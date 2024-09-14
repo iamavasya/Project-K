@@ -4,5 +4,7 @@
     {
         public int Id { get; set; }
         public required int Name { get; set; }
+
+        public ICollection<MemberLevels> MemberLevels { get; set; }
     }
 }

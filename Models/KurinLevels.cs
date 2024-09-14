@@ -5,5 +5,7 @@
         public int Id { get; set; }
         public required string Name { get; set; }
         public required int RequiredPoints { get; set; }
+
+        public ICollection<MemberKurinL> MemberKurinLs { get; set; }
     }
 }

@@ -3,8 +3,8 @@
     public class MemberLevels
     {
         public int Id { get; set; }
-        public required int MemberId { get; set; }
-        public required int LevelId { get; set; }
+        public Members Member { get; set; }
+        public Levels Level { get; set; }
         public required DateOnly AchieveDate { get; set; }
     }
 }
