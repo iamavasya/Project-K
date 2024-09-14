@@ -19,6 +19,8 @@ namespace Project_K.Models
         public required DateOnly PlastJoin { get; set; }
         public Addresses Address { get; set; }
         public Schools School { get; set; }
+        public ICollection<MemberKurinL> MemberKurinLs { get; set; }
+        public ICollection<MemberLevels> MemberLevels { get; set; }
     }
 
 }
