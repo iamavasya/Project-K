@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Project_K.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class WorkingOnModels : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -98,7 +98,8 @@ namespace Project_K.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PlastJoin = table.Column<DateOnly>(type: "date", nullable: false),
                     AddressId = table.Column<int>(type: "int", nullable: false),
-                    SchoolId = table.Column<int>(type: "int", nullable: false)
+                    KurinLevelId = table.Column<int>(type: "int", nullable: true),
+                    SchoolId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -110,38 +111,15 @@ namespace Project_K.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_Members_KurinLevels_KurinLevelId",
+                        column: x => x.KurinLevelId,
+                        principalTable: "KurinLevels",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Members_Schools_SchoolId",
                         column: x => x.SchoolId,
                         principalTable: "Schools",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "MemberKurinLs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    MemberId = table.Column<uint>(type: "int unsigned", nullable: false),
-                    LevelId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MemberKurinLs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MemberKurinLs_KurinLevels_LevelId",
-                        column: x => x.LevelId,
-                        principalTable: "KurinLevels",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_MemberKurinLs_Members_MemberId",
-                        column: x => x.MemberId,
-                        principalTable: "Members",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -174,16 +152,6 @@ namespace Project_K.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MemberKurinLs_LevelId",
-                table: "MemberKurinLs",
-                column: "LevelId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MemberKurinLs_MemberId",
-                table: "MemberKurinLs",
-                column: "MemberId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MemberLevels_LevelId",
                 table: "MemberLevels",
                 column: "LevelId");
@@ -199,6 +167,11 @@ namespace Project_K.Migrations
                 column: "AddressId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Members_KurinLevelId",
+                table: "Members",
+                column: "KurinLevelId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Members_SchoolId",
                 table: "Members",
                 column: "SchoolId");
@@ -208,13 +181,7 @@ namespace Project_K.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "MemberKurinLs");
-
-            migrationBuilder.DropTable(
                 name: "MemberLevels");
-
-            migrationBuilder.DropTable(
-                name: "KurinLevels");
 
             migrationBuilder.DropTable(
                 name: "Levels");
@@ -224,6 +191,9 @@ namespace Project_K.Migrations
 
             migrationBuilder.DropTable(
                 name: "Addresses");
+
+            migrationBuilder.DropTable(
+                name: "KurinLevels");
 
             migrationBuilder.DropTable(
                 name: "Schools");
