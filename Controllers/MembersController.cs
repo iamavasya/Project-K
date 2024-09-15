@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Project_K.Data;
 using Project_K.Models;
+using Project_K.Dtos;
 
 namespace Project_K.Controllers
 {
@@ -19,13 +20,13 @@ namespace Project_K.Controllers
         [Route("api/members")]
         public async Task<IActionResult> GetMembers()
         {
-            var members = await _context.Members.ToListAsync();
+            var members = await _context.Members.Include(m => m.Address).ToListAsync();
             return Ok(members);
         }
 
         [HttpGet]
         [Route("api/members/{id}")]
-        public async Task<IActionResult> GetMember(int id)
+        public async Task<IActionResult> GetMember(uint id)
         {
             var member = await _context.Members.FindAsync(id);
             if (member == null)
@@ -37,12 +38,30 @@ namespace Project_K.Controllers
 
         [HttpPost]
         [Route("api/members")]
-        public async Task<IActionResult> CreateMember([FromBody] Member member)
+        public async Task<IActionResult> CreateMember([FromBody] MemberDto memberDto)
         {
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
+            // TODO: навігаційна властивість
+            Member member = new()
+            {
+                FirstName = memberDto.FirstName,
+                LastName = memberDto.LastName,
+                MiddleName = memberDto.MiddleName,
+                BirthDate = memberDto.BirthDate,
+                Phone = memberDto.Phone,
+                Email = memberDto.Email,
+                Telegram = memberDto.Telegram,
+                PlastJoin = memberDto.PlastJoin,
+                AddressId = memberDto.AddressId,
+            };
+            member.Address = await _context.Addresses.FindAsync(member.AddressId);
+            /*member.School = await _context.Schools.FindAsync(member.SchoolId);
+            member.KurinLevel = await _context.KurinLevels.FindAsync(member.KurinLevelId);*/
 
             _context.Members.Add(member);
             await _context.SaveChangesAsync();
@@ -52,7 +71,7 @@ namespace Project_K.Controllers
 
         [HttpPut]
         [Route("api/members/{id}")]
-        public async Task<IActionResult> UpdateMember(int id, [FromBody] Member member)
+        public async Task<IActionResult> UpdateMember(uint id, [FromBody] Member member)
         {
             if (id != member.Id)
             {
@@ -82,7 +101,7 @@ namespace Project_K.Controllers
 
         [HttpDelete]
         [Route("api/members/{id}")]
-        public async Task<IActionResult> DeleteMember(int id)
+        public async Task<IActionResult> DeleteMember(uint id)
         {
             var member = await _context.Members.FindAsync(id);
             if (member == null)
