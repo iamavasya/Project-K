@@ -1,6 +1,6 @@
 ﻿namespace Project_K.Models
 {
-    public class KurinLevels
+    public class KurinLevel
     {
         public int Id { get; set; }
         public required string Name { get; set; }

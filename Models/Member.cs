@@ -5,7 +5,7 @@ using System.Net;
 
 namespace Project_K.Models
 {
-    public class Members
+    public class Member
     {
         public uint Id { get; set; }
         public required string FirstName { get; set; }
@@ -17,10 +17,10 @@ namespace Project_K.Models
         public required string Email { get; set; }
         public required string Telegram { get; set; }
         public required DateOnly PlastJoin { get; set; }
-        public Addresses Address { get; set; }
-        public Schools School { get; set; }
+        public Address Address { get; set; }
+        public School School { get; set; }
         public ICollection<MemberKurinL> MemberKurinLs { get; set; }
-        public ICollection<MemberLevels> MemberLevels { get; set; }
+        public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 
 }
