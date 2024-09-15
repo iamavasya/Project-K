@@ -97,6 +97,9 @@ namespace Project_K.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("KurinLevelId")
+                        .HasColumnType("int");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -115,7 +118,7 @@ namespace Project_K.Migrations
                     b.Property<DateOnly>("PlastJoin")
                         .HasColumnType("date");
 
-                    b.Property<int>("SchoolId")
+                    b.Property<int?>("SchoolId")
                         .HasColumnType("int");
 
                     b.Property<string>("Telegram")
@@ -126,32 +129,11 @@ namespace Project_K.Migrations
 
                     b.HasIndex("AddressId");
 
+                    b.HasIndex("KurinLevelId");
+
                     b.HasIndex("SchoolId");
 
                     b.ToTable("Members");
-                });
-
-            modelBuilder.Entity("Project_K.Models.MemberKurinL", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("LevelId")
-                        .HasColumnType("int");
-
-                    b.Property<uint>("MemberId")
-                        .HasColumnType("int unsigned");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LevelId");
-
-                    b.HasIndex("MemberId");
-
-                    b.ToTable("MemberKurinLs");
                 });
 
             modelBuilder.Entity("Project_K.Models.MemberLevel", b =>
@@ -205,34 +187,15 @@ namespace Project_K.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Project_K.Models.School", "School")
+                    b.HasOne("Project_K.Models.KurinLevel", null)
                         .WithMany("Members")
-                        .HasForeignKey("SchoolId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("KurinLevelId");
+
+                    b.HasOne("Project_K.Models.School", null)
+                        .WithMany("Members")
+                        .HasForeignKey("SchoolId");
 
                     b.Navigation("Address");
-
-                    b.Navigation("School");
-                });
-
-            modelBuilder.Entity("Project_K.Models.MemberKurinL", b =>
-                {
-                    b.HasOne("Project_K.Models.KurinLevel", "Level")
-                        .WithMany("MemberKurinLs")
-                        .HasForeignKey("LevelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Project_K.Models.Member", "Member")
-                        .WithMany("MemberKurinLs")
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Level");
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("Project_K.Models.MemberLevel", b =>
@@ -244,7 +207,7 @@ namespace Project_K.Migrations
                         .IsRequired();
 
                     b.HasOne("Project_K.Models.Member", "Member")
-                        .WithMany("MemberLevels")
+                        .WithMany()
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -261,18 +224,11 @@ namespace Project_K.Migrations
 
             modelBuilder.Entity("Project_K.Models.KurinLevel", b =>
                 {
-                    b.Navigation("MemberKurinLs");
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Project_K.Models.Level", b =>
                 {
-                    b.Navigation("MemberLevels");
-                });
-
-            modelBuilder.Entity("Project_K.Models.Member", b =>
-                {
-                    b.Navigation("MemberKurinLs");
-
                     b.Navigation("MemberLevels");
                 });
 
