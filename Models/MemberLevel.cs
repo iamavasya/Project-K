@@ -1,10 +1,10 @@
 ﻿namespace Project_K.Models
 {
-    public class MemberLevels
+    public class MemberLevel
     {
         public int Id { get; set; }
-        public required int MemberId { get; set; }
-        public required int LevelId { get; set; }
+        public Member Member { get; set; }
+        public Level Level { get; set; }
         public required DateOnly AchieveDate { get; set; }
     }
 }
