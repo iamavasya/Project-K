@@ -1,9 +1,10 @@
 ﻿namespace Project_K.Models
 {
-    public class KurinLevels
+    public class School
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public required int RequiredPoints { get; set; }
+
+        public ICollection<Member> Members { get; set; }
     }
 }
