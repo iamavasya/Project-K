@@ -1,10 +1,14 @@
-﻿namespace Project_K.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Project_K.Models
 {
     public class KurinLevel
     {
         public int Id { get; set; }
-        public required string Name { get; set; }
-        public required int RequiredPoints { get; set; }
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        public int RequiredPoints { get; set; }
 
         public ICollection<Member> Members { get; set; }
     }
