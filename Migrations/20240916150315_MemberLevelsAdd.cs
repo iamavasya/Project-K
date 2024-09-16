@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Project_K.Migrations
 {
     /// <inheritdoc />
-    public partial class WorkingOnModels : Migration
+    public partial class MemberLevelsAdd : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,7 +52,8 @@ namespace Project_K.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<int>(type: "int", nullable: false)
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -79,7 +80,7 @@ namespace Project_K.Migrations
                 name: "Members",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     FirstName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -98,8 +99,8 @@ namespace Project_K.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PlastJoin = table.Column<DateOnly>(type: "date", nullable: false),
                     AddressId = table.Column<int>(type: "int", nullable: false),
-                    KurinLevelId = table.Column<int>(type: "int", nullable: true),
-                    SchoolId = table.Column<int>(type: "int", nullable: true)
+                    SchoolId = table.Column<int>(type: "int", nullable: false),
+                    KurinLevelId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -114,12 +115,14 @@ namespace Project_K.Migrations
                         name: "FK_Members_KurinLevels_KurinLevelId",
                         column: x => x.KurinLevelId,
                         principalTable: "KurinLevels",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Members_Schools_SchoolId",
                         column: x => x.SchoolId,
                         principalTable: "Schools",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -129,7 +132,7 @@ namespace Project_K.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    MemberId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    MemberId = table.Column<int>(type: "int", nullable: false),
                     LevelId = table.Column<int>(type: "int", nullable: false),
                     AchieveDate = table.Column<DateOnly>(type: "date", nullable: false)
                 },

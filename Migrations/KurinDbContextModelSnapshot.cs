@@ -78,11 +78,11 @@ namespace Project_K.Migrations
 
             modelBuilder.Entity("Project_K.Models.Member", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int unsigned");
+                        .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AddressId")
                         .HasColumnType("int");
@@ -151,8 +151,8 @@ namespace Project_K.Migrations
                     b.Property<int>("LevelId")
                         .HasColumnType("int");
 
-                    b.Property<uint>("MemberId")
-                        .HasColumnType("int unsigned");
+                    b.Property<int>("MemberId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -216,7 +216,7 @@ namespace Project_K.Migrations
                         .IsRequired();
 
                     b.HasOne("Project_K.Models.Member", "Member")
-                        .WithMany()
+                        .WithMany("MemberLevels")
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -237,6 +237,11 @@ namespace Project_K.Migrations
                 });
 
             modelBuilder.Entity("Project_K.Models.Level", b =>
+                {
+                    b.Navigation("MemberLevels");
+                });
+
+            modelBuilder.Entity("Project_K.Models.Member", b =>
                 {
                     b.Navigation("MemberLevels");
                 });
