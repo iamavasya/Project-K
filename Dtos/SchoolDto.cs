@@ -1,6 +1,6 @@
-﻿namespace Project_K.Dtos
+namespace Project_K.Dtos
 {
-    public class AddressDto
+    public class SchoolDto
     {
         public required string Name { get; set; }
     }
