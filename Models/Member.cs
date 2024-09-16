@@ -19,11 +19,11 @@ namespace Project_K.Models
         public required DateOnly PlastJoin { get; set; }
         public int AddressId { get; set; }
         public Address Address { get; set; }
-        //public int SchoolId { get; set; }
-        //public School School { get; set; }
-        //public int KurinLevelId { get; set; }
-        //public KurinLevel KurinLevel { get; set; }
-        // public ICollection<MemberLevel> MemberLevels { get; set; }
+        public int SchoolId { get; set; }
+        public School School { get; set; }
+        public int KurinLevelId { get; set; }
+        public KurinLevel KurinLevel { get; set; }
+        public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 
 }
