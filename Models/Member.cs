@@ -23,7 +23,7 @@ namespace Project_K.Models
         public School School { get; set; }
         public int KurinLevelId { get; set; }
         public KurinLevel KurinLevel { get; set; }
-        public ICollection<MemberLevel> MemberLevels { get; set; }
+        //public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 
 }

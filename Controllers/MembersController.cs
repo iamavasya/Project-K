@@ -20,7 +20,9 @@ namespace Project_K.Controllers
         [Route("api/members")]
         public async Task<IActionResult> GetMembers()
         {
-            var members = await _context.Members.Include(m => m.Address).ToListAsync();
+            var members = await _context.Members.Include(m => m.Address)
+                                                .Include(m => m.School)
+                                                .Include(m => m.KurinLevel).ToListAsync();
             return Ok(members);
         }
 
@@ -46,22 +48,24 @@ namespace Project_K.Controllers
                 return BadRequest(ModelState);
             }
 
-            // TODO: навігаційна властивість
             Member member = new()
             {
                 FirstName = memberDto.FirstName,
                 LastName = memberDto.LastName,
                 MiddleName = memberDto.MiddleName,
+                Nickname = memberDto.Nickname,
                 BirthDate = memberDto.BirthDate,
                 Phone = memberDto.Phone,
                 Email = memberDto.Email,
                 Telegram = memberDto.Telegram,
                 PlastJoin = memberDto.PlastJoin,
                 AddressId = memberDto.AddressId,
+                SchoolId = memberDto.SchoolId,
+                KurinLevelId = memberDto.KurinLevelId
             };
             member.Address = await _context.Addresses.FindAsync(member.AddressId);
-            /*member.School = await _context.Schools.FindAsync(member.SchoolId);
-            member.KurinLevel = await _context.KurinLevels.FindAsync(member.KurinLevelId);*/
+            member.School = await _context.Schools.FindAsync(member.SchoolId);
+            member.KurinLevel = await _context.KurinLevels.FindAsync(member.KurinLevelId);
 
             _context.Members.Add(member);
             await _context.SaveChangesAsync();
@@ -71,32 +75,30 @@ namespace Project_K.Controllers
 
         [HttpPut]
         [Route("api/members/{id}")]
-        public async Task<IActionResult> UpdateMember(uint id, [FromBody] Member member)
+        public async Task<IActionResult> UpdateMember(uint id, [FromBody] MemberDto memberDto)
         {
-            if (id != member.Id)
+            var member = await _context.Members.FindAsync(id);
+            if (member == null)
             {
-                return BadRequest();
+                return NotFound();
             }
+            member.FirstName = memberDto.FirstName;
+            member.LastName = memberDto.LastName;
+            member.MiddleName = memberDto.MiddleName;
+            member.Nickname = memberDto.Nickname;
+            member.BirthDate = memberDto.BirthDate;
+            member.Phone = memberDto.Phone;
+            member.Email = memberDto.Email;
+            member.Telegram = memberDto.Telegram;
+            member.PlastJoin = memberDto.PlastJoin;
+            member.AddressId = memberDto.AddressId;
+            member.SchoolId = memberDto.SchoolId;
+            member.KurinLevelId = memberDto.KurinLevelId;
 
-            _context.Entry(member).State = EntityState.Modified;
+            _context.Members.Update(member);
+            await _context.SaveChangesAsync();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Members.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return Ok();
         }
 
         [HttpDelete]

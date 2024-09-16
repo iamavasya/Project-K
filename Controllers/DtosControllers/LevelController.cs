@@ -14,6 +14,11 @@ namespace Project_K.Controllers.DtosControllers
             };
         }
 
+        protected override void UpdateTheModel(Level model, LevelDto dto)
+        {
+            model.Name = dto.Name;
+        }
+
         protected override int GetModelId(Level model)
         {
             return model.Id;

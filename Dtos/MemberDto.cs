@@ -12,5 +12,7 @@
         public required string Telegram { get; set; }
         public required DateOnly PlastJoin { get; set; }
         public int AddressId { get; set; }
+        public int SchoolId { get; set; }
+        public int KurinLevelId { get; set; }
     }
 }
