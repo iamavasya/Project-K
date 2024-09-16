@@ -13,7 +13,10 @@ namespace Project_K.Controllers.DtosControllers
                 AddressName = dto.Name
             };
         }
-
+        protected override void UpdateTheModel(Address model, AddressDto dto)
+        {
+            model.AddressName = dto.Name;
+        }
         protected override int GetModelId(Address model)
         {
             return model.Id;

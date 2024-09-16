@@ -34,7 +34,7 @@ namespace Project_K.Controllers.DtosControllers
 
 
             var model = MapToModel(dto);
-            _context.Set<TModel>().Add(model);
+            await _context.Set<TModel>().AddAsync(model);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = GetModelId(model) }, dto);
@@ -51,7 +51,39 @@ namespace Project_K.Controllers.DtosControllers
             return Ok(model);
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateById(int id, [FromBody] TDto dto)
+        {
+            var model = await _context.Set<TModel>().FindAsync(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+
+            UpdateTheModel(model, dto);
+            _context.Set<TModel>().Update(model);
+            await _context.SaveChangesAsync();
+
+            return Ok(model);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteById(int id)
+        {
+            var model = await _context.Set<TModel>().FindAsync(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+
+            _context.Set<TModel>().Remove(model);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
         protected abstract TModel MapToModel(TDto dto);
+        protected abstract void UpdateTheModel(TModel model, TDto dto);
         protected abstract int GetModelId(TModel model);
     }
 }
