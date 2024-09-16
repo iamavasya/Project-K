@@ -22,7 +22,8 @@ namespace Project_K.Controllers
         {
             var members = await _context.Members.Include(m => m.Address)
                                                 .Include(m => m.School)
-                                                .Include(m => m.KurinLevel).ToListAsync();
+                                                .Include(m => m.KurinLevel)
+                                                .Include(m => m.MemberLevels).ToListAsync();
             return Ok(members);
         }
 

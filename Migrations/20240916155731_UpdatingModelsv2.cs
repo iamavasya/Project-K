@@ -5,7 +5,7 @@
 namespace Project_K.Migrations
 {
     /// <inheritdoc />
-    public partial class UpadingModelsv1 : Migration
+    public partial class UpdatingModelsv2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
