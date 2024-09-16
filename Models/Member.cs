@@ -7,7 +7,7 @@ namespace Project_K.Models
 {
     public class Member
     {
-        public uint Id { get; set; }
+        public int Id { get; set; }
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public required string MiddleName { get; set; }
@@ -23,7 +23,7 @@ namespace Project_K.Models
         public School School { get; set; }
         public int KurinLevelId { get; set; }
         public KurinLevel KurinLevel { get; set; }
-        //public ICollection<MemberLevel> MemberLevels { get; set; }
+        public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 
 }
