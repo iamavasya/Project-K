@@ -23,7 +23,7 @@ namespace Project_K.Controllers
         // GET: DBView
         public async Task<IActionResult> Index()
         {
-            var kurinDbContext = _context.Members.Include(m => m.Address).Include(m => m.KurinLevel).Include(m => m.School);
+            var kurinDbContext = _context.Members.Include(m => m.Address).Include(m => m.KurinLevel).Include(m => m.School).Include(m => m.MemberLevels).ThenInclude(ml => ml.Level);
             return View(await kurinDbContext.ToListAsync());
         }
 
