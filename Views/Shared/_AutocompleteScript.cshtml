@@ -1,5 +1,5 @@
 @* Views/Shared/_AutocompleteScripts.cshtml *@
-<script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=@ViewData["ApiKey"]&libraries=places"></script>
 <script>
     function initAutocomplete() {
         var addressInput = document.getElementById('address');
