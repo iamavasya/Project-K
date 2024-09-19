@@ -1,0 +1,12 @@
+@* Views/Shared/_AutocompleteScripts.cshtml *@
+<script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places"></script>
+<script>
+    function initAutocomplete() {
+        var addressInput = document.getElementById('address');
+        var schoolInput = document.getElementById('school');
+        var addressAutocomplete = new google.maps.places.Autocomplete(addressInput);
+        var schoolAutocomplete = new google.maps.places.Autocomplete(schoolInput);
+    }
+
+    google.maps.event.addDomListener(window, 'load', initAutocomplete);
+</script>
