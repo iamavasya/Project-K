@@ -17,10 +17,8 @@ namespace Project_K.Models
         public required string Email { get; set; }
         public required string Telegram { get; set; }
         public required DateOnly PlastJoin { get; set; }
-        public int AddressId { get; set; }
-        public Address Address { get; set; }
-        public int SchoolId { get; set; }
-        public School School { get; set; }
+        public string Address { get; set; }
+        public string School { get; set; }
         public int KurinLevelId { get; set; }
         public KurinLevel KurinLevel { get; set; }
         public ICollection<MemberLevel> MemberLevels { get; set; }
