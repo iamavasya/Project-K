@@ -59,12 +59,12 @@
                 <span asp-validation-for="PlastJoin" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="AddressId" class="control-label">Адреса проживання</label>
-                <select asp-for="AddressId" class ="form-control" asp-items="ViewBag.AddressId"></select>
+                <label asp-for="Address" class="control-label">Адреса проживання</label>
+                <input asp-for="Address" id="address" class="form-control" />
             </div>
             <div class="form-group">
-                <label asp-for="SchoolId" class="control-label">Школа</label>
-                <select asp-for="SchoolId" class ="form-control" asp-items="ViewBag.SchoolId"></select>
+                <label asp-for="School" class="control-label">Школа</label>
+                <input asp-for="School" id="school" class="form-control" />
             </div>
             <div class="form-group">
                 <label asp-for="KurinLevelId" class="control-label">Курінний ранг</label>
@@ -82,5 +82,6 @@
 </div>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_AutocompleteScript");}
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

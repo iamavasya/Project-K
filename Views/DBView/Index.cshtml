@@ -4,7 +4,7 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>База даних 51-го куреня</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
@@ -84,10 +84,10 @@
                 @Html.DisplayFor(modelItem => item.PlastJoin)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Address.AddressName)
+                @Html.DisplayFor(modelItem => item.Address)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.School.Name)
+                @Html.DisplayFor(modelItem => item.School)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.KurinLevel.Name)
