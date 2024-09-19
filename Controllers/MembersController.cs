@@ -20,9 +20,7 @@ namespace Project_K.Controllers
         [Route("api/members")]
         public async Task<IActionResult> GetMembers()
         {
-            var members = await _context.Members.Include(m => m.Address)
-                                                .Include(m => m.School)
-                                                .Include(m => m.KurinLevel)
+            var members = await _context.Members.Include(m => m.KurinLevel)
                                                 .Include(m => m.MemberLevels).ToListAsync();
             return Ok(members);
         }
@@ -60,12 +58,10 @@ namespace Project_K.Controllers
                 Email = memberDto.Email,
                 Telegram = memberDto.Telegram,
                 PlastJoin = memberDto.PlastJoin,
-                AddressId = memberDto.AddressId,
-                SchoolId = memberDto.SchoolId,
+                Address = memberDto.Address,
+                School = memberDto.School,
                 KurinLevelId = memberDto.KurinLevelId
             };
-            member.Address = await _context.Addresses.FindAsync(member.AddressId);
-            member.School = await _context.Schools.FindAsync(member.SchoolId);
             member.KurinLevel = await _context.KurinLevels.FindAsync(member.KurinLevelId);
 
             _context.Members.Add(member);
@@ -92,8 +88,8 @@ namespace Project_K.Controllers
             member.Email = memberDto.Email;
             member.Telegram = memberDto.Telegram;
             member.PlastJoin = memberDto.PlastJoin;
-            member.AddressId = memberDto.AddressId;
-            member.SchoolId = memberDto.SchoolId;
+            member.Address = memberDto.Address;
+            member.School = memberDto.School;
             member.KurinLevelId = memberDto.KurinLevelId;
 
             _context.Members.Update(member);

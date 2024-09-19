@@ -13,17 +13,23 @@ namespace Project_K.Controllers
 {
     public class DBViewController : Controller
     {
+        private readonly string? _apiKey;
         private readonly KurinDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public DBViewController(KurinDbContext context)
+
+        public DBViewController(KurinDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
+            _apiKey = _configuration["ApiSettings:ApiKey"];
+
         }
 
         // GET: DBView
         public async Task<IActionResult> Index()
         {
-            var kurinDbContext = _context.Members.Include(m => m.Address).Include(m => m.KurinLevel).Include(m => m.School).Include(m => m.MemberLevels).ThenInclude(ml => ml.Level);
+            var kurinDbContext = _context.Members.Include(m => m.KurinLevel).Include(m => m.MemberLevels).ThenInclude(ml => ml.Level);
             return View(await kurinDbContext.ToListAsync());
         }
 
@@ -36,9 +42,7 @@ namespace Project_K.Controllers
             }
 
             var member = await _context.Members
-                .Include(m => m.Address)
                 .Include(m => m.KurinLevel)
-                .Include(m => m.School)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (member == null)
             {
@@ -51,9 +55,8 @@ namespace Project_K.Controllers
         // GET: DBView/Create
         public IActionResult Create()
         {
-            ViewData["AddressId"] = new SelectList(_context.Addresses, "Id", "AddressName");
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name");
-            ViewData["SchoolId"] = new SelectList(_context.Schools, "Id", "Name");
+            ViewData["ApiKey"] = _apiKey;
             return View();
         }
 
@@ -62,7 +65,7 @@ namespace Project_K.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,AddressId,SchoolId,KurinLevelId")] MemberDto memberDto)
+        public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId")] MemberDto memberDto)
         {
             if (ModelState.IsValid)
             {
@@ -78,17 +81,16 @@ namespace Project_K.Controllers
                     Email = memberDto.Email,
                     Telegram = memberDto.Telegram,
                     PlastJoin = memberDto.PlastJoin,
-                    AddressId = memberDto.AddressId,
-                    SchoolId = memberDto.SchoolId,
+                    Address = memberDto.Address,
+                    School = memberDto.School,
                     KurinLevelId = memberDto.KurinLevelId
                 };
                 _context.Add(member);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["AddressId"] = new SelectList(_context.Addresses, "Id", "AddressName", memberDto.AddressId);
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
-            ViewData["SchoolId"] = new SelectList(_context.Schools, "Id", "Name", memberDto.SchoolId);
+        
             return View(memberDto);
         }
 
@@ -105,9 +107,10 @@ namespace Project_K.Controllers
             {
                 return NotFound();
             }
-            ViewData["AddressId"] = new SelectList(_context.Addresses, "Id", "AddressName", member.AddressId);
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", member.KurinLevelId);
-            ViewData["SchoolId"] = new SelectList(_context.Schools, "Id", "Name", member.SchoolId);
+            
+            ViewData["ApiKey"] = _apiKey;
+            
             return View(member);
         }
 
@@ -116,7 +119,7 @@ namespace Project_K.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,AddressId,SchoolId,KurinLevelId")] MemberDto memberDto)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId")] MemberDto memberDto)
         {
             var member = await _context.Members.FindAsync(id);
             if (member == null)
@@ -134,8 +137,8 @@ namespace Project_K.Controllers
                 member.Email = memberDto.Email;
                 member.Telegram = memberDto.Telegram;
                 member.PlastJoin = memberDto.PlastJoin;
-                member.AddressId = memberDto.AddressId;
-                member.SchoolId = memberDto.SchoolId;
+                member.Address = memberDto.Address;
+                member.School = memberDto.School;
                 member.KurinLevelId = memberDto.KurinLevelId;
 
                 _context.Update(member);
@@ -143,9 +146,7 @@ namespace Project_K.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["AddressId"] = new SelectList(_context.Addresses, "Id", "AddressName", memberDto.AddressId);
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
-            ViewData["SchoolId"] = new SelectList(_context.Schools, "Id", "Name", memberDto.SchoolId);
             return View(memberDto);
         }
 
@@ -158,9 +159,7 @@ namespace Project_K.Controllers
             }
 
             var member = await _context.Members
-                .Include(m => m.Address)
                 .Include(m => m.KurinLevel)
-                .Include(m => m.School)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (member == null)
             {
