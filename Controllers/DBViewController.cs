@@ -13,11 +13,17 @@ namespace Project_K.Controllers
 {
     public class DBViewController : Controller
     {
+        private readonly string? _apiKey;
         private readonly KurinDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public DBViewController(KurinDbContext context)
+
+        public DBViewController(KurinDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
+            _apiKey = _configuration["ApiSettings:ApiKey"];
+
         }
 
         // GET: DBView
@@ -83,6 +89,9 @@ namespace Project_K.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
+
+            ViewData["ApiKey"] = _apiKey;
+        
             return View(memberDto);
         }
 
@@ -100,6 +109,9 @@ namespace Project_K.Controllers
                 return NotFound();
             }
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", member.KurinLevelId);
+            
+            ViewData["ApiKey"] = _apiKey;
+            
             return View(member);
         }
 
