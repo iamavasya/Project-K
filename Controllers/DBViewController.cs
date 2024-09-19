@@ -56,6 +56,7 @@ namespace Project_K.Controllers
         public IActionResult Create()
         {
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name");
+            ViewData["ApiKey"] = _apiKey;
             return View();
         }
 
@@ -89,8 +90,6 @@ namespace Project_K.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
-
-            ViewData["ApiKey"] = _apiKey;
         
             return View(memberDto);
         }
