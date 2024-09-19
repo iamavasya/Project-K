@@ -4,7 +4,7 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>База даних 51-го куреня</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
@@ -13,42 +13,44 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.FirstName)
+                Ім'я
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.LastName)
+                Прізвище
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.MiddleName)
+                По-Батькові
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Nickname)
+                Псевдо
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.BirthDate)
+                Дата народження
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Phone)
+                Номер телефону
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Email)
+                Email
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Telegram)
+                Telegram
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.PlastJoin)
+                Дата вступу в Пласт
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Address)
+                Адреса
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.School)
+                Навчальний заклад
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.KurinLevel)
+                Курінний ранг
             </th>
-            <th></th>
+            <th>
+                Пластовий ступінь
+            </th>
         </tr>
     </thead>
     <tbody>
@@ -82,13 +84,19 @@
                 @Html.DisplayFor(modelItem => item.PlastJoin)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Address.AddressName)
+                @Html.DisplayFor(modelItem => item.Address)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.School.Name)
+                @Html.DisplayFor(modelItem => item.School)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.KurinLevel.Name)
+            </td>
+            <td>
+                @foreach (var level in item.MemberLevels)
+                {
+                    @Html.DisplayFor(modelItem => level.Level.Name)
+                }
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

@@ -11,8 +11,8 @@
         public required string Email { get; set; }
         public required string Telegram { get; set; }
         public required DateOnly PlastJoin { get; set; }
-        public int AddressId { get; set; }
-        public int SchoolId { get; set; }
+        public string Address { get; set; }
+        public string School { get; set; }
         public int KurinLevelId { get; set; }
     }
 }
