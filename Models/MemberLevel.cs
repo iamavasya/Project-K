@@ -14,7 +14,6 @@ namespace Project_K.Models
         [ForeignKey(nameof(Level))]
         public int LevelId { get; set; }
         public Level Level { get; set; }
-        [Required]
-        public DateOnly AchieveDate { get; set; }
+        public DateOnly? AchieveDate { get; set; }
     }
 }

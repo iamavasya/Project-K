@@ -29,7 +29,7 @@ namespace Project_K.Controllers
         // GET: DBView
         public async Task<IActionResult> Index()
         {
-            var kurinDbContext = _context.Members.Include(m => m.KurinLevel).Include(m => m.MemberLevels).ThenInclude(ml => ml.Level);
+            var kurinDbContext = _context.Members.Include(m => m.KurinLevel).Include(m => m.Team).Include(m => m.MemberLevels).ThenInclude(ml => ml.Level);
             return View(await kurinDbContext.ToListAsync());
         }
 
@@ -43,6 +43,9 @@ namespace Project_K.Controllers
 
             var member = await _context.Members
                 .Include(m => m.KurinLevel)
+                .Include(m => m.Team)
+                .Include(m => m.MemberLevels)
+                .ThenInclude(ml => ml.Level)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (member == null)
             {
@@ -55,7 +58,9 @@ namespace Project_K.Controllers
         // GET: DBView/Create
         public IActionResult Create()
         {
+            ViewBag.Levels = new SelectList(_context.Levels, "Id", "Name");
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name");
+            ViewData["TeamId"] = new SelectList(_context.Teams, "Id", "Name");
             ViewData["ApiKey"] = _apiKey;
             return View();
         }
@@ -65,7 +70,7 @@ namespace Project_K.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId")] MemberDto memberDto)
+        public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,MiddleName,Nickname,TeamId,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId,SelectedLevelId")] MemberDto memberDto)
         {
             if (ModelState.IsValid)
             {
@@ -76,6 +81,7 @@ namespace Project_K.Controllers
                     LastName = memberDto.LastName,
                     MiddleName = memberDto.MiddleName,
                     Nickname = memberDto.Nickname,
+                    TeamId = memberDto.TeamId,
                     BirthDate = memberDto.BirthDate,
                     Phone = memberDto.Phone,
                     Email = memberDto.Email,
@@ -87,10 +93,24 @@ namespace Project_K.Controllers
                 };
                 _context.Add(member);
                 await _context.SaveChangesAsync();
+
+                var memberLevel = new MemberLevel
+                {
+                    MemberId = member.Id,
+                    LevelId = memberDto.SelectedLevelId,
+                    AchieveDate = null
+                };
+
+                _context.Add(memberLevel);
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
-        
+
+            ViewBag.Levels = new SelectList(_context.Levels, "Id", "Name");
+            ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name");
+            ViewData["TeamId"] = new SelectList(_context.Teams, "Id", "Name");
+            ViewData["ApiKey"] = _apiKey;
             return View(memberDto);
         }
 
@@ -102,16 +122,35 @@ namespace Project_K.Controllers
                 return NotFound();
             }
 
-            var member = await _context.Members.FindAsync(id);
+            var member = await _context.Members.Include(m => m.MemberLevels).FirstOrDefaultAsync(m => m.Id == id);
             if (member == null)
             {
                 return NotFound();
             }
-            ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", member.KurinLevelId);
-            
+            var memberDto = new MemberDto
+            {
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                MiddleName = member.MiddleName,
+                Nickname = member.Nickname,
+                TeamId = member.TeamId,
+                BirthDate = member.BirthDate,
+                Phone = member.Phone,
+                Email = member.Email,
+                Telegram = member.Telegram,
+                PlastJoin = member.PlastJoin,
+                Address = member.Address,
+                School = member.School,
+                KurinLevelId = member.KurinLevelId,
+                SelectedLevelId = member.MemberLevels.FirstOrDefault()?.LevelId ?? 0
+            };
+
+            ViewBag.Levels = new SelectList(_context.Levels, "Id", "Name", memberDto.SelectedLevelId);
+            ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
+            ViewData["TeamId"] = new SelectList(_context.Teams, "Id", "Name", memberDto.TeamId);
             ViewData["ApiKey"] = _apiKey;
             
-            return View(member);
+            return View(memberDto);
         }
 
         // POST: DBView/Edit/5
@@ -119,19 +158,24 @@ namespace Project_K.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,MiddleName,Nickname,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId")] MemberDto memberDto)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,MiddleName,Nickname,TeamId,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId,SelectedLevelId")] MemberDto memberDto)
         {
-            var member = await _context.Members.FindAsync(id);
+            var member = await _context.Members
+                .Include(m => m.MemberLevels)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (member == null)
             {
                 return NotFound();
             }
+
             if (ModelState.IsValid)
             {
                 member.FirstName = memberDto.FirstName;
                 member.LastName = memberDto.LastName;
                 member.MiddleName = memberDto.MiddleName;
                 member.Nickname = memberDto.Nickname;
+                member.TeamId = memberDto.TeamId;
                 member.BirthDate = memberDto.BirthDate;
                 member.Phone = memberDto.Phone;
                 member.Email = memberDto.Email;
@@ -144,9 +188,32 @@ namespace Project_K.Controllers
                 _context.Update(member);
                 await _context.SaveChangesAsync();
 
+                var memberLevel = member.MemberLevels.FirstOrDefault();
+                if (memberLevel != null)
+                {
+                    memberLevel.LevelId = memberDto.SelectedLevelId;
+                    _context.Update(memberLevel);
+                }
+                else
+                {
+                    memberLevel = new MemberLevel
+                    {
+                        MemberId = member.Id,
+                        LevelId = memberDto.SelectedLevelId,
+                        AchieveDate = null
+                    };
+                    _context.Add(memberLevel);
+                }
+
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.Levels = new SelectList(_context.Levels, "Id", "Name", memberDto.SelectedLevelId);
             ViewData["KurinLevelId"] = new SelectList(_context.KurinLevels, "Id", "Name", memberDto.KurinLevelId);
+            ViewData["TeamId"] = new SelectList(_context.Teams, "Id", "Name", memberDto.TeamId);
+            ViewData["ApiKey"] = _apiKey;
             return View(memberDto);
         }
 
@@ -160,6 +227,9 @@ namespace Project_K.Controllers
 
             var member = await _context.Members
                 .Include(m => m.KurinLevel)
+                .Include(m => m.Team)
+                .Include(m => m.MemberLevels)
+                .ThenInclude(ml => ml.Level)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (member == null)
             {

@@ -10,7 +10,7 @@ namespace Project_K.Controllers.DtosControllers
         {
             return new Level
             {
-                Name = dto.Name
+                Name = dto.Name,
             };
         }
 
