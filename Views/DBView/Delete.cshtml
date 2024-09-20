@@ -35,6 +35,31 @@
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.Nickname)
         </dd>
+        <dt class="col-sm-2">
+            Member Levels
+        </dt>
+        <dd class="col-sm-10">
+            <ul>
+                @foreach (var level in Model.MemberLevels)
+                {
+                    if (level?.Level != null)
+                    {
+                        if (level.AchieveDate == null)
+                        {
+                            <li>
+                                @level.Level.Name - Дата іменування: не вказано
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                @level.Level.Name - Дата іменування: @level.AchieveDate?.ToString("d")
+                            </li>
+                        }
+                    }
+                }
+            </ul>
+        </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.BirthDate)
         </dt>

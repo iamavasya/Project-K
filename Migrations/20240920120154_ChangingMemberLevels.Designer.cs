@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Project_K.Data;
 
@@ -11,9 +12,11 @@ using Project_K.Data;
 namespace Project_K.Migrations
 {
     [DbContext(typeof(KurinDbContext))]
-    partial class KurinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240920120154_ChangingMemberLevels")]
+    partial class ChangingMemberLevels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,6 +92,9 @@ namespace Project_K.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("MemberLevelId")
+                        .HasColumnType("int");
+
                     b.Property<string>("MiddleName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -131,7 +137,7 @@ namespace Project_K.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly?>("AchieveDate")
+                    b.Property<DateOnly>("AchieveDate")
                         .HasColumnType("date");
 
                     b.Property<int>("LevelId")

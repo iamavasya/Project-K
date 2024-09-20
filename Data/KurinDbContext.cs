@@ -10,6 +10,7 @@ namespace Project_K.Data
         }
         
         public DbSet<KurinLevel> KurinLevels { get; set; }
+        public DbSet<Team> Teams { get; set; }
         public DbSet<Level> Levels { get; set; }
         public DbSet<Member> Members  { get; set; }
         public DbSet<MemberLevel> MemberLevels { get; set; }
