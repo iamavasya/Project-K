@@ -21,6 +21,7 @@ namespace Project_K.Controllers
         public async Task<IActionResult> GetMembers()
         {
             var members = await _context.Members.Include(m => m.KurinLevel)
+                                                .Include(m => m.Team)
                                                 .Include(m => m.MemberLevels).ToListAsync();
             return Ok(members);
         }
@@ -60,9 +61,12 @@ namespace Project_K.Controllers
                 PlastJoin = memberDto.PlastJoin,
                 Address = memberDto.Address,
                 School = memberDto.School,
+                TeamId = memberDto.TeamId,
                 KurinLevelId = memberDto.KurinLevelId
             };
             member.KurinLevel = await _context.KurinLevels.FindAsync(member.KurinLevelId);
+            member.Team = await _context.Teams.FindAsync(member.TeamId);
+
 
             _context.Members.Add(member);
             await _context.SaveChangesAsync();
@@ -90,6 +94,7 @@ namespace Project_K.Controllers
             member.PlastJoin = memberDto.PlastJoin;
             member.Address = memberDto.Address;
             member.School = memberDto.School;
+            member.TeamId = memberDto.TeamId;
             member.KurinLevelId = memberDto.KurinLevelId;
 
             _context.Members.Update(member);

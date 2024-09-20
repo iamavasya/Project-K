@@ -21,6 +21,8 @@ namespace Project_K.Models
         public string School { get; set; }
         public int KurinLevelId { get; set; }
         public KurinLevel KurinLevel { get; set; }
+        public int TeamId { get; set; }
+        public Team Team { get; set; }
         public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 

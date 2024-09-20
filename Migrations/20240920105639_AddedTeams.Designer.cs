@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Project_K.Data;
 
@@ -11,9 +12,11 @@ using Project_K.Data;
 namespace Project_K.Migrations
 {
     [DbContext(typeof(KurinDbContext))]
-    partial class KurinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240920105639_AddedTeams")]
+    partial class AddedTeams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -131,7 +134,7 @@ namespace Project_K.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly?>("AchieveDate")
+                    b.Property<DateOnly>("AchieveDate")
                         .HasColumnType("date");
 
                     b.Property<int>("LevelId")
