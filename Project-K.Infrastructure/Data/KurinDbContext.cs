@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Project_K.Infrastructure.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace Project_K.Infrastructure.Data
 {
-    public class KurinDbContext : DbContext
+    public class KurinDbContext : IdentityDbContext<User>
     {
         public KurinDbContext(DbContextOptions<KurinDbContext> options) : base(options)
         {
