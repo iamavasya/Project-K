@@ -73,7 +73,13 @@ namespace Project_K.Controllers
                 else
                 {
                     ModelState.AddModelError("", "Неправильний логін чи (або) пароль");
-                    Console.WriteLine("Щось пішло по дупі");
+                }
+            }
+            else
+            {
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    Console.WriteLine(error.ErrorMessage);
                 }
             }
             return View(model);
