@@ -17,7 +17,9 @@ builder.Services.AddDbContext<KurinDbContext>(options =>
         new MySqlServerVersion(new Version(9, 0, 1))
     ));
 
-builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddIdentity<User, IdentityRole>(options => {
+    options.SignIn.RequireConfirmedAccount = false;
+    })
     .AddEntityFrameworkStores<KurinDbContext>()
     .AddDefaultTokenProviders();
 
