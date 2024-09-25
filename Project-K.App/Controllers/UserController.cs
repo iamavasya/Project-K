@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using System.Linq;
 using Project_K.ViewModels;
@@ -6,6 +8,7 @@ using Project_K.Infrastructure.Models;
 
 namespace Project_K.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
         UserManager<User> _userManager;

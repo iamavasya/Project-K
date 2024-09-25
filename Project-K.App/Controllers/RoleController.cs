@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Project_K.Infrastructure.Models;
 using Project_K.ViewModels;
 
 namespace Project_K.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class RoleController : Controller
     {
         RoleManager<IdentityRole> _roleManager;
