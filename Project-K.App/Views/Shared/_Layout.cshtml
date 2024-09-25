@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Project_K.styles.css" asp-append-version="true" />
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+        }
+
+        main {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -25,6 +36,23 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class ="nav-item">@User.Identity.Name</li>
+
+                            <form method="post" asp-controller="Account" asp-action="Logout">
+                                <input type="submit" value="Вихід" />
+                            </form>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Вхід</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Реєстрація</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
@@ -36,7 +64,7 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted mt-auto">
         <div class="container">
             &copy; 2024 - Project_K - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
