@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Project_K.Infrastructure.Data;
 using Project_K.Infrastructure.Models;
 using Project_K.BusinessLogic.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Project_K.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class MembersController : ControllerBase
     {
         private readonly KurinDbContext _context;
