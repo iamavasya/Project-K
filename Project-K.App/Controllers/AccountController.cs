@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Project_K.Infrastructure.Models;
-using Project_K.ViewModels;
 
 namespace Project_K.Controllers
 {
@@ -22,14 +21,21 @@ namespace Project_K.Controllers
         {
             return View();
         }
+
         [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(string email, string password, string passwordConfirm)
         {
             if (ModelState.IsValid)
             {
-                User user = new User { Email = model.Email, UserName = model.Email};
+                if (password != passwordConfirm)
+                {
+                    ModelState.AddModelError(string.Empty, "Паролі не співпадають");
+                    return View();
+                }
+
+                User user = new User { Email = email, UserName = email };
                 // добавляем пользователя
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var result = await _userManager.CreateAsync(user, password);
                 if (result.Succeeded)
                 {
                     // установка куки
@@ -44,27 +50,27 @@ namespace Project_K.Controllers
                     }
                 }
             }
-            return View(model);
+            return View();
         }
         [HttpGet]
         public IActionResult Login(string returnUrl = null)
         {
-            return View(new LoginViewModel { ReturnUrl = returnUrl });
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe = false, string returnUrl = null)
         {
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
+                var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, false);
                 if (result.Succeeded)
                 {
-                    // проверяем, принадлежит ли URL приложению
-                    if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     {
-                        return Redirect(model.ReturnUrl);
+                        return Redirect(returnUrl);
                     }
                     else
                     {
@@ -83,14 +89,13 @@ namespace Project_K.Controllers
                     Console.WriteLine(error.ErrorMessage);
                 }
             }
-            return View(model);
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            // удаляем аутентификационные куки
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
