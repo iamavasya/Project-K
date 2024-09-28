@@ -1,22 +1,23 @@
-﻿@model Project_K.ViewModels.LoginViewModel
+﻿@{
+    ViewData["Title"] = "Вхід в додаток";
+}
 
-<h2>Вхід в додаток</h2>
+<h2>@ViewData["Title"]</h2>
 <form method="post" asp-controller="Account" asp-action="Login"
-      asp-route-returnUrl="@Model.ReturnUrl">
+      asp-route-returnUrl="@ViewBag.ReturnUrl">
     <div asp-validation-summary="ModelOnly"></div>
     <div>
-        <label asp-for="Email"></label><br />
-        <input asp-for="Email" />
-        <span asp-validation-for="Email"></span>
+        <label for="email">Email</label><br />
+        <input type="email" id="email" name="email" required />
     </div>
     <div>
-        <label asp-for="Password"></label><br />
-        <input asp-for="Password" />
-        <span asp-validation-for="Password"></span>
+        <label for="password">Пароль</label><br />
+        <input type="password" id="password" name="password" required />
     </div>
     <div>
-        <label asp-for="RememberMe"></label><br />
-        <input asp-for="RememberMe" />
+        <label for="rememberMe">Запам'ятати?</label><br />
+        <input type="hidden" name="rememberMe" value="false" />
+        <input type="checkbox" id="rememberMe" name="rememberMe" value="true" />
     </div>
     <div>
         <input type="submit" value="Ввійти" />

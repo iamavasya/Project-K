@@ -1,24 +1,18 @@
-﻿@model Project_K.ViewModels.RegisterViewModel
-
-<h2>Реєстрація нового користувача</h2>
-<form method="post" asp-controller="Account" asp-action="Register">
-    <div asp-validation-summary="ModelOnly"></div>
+﻿<h2>Реєстрація нового користувача</h2>
+<form method="post" action="/Account/Register">
     <div>
-        <label asp-for="Email"></label><br />
-        <input asp-for="Email" />
-        <span asp-validation-for="Email"></span>
+        <label for="email">Email</label><br />
+        <input type="email" id="email" name="email" required />
     </div>
     <div>
-        <label asp-for="Password"></label><br />
-        <input asp-for="Password" />
-        <span asp-validation-for="Password"></span>
+        <label for="password">Пароль</label><br />
+        <input type="password" id="password" name="password" required />
     </div>
     <div>
-        <label asp-for="PasswordConfirm"></label><br />
-        <input asp-for="PasswordConfirm" />
-        <span asp-validation-for="PasswordConfirm"></span>
+        <label for="passwordConfirm">Підтвердіть пароль</label><br />
+        <input type="password" id="passwordConfirm" name="passwordConfirm" required />
     </div>
     <div>
-        <input type="submit" value="Регистрация" />
+        <input type="submit" value="Реєстрація" />
     </div>
 </form>

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using System.Linq;
-using Project_K.ViewModels;
 using Project_K.Infrastructure.Models;
 
 namespace Project_K.Controllers
@@ -11,24 +10,26 @@ namespace Project_K.Controllers
     [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
-        UserManager<User> _userManager;
+        private readonly UserManager<User> _userManager;
 
         public UserController(UserManager<User> userManager)
         {
             _userManager = userManager;
         }
 
+        [HttpGet]
         public IActionResult Index() => View(_userManager.Users.ToList());
 
+        [HttpGet]
         public IActionResult Create() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateUserViewModel model)
+        public async Task<IActionResult> Create(string email, string password)
         {
             if (ModelState.IsValid)
             {
-                User? user = new User { Email = model.Email, UserName = model.Email};
-                var result = await _userManager.CreateAsync(user, model.Password);
+                User user = new User { Email = email, UserName = email };
+                var result = await _userManager.CreateAsync(user, password);
                 if (result.Succeeded)
                 {
                     return RedirectToAction("Index");
@@ -41,30 +42,29 @@ namespace Project_K.Controllers
                     }
                 }
             }
-            return View(model);
+            return View();
         }
 
         public async Task<IActionResult> Edit(string id)
         {
-            User? user = await _userManager.FindByIdAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
-            EditUserViewModel model = new EditUserViewModel { Id = user.Id, Email = user.Email };
-            return View(model);
+            return View(user);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(EditUserViewModel model)
+        public async Task<IActionResult> Edit(string id, string email)
         {
             if (ModelState.IsValid)
             {
-                User? user = await _userManager.FindByIdAsync(model.Id);
+                var user = await _userManager.FindByIdAsync(id);
                 if (user != null)
                 {
-                    user.Email = model.Email;
-                    user.UserName = model.Email;
+                    user.Email = email;
+                    user.UserName = email;
 
                     var result = await _userManager.UpdateAsync(user);
                     if (result.Succeeded)
@@ -80,13 +80,13 @@ namespace Project_K.Controllers
                     }
                 }
             }
-            return View(model);
+            return View();
         }
 
         [HttpPost]
         public async Task<ActionResult> Delete(string id)
         {
-            User? user = await _userManager.FindByIdAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user != null)
             {
                 IdentityResult result = await _userManager.DeleteAsync(user);
@@ -97,24 +97,23 @@ namespace Project_K.Controllers
         [HttpGet]
         public async Task<IActionResult> ChangePassword(string id)
         {
-            User? user = await _userManager.FindByIdAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
-            ChangePasswordViewModel model = new ChangePasswordViewModel { Id = user.Id, Email = user.Email };
-            return View(model);
+            return View(user);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        public async Task<IActionResult> ChangePassword(string id, string oldPassword, string newPassword)
         {
             if (ModelState.IsValid)
             {
-                User? user = await _userManager.FindByIdAsync(model.Id);
+                var user = await _userManager.FindByIdAsync(id);
                 if (user != null)
                 {
-                    IdentityResult result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+                    IdentityResult result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
                     if (result.Succeeded)
                     {
                         return RedirectToAction("Index");
@@ -129,10 +128,10 @@ namespace Project_K.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Користувач не знайдений");
+                    ModelState.AddModelError(string.Empty, "User not found");
                 }
             }
-            return View(model);
+            return View();
         }
     }
 }
