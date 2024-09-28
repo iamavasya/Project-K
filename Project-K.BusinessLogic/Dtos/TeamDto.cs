@@ -1,4 +1,4 @@
-namespace Project_K.Dtos
+namespace Project_K.BusinessLogic.Dtos
 {
     public class TeamDto
     {
