@@ -1,6 +1,6 @@
-using Project_K.Models;
-using Project_K.Data;
-using Project_K.Dtos;
+using Project_K.Infrastructure.Models;
+using Project_K.BusinessLogic.Dtos;
+using Project_K.Infrastructure.Data;
 
 namespace Project_K.Controllers.DtosControllers
 {

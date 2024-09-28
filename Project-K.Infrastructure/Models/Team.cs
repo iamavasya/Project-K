@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Project_K.Models
+namespace Project_K.Infrastructure.Models
 {
     public class Team
     {

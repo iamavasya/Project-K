@@ -20,6 +20,7 @@ namespace Project_K.Infrastructure.Models
         public string Address { get; set; }
         public string School { get; set; }
         public int KurinLevelId { get; set; }
+        public int SelectedLevelId { get; set; }
         public KurinLevel KurinLevel { get; set; }
         public int TeamId { get; set; }
         public Team Team { get; set; }

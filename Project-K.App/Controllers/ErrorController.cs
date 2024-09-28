@@ -4,6 +4,7 @@ namespace Project_K.Controllers
 {
     public class ErrorController : Controller
     {
+        [HttpGet]
         [Route("Error/{statusCode}")]
         public IActionResult HandleError(int statusCode)
         {
