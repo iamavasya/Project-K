@@ -8,6 +8,7 @@ namespace Project_K.Infrastructure.Models
     public class Member
     {
         public int Id { get; set; }
+        public string UserId { get; set; }
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public required string MiddleName { get; set; }
@@ -24,6 +25,7 @@ namespace Project_K.Infrastructure.Models
         public KurinLevel KurinLevel { get; set; }
         public int TeamId { get; set; }
         public Team Team { get; set; }
+        public User User { get; set; }
         public ICollection<MemberLevel> MemberLevels { get; set; }
     }
 

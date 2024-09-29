@@ -40,7 +40,7 @@ namespace Project_K.Controllers
                 {
                     // установка куки
                     await _signInManager.SignInAsync(user, false);
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Create", "DBView");
                 }
                 else
                 {
