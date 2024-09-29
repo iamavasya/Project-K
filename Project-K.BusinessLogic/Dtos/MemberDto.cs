@@ -16,5 +16,6 @@
         public int SelectedLevelId { get; set; }
         public int KurinLevelId { get; set; }
         public int TeamId { get; set; }
+        public string? UserId { get; set; }
     }
 }
