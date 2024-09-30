@@ -10,5 +10,6 @@ namespace Project_K.Infrastructure.Models
     public class User : IdentityUser
     {
         public bool IsMemberInfoCompleted { get; set; }
+        public Member Member { get; set; }
     }
 }
