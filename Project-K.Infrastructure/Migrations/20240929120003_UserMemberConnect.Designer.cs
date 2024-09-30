@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Project_K.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Project_K.Infrastructure.Data;
 namespace Project_K.Migrations
 {
     [DbContext(typeof(KurinDbContext))]
-    partial class KurinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240929120003_UserMemberConnect")]
+    partial class UserMemberConnect
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -259,8 +262,7 @@ namespace Project_K.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Members");
                 });
@@ -441,8 +443,8 @@ namespace Project_K.Migrations
                         .IsRequired();
 
                     b.HasOne("Project_K.Infrastructure.Models.User", "User")
-                        .WithOne("Member")
-                        .HasForeignKey("Project_K.Infrastructure.Models.Member", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -490,12 +492,6 @@ namespace Project_K.Migrations
             modelBuilder.Entity("Project_K.Infrastructure.Models.Team", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("Project_K.Infrastructure.Models.User", b =>
-                {
-                    b.Navigation("Member")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

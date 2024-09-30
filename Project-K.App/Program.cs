@@ -3,6 +3,7 @@ using Microsoft.OpenApi.Models;
 using Project_K.Infrastructure.Data;
 using Project_K.Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
+using Project_K.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,8 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseExceptionHandler("/Error");
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
+app.UseMiddleware<MemberInfoCompletionMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

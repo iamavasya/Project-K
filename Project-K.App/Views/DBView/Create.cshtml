@@ -1,4 +1,4 @@
-﻿@model Project_K.Infrastructure.Models.Member
+@model Project_K.BusinessLogic.Dtos.MemberDto
 
 @{
     ViewData["Title"] = "Додати учасника";
@@ -34,8 +34,16 @@
                 <span asp-validation-for="Nickname" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <label asp-for="SelectedLevelId" class="control-label">Пластовий ступінь</label>
+                <select asp-for="SelectedLevelId" class ="form-control" asp-items="ViewBag.Levels"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="TeamId" class="control-label">Гурток</label>
+                <select asp-for="TeamId" class ="form-control" asp-items="ViewBag.TeamId"></select>
+            </div>
+            <div class="form-group">
                 <label asp-for="BirthDate" class="control-label">Дата народження</label>
-                <input asp-for="BirthDate" class="form-control" />
+                <input asp-for="BirthDate" class="form-control datepicker" />
                 <span asp-validation-for="BirthDate" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -55,7 +63,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="PlastJoin" class="control-label">Дата вступу в Пласт</label>
-                <input asp-for="PlastJoin" class="form-control" />
+                <input asp-for="PlastJoin" class="form-control datepicker" />
                 <span asp-validation-for="PlastJoin" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -82,6 +90,7 @@
 </div>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_DatePicker");}
     @{await Html.RenderPartialAsync("_AutocompleteScript");}
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

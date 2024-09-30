@@ -9,6 +9,7 @@ namespace Project_K.Infrastructure.Models
 {
     public class User : IdentityUser
     {
-        public string? Name { get; set; }
+        public bool IsMemberInfoCompleted { get; set; }
+        public Member Member { get; set; }
     }
 }

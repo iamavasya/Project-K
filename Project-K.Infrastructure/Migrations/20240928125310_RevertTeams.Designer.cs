@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Project_K.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Project_K.Infrastructure.Data;
 namespace Project_K.Migrations
 {
     [DbContext(typeof(KurinDbContext))]
-    partial class KurinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240928125310_RevertTeams")]
+    partial class RevertTeams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -249,18 +252,11 @@ namespace Project_K.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("KurinLevelId");
 
                     b.HasIndex("TeamId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("Members");
                 });
@@ -327,14 +323,14 @@ namespace Project_K.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<bool>("IsMemberInfoCompleted")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -440,17 +436,9 @@ namespace Project_K.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Project_K.Infrastructure.Models.User", "User")
-                        .WithOne("Member")
-                        .HasForeignKey("Project_K.Infrastructure.Models.Member", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("KurinLevel");
 
                     b.Navigation("Team");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Project_K.Infrastructure.Models.MemberLevel", b =>
@@ -490,12 +478,6 @@ namespace Project_K.Migrations
             modelBuilder.Entity("Project_K.Infrastructure.Models.Team", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("Project_K.Infrastructure.Models.User", b =>
-                {
-                    b.Navigation("Member")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
