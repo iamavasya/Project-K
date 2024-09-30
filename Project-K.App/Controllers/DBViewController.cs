@@ -124,7 +124,7 @@ namespace Project_K.Controllers
                 user.IsMemberInfoCompleted = true;
                 await _userManager.UpdateAsync(user);
 
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Profile");
             }
             // Log ModelState errors
             foreach (var state in ModelState)
