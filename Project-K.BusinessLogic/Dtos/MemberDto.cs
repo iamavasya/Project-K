@@ -13,6 +13,9 @@
         public required DateOnly PlastJoin { get; set; }
         public string Address { get; set; }
         public string School { get; set; }
+        public int SelectedLevelId { get; set; }
         public int KurinLevelId { get; set; }
+        public int TeamId { get; set; }
+        public string? UserId { get; set; }
     }
 }

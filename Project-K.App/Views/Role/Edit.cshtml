@@ -1,16 +1,17 @@
-﻿@using Microsoft.AspNetCore.Identity
-@model Project_K.ViewModels.ChangeRoleViewModel
+﻿@{
+    var userEmail = ViewBag.UserEmail as string;
+    var userId = ViewBag.UserId as string;
+    var allRoles = ViewBag.AllRoles as List<Microsoft.AspNetCore.Identity.IdentityRole>;
+    var userRoles = ViewBag.UserRoles as List<string>;
+}
 
-<h2>Зміна ролі для користувача @Model.UserEmail</h2>
-
+<h2>Зміна ролі для користувача @userEmail</h2>
 <form asp-action="Edit" method="post">
-    <input type="hidden" name="userId" value="@Model.UserId" />
+    <input type="hidden" name="userId" value="@userId" />
     <div class="form-group">
-        @foreach (IdentityRole role in Model.AllRoles)
+        @foreach (var role in allRoles)
         {
-            <input type="checkbox" name="roles" value="@role.Name"
-            @(Model.UserRoles.Contains(role.Name) ? "checked=\"checked\"" : "") />
-
+            <input type="checkbox" name="roles" value="@role.Name" @(userRoles.Contains(role.Name) ? "checked=\"checked\"" : "") />
             @role.Name <br />
         }
     </div>
