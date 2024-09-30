@@ -1,0 +1,36 @@
+﻿@model Member
+
+@{
+    ViewBag.Title = "Profile";
+}
+
+<h2>Профіль користувача @Model.FirstName</h2>
+
+<p>Ім'я: @Model.FirstName</p>
+<p>Прізвище: @Model.LastName</p>
+<p>По батькові: @Model.MiddleName</p>
+<p>Псевдо: @Model.Nickname</p>
+<p>Дата народження: @Model.BirthDate</p>
+<p>Телефон: @Model.Phone</p>
+<p>Email: @Model.Email</p>
+<p>Telegram: @Model.Telegram</p>
+<p>Дата вступу до Пласту: @Model.PlastJoin</p>
+<p>Адреса: @Model.Address</p>
+<p>Школа: @Model.School</p>
+<p>Курінний Ранг: @Model.KurinLevel.Name</p>
+<ul>
+    @foreach (var memberLevel in Model.MemberLevels)
+    {
+        <li>
+            @if (memberLevel.AchieveDate != null) 
+            {
+                <text>Пластовий ступінь - @memberLevel.Level.Name, Дата - @memberLevel.AchieveDate</text>
+            } 
+            else
+            {
+                <text>Пластовий ступінь - @memberLevel.Level.Name, Дата - не вказана</text>
+            }
+        </li>
+    }
+</ul>
+<p>Гурток: @Model.Team.Name</p>
