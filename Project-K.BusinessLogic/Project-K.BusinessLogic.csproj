@@ -17,6 +17,8 @@
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.5" />
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
+	
+		<ProjectReference Include="..\Project-K.Infrastructure\Project-K.Infrastructure.csproj" />
 	</ItemGroup>
 	
 </Project>
