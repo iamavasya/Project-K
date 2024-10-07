@@ -195,7 +195,7 @@ namespace Project_K.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [Authorize(Roles = "Admin")]
-        [HttpPost]
+        [HttpPut]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,MiddleName,Nickname,TeamId,BirthDate,Phone,Email,Telegram,PlastJoin,Address,School,KurinLevelId,SelectedLevelId")] MemberDto memberDto)
         {
@@ -282,7 +282,7 @@ namespace Project_K.Controllers
 
         // POST: DBView/Delete/5
         [Authorize(Roles = "Admin")]
-        [HttpPost, ActionName("Delete")]
+        [HttpDelete, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
