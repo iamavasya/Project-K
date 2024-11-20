@@ -17,6 +17,10 @@ namespace Project_K.Infrastructure.Repositories
         {
             _context = context;
         }
+        public DbSet<Team> GetTeams()
+        {
+            return _context.Teams;
+        }
         public async Task<Team?> GetByIdAsync(int id)
         {
             return await _context.Teams.FindAsync(id);

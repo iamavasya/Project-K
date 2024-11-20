@@ -10,7 +10,9 @@ namespace Project_K.Infrastructure.Interfaces
     public interface IMemberRepository
     {
         Task<IEnumerable<Member>> GetMembersAsync();
-        Task<Member> GetByIdAsync(uint id);
+        Task<List<Member?>> GetMembersDetailed();
+        Task<Member?> GetMemberDetailed(uint id);
+        Task<Member?> GetByIdAsync(uint id);
         Task AddAsync(Member member);
         Task UpdateAsync(Member member);
         Task DeleteAsync(Member member);

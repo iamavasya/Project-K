@@ -1,16 +1,16 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Project_K.Infrastructure.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Project_K.Infrastructure.Interfaces
 {
-    public interface ITeamRepository
+    public interface ILevelRepository
     {
-        Task<Team?> GetByIdAsync(int id);
-        DbSet<Team> GetTeams();
+        Task<Level?> GetByIdAsync(int id);
+        DbSet<Level> GetLevels();
     }
 }

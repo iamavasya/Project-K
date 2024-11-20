@@ -26,9 +26,33 @@ namespace Project_K.Infrastructure.Repositories
                                          .Include(m => m.MemberLevels).ToListAsync();
         }
 
-        public async Task<Member> GetByIdAsync(uint id)
+        public async Task<List<Member?>> GetMembersDetailed()
         {
-            return await _context.Members.FindAsync(id);
+            return await _context.Members
+                .Include(m => m.KurinLevel)
+                .Include(m => m.Team)
+                .Include(m => m.MemberLevels)
+                .ThenInclude(ml => ml.Level)
+                .ToListAsync();
+        }
+
+        public async Task<Member?> GetMemberDetailed(uint id){
+            return await _context.Members
+                .Include(m => m.KurinLevel)
+                .Include(m => m.Team)
+                .Include(m => m.MemberLevels)
+                .ThenInclude(ml => ml.Level)
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
+
+        public async Task<Member?> GetByIdAsync(uint id)
+        {
+            return await _context.Members
+                .Include(m => m.KurinLevel)
+                .Include(m => m.Team)
+                .Include(m => m.MemberLevels)
+                .ThenInclude(ml => ml.Level)
+                .FirstOrDefaultAsync(m => m.Id == id);
         }
 
         public async Task AddAsync(Member member)
