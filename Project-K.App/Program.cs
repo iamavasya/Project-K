@@ -4,6 +4,10 @@ using Project_K.Infrastructure.Data;
 using Project_K.Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 using Project_K.Middlewares;
+using Project_K.BusinessLogic.Interfaces;
+using Project_K.BusinessLogic.Services;
+using Project_K.Infrastructure.Interfaces;
+using Project_K.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +38,19 @@ builder.Services.AddSwaggerGen(c =>
         Description = "ASP.NET Core Web API with Swagger"
     });
 });
+
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IKurinLevelService, KurinLevelService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<IMemberLevelService, MemberLevelService>();
+builder.Services.AddScoped<ISelectListService, SelectListService>();
+
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<IKurinLevelRepository, KurinLevelRepository>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<ILevelRepository, LevelRepository>();
+builder.Services.AddScoped<IMemberLevelRepository, MemberLevelRepository>();
+
 
 var app = builder.Build();
 
