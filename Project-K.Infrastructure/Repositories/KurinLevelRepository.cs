@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Project_K.Infrastructure.Repositories
 {
@@ -15,6 +17,10 @@ namespace Project_K.Infrastructure.Repositories
         public KurinLevelRepository(KurinDbContext context)
         {
             _context = context;    
+        }
+        public DbSet<KurinLevel> GetKurinLevels()
+        {
+            return _context.KurinLevels;
         }
         public async Task<KurinLevel?> GetByIdAsync(int id)
         {

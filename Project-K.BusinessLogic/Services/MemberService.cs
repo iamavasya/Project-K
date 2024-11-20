@@ -3,6 +3,7 @@ using Project_K.BusinessLogic.Interfaces;
 using Project_K.BusinessLogic.Dtos;
 using Project_K.Infrastructure.Models;
 using Project_K.Infrastructure.Interfaces;
+using Project_K.BusinessLogic.Services;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,15 +12,17 @@ namespace Project_K.BusinessLogic.Services
     public class MemberService : IMemberService
     {
         private readonly IMemberRepository _memberRepository;
-        private readonly IKurinLevelRepository _kurinLevelRepository;
-        private readonly ITeamRepository _teamRepository;
+        private readonly IKurinLevelService _kurinLevelService;
+        private readonly ITeamService _teamService;
+        private readonly IMemberLevelService _memberLevelService;
 
-        public MemberService(IMemberRepository memberRepository, IKurinLevelRepository kurinLevelRepository, ITeamRepository teamRepository)
+        public MemberService(IMemberRepository memberRepository, IMemberLevelService memberLevelService, IKurinLevelService kurinLevelService, ITeamService teamService)
         {
 
             _memberRepository = memberRepository;
-            _kurinLevelRepository = kurinLevelRepository;
-            _teamRepository = teamRepository;
+            _memberLevelService = memberLevelService;
+            _kurinLevelService = kurinLevelService;
+            _teamService = teamService;
         }
 
         public async Task<IEnumerable<Member>> GetMembersAsync()
@@ -32,12 +35,46 @@ namespace Project_K.BusinessLogic.Services
             return await _memberRepository.GetByIdAsync(id);
         }
 
+        public async Task<Member?> GetMemberDetailed(uint id)
+        {
+            var member = await _memberRepository.GetMemberDetailed(id);
+            return member;
+        }
+
+        public async Task<MemberDto?> GetDto (uint id, string userId)
+        {
+            var member = await _memberRepository.GetByIdAsync(id);
+            if (member == null)
+            {
+                return null;
+            }
+            var dto = MapMemberToMemberDto(member, userId);
+            return dto;
+        }
+
+        public async Task<List<Member?>> GetMembersDetailed()
+        {
+            return await _memberRepository.GetMembersDetailed();
+        }
+
         public async Task<Member> CreateMember(MemberDto memberDto)
         {
             Member member = MapMemberDtoToMember(memberDto);
-            member.KurinLevel = await _kurinLevelRepository.GetByIdAsync(member.KurinLevelId);
-            member.Team = await _teamRepository.GetByIdAsync(member.TeamId);
+            member.KurinLevel = await _kurinLevelService.GetByIdAsync(member.KurinLevelId);
+            member.Team = await _teamService.GetByIdAsync(member.TeamId);
             await _memberRepository.AddAsync(member);
+            return member;
+        }
+
+        public async Task<Member> CreateMember(MemberDto memberDto, string userId) {
+            var member = MapMemberDtoToMember(memberDto);
+
+            member.KurinLevel = await _kurinLevelService.GetByIdAsync(member.KurinLevelId);
+            member.Team = await _teamService.GetByIdAsync(member.TeamId);
+            member.UserId = userId;
+            await _memberRepository.AddAsync(member);
+
+            await _memberLevelService.AddMemberLevel(member.Id, memberDto.SelectedLevelId);
             return member;
         }
 
@@ -50,7 +87,13 @@ namespace Project_K.BusinessLogic.Services
             }
 
             MapMemberDtoToMember(memberDto, member);
+
+            member.KurinLevel = await _kurinLevelService.GetByIdAsync(member.KurinLevelId);
+            member.Team = await _teamService.GetByIdAsync(member.TeamId);
+
             await _memberRepository.UpdateAsync(member);
+
+            await _memberLevelService.UpdateMemberLevel(member.Id, member.MemberLevels.FirstOrDefault(), memberDto.SelectedLevelId);
             return true;
         }
 
@@ -64,6 +107,11 @@ namespace Project_K.BusinessLogic.Services
 
             await _memberRepository.DeleteAsync(member);
             return true;
+        }
+
+        public async Task<bool> IsMemberExists(uint id)
+        {
+            return await _memberRepository.GetByIdAsync(id) != null;
         }
 
         private Member MapMemberDtoToMember(MemberDto memberDto, Member member = null)
@@ -83,8 +131,8 @@ namespace Project_K.BusinessLogic.Services
                     PlastJoin = memberDto.PlastJoin,
                     Address = memberDto.Address,
                     School = memberDto.School,
-                    TeamId = memberDto.TeamId,
-                    KurinLevelId = memberDto.KurinLevelId
+                    KurinLevelId = memberDto.KurinLevelId,
+                    TeamId = memberDto.TeamId
                 };
             } else
             {
@@ -103,6 +151,28 @@ namespace Project_K.BusinessLogic.Services
                 member.TeamId = memberDto.TeamId;
             }
             return member;
+        }
+
+        private MemberDto MapMemberToMemberDto(Member member, string userId)
+        {
+            return new MemberDto
+            {
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                MiddleName = member.MiddleName,
+                Nickname = member.Nickname,
+                BirthDate = member.BirthDate,
+                Phone = member.Phone,
+                Email = member.Email,
+                Telegram = member.Telegram,
+                PlastJoin = member.PlastJoin,
+                Address = member.Address,
+                School = member.School,
+                KurinLevelId = member.KurinLevelId,
+                TeamId = member.TeamId,
+                SelectedLevelId = member.MemberLevels.FirstOrDefault()?.LevelId ?? 0,
+                UserId = userId
+            };
         }
     }
 }
