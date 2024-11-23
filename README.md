@@ -60,6 +60,7 @@ In the project, you'll find `AutocompleteScript.cshtml` located in `Project-K.Ap
 - User management (add, edit, delete).
 - Role creation and assignment.
 - User registration and authentication.
+- User Profiles.
 
 ### Planned Features
 - 📋 Leaderboard for user recognition.
@@ -71,6 +72,12 @@ In the project, you'll find `AutocompleteScript.cshtml` located in `Project-K.Ap
 - 🔍 Enhance application architecture for scalability.
 - 🌐 Integrate external services.
 - 🔄 Implement middleware and repository patterns.
+
+### Checklist
+- [x] DBView Admin panel
+- [x] Users improvements
+- [x] Repository pattern
+- [ ] Project Containerization
 
 ## Requirements 📦
 - .NET Core SDK
