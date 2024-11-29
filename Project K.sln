@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Project K.App", "Project-K.App\Project K.App.csproj", "{510DF780-2FDC-4E31-9224-366BCD4BDDD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Project-K.App", "Project-K.App\Project-K.App.csproj", "{510DF780-2FDC-4E31-9224-366BCD4BDDD3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Project-K.BusinessLogic", "Project-K.BusinessLogic\Project-K.BusinessLogic.csproj", "{883AE6D7-6F3F-41C9-AAE1-FE620D1136A4}"
 EndProject
