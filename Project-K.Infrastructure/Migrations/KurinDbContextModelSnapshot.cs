@@ -8,7 +8,7 @@ using Project_K.Infrastructure.Data;
 
 #nullable disable
 
-namespace Project_K.Migrations
+namespace Project_K.Infrastructure.Migrations
 {
     [DbContext(typeof(KurinDbContext))]
     partial class KurinDbContextModelSnapshot : ModelSnapshot

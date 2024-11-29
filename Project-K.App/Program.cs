@@ -19,7 +19,7 @@ builder.Services.AddControllersWithViews().AddNewtonsoftJson(options =>
 builder.Services.AddDbContext<KurinDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(9, 0, 1))
+        new MySqlServerVersion(new Version(9, 1, 0))
     ));
 
 builder.Services.AddIdentity<User, IdentityRole>(options => {
@@ -53,6 +53,12 @@ builder.Services.AddScoped<IMemberLevelRepository, MemberLevelRepository>();
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<KurinDbContext>();
+    await dbContext.Database.MigrateAsync();  // Це застосує всі неприєднані міграції до бази даних
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
