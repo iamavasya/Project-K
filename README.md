@@ -68,4 +68,4 @@ Add your Google Places API key in the `appsettings.json` under `"ApiSettings"` a
 Feel free to open issues or submit pull requests to enhance the project.
 
 ## License 📜
-This project is licensed under the MIT License.
+This project is licensed under the Proprietary License. You are allowed to view and use the code for personal or internal business purposes only. You may not modify, distribute, or create derivative works from the code without explicit permission from the author. For more details, please refer to the LICENSE file in this repository.
