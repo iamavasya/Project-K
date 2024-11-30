@@ -1,21 +1,29 @@
-MIT License
+Proprietary Software License Agreement
 
-Copyright (c) 2024 Rostyslav Mukha
+Copyright (c) 2025 Rostyslav Mukha
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and its associated documentation (the "Software") are provided under the terms of this Proprietary Software License Agreement. By using the Software, you agree to the following terms:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Grant of License
+You are granted a non-exclusive, non-transferable, revocable license to use the Software solely for personal or internal business purposes.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Restrictions
+You are expressly prohibited from:
+
+- Modifying, adapting, translating, or creating derivative works based on the Software or any part thereof.
+- Redistributing, sublicensing, selling, leasing, renting, or otherwise transferring the Software to any third party.
+- Reverse engineering, decompiling, disassembling, or attempting to extract the source code of the Software, except as required by applicable law.
+- Using any part of the Software in other projects, whether commercial or non-commercial.
+3. Ownership
+The Software is licensed, not sold. All rights, title, and interest in and to the Software remain exclusively with [Your Name or Organization].
+
+4. Warranty Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+5. Limitation of Liability
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. Termination
+This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any of the terms. Upon termination, you must destroy all copies of the Software in your possession or control.
+
+Copyright (c) 2025 Rostyslav Mukha. All rights reserved.
