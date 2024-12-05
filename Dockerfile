@@ -33,7 +33,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS development
 COPY . /source
 ENV ASPNETCORE_ENVIRONMENT Development
 WORKDIR /source/Project-K.App
-CMD dotnet run
+CMD dotnet run --no-launch-profile
 
 # If you need to enable globalization and time zones:
 # https://github.com/dotnet/dotnet-docker/blob/main/samples/enable-globalization.md
