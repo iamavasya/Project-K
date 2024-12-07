@@ -2,7 +2,7 @@ services:
   server:
     build:
       context: .
-      target: development
+      target: final
     ports:
       - 8080:8080
     depends_on:

@@ -2,16 +2,19 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Project_K.Infrastructure.Models;
+using Project_K.BusinessLogic.Interfaces;
 
 namespace Project_K.Controllers
 {
     public class AccountController : Controller
     {
         private readonly UserManager<User> _userManager;
+        private readonly IAccountService _accountService;
         private readonly SignInManager<User> _signInManager;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IAccountService accountService)
         {
+            _accountService = accountService;
             _userManager = userManager;
             _signInManager = signInManager;
         }
@@ -32,14 +35,10 @@ namespace Project_K.Controllers
                     ModelState.AddModelError(string.Empty, "Паролі не співпадають");
                     return View();
                 }
-
-                User user = new User { Email = email, UserName = email };
-                // добавляем пользователя
-                var result = await _userManager.CreateAsync(user, password);
+                
+                var result = await _accountService.CreateAccount(email, password);
                 if (result.Succeeded)
                 {
-                    // установка куки
-                    await _signInManager.SignInAsync(user, false);
                     return RedirectToAction("Create", "DBView");
                 }
                 else

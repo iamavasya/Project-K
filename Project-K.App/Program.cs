@@ -8,6 +8,7 @@ using Project_K.BusinessLogic.Interfaces;
 using Project_K.BusinessLogic.Services;
 using Project_K.Infrastructure.Interfaces;
 using Project_K.Infrastructure.Repositories;
+using Project_K.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,8 @@ builder.Services.AddScoped<IKurinLevelService, KurinLevelService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IMemberLevelService, MemberLevelService>();
 builder.Services.AddScoped<ISelectListService, SelectListService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IKurinLevelRepository, KurinLevelRepository>();
