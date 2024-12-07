@@ -51,6 +51,8 @@ builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<ILevelRepository, LevelRepository>();
 builder.Services.AddScoped<IMemberLevelRepository, MemberLevelRepository>();
 
+builder.Services.AddScoped<CheckDatabaseStateFilter>();
+
 
 var app = builder.Build();
 
@@ -84,6 +86,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Seed}/{action=Index}/{id?}");
 
 app.Run();
