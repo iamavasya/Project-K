@@ -8,11 +8,11 @@ namespace ProjectK.Common.Interfaces
 {
     public interface IBaseEntityRepository<T>
     {
-        Task<Guid> CreateAsync(T entity);
-        Task<T?> GetByKeyAsync(Guid entityKey);
-        Task<bool> UpdateAsync(T entity);
-        Task<bool> DeleteAsync(Guid entityKey);
-        Task<Guid> UpsertAsync(T entity);
-        Task<T> GetByKeyOrCreateAsync (Guid entityKey, T entity);
+        Task<Guid> CreateAsync(T entity, CancellationToken token = default);
+        Task<T?> GetByKeyAsync(Guid entityKey, CancellationToken token = default);
+        Task<bool> UpdateAsync(T entity, CancellationToken token = default);
+        Task<bool> DeleteAsync(Guid entityKey, CancellationToken token = default);
+        Task<Guid> UpsertAsync(T entity, CancellationToken token = default);
+        Task<T> GetByKeyOrCreateAsync (Guid entityKey, T entity, CancellationToken token = default);
     }
 }
