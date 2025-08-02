@@ -1,0 +1,25 @@
+﻿using MediatR;
+using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands
+{
+    public class UpsertKurinCommand : IRequest<KurinResponse>
+    {
+        public Guid KurinKey { get; set; } = Guid.NewGuid();
+        public int Number { get; set; }
+        public UpsertKurinCommand(Guid kurinKey, int number)
+        {
+            KurinKey = kurinKey;
+            Number = number;
+        }
+        public UpsertKurinCommand(int number)
+        {
+            Number = number;
+        }
+    }
+}
