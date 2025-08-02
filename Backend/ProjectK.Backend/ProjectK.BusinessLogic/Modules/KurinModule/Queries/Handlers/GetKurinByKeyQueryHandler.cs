@@ -20,10 +20,10 @@ namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
             _mapper = mapper;
         }
 
-        public async Task<KurinResponse> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
+        public async Task<KurinResponse> Handle(GetKurinByKeyQuery request, CancellationToken token)
         {
             var kurinResponse = new KurinResponse();
-            var kurin = await _kurinRepository.GetByKeyAsync(request.KurinKey);
+            var kurin = await _kurinRepository.GetByKeyAsync(request.KurinKey, token);
 
             if (kurin != null)
             {

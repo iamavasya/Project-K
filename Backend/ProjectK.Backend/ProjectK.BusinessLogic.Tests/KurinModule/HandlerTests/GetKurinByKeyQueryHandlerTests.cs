@@ -3,7 +3,6 @@ using Moq;
 using ProjectK.API.MappingProfiles.KurinModule;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers;
-using ProjectK.Common.Entities.Kurin;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using FluentAssertions;
 using System;
@@ -12,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Entities.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
 {
@@ -49,7 +49,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             };
 
             _kurinRepositoryMock
-                .Setup(repo => repo.GetByKeyAsync(kurinKey))
+                .Setup(repo => repo.GetByKeyAsync(kurinKey, CancellationToken.None))
                 .ReturnsAsync(kurinEntity);
 
             // Act
@@ -62,7 +62,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_ShouldReturnNull_WhenKurinNotExists()
+        public async Task Handle_ShouldReturnEmpty_WhenKurinNotExists()
         {
             // Arrange
             var kurinKey = Guid.NewGuid();;
@@ -70,7 +70,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             Kurin? kurinEntity = null;
 
             _kurinRepositoryMock
-                .Setup(repo => repo.GetByKeyAsync(kurinKey))
+                .Setup(repo => repo.GetByKeyAsync(kurinKey, CancellationToken.None))
                 .ReturnsAsync(kurinEntity);
 
             // Act

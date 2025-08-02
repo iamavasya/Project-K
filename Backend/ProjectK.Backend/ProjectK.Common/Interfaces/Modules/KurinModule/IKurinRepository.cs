@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.Kurin;
+﻿using ProjectK.Common.Entities.KurinModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
