@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands
 {
-    public class CreateKurinCommand : IRequest<Guid>
+    public class DeleteKurinCommand : IRequest<bool>
     {
-        public int Number { get; set; }
-        public CreateKurinCommand(int number)
+        public Guid KurinKey { get; set; }
+        public DeleteKurinCommand(Guid kurinKey)
         {
-            Number = number;
+            KurinKey = kurinKey;
         }
     }
 }
