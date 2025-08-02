@@ -1,4 +1,5 @@
-﻿using ProjectK.Common.Entities.KurinModule;
+﻿using ProjectK.Common.Dtos;
+using ProjectK.Common.Entities.KurinModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
-    public interface IKurinRepository : IBaseEntityRepository<Kurin>
+    public interface IKurinRepository : IBaseEntityRepository<Kurin, KurinDto>
     {
 
     }

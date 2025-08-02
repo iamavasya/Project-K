@@ -1,4 +1,6 @@
-﻿using ProjectK.Common.Entities.KurinModule;
+﻿using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
+using ProjectK.Common.Dtos;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using System;
 using System.Collections.Generic;
@@ -10,7 +12,7 @@ namespace ProjectK.Infrastructure.Repositories
 {
     public class KurinRepository : IKurinRepository
     {
-        public Task<Guid> CreateAsync(Kurin entity, CancellationToken token = default)
+        public Task<Guid> CreateAsync(KurinDto dto, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }
@@ -25,17 +27,17 @@ namespace ProjectK.Infrastructure.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<Kurin> GetByKeyOrCreateAsync(Guid entityKey, Kurin entity, CancellationToken token = default)
+        public Task<Kurin> GetByKeyOrCreateAsync(KurinDto dto, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool> UpdateAsync(Kurin entity, CancellationToken token = default)
+        public Task<bool> UpdateAsync(KurinDto dto, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<Guid> UpsertAsync(Kurin entity, CancellationToken token = default)
+        public Task<Kurin> UpsertAsync(KurinDto dto, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }
