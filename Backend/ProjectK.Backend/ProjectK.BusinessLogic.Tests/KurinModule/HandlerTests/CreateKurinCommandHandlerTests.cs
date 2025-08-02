@@ -27,7 +27,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         {
             // Arrange
             var number = 51;
-            var command = new CreateKurinCommand { Number = number };
+            var command = new CreateKurinCommand(number);
             var expectedKurinKey = Guid.NewGuid();
             _kurinRepositoryMock
                 .Setup(repo => repo.CreateAsync(It.IsAny<Common.Entities.KurinModule.Kurin>(), CancellationToken.None))
