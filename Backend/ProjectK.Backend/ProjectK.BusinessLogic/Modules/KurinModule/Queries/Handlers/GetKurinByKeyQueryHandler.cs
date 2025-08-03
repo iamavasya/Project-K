@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using System;
 using System.Collections.Generic;
@@ -12,18 +13,18 @@ namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
 {
     public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, KurinResponse>
     {
-        private readonly IKurinRepository _kurinRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public GetKurinByKeyQueryHandler(IKurinRepository kurinRepository, IMapper mapper)
+        public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _kurinRepository = kurinRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<KurinResponse> Handle(GetKurinByKeyQuery request, CancellationToken token)
         {
             var kurinResponse = new KurinResponse();
-            var kurin = await _kurinRepository.GetByKeyAsync(request.KurinKey, token);
+            var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
 
             if (kurin != null)
             {

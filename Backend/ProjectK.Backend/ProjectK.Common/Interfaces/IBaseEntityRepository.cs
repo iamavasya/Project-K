@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Common.Interfaces
 {
-    public interface IBaseEntityRepository<Entity, Dto>
+    public interface IBaseEntityRepository<T>
     {
-        Task<Guid> CreateAsync(Dto dto, CancellationToken token = default);
-        Task<Entity?> GetByKeyAsync(Guid entityKey, CancellationToken token = default);
-        Task<bool> UpdateAsync(Dto dto, CancellationToken token = default);
-        Task<bool> DeleteAsync(Guid entityKey, CancellationToken token = default);
-        Task<Entity> UpsertAsync(Dto dto, CancellationToken token = default);
-        Task<Entity> GetByKeyOrCreateAsync (Dto dto, CancellationToken token = default);
+        void Create(T entity, CancellationToken token = default);
+        Task<T?> GetByKeyAsync(Guid entityKey, CancellationToken token = default);
+        void Update(T entity, CancellationToken token = default);
+        void Delete(T entity, CancellationToken token = default);
+
     }
 }

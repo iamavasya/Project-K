@@ -11,7 +11,10 @@ namespace ProjectK.API.MappingProfiles.KurinModule
         public KurinProfile()
         {
             CreateMap<Kurin, KurinResponse>();
-            CreateMap<UpsertKurinCommand, KurinDto>();
+            CreateMap<UpsertKurinCommand, Kurin>()
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
+                .ForMember(dest => dest.Number, opt => opt.MapFrom(src => src.Number))
+                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
         }
     }
 }

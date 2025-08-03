@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Common.Entities.KurinModule
 {
-    public class Kurin : Entity
+    public class Kurin(int number) : Entity
     {
-        public Guid KurinKey { get; set; }
-        public int Number { get; set; }
+        public Guid KurinKey { get; set; } = Guid.NewGuid();
+        public int Number { get; set; } = number;
     }
 }

@@ -1,7 +1,9 @@
-﻿using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
+﻿using Microsoft.EntityFrameworkCore;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
 using ProjectK.Common.Dtos;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Infrastructure.DbContexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,34 +14,30 @@ namespace ProjectK.Infrastructure.Repositories
 {
     public class KurinRepository : IKurinRepository
     {
-        public Task<Guid> CreateAsync(KurinDto dto, CancellationToken token = default)
+        private readonly AppDbContext _context;
+        public KurinRepository(AppDbContext context)
         {
-            throw new NotImplementedException();
+            _context = context;
         }
 
-        public Task<bool> DeleteAsync(Guid entityKey, CancellationToken token = default)
+        public void Create(Kurin kurin, CancellationToken token = default)
         {
-            throw new NotImplementedException();
+            _context.Kurins.Add(kurin);
         }
 
-        public Task<Kurin?> GetByKeyAsync(Guid entityKey, CancellationToken token = default)
+        public void Delete(Kurin kurin, CancellationToken token = default)
         {
-            throw new NotImplementedException();
+            _context.Kurins.Remove(kurin);
         }
 
-        public Task<Kurin> GetByKeyOrCreateAsync(KurinDto dto, CancellationToken token = default)
+        public async Task<Kurin?> GetByKeyAsync(Guid entityKey, CancellationToken token = default)
         {
-            throw new NotImplementedException();
+            return await _context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
         }
 
-        public Task<bool> UpdateAsync(KurinDto dto, CancellationToken token = default)
+        public void Update(Kurin kurin, CancellationToken token = default)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Kurin> UpsertAsync(KurinDto dto, CancellationToken token = default)
-        {
-            throw new NotImplementedException();
+            _context.Kurins.Update(kurin);
         }
     }
 }

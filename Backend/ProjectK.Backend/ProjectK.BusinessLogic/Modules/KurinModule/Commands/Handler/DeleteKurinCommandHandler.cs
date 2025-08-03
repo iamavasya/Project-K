@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
 {
     public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, bool>
     {
-        private readonly IKurinRepository _kurinRepository;
-        public DeleteKurinCommandHandler(IKurinRepository kurinRepository)
+        private readonly IUnitOfWork _unitOfWork;
+        public DeleteKurinCommandHandler(IUnitOfWork unitOfWork)
         {
-            _kurinRepository = kurinRepository;
+            _unitOfWork = unitOfWork;
         }
         public async Task<bool> Handle(DeleteKurinCommand request, CancellationToken token)
         {
@@ -21,8 +22,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
             {
                 throw new ArgumentException("KurinKey cannot be empty.", nameof(request.KurinKey));
             }
-            var isKurinDeleted = await _kurinRepository.DeleteAsync(request.KurinKey, token);
-            return isKurinDeleted;
+            var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
+            if (existing is null)
+            {
+                return false;
+            }
+            _unitOfWork.Kurins.Delete(existing, token);
+            var changes = await _unitOfWork.SaveChangesAsync(token);
+            if (changes <= 0)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }
