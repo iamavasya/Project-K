@@ -10,7 +10,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands
 {
     public class UpsertKurinCommand : IRequest<KurinResponse>
     {
-        public Guid KurinKey { get; set; } = Guid.NewGuid();
+        public Guid KurinKey { get; set; }
         public int Number { get; set; }
         public UpsertKurinCommand(Guid kurinKey, int number)
         {

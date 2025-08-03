@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
-    public interface IKurinRepository : IBaseEntityRepository<Kurin, KurinDto>
+    public interface IKurinRepository : IBaseEntityRepository<Kurin>
     {
 
     }

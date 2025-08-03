@@ -1,17 +1,19 @@
 ﻿using AutoMapper;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles.KurinModule;
+using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using ProjectK.Common.Entities.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
 {
@@ -19,6 +21,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
+        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 
         private readonly GetKurinByKeyQueryHandler _handler;
 
@@ -30,55 +33,92 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             _mapper = config.CreateMapper();
 
             _kurinRepositoryMock = new Mock<IKurinRepository>();
+            _unitOfWorkMock = new Mock<IUnitOfWork>();
 
-            _handler = new GetKurinByKeyQueryHandler(_kurinRepositoryMock.Object, _mapper);
+            _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
+
+            _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
-        public async Task Handle_ShouldReturnKurin_WhenKurinExists()
+        public async Task Handle_WhenKurinExists_ShouldReturnMappedResponse()
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var number = 51;
+            var kurin = new Kurin(123) { KurinKey = kurinKey };
             var query = new GetKurinByKeyQuery { KurinKey = kurinKey };
 
-            var kurinEntity = new Kurin
-            {
-                KurinKey = kurinKey,
-                Number = number,
-            };
-
-            _kurinRepositoryMock
-                .Setup(repo => repo.GetByKeyAsync(kurinKey, CancellationToken.None))
-                .ReturnsAsync(kurinEntity);
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ReturnsAsync(kurin);
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(query, default);
 
             // Assert
             result.Should().NotBeNull();
             result.KurinKey.Should().Be(kurinKey);
-            result.Number.Should().Be(number);
+            result.Number.Should().Be(123);
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(kurinKey, default), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ShouldReturnEmpty_WhenKurinNotExists()
+        public async Task Handle_WhenKurinDoesNotExist_ShouldReturnNull()
         {
             // Arrange
-            var kurinKey = Guid.NewGuid();;
+            var kurinKey = Guid.NewGuid();
             var query = new GetKurinByKeyQuery { KurinKey = kurinKey };
-            Kurin? kurinEntity = null;
 
-            _kurinRepositoryMock
-                .Setup(repo => repo.GetByKeyAsync(kurinKey, CancellationToken.None))
-                .ReturnsAsync(kurinEntity);
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ReturnsAsync((Kurin)null);
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(query, default);
 
             // Assert
             result.KurinKey.Should().BeEmpty();
             result.Number.Should().Be(0);
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(kurinKey, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
+        {
+            // Arrange
+            var kurinKey = Guid.NewGuid();
+            var query = new GetKurinByKeyQuery { KurinKey = kurinKey };
+            var expectedException = new Exception("Database error");
+
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ThrowsAsync(expectedException);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(query, default));
+            exception.Should().BeSameAs(expectedException);
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(kurinKey, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenMappingWorks_ShouldMapCorrectly()
+        {
+            // Arrange
+            var kurinKey = Guid.NewGuid();
+            var kurin = new Kurin(456) { KurinKey = kurinKey };
+            var query = new GetKurinByKeyQuery { KurinKey = kurinKey };
+
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ReturnsAsync(kurin);
+
+            // Act
+            var result = await _handler.Handle(query, default);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.KurinKey.Should().Be(kurinKey);
+            result.Number.Should().Be(456);
+
+            // Verify the mapping worked correctly
+            var directlyMapped = _mapper.Map<KurinResponse>(kurin);
+            result.Should().BeEquivalentTo(directlyMapped);
         }
     }
 }
