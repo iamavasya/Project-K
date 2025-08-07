@@ -13,9 +13,8 @@ namespace ProjectK.Infrastructure.DbContexts
         // Kurin module DbSet
         public DbSet<Kurin> Kurins { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
-            optionsBuilder.UseSqlServer("Server=localhost;Database=projectK_DB;Trusted_Connection=True;");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
