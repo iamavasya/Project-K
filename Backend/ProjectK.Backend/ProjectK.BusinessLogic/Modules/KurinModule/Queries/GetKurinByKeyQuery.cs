@@ -5,11 +5,17 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.Kurin.Queries
 {
-    public class GetKurinByKeyQuery : IRequest<KurinResponse>
+    public class GetKurinByKeyQuery : IRequest<ServiceResult<KurinResponse>>
     {
         public Guid KurinKey { get; set; }
+
+        public GetKurinByKeyQuery(Guid kurinKey)
+        {
+            KurinKey = kurinKey;
+        }
     }
 }

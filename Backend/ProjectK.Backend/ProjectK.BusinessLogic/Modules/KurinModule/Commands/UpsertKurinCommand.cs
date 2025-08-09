@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands
 {
-    public class UpsertKurinCommand : IRequest<KurinResponse>
+    public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     {
         public Guid KurinKey { get; set; }
         public int Number { get; set; }
