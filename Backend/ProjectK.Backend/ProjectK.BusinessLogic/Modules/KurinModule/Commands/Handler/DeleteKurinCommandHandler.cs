@@ -1,6 +1,9 @@
 ﻿using MediatR;
+using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,31 +12,43 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
 {
-    public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, bool>
+    public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
         public DeleteKurinCommandHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<bool> Handle(DeleteKurinCommand request, CancellationToken token)
+        public async Task<ServiceResult<object>> Handle(DeleteKurinCommand request, CancellationToken token)
         {
             if (request.KurinKey == Guid.Empty)
             {
-                throw new ArgumentException("KurinKey cannot be empty.", nameof(request.KurinKey));
+                return new ServiceResult<object>(
+                    ResultType.BadRequest,
+                    "KurinKey cannot be empty.");
             }
+
             var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
+
             if (existing is null)
             {
-                return false;
+                return new ServiceResult<object>(
+                    ResultType.NotFound,
+                    $"Kurin with key {request.KurinKey} not found.");
             }
+
             _unitOfWork.Kurins.Delete(existing, token);
+
             var changes = await _unitOfWork.SaveChangesAsync(token);
+
             if (changes <= 0)
             {
-                return false;
+                return new ServiceResult<object>(
+                    ResultType.InternalServerError,
+                    "Failed to delete Kurin due to internal error.");
             }
-            return true;
+
+            return new ServiceResult<object>(ResultType.Success);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Common.Dtos
+namespace ProjectK.Common.Models.Dtos
 {
     public class KurinDto
     {

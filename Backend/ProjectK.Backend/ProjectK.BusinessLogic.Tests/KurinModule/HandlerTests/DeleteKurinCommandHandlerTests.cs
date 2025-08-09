@@ -1,15 +1,13 @@
-﻿using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+﻿using FluentAssertions;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
-using FluentAssertions;
-using ProjectK.Common.Interfaces;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Enums;
+using System;
+using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
 {
@@ -18,6 +16,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly DeleteKurinCommandHandler _handler;
+
         public DeleteKurinCommandHandlerTests()
         {
             _kurinRepositoryMock = new Mock<IKurinRepository>();
@@ -29,7 +28,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_WhenKurinExists_ShouldDeleteKurinAndReturnTrue()
+        public async Task Handle_WhenKurinExists_ShouldDeleteKurinAndReturnSuccess()
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
@@ -45,13 +44,14 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             var result = await _handler.Handle(command, default);
 
             // Assert
-            result.Should().BeTrue();
+            result.Type.Should().Be(ResultType.Success);
+            result.Data.Should().BeNull();
             _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_WhenKurinDoesNotExist_ShouldReturnFalse()
+        public async Task Handle_WhenKurinDoesNotExist_ShouldReturnNotFound()
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
@@ -64,13 +64,54 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             var result = await _handler.Handle(command, default);
 
             // Assert
-            result.Should().BeFalse();
+            result.Type.Should().Be(ResultType.NotFound);
+            result.Data.Should().Be($"Kurin with key {kurinKey} not found.");
             _kurinRepositoryMock.Verify(r => r.Delete(It.IsAny<Kurin>(), default), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task Handle_WhenExceptionOccurs_ShouldPropagateException()
+        public async Task Handle_WhenKurinKeyIsEmpty_ShouldReturnInvalidData()
+        {
+            // Arrange
+            var command = new DeleteKurinCommand(Guid.Empty);
+
+            // Act
+            var result = await _handler.Handle(command, default);
+
+            // Assert
+            result.Type.Should().Be(ResultType.BadRequest);
+            result.Data.Should().Be("KurinKey cannot be empty.");
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), default), Times.Never);
+            _kurinRepositoryMock.Verify(r => r.Delete(It.IsAny<Kurin>(), default), Times.Never);
+            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSaveChangesFails_ShouldReturnServerError()
+        {
+            // Arrange
+            var kurinKey = Guid.NewGuid();
+            var kurin = new Kurin(1) { KurinKey = kurinKey };
+            var command = new DeleteKurinCommand(kurinKey);
+
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ReturnsAsync(kurin);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
+                .ReturnsAsync(0);
+
+            // Act
+            var result = await _handler.Handle(command, default);
+
+            // Assert
+            result.Type.Should().Be(ResultType.InternalServerError);
+            result.Data.Should().Be("Failed to delete Kurin due to internal error.");
+            _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
+            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenDeleteThrowsException_ShouldPropagateException()
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
@@ -86,28 +127,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));
             exception.Should().BeSameAs(expectedException);
-        }
-
-        [Fact]
-        public async Task Handle_WhenSaveChangesFails_ShouldReturnFalse()
-        {
-            // Arrange
-            var kurinKey = Guid.NewGuid();
-            var kurin = new Kurin(1) { KurinKey = kurinKey };
-            var command = new DeleteKurinCommand(kurinKey);
-
-            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
-                .ReturnsAsync(kurin);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
-                .ReturnsAsync(0); // No changes saved
-
-            // Act
-            var result = await _handler.Handle(command, default);
-
-            // Assert
-            result.Should().BeFalse();
-            _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
-            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
         }
     }
 }

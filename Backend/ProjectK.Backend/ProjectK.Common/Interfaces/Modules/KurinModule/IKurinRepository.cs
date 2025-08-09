@@ -1,5 +1,4 @@
-﻿using ProjectK.Common.Dtos;
-using ProjectK.Common.Entities.KurinModule;
+﻿using ProjectK.Common.Entities.KurinModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;

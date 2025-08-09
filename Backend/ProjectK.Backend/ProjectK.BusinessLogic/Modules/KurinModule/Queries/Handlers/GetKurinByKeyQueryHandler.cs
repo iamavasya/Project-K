@@ -3,6 +3,8 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
 {
-    public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, KurinResponse>
+    public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, ServiceResult<KurinResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -21,17 +23,18 @@ namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
             _mapper = mapper;
         }
 
-        public async Task<KurinResponse> Handle(GetKurinByKeyQuery request, CancellationToken token)
+        public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKeyQuery request, CancellationToken token)
         {
-            var kurinResponse = new KurinResponse();
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
 
-            if (kurin != null)
+            if (kurin is null)
             {
-                kurinResponse = _mapper.Map<KurinResponse>(kurin);
+                return new ServiceResult<KurinResponse>(ResultType.NotFound);
             }
 
-            return kurinResponse;
+            var kurinResponse = _mapper.Map<KurinResponse>(kurin);
+            
+            return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
         }
     }
 }
