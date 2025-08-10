@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries;
 using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Controllers.KurinModule
@@ -26,6 +27,16 @@ namespace ProjectK.API.Controllers.KurinModule
         public async Task<IActionResult> GetByKey(Guid kurinKey)
         {
             var request = new GetKurinByKeyQuery(kurinKey);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+
+        [HttpGet("kurins")]
+        [ProducesResponseType(typeof(IEnumerable<KurinResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetAll()
+        {
+            var request = new GetKurinsQuery();
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }

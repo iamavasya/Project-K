@@ -10,6 +10,8 @@ namespace ProjectK.Common.Interfaces
     {
         void Create(T entity, CancellationToken token = default);
         Task<T?> GetByKeyAsync(Guid entityKey, CancellationToken token = default);
+        Task<IEnumerable<T>> GetAllAsync(CancellationToken token = default);
+        Task<bool> ExistsAsync(Guid entityKey, CancellationToken token = default);
         void Update(T entity, CancellationToken token = default);
         void Delete(T entity, CancellationToken token = default);
 

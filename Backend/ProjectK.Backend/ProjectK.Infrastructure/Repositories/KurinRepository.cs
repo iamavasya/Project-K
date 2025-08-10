@@ -34,6 +34,26 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
         }
 
+        public async Task<Kurin?> GetByNumberAsync(int number, CancellationToken token = default)
+        {
+            return await _context.Kurins.FirstOrDefaultAsync(k => k.Number == number, token);
+        }
+
+        public async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken token = default)
+        {
+            return await _context.Kurins.ToListAsync(token);
+        }
+
+        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken token = default)
+        {
+            return await _context.Kurins.AnyAsync(k => k.KurinKey == entityKey, token);
+        }
+
+        public async Task<bool> ExistsAsync(int number, CancellationToken token = default)
+        {
+            return await _context.Kurins.AnyAsync(k => k.Number == number, token);
+        }
+
         public void Update(Kurin kurin, CancellationToken token = default)
         {
             _context.Kurins.Update(kurin);
