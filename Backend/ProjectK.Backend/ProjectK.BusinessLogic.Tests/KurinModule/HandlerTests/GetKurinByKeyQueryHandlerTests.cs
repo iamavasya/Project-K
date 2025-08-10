@@ -69,7 +69,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             var query = new GetKurinByKeyQuery(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
-                .ReturnsAsync((Kurin)null);
+                .ReturnsAsync((Kurin)null!);
 
             // Act
             var result = await _handler.Handle(query, default);
