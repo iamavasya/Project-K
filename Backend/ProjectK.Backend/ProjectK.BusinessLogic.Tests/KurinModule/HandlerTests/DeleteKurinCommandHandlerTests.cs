@@ -58,7 +58,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             var command = new DeleteKurinCommand(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
-                .ReturnsAsync((Kurin)null);
+                .ReturnsAsync((Kurin)null!);
 
             // Act
             var result = await _handler.Handle(command, default);
