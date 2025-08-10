@@ -46,7 +46,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(Guid kurinKey, [FromBody] int kurinNumber)
+        public async Task<IActionResult> Upsert(Guid kurinKey, [FromBody] int kurinNumber)
         {
             var request = new UpsertKurinCommand(kurinKey, kurinNumber);
             var response = await _mediator.Send(request);

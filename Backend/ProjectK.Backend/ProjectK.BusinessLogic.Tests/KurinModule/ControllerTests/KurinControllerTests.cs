@@ -81,7 +81,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
         }
 
         [Fact]
-        public async Task Update_ShouldReturnBadRequest_WhenInvalid()
+        public async Task Upsert_ShouldReturnBadRequest_WhenInvalid()
         {
             var key = Guid.NewGuid();
             var serviceResult = new ServiceResult<KurinResponse>(ResultType.BadRequest, new KurinResponse());
@@ -90,7 +90,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Update(key, 10);
+            var result = await _controller.Upsert(key, 10);
 
             Assert.IsType<BadRequestObjectResult>(result);
         }

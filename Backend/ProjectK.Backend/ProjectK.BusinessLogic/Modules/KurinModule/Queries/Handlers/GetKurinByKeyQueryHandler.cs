@@ -23,9 +23,9 @@ namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKeyQuery request, CancellationToken token)
+        public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
         {
-            var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
+            var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
 
             if (kurin is null)
             {
