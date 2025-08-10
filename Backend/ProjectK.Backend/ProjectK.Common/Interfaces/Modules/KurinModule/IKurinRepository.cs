@@ -9,6 +9,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
     public interface IKurinRepository : IBaseEntityRepository<Kurin>
     {
-
+        Task<Kurin?> GetByNumberAsync(int number, CancellationToken token = default);
+        Task<bool> ExistsAsync(int number, CancellationToken token = default);
     }
 }

@@ -5,6 +5,7 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.Kurin.Queries;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -56,6 +57,24 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var result = await _controller.GetByKey(key);
 
             Assert.IsType<NotFoundObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task GetAll_ShouldReturnOk_WhenSuccess()
+        {
+            var kurins = new List<KurinResponse>
+            {
+                new KurinResponse { KurinKey = Guid.NewGuid(), Number = 1 },
+                new KurinResponse { KurinKey = Guid.NewGuid(), Number = 2 }
+            };
+            var serviceResult = new ServiceResult<IEnumerable<KurinResponse>>(ResultType.Success, kurins);
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetKurinsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+            var result = await _controller.GetAll();
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<List<KurinResponse>>(ok.Value);
+            Assert.Equal(kurins.Count, data.Count);
         }
 
         [Fact]

@@ -15,7 +15,8 @@ namespace ProjectK.API
             builder.Services.AddDbContext<AppDbContext>(opt =>
             {
                 opt.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                        b => b.MigrationsAssembly("ProjectK.Infrastructure")
                 );
             });
 

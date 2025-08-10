@@ -22,6 +22,7 @@ namespace ProjectK.Common.Extensions
                 ResultType.BadRequest => controller.BadRequest(result.Data),
                 ResultType.Unauthorized => controller.Unauthorized(),
                 ResultType.NotFound => controller.NotFound(result.Data),
+                ResultType.Conflict => controller.Conflict(new object[] { "The entity that was attempted to be created already exists.", result.Data! }),
                 // ResultType.Forbidden => controller.Forbid(),
                 _ => controller.StatusCode(500, "An unexpected error occurred."),
             };

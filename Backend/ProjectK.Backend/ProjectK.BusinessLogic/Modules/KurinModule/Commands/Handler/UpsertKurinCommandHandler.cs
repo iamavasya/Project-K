@@ -32,6 +32,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
 
             if (existing is null)
             {
+                var isExistingByNumber = await _unitOfWork.Kurins.ExistsAsync(request.Number, cancellationToken);
+                if (isExistingByNumber)
+                {
+                    var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(request.Number, cancellationToken);
+                    return new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber));
+                }
                 // Create new Kurin
                 existing = new (request.Number);
                 _unitOfWork.Kurins.Create(existing, cancellationToken);

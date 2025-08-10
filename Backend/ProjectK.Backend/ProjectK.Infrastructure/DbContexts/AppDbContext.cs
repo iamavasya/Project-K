@@ -25,6 +25,7 @@ namespace ProjectK.Infrastructure.DbContexts
             modelBuilder.Entity<Kurin>(entity =>
             {
                 entity.HasKey(e => e.KurinKey);
+                entity.HasIndex(e => e.Number).IsUnique();
             });
         }
     }

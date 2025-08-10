@@ -90,5 +90,75 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
                 Assert.Null(deleted);
             }
         }
+
+        [Fact]
+        public async Task GetByNumberAsync_ShouldReturnCorrectEntity()
+        {
+            // Arrange
+            using (var context = CreateInMemoryDbContext())
+            {
+                var unitOfWork = new UnitOfWork(context);
+                var kurin = new Kurin(15);
+                unitOfWork.Kurins.Create(kurin);
+                await unitOfWork.SaveChangesAsync();
+                // Act
+                var fetched = await unitOfWork.Kurins.GetByNumberAsync(15);
+                // Assert
+                Assert.NotNull(fetched);
+                Assert.Equal(15, fetched!.Number);
+            }
+        }
+
+        [Fact]
+        public async Task GetAllAsync_ShouldReturnCorrectEntities()
+        {
+            // Arrange
+            using (var context = CreateInMemoryDbContext())
+            {
+                var unitOfWork = new UnitOfWork(context);
+                unitOfWork.Kurins.Create(new Kurin(1));
+                unitOfWork.Kurins.Create(new Kurin(2));
+                await unitOfWork.SaveChangesAsync();
+                // Act
+                var allKurins = await unitOfWork.Kurins.GetAllAsync();
+                // Assert
+                Assert.NotNull(allKurins);
+                Assert.Equal(2, allKurins.Count());
+            }
+        }
+
+        [Fact]
+        public async Task ExistsAsync_ByKey_ShouldReturnTrueForExistingEntity()
+        {
+            // Arrange
+            using (var context = CreateInMemoryDbContext())
+            {
+                var unitOfWork = new UnitOfWork(context);
+                var kurin = new Kurin(3);
+                unitOfWork.Kurins.Create(kurin);
+                await unitOfWork.SaveChangesAsync();
+                // Act
+                var exists = await unitOfWork.Kurins.ExistsAsync(kurin.KurinKey);
+                // Assert
+                Assert.True(exists);
+            }
+        }
+
+        [Fact]
+        public async Task ExistsAsync_ByNumber_ShouldReturnTrueForExistingEntity()
+        {
+            // Arrange
+            using (var context = CreateInMemoryDbContext())
+            {
+                var unitOfWork = new UnitOfWork(context);
+                var kurin = new Kurin(4);
+                unitOfWork.Kurins.Create(kurin);
+                await unitOfWork.SaveChangesAsync();
+                // Act
+                var exists = await unitOfWork.Kurins.ExistsAsync(4);
+                // Assert
+                Assert.True(exists);
+            }
+        }
     }
 }
