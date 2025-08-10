@@ -20,8 +20,6 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        // TODO: Implement different status codes for different scenarios
-
         [HttpGet]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
