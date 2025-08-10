@@ -24,9 +24,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
             _mapper = mapper;
 
         }
-        public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurinCommand request, CancellationToken token)
+        public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
         {
-            var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
+            var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
 
             bool isCreated = false;
 
@@ -34,17 +34,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
             {
                 // Create new Kurin
                 existing = new (request.Number);
-                _unitOfWork.Kurins.Create(existing, token);
+                _unitOfWork.Kurins.Create(existing, cancellationToken);
                 isCreated = true;
             }
             else
             {
                 // Update existing Kurin
                 _mapper.Map(request, existing);
-                _unitOfWork.Kurins.Update(existing, token);
+                _unitOfWork.Kurins.Update(existing, cancellationToken);
             }
 
-            var changes = await _unitOfWork.SaveChangesAsync(token);
+            var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             if (changes <= 0)
             {
