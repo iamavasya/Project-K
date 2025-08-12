@@ -3,12 +3,12 @@ name: Angular CI
 on:
   push:
     branches: [ "new-monolith" ]
-    paths-ignore:
-      - 'Project-K/Backend/**'
+    paths:
+      - 'Frontend/**'
   pull_request:
     branches: [ "new-monolith" ]
     paths:
-      - 'Project-K/Backend/**'
+      - 'Frontend/**'
 
 jobs:
   build:
