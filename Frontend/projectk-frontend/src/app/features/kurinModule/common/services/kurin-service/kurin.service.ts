@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { KurinDto } from '../../models/kurinDto';
@@ -8,8 +8,7 @@ import { Observable } from 'rxjs/internal/Observable';
   providedIn: 'root'
 })
 export class KurinService {
-  constructor(private http: HttpClient) {}
-
+  private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/kurin`;
 
   getKurins(): Observable<KurinDto[]> {

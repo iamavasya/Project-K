@@ -13,7 +13,7 @@ import { KurinDto } from '../../models/kurinDto';
   styleUrl: './manage-panel.scss'
 })
 export class ManagePanel implements OnChanges {
-  @Input() visible: boolean = false;
+  @Input() visible = false;
   @Input() parameter: 'create' | 'update' | 'delete' | 'undef'= 'undef';
   @Input() kurin: KurinDto | null = null;
   @Output() visibleChange = new EventEmitter<boolean>();

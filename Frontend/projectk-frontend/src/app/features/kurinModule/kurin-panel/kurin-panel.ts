@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { CommonModule } from '@angular/common';
@@ -9,18 +9,17 @@ import { ManagePanel } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
-  selector: 'km-kurin-panel',
+  selector: 'app-kurin-panel',
   imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule],
   templateUrl: './kurin-panel.html',
   styleUrl: './kurin-panel.scss'
 })
 export class KurinPanel implements OnInit {
-
-  constructor(private kurinService: KurinService) {}
   
+  kurinService = inject(KurinService);
   data: KurinDto[] = [];
   selectedItem: KurinDto | null = null;
-  managePanelVisible: boolean = false;
+  managePanelVisible = false;
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
 
   tableHeaders = [

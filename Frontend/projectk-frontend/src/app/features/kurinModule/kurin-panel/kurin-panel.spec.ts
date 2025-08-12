@@ -60,7 +60,7 @@ describe('KurinPanel', () => {
   });
 
   it('should handle empty kurins data', () => {
-    kurinService.getKurins.and.returnValue(of(null as any));
+    kurinService.getKurins.and.returnValue(of(null as unknown as KurinDto[]));
     
     component.refreshData();
     
