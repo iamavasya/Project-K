@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { KurinPanel } from './kurin-panel';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('KurinPanel', () => {
   let component: KurinPanel;
@@ -8,7 +10,11 @@ describe('KurinPanel', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [KurinPanel]
+      imports: [KurinPanel],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
     })
     .compileComponents();
 
