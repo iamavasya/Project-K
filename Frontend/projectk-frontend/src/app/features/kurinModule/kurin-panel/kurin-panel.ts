@@ -8,7 +8,6 @@ import { MenuItem } from 'primeng/api';
 import { ManagePanel } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 
-//test comment
 @Component({
   selector: 'app-kurin-panel',
   imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule],
