@@ -26,10 +26,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Handlers
         public async Task<ServiceResult<IEnumerable<KurinResponse>>> Handle(GetKurinsQuery request, CancellationToken cancellationToken)
         {
             var kurins = await _unitOfWork.Kurins.GetAllAsync(cancellationToken);
-            if (kurins is null || !kurins.Any())
-            {
-                return new ServiceResult<IEnumerable<KurinResponse>>(ResultType.NotFound);
-            }
             var kurinResponses = _mapper.Map<IEnumerable<KurinResponse>>(kurins);
             return new ServiceResult<IEnumerable<KurinResponse>>(ResultType.Success, kurinResponses);
         }
