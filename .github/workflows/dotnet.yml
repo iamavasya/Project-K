@@ -6,8 +6,12 @@ name: .NET
 on:
   push:
     branches: [ "main", "new-monolith" ]
+    paths:
+      - 'Backend/**'
   pull_request:
     branches: [ "main", "new-monolith" ]
+    paths:
+      - 'Backend/**'
 
 jobs:
   build:
