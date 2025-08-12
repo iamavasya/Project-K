@@ -29,11 +29,6 @@ export class ManagePanel implements OnChanges {
     }
   }
 
-  show(): void {
-    this.visible = true;
-    this.visibleChange.emit(this.visible);
-  }
-
   hide(): void {
     this.visible = false;
     this.visibleChange.emit(this.visible);
