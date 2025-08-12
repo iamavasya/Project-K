@@ -1,0 +1,29 @@
+<p-dialog header="{{parameter.charAt(0).toUpperCase() + parameter.slice(1)}} record" [modal]="true" [(visible)]="visible" (onHide)="hide()" [style]="{ width: '30rem' }">
+    <div class="overlay-content">
+        @if (parameter !== 'delete') {
+            @if (parameter !== 'create') {
+                <div>
+                    <label for="kurinKey">Kurin Key</label>
+                    <input class="overlay-field" id="kurinKey" type="text" pInputText [(ngModel)]="kurinKey" [disabled]="true" />
+                </div>
+            }
+            <div>
+                <label for="number">Number</label>
+                <input class="overlay-field" id="number" type="text" pInputText [(ngModel)]="number" />
+            </div>
+        }
+        @else if (parameter === 'delete') {
+            <label for="confirmDelete">Confirm Deletion</label>
+        }
+    </div>
+    <ng-template pTemplate="footer">
+        @if (parameter === 'delete') {
+            <p-button label="Delete" (onClick)="onActionClick('delete')" severity="danger" />
+        } @else if (parameter === 'update') {
+            <p-button label="Save" (onClick)="onActionClick('update')" />
+        } @else {
+            <p-button label="Create" (onClick)="onActionClick('create')" severity="info" />
+        }
+        <p-button label="Cancel" (onClick)="hide()" severity="secondary" />
+    </ng-template>
+</p-dialog>

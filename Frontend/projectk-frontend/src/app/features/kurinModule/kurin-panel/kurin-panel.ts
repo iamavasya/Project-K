@@ -1,0 +1,87 @@
+import { Component, OnInit } from '@angular/core';
+import { TableModule } from 'primeng/table';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { CommonModule } from '@angular/common';
+import { KurinDto } from '../common/models/kurinDto';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { MenuItem } from 'primeng/api';
+import { ManagePanel } from '../common/components/manage-panel/manage-panel';
+import { ButtonModule } from 'primeng/button';
+
+@Component({
+  selector: 'km-kurin-panel',
+  imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule],
+  templateUrl: './kurin-panel.html',
+  styleUrl: './kurin-panel.scss'
+})
+export class KurinPanel implements OnInit {
+
+  constructor(private kurinService: KurinService) {}
+  
+  data: KurinDto[] = [];
+  selectedItem: KurinDto | null = null;
+  managePanelVisible: boolean = false;
+  managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
+
+  tableHeaders = [
+    "KurinKey",
+    "Number"
+  ];
+
+  actions: MenuItem[] = [
+  ];
+
+  prepareItemActions(item: KurinDto): void {
+    this.actions = [
+      {
+        label: 'Update',
+        command: () => { this.onActionClick(item, 'update') }
+      },
+      {
+        label: 'Delete',
+        command: () => { this.onActionClick(item, 'delete') }
+      }
+    ];
+  }
+
+  ngOnInit(): void {
+    this.refreshData();
+  }
+
+  onActionClick(item: KurinDto | null, param: 'create' | 'update' | 'delete' | 'undef'): void {
+    this.selectedItem = item;
+    this.managePanelVisible = true;
+    this.managePanelParameter = param;
+  }
+
+  actionHandler(action: { action: 'create' | 'update' | 'delete', kurin: KurinDto }): void {
+    switch (action.action) {
+      case 'create':
+        this.kurinService.createKurin(action.kurin).subscribe(() => {
+          this.refreshData();
+        });
+        break;
+      case 'update':
+        this.kurinService.updateKurin(action.kurin).subscribe(() => {
+          this.refreshData();
+        });
+        break;
+      case 'delete':
+        this.kurinService.deleteKurin(action.kurin.kurinKey).subscribe(() => {
+          this.refreshData();
+        });
+        break;
+    }
+  }
+
+  refreshData(): void {
+    this.kurinService.getKurins().subscribe((data: KurinDto[]) => {
+      this.data = data ?? [];
+      console.log('Kurins fetched:', this.data);
+    });
+  }
+
+  onOpenClick(): void {
+    alert('Open functionality is not implemented yet.');
+  }
+}

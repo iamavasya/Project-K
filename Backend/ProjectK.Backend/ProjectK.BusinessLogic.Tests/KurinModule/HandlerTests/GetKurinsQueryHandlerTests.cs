@@ -75,7 +75,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_WhenNoKurinsExist_ShouldReturnNotFound()
+        public async Task Handle_WhenNoKurinsExist_ShouldReturnSuccess()
         {
             // Arrange
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -87,27 +87,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Type.Should().Be(ResultType.NotFound);
-            result.Data.Should().BeNull();
-
-            _kurinRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_WhenRepositoryReturnsNull_ShouldReturnNotFound()
-        {
-            // Arrange
-            _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync((IEnumerable<Kurin>)null!);
-
-            var query = new GetKurinsQuery();
-
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            // Assert
-            result.Type.Should().Be(ResultType.NotFound);
-            result.Data.Should().BeNull();
+            result.Type.Should().Be(ResultType.Success);
+            result.Data.Should().BeEmpty();
 
             _kurinRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
         }

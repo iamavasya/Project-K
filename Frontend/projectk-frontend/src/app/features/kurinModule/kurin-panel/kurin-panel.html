@@ -1,0 +1,31 @@
+<div class="kurin-panel">
+    <p-table [value]="data">
+        <ng-template #header>
+            <tr>
+                @for (header of tableHeaders; track header) {
+                    <th>{{ header }}</th>
+                }
+                <th class="kurin-actions">
+                    <p-button (onClick)="onActionClick(null, 'create')" label="Create" severity="info" icon="pi pi-plus" iconPos="right" />
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-item>
+            <tr>
+                <td>{{ item.kurinKey }}</td>
+                <td>{{ item.number }}</td>
+                <td class="kurin-actions">
+                    <p-splitButton label="Open" (onClick)="onOpenClick()" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
+
+                    </p-splitButton>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+<app-manage-panel
+  [(visible)]="managePanelVisible"
+  [kurin]="selectedItem"
+  [parameter]="managePanelParameter"
+  (actionPerformed)="actionHandler($event)"
+></app-manage-panel>
