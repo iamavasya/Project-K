@@ -6,8 +6,12 @@ name: .NET
 on:
   push:
     branches: [ "main", "new-monolith" ]
+    paths-ignore:
+      - 'Project-K/Frontend/**'
   pull_request:
     branches: [ "main", "new-monolith" ]
+    paths-ignore:
+      - 'Project-K/Frontend/**'
 
 jobs:
   build:
