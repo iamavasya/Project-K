@@ -3,9 +3,9 @@
         <ng-template #header>
             <tr>
                 @for (header of tableHeaders; track header) {
-                    <th>{{ header }}</th>
+                    <th scope="col">{{ header }}</th>
                 }
-                <th class="kurin-actions">
+                <th scope="col" class="kurin-actions">
                     <p-button (onClick)="onActionClick(null, 'create')" label="Create" severity="info" icon="pi pi-plus" iconPos="right" />
                 </th>
             </tr>

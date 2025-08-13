@@ -8,8 +8,8 @@ import { Observable } from 'rxjs/internal/Observable';
   providedIn: 'root'
 })
 export class KurinService {
-  private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/kurin`;
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/kurin`;
 
   getKurins(): Observable<KurinDto[]> {
     return this.http.get<KurinDto[]>(`${this.apiUrl}/kurins`);
