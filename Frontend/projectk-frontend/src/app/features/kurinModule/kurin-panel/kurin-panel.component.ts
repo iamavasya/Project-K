@@ -7,14 +7,17 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MenuItem } from 'primeng/api';
 import { ManagePanel } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-kurin-panel',
   imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule],
-  templateUrl: './kurin-panel.html',
-  styleUrl: './kurin-panel.scss'
+  templateUrl: './kurin-panel.component.html',
+  styleUrls: ['./kurin-panel.component.scss']
 })
-export class KurinPanel implements OnInit {
+export class KurinPanelComponent implements OnInit {
+
+  constructor(private router: Router) {}
   
   kurinService = inject(KurinService);
   data: KurinDto[] = [];
@@ -27,8 +30,7 @@ export class KurinPanel implements OnInit {
     "Number"
   ];
 
-  actions: MenuItem[] = [
-  ];
+  actions: MenuItem[] = [];
 
   prepareItemActions(item: KurinDto): void {
     this.actions = [
@@ -80,7 +82,7 @@ export class KurinPanel implements OnInit {
     });
   }
 
-  onOpenClick(): void {
-    alert('Open functionality is not implemented yet.');
+  onOpenClick(kurinKey: string): void {
+    this.router.navigate(['/kurin', kurinKey]);
   }
 }

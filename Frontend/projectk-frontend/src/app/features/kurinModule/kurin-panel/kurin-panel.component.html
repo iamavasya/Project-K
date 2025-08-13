@@ -15,7 +15,7 @@
                 <td>{{ item.kurinKey }}</td>
                 <td>{{ item.number }}</td>
                 <td class="kurin-actions">
-                    <p-splitButton label="Open" (onClick)="onOpenClick()" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
+                    <p-splitButton label="Open" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
 
                     </p-splitButton>
                 </td>
