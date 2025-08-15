@@ -1,33 +1,40 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap, ParamMap } from '@angular/router';
+import { Subject } from 'rxjs';
 
 import { GroupPanelComponent } from './group-panel.component';
 
 describe('GroupPanelComponent', () => {
   let component: GroupPanelComponent;
   let fixture: ComponentFixture<GroupPanelComponent>;
-
-  const createMockActivatedRoute = (kurinKey: string | null = 'test-kurin-key') => ({
-    paramMap: of(convertToParamMap(kurinKey ? { kurinKey } : {})),
-    snapshot: {
-      params: kurinKey ? { kurinKey } : {},
-      queryParams: {},
-      data: {}
-    } as unknown as ActivatedRouteSnapshot
-  });
+  let paramMapSubject: Subject<ParamMap>;
 
   beforeEach(async () => {
+    paramMapSubject = new Subject<ParamMap>();
+    
+    const mockActivatedRoute = {
+      paramMap: paramMapSubject.asObservable(),
+      snapshot: {
+        params: { kurinKey: 'test-kurin-key' },
+        queryParams: {},
+        data: {}
+      } as unknown as ActivatedRouteSnapshot
+    };
+
     await TestBed.configureTestingModule({
       imports: [GroupPanelComponent],
       providers: [
-        { provide: ActivatedRoute, useValue: createMockActivatedRoute() }
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
     })
     .compileComponents();
 
     fixture = TestBed.createComponent(GroupPanelComponent);
     component = fixture.componentInstance;
+  });
+
+  afterEach(() => {
+    paramMapSubject.complete();
   });
 
   it('should create', () => {
@@ -40,35 +47,34 @@ describe('GroupPanelComponent', () => {
 
   it('should extract kurinKey from route params on init', () => {
     component.ngOnInit();
+    paramMapSubject.next(convertToParamMap({ kurinKey: 'test-kurin-key' }));
     
     expect(component.kurinKey).toBe('test-kurin-key');
   });
 
-  it('should handle route param changes', async () => {
-    // Create new component with different route params
-    await TestBed.overrideProvider(ActivatedRoute, {
-      useValue: createMockActivatedRoute('new-kurin-key')
-    }).compileComponents();
-
-    const newFixture = TestBed.createComponent(GroupPanelComponent);
-    const newComponent = newFixture.componentInstance;
+  it('should handle route param changes', () => {
+    component.ngOnInit();
     
-    newComponent.ngOnInit();
+    // Initial value
+    paramMapSubject.next(convertToParamMap({ kurinKey: 'test-kurin-key' }));
+    expect(component.kurinKey).toBe('test-kurin-key');
     
-    expect(newComponent.kurinKey).toBe('new-kurin-key');
+    // Changed value
+    paramMapSubject.next(convertToParamMap({ kurinKey: 'new-kurin-key' }));
+    expect(component.kurinKey).toBe('new-kurin-key');
   });
 
-  it('should handle missing kurinKey param', async () => {
-    // Create new component with no route params
-    await TestBed.overrideProvider(ActivatedRoute, {
-      useValue: createMockActivatedRoute(null)
-    }).compileComponents();
+  it('should handle missing kurinKey param', () => {
+    component.ngOnInit();
+    paramMapSubject.next(convertToParamMap({}));
 
-    const newFixture = TestBed.createComponent(GroupPanelComponent);
-    const newComponent = newFixture.componentInstance;
+    expect(component.kurinKey).toBeNull();
+  });
+
+  it('should handle null kurinKey param', () => {
+    component.ngOnInit();
+    paramMapSubject.next(convertToParamMap({ kurinKey: null }));
     
-    newComponent.ngOnInit();
-    
-    expect(newComponent.kurinKey).toBeNull();
+    expect(component.kurinKey).toBeNull();
   });
 });
