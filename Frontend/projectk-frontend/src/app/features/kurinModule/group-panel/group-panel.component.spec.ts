@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 
 import { GroupPanelComponent } from './group-panel.component';
@@ -7,7 +7,7 @@ import { GroupPanelComponent } from './group-panel.component';
 describe('GroupPanelComponent', () => {
   let component: GroupPanelComponent;
   let fixture: ComponentFixture<GroupPanelComponent>;
-  let mockActivatedRoute: any;
+  let mockActivatedRoute: Partial<ActivatedRoute>;
 
   beforeEach(async () => {
     mockActivatedRoute = {
@@ -16,7 +16,7 @@ describe('GroupPanelComponent', () => {
         params: { kurinKey: 'test-kurin-key' },
         queryParams: {},
         data: {}
-      }
+      } as unknown as ActivatedRouteSnapshot
     };
 
     await TestBed.configureTestingModule({
