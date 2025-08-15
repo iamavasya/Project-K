@@ -17,8 +17,8 @@ import { Router } from '@angular/router';
 })
 export class KurinPanelComponent implements OnInit {
 
-  constructor(private router: Router) {}
-  
+  private router: Router = inject(Router);
+
   kurinService = inject(KurinService);
   data: KurinDto[] = [];
   selectedItem: KurinDto | null = null;
