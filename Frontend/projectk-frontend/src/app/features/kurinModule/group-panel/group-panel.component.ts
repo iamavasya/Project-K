@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -8,9 +8,10 @@ import { ActivatedRoute } from '@angular/router';
   styleUrls: ['./group-panel.component.scss']
 })
 export class GroupPanelComponent implements OnInit {
-  constructor(private route: ActivatedRoute) {}
 
-  kurinKey: string = '';
+  private route: ActivatedRoute = inject(ActivatedRoute);
+
+  kurinKey = '';
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
