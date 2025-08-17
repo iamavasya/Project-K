@@ -5,6 +5,7 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinDto } from '../common/models/kurinDto';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('KurinPanel', () => {
   let component: KurinPanelComponent;
@@ -22,12 +23,12 @@ describe('KurinPanel', () => {
     // Create spy object
     const kurinServiceSpy = jasmine.createSpyObj('KurinService', 
       ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
-
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: KurinService, useValue: kurinServiceSpy }
       ]
     })
@@ -65,6 +66,18 @@ describe('KurinPanel', () => {
     component.refreshData();
     
     expect(component.data).toEqual([]);
+  });
+
+  it('should show message when no kurins are available', () => {
+    kurinService.getKurins.and.returnValue(of([]));
+    
+    component.refreshData();
+    fixture.detectChanges();
+    
+    expect(component.data).toEqual([]);
+    expect(component.data.length).toBe(0);
+    expect(fixture.nativeElement.querySelector('p-message')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('p-message').textContent).toContain('Наразі немає доступних куренів. Створіть один!');
   });
 
   describe('prepareItemActions', () => {
@@ -143,6 +156,7 @@ describe('KurinPanel', () => {
   //     expect(window.alert).toHaveBeenCalledWith('Open functionality is not implemented yet.');
   //   });
   // });
+  
 
   describe('refreshData', () => {
     it('should refresh data from service', () => {

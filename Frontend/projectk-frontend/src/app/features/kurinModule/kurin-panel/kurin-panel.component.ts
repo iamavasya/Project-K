@@ -8,10 +8,11 @@ import { MenuItem } from 'primeng/api';
 import { ManagePanel } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
+import { MessageModule } from 'primeng/message';
 
 @Component({
   selector: 'app-kurin-panel',
-  imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule],
+  imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule, MessageModule],
   templateUrl: './kurin-panel.component.html',
   styleUrls: ['./kurin-panel.component.scss']
 })
@@ -20,10 +21,10 @@ export class KurinPanelComponent implements OnInit {
   private router: Router = inject(Router);
 
   kurinService = inject(KurinService);
-  data: KurinDto[] = [];
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
+  data: KurinDto[] = [];
 
   tableHeaders = [
     "KurinKey",
