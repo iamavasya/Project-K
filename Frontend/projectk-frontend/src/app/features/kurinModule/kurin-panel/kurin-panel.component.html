@@ -22,6 +22,11 @@
             </tr>
         </ng-template>
     </p-table>
+    @if (data.length === 0) {
+        <div style="margin-top: 1rem;">
+            <p-message icon="pi pi-question-circle" severity="info">Наразі немає доступних куренів. Створіть один!</p-message>
+        </div>
+    }
 </div>
 <app-manage-panel
   [(visible)]="managePanelVisible"
