@@ -20,7 +20,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [HttpGet]
+        [HttpGet("{kurinKey}")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetByKey(Guid kurinKey)
