@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Handlers
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers
 {
     public class GetKurinsQueryHandler : IRequestHandler<GetKurinsQuery, ServiceResult<IEnumerable<KurinResponse>>>
     {

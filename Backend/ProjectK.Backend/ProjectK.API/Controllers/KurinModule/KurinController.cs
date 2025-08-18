@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
-using ProjectK.BusinessLogic.Modules.Kurin.Queries;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
 using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Controllers.KurinModule

@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
