@@ -26,7 +26,7 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number));
             CreateMap<UpsertGroupCommand, Group>()
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore()   )
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
         }

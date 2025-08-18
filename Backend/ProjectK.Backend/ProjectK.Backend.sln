@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36327.8 d17.14
+VisualStudioVersion = 17.14.36327.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.API", "ProjectK.API\ProjectK.API.csproj", "{C05D1F4C-CE81-4534-8520-26DFAF06EE47}"
 EndProject
@@ -14,6 +14,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.BusinessLogic.Tests", "ProjectK.BusinessLogic.Tests\ProjectK.BusinessLogic.Tests.csproj", "{D7F7675E-2B63-4325-8D32-528B2E93F58C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.API.Tests", "ProjectK.API.Tests\ProjectK.API.Tests.csproj", "{19F88C0D-0867-44E8-B1FF-3EB3424562A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.Infrastructure.Tests", "ProjectK.Infrastructure.Tests\ProjectK.Infrastructure.Tests.csproj", "{50DEDD42-88D0-411A-BB20-D504B62EFD56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,12 +45,22 @@ Global
 		{D7F7675E-2B63-4325-8D32-528B2E93F58C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7F7675E-2B63-4325-8D32-528B2E93F58C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7F7675E-2B63-4325-8D32-528B2E93F58C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19F88C0D-0867-44E8-B1FF-3EB3424562A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19F88C0D-0867-44E8-B1FF-3EB3424562A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19F88C0D-0867-44E8-B1FF-3EB3424562A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19F88C0D-0867-44E8-B1FF-3EB3424562A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50DEDD42-88D0-411A-BB20-D504B62EFD56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50DEDD42-88D0-411A-BB20-D504B62EFD56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50DEDD42-88D0-411A-BB20-D504B62EFD56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50DEDD42-88D0-411A-BB20-D504B62EFD56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D7F7675E-2B63-4325-8D32-528B2E93F58C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{19F88C0D-0867-44E8-B1FF-3EB3424562A3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{50DEDD42-88D0-411A-BB20-D504B62EFD56} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DE005101-D112-4EB5-AC17-EECFA967259B}

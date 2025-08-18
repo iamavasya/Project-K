@@ -9,7 +9,7 @@ using ProjectK.Common.Models.Enums;
 using System;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
     public class DeleteKurinCommandHandlerTests
     {

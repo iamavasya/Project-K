@@ -10,10 +10,5 @@ namespace ProjectK.Common.Models.Dtos.Requests
     {
         public string Name { get; set; }
         public Guid KurinKey { get; set; }
-        public CreateGroupRequest(string name, Guid kurinKey)
-        {
-            Name = name;
-            KurinKey = kurinKey;
-        }
     }
 }

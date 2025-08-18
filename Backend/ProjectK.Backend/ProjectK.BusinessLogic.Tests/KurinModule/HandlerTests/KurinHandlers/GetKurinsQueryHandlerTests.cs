@@ -16,7 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
     public class GetKurinsQueryHandlerTests
     {

@@ -14,7 +14,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
     public class GetKurinByKeyQueryHandlerTests
     {
