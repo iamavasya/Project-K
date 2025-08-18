@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins.Handlers
 {
     public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, ServiceResult<KurinResponse>>
     {
@@ -65,7 +65,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Handler
                     ResultType.Created,
                     kurinResponse,
                     CreatedAtActionName: "GetByKey",
-                    CreatedAtRouteValues: new { kurinKey = existing.KurinKey })
+                    CreatedAtRouteValues: new { kurinKey = kurinResponse.KurinKey })
                 : new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
         }
     }

@@ -10,6 +10,7 @@ namespace ProjectK.Common.Interfaces
     public interface IUnitOfWork
     {
         IKurinRepository Kurins { get; }
+        IGroupRepository Groups { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
     }
 }

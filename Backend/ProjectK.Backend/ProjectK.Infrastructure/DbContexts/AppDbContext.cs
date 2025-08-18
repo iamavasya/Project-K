@@ -12,6 +12,7 @@ namespace ProjectK.Infrastructure.DbContexts
     {
         // Kurin module DbSet
         public DbSet<Kurin> Kurins { get; set; }
+        public DbSet<Group> Groups { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -26,6 +27,15 @@ namespace ProjectK.Infrastructure.DbContexts
             {
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
+            });
+
+            modelBuilder.Entity<Group>(entity =>
+            {
+                entity.HasKey(e => e.GroupKey);
+                entity.HasOne(e => e.Kurin)
+                      .WithMany(k => k.Groups)
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

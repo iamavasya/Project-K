@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins
 {
     public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     {

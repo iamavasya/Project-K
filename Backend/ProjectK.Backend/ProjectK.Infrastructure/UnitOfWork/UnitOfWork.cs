@@ -15,12 +15,14 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private readonly AppDbContext _context;
 
         public IKurinRepository Kurins { get; }
+        public IGroupRepository Groups { get; }
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
 
             Kurins = new KurinRepository(_context);
+            Groups = new GroupRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

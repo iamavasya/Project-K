@@ -2,10 +2,10 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.MappingProfiles.KurinModule;
+using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
-using ProjectK.BusinessLogic.Modules.Kurin.Queries;
-using ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -27,7 +27,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests
         public GetKurinByKeyQueryHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
-            var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinProfile()), loggerFactory);
+            var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
             _mapper = config.CreateMapper();
 
             _kurinRepositoryMock = new Mock<IKurinRepository>();

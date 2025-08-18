@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectK.API.MappingProfiles.KurinModule;
-using ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers;
+using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.API
@@ -31,7 +31,7 @@ namespace ProjectK.API
                 );
             });
 
-            builder.Services.AddAutoMapper(cfg => { }, typeof(KurinProfile));
+            builder.Services.AddAutoMapper(cfg => { }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(GetKurinByKeyQueryHandler).Assembly)
             );

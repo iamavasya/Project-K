@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.Kurin.Queries.Handlers
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers
 {
     public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, ServiceResult<KurinResponse>>
     {
