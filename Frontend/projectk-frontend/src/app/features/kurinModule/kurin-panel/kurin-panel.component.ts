@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { KurinDto } from '../common/models/kurinDto';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MenuItem } from 'primeng/api';
-import { ManagePanel } from '../common/components/manage-panel/manage-panel';
+import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
@@ -33,6 +33,29 @@ export class KurinPanelComponent implements OnInit {
 
   actions: MenuItem[] = [];
 
+  managePanelConfig: ManagePanelConfig = {
+    entityType: 'kurin',
+    title: 'Kurin',
+    fields: [
+      {
+        name: 'kurinKey',
+        label: 'Kurin Key',
+        type: 'text',
+        required: true,
+        hiddenOn: ['create', 'delete'],
+        disabledOn: ['update']
+      },
+      {
+        name: 'number',
+        label: 'Number',
+        type: 'number',
+        required: true,
+        hiddenOn: ['delete'],
+      }
+    ],
+    createFactory: () => ({ kurinKey: '', number: null }),
+  }
+
   prepareItemActions(item: KurinDto): void {
     this.actions = [
       {
@@ -50,28 +73,22 @@ export class KurinPanelComponent implements OnInit {
     this.refreshData();
   }
 
-  onActionClick(item: KurinDto | null, param: 'create' | 'update' | 'delete' | 'undef'): void {
+  onActionClick(item: KurinDto | null, param: ManageAction | 'undef'): void {
     this.selectedItem = item;
     this.managePanelVisible = true;
     this.managePanelParameter = param;
   }
 
-  actionHandler(action: { action: 'create' | 'update' | 'delete', kurin: KurinDto }): void {
-    switch (action.action) {
+  onManageAction(e: { action: ManageAction; entity: KurinDto; entityType: string }): void {
+    switch (e.action) {
       case 'create':
-        this.kurinService.createKurin(action.kurin).subscribe(() => {
-          this.refreshData();
-        });
+        this.kurinService.createKurin(e.entity).subscribe(() => this.refreshData());
         break;
       case 'update':
-        this.kurinService.updateKurin(action.kurin).subscribe(() => {
-          this.refreshData();
-        });
+        this.kurinService.updateKurin(e.entity).subscribe(() => this.refreshData());
         break;
       case 'delete':
-        this.kurinService.deleteKurin(action.kurin.kurinKey).subscribe(() => {
-          this.refreshData();
-        });
+        this.kurinService.deleteKurin(e.entity.kurinKey).subscribe(() => this.refreshData());
         break;
     }
   }
@@ -79,7 +96,6 @@ export class KurinPanelComponent implements OnInit {
   refreshData(): void {
     this.kurinService.getKurins().subscribe((data: KurinDto[]) => {
       this.data = data ?? [];
-      console.log('Kurins fetched:', this.data);
     });
   }
 

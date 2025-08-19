@@ -30,7 +30,8 @@
 </div>
 <app-manage-panel
   [(visible)]="managePanelVisible"
-  [kurin]="selectedItem"
   [parameter]="managePanelParameter"
-  (actionPerformed)="actionHandler($event)"
+  [entity]="selectedItem"
+  [config]="managePanelConfig"
+  (actionPerformed)="onManageAction($event)"
 ></app-manage-panel>

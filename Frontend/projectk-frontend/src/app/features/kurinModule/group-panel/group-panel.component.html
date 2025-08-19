@@ -1,1 +1,41 @@
-<p>group-panel works! Chosen kurin: {{ kurinKey }}</p>
+@if (kurinNumber) {
+    <span class="head-message">Main page of {{ kurinNumber }} kurin.</span>
+}
+<div class="group-panel">
+    <p-table [value]="groups">
+        <ng-template #header>
+            <tr>
+                @for (header of tableHeaders; track header) {
+                    <th scope="col">{{ header }}</th>
+                }
+                <th scope="col" class="group-actions">
+                    <p-button label="Create" (onClick)="onGroupActionClick(null, 'create')" severity="info" icon="pi pi-plus" iconPos="right" />
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-group>
+            <tr>
+                <td>{{ group.groupKey }}</td>
+                <td>{{ group.name }}</td>
+                <td>{{ group.kurinNumber }}</td>
+                <td class="group-actions">
+                    <p-splitButton label="Open" (onClick)="onOpenClick()" [model]="actions" (onDropdownClick)="prepareItemActions(group)">
+
+                    </p-splitButton>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+    @if (groups.length === 0) {
+        <div style="margin-top: 1rem;">
+            <p-message icon="pi pi-question-circle" severity="info">Наразі немає гуртків. Мабуть, варто додати?</p-message>
+        </div>
+    }
+</div>
+<app-manage-panel
+  [(visible)]="groupPanelVisible"
+  [parameter]="groupPanelParameter"
+  [entity]="selectedGroup"
+  [config]="groupPanelConfig"
+  (actionPerformed)="onGroupManage($event)">
+</app-manage-panel>
