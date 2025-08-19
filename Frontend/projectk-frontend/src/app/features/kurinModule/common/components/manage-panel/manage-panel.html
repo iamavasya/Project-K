@@ -1,29 +1,79 @@
-<p-dialog header="{{parameter.charAt(0).toUpperCase() + parameter.slice(1)}} record" [modal]="true" [(visible)]="visible" (onHide)="hide()" [style]="{ width: '30rem' }">
-    <div class="overlay-content">
-        @if (parameter !== 'delete') {
-            @if (parameter !== 'create') {
-                <div>
-                    <label for="kurinKey">Kurin Key</label>
-                    <input class="overlay-field" id="kurinKey" type="text" pInputText [(ngModel)]="kurinKey" [disabled]="true" />
-                </div>
-            }
-            <div>
-                <label for="number">Number</label>
-                <input class="overlay-field" id="number" type="text" pInputText [(ngModel)]="number" />
-            </div>
-        }
-        @else if (parameter === 'delete') {
-            <label for="confirmDelete">Confirm Deletion</label>
-        }
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="true"
+  (onHide)="hide()"
+  (onShow)="onDialogShow()"
+  [style]="{ width: '30rem' }"
+  [header]="header() | titlecase">
+
+  <ng-container *ngIf="isDeleteMode(); else formBlock">
+    <div style="padding: .5rem 0 1rem;">
+      <p>
+        Ви впевнені, що хочете видалити
+        <strong>{{ config.entityType | titlecase }}</strong>
+        <ng-container *ngIf="entity">
+          <ng-container *ngIf="entity.kurinKey"> ({{ entity.kurinKey }}) </ng-container>
+        </ng-container>
+        ?
+      </p>
+      <p style="font-size: .8rem; opacity: .65;">Цю дію неможливо скасувати.</p>
     </div>
-    <ng-template pTemplate="footer">
-        @if (parameter === 'delete') {
-            <p-button label="Delete" (onClick)="onActionClick('delete')" severity="danger" />
-        } @else if (parameter === 'update') {
-            <p-button label="Save" (onClick)="onActionClick('update')" />
-        } @else {
-            <p-button label="Create" (onClick)="onActionClick('create')" severity="info" />
-        }
-        <p-button label="Cancel" (onClick)="hide()" severity="secondary" />
-    </ng-template>
+    <div class="actions">
+      <button pButton type="button" label="Скасувати" class="p-button-text" (click)="hide()"></button>
+      <button pButton type="button" severity="danger" [label]="actionLabel()" (click)="submit()"></button>
+    </div>
+  </ng-container>
+
+  <!-- Режими CREATE / UPDATE -->
+  <ng-template #formBlock>
+    <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()" *ngIf="ready">
+      <ng-container *ngFor="let f of config.fields">
+        <div class="field" *ngIf="!isHidden(f)">
+          <label>{{ f.label }} <span *ngIf="f.required" class="req">*</span></label>
+
+          <ng-container [ngSwitch]="f.type">
+            <input
+              *ngSwitchCase="'text'"
+              #autoField
+              pInputText
+              [placeholder]="f.placeholder"
+              [formControlName]="f.name" />
+            <input
+              *ngSwitchCase="'number'"
+              #autoField
+              pInputText
+              type="number"
+              [placeholder]="f.placeholder"
+              [formControlName]="f.name" />
+            <textarea
+              *ngSwitchCase="'textarea'"
+              #autoField
+              pInputText
+              rows="3"
+              [placeholder]="f.placeholder"
+              [formControlName]="f.name"></textarea>
+          </ng-container>
+
+          <small class="error" *ngIf="form.get(f.name)?.touched && form.get(f.name)?.invalid">
+            Поле обов'язкове
+          </small>
+        </div>
+      </ng-container>
+
+      <div *ngIf="visibleFields().length === 0" style="opacity:.6; font-size:.8rem;">
+        Немає полів для цієї дії.
+      </div>
+
+      <div class="actions">
+        <button pButton type="button" label="Скасувати" class="p-button-text" (click)="hide()"></button>
+        <button
+          pButton
+            type="submit"
+            [label]="actionLabel()"
+            [disabled]="parameter !== 'delete' && form.invalid">
+        </button>
+      </div>
+    </form>
+  </ng-template>
 </p-dialog>

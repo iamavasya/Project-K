@@ -1,21 +1,123 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { GroupService } from '../common/services/group-service/group.service';
+import { GroupDto } from '../common/models/groupDto';
+import { SplitButton } from 'primeng/splitbutton';
+import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
+import { MenuItem } from 'primeng/api';
+import { MessageModule } from 'primeng/message';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [],
+  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule],
   templateUrl: './group-panel.component.html',
   styleUrls: ['./group-panel.component.scss']
 })
 export class GroupPanelComponent implements OnInit {
 
   private route: ActivatedRoute = inject(ActivatedRoute);
+  private groupService = inject(GroupService);
+  private kurinService = inject(KurinService);
+  groups: GroupDto[] = [];
+  actions: MenuItem[] = [];
+
+  tableHeaders: string[] = ['GroupKey', 'GroupName', 'KurinNumber'];
 
   kurinKey = '';
+  kurinNumber: number | null = null;
+
+  groupPanelConfig: ManagePanelConfig = {
+    entityType: 'group',
+    title: 'Group',
+    fields: [
+      {
+        name: 'groupKey',
+        label: 'Group Key',
+        type: 'text',
+        required: true,
+        hiddenOn: ['create', 'delete'],
+        disabledOn: ['update']
+      },
+      {
+        name: 'kurinKey',
+        label: 'Kurin Key',
+        type: 'text',
+        required: true,
+        hiddenOn: ['create', 'delete', 'update'],
+        disabledOn: ['update']
+      },
+      {
+        name: 'name',
+        label: 'Name',
+        type: 'text',
+        required: true,
+        hiddenOn: ['delete']
+      }
+    ],
+    createFactory: () => ({ groupKey: '', name: '', kurinKey: this.kurinKey })
+  };
+
+  groupPanelVisible = false;
+  groupPanelParameter: ManageAction | 'undef' = 'undef';
+  selectedGroup: any | null = null;
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey')!;
     });
+    this.refreshData();
+  }
+
+  refreshData() {
+    this.groupService.getAllByKurinKey(this.kurinKey).subscribe({
+      next: (groups) => {
+        this.groups = groups;
+      },
+      error: (error) => {
+        console.error('Error fetching groups:', error);
+      }
+    });
+    this.kurinService.getByKey(this.kurinKey).subscribe({
+      next: (kurin) => {
+        this.kurinNumber = kurin.number;
+      },
+      error: (error) => {
+        console.error('Error fetching kurin:', error);
+      }
+    });
+  }
+
+  prepareItemActions(item: GroupDto): void {
+    this.actions = [
+      {
+        label: 'Update',
+        command: () => { this.onGroupActionClick(item, 'update') }
+      },
+      {
+        label: 'Delete',
+        command: () => { this.onGroupActionClick(item, 'delete') }
+      }
+    ];
+  }
+  
+  onGroupActionClick(item: any | null, action: ManageAction) {
+    this.groupPanelParameter = action;
+    this.selectedGroup = action === 'create' ? null : item;
+    this.groupPanelVisible = true;
+  }
+
+  onGroupManage(e: { action: ManageAction; entity: any }) {
+    switch (e.action) {
+      case 'create': this.groupService.create(e.entity).subscribe(() => this.refreshData()); break;
+      case 'update': this.groupService.update(e.entity.groupKey, e.entity).subscribe(() => this.refreshData()); break;
+      case 'delete': this.groupService.delete(e.entity.groupKey).subscribe(() => this.refreshData()); break;
+    }
+  }
+
+  onOpenClick(): void {
+    alert('Functionality not implemented yet.');
   }
 }

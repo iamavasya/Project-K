@@ -11,6 +11,10 @@ export class KurinService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/kurin`;
 
+  getByKey(kurinKey: string): Observable<KurinDto> {
+    return this.http.get<KurinDto>(`${this.apiUrl}/${kurinKey}`);
+  }
+
   getKurins(): Observable<KurinDto[]> {
     return this.http.get<KurinDto[]>(`${this.apiUrl}/kurins`);
   }
