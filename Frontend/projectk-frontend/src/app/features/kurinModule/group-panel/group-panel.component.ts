@@ -62,7 +62,7 @@ export class GroupPanelComponent implements OnInit {
 
   groupPanelVisible = false;
   groupPanelParameter: ManageAction | 'undef' = 'undef';
-  selectedGroup: any | null = null;
+  selectedGroup: GroupDto | null = null;
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -103,13 +103,13 @@ export class GroupPanelComponent implements OnInit {
     ];
   }
   
-  onGroupActionClick(item: any | null, action: ManageAction) {
+  onGroupActionClick(item: GroupDto | null, action: ManageAction) {
     this.groupPanelParameter = action;
     this.selectedGroup = action === 'create' ? null : item;
     this.groupPanelVisible = true;
   }
 
-  onGroupManage(e: { action: ManageAction; entity: any }) {
+  onGroupManage(e: { action: ManageAction; entity: GroupDto }) {
     switch (e.action) {
       case 'create': this.groupService.create(e.entity).subscribe(() => this.refreshData()); break;
       case 'update': this.groupService.update(e.entity.groupKey, e.entity).subscribe(() => this.refreshData()); break;

@@ -20,8 +20,8 @@
       <p style="font-size: .8rem; opacity: .65;">Цю дію неможливо скасувати.</p>
     </div>
     <div class="actions">
-      <button pButton type="button" label="Скасувати" class="p-button-text" (click)="hide()"></button>
-      <button pButton type="button" severity="danger" [label]="actionLabel()" (click)="submit()"></button>
+      <p-button label="Скасувати" class="p-button-text" (click)="hide()"></p-button>
+      <p-button severity="danger" [label]="actionLabel()" (click)="submit()"></p-button>
     </div>
   </ng-container>
 
@@ -30,7 +30,7 @@
     <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()" *ngIf="ready">
       <ng-container *ngFor="let f of config.fields">
         <div class="field" *ngIf="!isHidden(f)">
-          <label>{{ f.label }} <span *ngIf="f.required" class="req">*</span></label>
+          <span>{{ f.label }} <span *ngIf="f.required" class="req">*</span></span>
 
           <ng-container [ngSwitch]="f.type">
             <input
@@ -66,13 +66,12 @@
       </div>
 
       <div class="actions">
-        <button pButton type="button" label="Скасувати" class="p-button-text" (click)="hide()"></button>
-        <button
-          pButton
-            type="submit"
-            [label]="actionLabel()"
-            [disabled]="parameter !== 'delete' && form.invalid">
-        </button>
+        <p-button label="Скасувати" class="p-button-text" (click)="hide()"></p-button>
+        <p-button
+          type="submit"
+          [label]="actionLabel()"
+          [disabled]="parameter !== 'delete' && form.invalid">
+        </p-button>
       </div>
     </form>
   </ng-template>
