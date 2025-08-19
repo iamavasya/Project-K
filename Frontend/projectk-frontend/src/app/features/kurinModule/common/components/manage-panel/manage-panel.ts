@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
 import { DialogModule } from 'primeng/dialog';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { KurinDto } from '../../models/kurinDto';
 
 export type ManageAction = 'create' | 'update' | 'delete';
 export type ManageFieldType = 'text' | 'number' | 'textarea';
