@@ -20,8 +20,8 @@
       <p style="font-size: .8rem; opacity: .65;">Цю дію неможливо скасувати.</p>
     </div>
     <div class="actions">
-      <p-button label="Скасувати" class="p-button-text" (click)="hide()"></p-button>
-      <p-button severity="danger" [label]="actionLabel()" (click)="submit()"></p-button>
+      <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
+      <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()"></p-button>
     </div>
   </ng-container>
 
@@ -66,7 +66,7 @@
       </div>
 
       <div class="actions">
-        <p-button label="Скасувати" class="p-button-text" (click)="hide()"></p-button>
+        <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
         <p-button
           type="submit"
           [label]="actionLabel()"
