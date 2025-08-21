@@ -11,6 +11,7 @@ namespace ProjectK.Common.Interfaces
     {
         IKurinRepository Kurins { get; }
         IGroupRepository Groups { get; }
+        IMemberRepository Members { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
     }
 }

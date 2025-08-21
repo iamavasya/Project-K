@@ -16,6 +16,7 @@ namespace ProjectK.API
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();
             services.AddScoped<IGroupRepository, GroupRepository>();
+            services.AddScoped<IMemberRepository, MemberRepository>();
             return services;
         }
     }

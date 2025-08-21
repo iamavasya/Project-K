@@ -13,6 +13,7 @@ namespace ProjectK.Infrastructure.DbContexts
         // Kurin module DbSet
         public DbSet<Kurin> Kurins { get; set; }
         public DbSet<Group> Groups { get; set; }
+        public DbSet<Member> Members { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -36,6 +37,19 @@ namespace ProjectK.Infrastructure.DbContexts
                       .WithMany(k => k.Groups)
                       .HasForeignKey(e => e.KurinKey)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Member>(entity =>
+            {
+                entity.HasKey(e => e.MemberKey);
+                entity.HasOne(entity => entity.Group)
+                      .WithMany(g => g.Members)
+                      .HasForeignKey(e => e.GroupKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(entity => entity.Kurin)
+                        .WithMany(k => k.Members)
+                        .HasForeignKey(e => e.KurinKey)
+                        .OnDelete(DeleteBehavior.NoAction);
             });
         }
     }

@@ -9,6 +9,6 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
     public interface IGroupRepository : IBaseEntityRepository<Group>
     {
-        new Task<IEnumerable<Group>> GetAllAsync(Guid kurinKey, CancellationToken token = default);
+        Task<IEnumerable<Group>> GetAllAsync(Guid kurinKey, CancellationToken token = default);
     }
 }
