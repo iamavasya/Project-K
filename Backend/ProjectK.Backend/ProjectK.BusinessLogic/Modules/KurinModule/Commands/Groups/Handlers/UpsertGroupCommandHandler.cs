@@ -61,7 +61,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups.Handlers
                     ResultType.Created,
                     response,
                     CreatedAtActionName: "GetByKey",
-                    CreatedAtRouteValues: new { groupKey = response.KurinKey })
+                    CreatedAtRouteValues: new { groupKey = response.GroupKey })
                 : new ServiceResult<GroupResponse>(ResultType.Success, response);
         }
     }

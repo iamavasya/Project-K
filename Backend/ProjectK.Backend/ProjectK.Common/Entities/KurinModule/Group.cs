@@ -13,6 +13,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public Guid KurinKey { get; set; }
         public string Name { get; set; } = string.Empty;
         public Kurin Kurin { get; set; }
+        public ICollection<Member> Members { get; set; } = new List<Member>();
 
         public Group(string name, Guid kurinKey)
         {
