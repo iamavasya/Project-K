@@ -19,7 +19,7 @@
                 <td>{{ group.name }}</td>
                 <td>{{ group.kurinNumber }}</td>
                 <td class="group-actions">
-                    <p-splitButton label="Open" (onClick)="onOpenClick()" [model]="actions" (onDropdownClick)="prepareItemActions(group)">
+                    <p-splitButton label="Open" (onClick)="onOpenClick(group.groupKey)" [model]="actions" (onDropdownClick)="prepareItemActions(group)">
 
                     </p-splitButton>
                 </td>

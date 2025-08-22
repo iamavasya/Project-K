@@ -1,0 +1,20 @@
+.member-card {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 60%;
+    font-size: 18px;
+
+    .member-card-edit {
+        margin-left: auto;
+    }
+}
+.member-card-container {
+    display: flex;
+    justify-content: center;
+}
