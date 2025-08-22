@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { GroupService } from '../common/services/group-service/group.service';
@@ -19,6 +19,7 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 export class GroupPanelComponent implements OnInit {
 
   private route: ActivatedRoute = inject(ActivatedRoute);
+  private router: Router = inject(Router);
   private groupService = inject(GroupService);
   private kurinService = inject(KurinService);
   groups: GroupDto[] = [];
@@ -117,7 +118,7 @@ export class GroupPanelComponent implements OnInit {
     }
   }
 
-  onOpenClick(): void {
-    alert('Functionality not implemented yet.');
+  onOpenClick(groupKey: string): void {
+    this.router.navigate(['/group', groupKey]);
   }
 }
