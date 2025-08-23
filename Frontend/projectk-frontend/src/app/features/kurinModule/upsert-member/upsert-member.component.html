@@ -1,0 +1,27 @@
+<p>upsert-member works! {{memberKey}}</p>
+<div>
+    <div>
+        <p-floatlabel variant="on">
+            <input pInputText id="firstName" [(ngModel)]="member.firstName" autocomplete="off" />
+            <label for="firstName">First Name</label>
+        </p-floatlabel>
+        <p-floatlabel variant="on">
+            <input pInputText id="middleName" [(ngModel)]="member.middleName" autocomplete="off" />
+            <label for="middleName">Middle Name</label>
+        </p-floatlabel>
+        <p-floatlabel variant="on">
+            <input pInputText id="lastName" [(ngModel)]="member.lastName" autocomplete="off" />
+            <label for="lastName">Last Name</label>
+        </p-floatlabel>
+        <p-floatlabel variant="on">
+            <input pInputText id="email" [(ngModel)]="member.email" autocomplete="off" />
+            <label for="email">Email</label>
+        </p-floatlabel>
+        <p-floatlabel variant="on">
+            <p-inputMask mask="999-999-9999" id="phoneNumber" [(ngModel)]="member.phoneNumber" />
+            <label for="phoneNumber">Phone Number</label>
+        </p-floatlabel>
+        <p-datepicker [(ngModel)]="member.dateOfBirth" placeholder="Date of Birth" dateFormat="yy-mm-dd" />
+    </div>
+    <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()"></p-button>
+</div>

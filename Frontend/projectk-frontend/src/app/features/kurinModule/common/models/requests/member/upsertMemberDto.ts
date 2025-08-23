@@ -1,9 +1,9 @@
 export interface UpsertMemberDto {
-    groupKey: string;
+    groupKey?: string;
     firstName: string;
     middleName: string;
     lastName: string;
     email: string;
     phoneNumber: string;
-    dateOfBirth: Date;
+    dateOfBirth: string;
 }

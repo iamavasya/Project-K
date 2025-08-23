@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MemberDto } from '../common/models/memberDto';
 import { MemberService } from '../common/services/member-service/member.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
@@ -13,6 +13,7 @@ import { ButtonModule } from 'primeng/button';
 })
 export class MemberCardComponent implements OnInit {
   route = inject(ActivatedRoute);
+  router = inject(Router);
   someText = 'Sample Text';
   memberService = inject(MemberService);
   member: MemberDto | null = null;
@@ -34,5 +35,9 @@ export class MemberCardComponent implements OnInit {
         console.error('Error fetching member:', error);
       }
     });
+  }
+
+  onEditMember() {
+    this.router.navigate(['/member/upsert', this.memberKey]);
   }
 }
