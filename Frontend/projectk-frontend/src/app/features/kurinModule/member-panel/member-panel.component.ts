@@ -50,4 +50,8 @@ export class MemberPanelComponent implements OnInit {
   onMemberSelect(event: any) {
     this.router.navigate(['/member', this.selectedMember?.memberKey]);
   }
+
+  onMemberCreate() {
+    this.router.navigate(['/group', this.groupKey, 'member', 'upsert']);
+  }
 }
