@@ -10,10 +10,13 @@ import { ButtonModule } from 'primeng/button';
 import { eventMarker } from '@primeuix/themes/aura/timeline';
 import { MemberDto } from '../common/models/memberDto';
 import { UpsertMemberDto } from '../common/models/requests/member/upsertMemberDto';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule],
+  providers: [ConfirmationService],
   templateUrl: './upsert-member.component.html',
   styleUrl: './upsert-member.component.scss'
 })
@@ -35,6 +38,7 @@ export class UpsertMemberComponent implements OnInit {
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
+  confirmationService = inject(ConfirmationService);
   isCreate: boolean = false;
 
   ngOnInit(): void {
@@ -76,6 +80,7 @@ export class UpsertMemberComponent implements OnInit {
       this.memberService.create(memberDto).subscribe({
         next: (createdMember) => {
           console.log('Member created:', createdMember);
+          this.router.navigate(['/member', createdMember.memberKey]);
         },
         error: (error) => {
           console.error('Error creating member:', error, memberDto);
@@ -101,7 +106,36 @@ export class UpsertMemberComponent implements OnInit {
         }
       });
     }
+  }
 
+  confirmDeleteMember(event: Event) {
+      this.confirmationService.confirm({
+          target: event.target as EventTarget,
+          message: 'Do you want to delete this record?',
+          header: 'Danger Zone',
+          icon: 'pi pi-info-circle',
+          rejectLabel: 'Cancel',
+          rejectButtonProps: {
+              label: 'Cancel',
+              severity: 'secondary',
+              outlined: true,
+          },
+          acceptButtonProps: {
+              label: 'Delete',
+              severity: 'danger',
+          },
+
+          accept: () => {
+            this.memberService.delete(this.memberKey).subscribe({
+              next: () => {
+                this.router.navigate(['/group', this.groupKey]);
+              },
+              error: (error) => {
+                console.error('Error deleting member:', error);
+              }
+            });
+          }
+      });
   }
 
   private toDateOnlyString(d: Date | string | null | undefined): string {
