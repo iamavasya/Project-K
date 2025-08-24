@@ -1,4 +1,5 @@
 <p>upsert-member works! {{memberKey}}</p>
+<p-confirmdialog />
 <div>
     <div>
         <p-floatlabel variant="on">
@@ -23,5 +24,10 @@
         </p-floatlabel>
         <p-datepicker [(ngModel)]="member.dateOfBirth" placeholder="Date of Birth" dateFormat="yy-mm-dd" />
     </div>
-    <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()"></p-button>
+    <div class="upsert-member-actions">
+        <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()"></p-button>
+        @if (!isCreate) {
+          <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
+        }
+    </div>
 </div>
