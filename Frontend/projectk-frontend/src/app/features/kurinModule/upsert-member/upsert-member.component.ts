@@ -12,10 +12,15 @@ import { MemberDto } from '../common/models/memberDto';
 import { UpsertMemberDto } from '../common/models/requests/member/upsertMemberDto';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { MinAgeValidatorDirective } from "../common/directives/min-age-validator/min-age.validator";
+import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
+import { ImageCropperComponent, ImageCroppedEvent, LoadedImage } from 'ngx-image-cropper';
+import { DialogModule } from 'primeng/dialog';
+import { SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.component.html',
   styleUrl: './upsert-member.component.scss'
@@ -30,7 +35,7 @@ export class UpsertMemberComponent implements OnInit {
     lastName: '',
     email: '',
     phoneNumber: '',
-    dateOfBirth: new Date(),
+    dateOfBirth: null,
   };
 
   memberKey: string = '';
@@ -40,6 +45,10 @@ export class UpsertMemberComponent implements OnInit {
   memberService = inject(MemberService);
   confirmationService = inject(ConfirmationService);
   isCreate: boolean = false;
+
+  imageChangedEvent: Event | null = null;
+  croppedImage: SafeUrl  = '';
+  displayCropper = false;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -62,6 +71,7 @@ export class UpsertMemberComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching member:', error);
+        this.router.navigate(['/group', this.groupKey], { replaceUrl: true });
       }
     });
   }
@@ -151,5 +161,45 @@ export class UpsertMemberComponent implements OnInit {
     const m = (d.getMonth() + 1).toString().padStart(2, '0');
     const day = d.getDate().toString().padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  fileChangeEvent(event: FileSelectEvent): void {
+    console.log("fileChangeEvent: ", event);
+
+    // Casting FileSelectEvent to Event
+    const toArray = (f: File[] | FileList): File[] => {
+      if (Array.isArray(f)) return f;
+      return Array.from(f as FileList);
+    };
+
+    const filesArray = toArray(event.files as any);
+
+    if (!filesArray.length) {
+      console.warn('No files provided');
+      return;
+    }
+
+    const toFileList = (files: File[]): FileList => {
+      const dt = new DataTransfer();
+      files.forEach(file => dt.items.add(file));
+      return dt.files;
+    };
+
+    const synthetic = {
+      target: {
+        files: toFileList(filesArray)
+      }
+    } as unknown as Event;
+
+    this.imageChangedEvent = synthetic;
+    this.displayCropper = true;
+  }
+
+  imageCropped(event: ImageCroppedEvent) {
+    this.croppedImage = event.base64!;
+  }
+
+  save() {
+    this.displayCropper = false;
   }
 }
