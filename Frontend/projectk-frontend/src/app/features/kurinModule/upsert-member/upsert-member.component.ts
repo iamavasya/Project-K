@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, SecurityContext } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { FormsModule } from '@angular/forms';
@@ -14,9 +14,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { MinAgeValidatorDirective } from "../common/directives/min-age-validator/min-age.validator";
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
-import { ImageCropperComponent, ImageCroppedEvent, LoadedImage } from 'ngx-image-cropper';
+import { ImageCropperComponent, ImageCroppedEvent, LoadedImage, base64ToFile } from 'ngx-image-cropper';
 import { DialogModule } from 'primeng/dialog';
 import { SafeUrl } from '@angular/platform-browser';
+import { base64ToBlob } from '../common/functions/base64ToBlob.function';
+import { PhotoService } from '../../infrastructureModule/common/services/photo-service/photo.service';
 
 @Component({
   selector: 'app-upsert-member',
@@ -40,15 +42,21 @@ export class UpsertMemberComponent implements OnInit {
 
   memberKey: string = '';
   groupKey: string = '';
+
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
   confirmationService = inject(ConfirmationService);
+  photoService = inject(PhotoService);
+
   isCreate: boolean = false;
 
-  imageChangedEvent: Event | null = null;
-  croppedImage: SafeUrl  = '';
+  imageFile?: File;              // реальний файл
+  croppedImage: string = '';                  // base64 (string)
+  croppedFile: File | null = null;
   displayCropper = false;
+
+  private objectUrlToRevoke: string | null = null;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -164,42 +172,70 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   fileChangeEvent(event: FileSelectEvent): void {
-    console.log("fileChangeEvent: ", event);
-
-    // Casting FileSelectEvent to Event
-    const toArray = (f: File[] | FileList): File[] => {
-      if (Array.isArray(f)) return f;
-      return Array.from(f as FileList);
-    };
-
-    const filesArray = toArray(event.files as any);
-
-    if (!filesArray.length) {
-      console.warn('No files provided');
+    const file = event.files?.[0];
+    if (!file) {
+      console.warn('No file selected');
       return;
     }
-
-    const toFileList = (files: File[]): FileList => {
-      const dt = new DataTransfer();
-      files.forEach(file => dt.items.add(file));
-      return dt.files;
-    };
-
-    const synthetic = {
-      target: {
-        files: toFileList(filesArray)
-      }
-    } as unknown as Event;
-
-    this.imageChangedEvent = synthetic;
+    // При новому виборі — зачистити попередній objectURL
+    if (this.objectUrlToRevoke) {
+      URL.revokeObjectURL(this.objectUrlToRevoke);
+      this.objectUrlToRevoke = null;
+    }
+    this.imageFile = file;
+    this.croppedImage = '';
+    this.croppedFile = null;
     this.displayCropper = true;
   }
 
   imageCropped(event: ImageCroppedEvent) {
-    this.croppedImage = event.base64!;
+    // Варіант 1: бібліотека дала base64
+    if (event.base64) {
+      this.croppedImage = event.base64;
+      this.croppedFile = null; // перегенеруємо при save
+      return;
+    }
+
+    // Варіант 2: без base64, але є blob (поточна ситуація)
+    if (event.blob) {
+      // Створюємо File для завантаження
+      this.croppedFile = new File(
+        [event.blob],
+        this.imageFile?.name?.replace(/\.[^.]+$/, '.png') || 'profile.png',
+        { type: event.blob.type || 'image/png' }
+      );
+
+      // Превʼю: беремо існуючий objectUrl (якщо наданий) або створюємо
+      const url = event.objectUrl || URL.createObjectURL(event.blob);
+      if (this.objectUrlToRevoke && this.objectUrlToRevoke !== url) {
+        URL.revokeObjectURL(this.objectUrlToRevoke);
+      }
+      this.objectUrlToRevoke = url;
+      this.croppedImage = url; // <img [src]>
+    } else {
+      console.warn('Crop event без base64 і blob', event);
+    }
   }
 
   save() {
     this.displayCropper = false;
+    const fileToUpload = this.croppedFile ?? (this.croppedImage ? base64ToBlob(this.croppedImage) : null);
+
+    if (!fileToUpload) {
+      console.warn('Nothing to upload (cropped image undefined)');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileToUpload, 'profile.png');
+
+    this.photoService.uploadPhoto(formData).subscribe({
+      next: () => {
+        console.log('Фото завантажено!');
+      },
+      error: () => {
+        console.error('Помилка при завантаженні фото');
+      }
+    });
   }
 }

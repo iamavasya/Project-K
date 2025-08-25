@@ -85,7 +85,7 @@
             </p-fileUpload>
             <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{width: '400px'}">
                 <image-cropper
-                    [imageChangedEvent]="imageChangedEvent"
+                    [imageFile]="imageFile"
                     [maintainAspectRatio]="true"
                     [aspectRatio]="1 / 1"
                     format="png"
