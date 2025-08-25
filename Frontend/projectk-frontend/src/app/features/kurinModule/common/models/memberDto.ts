@@ -7,5 +7,5 @@ export interface MemberDto {
     lastName: string;
     email: string;
     phoneNumber: string;
-    dateOfBirth: Date;
+    dateOfBirth: Date | null;
 }

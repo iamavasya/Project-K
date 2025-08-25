@@ -33,6 +33,10 @@ export class MemberCardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching member:', error);
+        if (this.member?.groupKey) {
+          this.router.navigate(['/group', this.member?.groupKey], { replaceUrl: true });
+        }
+        else this.router.navigate(['/panel'], { replaceUrl: true });
       }
     });
   }
