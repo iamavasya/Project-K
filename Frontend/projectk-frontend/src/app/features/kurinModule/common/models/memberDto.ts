@@ -8,4 +8,5 @@ export interface MemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: Date | null;
+    profilePhotoUrl: string | null;
 }

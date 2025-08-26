@@ -38,6 +38,7 @@ export class UpsertMemberComponent implements OnInit {
     email: '',
     phoneNumber: '',
     dateOfBirth: null,
+    profilePhotoUrl: null,
   };
 
   memberKey: string = '';
@@ -55,6 +56,7 @@ export class UpsertMemberComponent implements OnInit {
   croppedImage: string = '';                  // base64 (string)
   croppedFile: File | null = null;
   displayCropper = false;
+  fileToUpload: Blob | null = null;
 
   private objectUrlToRevoke: string | null = null;
 
@@ -95,7 +97,7 @@ export class UpsertMemberComponent implements OnInit {
         phoneNumber: this.member.phoneNumber,
         dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
       };
-      this.memberService.create(memberDto).subscribe({
+      this.memberService.create(memberDto, this.fileToUpload).subscribe({
         next: (createdMember) => {
           console.log('Member created:', createdMember);
           this.router.navigate(['/member', createdMember.memberKey]);
@@ -114,7 +116,7 @@ export class UpsertMemberComponent implements OnInit {
         phoneNumber: this.member.phoneNumber,
         dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
       };
-      this.memberService.update(this.memberKey, memberDto).subscribe({
+      this.memberService.update(this.memberKey, memberDto, this.fileToUpload).subscribe({
         next: (updatedMember) => {
           console.log('Member updated:', updatedMember);
           this.router.navigate(['/group', this.groupKey]);
@@ -219,23 +221,10 @@ export class UpsertMemberComponent implements OnInit {
 
   save() {
     this.displayCropper = false;
-    const fileToUpload = this.croppedFile ?? (this.croppedImage ? base64ToBlob(this.croppedImage) : null);
+    this.fileToUpload = this.croppedFile ?? (this.croppedImage ? base64ToBlob(this.croppedImage) : null);
 
-    if (!fileToUpload) {
+    if (!this.fileToUpload) {
       console.warn('Nothing to upload (cropped image undefined)');
-      return;
     }
-
-    const formData = new FormData();
-    formData.append('file', fileToUpload, 'profile.png');
-
-    this.photoService.uploadPhoto(formData).subscribe({
-      next: () => {
-        console.log('Фото завантажено!');
-      },
-      error: () => {
-        console.error('Помилка при завантаженні фото');
-      }
-    });
   }
 }
