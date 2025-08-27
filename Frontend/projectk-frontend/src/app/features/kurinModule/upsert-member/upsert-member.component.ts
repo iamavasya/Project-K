@@ -227,4 +227,9 @@ export class UpsertMemberComponent implements OnInit {
       console.warn('Nothing to upload (cropped image undefined)');
     }
   }
+
+  onCancelCrop() {
+    this.displayCropper = false;
+    this.croppedImage = '';
+  }
 }
