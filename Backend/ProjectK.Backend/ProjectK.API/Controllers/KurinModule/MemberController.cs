@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Helpers;
 using ProjectK.Common.Models.Dtos.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
@@ -41,11 +42,17 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [HttpPost]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] CreateMemberRequest request)
+        public async Task<IActionResult> Create([FromForm] string dto,
+                                                [FromForm] IFormFile? blob,
+                                                CancellationToken cancellationToken)
         {
+            var request = System.Text.Json.JsonSerializer.Deserialize<CreateMemberRequest>(dto);
+
+            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(blob, cancellationToken);
             var command = new UpsertMemberCommand
             {
                 GroupKey = request.GroupKey,
@@ -54,19 +61,29 @@ namespace ProjectK.API.Controllers.KurinModule
                 MiddleName = request.MiddleName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
-                DateOfBirth = request.DateOfBirth
+                DateOfBirth = request.DateOfBirth,
+                BlobContent = blobData,
+                BlobFileName = blob?.FileName,
+                BlobContentType = blob?.ContentType
             };
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
 
         [HttpPut("{memberKey:guid}")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(Guid memberKey, [FromBody] UpdateMemberRequest request)
+        public async Task<IActionResult> Update(Guid memberKey,
+                                                [FromForm] string dto,
+                                                [FromForm] IFormFile? blob,
+                                                CancellationToken cancellationToken)
         {
+            var request = System.Text.Json.JsonSerializer.Deserialize<UpdateMemberRequest>(dto);
+
+            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(blob, cancellationToken);
             var command = new UpsertMemberCommand
             {
                 MemberKey = memberKey,
@@ -76,7 +93,10 @@ namespace ProjectK.API.Controllers.KurinModule
                 MiddleName = request.MiddleName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
-                DateOfBirth = request.DateOfBirth
+                DateOfBirth = request.DateOfBirth,
+                BlobContent = blobData,
+                BlobFileName = blob?.FileName,
+                BlobContentType = blob?.ContentType
             };
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);

@@ -98,9 +98,9 @@
                 </div>
             </p-dialog>
 
-            @if (croppedImage) {
+            @if (croppedImage || member.profilePhotoUrl) {
                 <h4>Попередній перегляд</h4>
-                <img [src]="croppedImage" width="150" height="150" style="border-radius: 50%;" />
+                <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" />
             }
 
         </div>
