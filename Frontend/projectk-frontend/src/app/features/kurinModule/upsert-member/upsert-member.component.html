@@ -93,8 +93,8 @@
                 </image-cropper>
 
                 <div class="flex justify-content-end gap-2 mt-3">
-                    <button pButton label="Зберегти" icon="pi pi-check" (click)="save()"></button>
-                    <button pButton label="Скасувати" icon="pi pi-times" class="p-button-secondary" (click)="displayCropper=false"></button>
+                    <button pButton label="Зберегти" icon="pi pi-check" (click)="save(); form.form.markAsTouched()"></button>
+                    <button pButton label="Скасувати" icon="pi pi-times" class="p-button-secondary" (click)="onCancelCrop()"></button>
                 </div>
             </p-dialog>
 
