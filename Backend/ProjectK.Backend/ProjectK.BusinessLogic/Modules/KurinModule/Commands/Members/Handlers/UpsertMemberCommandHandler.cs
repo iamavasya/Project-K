@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -17,10 +18,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public UpsertMemberCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IPhotoService _photoService;
+        public UpsertMemberCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IPhotoService photoService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _photoService = photoService;
         }
 
         public async Task<ServiceResult<MemberResponse>> Handle(UpsertMemberCommand request, CancellationToken cancellationToken)
@@ -28,6 +31,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
             var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
             bool isCreated = false;
+            string? oldBlobName = null;
 
             if (group != null)
             {
@@ -42,6 +46,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                 else
                 {
                     // Update existing Member
+                    oldBlobName = existing.ProfilePhotoBlobName;
                     _mapper.Map(request, existing);
                     existing.KurinKey = group.KurinKey;
                     _unitOfWork.Members.Update(existing, cancellationToken);
@@ -50,11 +55,22 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
             else if (group == null) return new ServiceResult<MemberResponse>(ResultType.NotFound);
             else return new ServiceResult<MemberResponse>(ResultType.BadRequest);
 
+            if (request.BlobContent is { Length: > 0 } && !string.IsNullOrWhiteSpace(request.BlobFileName))
+            {
+                var upload = await _photoService.UploadPhotoAsync(request.BlobContent, request.BlobFileName, cancellationToken);
+                existing.ProfilePhotoBlobName = upload.BlobName;
+            }
+
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             if (changes <= 0)
             {
                 return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
+            }
+
+            if (!isCreated && oldBlobName != null && oldBlobName != existing.ProfilePhotoBlobName)
+            {
+                await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
             }
 
             var response = _mapper.Map<MemberResponse>(existing);

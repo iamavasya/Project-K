@@ -37,7 +37,7 @@ export class MemberService {
 
   private buildFormData(dto: UpsertMemberDto, file: Blob | null, blobFieldName = 'blob'): FormData {
     const formData = new FormData();
-    formData.append('dto', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
+    formData.append('dto', JSON.stringify(dto));
     if (file) {
       const filename = (file as File).name ? (file as File).name : 'file';
       formData.append(blobFieldName, file, filename);

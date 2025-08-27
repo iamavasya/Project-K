@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using ProjectK.API.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Infrastructure.Services;
 
 namespace ProjectK.API.MappingProfiles
 {
@@ -52,7 +54,8 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth));
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+                .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
         }
     }
 }
