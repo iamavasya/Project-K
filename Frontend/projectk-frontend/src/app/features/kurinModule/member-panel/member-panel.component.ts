@@ -29,8 +29,6 @@ export class MemberPanelComponent implements OnInit {
     'LastName',
   ];
 
-  constructor() { }
-
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.groupKey = params.get('groupKey')!;
@@ -56,7 +54,7 @@ export class MemberPanelComponent implements OnInit {
     });
   }
 
-  onMemberSelect(event: any) {
+  onMemberSelect() {
     this.router.navigate(['/member', this.selectedMember?.memberKey]);
   }
 
