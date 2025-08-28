@@ -43,7 +43,6 @@ namespace ProjectK.API
                 BlobPrefix = builder.Configuration["BlobStorage:BlobPrefix"],
                 PublicBaseUrl = builder.Configuration["BlobStorage:PublicBaseUrl"]
             };
-            // Реєструємо постачальник референсів (спрощений приклад).
             builder.Services.AddScoped<IPhotoReferenceProvider, MemberPhotoReferenceProvider>();
 
             builder.Services.AddSingleton(blobOptions);
@@ -53,7 +52,7 @@ namespace ProjectK.API
             builder.Services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
             {
                 var opts = sp.GetRequiredService<BlobStorageOptions>();
-                var refProvider = sp.GetService<IPhotoReferenceProvider>(); // може бути null якщо не потрібен
+                var refProvider = sp.GetService<IPhotoReferenceProvider>();
                 return new AzureBlobPhotoService(opts, refProvider);
             });
 

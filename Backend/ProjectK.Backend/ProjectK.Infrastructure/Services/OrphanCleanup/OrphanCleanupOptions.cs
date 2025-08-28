@@ -8,22 +8,22 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
 {
     public sealed class OrphanCleanupOptions
     {
-        // Увімкнути/вимкнути фоновий сервіс.
+        // Enable/disable the cleanup service.
         public bool Enabled { get; init; } = true;
 
-        // Інтервал між повними проходами (за замовчуванням 6 год).
+        // Interval between full runs (default 6 hours).
         public TimeSpan Interval { get; init; } = TimeSpan.FromHours(6);
 
-        // Мінімальний "вік" blob перед видаленням (щоб не стерти щойно завантажене).
+        // Minimum "age" of a blob before deletion (to avoid deleting just-uploaded files).
         public TimeSpan GracePeriod { get; init; } = TimeSpan.FromHours(1);
 
-        // Ліміт видалень за один прохід (захист від масового стирання).
+        // Limit of deletions per run (to prevent mass deletions).
         public int MaxDeletesPerRun { get; init; } = 500;
 
-        // Якщо true – лише лог, без фактичного видалення.
+        // If true, only log actions without actual deletions.
         public bool DryRun { get; init; } = false;
 
-        // Додаткова хаотична затримка (джиттер) у секундах (0..JitterSeconds).
+        // Additional random delay (jitter) in seconds (0..JitterSeconds).
         public int JitterSeconds { get; init; } = 30;
     }
 }
