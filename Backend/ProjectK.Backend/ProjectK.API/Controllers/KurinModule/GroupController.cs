@@ -31,6 +31,17 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [HttpGet("exists/{groupKey}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Exists(Guid groupKey)
+        {
+            var request = new ExistsGroupByKeyQuery(groupKey);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+        
+
         [HttpGet("groups")]
         [ProducesResponseType(typeof(IEnumerable<GroupResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

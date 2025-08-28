@@ -18,6 +18,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public DateOnly DateOfBirth { get; set; }
+        public string? ProfilePhotoBlobName { get; set; }
         public Group Group { get; set; }
         public Kurin Kurin { get; set; }
     }

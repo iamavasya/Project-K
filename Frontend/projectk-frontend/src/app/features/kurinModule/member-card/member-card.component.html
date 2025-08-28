@@ -1,0 +1,34 @@
+<div class="member-card-container">
+    <div class="member-card">
+        <div>
+            <img width="300" src="{{ member?.profilePhotoUrl || 'https://placehold.co/300?text=Member+Image' }}" alt="{{member?.firstName}} {{member?.lastName}}" />
+        </div>
+        <div>
+            <div>
+                <span>First Name: </span>
+                <span>{{ member?.firstName }}</span>
+            </div>
+            <div>
+                <span>Middle Name: </span>
+                <span>{{ member?.middleName }}</span>
+            </div>
+            <div>
+                <span>Last Name: </span>
+                <span>{{ member?.lastName }}</span>
+            </div>
+            <div>
+                <span>Date of Birth: </span>
+                <span>{{ member?.dateOfBirth }}</span>
+            </div>
+            <div>
+                <span>Email: </span>
+                <span>{{ member?.email }}</span>
+            </div>
+            <div>
+                <span>Phone number: </span>
+                <span>{{ member?.phoneNumber }}</span>
+            </div>
+        </div>
+        <p-button (onClick)="onEditMember()" class="member-card-edit" label="Edit Profile" icon="pi pi-pencil"></p-button>
+    </div>
+</div>

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { GroupDto } from '../../models/groupDto';
 import { CreateGroupDto } from '../../models/requests/createGroupDto';
@@ -31,5 +31,9 @@ export class GroupService {
 
   delete(groupKey: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${groupKey}`);
+  }
+    
+  exists(groupKey: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/exists/${groupKey}`);
   }
 }
