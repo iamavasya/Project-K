@@ -14,10 +14,10 @@ import { GroupService } from '../common/services/group-service/group.service';
 })
 export class MemberPanelComponent implements OnInit {
 
-  private route: ActivatedRoute = inject(ActivatedRoute);
-  private router: Router = inject(Router);
-  private memberService = inject(MemberService);
-  private groupService = inject(GroupService);
+  private readonly route: ActivatedRoute = inject(ActivatedRoute);
+  private readonly router: Router = inject(Router);
+  private readonly memberService = inject(MemberService);
+  private readonly groupService = inject(GroupService);
   groupKey = '';
   members: MemberDto[] = [];
   selectedMember: MemberDto | null = null;
