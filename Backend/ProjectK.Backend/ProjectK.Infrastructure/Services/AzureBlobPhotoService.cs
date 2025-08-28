@@ -117,11 +117,10 @@ namespace ProjectK.Infrastructure.Services
             }
         }
 
-        // Реалізація через БД: порівнюємо всі блоби контейнера з множиною референсів з _referenceProvider.
         public async Task<IEnumerable<string>> GetOrphanFilesAsync(CancellationToken cancellationToken)
         {
             if (_referenceProvider is null)
-                return Array.Empty<string>(); // або кинути виняток – залежно від політики
+                return Array.Empty<string>();
 
             await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
 
@@ -136,7 +135,7 @@ namespace ProjectK.Infrastructure.Services
                                prefix: _options.BlobPrefix,
                                cancellationToken))
             {
-                // item.Name – це blobName (відносний шлях усередині контейнера)
+                // item.Name – blobName (relative path in container)
                 if (!referencedSet.Contains(item.Name))
                 {
                     var client = _container.GetBlobClient(item.Name);
@@ -210,7 +209,7 @@ namespace ProjectK.Infrastructure.Services
             return $"{prefix}/{Guid.NewGuid():N}{extension}";
         }
 
-        // Витягуємо blobName із повного URL (container/name...). Працює і для Azurite, і для Azure.
+        // Select blobName from full URL (container/name...). Azure/Azurite
         private static bool TryExtractBlobName(string photoUrl, out string blobName)
         {
             blobName = string.Empty;

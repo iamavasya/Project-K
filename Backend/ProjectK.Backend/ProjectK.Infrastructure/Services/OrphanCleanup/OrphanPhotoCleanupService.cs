@@ -10,8 +10,8 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.OrphanCleanup
 {
-    // Фоновий сервіс очищення сирітських blob-файлів (фото).
-    // Виконує періодичне порівняння списку blob-ів із множиною референсів у БД.
+    // Background service for cleaning up orphaned blob files (photos).
+    // Periodically compares the list of blobs with the set of references in the database.
     public sealed class OrphanPhotoCleanupService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -37,14 +37,15 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
         {
             if (!_options.Enabled)
             {
-                _logger.LogInformation("OrphanPhotoCleanupService вимкнено (Enabled=false).");
+                _logger.LogInformation("OrphanPhotoCleanupService disabled (Enabled=false).");
                 return;
             }
 
-            _logger.LogInformation("OrphanPhotoCleanupService стартував. Інтервал: {Interval}, Grace: {Grace}, MaxDeletes: {Max}",
+            _logger.LogInformation("OrphanPhotoCleanupService started. Interval: {Interval}, Grace: {Grace}, MaxDeletes: {Max}",
                 _options.Interval, _options.GracePeriod, _options.MaxDeletesPerRun);
 
-            // Початковий невеликий джиттер щоб не стартувати масово після деплоя
+            // Initial small jitter to avoid mass start after deployment
+            // (could be removed if not needed)
             await Task.Delay(TimeSpan.FromSeconds(_rnd.Next(0, _options.JitterSeconds + 1)), stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
@@ -55,11 +56,11 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
-                    // ігноруємо – нормальне завершення
+                    // ignore - shutting down
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Помилка під час виконання очищення сирітських фото.");
+                    _logger.LogError(ex, "Error while executing orphan photo cleanup.");
                 }
 
                 var jitter = TimeSpan.FromSeconds(_rnd.Next(0, _options.JitterSeconds + 1));
@@ -75,26 +76,25 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
                 }
             }
 
-            _logger.LogInformation("OrphanPhotoCleanupService зупинено.");
+            _logger.LogInformation("OrphanPhotoCleanupService stopped.");
         }
 
         private async Task RunOnceAsync(CancellationToken ct)
         {
             if (!await _runLock.WaitAsync(0, ct))
             {
-                _logger.LogWarning("Попередній цикл очищення ще виконується – пропускаємо цей запуск.");
+                _logger.LogWarning("Previous cleanup cycle still running – skipping this run.");
                 return;
             }
 
             try
             {
                 var start = DateTime.UtcNow;
-                _logger.LogInformation("Початок перевірки сирітських фото...");
+                _logger.LogInformation("Starting orphan photo check...");
 
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                // 1. Отримати референсні blobName з БД
                 var referencedBlobNames = await db.Members
                     .Where(m => m.ProfilePhotoBlobName != null && m.ProfilePhotoBlobName != "")
                     .Select(m => m.ProfilePhotoBlobName!)
@@ -103,18 +103,15 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
 
                 var referencedSet = new HashSet<string>(referencedBlobNames, StringComparer.Ordinal);
 
-                // 2. Підготувати Blob клієнти
                 var blobService = new BlobServiceClient(_blobOptions.ConnectionString);
                 var container = blobService.GetBlobContainerClient(_blobOptions.ContainerName);
 
-                // Якщо контейнера немає – немає що чистити
                 if (!await container.ExistsAsync(ct))
                 {
-                    _logger.LogInformation("Контейнер {Container} не існує – очищення пропущено.", _blobOptions.ContainerName);
+                    _logger.LogInformation("Container {Container} does not exist – cleanup skipped.", _blobOptions.ContainerName);
                     return;
                 }
 
-                // 3. Зібрати всі блоби (можна з префіксом)
                 var allBlobs = new List<BlobItem>();
                 await foreach (var pageBlob in container.GetBlobsAsync(
                                     traits: BlobTraits.None,
@@ -125,10 +122,9 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
                     allBlobs.Add(pageBlob);
                 }
 
-                _logger.LogInformation("Загальна кількість blob у контейнері {Count}, з них референсних (у БД) {Referenced}.",
+                _logger.LogInformation("Total blob count in container {Count}, referenced in DB {Referenced}.",
                     allBlobs.Count, referencedSet.Count);
 
-                // 4. Визначити сиріт (не у множині referenced + старші за GracePeriod)
                 var now = DateTimeOffset.UtcNow;
                 var graceThreshold = now - _options.GracePeriod;
 
@@ -136,7 +132,7 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
                     .Where(b => !referencedSet.Contains(b.Name))
                     .Where(b =>
                     {
-                        // Перевірка віку (LastModified може бути null – тоді не видаляємо для безпеки)
+                        // Check age (LastModified can be null - then we do not delete for safety)
                         if (b.Properties.LastModified is { } lm)
                             return lm < graceThreshold;
                         return false;
@@ -147,17 +143,17 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
 
                 if (orphans.Count == 0)
                 {
-                    _logger.LogInformation("Сирітських blob для видалення не знайдено.");
+                    _logger.LogInformation("No orphan blobs found for deletion.");
                     return;
                 }
 
-                _logger.LogInformation("Знайдено {Count} сирітських blob для видалення (обмеження на прохід {Limit}). DryRun={DryRun}",
+                _logger.LogInformation("Found {Count} orphan blobs for deletion (per-run limit {Limit}). DryRun={DryRun}",
                     orphans.Count, _options.MaxDeletesPerRun, _options.DryRun);
 
                 if (_options.DryRun)
                 {
                     foreach (var name in orphans)
-                        _logger.LogInformation("DryRun: orphan (не видаляємо) {BlobName}", name);
+                        _logger.LogInformation("DryRun: orphan (not deleting) {BlobName}", name);
                     return;
                 }
 
@@ -169,16 +165,16 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
                         var client = container.GetBlobClient(name);
                         var resp = await client.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
                         if (resp.Value) deleted++;
-                        else _logger.LogDebug("Blob {Blob} вже відсутній (можливо паралельне видалення).", name);
+                        else _logger.LogDebug("Blob {Blob} already absent (possibly deleted in parallel).", name);
                     }
                     catch (RequestFailedException ex)
                     {
-                        _logger.LogWarning(ex, "Помилка видалення blob {Blob}", name);
+                        _logger.LogWarning(ex, "Error deleting blob {Blob}", name);
                     }
                 }
 
                 var elapsed = DateTime.UtcNow - start;
-                _logger.LogInformation("Очищення завершено. Видалено {Deleted} з {Candidates} кандидатів. Тривалість {Elapsed} сек.",
+                _logger.LogInformation("Cleanup finished. Deleted {Deleted} of {Candidates} candidates. Duration {Elapsed} sec.",
                     deleted, orphans.Count, elapsed.TotalSeconds);
             }
             finally
