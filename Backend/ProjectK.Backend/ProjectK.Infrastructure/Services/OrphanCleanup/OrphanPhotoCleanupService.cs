@@ -115,7 +115,7 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
             }
         }
 
-        private async Task<HashSet<string>> GetReferencedBlobNamesAsync(AppDbContext db, CancellationToken ct)
+        private static async Task<HashSet<string>> GetReferencedBlobNamesAsync(AppDbContext db, CancellationToken ct)
         {
             var referencedBlobNames = await db.Members
                 .Where(m => m.ProfilePhotoBlobName != null && m.ProfilePhotoBlobName != "")
@@ -174,7 +174,7 @@ namespace ProjectK.Infrastructure.Services.OrphanCleanup
             return orphans;
         }
 
-        private bool IsOldEnoughForDeletion(BlobItem blob, DateTimeOffset graceThreshold)
+        private static bool IsOldEnoughForDeletion(BlobItem blob, DateTimeOffset graceThreshold)
         {
             // Check age (LastModified can be null - then we do not delete for safety)
             return blob.Properties.LastModified is { } lastModified && lastModified < graceThreshold;
