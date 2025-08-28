@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { catchError, map, Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { GroupDto } from '../../models/groupDto';
 import { CreateGroupDto } from '../../models/requests/createGroupDto';
 import { UpdateGroupDto } from '../../models/requests/updateGroupDto';

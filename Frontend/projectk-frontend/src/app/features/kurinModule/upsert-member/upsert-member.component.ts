@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, SecurityContext } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { FormsModule } from '@angular/forms';
@@ -7,18 +7,15 @@ import { InputMaskModule } from 'primeng/inputmask';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ButtonModule } from 'primeng/button';
-import { eventMarker } from '@primeuix/themes/aura/timeline';
 import { MemberDto } from '../common/models/memberDto';
 import { UpsertMemberDto } from '../common/models/requests/member/upsertMemberDto';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { MinAgeValidatorDirective } from "../common/directives/min-age-validator/min-age.validator";
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
-import { ImageCropperComponent, ImageCroppedEvent, LoadedImage, base64ToFile } from 'ngx-image-cropper';
+import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { DialogModule } from 'primeng/dialog';
-import { SafeUrl } from '@angular/platform-browser';
 import { base64ToBlob } from '../common/functions/base64ToBlob.function';
-import { PhotoService } from '../../infrastructureModule/common/services/photo-service/photo.service';
 
 @Component({
   selector: 'app-upsert-member',
@@ -41,19 +38,18 @@ export class UpsertMemberComponent implements OnInit {
     profilePhotoUrl: null,
   };
 
-  memberKey: string = '';
-  groupKey: string = '';
+  memberKey = '';
+  groupKey = '';
 
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
   confirmationService = inject(ConfirmationService);
-  photoService = inject(PhotoService);
 
-  isCreate: boolean = false;
+  isCreate = false;
 
-  imageFile?: File;              // реальний файл
-  croppedImage: string = '';                  // base64 (string)
+  imageFile?: File;
+  croppedImage = '';
   croppedFile: File | null = null;
   displayCropper = false;
   fileToUpload: Blob | null = null;
