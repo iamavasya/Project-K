@@ -38,7 +38,6 @@ namespace ProjectK.Infrastructure.Services
 
     public class AzureBlobPhotoService : IPhotoService
     {
-        private readonly BlobServiceClient _blobServiceClient;
         private readonly BlobContainerClient _container;
         private readonly BlobStorageOptions _options;
         private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
@@ -55,8 +54,8 @@ namespace ProjectK.Infrastructure.Services
             {
                 throw new ArgumentException("Blob storage connection string is not configured.");
             }
-            _blobServiceClient = new BlobServiceClient(_options.ConnectionString);
-            _container = _blobServiceClient.GetBlobContainerClient(_options.ContainerName);
+            var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
+            _container = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
             _referenceProvider = referenceProvider;
         }
         public async Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
@@ -87,20 +86,20 @@ namespace ProjectK.Infrastructure.Services
             return new PhotoUploadResult(blobName, url);
         }
 
-        public async Task<bool> DeletePhotoAsync(string photoUrlOrBlobRef, CancellationToken cancellationToken)
+        public async Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(photoUrlOrBlobRef))
+            if (string.IsNullOrWhiteSpace(photoUrl))
                 return false;
 
             string blobName;
-            if (photoUrlOrBlobRef.Contains("://"))
+            if (photoUrl.Contains("://"))
             {
-                if (!TryExtractBlobName(photoUrlOrBlobRef, out blobName))
+                if (!TryExtractBlobName(photoUrl, out blobName))
                     return false;
             }
             else
             {
-                blobName = photoUrlOrBlobRef;
+                blobName = photoUrl;
             }
 
             await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
@@ -127,21 +126,20 @@ namespace ProjectK.Infrastructure.Services
             var referenced = await _referenceProvider.GetAllReferencedBlobNamesAsync(cancellationToken).ConfigureAwait(false);
             var referencedSet = new HashSet<string>(referenced, StringComparer.Ordinal);
 
-            var orphans = new List<string>();
-
+            var allBlobs = new List<BlobItem>();
             await foreach (var item in _container.GetBlobsAsync(
                                traits: BlobTraits.None,
                                states: BlobStates.None,
                                prefix: _options.BlobPrefix,
                                cancellationToken))
             {
-                // item.Name – blobName (relative path in container)
-                if (!referencedSet.Contains(item.Name))
-                {
-                    var client = _container.GetBlobClient(item.Name);
-                    orphans.Add(BuildPublicUrl(client));
-                }
+                allBlobs.Add(item);
             }
+
+            var orphans = allBlobs
+                .Where(item => !referencedSet.Contains(item.Name))
+                .Select(item => BuildPublicUrl(_container.GetBlobClient(item.Name)))
+                .ToList();
 
             return orphans;
         }

@@ -39,7 +39,7 @@ namespace ProjectK.API
             {
                 ConnectionString = builder.Configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
                 ContainerName = builder.Configuration["BlobStorage:ContainerName"] ?? "photos",
-                PublicAccess = bool.TryParse(builder.Configuration["BlobStorage:PublicAccess"], out var pa) ? pa : true,
+                PublicAccess = !bool.TryParse(builder.Configuration["BlobStorage:PublicAccess"], out var pa) || pa,
                 BlobPrefix = builder.Configuration["BlobStorage:BlobPrefix"],
                 PublicBaseUrl = builder.Configuration["BlobStorage:PublicBaseUrl"]
             };
