@@ -5,7 +5,7 @@ using ProjectK.Infrastructure.Services;
 
 namespace ProjectK.API.MappingProfiles.Resolvers
 {
-    internal sealed class ProfilePhotoUrlResolver : IValueResolver<Member, MemberResponse, string?>
+    public sealed class ProfilePhotoUrlResolver : IValueResolver<Member, MemberResponse, string?>
     {
         private readonly BlobStorageOptions _options;
 
