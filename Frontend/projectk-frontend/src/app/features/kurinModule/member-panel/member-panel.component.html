@@ -1,5 +1,5 @@
 <div class="group-panel">
-    <p-table [value]="members" selectionMode="single" [(selection)]="selectedMember" dataKey="memberKey" (onRowSelect)="onMemberSelect($event)">
+    <p-table [value]="members" selectionMode="single" [(selection)]="selectedMember" dataKey="memberKey" (onRowSelect)="onMemberSelect()">
         <ng-template #header>
             <tr>
                 @for (header of tableHeaders; track header) {
