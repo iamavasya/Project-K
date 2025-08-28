@@ -109,6 +109,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ProfilePhotoBlobName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
