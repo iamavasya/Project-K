@@ -18,9 +18,9 @@ import { MessageModule } from 'primeng/message';
 })
 export class KurinPanelComponent implements OnInit {
 
-  private router: Router = inject(Router);
-
-  kurinService = inject(KurinService);
+  private readonly router: Router = inject(Router);
+  private readonly kurinService = inject(KurinService);
+  
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';

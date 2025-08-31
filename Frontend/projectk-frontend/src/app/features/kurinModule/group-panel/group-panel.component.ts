@@ -18,10 +18,10 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 })
 export class GroupPanelComponent implements OnInit {
 
-  private route: ActivatedRoute = inject(ActivatedRoute);
+  private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly router: Router = inject(Router);
-  private groupService = inject(GroupService);
-  private kurinService = inject(KurinService);
+  private readonly groupService = inject(GroupService);
+  private readonly kurinService = inject(KurinService);
   groups: GroupDto[] = [];
   actions: MenuItem[] = [];
 

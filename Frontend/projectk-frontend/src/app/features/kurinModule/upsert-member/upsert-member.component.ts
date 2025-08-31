@@ -157,9 +157,7 @@ export class UpsertMemberComponent implements OnInit {
   private toDateOnlyString(d: Date | string | null | undefined): string {
     if (!d) return '';
     if (typeof d === 'string') {
-      // якщо вже yyyy-MM-dd
       if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-      // якщо ISO datetime
       const only = d.split('T')[0];
       return only;
     }
@@ -175,7 +173,6 @@ export class UpsertMemberComponent implements OnInit {
       console.warn('No file selected');
       return;
     }
-    // При новому виборі — зачистити попередній objectURL
     if (this.objectUrlToRevoke) {
       URL.revokeObjectURL(this.objectUrlToRevoke);
       this.objectUrlToRevoke = null;
@@ -187,29 +184,25 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   imageCropped(event: ImageCroppedEvent) {
-    // Варіант 1: бібліотека дала base64
     if (event.base64) {
       this.croppedImage = event.base64;
-      this.croppedFile = null; // перегенеруємо при save
+      this.croppedFile = null;
       return;
     }
 
-    // Варіант 2: без base64, але є blob (поточна ситуація)
     if (event.blob) {
-      // Створюємо File для завантаження
       this.croppedFile = new File(
         [event.blob],
         this.imageFile?.name?.replace(/\.[^.]+$/, '.png') || 'profile.png',
         { type: event.blob.type || 'image/png' }
       );
 
-      // Превʼю: беремо існуючий objectUrl (якщо наданий) або створюємо
       const url = event.objectUrl || URL.createObjectURL(event.blob);
       if (this.objectUrlToRevoke && this.objectUrlToRevoke !== url) {
         URL.revokeObjectURL(this.objectUrlToRevoke);
       }
       this.objectUrlToRevoke = url;
-      this.croppedImage = url; // <img [src]>
+      this.croppedImage = url;
     } else {
       console.warn('Crop event без base64 і blob', event);
     }

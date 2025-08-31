@@ -9,20 +9,22 @@ namespace ProjectK.Infrastructure.Migrations
     public partial class AddMemberEntity : Migration
     {
         /// <inheritdoc />
+        private const string _members = "Members";
+        private const string _nvarcharmax = "nvarchar(max)";
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Members",
+                name: _members,
                 columns: table => new
                 {
                     MemberKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GroupKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     KurinKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MiddleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FirstName = table.Column<string>(type: _nvarcharmax, nullable: false),
+                    MiddleName = table.Column<string>(type: _nvarcharmax, nullable: false),
+                    LastName = table.Column<string>(type: _nvarcharmax, nullable: false),
+                    Email = table.Column<string>(type: _nvarcharmax, nullable: false),
+                    PhoneNumber = table.Column<string>(type: _nvarcharmax, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -45,12 +47,12 @@ namespace ProjectK.Infrastructure.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_GroupKey",
-                table: "Members",
+                table: _members,
                 column: "GroupKey");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_KurinKey",
-                table: "Members",
+                table: _members,
                 column: "KurinKey");
         }
 
@@ -58,7 +60,7 @@ namespace ProjectK.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Members");
+                name: _members);
         }
     }
 }
