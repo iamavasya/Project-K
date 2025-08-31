@@ -52,8 +52,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                     _unitOfWork.Members.Update(existing, cancellationToken);
                 }
             } 
-            else if (group == null) return new ServiceResult<MemberResponse>(ResultType.NotFound);
-            else return new ServiceResult<MemberResponse>(ResultType.BadRequest);
+            else return new ServiceResult<MemberResponse>(ResultType.NotFound);
 
             if (request.BlobContent is { Length: > 0 } && !string.IsNullOrWhiteSpace(request.BlobFileName))
             {

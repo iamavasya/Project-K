@@ -36,7 +36,7 @@ export interface ManagePanelConfig {
 export class ManagePanel implements OnChanges {
   @Input() visible = false;
   @Input() parameter: ManageAction | 'undef' = 'undef';
-  @Input() entity: any | null = null;
+  @Input() entity: any = null;
   @Input() config!: ManagePanelConfig;
 
   @Output() visibleChange = new EventEmitter<boolean>();
@@ -138,7 +138,7 @@ export class ManagePanel implements OnChanges {
       const hidden = !!f.hiddenOn && f.hiddenOn.includes(action);
       const shouldDisableBecauseOfAction =
         action === 'delete' ||
-        (f.disabledOn && f.disabledOn.includes(action));
+        (f.disabledOn?.includes(action));
 
       // Якщо поле сховане — теж disable, щоб валідатор не блокував submit
       const needDisable = hidden || shouldDisableBecauseOfAction;
@@ -163,7 +163,7 @@ export class ManagePanel implements OnChanges {
 
   submit(): void {
     if (this.parameter === 'undef') return;
-    const action = this.parameter as ManageAction;
+    const action = this.parameter;
 
     let raw = {
       ...(this.entity ?? this.config.createFactory?.() ?? {}),
