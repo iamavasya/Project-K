@@ -9,10 +9,11 @@ import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/componen
 import { MenuItem } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule],
+  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent],
   templateUrl: './group-panel.component.html',
   styleUrls: ['./group-panel.component.scss']
 })
