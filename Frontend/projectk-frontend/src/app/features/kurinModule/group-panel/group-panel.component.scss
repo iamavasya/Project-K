@@ -1,3 +1,15 @@
+.kurin-header {
+    display: flex;
+    align-items: center;
+    margin: 5rem;
+}
+
+.head-message {
+    display: flex;
+    margin-left: 2rem;
+    font-size: 2rem;
+}
+
 .group-panel {
     margin: 5rem;
 
@@ -5,11 +17,4 @@
         text-align: right;
         width: 1rem;
     }
-}
-
-.head-message {
-    display: flex;
-    margin-left: 2rem;
-    margin-top: 2rem;
-    font-size: 2rem;
 }

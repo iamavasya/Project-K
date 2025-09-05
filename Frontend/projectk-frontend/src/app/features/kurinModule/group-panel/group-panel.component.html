@@ -1,6 +1,9 @@
-@if (kurinNumber) {
-    <span class="head-message">Main page of {{ kurinNumber }} kurin.</span>
-}
+<div class="kurin-header">
+    <app-kurin-number [number]="kurinNumber"></app-kurin-number>
+    @if (kurinNumber) {
+        <span class="head-message">Main page of {{ kurinNumber }} kurin.</span>
+    }
+</div>
 <div class="group-panel">
     <p-table [value]="groups">
         <ng-template #header>

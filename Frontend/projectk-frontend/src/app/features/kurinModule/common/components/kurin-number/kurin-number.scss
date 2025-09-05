@@ -1,0 +1,22 @@
+.kurin-number-square {
+  width: 10rem;
+  height: 10rem;
+  background-color: #b30003;
+  border: 0.5rem solid #ff0005;
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+}
+
+.kurin-number {
+    font-size: 7rem;
+}
+
+.kurin-number-short {
+    font-size: 5.5rem;
+}
