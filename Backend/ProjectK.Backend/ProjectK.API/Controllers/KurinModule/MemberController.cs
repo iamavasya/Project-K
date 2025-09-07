@@ -94,6 +94,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
+                RemoveProfilePhoto = request.RemoveProfilePhoto,
                 BlobContent = blobData,
                 BlobFileName = blob?.FileName,
                 BlobContentType = blob?.ContentType
