@@ -9,6 +9,7 @@ import { UpsertMemberDto } from '../common/models/requests/member/upsertMemberDt
 import { FileSelectEvent } from 'primeng/fileupload';
 import { ImageCroppedEvent } from 'ngx-image-cropper';
 import { HttpClient } from '@angular/common/http';
+import { NgForm } from '@angular/forms';
 
 describe('UpsertMemberComponent', () => {
   let fixture: ComponentFixture<UpsertMemberComponent>;
@@ -141,9 +142,14 @@ describe('UpsertMemberComponent', () => {
   });
 
   describe('file & crop workflow', () => {
+    let mockForm: NgForm;
+    
     beforeEach(() => {
       setRouteParams({ groupKey });
       create();
+      mockForm = jasmine.createSpyObj<NgForm>('NgForm', [], {
+        form: jasmine.createSpyObj('FormGroup', ['markAsTouched'])
+      });
     });
 
     it('fileChangeEvent should set file and open cropper', () => {
@@ -196,7 +202,7 @@ describe('UpsertMemberComponent', () => {
       const blob = new Blob(['out'], { type: 'image/png' });
       component.croppedFile = new File([blob], 'out.png', { type: 'image/png' });
       component.displayCropper = true;
-      component.save();
+      component.save(mockForm.form);
       expect(component.displayCropper).toBeFalse();
       expect(component.fileToUpload).toBe(component.croppedFile);
     });
@@ -204,7 +210,7 @@ describe('UpsertMemberComponent', () => {
     it('save should convert base64 when no croppedFile', () => {
       component.croppedImage = 'data:image/png;base64,iVBORw0KGgo=';
       component.croppedFile = null;
-      component.save();
+      component.save(mockForm.form);
       expect(component.fileToUpload).toBeTruthy();
     });
 

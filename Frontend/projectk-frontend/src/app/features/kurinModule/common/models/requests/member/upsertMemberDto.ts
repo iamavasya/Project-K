@@ -6,4 +6,5 @@ export interface UpsertMemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: string;
+    removeProfilePhoto?: boolean;
 }

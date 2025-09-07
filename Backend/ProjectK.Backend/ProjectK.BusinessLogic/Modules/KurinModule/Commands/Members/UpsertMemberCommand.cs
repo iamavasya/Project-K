@@ -19,6 +19,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public DateOnly DateOfBirth { get; set; }
+        public bool RemoveProfilePhoto { get; set; }
         public byte[]? BlobContent { get; set; }
         public string? BlobFileName { get; set; }
         public string? BlobContentType { get; set; }

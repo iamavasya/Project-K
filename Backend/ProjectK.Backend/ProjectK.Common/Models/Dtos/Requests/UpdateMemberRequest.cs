@@ -23,5 +23,7 @@ namespace ProjectK.Common.Models.Dtos.Requests
         public string PhoneNumber { get; set; }
         [JsonPropertyName("dateOfBirth")]
         public DateOnly DateOfBirth { get; set; }
+        [JsonPropertyName("removeProfilePhoto")]
+        public bool RemoveProfilePhoto { get; set; }
     }
 }

@@ -1,3 +1,8 @@
+<div class="group-header">
+    <app-group-chevron></app-group-chevron>
+    <span class="group-head-message"> Main page of {{ group?.name }}</span>
+</div>
+
 <div class="group-panel">
     <p-table [value]="members" selectionMode="single" [(selection)]="selectedMember" dataKey="memberKey" (onRowSelect)="onMemberSelect()">
         <ng-template #header>

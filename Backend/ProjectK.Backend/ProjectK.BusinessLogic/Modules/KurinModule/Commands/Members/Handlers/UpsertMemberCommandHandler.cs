@@ -60,6 +60,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                 existing.ProfilePhotoBlobName = upload.BlobName;
             }
 
+            if (request.RemoveProfilePhoto && oldBlobName != null)
+            {
+                existing.ProfilePhotoBlobName = null;
+                await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
+            }
+
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             if (changes <= 0)

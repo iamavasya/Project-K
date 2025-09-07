@@ -93,7 +93,7 @@
                 </image-cropper>
 
                 <div class="flex justify-content-end gap-2 mt-3">
-                    <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(); form.form.markAsTouched()"></p-button>
+                    <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)"></p-button>
                     <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()"></p-button>
                 </div>
             </p-dialog>
@@ -101,6 +101,9 @@
             @if (croppedImage || member.profilePhotoUrl) {
                 <h4>Попередній перегляд</h4>
                 <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" alt="{{member.firstName}} {{member.lastName}}" />
+                <p-button type="button" icon="pi pi-trash" label="Очистити фото"
+                    [disabled]="!member.profilePhotoUrl && !croppedImage"
+                    (onClick)="clearProfilePhoto(form.form)"></p-button>
             }
 
         </div>

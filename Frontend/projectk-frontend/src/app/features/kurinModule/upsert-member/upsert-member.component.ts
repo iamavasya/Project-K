@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { FormsModule } from '@angular/forms';
+import { FormGroup, FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -53,6 +53,7 @@ export class UpsertMemberComponent implements OnInit {
   croppedFile: File | null = null;
   displayCropper = false;
   fileToUpload: Blob | null = null;
+  removeProfilePhoto = false;
 
   private objectUrlToRevoke: string | null = null;
 
@@ -111,6 +112,7 @@ export class UpsertMemberComponent implements OnInit {
         email: this.member.email,
         phoneNumber: this.member.phoneNumber,
         dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
+        removeProfilePhoto: this.removeProfilePhoto,
       };
       this.memberService.update(this.memberKey, memberDto, this.fileToUpload).subscribe({
         next: (updatedMember) => {
@@ -180,6 +182,9 @@ export class UpsertMemberComponent implements OnInit {
     this.imageFile = file;
     this.croppedImage = '';
     this.croppedFile = null;
+    
+    this.removeProfilePhoto = false;
+    
     this.displayCropper = true;
   }
 
@@ -208,11 +213,15 @@ export class UpsertMemberComponent implements OnInit {
     }
   }
 
-  save() {
+  save(form: FormGroup) {
     this.displayCropper = false;
     this.fileToUpload = this.croppedFile ?? (this.croppedImage ? base64ToBlob(this.croppedImage) : null);
 
-    if (!this.fileToUpload) {
+    if (this.fileToUpload) {
+      this.removeProfilePhoto = false;
+      form.markAsTouched();
+    }
+    else {
       console.warn('Nothing to upload (cropped image undefined)');
     }
   }
@@ -220,5 +229,21 @@ export class UpsertMemberComponent implements OnInit {
   onCancelCrop() {
     this.displayCropper = false;
     this.croppedImage = '';
+  }
+
+  clearProfilePhoto(form: FormGroup) {
+    console.log('Clearing profile photo');
+    if (this.objectUrlToRevoke) {
+      URL.revokeObjectURL(this.objectUrlToRevoke);
+      this.objectUrlToRevoke = null;
+    }
+    this.imageFile = undefined;
+    this.croppedImage = '';
+    this.croppedFile = null;
+    this.fileToUpload = null;
+    this.member.profilePhotoUrl = null;
+
+    form.markAsTouched();
+    this.removeProfilePhoto = true;
   }
 }
