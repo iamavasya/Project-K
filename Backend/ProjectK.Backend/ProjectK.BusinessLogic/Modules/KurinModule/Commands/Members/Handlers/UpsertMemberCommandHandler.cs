@@ -73,6 +73,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                 return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
             }
 
+            // Removing old photo if a new one was uploaded
             if (!isCreated && oldBlobName != null && oldBlobName != existing.ProfilePhotoBlobName)
             {
                 await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
