@@ -16,6 +16,7 @@ import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { DialogModule } from 'primeng/dialog';
 import { base64ToBlob } from '../common/functions/base64ToBlob.function';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-upsert-member',
@@ -43,8 +44,11 @@ export class UpsertMemberComponent implements OnInit {
 
   route = inject(ActivatedRoute);
   router = inject(Router);
+  location = inject(Location);
   memberService = inject(MemberService);
   confirmationService = inject(ConfirmationService);
+
+  private cameFromMember = false;
 
   isCreate = false;
 
@@ -68,6 +72,8 @@ export class UpsertMemberComponent implements OnInit {
     } else {
       this.isCreate = true;
     }
+    const navState = (this.router.getCurrentNavigation()?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
+    this.cameFromMember = navState?.fromMember === true;
   }
 
   private loadData(): void {
@@ -97,7 +103,7 @@ export class UpsertMemberComponent implements OnInit {
       this.memberService.create(memberDto, this.fileToUpload).subscribe({
         next: (createdMember) => {
           console.log('Member created:', createdMember);
-          this.router.navigate(['/member', createdMember.memberKey]);
+          this.router.navigate(['/member', createdMember.memberKey], { replaceUrl: true });
         },
         error: (error) => {
           console.error('Error creating member:', error, memberDto);
@@ -117,7 +123,11 @@ export class UpsertMemberComponent implements OnInit {
       this.memberService.update(this.memberKey, memberDto, this.fileToUpload).subscribe({
         next: (updatedMember) => {
           console.log('Member updated:', updatedMember);
-          this.router.navigate(['/group', this.groupKey]);
+          if (this.cameFromMember) {
+            this.location.back();
+            return;
+          }
+          this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
         },
         error: (error) => {
           console.error('Error updating member:', error);

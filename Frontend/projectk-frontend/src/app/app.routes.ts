@@ -7,11 +7,34 @@ import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upse
 import { KurinNumberComponent } from './features/kurinModule/common/components/kurin-number/kurin-number';
 
 export const routes: Routes = [
-    { path: 'panel', component: KurinPanelComponent },
-    { path: 'kurin/:kurinKey', component: GroupPanelComponent },
-    { path: 'group/:groupKey', component: MemberPanelComponent },
-    { path: 'group/:groupKey/member/upsert/:memberKey', component: UpsertMemberComponent },
-    { path: 'group/:groupKey/member/upsert', component: UpsertMemberComponent },
-    { path: 'member/:memberKey', component: MemberCardComponent },
-    { path: 'kurinNumber/:kurinNumber', component: KurinNumberComponent },
+  { 
+    path: 'panel', 
+    component: KurinPanelComponent,
+    data: { breadcrumb: 'Panel' }
+  },
+  { 
+    path: 'kurin/:kurinKey', 
+    component: GroupPanelComponent,
+    data: { breadcrumb: 'Kurin', parent: '/panel' }
+  },
+  { 
+    path: 'group/:groupKey', 
+    component: MemberPanelComponent,
+    data: { breadcrumb: 'Group', parent: '/kurin/:kurinKey' }
+  },
+  { 
+    path: 'group/:groupKey/member/upsert/:memberKey', 
+    component: UpsertMemberComponent,
+    data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey' }
+  },
+  { 
+    path: 'group/:groupKey/member/upsert', 
+    component: UpsertMemberComponent,
+    data: { breadcrumb: 'New Member', parent: '/group/:groupKey' }
+  },
+  { 
+    path: 'member/:memberKey', 
+    component: MemberCardComponent,
+    data: { breadcrumb: 'Member Card', parent: '/group/:groupKey' }
+  }
 ];
