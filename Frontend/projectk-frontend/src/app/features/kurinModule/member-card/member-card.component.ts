@@ -42,6 +42,9 @@ export class MemberCardComponent implements OnInit {
   }
 
   onEditMember() {
-    this.router.navigate(['/group', this.member?.groupKey, 'member', 'upsert', this.memberKey]);
+    this.router.navigate(
+      ['/group', this.member?.groupKey, 'member', 'upsert', this.memberKey],
+      { state: { fromMember: true } }
+    );
   }
 }
