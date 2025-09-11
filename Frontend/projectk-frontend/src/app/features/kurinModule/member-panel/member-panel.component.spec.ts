@@ -95,7 +95,10 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
     component.onEditMember();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/group', member.groupKey, 'member', 'upsert', memberKey]);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(
+      ['/group', member.groupKey, 'member', 'upsert', memberKey],
+      { state: { fromMember: true } }
+    );
   });
 
   it('refreshData should use latest paramMap value if it changes', () => {

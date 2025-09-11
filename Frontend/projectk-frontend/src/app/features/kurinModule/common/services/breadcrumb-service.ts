@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { inject, Injectable } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Route, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
 
@@ -10,8 +10,10 @@ export class BreadcrumbService {
   private breadcrumbsSubject = new BehaviorSubject<MenuItem[]>([]);
   public breadcrumbs$: Observable<MenuItem[]> = this.breadcrumbsSubject.asObservable();
   private paramCache: Record<string, string> = {};
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
 
-  constructor(private router: Router, private activatedRoute: ActivatedRoute) {
+  constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -121,10 +123,10 @@ export class BreadcrumbService {
     
     // Find the route configuration for this path
     const route = this.findRouteByPattern(parentPath);
-    if (route && route.data?.breadcrumb) {
+    if (route && route.data?.['breadcrumb']) {
       // Create breadcrumb item for the parent
       const parentItem: MenuItem = {
-        label: route.data.breadcrumb,
+        label: route.data['breadcrumb'],
         routerLink: resolvedPath
       };
       
@@ -132,8 +134,8 @@ export class BreadcrumbService {
       breadcrumbs.unshift(parentItem);
       
       // Process grandparent if exists
-      if (route.data.parent) {
-        this.processParent(route.data.parent, breadcrumbs);
+      if (route.data['parent']) {
+        this.processParent(route.data['parent'], breadcrumbs);
       }
     }
   }
@@ -154,9 +156,9 @@ export class BreadcrumbService {
     return result;
   }
   
-  private findRouteByPattern(pathPattern: string): any {
+  private findRouteByPattern(pathPattern: string): Route | null {
     if (!pathPattern) return null;
-    
+
     // Remove leading slash if present
     const normalizedPattern = pathPattern.startsWith('/') ? pathPattern.substring(1) : pathPattern;
     
