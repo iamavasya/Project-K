@@ -42,7 +42,8 @@ describe('UpsertMemberComponent', () => {
 
   beforeEach(async () => {
     routeParamMap$ = new BehaviorSubject(convertToParamMap({ groupKey, memberKey }));
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'getCurrentNavigation']);
+    routerSpy.getCurrentNavigation.and.returnValue(null);
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
 
@@ -120,7 +121,7 @@ describe('UpsertMemberComponent', () => {
       dateOfBirth: '2012-07-09'
     }));
     expect(fileArg).toBe(component.fileToUpload);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', 'created999']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', 'created999'], { replaceUrl: true });
   });
 
   it('submit (update) should convert Date to yyyy-MM-dd', () => {

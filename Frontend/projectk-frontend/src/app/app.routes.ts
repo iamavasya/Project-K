@@ -4,7 +4,6 @@ import { GroupPanelComponent } from './features/kurinModule/group-panel/group-pa
 import { MemberPanelComponent } from './features/kurinModule/member-panel/member-panel.component';
 import { MemberCardComponent } from './features/kurinModule/member-card/member-card.component';
 import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upsert-member.component';
-import { KurinNumberComponent } from './features/kurinModule/common/components/kurin-number/kurin-number';
 
 export const routes: Routes = [
   { 
