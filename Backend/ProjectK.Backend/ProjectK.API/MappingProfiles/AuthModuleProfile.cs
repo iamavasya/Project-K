@@ -11,6 +11,8 @@ namespace ProjectK.API.MappingProfiles
         {
             CreateMap<RegisterUserRequest, RegisterUserCommand>();
             CreateMap<RegisterUserCommand, AppUser>();
+
+            CreateMap<LoginUserRequest, LoginUserCommand>();
         }
     }
 }
