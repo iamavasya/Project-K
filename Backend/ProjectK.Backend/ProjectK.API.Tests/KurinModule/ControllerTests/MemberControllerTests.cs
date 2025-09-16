@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
@@ -10,9 +11,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -98,7 +97,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task Create_ShouldReturnCreated_WhenSuccess()
         {
             var key = Guid.NewGuid();
-            var request = new CreateMemberRequest
+            var request = new UpsertMemberRequest
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "Ivan",
@@ -108,7 +107,6 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 PhoneNumber = "123456",
                 DateOfBirth = new DateOnly(2000, 5, 10)
             };
-            var json = JsonSerializer.Serialize(request);
 
             var serviceResult = new ServiceResult<MemberResponse>(
                 ResultType.Created,
@@ -131,7 +129,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Create(json, null, CancellationToken.None);
+            var result = await _controller.Create(request, CancellationToken.None);
 
             var created = Assert.IsType<CreatedAtActionResult>(result);
             var data = Assert.IsType<MemberResponse>(created.Value);
@@ -149,7 +147,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         [Fact]
         public async Task Create_ShouldReturnBadRequest_WhenInvalid()
         {
-            var json = JsonSerializer.Serialize(new CreateMemberRequest
+            var request = new UpsertMemberRequest
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "Bad",
@@ -158,7 +156,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 Email = "bad@example.com",
                 PhoneNumber = "000",
                 DateOfBirth = new DateOnly(1999, 1, 1)
-            });
+            };
 
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
@@ -166,7 +164,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Create(json, null, CancellationToken.None);
+            var result = await _controller.Create(request, CancellationToken.None);
 
             Assert.IsType<BadRequestObjectResult>(result);
         }
@@ -175,7 +173,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task Update_ShouldReturnOk_WhenSuccess()
         {
             var memberKey = Guid.NewGuid();
-            var update = new UpdateMemberRequest
+            var request = new UpsertMemberRequest
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "Updated",
@@ -183,36 +181,36 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 LastName = "Name",
                 Email = "upd@example.com",
                 PhoneNumber = "555",
-                DateOfBirth = new DateOnly(1995, 2, 2)
+                DateOfBirth = new DateOnly(1995, 2, 2),
+                RemoveProfilePhoto = false
             };
-            var json = JsonSerializer.Serialize(update);
 
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success,
                 new MemberResponse
                 {
                     MemberKey = memberKey,
-                    GroupKey = update.GroupKey,
+                    GroupKey = request.GroupKey,
                     KurinKey = Guid.NewGuid(),
-                    FirstName = update.FirstName,
-                    MiddleName = update.MiddleName,
-                    LastName = update.LastName,
-                    Email = update.Email,
-                    PhoneNumber = update.PhoneNumber,
-                    DateOfBirth = update.DateOfBirth
+                    FirstName = request.FirstName,
+                    MiddleName = request.MiddleName,
+                    LastName = request.LastName,
+                    Email = request.Email,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth
                 });
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Update(memberKey, json, null, CancellationToken.None);
+            var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
             var ok = Assert.IsType<OkObjectResult>(result);
             var data = Assert.IsType<MemberResponse>(ok.Value);
             Assert.Equal(memberKey, data.MemberKey);
 
             _mediatorMock.Verify(m => m.Send(
-                It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == update.FirstName),
+                It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
         }
@@ -221,7 +219,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task Update_ShouldReturnNotFound_WhenNotFound()
         {
             var memberKey = Guid.NewGuid();
-            var json = JsonSerializer.Serialize(new UpdateMemberRequest
+            var request = new UpsertMemberRequest
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "X",
@@ -230,7 +228,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 Email = "x@example.com",
                 PhoneNumber = "1",
                 DateOfBirth = new DateOnly(1990, 1, 1)
-            });
+            };
 
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
 
@@ -238,7 +236,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Update(memberKey, json, null, CancellationToken.None);
+            var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
             Assert.IsType<NotFoundObjectResult>(result);
         }
@@ -247,7 +245,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task Update_ShouldReturnBadRequest_WhenInvalid()
         {
             var memberKey = Guid.NewGuid();
-            var json = JsonSerializer.Serialize(new UpdateMemberRequest
+            var request = new UpsertMemberRequest
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "Bad",
@@ -256,7 +254,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 Email = "b@example.com",
                 PhoneNumber = "0",
                 DateOfBirth = new DateOnly(1999, 1, 1)
-            });
+            };
 
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
@@ -264,7 +262,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Update(memberKey, json, null, CancellationToken.None);
+            var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
             Assert.IsType<BadRequestObjectResult>(result);
         }

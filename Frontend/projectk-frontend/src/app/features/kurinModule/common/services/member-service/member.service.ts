@@ -37,11 +37,20 @@ export class MemberService {
 
   private buildFormData(dto: UpsertMemberDto, file: Blob | null, blobFieldName = 'blob'): FormData {
     const formData = new FormData();
-    formData.append('dto', JSON.stringify(dto));
+
+    // Додаємо всі властивості DTO у formData
+    Object.entries(dto).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        // Date обʼєкти перетворюємо в ISO string
+        formData.append(key, value instanceof Date ? value.toISOString() : value.toString());
+      }
+    });
+
     if (file) {
-      const filename = (file as File).name ? (file as File).name : 'file';
+      const filename = (file as File).name || 'file';
       formData.append(blobFieldName, file, filename);
     }
+
     return formData;
   }
 }

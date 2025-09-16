@@ -46,13 +46,10 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromForm] string dto,
-                                                [FromForm] IFormFile? blob,
+        public async Task<IActionResult> Create([FromForm] UpsertMemberRequest request,
                                                 CancellationToken cancellationToken)
         {
-            var request = System.Text.Json.JsonSerializer.Deserialize<CreateMemberRequest>(dto);
-
-            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(blob, cancellationToken);
+            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
             var command = new UpsertMemberCommand
             {
                 GroupKey = request.GroupKey,
@@ -63,8 +60,8 @@ namespace ProjectK.API.Controllers.KurinModule
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
                 BlobContent = blobData,
-                BlobFileName = blob?.FileName,
-                BlobContentType = blob?.ContentType
+                BlobFileName = request.Blob?.FileName,
+                BlobContentType = request.Blob?.ContentType
             };
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
@@ -77,13 +74,11 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(Guid memberKey,
-                                                [FromForm] string dto,
-                                                [FromForm] IFormFile? blob,
+                                                [FromForm] UpsertMemberRequest request,
                                                 CancellationToken cancellationToken)
         {
-            var request = System.Text.Json.JsonSerializer.Deserialize<UpdateMemberRequest>(dto);
 
-            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(blob, cancellationToken);
+            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
             var command = new UpsertMemberCommand
             {
                 MemberKey = memberKey,
@@ -94,10 +89,10 @@ namespace ProjectK.API.Controllers.KurinModule
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
-                RemoveProfilePhoto = request.RemoveProfilePhoto,
+                RemoveProfilePhoto = request.RemoveProfilePhoto ?? false,
                 BlobContent = blobData,
-                BlobFileName = blob?.FileName,
-                BlobContentType = blob?.ContentType
+                BlobFileName = request.Blob?.FileName,
+                BlobContentType = request.Blob?.ContentType
             };
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);

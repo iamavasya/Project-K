@@ -93,7 +93,7 @@ describe('MemberService', () => {
     req.flush([]);
   });
 
-  it('create should POST FormData with dto and blob when file provided', () => {
+  it('create should POST FormData with individual dto properties and blob when file provided', () => {
     const file = new File(['content'], 'avatar.png', { type: 'image/png' });
 
     service.create(sampleUpsert, file).subscribe(res => {
@@ -105,20 +105,33 @@ describe('MemberService', () => {
     const body = req.request.body as FormData;
     expect(body instanceof FormData).toBeTrue();
 
-    let dtoJsonParsed: unknown;
-    body.forEach((value: FormDataEntryValue, key: string) => {
-      if (key === 'dto' && typeof value === 'string') {
-        dtoJsonParsed = JSON.parse(value);
+    // Check all DTO properties are present in FormData
+    Object.entries(sampleUpsert).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        expect(body.get(key)).toEqual(value.toString());
       }
     });
-    expect(dtoJsonParsed).toBeTruthy();
 
-    let hasBlob = false;
-    body.forEach((_v: FormDataEntryValue, key: string) => {
-      if (key === 'blob') hasBlob = true;
-    });
-    expect(hasBlob).toBeTrue();
+    // Verify blob is included with filename
+    const blobEntry = body.get('blob') as File;
+    expect(blobEntry).toBeTruthy();
+    expect(blobEntry.name).toBe('avatar.png');
 
+    req.flush(sampleMember);
+  });
+
+  it('create should handle Date objects by converting to ISO string', () => {
+    const dateUpsert: UpsertMemberDto = {
+      ...sampleUpsert,
+      dateOfBirth: new Date('2000-05-10').toISOString()
+    };
+    
+    service.create(dateUpsert, null).subscribe();
+
+    const req = httpMock.expectOne(apiUrl);
+    const body = req.request.body as FormData;
+    
+    expect(body.get('dateOfBirth')).toEqual('2000-05-10T00:00:00.000Z');
     req.flush(sampleMember);
   });
 
@@ -140,7 +153,7 @@ describe('MemberService', () => {
     req.flush(sampleMember);
   });
 
-  it('update should PUT FormData to correct URL (with file)', () => {
+  it('update should PUT FormData to correct URL with individual properties and file', () => {
     const memberKey = 'member-key-1';
     const file = new File(['xx'], 'photo.jpg', { type: 'image/jpeg' });
 
@@ -152,14 +165,17 @@ describe('MemberService', () => {
     expect(req.request.method).toBe('PUT');
     const body = req.request.body as FormData;
 
-    let containsDto = false;
-    let containsBlob = false;
-    body.forEach((_v: FormDataEntryValue, key: string) => {
-      if (key === 'dto') containsDto = true;
-      if (key === 'blob') containsBlob = true;
+    // Check DTO properties
+    Object.entries(sampleUpsert).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        expect(body.get(key)).toEqual(value.toString());
+      }
     });
-    expect(containsDto).toBeTrue();
-    expect(containsBlob).toBeTrue();
+
+    // Check blob with filename
+    const blobEntry = body.get('blob') as File;
+    expect(blobEntry).toBeTruthy();
+    expect(blobEntry.name).toBe('photo.jpg');
 
     req.flush(sampleMember);
   });
