@@ -132,12 +132,13 @@ namespace ProjectK.API
                 app.UseSwaggerUI();
             }
 
+            app.UseRouting();
+
             app.UseCors("AllowFrontend");
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseRouting();
             app.MapControllers();
 
             app.MapGet("/", () => "Backend Started");

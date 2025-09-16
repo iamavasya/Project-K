@@ -31,7 +31,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
         public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
-            // TODO: 13.09.2025; Продовжити писати бізнес-логіку для реєстрації юзерів і прив'язки до мемберів
             var user = _mapper.Map<AppUser>(request);
             user.UserName = request.Email;
 
