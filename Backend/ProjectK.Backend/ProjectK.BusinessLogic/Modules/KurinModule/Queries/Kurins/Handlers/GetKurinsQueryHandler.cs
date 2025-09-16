@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

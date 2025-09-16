@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Services.BlobStorageService;
 
 namespace ProjectK.API.MappingProfiles.Resolvers
 {

@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

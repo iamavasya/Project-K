@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
 using ProjectK.Common.Extensions;
 

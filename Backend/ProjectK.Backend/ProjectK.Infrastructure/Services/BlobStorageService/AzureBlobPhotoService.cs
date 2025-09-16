@@ -13,7 +13,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Infrastructure.Services
+namespace ProjectK.Infrastructure.Services.BlobStorageService
 {
     // Options used for both Azure Blob Storage and Azurite emulator.
     public sealed class BlobStorageOptions
