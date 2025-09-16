@@ -4,8 +4,14 @@ using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Services;
-using ProjectK.Infrastructure.Services.OrphanCleanup;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.IdentityModel.JsonWebTokens;
+using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
+using ProjectK.Common.Entities.AuthModule;
+using Microsoft.AspNetCore.Identity;
 
 namespace ProjectK.API
 {
@@ -14,6 +20,48 @@ namespace ProjectK.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddIdentity<AppUser, AppRole>(options =>
+            {
+                // Flag for skip secure passwords
+                bool.TryParse(builder.Configuration["DebugMode:SecurePasswordOptions"], out bool securePasswordOption);
+
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = securePasswordOption;
+                options.Password.RequireNonAlphanumeric = securePasswordOption;
+                options.Password.RequireUppercase = securePasswordOption;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+
+                    RoleClaimType = "roles",
+                    NameClaimType = JwtRegisteredClaimNames.Sub
+                };
+            });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+            });
 
             builder.Services.AddCors(options =>
             {

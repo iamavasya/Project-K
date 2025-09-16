@@ -13,7 +13,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Services.BlobStorageService;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

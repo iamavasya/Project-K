@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Infrastructure.Services.OrphanCleanup
+namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
 {
     public sealed class OrphanCleanupOptions
     {

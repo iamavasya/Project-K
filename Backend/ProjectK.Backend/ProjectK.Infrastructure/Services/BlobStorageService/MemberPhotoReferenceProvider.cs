@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Services
+namespace ProjectK.Infrastructure.Services.BlobStorageService
 {
     public class MemberPhotoReferenceProvider : IPhotoReferenceProvider
     {

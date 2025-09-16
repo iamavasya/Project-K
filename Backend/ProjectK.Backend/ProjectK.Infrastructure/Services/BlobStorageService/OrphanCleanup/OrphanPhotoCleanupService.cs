@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Services.OrphanCleanup
+namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
 {
     // Background service for cleaning up orphaned blob files (photos).
     // Periodically compares the list of blobs with the set of references in the database.

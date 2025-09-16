@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ProjectK.API.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
