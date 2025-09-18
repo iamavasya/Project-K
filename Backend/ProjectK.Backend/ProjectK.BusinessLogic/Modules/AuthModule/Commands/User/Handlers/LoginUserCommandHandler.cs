@@ -42,9 +42,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
 
+            var role = await _userManager.GetRolesAsync(user);
+
             var jwt = new JwtResponse
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, await _userManager.GetRolesAsync(user)),
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, role),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 
@@ -54,6 +56,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
             var response = new LoginUserResponse
             {
+                UserKey = user.Id,
+                Email = user.Email!,
+                Role = role.FirstOrDefault()!,
                 Tokens = jwt
             };
 

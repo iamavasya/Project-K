@@ -1,0 +1,10 @@
+<p>login-component works!</p>
+<p-floatlabel variant="on">
+    <input pInputText id="email" [(ngModel)]="email" autocomplete="off" />
+    <label for="email">Email</label>
+</p-floatlabel>
+<p-floatLabel variant="on">
+    <p-password [(ngModel)]="password" [feedback]="false" />
+    <label for="password">Password</label>
+</p-floatLabel>
+<p-button label="Submit" (click)="onSubmit()" />

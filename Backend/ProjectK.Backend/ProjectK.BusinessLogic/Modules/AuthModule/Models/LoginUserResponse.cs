@@ -9,6 +9,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Models
 {
     public class LoginUserResponse
     {
+        public Guid UserKey { get; set; }
+        public string Email { get; set; } = null!;
+        public string Role { get; set; } = null!;
         public JwtResponse Tokens { get; set; } = null!;
     }
 }
