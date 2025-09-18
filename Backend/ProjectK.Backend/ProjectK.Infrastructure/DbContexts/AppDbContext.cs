@@ -52,6 +52,10 @@ namespace ProjectK.Infrastructure.DbContexts
                         .WithMany(k => k.Members)
                         .HasForeignKey(e => e.KurinKey)
                         .OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(entity => entity.User)
+                      .WithOne()
+                      .HasForeignKey<Member>(e => e.UserKey)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

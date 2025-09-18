@@ -12,5 +12,8 @@ namespace ProjectK.Common.Models.Dtos.AuthModule.Requests
         public string Password { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string PhoneNumber { get; set; }
+        public int? KurinNumber { get; set; }
+        public string? Role { get; set; } = "User";
     }
 }
