@@ -4,10 +4,19 @@ import { GroupPanelComponent } from './features/kurinModule/group-panel/group-pa
 import { MemberPanelComponent } from './features/kurinModule/member-panel/member-panel.component';
 import { MemberCardComponent } from './features/kurinModule/member-card/member-card.component';
 import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upsert-member.component';
+import { authGuard } from './features/authModule/guards/auth.guard';
+import { roleGuard } from './features/authModule/guards/role.guard';
+import { LoginComponent } from './features/authModule/login-component/login-component';
 
 export const routes: Routes = [
-  { 
-    path: 'panel', 
+  {
+    path: 'login',
+    component: LoginComponent,
+    data: { breadcrumb: 'Login' }
+  },
+  {
+    path: 'panel',
+    canActivate: [authGuard, roleGuard('Admin')], 
     component: KurinPanelComponent,
     data: { breadcrumb: 'Panel' }
   },
