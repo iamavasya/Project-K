@@ -11,6 +11,8 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -27,6 +29,24 @@ namespace ProjectK.API.Controllers.AuthModule
             _mapper = mapper;
         }
 
+        [Authorize(Policy = "RequireAdmin")]
+        [HttpPost("register/manager")]
+        public async Task<IActionResult> RegisterManager([FromBody] RegisterUserRequest request)
+        {
+            var command = new RegisterManagerCommand
+            {
+                Email = request.Email,
+                Password = request.Password,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                PhoneNumber = request.PhoneNumber,
+                KurinNumber = (int)request.KurinNumber!
+            };
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
         {
@@ -35,6 +55,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest request)
         {
@@ -44,6 +65,7 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         // TODO: Take refresh token from HttpOnly cookie
+        [AllowAnonymous]
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] string refreshToken)
         {
@@ -52,7 +74,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize]
+        [Authorize(Policy = "RequireUser")]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

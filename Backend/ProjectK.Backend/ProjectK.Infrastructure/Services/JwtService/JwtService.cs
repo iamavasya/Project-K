@@ -35,7 +35,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
             };
 
             // Додаємо ролі як окремі claim
-            claims.AddRange(roles.Select(role => new Claim("roles", role)));
+            claims.AddRange(roles.Select(role => new Claim("role", role)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -82,7 +82,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
                 ValidIssuer = _config["Jwt:Issuer"],
                 ValidAudience = _config["Jwt:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])),
-                RoleClaimType = "roles",
+                RoleClaimType = ClaimTypes.Role,
                 NameClaimType = JwtRegisteredClaimNames.Sub
             };
 

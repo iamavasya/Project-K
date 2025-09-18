@@ -3,7 +3,9 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
@@ -13,18 +15,18 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 {
-    public class RegisterFirstUserCommandHandler : IRequestHandler<RegisterFirstUserCommand, ServiceResult<RegisterUserResponse>>
+    public class RegisterManagerCommandHandler : IRequestHandler<RegisterManagerCommand, ServiceResult<RegisterUserResponse>>
     {
         private readonly IMediator _mediator;
         private readonly IUnitOfWork _uow;
 
-        public RegisterFirstUserCommandHandler(IMediator mediator, IUnitOfWork unitOfWork)
+        public RegisterManagerCommandHandler(IMediator mediator, IUnitOfWork unitOfWork)
         {
             _mediator = mediator;
             _uow = unitOfWork;
         }
 
-        public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterFirstUserCommand request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterManagerCommand request, CancellationToken cancellationToken)
         {
             // TODO: Продовжити працювати над транзакціями
             await using var transaction = await _uow.BeginTransactionAsync(cancellationToken);
@@ -37,13 +39,13 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                     Email = request.Email,
                     Password = request.Password,
                     FirstName = request.FirstName,
-                    LastName = request.LastName
+                    LastName = request.LastName,
+                    Role = UserRole.Manager.ToClaimValue()
                 }, cancellationToken);
 
                 // Step 2: Create the new Kurin
                 var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
 
-                // TODO: Додати в хендлері лінкування User to Member
                 // Step 3: Create the new Member and associate with User
                 var memberResult = await _mediator.Send(new UpsertMemberCommand
                 {

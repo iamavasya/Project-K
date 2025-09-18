@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,14 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpGet("test")]
+        public async Task<IActionResult> Test()
+        {
+            return Ok("Admin here");
+        }
+
+        [Authorize(Policy = "RequireManager")]
         [HttpGet("{kurinKey}")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -30,6 +39,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireAdmin")]
         [HttpGet("kurins")]
         [ProducesResponseType(typeof(IEnumerable<KurinResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,6 +50,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireAdmin")]
         [HttpPost]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -51,6 +62,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireManager")]
         [HttpPut("{kurinKey}")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -63,6 +75,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireManager")]
         [HttpDelete("{kurinKey}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

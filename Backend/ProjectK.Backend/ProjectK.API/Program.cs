@@ -1,17 +1,21 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.IdentityModel.JsonWebTokens;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
-using ProjectK.Common.Entities.AuthModule;
-using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Extensions;
+using System.Text;
+using ProjectK.API.Helpers;
+using System.Security.Claims;
 
 namespace ProjectK.API
 {
@@ -53,14 +57,24 @@ namespace ProjectK.API
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-                    RoleClaimType = "roles",
+                    RoleClaimType = ClaimTypes.Role,
                     NameClaimType = JwtRegisteredClaimNames.Sub
                 };
             });
 
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("RequireAdmin",
+                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+
+                options.AddPolicy("RequireManager",
+                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+
+                options.AddPolicy("RequireMentor",
+                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+
+                options.AddPolicy("RequireUser",
+                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
             });
 
             builder.Services.AddCors(options =>
@@ -124,6 +138,8 @@ namespace ProjectK.API
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 await dbContext.Database.MigrateAsync();
+
+                await DataSeeder.SeedAsync(scope.ServiceProvider);
             }
 
             if (app.Environment.IsDevelopment())
@@ -137,6 +153,27 @@ namespace ProjectK.API
             app.UseCors("AllowFrontend");
 
             app.UseAuthentication();
+
+            // --- Debug Middleware ---
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                {
+                    Console.WriteLine("User is authenticated!");
+                    foreach (var claim in context.User.Claims)
+                    {
+                        Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("User is NOT authenticated.");
+                }
+
+                await next();
+            });
+            // --- End Debug Middleware ---
+
             app.UseAuthorization();
 
             app.MapControllers();
