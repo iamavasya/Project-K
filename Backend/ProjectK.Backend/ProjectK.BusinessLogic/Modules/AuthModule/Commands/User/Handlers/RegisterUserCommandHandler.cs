@@ -53,9 +53,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
             var roles = await _userManager.GetRolesAsync(user);
 
+            string? kurinKey = request.KurinKey == Guid.Empty ? null : request.KurinKey.ToString();
+
             var jwt = new JwtResponse
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, roles),
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, roles, kurinKey),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 

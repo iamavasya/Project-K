@@ -30,9 +30,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken.Handle
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
+            string? kurinKey = user.KurinKey == Guid.Empty ? null : user.KurinKey.ToString();
+
             var jwt = new JwtResponse
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, await _userManager.GetRolesAsync(user)),
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, await _userManager.GetRolesAsync(user), kurinKey),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
             user.RefreshToken = jwt.RefreshToken.Token;

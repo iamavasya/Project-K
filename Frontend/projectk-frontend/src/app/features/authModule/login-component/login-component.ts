@@ -6,6 +6,7 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../services/auth.service';
 import { LoginRequest } from '../models/login-request.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login-component',
@@ -15,6 +16,7 @@ import { LoginRequest } from '../models/login-request.model';
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   email: string = '';
   password: string = '';
@@ -29,6 +31,12 @@ export class LoginComponent {
       next: (response) => {
         // TODO: Продовжити роботу з логіном і решту auth module
         alert(`Login successful: ${response}`);
+        const state = this.authService.getAuthStateValue();
+        if (state?.role === 'Admin') {
+          this.router.navigate(['/panel']);
+        } else if (state?.kurinKey) {
+          this.router.navigate(['/kurin', state.kurinKey]);
+        }
       },
       error: (error) => {
         alert(`Login failed: ${error}`);

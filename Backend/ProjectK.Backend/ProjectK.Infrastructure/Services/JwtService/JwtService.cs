@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Infrastructure.Services.JwtService
 {
-    // TODO: Продовжити розбирати сервіс
+    // TODO: Винести змінні днів в конфіг аппсетінгів
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
@@ -26,7 +26,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
         /// <summary>
         /// Генерує JWT access token
         /// </summary>
-        public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles)
+        public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey)
         {
             var claims = new List<Claim>
             {
@@ -34,8 +34,13 @@ namespace ProjectK.Infrastructure.Services.JwtService
                 new Claim(JwtRegisteredClaimNames.Email, email)
             };
 
-            // Додаємо ролі як окремі claim
+            // Add other claims
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            if (kurinKey != null)
+            {
+                claims.Add(new Claim("kurinKey", kurinKey));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
