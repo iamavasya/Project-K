@@ -16,5 +16,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Role { get; set; } = "User";
+        public Guid? KurinKey { get; set; }
     }
 }

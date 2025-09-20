@@ -13,6 +13,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.UsersModule.Command;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -61,16 +62,22 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             var command = _mapper.Map<LoginUserCommand>(request);
             var response = await _mediator.Send(command);
+            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
             return response.ToActionResult(this);
         }
 
-        // TODO: Take refresh token from HttpOnly cookie
         [AllowAnonymous]
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        public async Task<IActionResult> Refresh()
         {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (refreshToken == null)
+            {
+                return Unauthorized();
+            }
             var command = new RefreshTokenCommand(refreshToken);
             var response = await _mediator.Send(command);
+            SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
             return response.ToActionResult(this);
         }
 
@@ -78,10 +85,27 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (refreshToken != null)
+            {
+                Response.Cookies.Delete("refreshToken");
+            }
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var command = new LogoutUserCommand(userKeyClaim!);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
+        }
+
+        private void SetRefreshTokenCookie(string token, DateTime expires)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = expires
+            };
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
     }
 }

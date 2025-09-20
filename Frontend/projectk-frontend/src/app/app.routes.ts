@@ -7,12 +7,19 @@ import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upse
 import { authGuard } from './features/authModule/guards/auth.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
+import { LogoutComponent } from './features/authModule/logout-component/logout-component';
 
 export const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent,
     data: { breadcrumb: 'Login' }
+  },
+  {
+    path: 'logout',
+    canActivate: [authGuard],
+    component: LogoutComponent,
+    data: { breadcrumb: 'Logout' }
   },
   {
     path: 'panel',
