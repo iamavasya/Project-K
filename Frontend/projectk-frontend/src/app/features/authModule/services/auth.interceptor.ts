@@ -8,18 +8,24 @@ import {
 } from "@angular/common/http";
 import { AuthService } from "./auth.service";
 import { Observable, throwError, BehaviorSubject } from "rxjs";
-import { catchError, switchMap, filter, take } from "rxjs/operators";
+import { catchError, switchMap, filter, take, finalize } from "rxjs/operators";
+import { Router } from "@angular/router";
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
     private readonly authService = inject(AuthService);
+    private readonly router = inject(Router);
 
     private isRefreshing = false;
     private refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        const authReq = this.addAuthHeader(req);
+        // Skip refresh token requests to avoid loops
+        if (req.url.includes('/api/auth/refresh')) {
+            return next.handle(req);
+        }
 
+        const authReq = this.addAuthHeader(req);
         return next.handle(authReq).pipe(
             catchError(error => this.handleError(error, req, next))
         );
@@ -50,28 +56,36 @@ export class AuthInterceptor implements HttpInterceptor {
                 switchMap(newToken => {
                     this.isRefreshing = false;
                     this.refreshTokenSubject.next(newToken);
-                    const retryReq = req.clone({
-                        setHeaders: { Authorization: `Bearer ${newToken}` }
-                    });
-                    return next.handle(retryReq);
+                    return next.handle(this.addTokenToRequest(req, newToken));
                 }),
                 catchError(err => {
                     this.isRefreshing = false;
-                    return throwError(() => err);
+                    this.refreshTokenSubject.next(null);
+                    this.authService.logout();
+                    this.router.navigate(['/login'], { replaceUrl: true });
+                    return throwError(() => new Error('Session expired'));
+                }),
+                finalize(() => {
+                    this.isRefreshing = false;
                 })
             );
         } else {
-            // Wait until the refresh is done, then retry
             return this.refreshTokenSubject.pipe(
-                filter(token => !!token),
+                filter(token => token !== null),
                 take(1),
                 switchMap(token => {
-                    const retryReq = req.clone({
-                        setHeaders: { Authorization: `Bearer ${token}` }
-                    });
-                    return next.handle(retryReq);
+                    if (token) {
+                        return next.handle(this.addTokenToRequest(req, token));
+                    }
+                    return throwError(() => new Error('Session expired'));
                 })
             );
         }
+    }
+
+    private addTokenToRequest(req: HttpRequest<any>, token: string): HttpRequest<any> {
+        return req.clone({
+            setHeaders: { Authorization: `Bearer ${token}` }
+        });
     }
 }

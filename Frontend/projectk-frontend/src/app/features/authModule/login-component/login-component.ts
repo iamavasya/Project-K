@@ -37,6 +37,9 @@ export class LoginComponent {
         } else if (state?.kurinKey) {
           this.router.navigate(['/kurin', state.kurinKey]);
         }
+        else {
+          this.router.navigate(['/']);
+        }
       },
       error: (error) => {
         alert(`Login failed: ${error}`);
