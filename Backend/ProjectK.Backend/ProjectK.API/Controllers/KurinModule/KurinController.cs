@@ -28,7 +28,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return Ok("Admin here");
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("{kurinKey}")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
