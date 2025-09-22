@@ -1,9 +1,7 @@
 <p-toolbar>
     <ng-template #start>
         <div class="flex items-center gap-2">
-            <p-button icon="pi pi-bars" text severity="secondary" />
-            <p-button label="Edit" text plain />
-            <p-button label="View" text plain />
+            <p-button icon="pi pi-bars" (onClick)="toggleSidebar()" text severity="secondary" />
         </div>
     </ng-template>
 
@@ -15,3 +13,5 @@
         </div>
     </ng-template>
 </p-toolbar>
+
+<app-sidebar-menu [visible]="sidebarVisible" (visibleChange)="sidebarVisible = $event"></app-sidebar-menu>

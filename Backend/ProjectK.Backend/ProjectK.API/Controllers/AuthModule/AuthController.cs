@@ -62,7 +62,10 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             var command = _mapper.Map<LoginUserCommand>(request);
             var response = await _mediator.Send(command);
-            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            if (response.Type != ResultType.Unauthorized)
+            {
+                SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            }
             return response.ToActionResult(this);
         }
 
