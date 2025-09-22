@@ -1,0 +1,13 @@
+<p-drawer [visible]="visible" (onHide)="close()" closable="true">
+    <ng-template #headless>
+        <div class="sidebar-header">
+            <h3>Project K</h3>
+        </div>
+        <div class="sidebar-content">
+            <p-panelmenu [model]="items"></p-panelmenu>
+        </div>
+        <div class="sidebar-footer">
+            <span>here is footer</span>
+        </div>
+    </ng-template>
+</p-drawer>
