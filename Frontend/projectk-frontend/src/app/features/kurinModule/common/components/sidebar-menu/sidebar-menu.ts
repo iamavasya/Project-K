@@ -14,6 +14,10 @@ export class SidebarMenu {
   @Input() visible: boolean = false;
   @Output() visibleChange: EventEmitter<boolean> = new EventEmitter<boolean>();
 
+  // TODO: Продовжити роботу з стейтом, а саме:
+  // 1. Якщо адмін входить в курінь з панелі - додавати в стейт курінь кей, прибирати з історії панель, і показувати кнопку назад в панель, яка прибиратиме курінь кей з стейту
+  // 2. Наповнити меню динамічною інформацією з бекенду і додати роутінг
+  
   items: MenuItem[] = [
     {
       label: 'Kurin',
