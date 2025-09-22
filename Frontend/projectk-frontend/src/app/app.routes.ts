@@ -8,6 +8,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
+import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-header/toolbar-header';
 
 export const routes: Routes = [
   {
@@ -51,5 +52,9 @@ export const routes: Routes = [
     path: 'member/:memberKey', 
     component: MemberCardComponent,
     data: { breadcrumb: 'Member Card', parent: '/group/:groupKey' }
+  },
+  {
+    path: 'toolbar',
+    component: ToolbarHeader,
   }
 ];

@@ -7,7 +7,3 @@ export interface LoginResponse {
         accessToken: string;
     };
 }
-
-export interface UserSession {
-    accessToken: string;
-}
