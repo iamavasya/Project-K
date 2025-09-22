@@ -1,0 +1,17 @@
+<p-toolbar>
+    <ng-template #start>
+        <div class="flex items-center gap-2">
+            <p-button icon="pi pi-bars" text severity="secondary" />
+            <p-button label="Edit" text plain />
+            <p-button label="View" text plain />
+        </div>
+    </ng-template>
+
+    <ng-template #end>
+        <div>
+            @if ((state$ | async)?.accessToken) {
+                <app-logout-component></app-logout-component>
+            }
+        </div>
+    </ng-template>
+</p-toolbar>
