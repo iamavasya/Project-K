@@ -9,6 +9,7 @@ import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
 import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-header/toolbar-header';
+import { kurinGuard } from './features/authModule/guards/kurin.guard';
 
 export const routes: Routes = [
   {
@@ -24,32 +25,37 @@ export const routes: Routes = [
   },
   {
     path: 'panel',
-    canActivate: [authGuard, roleGuard('Admin')], 
+    canActivate: [authGuard, roleGuard('Admin'), kurinGuard('panel')], 
     component: KurinPanelComponent,
     data: { breadcrumb: 'Panel' }
   },
   { 
-    path: 'kurin/:kurinKey', 
+    path: 'kurin',
+    canActivate: [authGuard, kurinGuard('kurin')],
     component: GroupPanelComponent,
-    data: { breadcrumb: 'Kurin', parent: '/panel' }
+    data: { breadcrumb: 'Kurin', parent: '/panel' },
   },
   { 
-    path: 'group/:groupKey', 
+    path: 'group/:groupKey',
+    canActivate: [authGuard, kurinGuard('kurin')],
     component: MemberPanelComponent,
-    data: { breadcrumb: 'Group', parent: '/kurin/:kurinKey' }
+    data: { breadcrumb: 'Group', parent: '/kurin' }
   },
   { 
-    path: 'group/:groupKey/member/upsert/:memberKey', 
+    path: 'group/:groupKey/member/upsert/:memberKey',
+    canActivate: [authGuard, kurinGuard('kurin')],
     component: UpsertMemberComponent,
     data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey' }
   },
   { 
-    path: 'group/:groupKey/member/upsert', 
+    path: 'group/:groupKey/member/upsert',
+    canActivate: [authGuard, kurinGuard('kurin')],
     component: UpsertMemberComponent,
     data: { breadcrumb: 'New Member', parent: '/group/:groupKey' }
   },
   { 
     path: 'member/:memberKey', 
+    canActivate: [authGuard, kurinGuard('kurin')],
     component: MemberCardComponent,
     data: { breadcrumb: 'Member Card', parent: '/group/:groupKey' }
   },

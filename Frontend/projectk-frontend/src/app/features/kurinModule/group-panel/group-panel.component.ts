@@ -10,6 +10,7 @@ import { MenuItem } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
+import { AuthService } from '../../authModule/services/auth.service';
 
 @Component({
   selector: 'app-group-panel',
@@ -23,6 +24,7 @@ export class GroupPanelComponent implements OnInit {
   private readonly router: Router = inject(Router);
   private readonly groupService = inject(GroupService);
   private readonly kurinService = inject(KurinService);
+  private readonly authService = inject(AuthService);
   groups: GroupDto[] = [];
   actions: MenuItem[] = [];
 
@@ -67,8 +69,10 @@ export class GroupPanelComponent implements OnInit {
   selectedGroup: GroupDto | null = null;
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
-      this.kurinKey = params.get('kurinKey')!;
+    this.authService.getAuthState().subscribe(state => {
+      if (state?.kurinKey) {
+        this.kurinKey = state.kurinKey;
+      }
     });
     this.refreshData();
   }

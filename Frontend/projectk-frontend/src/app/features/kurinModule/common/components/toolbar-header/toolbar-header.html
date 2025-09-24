@@ -1,12 +1,15 @@
 <p-toolbar>
     <ng-template #start>
         <div class="flex items-center gap-2">
-            <p-button icon="pi pi-bars" (onClick)="toggleSidebar()" text severity="secondary" />
+            <p-button icon="pi pi-bars" [disabled]="!(state$ | async)?.kurinKey" (onClick)="toggleSidebar()" text severity="secondary" />
         </div>
     </ng-template>
 
     <ng-template #end>
         <div>
+            @if ((state$ | async)?.kurinKey && (state$ | async)?.role === 'Admin') {
+                <p-button (onClick)="backToKurinPanel()" label="Back to Admin Panel" variant="text" severity="info" icon="pi pi-arrow-left" iconPos="left" />
+            }
             @if ((state$ | async)?.accessToken) {
                 <app-logout-component></app-logout-component>
             }
@@ -14,4 +17,4 @@
     </ng-template>
 </p-toolbar>
 
-<app-sidebar-menu [visible]="sidebarVisible" (visibleChange)="sidebarVisible = $event"></app-sidebar-menu>
+<app-sidebar-menu [visible]="sidebarVisible" (visibleChange)="sidebarVisible = $event" [kurinKey]="(state$ | async)?.kurinKey ?? null"></app-sidebar-menu>

@@ -79,4 +79,17 @@ export class AuthService {
   getAccessToken(): string | null {
     return this.authState$.value?.accessToken ?? null;
   }
+
+  setKurinKey(kurinKey: string | null): void {
+    const state = this.authState$.value;
+    if (state) {
+      const newState = { ...state, kurinKey };
+      this.authState$.next(newState);
+      localStorage.setItem('authState', JSON.stringify(newState));
+    }
+  }
+
+  clearKurinKey(): void {
+    this.setKurinKey(null);
+  }
 }

@@ -6,6 +6,7 @@ import { LogoutComponent } from "../../../../authModule/logout-component/logout-
 import { AuthService } from '../../../../authModule/services/auth.service';
 import { AsyncPipe } from '@angular/common';
 import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-toolbar-header',
@@ -16,10 +17,16 @@ import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
 export class ToolbarHeader {
   private readonly authService = inject(AuthService);
   state$ = this.authService.getAuthState();
+  private readonly router = inject(Router);
 
   sidebarVisible: boolean = false;
 
   toggleSidebar() {
     this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  backToKurinPanel() {
+    this.authService.clearKurinKey();
+    this.router.navigate(['/panel']);
   }
 }

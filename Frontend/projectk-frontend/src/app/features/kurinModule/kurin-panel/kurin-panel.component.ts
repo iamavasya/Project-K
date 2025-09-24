@@ -9,6 +9,7 @@ import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/componen
 import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
+import { AuthService } from '../../authModule/services/auth.service';
 
 @Component({
   selector: 'app-kurin-panel',
@@ -20,6 +21,7 @@ export class KurinPanelComponent implements OnInit {
 
   private readonly router: Router = inject(Router);
   private readonly kurinService = inject(KurinService);
+  private readonly authService = inject(AuthService);
   
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
@@ -100,6 +102,7 @@ export class KurinPanelComponent implements OnInit {
   }
 
   onOpenClick(kurinKey: string): void {
-    this.router.navigate(['/kurin', kurinKey]);
+    this.authService.setKurinKey(kurinKey);
+    this.router.navigate(['/kurin']);
   }
 }
