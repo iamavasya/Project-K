@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -96,6 +97,21 @@ namespace ProjectK.API.Controllers.AuthModule
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var command = new LogoutUserCommand(userKeyClaim!);
             var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [HttpPost("check-access")]
+        public async Task<IActionResult> CheckAccess([FromBody] CheckEntityAccessRequest request)
+        {
+            var activeKurinKey = string.IsNullOrEmpty(request.ActiveKurinKey) ? User.FindFirstValue("kurinKey") : request.ActiveKurinKey;
+            var query = new CheckEntityAccessQuery
+            {
+                EntityType = request.EntityType,
+                EntityKey = request.EntityKey,
+                ActiveKurinKey = activeKurinKey
+            };
+            var response = await _mediator.Send(query);
             return response.ToActionResult(this);
         }
 
