@@ -1,8 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { MenuItem } from 'primeng/api';
+import { BaseIcon } from "primeng/icons/baseicon";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -11,7 +13,9 @@ import { MenuItem } from 'primeng/api';
   styleUrl: './sidebar-menu.scss'
 })
 export class SidebarMenu {
+  private readonly router = inject(Router);
   @Input() visible: boolean = false;
+  @Input() kurinKey: string | null = null;
   @Output() visibleChange: EventEmitter<boolean> = new EventEmitter<boolean>();
 
   // TODO: Продовжити роботу з стейтом, а саме:
@@ -21,15 +25,24 @@ export class SidebarMenu {
   items: MenuItem[] = [
     {
       label: 'Kurin',
+      routerLink: ['/kurin'],
+      command: () => {
+        this.close();
+        this.router.navigate(['/kurin']);
+      }
+    },
+    // NOT IMPLEMENTED YET
+    {
+      label: 'Groups',
+      disabled: true
     },
     {
-      label: 'Groups'
+      label: 'All Members',
+      disabled: true
     },
     {
-      label: 'All Members'
-    },
-    {
-      label: 'Settings'
+      label: 'Settings',
+      disabled: true
     }
   ];
 
