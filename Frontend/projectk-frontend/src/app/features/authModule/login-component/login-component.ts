@@ -35,7 +35,7 @@ export class LoginComponent {
         if (state?.role === 'Admin') {
           this.router.navigate(['/panel']);
         } else if (state?.kurinKey) {
-          this.router.navigate(['/kurin', state.kurinKey]);
+          this.router.navigate(['/kurin']);
         }
         else {
           this.router.navigate(['/']);
