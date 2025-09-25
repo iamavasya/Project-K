@@ -7,7 +7,7 @@ import { ToolbarHeader } from "./features/kurinModule/common/components/toolbar-
   selector: 'app-root',
   imports: [RouterOutlet, BreadcrumbComponent, ToolbarHeader],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.css'
 })
 export class App {
   protected readonly title = signal('projectk-frontend');

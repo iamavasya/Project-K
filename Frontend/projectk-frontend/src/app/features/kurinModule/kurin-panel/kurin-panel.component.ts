@@ -15,7 +15,7 @@ import { AuthService } from '../../authModule/services/auth.service';
   selector: 'app-kurin-panel',
   imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule, MessageModule],
   templateUrl: './kurin-panel.component.html',
-  styleUrls: ['./kurin-panel.component.scss']
+  styleUrls: ['./kurin-panel.component.css']
 })
 export class KurinPanelComponent implements OnInit {
 

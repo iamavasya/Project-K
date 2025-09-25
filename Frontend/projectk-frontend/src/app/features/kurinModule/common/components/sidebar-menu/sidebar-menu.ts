@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule],
   templateUrl: './sidebar-menu.html',
-  styleUrl: './sidebar-menu.scss'
+  styleUrl: './sidebar-menu.css'
 })
 export class SidebarMenu {
   private readonly router = inject(Router);
