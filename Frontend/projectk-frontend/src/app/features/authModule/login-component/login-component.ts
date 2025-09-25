@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
   selector: 'app-login-component',
   imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule],
   templateUrl: './login-component.html',
-  styleUrl: './login-component.scss'
+  styleUrl: './login-component.css'
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);

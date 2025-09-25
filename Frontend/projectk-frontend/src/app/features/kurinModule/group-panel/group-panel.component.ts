@@ -16,7 +16,7 @@ import { AuthService } from '../../authModule/services/auth.service';
   selector: 'app-group-panel',
   imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent],
   templateUrl: './group-panel.component.html',
-  styleUrls: ['./group-panel.component.scss']
+  styleUrls: ['./group-panel.component.css']
 })
 export class GroupPanelComponent implements OnInit {
 

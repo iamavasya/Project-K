@@ -23,7 +23,7 @@ import { Location } from '@angular/common';
   imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.component.html',
-  styleUrl: './upsert-member.component.scss'
+  styleUrl: './upsert-member.component.css'
 })
 export class UpsertMemberComponent implements OnInit {
   member: MemberDto = {

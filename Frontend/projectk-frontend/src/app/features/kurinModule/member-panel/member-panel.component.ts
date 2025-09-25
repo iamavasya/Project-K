@@ -12,7 +12,7 @@ import { GroupDto } from '../common/models/groupDto';
   selector: 'app-member-panel',
   imports: [TableModule, ButtonModule, GroupChevron],
   templateUrl: './member-panel.component.html',
-  styleUrl: './member-panel.component.scss'
+  styleUrl: './member-panel.component.css'
 })
 export class MemberPanelComponent implements OnInit {
 

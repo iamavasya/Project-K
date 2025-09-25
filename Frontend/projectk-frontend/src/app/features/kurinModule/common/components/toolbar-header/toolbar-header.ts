@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
   selector: 'app-toolbar-header',
   imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu],
   templateUrl: './toolbar-header.html',
-  styleUrl: './toolbar-header.scss'
+  styleUrl: './toolbar-header.css'
 })
 export class ToolbarHeader {
   private readonly authService = inject(AuthService);

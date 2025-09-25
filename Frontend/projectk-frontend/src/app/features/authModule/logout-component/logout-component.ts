@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
   selector: 'app-logout-component',
   imports: [ButtonModule],
   templateUrl: './logout-component.html',
-  styleUrl: './logout-component.scss'
+  styleUrl: './logout-component.css'
 })
 export class LogoutComponent {
   private readonly authService = inject(AuthService);
