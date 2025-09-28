@@ -1,5 +1,5 @@
 <div class="w-3/4 mx-auto mt-6">
-    <p-table #usersTable [value]="users" dataKey="id" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']">
+    <p-table #usersTable [value]="users" dataKey="userId" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']">
         <ng-template #caption>
             <div class="flex">
                 <p-iconfield iconPosition="left" class="ml-auto">
@@ -68,40 +68,42 @@
                     </p-cellEditor>
                 </td>
                 <td>
-                    @if (!editing) {
-                        <button
-                            pButton
-                            type="button"
-                            pInitEditableRow
-                            icon="pi pi-pencil"
-                            (click)="onRowEditInit(user)"
-                            text
-                            rounded
-                            severity="secondary">
-                        </button>
-                    }
-                    @else if (editing) {
-                        <button
-                            pButton
-                            type="button"
-                            pSaveEditableRow
-                            icon="pi pi-check"
-                            (click)="onRowEditSave(user)"
-                            text
-                            rounded
-                            severity="success">
-                        </button>
-                        <button
-                            pButton
-                            type="button"
-                            pCancelEditableRow
-                            icon="pi pi-times"
-                            (click)="onRowEditCancel(user, ri)"
-                            text
-                            rounded
-                            severity="danger">
-                        </button>
-                    }
+                    <div>
+                        @if (!editing) {
+                            <button
+                                pButton
+                                type="button"
+                                pInitEditableRow
+                                icon="pi pi-pencil"
+                                (click)="onRowEditInit(user)"
+                                text
+                                rounded
+                                severity="secondary">
+                            </button>
+                        }
+                        @else if (editing) {
+                            <button
+                                pButton
+                                type="button"
+                                pSaveEditableRow
+                                icon="pi pi-check"
+                                (click)="onRowEditSave(user)"
+                                text
+                                rounded
+                                severity="success">
+                            </button>
+                            <button
+                                pButton
+                                type="button"
+                                pCancelEditableRow
+                                icon="pi pi-times"
+                                (click)="onRowEditCancel(user, ri)"
+                                text
+                                rounded
+                                severity="danger">
+                            </button>
+                        }
+                    </div>
                 </td>
             </tr>
         </ng-template>
