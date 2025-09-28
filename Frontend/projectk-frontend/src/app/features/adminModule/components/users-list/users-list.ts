@@ -38,7 +38,7 @@ export class UsersListComponent implements OnInit {
   ngOnInit() {
     this.userService.getAllUsers().subscribe(users => {
       this.users = users;
-    });
+    }); 
   }
 
   onRowEditInit(user: UserDto) {
