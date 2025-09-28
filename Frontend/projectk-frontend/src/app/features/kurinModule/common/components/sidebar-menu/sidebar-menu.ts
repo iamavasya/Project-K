@@ -53,11 +53,21 @@ export class SidebarMenu implements OnChanges {
           this.close();
           this.router.navigate(['/kurin']);
         },
-        disabled
+        disabled,
+        visible: !!kurinKey
       },
-      { label: 'Groups', disabled: true },
-      { label: 'All Members', disabled: true },
-      { label: 'Settings', disabled: true }
+      { label: 'Groups', disabled: true, visible: !!kurinKey },
+      { label: 'All Members', disabled: true, visible: !!kurinKey },
+      { label: 'Settings', disabled: true, visible: !!kurinKey },
+      { label: 'Global Settings', visible: !kurinKey },
+      { 
+        label: 'Users',
+        visible: !kurinKey,
+        command: () => {
+          this.close();
+          this.router.navigate(['/users']);
+        } 
+      },
     ];
   }
 

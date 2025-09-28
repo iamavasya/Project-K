@@ -81,7 +81,14 @@ namespace ProjectK.API.Controllers.AuthModule
             }
             var command = new RefreshTokenCommand(refreshToken);
             var response = await _mediator.Send(command);
-            SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
+            if (response.Type == ResultType.Unauthorized)
+            {
+                await Logout();
+            }
+            else
+            {
+                SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
+            }
             return response.ToActionResult(this);
         }
 
@@ -89,14 +96,14 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var command = new LogoutUserCommand(userKeyClaim!);
+            var response = await _mediator.Send(command);
             var refreshToken = Request.Cookies["refreshToken"];
             if (refreshToken != null)
             {
                 Response.Cookies.Delete("refreshToken");
             }
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new LogoutUserCommand(userKeyClaim!);
-            var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
 

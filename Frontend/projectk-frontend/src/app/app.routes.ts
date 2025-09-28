@@ -9,8 +9,9 @@ import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
 import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-header/toolbar-header';
-import { kurinGuard } from './features/authModule/guards/kurin.guard';
+import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
+import { UsersListComponent } from './features/adminModule/components/users-list/users-list';
 
 export const routes: Routes = [
   {
@@ -25,38 +26,44 @@ export const routes: Routes = [
     data: { breadcrumb: 'Logout' }
   },
   {
+    path: 'users',
+    canActivate: [authGuard, roleGuard('Admin')],
+    component: UsersListComponent,
+    data: { breadcrumb: 'Users', parent: '/panel' }
+  },
+  {
     path: 'panel',
-    canActivate: [authGuard, roleGuard('Admin'), kurinGuard('panel')], 
+    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')], 
     component: KurinPanelComponent,
     data: { breadcrumb: 'Panel' }
   },
   { 
     path: 'kurin',
-    canActivate: [authGuard, kurinGuard('kurin')],
+    canActivate: [authGuard, kurinAccessGuard('kurin')],
     component: GroupPanelComponent,
     data: { breadcrumb: 'Kurin', parent: '/panel' },
   },
   { 
     path: 'group/:groupKey',
-    canActivate: [authGuard, kurinGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: MemberPanelComponent,
     data: { breadcrumb: 'Group', parent: '/kurin', entityType: 'group' }
   },
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
-    canActivate: [authGuard, kurinGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
     data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey', entityType: 'member' }
   },
   { 
     path: 'group/:groupKey/member/upsert',
-    canActivate: [authGuard, kurinGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
     data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
   },
   { 
     path: 'member/:memberKey', 
-    canActivate: [authGuard, kurinGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: MemberCardComponent,
     data: { breadcrumb: 'Member Card', parent: '/group/:groupKey', entityType: 'member' }
   },
