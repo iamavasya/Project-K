@@ -15,8 +15,4 @@
     <ProjectReference Include="..\ProjectK.Common\ProjectK.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Modules\UsersModule\Models\" />
-  </ItemGroup>
-
 </Project>
