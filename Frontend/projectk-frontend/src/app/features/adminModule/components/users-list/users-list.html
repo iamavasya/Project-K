@@ -1,1 +1,109 @@
-<p>users-list works!</p>
+<div class="w-3/4 mx-auto mt-6">
+    <p-table #usersTable [value]="users" dataKey="id" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']">
+        <ng-template #caption>
+            <div class="flex">
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="usersTable.filterGlobal($event.target.value, 'contains')" placeholder="Search keyword" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th style="width: 10%"></th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-user let-editing="editing" let-ri="rowIndex">
+            <tr [pEditableRow]="user">
+                <td>
+                    <p-cellEditor>
+                        <ng-template #input>
+                            <input
+                                pInputText type="text"
+                                [(ngModel)]="user.firstName" />
+                        </ng-template>
+                        <ng-template #output>
+                            {{user.firstName}}
+                        </ng-template>
+                    </p-cellEditor>
+                </td>
+                <td>
+                    <p-cellEditor>
+                        <ng-template #input>
+                            <input
+                                pInputText type="text"
+                                [(ngModel)]="user.lastName" />
+                        </ng-template>
+                        <ng-template #output>
+                            {{user.lastName}}
+                        </ng-template>
+                    </p-cellEditor>
+                </td>
+                <td>
+                    <p-cellEditor>
+                        <ng-template #input>
+                            <input
+                                pInputText type="text"
+                                [(ngModel)]="user.email" />
+                        </ng-template>
+                        <ng-template #output>
+                            {{user.email}}
+                        </ng-template>
+                    </p-cellEditor>
+                </td>
+                <td>
+                    <p-cellEditor>
+                        <ng-template #input>
+                            <p-select />
+                        </ng-template>
+                        <ng-template #output>
+                            {{user.role}}
+                        </ng-template>
+                    </p-cellEditor>
+                </td>
+                <td>
+                    @if (!editing) {
+                        <button
+                            pButton
+                            type="button"
+                            pInitEditableRow
+                            icon="pi pi-pencil"
+                            (click)="onRowEditInit(user)"
+                            text
+                            rounded
+                            severity="secondary">
+                        </button>
+                    }
+                    @else if (editing) {
+                        <button
+                            pButton
+                            type="button"
+                            pSaveEditableRow
+                            icon="pi pi-check"
+                            (click)="onRowEditSave(user)"
+                            text
+                            rounded
+                            severity="success">
+                        </button>
+                        <button
+                            pButton
+                            type="button"
+                            pCancelEditableRow
+                            icon="pi pi-times"
+                            (click)="onRowEditCancel(user, ri)"
+                            text
+                            rounded
+                            severity="danger">
+                        </button>
+                    }
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

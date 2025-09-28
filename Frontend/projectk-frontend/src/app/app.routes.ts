@@ -27,7 +27,7 @@ export const routes: Routes = [
   },
   {
     path: 'users',
-    canActivate: [authGuard, roleGuard('Admin')],
+    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
     component: UsersListComponent,
     data: { breadcrumb: 'Users', parent: '/panel' }
   },
