@@ -5,6 +5,7 @@ import { environment } from "../../environments/environment";
 import { LoginRequest } from "../models/login-request.model";
 import { LoginResponse } from "../models/login-response.model";
 import { AuthState } from "../models/auth-state.model";
+import { KurinDto } from "../../kurinModule/common/models/kurinDto";
 
 @Injectable({
   providedIn: 'root'
@@ -73,6 +74,24 @@ export class AuthService {
         }
       }),
       map(res => res.accessToken)
+    );
+  }
+
+  registerFirstManager(kurinDto: KurinDto): Observable<void> {
+    const body = {
+      email: kurinDto.managerEmail,
+      password: null,
+      firstName: null,
+      lastName: null,
+      phoneNumber: null,
+      kurinNumber: kurinDto.number,
+      role: "Manager"
+    };
+
+    return this.http.post<void>(
+      `${this.apiUrl}/auth/register/manager`,
+      body,
+      { withCredentials: true }
     );
   }
 
