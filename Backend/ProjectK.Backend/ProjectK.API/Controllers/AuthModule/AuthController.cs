@@ -38,10 +38,10 @@ namespace ProjectK.API.Controllers.AuthModule
             var command = new RegisterManagerCommand
             {
                 Email = request.Email,
-                Password = request.Password,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                PhoneNumber = request.PhoneNumber,
+                Password = request.Password ?? "tempManagerPass1!",
+                FirstName = request.FirstName ?? "tempManagerFirstName",
+                LastName = request.LastName ?? "tempManagerLastName",
+                PhoneNumber = request.PhoneNumber ?? "tempManagerNumber",
                 KurinNumber = (int)request.KurinNumber!
             };
             var response = await _mediator.Send(command);

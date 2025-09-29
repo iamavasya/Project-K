@@ -53,9 +53,17 @@ export class KurinPanelComponent implements OnInit {
         type: 'number',
         required: true,
         hiddenOn: ['delete'],
+      },
+      {
+        name: 'managerEmail',
+        label: 'Manager Email',
+        type: 'text',
+        required: true,
+        hiddenOn: ['delete'],
+        disabledOn: ['update']
       }
     ],
-    createFactory: () => ({ kurinKey: '', number: null }),
+    createFactory: () => ({ kurinKey: '', number: null, managerEmail: '' }),
   }
 
   prepareItemActions(item: KurinDto): void {
@@ -84,7 +92,8 @@ export class KurinPanelComponent implements OnInit {
   onManageAction(e: { action: ManageAction; entity: KurinDto; entityType: string }): void {
     switch (e.action) {
       case 'create':
-        this.kurinService.createKurin(e.entity).subscribe(() => this.refreshData());
+        this.authService.registerFirstManager(e.entity).subscribe(() => { this.refreshData(); });
+        // this.kurinService.createKurin(e.entity).subscribe(() => this.refreshData());
         break;
       case 'update':
         this.kurinService.updateKurin(e.entity).subscribe(() => this.refreshData());

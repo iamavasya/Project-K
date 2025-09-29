@@ -33,18 +33,19 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
             try
             {
-                // Step 1: Register the user
+                // Step 1: Create the new Kurin
+                var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
+                
+                // Step 2: Register the user
                 var userResult = await _mediator.Send(new RegisterUserCommand
                 {
                     Email = request.Email,
                     Password = request.Password,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Role = UserRole.Manager.ToClaimValue()
+                    Role = UserRole.Manager.ToClaimValue(),
+                    KurinKey = kurinResult.Data.KurinKey
                 }, cancellationToken);
-
-                // Step 2: Create the new Kurin
-                var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
 
                 // Step 3: Create the new Member and associate with User
                 var memberResult = await _mediator.Send(new UpsertMemberCommand
