@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
+import { AdminPanelComponent } from './features/kurinModule/admin-panel/admin-panel.component';
 import { KurinPanelComponent } from './features/kurinModule/kurin-panel/kurin-panel.component';
 import { GroupPanelComponent } from './features/kurinModule/group-panel/group-panel.component';
-import { MemberPanelComponent } from './features/kurinModule/member-panel/member-panel.component';
 import { MemberCardComponent } from './features/kurinModule/member-card/member-card.component';
 import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upsert-member.component';
 import { authGuard } from './features/authModule/guards/auth.guard';
@@ -34,19 +34,19 @@ export const routes: Routes = [
   {
     path: 'panel',
     canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')], 
-    component: KurinPanelComponent,
+    component: AdminPanelComponent,
     data: { breadcrumb: 'Panel' }
   },
   { 
     path: 'kurin',
     canActivate: [authGuard, kurinAccessGuard('kurin')],
-    component: GroupPanelComponent,
+    component: KurinPanelComponent,
     data: { breadcrumb: 'Kurin', parent: '/panel' },
   },
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    component: MemberPanelComponent,
+    component: GroupPanelComponent,
     data: { breadcrumb: 'Group', parent: '/kurin', entityType: 'group' }
   },
   { 
