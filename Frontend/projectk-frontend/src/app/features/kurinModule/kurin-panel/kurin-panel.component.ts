@@ -11,10 +11,11 @@ import { MessageModule } from 'primeng/message';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
 import { AuthService } from '../../authModule/services/auth.service';
+import { MemberList } from '../common/components/member-list/member-list';
 
 @Component({
   selector: 'app-kurin-panel',
-  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent],
+  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent, MemberList],
   templateUrl: './kurin-panel.component.html',
   styleUrls: ['./kurin-panel.component.css']
 })

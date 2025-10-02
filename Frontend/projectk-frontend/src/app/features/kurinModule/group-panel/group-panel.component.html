@@ -21,4 +21,7 @@
         </ng-template>
     </p-table>
     <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" iconPos="right" />
+
+    <app-member-list [type]="'group'" [typeKey]="groupKey"></app-member-list>
 </div>
+

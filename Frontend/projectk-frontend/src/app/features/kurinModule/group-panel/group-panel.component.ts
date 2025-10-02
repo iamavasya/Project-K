@@ -7,10 +7,11 @@ import { ButtonModule } from 'primeng/button';
 import { GroupService } from '../common/services/group-service/group.service';
 import { GroupChevron } from "../common/components/group-chevron/group-chevron";
 import { GroupDto } from '../common/models/groupDto';
+import { MemberList } from '../common/components/member-list/member-list';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, GroupChevron],
+  imports: [TableModule, ButtonModule, GroupChevron, MemberList],
   templateUrl: './group-panel.component.html',
   styleUrl: './group-panel.component.css'
 })

@@ -34,6 +34,8 @@
             <p-message icon="pi pi-question-circle" severity="info">Наразі немає гуртків. Мабуть, варто додати?</p-message>
         </div>
     }
+
+    <app-member-list [type]="'kurin'" [typeKey]="kurinKey"></app-member-list>
 </div>
 <app-manage-panel
   [(visible)]="groupPanelVisible"
