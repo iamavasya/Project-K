@@ -1,10 +1,10 @@
-.kurin-header {
+.group-header {
     display: flex;
     align-items: center;
     margin: 5rem;
 }
 
-.kurin-head-message {
+.group-head-message {
     display: flex;
     margin-left: 2rem;
     font-size: 2rem;
@@ -12,9 +12,4 @@
 
 .group-panel {
     margin: 5rem;
-
-    .group-actions {
-        text-align: right;
-        width: 1rem;
-    }
 }
