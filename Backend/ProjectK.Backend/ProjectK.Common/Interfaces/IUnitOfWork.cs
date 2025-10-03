@@ -1,4 +1,5 @@
-﻿using ProjectK.Common.Interfaces.Modules.KurinModule;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,5 +14,6 @@ namespace ProjectK.Common.Interfaces
         IGroupRepository Groups { get; }
         IMemberRepository Members { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
+        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
     }
 }

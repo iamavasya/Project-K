@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-group-chevron',
   imports: [],
   templateUrl: './group-chevron.html',
-  styleUrl: './group-chevron.scss'
+  styleUrl: './group-chevron.css'
 })
 export class GroupChevron {
 

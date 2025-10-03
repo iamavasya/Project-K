@@ -65,7 +65,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Returns(new MemberResponse
                 {
                     MemberKey = member.MemberKey,
-                    GroupKey = member.GroupKey,
+                    GroupKey = (Guid)member.GroupKey,
                     KurinKey = member.KurinKey,
                     FirstName = member.FirstName,
                     MiddleName = member.MiddleName,

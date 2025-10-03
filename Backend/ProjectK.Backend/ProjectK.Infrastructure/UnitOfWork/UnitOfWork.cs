@@ -1,4 +1,5 @@
-﻿using ProjectK.Common.Interfaces;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
@@ -30,6 +31,11 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public Task<int> SaveChangesAsync(CancellationToken token = default)
         {
             return _context.SaveChangesAsync(token);
+        }
+
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default)
+        {
+            return _context.Database.BeginTransactionAsync(token);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
@@ -21,6 +22,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("{memberKey}")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -31,6 +33,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("members")]
         [ProducesResponseType(typeof(IEnumerable<MemberResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,6 +44,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireMentor")]
         [HttpPost]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
@@ -67,6 +71,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireMentor")]
         [HttpPut("{memberKey:guid}")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
@@ -98,6 +103,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireMentor")]
         [HttpDelete("{memberKey:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

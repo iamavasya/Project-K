@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-kurin-number',
   imports: [CommonModule],
   templateUrl: './kurin-number.html',
-  styleUrl: './kurin-number.scss'
+  styleUrl: './kurin-number.css'
 })
 export class KurinNumberComponent {
   @Input() number: number | null = null;

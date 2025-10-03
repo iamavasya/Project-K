@@ -1,40 +1,75 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
-import { KurinPanelComponent } from './kurin-panel.component';
-import { KurinService } from '../common/services/kurin-service/kurin.service';
-import { KurinDto } from '../common/models/kurinDto';
+import { ActivatedRoute } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
+import { KurinPanelComponent } from './kurin-panel.component';
+import { GroupService } from '../common/services/group-service/group.service';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
+import { GroupDto } from '../common/models/groupDto';
+import { AuthState } from '../../authModule/models/auth-state.model';
 
 describe('KurinPanelComponent', () => {
-  let component: KurinPanelComponent;
   let fixture: ComponentFixture<KurinPanelComponent>;
-  let kurinService: jasmine.SpyObj<KurinService>;
+  let component: KurinPanelComponent;
 
-  const mockKurins: KurinDto[] = [
-    { kurinKey: '1', number: 101 },
-    { kurinKey: '2', number: 102 }
+  let groupService: jasmine.SpyObj<GroupService>;
+  let kurinService: jasmine.SpyObj<KurinService>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let authState$: BehaviorSubject<AuthState | null>;
+
+  const mockAuthState: AuthState = {
+    userKey: 'u1',
+    email: 'test@example.com',
+    role: 'admin',
+    kurinKey: 'k1',
+    accessToken: 'token'
+  };
+
+  const mockGroups: GroupDto[] = [
+    { groupKey: 'g1', name: 'Alpha', kurinKey: 'k1', kurinNumber: 10 },
+    { groupKey: 'g2', name: 'Beta',  kurinKey: 'k1', kurinNumber: 10 }
   ];
 
   beforeEach(async () => {
-    const kurinServiceSpy = jasmine.createSpyObj('KurinService',
-      ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
+    authState$ = new BehaviorSubject<AuthState | null>(mockAuthState);
+
+    groupService = jasmine.createSpyObj<GroupService>('GroupService', [
+      'getAllByKurinKey', 'create', 'update', 'delete'
+    ]);
+    kurinService = jasmine.createSpyObj<KurinService>('KurinService', [
+      'getByKey'
+    ]);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', [
+      'getAuthState'
+    ]);
+
+    groupService.getAllByKurinKey.and.returnValue(of(mockGroups));
+    kurinService.getByKey.and.returnValue(of({ kurinKey: 'k1', number: 10 }));
+    authService.getAuthState.and.returnValue(authState$.asObservable());
+
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: {} },
+        { provide: GroupService, useValue: groupService },
+        { provide: KurinService, useValue: kurinService },
+        { provide: AuthService, useValue: authService },
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
-        { provide: KurinService, useValue: kurinServiceSpy }
+        provideNoopAnimations()
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(KurinPanelComponent);
     component = fixture.componentInstance;
-    kurinService = TestBed.inject(KurinService) as jasmine.SpyObj<KurinService>;
+  });
 
-    kurinService.getKurins.and.returnValue(of(mockKurins));
+  afterEach(() => {
+    authState$.complete();
   });
 
   it('should create', () => {
@@ -42,94 +77,110 @@ describe('KurinPanelComponent', () => {
   });
 
   it('initial state before ngOnInit', () => {
-    expect(component.data).toEqual([]);
-    expect(component.selectedItem).toBeNull();
-    expect(component.managePanelVisible).toBeFalse();
-    expect(component.managePanelParameter).toBe('undef');
+    expect(component.kurinKey).toBe('');
+    expect(component.groups).toEqual([]);
+    expect(component.groupPanelVisible).toBeFalse();
+    expect(component.groupPanelParameter).toBe('undef');
   });
 
-  it('should fetch kurins on init', () => {
-    component.ngOnInit();
-    expect(kurinService.getKurins).toHaveBeenCalledTimes(1);
-    expect(component.data).toEqual(mockKurins);
+  it('on init gets kurinKey from authState and calls refreshData', () => {
+    fixture.detectChanges(); // triggers ngOnInit
+    expect(authService.getAuthState).toHaveBeenCalled();
+    expect(component.kurinKey).toBe('k1');
+    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k1');
+    expect(kurinService.getByKey).toHaveBeenCalledWith('k1');
+    expect(component.groups).toEqual(mockGroups);
   });
 
-  it('refreshData sets empty array on null response', () => {
-    kurinService.getKurins.and.returnValue(of(null as unknown as KurinDto[]));
-    component.refreshData();
-    expect(component.data).toEqual([]);
-  });
-
-  it('should show no data message when list empty (template)', () => {
-    kurinService.getKurins.and.returnValue(of([]));
-    component.refreshData();
+  it('authState emission updates kurinKey', () => {
     fixture.detectChanges();
-    expect(component.data.length).toBe(0);
-    const msg = fixture.nativeElement.querySelector('p-message');
-    expect(msg).toBeTruthy();
-    expect(msg.textContent).toContain('Наразі немає доступних куренів');
+    groupService.getAllByKurinKey.calls.reset();
+    const newAuthState: AuthState = {
+      ...mockAuthState,
+      kurinKey: 'k2'
+    };
+    authState$.next(newAuthState);
+    expect(component.kurinKey).toBe('k2');
+  });
+
+  it('manual refresh uses current kurinKey from component', () => {
+    fixture.detectChanges();
+    component.kurinKey = 'k2';
+    groupService.getAllByKurinKey.calls.reset();
+    kurinService.getByKey.calls.reset();
+    component.refreshData();
+    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k2');
+    expect(kurinService.getByKey).toHaveBeenCalledWith('k2');
   });
 
   describe('prepareItemActions', () => {
-    it('creates Update/Delete menu items', () => {
-      component.prepareItemActions(mockKurins[0]);
+    it('sets Update/Delete actions', () => {
+      component.prepareItemActions(mockGroups[0]);
       expect(component.actions.length).toBe(2);
       expect(component.actions[0].label).toBe('Update');
       expect(component.actions[1].label).toBe('Delete');
     });
   });
 
-  describe('onActionClick', () => {
-    it('opens panel for update', () => {
-      component.onActionClick(mockKurins[0], 'update');
-      expect(component.selectedItem).toBe(mockKurins[0]);
-      expect(component.managePanelVisible).toBeTrue();
-      expect(component.managePanelParameter).toBe('update');
+  describe('onGroupActionClick', () => {
+    it('create: resets selectedGroup', () => {
+      component.onGroupActionClick(null, 'create');
+      expect(component.selectedGroup).toBeNull();
+      expect(component.groupPanelParameter).toBe('create');
+      expect(component.groupPanelVisible).toBeTrue();
     });
 
-    it('opens panel for create (selectedItem null)', () => {
-      component.onActionClick(null, 'create');
-      expect(component.selectedItem).toBeNull();
-      expect(component.managePanelVisible).toBeTrue();
-      expect(component.managePanelParameter).toBe('create');
+    it('update: sets selectedGroup', () => {
+      component.onGroupActionClick(mockGroups[0], 'update');
+      expect(component.selectedGroup).toBe(mockGroups[0]);
+      expect(component.groupPanelParameter).toBe('update');
+      expect(component.groupPanelVisible).toBeTrue();
     });
   });
 
-  describe('onManageAction', () => {
+  describe('onGroupManage', () => {
     beforeEach(() => {
-      component.ngOnInit(); // baseline fetch
-      kurinService.createKurin.and.returnValue(of({ kurinKey: '3', number: 103 }));
-      kurinService.updateKurin.and.returnValue(of({ kurinKey: '1', number: 201 }));
-      kurinService.deleteKurin.and.returnValue(of(void 0));
+      component.kurinKey = 'k1';
+      groupService.create.and.returnValue(of(mockGroups[0]));
+      groupService.update.and.returnValue(of(mockGroups[0]));
+      groupService.delete.and.returnValue(of(void 0));
     });
 
-    it('handles create', () => {
-      const newEntity: KurinDto = { kurinKey: '3', number: 103 };
-      component.onManageAction({ action: 'create', entity: newEntity, entityType: 'kurin' });
-      expect(kurinService.createKurin).toHaveBeenCalledWith(newEntity);
-      expect(kurinService.getKurins).toHaveBeenCalledTimes(2); // initial + refresh
+    it('create calls service.create with full entity', () => {
+      const entity = { groupKey: '', name: 'Gamma', kurinKey: 'k1', kurinNumber: 10 };
+      component.onGroupManage({ action: 'create', entity });
+      expect(groupService.create).toHaveBeenCalledWith(entity);
+      expect(groupService.getAllByKurinKey).toHaveBeenCalled();
     });
 
-    it('handles update', () => {
-      const updated: KurinDto = { kurinKey: '1', number: 201 };
-      component.onManageAction({ action: 'update', entity: updated, entityType: 'kurin' });
-      expect(kurinService.updateKurin).toHaveBeenCalledWith(updated);
-      expect(kurinService.getKurins).toHaveBeenCalledTimes(2);
+    it('update calls service.update with key + entity', () => {
+      const entity = { groupKey: 'g1', name: 'Alpha*', kurinKey: 'k1', kurinNumber: 10 };
+      component.onGroupManage({ action: 'update', entity });
+      expect(groupService.update).toHaveBeenCalledWith('g1', entity);
+      expect(groupService.getAllByKurinKey).toHaveBeenCalled();
     });
 
-    it('handles delete', () => {
-      const toDelete: KurinDto = { kurinKey: '1', number: 101 };
-      component.onManageAction({ action: 'delete', entity: toDelete, entityType: 'kurin' });
-      expect(kurinService.deleteKurin).toHaveBeenCalledWith('1');
-      expect(kurinService.getKurins).toHaveBeenCalledTimes(2);
+    it('delete calls service.delete with key', () => {
+      const entity = { groupKey: 'g1', name: 'Alpha', kurinKey: 'k1', kurinNumber: 10 };
+      component.onGroupManage({ action: 'delete', entity });
+      expect(groupService.delete).toHaveBeenCalledWith('g1');
+      expect(groupService.getAllByKurinKey).toHaveBeenCalled();
     });
   });
 
-  describe('managePanelConfig', () => {
-    it('has correct field rules (kurinKey hidden on create)', () => {
-      const kurinKeyField = component.managePanelConfig.fields.find(f => f.name === 'kurinKey')!;
-      expect(kurinKeyField.hiddenOn).toContain('create');
-      expect(kurinKeyField.disabledOn).toContain('update');
+  describe('groupPanelConfig', () => {
+    it('groupKey field rules', () => {
+      const f = component.groupPanelConfig.fields.find(x => x.name === 'groupKey')!;
+      expect(f.hiddenOn).toContain('create');
+      expect(f.disabledOn).toContain('update');
+    });
+    it('kurinKey hidden on update', () => {
+      const f = component.groupPanelConfig.fields.find(x => x.name === 'kurinKey')!;
+      expect(f.hiddenOn).toContain('update');
+    });
+    it('name visible on create', () => {
+      const f = component.groupPanelConfig.fields.find(x => x.name === 'name')!;
+      expect((f.hiddenOn || []).includes('create')).toBeFalse();
     });
   });
 });

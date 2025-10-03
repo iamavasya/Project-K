@@ -12,6 +12,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members
     public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>
     {
         public Guid MemberKey { get; set; }
+        public Guid? UserKey { get; set; }
+        public Guid? KurinKey { get; set; }
         public Guid GroupKey { get; set; }
         public string FirstName { get; set; }
         public string MiddleName { get; set; }

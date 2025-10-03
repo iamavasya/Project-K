@@ -9,7 +9,7 @@ import { ButtonModule } from 'primeng/button';
   selector: 'app-member-card',
   imports: [SkeletonModule, ButtonModule],
   templateUrl: './member-card.component.html',
-  styleUrl: './member-card.component.scss'
+  styleUrl: './member-card.component.css'
 })
 export class MemberCardComponent implements OnInit {
   route = inject(ActivatedRoute);
