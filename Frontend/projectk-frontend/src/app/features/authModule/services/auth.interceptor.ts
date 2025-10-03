@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { inject, Injectable } from "@angular/core";
 import {
     HttpInterceptor,
@@ -6,7 +7,7 @@ import {
     HttpEvent,
     HttpErrorResponse
 } from "@angular/common/http";
-import { AuthService } from "./auth.service";
+import { AuthService } from "./authService/auth.service";
 import { Observable, throwError, BehaviorSubject } from "rxjs";
 import { catchError, switchMap, filter, take, finalize } from "rxjs/operators";
 import { Router } from "@angular/router";
@@ -58,7 +59,7 @@ export class AuthInterceptor implements HttpInterceptor {
                     this.refreshTokenSubject.next(newToken);
                     return next.handle(this.addTokenToRequest(req, newToken));
                 }),
-                catchError(err => {
+                catchError(() => {
                     this.isRefreshing = false;
                     this.refreshTokenSubject.next(null);
                     this.authService.logout();

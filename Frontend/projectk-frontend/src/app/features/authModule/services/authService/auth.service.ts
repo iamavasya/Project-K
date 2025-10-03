@@ -1,11 +1,11 @@
 import { inject, Injectable } from "@angular/core";
 import { BehaviorSubject, map, Observable, tap } from "rxjs";
 import { HttpClient } from "@angular/common/http";
-import { environment } from "../../environments/environment";
-import { LoginRequest } from "../models/login-request.model";
-import { LoginResponse } from "../models/login-response.model";
-import { AuthState } from "../models/auth-state.model";
-import { KurinDto } from "../../kurinModule/common/models/kurinDto";
+import { environment } from "../../../environments/environment";
+import { LoginRequest } from "../../models/login-request.model";
+import { LoginResponse } from "../../models/login-response.model";
+import { AuthState } from "../../models/auth-state.model";
+import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 
 @Injectable({
   providedIn: 'root'

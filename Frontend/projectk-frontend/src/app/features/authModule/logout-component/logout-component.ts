@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/authService/auth.service';
 import { Router } from '@angular/router';
 
 @Component({

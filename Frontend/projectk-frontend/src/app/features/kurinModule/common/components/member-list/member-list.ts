@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
 })
 export class MemberList implements OnInit {
   @Input() type: 'kurin' | 'group' = 'group';
-  @Input() typeKey: string = '';
+  @Input() typeKey = '';
 
   private readonly memberService = inject(MemberService);
   private readonly router = inject(Router);

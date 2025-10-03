@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { AdminPanelComponent } from './admin-panel.component';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { KurinDto } from '../common/models/kurinDto';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -11,6 +12,7 @@ describe('AdminPanelComponent', () => {
   let component: AdminPanelComponent;
   let fixture: ComponentFixture<AdminPanelComponent>;
   let kurinService: jasmine.SpyObj<KurinService>;
+  let authService: jasmine.SpyObj<AuthService>;
 
   const mockKurins: KurinDto[] = [
     { kurinKey: '1', number: 101 },
@@ -20,19 +22,24 @@ describe('AdminPanelComponent', () => {
   beforeEach(async () => {
     const kurinServiceSpy = jasmine.createSpyObj('KurinService',
       ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService',
+      ['registerFirstManager', 'setKurinKey']);
+    
     await TestBed.configureTestingModule({
       imports: [AdminPanelComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations(),
-        { provide: KurinService, useValue: kurinServiceSpy }
+        { provide: KurinService, useValue: kurinServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminPanelComponent);
     component = fixture.componentInstance;
     kurinService = TestBed.inject(KurinService) as jasmine.SpyObj<KurinService>;
+    authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
 
     kurinService.getKurins.and.returnValue(of(mockKurins));
   });
@@ -98,15 +105,15 @@ describe('AdminPanelComponent', () => {
   describe('onManageAction', () => {
     beforeEach(() => {
       component.ngOnInit(); // baseline fetch
-      kurinService.createKurin.and.returnValue(of({ kurinKey: '3', number: 103 }));
+      authService.registerFirstManager.and.returnValue(of(void 0));
       kurinService.updateKurin.and.returnValue(of({ kurinKey: '1', number: 201 }));
       kurinService.deleteKurin.and.returnValue(of(void 0));
     });
 
     it('handles create', () => {
-      const newEntity: KurinDto = { kurinKey: '3', number: 103 };
+      const newEntity: KurinDto = { kurinKey: '3', number: 103, managerEmail: 'test@example.com' };
       component.onManageAction({ action: 'create', entity: newEntity, entityType: 'kurin' });
-      expect(kurinService.createKurin).toHaveBeenCalledWith(newEntity);
+      expect(authService.registerFirstManager).toHaveBeenCalledWith(newEntity);
       expect(kurinService.getKurins).toHaveBeenCalledTimes(2); // initial + refresh
     });
 

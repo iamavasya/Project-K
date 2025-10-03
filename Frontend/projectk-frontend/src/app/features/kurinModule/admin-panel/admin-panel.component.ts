@@ -9,7 +9,7 @@ import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/componen
 import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
-import { AuthService } from '../../authModule/services/auth.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 
 @Component({
   selector: 'app-admin-panel',

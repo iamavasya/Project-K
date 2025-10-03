@@ -1,11 +1,11 @@
-import { Component, EventEmitter, inject, input, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { MenuItem } from 'primeng/api';
 import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
-import { AuthService } from '../../../../authModule/services/auth.service';
+import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { map, Observable, of } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
@@ -20,7 +20,7 @@ import { TagModule } from 'primeng/tag';
 export class SidebarMenu implements OnChanges {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
-  @Input() visible: boolean = false;
+  @Input() visible = false;
   @Input() state$: Observable<AuthState | null> = of(null);
   @Output() visibleChange: EventEmitter<boolean> = new EventEmitter<boolean>();
   items$: Observable<MenuItem[]> = of([]);
