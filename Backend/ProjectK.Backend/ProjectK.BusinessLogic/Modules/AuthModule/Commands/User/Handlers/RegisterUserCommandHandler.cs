@@ -34,6 +34,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             var user = _mapper.Map<AppUser>(request);
             user.UserName = request.Email;
 
+            if ((request.KurinKey == Guid.Empty || request.KurinKey == null) && request.Role != "Admin") throw new ArgumentNullException($"User with role {request.Role} must have kurinKey");
+
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
@@ -52,6 +54,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             await _userManager.AddToRoleAsync(user, roleName);
 
             var roles = await _userManager.GetRolesAsync(user);
+
 
             string? kurinKey = request.KurinKey == Guid.Empty ? null : request.KurinKey.ToString();
 
