@@ -3,7 +3,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { LogoutComponent } from "../../../../authModule/logout-component/logout-component";
-import { AuthService } from '../../../../authModule/services/auth.service';
+import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { AsyncPipe } from '@angular/common';
 import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
 import { Router } from '@angular/router';
@@ -19,7 +19,7 @@ export class ToolbarHeader {
   state$ = this.authService.getAuthState();
   private readonly router = inject(Router);
 
-  sidebarVisible: boolean = false;
+  sidebarVisible = false;
 
   toggleSidebar() {
     this.sidebarVisible = !this.sidebarVisible;

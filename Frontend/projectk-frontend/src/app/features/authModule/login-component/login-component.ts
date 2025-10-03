@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FloatLabel } from 'primeng/floatlabel';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/authService/auth.service';
 import { LoginRequest } from '../models/login-request.model';
 import { Router } from '@angular/router';
 
@@ -18,9 +18,8 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  email: string = '';
-  password: string = '';
-  
+  email = '';
+  password = '';
 
   onSubmit() {
     const LoginRequest: LoginRequest = {

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { MemberList } from './member-list';
+import { provideHttpClient } from '@angular/common/http';
 
 describe('MemberList', () => {
   let component: MemberList;
@@ -8,7 +9,8 @@ describe('MemberList', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MemberList]
+      imports: [MemberList],
+      providers: [provideHttpClient()],
     })
     .compileComponents();
 

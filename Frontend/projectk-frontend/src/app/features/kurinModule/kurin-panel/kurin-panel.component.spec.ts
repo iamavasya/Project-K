@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, convertToParamMap } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,7 +8,9 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { KurinPanelComponent } from './kurin-panel.component';
 import { GroupService } from '../common/services/group-service/group.service';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { GroupDto } from '../common/models/groupDto';
+import { AuthState } from '../../authModule/models/auth-state.model';
 
 describe('KurinPanelComponent', () => {
   let fixture: ComponentFixture<KurinPanelComponent>;
@@ -16,7 +18,16 @@ describe('KurinPanelComponent', () => {
 
   let groupService: jasmine.SpyObj<GroupService>;
   let kurinService: jasmine.SpyObj<KurinService>;
-  let paramMap$: Subject<ParamMap>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let authState$: BehaviorSubject<AuthState | null>;
+
+  const mockAuthState: AuthState = {
+    userKey: 'u1',
+    email: 'test@example.com',
+    role: 'admin',
+    kurinKey: 'k1',
+    accessToken: 'token'
+  };
 
   const mockGroups: GroupDto[] = [
     { groupKey: 'g1', name: 'Alpha', kurinKey: 'k1', kurinNumber: 10 },
@@ -24,12 +35,7 @@ describe('KurinPanelComponent', () => {
   ];
 
   beforeEach(async () => {
-    paramMap$ = new Subject<ParamMap>();
-
-    const activatedRouteStub = {
-      paramMap: paramMap$.asObservable(),
-      snapshot: { params: { kurinKey: 'k1' } } as unknown as ActivatedRouteSnapshot
-    };
+    authState$ = new BehaviorSubject<AuthState | null>(mockAuthState);
 
     groupService = jasmine.createSpyObj<GroupService>('GroupService', [
       'getAllByKurinKey', 'create', 'update', 'delete'
@@ -37,16 +43,21 @@ describe('KurinPanelComponent', () => {
     kurinService = jasmine.createSpyObj<KurinService>('KurinService', [
       'getByKey'
     ]);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', [
+      'getAuthState'
+    ]);
 
     groupService.getAllByKurinKey.and.returnValue(of(mockGroups));
     kurinService.getByKey.and.returnValue(of({ kurinKey: 'k1', number: 10 }));
+    authService.getAuthState.and.returnValue(authState$.asObservable());
 
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
       providers: [
-        { provide: ActivatedRoute, useValue: activatedRouteStub },
+        { provide: ActivatedRoute, useValue: {} },
         { provide: GroupService, useValue: groupService },
         { provide: KurinService, useValue: kurinService },
+        { provide: AuthService, useValue: authService },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations()
@@ -58,7 +69,7 @@ describe('KurinPanelComponent', () => {
   });
 
   afterEach(() => {
-    paramMap$.complete();
+    authState$.complete();
   });
 
   it('should create', () => {
@@ -72,27 +83,34 @@ describe('KurinPanelComponent', () => {
     expect(component.groupPanelParameter).toBe('undef');
   });
 
-  it('on init calls refreshData once with empty kurinKey', () => {
-    fixture.detectChanges(); // triggers ngOnInit -> refreshData()
-    expect(groupService.getAllByKurinKey).toHaveBeenCalledTimes(1);
-    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('');
+  it('on init gets kurinKey from authState and calls refreshData', () => {
+    fixture.detectChanges(); // triggers ngOnInit
+    expect(authService.getAuthState).toHaveBeenCalled();
+    expect(component.kurinKey).toBe('k1');
+    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k1');
+    expect(kurinService.getByKey).toHaveBeenCalledWith('k1');
     expect(component.groups).toEqual(mockGroups);
   });
 
-  it('param emission updates kurinKey but does NOT auto refresh again', () => {
+  it('authState emission updates kurinKey', () => {
     fixture.detectChanges();
     groupService.getAllByKurinKey.calls.reset();
-    paramMap$.next(convertToParamMap({ kurinKey: 'k1' }));
-    expect(component.kurinKey).toBe('k1');
-    expect(groupService.getAllByKurinKey).not.toHaveBeenCalled();
+    const newAuthState: AuthState = {
+      ...mockAuthState,
+      kurinKey: 'k2'
+    };
+    authState$.next(newAuthState);
+    expect(component.kurinKey).toBe('k2');
   });
 
-  it('manual refresh after param emission uses updated kurinKey', () => {
+  it('manual refresh uses current kurinKey from component', () => {
     fixture.detectChanges();
-    paramMap$.next(convertToParamMap({ kurinKey: 'k1' }));
+    component.kurinKey = 'k2';
     groupService.getAllByKurinKey.calls.reset();
+    kurinService.getByKey.calls.reset();
     component.refreshData();
-    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k1');
+    expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k2');
+    expect(kurinService.getByKey).toHaveBeenCalledWith('k2');
   });
 
   describe('prepareItemActions', () => {

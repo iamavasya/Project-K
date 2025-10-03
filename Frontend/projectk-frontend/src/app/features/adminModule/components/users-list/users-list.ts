@@ -19,7 +19,7 @@ import { ButtonModule } from 'primeng/button';
 })
 export class UsersListComponent implements OnInit {
   users: UserDto[] = [];
-  clonedUsers: { [s: string]: UserDto } = {};
+  clonedUsers: Record<string, UserDto> = {};
   private readonly userService = inject(UserService);
 
   // TODO: Продовжити роботу над компонентом юзерів

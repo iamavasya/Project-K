@@ -10,7 +10,7 @@ import { MenuItem } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
-import { AuthService } from '../../authModule/services/auth.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberList } from '../common/components/member-list/member-list';
 
 @Component({
