@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.UnitOfWork;
 
 namespace ProjectK.API
@@ -12,6 +14,7 @@ namespace ProjectK.API
         {
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IJwtService, JwtService>();
 
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
@@ -21,6 +22,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("{groupKey}")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -31,6 +33,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("exists/{groupKey}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -40,8 +43,8 @@ namespace ProjectK.API.Controllers.KurinModule
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
-        
 
+        [Authorize(Policy = "RequireUser")]
         [HttpGet("groups")]
         [ProducesResponseType(typeof(IEnumerable<GroupResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -52,6 +55,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireMentor")]
         [HttpPost]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -63,6 +67,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireMentor")]
         [HttpPut("{groupKey:guid}")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -75,6 +80,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireManager")]
         [HttpDelete("{groupKey}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins

@@ -1,125 +1,73 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
+import { MemberService } from '../common/services/member-service/member.service';
+import { MemberDto } from '../common/models/memberDto';
 import { ButtonModule } from 'primeng/button';
 import { GroupService } from '../common/services/group-service/group.service';
+import { GroupChevron } from "../common/components/group-chevron/group-chevron";
 import { GroupDto } from '../common/models/groupDto';
-import { SplitButton } from 'primeng/splitbutton';
-import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
-import { MenuItem } from 'primeng/api';
-import { MessageModule } from 'primeng/message';
-import { KurinService } from '../common/services/kurin-service/kurin.service';
-import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
+import { MemberList } from '../common/components/member-list/member-list';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent],
+  imports: [TableModule, ButtonModule, GroupChevron, MemberList],
   templateUrl: './group-panel.component.html',
-  styleUrls: ['./group-panel.component.scss']
+  styleUrl: './group-panel.component.css'
 })
 export class GroupPanelComponent implements OnInit {
 
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly router: Router = inject(Router);
+  private readonly memberService = inject(MemberService);
   private readonly groupService = inject(GroupService);
-  private readonly kurinService = inject(KurinService);
-  groups: GroupDto[] = [];
-  actions: MenuItem[] = [];
+  groupKey = '';
+  group: GroupDto | null = null;
+  members: MemberDto[] = [];
+  selectedMember: MemberDto | null = null;
 
-  tableHeaders: string[] = ['GroupKey', 'GroupName', 'KurinNumber'];
 
-  kurinKey = '';
-  kurinNumber: number | null = null;
+  tableHeaders: string[] = [
+    'MemberKey',
+    'FirstName',
+    'LastName',
+  ];
 
-  groupPanelConfig: ManagePanelConfig = {
-    entityType: 'group',
-    title: 'Group',
-    fields: [
-      {
-        name: 'groupKey',
-        label: 'Group Key',
-        type: 'text',
-        required: true,
-        hiddenOn: ['create', 'delete'],
-        disabledOn: ['update']
-      },
-      {
-        name: 'kurinKey',
-        label: 'Kurin Key',
-        type: 'text',
-        required: true,
-        hiddenOn: ['create', 'delete', 'update'],
-        disabledOn: ['update']
-      },
-      {
-        name: 'name',
-        label: 'Name',
-        type: 'text',
-        required: true,
-        hiddenOn: ['delete']
-      }
-    ],
-    createFactory: () => ({ groupKey: '', name: '', kurinKey: this.kurinKey })
-  };
-
-  groupPanelVisible = false;
-  groupPanelParameter: ManageAction | 'undef' = 'undef';
-  selectedGroup: GroupDto | null = null;
-
-  ngOnInit() {
+  ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      this.kurinKey = params.get('kurinKey')!;
+      this.groupKey = params.get('groupKey')!;
     });
     this.refreshData();
   }
 
-  refreshData() {
-    this.groupService.getAllByKurinKey(this.kurinKey).subscribe({
-      next: (groups) => {
-        this.groups = groups;
-      },
-      error: (error) => {
-        console.error('Error fetching groups:', error);
+  refreshData(): void {
+    this.groupService.exists(this.groupKey).subscribe({
+      next: (exists) => {
+        if (!exists) {
+          this.router.navigate(['/panel'], { replaceUrl: true });
+        }
       }
     });
-    this.kurinService.getByKey(this.kurinKey).subscribe({
-      next: (kurin) => {
-        this.kurinNumber = kurin.number;
+    this.groupService.getByKey(this.groupKey).subscribe({
+      next: (group) => {
+        this.group = group;
+      }
+    });
+    this.memberService.getAll(this.groupKey).subscribe({
+      next: (members) => {
+        this.members = members;
       },
-      error: (error) => {
-        console.error('Error fetching kurin:', error);
+      error: (err) => {
+        console.error('Error fetching members:', err);
       }
     });
   }
 
-  prepareItemActions(item: GroupDto): void {
-    this.actions = [
-      {
-        label: 'Update',
-        command: () => { this.onGroupActionClick(item, 'update') }
-      },
-      {
-        label: 'Delete',
-        command: () => { this.onGroupActionClick(item, 'delete') }
-      }
-    ];
-  }
-  
-  onGroupActionClick(item: GroupDto | null, action: ManageAction) {
-    this.groupPanelParameter = action;
-    this.selectedGroup = action === 'create' ? null : item;
-    this.groupPanelVisible = true;
+  onMemberSelect() {
+    this.router.navigate(['/member', this.selectedMember?.memberKey]);
   }
 
-  onGroupManage(e: { action: ManageAction; entity: GroupDto }) {
-    switch (e.action) {
-      case 'create': this.groupService.create(e.entity).subscribe(() => this.refreshData()); break;
-      case 'update': this.groupService.update(e.entity.groupKey, e.entity).subscribe(() => this.refreshData()); break;
-      case 'delete': this.groupService.delete(e.entity.groupKey).subscribe(() => this.refreshData()); break;
-    }
-  }
-
-  onOpenClick(groupKey: string): void {
-    this.router.navigate(['/group', groupKey]);
+  onMemberCreate() {
+    this.router.navigate(['/group', this.groupKey, 'member', 'upsert']);
   }
 }

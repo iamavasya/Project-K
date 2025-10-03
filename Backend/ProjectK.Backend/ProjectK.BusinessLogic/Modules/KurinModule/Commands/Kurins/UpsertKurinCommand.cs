@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using ProjectK.BusinessLogic.Modules.Kurin.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;

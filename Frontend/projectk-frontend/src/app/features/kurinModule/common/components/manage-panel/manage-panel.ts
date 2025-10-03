@@ -31,7 +31,7 @@ export interface ManagePanelConfig {
   selector: 'app-manage-panel',
   imports: [DialogModule, CommonModule, InputTextModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
   templateUrl: './manage-panel.html',
-  styleUrl: './manage-panel.scss'
+  styleUrl: './manage-panel.css'
 })
 export class ManagePanel implements OnChanges {
   @Input() visible = false;
