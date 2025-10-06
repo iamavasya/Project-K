@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Common.Entities.KurinModule.Common
+namespace ProjectK.Common.Models.Enums
 {
     public enum PlastLevel
     {
