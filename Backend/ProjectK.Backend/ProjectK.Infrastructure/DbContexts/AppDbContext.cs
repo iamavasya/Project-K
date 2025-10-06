@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<Kurin> Kurins { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<Member> Members { get; set; }
+        public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -56,6 +58,19 @@ namespace ProjectK.Infrastructure.DbContexts
                       .WithOne()
                       .HasForeignKey<Member>(e => e.UserKey)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<PlastLevelHistory>(entity =>
+            {
+                entity.HasKey(e => e.PlastLevelHistoryKey);
+                entity.HasOne(e => e.Member)
+                      .WithMany(m => m.PlastLevelHistory)
+                      .HasForeignKey(e => e.MemberKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(e => e.PlastLevel)
+                      .HasConversion<int>();
+                entity.HasIndex(e => new { e.MemberKey, e.PlastLevel })
+                      .IsUnique();
             });
         }
     }
