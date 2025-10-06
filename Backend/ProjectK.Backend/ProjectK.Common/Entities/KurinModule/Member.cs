@@ -1,5 +1,5 @@
 ﻿using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule.Common;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.Entities;
 using System;
 using System.Collections.Generic;
