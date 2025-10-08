@@ -67,5 +67,79 @@ namespace ProjectK.Infrastructure.Repositories
         {
             _context.Members.Update(member);
         }
+
+        #region PlastLevelHistory Methods
+        public async Task AddPlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory history, CancellationToken cancellationToken = default)
+        {
+            var member = await _context.Members
+                .Include(m => m.PlastLevelHistory)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null) throw new Exception("Member not found.");
+
+            member.PlastLevelHistory.Add(history);
+
+            // Updating LatestPlastLevel
+            if (member.LatestPlastLevel == null || history.PlastLevel > member.LatestPlastLevel)
+            {
+                member.LatestPlastLevel = history.PlastLevel;
+            }
+        }
+
+        public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.PlastLevelHistory)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null) throw new Exception("Member not found");
+
+            var history = member.PlastLevelHistory.FirstOrDefault(h => h.PlastLevelHistoryKey == historyKey);
+            if (history != null)
+            {
+                member.PlastLevelHistory.Remove(history);
+
+                // Update LatestPlastLevel
+                var last = member.PlastLevelHistory.OrderByDescending(h => h.DateAchieved).FirstOrDefault();
+                member.LatestPlastLevel = last?.PlastLevel;
+            }
+        }
+
+        public async Task<IEnumerable<PlastLevelHistory>> GetPlastLevelHistoryAsync(Guid memberKey, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.PlastLevelHistory)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            return member?.PlastLevelHistory ?? Enumerable.Empty<PlastLevelHistory>();
+        }
+
+        public async Task UpdatePlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory updatedHistory, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.PlastLevelHistory)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null)
+                throw new Exception("Member not found");
+
+            var history = member.PlastLevelHistory
+                .FirstOrDefault(h => h.PlastLevelHistoryKey == updatedHistory.PlastLevelHistoryKey);
+
+            if (history == null)
+                throw new Exception("PlastLevelHistory not found");
+
+            // Updating fields
+            history.PlastLevel = updatedHistory.PlastLevel;
+            history.DateAchieved = updatedHistory.DateAchieved;
+
+            // Updating LatestPlastLevel
+            var lastHistory = member.PlastLevelHistory
+                .OrderByDescending(h => h.DateAchieved)
+                .FirstOrDefault();
+
+            member.LatestPlastLevel = lastHistory?.PlastLevel;
+        }
+        #endregion
     }
 }
