@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Leadership;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<Group> Groups { get; set; }
         public DbSet<Member> Members { get; set; }
         public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
+        public DbSet<Leadership> Leaderships { get; set; }
+        public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -70,6 +73,29 @@ namespace ProjectK.Infrastructure.DbContexts
                       .HasConversion<int>();
                 entity.HasIndex(e => new { e.MemberKey, e.PlastLevel })
                       .IsUnique();
+            });
+
+            modelBuilder.Entity<Leadership>(entity =>
+            {
+                entity.HasKey(e => e.LeadershipKey);
+                entity.Property(e => e.Type)
+                      .HasConversion<int>();
+                entity.HasIndex(e => new { e.Type, e.EntityKey });
+            });
+
+            modelBuilder.Entity<LeadershipHistory>(entity =>
+            {
+                entity.HasKey(e => e.LeadershipHistoryKey);
+                entity.HasOne(e => e.Member)
+                      .WithMany(m => m.LeadershipHistories)
+                      .HasForeignKey(e => e.MemberKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Leadership)
+                      .WithMany(l => l.LeadershipHistories)
+                      .HasForeignKey(e => e.LeadershipKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.LeadershipKey, e.Role, e.StartDate });
+                entity.HasIndex(e => new { e.MemberKey, e.StartDate });
             });
         }
     }
