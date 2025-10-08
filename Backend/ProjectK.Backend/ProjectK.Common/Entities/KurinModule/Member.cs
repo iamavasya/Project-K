@@ -1,4 +1,5 @@
 ﻿using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.Entities;
 using System;
@@ -28,6 +29,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public Group? Group { get; set; }
         public PlastLevel? LatestPlastLevel { get; set; }
         public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
+        public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
         public AppUser? User { get; set; }
     }
 }
