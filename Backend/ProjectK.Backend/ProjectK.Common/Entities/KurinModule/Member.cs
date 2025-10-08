@@ -26,7 +26,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public string? ProfilePhotoBlobName { get; set; }
         public Kurin Kurin { get; set; }
         public Group? Group { get; set; }
-        public PlastLevel? CurrentPlastLevel { get; set; } = PlastLevel.Neimenovanyi;
+        public PlastLevel? LatestPlastLevel { get; set; }
         public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
         public AppUser? User { get; set; }
     }
