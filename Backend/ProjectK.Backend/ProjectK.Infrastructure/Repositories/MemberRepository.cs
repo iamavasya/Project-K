@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using System;
@@ -139,6 +140,70 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefault();
 
             member.LatestPlastLevel = lastHistory?.PlastLevel;
+        }
+        #endregion
+
+        #region LeadershipHistory Methods
+
+        public async Task AddLeadershipHistoryAsync(Guid memberKey, LeadershipHistory leadershipHistory, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.LeadershipHistories)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null) throw new Exception("Member not found");
+
+            member.LeadershipHistories.Add(leadershipHistory);
+        }
+
+        public async Task EndLeadershipAsync(Guid memberKey, Guid historyKey, DateOnly endDate, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.LeadershipHistories)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null) throw new Exception("Member not found");
+
+            var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
+            
+            if (history != null) history.EndDate = endDate;
+        }
+
+        public async Task RemoveLeadershipHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.LeadershipHistories)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+            if (member == null) throw new Exception("Member not found");
+            var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
+            if (history != null)
+            {
+                member.LeadershipHistories.Remove(history);
+            }
+        }
+
+        public async Task UpdateLeadershipHistoryAsync(
+            Guid memberKey,
+            LeadershipHistory updatedHistory,
+            CancellationToken cancellationToken)
+        {
+            var member = await _context.Members
+                .Include(m => m.LeadershipHistories)
+                .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
+
+            if (member == null)
+                throw new KeyNotFoundException($"Member with key '{memberKey}' not found.");
+
+            var existingHistory = member.LeadershipHistories
+                .FirstOrDefault(h => h.LeadershipHistoryKey == updatedHistory.LeadershipHistoryKey);
+
+            if (existingHistory == null)
+                throw new KeyNotFoundException($"Leadership history '{updatedHistory.LeadershipHistoryKey}' not found for member '{memberKey}'.");
+
+            existingHistory.Role = updatedHistory.Role;
+            existingHistory.StartDate = updatedHistory.StartDate;
+            existingHistory.EndDate = updatedHistory.EndDate;
+            existingHistory.LeadershipKey = updatedHistory.LeadershipKey;
         }
         #endregion
     }
