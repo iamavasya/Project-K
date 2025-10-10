@@ -13,6 +13,8 @@ namespace ProjectK.Common.Entities.KurinModule.Leadership
         public LeadershipType Type { get; set; }
         public Guid EntityKey { get; set; }
         public string? Name { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
         public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
     }
 }
