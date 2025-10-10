@@ -51,7 +51,7 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasOne(entity => entity.Group)
                       .WithMany(g => g.Members)
                       .HasForeignKey(e => e.GroupKey)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.NoAction);
                 entity.HasOne(entity => entity.Kurin)
                         .WithMany(k => k.Members)
                         .HasForeignKey(e => e.KurinKey)

@@ -51,7 +51,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                     existing.KurinKey = group.KurinKey;
                     _unitOfWork.Members.Update(existing, cancellationToken);
                 }
-            } 
+            }
+            else if (request.KurinKey != Guid.Empty)
+            {
+                // Create new Member with KurinKey from request
+                existing = _mapper.Map<Member>(request);
+                existing.GroupKey = null;
+                existing.KurinKey = (Guid)request.KurinKey!;
+                _unitOfWork.Members.Create(existing, cancellationToken);
+                isCreated = true;
+            }
             else return new ServiceResult<MemberResponse>(ResultType.NotFound);
 
             if (request.BlobContent is { Length: > 0 } && !string.IsNullOrWhiteSpace(request.BlobFileName))
