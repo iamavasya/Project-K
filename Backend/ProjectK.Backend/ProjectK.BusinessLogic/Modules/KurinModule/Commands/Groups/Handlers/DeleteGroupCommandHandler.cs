@@ -32,6 +32,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups.Handlers
                     ResultType.NotFound,
                     $"Group with key {request.GroupKey} not found.");
             }
+
+            // Delete all members with GroupKey
+            var members = await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken);
+
+            foreach (var member in members)
+            {
+                member.Group = null;
+                member.Kurin = null!;
+                _unitOfWork.Members.Delete(member, cancellationToken);
+            }
+
             _unitOfWork.Groups.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)

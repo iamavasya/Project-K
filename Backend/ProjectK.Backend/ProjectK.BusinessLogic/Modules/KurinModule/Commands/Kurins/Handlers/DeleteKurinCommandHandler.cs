@@ -37,6 +37,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins.Handlers
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
+            // Delete all members with KurinKey
+            var members = await _unitOfWork.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
+
+            foreach (var member in members)
+            {
+                member.Group = null;
+                member.Kurin = null!;
+                _unitOfWork.Members.Delete(member, cancellationToken);
+            }
+
             _unitOfWork.Kurins.Delete(existing, cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
