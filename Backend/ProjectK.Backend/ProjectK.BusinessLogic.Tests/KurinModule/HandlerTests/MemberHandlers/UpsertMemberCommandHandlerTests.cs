@@ -110,7 +110,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         }
 
         [Fact]
-        public async Task Handle_Create_GroupNotFound_ShouldReturnNotFound()
+        public async Task Handle_Create_EmptyMemberRequest_ShouldReturnNotFound()
         {
             var cmd = new UpsertMemberCommand
             {
