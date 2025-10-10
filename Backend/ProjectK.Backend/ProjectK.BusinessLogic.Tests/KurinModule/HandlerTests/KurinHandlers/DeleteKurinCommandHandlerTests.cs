@@ -16,13 +16,16 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly DeleteKurinCommandHandler _handler;
+        private readonly Mock<IMemberRepository> _memberRepositoryMock;
 
         public DeleteKurinCommandHandlerTests()
         {
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _memberRepositoryMock = new Mock<IMemberRepository>();
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.Members).Returns(_memberRepositoryMock.Object);
 
             _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object);
         }
@@ -39,6 +42,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(1);
+            _memberRepositoryMock.Setup(r => r.GetAllByKurinKeyAsync(kurinKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -99,6 +105,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(0);
+            _memberRepositoryMock.Setup(r => r.GetAllByKurinKeyAsync(kurinKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -123,6 +132,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _kurinRepositoryMock.Setup(r => r.Delete(kurin, default))
                 .Throws(expectedException);
+            _memberRepositoryMock.Setup(r => r.GetAllByKurinKeyAsync(kurinKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));

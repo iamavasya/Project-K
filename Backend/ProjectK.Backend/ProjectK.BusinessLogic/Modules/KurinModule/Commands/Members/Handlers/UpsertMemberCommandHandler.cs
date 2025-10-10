@@ -52,7 +52,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                     _unitOfWork.Members.Update(existing, cancellationToken);
                 }
             }
-            else if (request.KurinKey != Guid.Empty)
+            else if (request.KurinKey != Guid.Empty && request.KurinKey != null)
             {
                 // Create new Member with KurinKey from request
                 existing = _mapper.Map<Member>(request);

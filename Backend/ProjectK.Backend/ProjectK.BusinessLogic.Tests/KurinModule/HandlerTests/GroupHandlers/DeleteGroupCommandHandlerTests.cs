@@ -17,13 +17,16 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly DeleteGroupCommandHandler _handler;
+        private readonly Mock<IMemberRepository> _memberRepositoryMock;
 
         public DeleteGroupCommandHandlerTests()
         {
             _groupRepositoryMock = new Mock<IGroupRepository>();
+            _memberRepositoryMock = new Mock<IMemberRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
 
             _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object);
         }
@@ -40,6 +43,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .ReturnsAsync(group);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(1);
+            _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -100,6 +106,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .ReturnsAsync(group);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(0);
+            _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -124,6 +133,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .ReturnsAsync(group);
             _groupRepositoryMock.Setup(r => r.Delete(group, default))
                 .Throws(expected);
+            _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
+                .ReturnsAsync([]);
+            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));

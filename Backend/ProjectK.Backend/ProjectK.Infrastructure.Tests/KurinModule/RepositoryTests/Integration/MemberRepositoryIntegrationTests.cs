@@ -203,34 +203,6 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
         }
 
         [Fact]
-        public async Task CascadeDelete_GroupDeletion_ShouldRemoveMembers()
-        {
-            using var context = CreateInMemoryDbContext();
-            var uow = new InfraUnitOfWork(context);
-
-            var kurin = new Kurin(9);
-            uow.Kurins.Create(kurin);
-            await uow.SaveChangesAsync();
-
-            var group = new Group("Cascade", kurin.KurinKey);
-            uow.Groups.Create(group);
-            await uow.SaveChangesAsync();
-
-            var member1 = BuildMember(group, kurin, "C1", "L1");
-            var member2 = BuildMember(group, kurin, "C2", "L2");
-            uow.Members.Create(member1);
-            uow.Members.Create(member2);
-            await uow.SaveChangesAsync();
-
-            // Delete group (cascade Members)
-            uow.Groups.Delete(group);
-            await uow.SaveChangesAsync();
-
-            Assert.False(await uow.Members.ExistsAsync(member1.MemberKey));
-            Assert.False(await uow.Members.ExistsAsync(member2.MemberKey));
-        }
-
-        [Fact]
         public async Task GetAllAsync_Parameterless_ShouldThrowNotSupported()
         {
             using var context = CreateInMemoryDbContext();
