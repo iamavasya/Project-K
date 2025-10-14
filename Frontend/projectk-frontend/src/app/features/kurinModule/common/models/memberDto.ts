@@ -1,3 +1,5 @@
+import { PlastLevelHistoryDto } from "./plastLevelHistoryDto";
+
 export interface MemberDto {
     memberKey: string;
     groupKey: string;
@@ -8,5 +10,6 @@ export interface MemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: Date | null;
+    plastLevelHistories: PlastLevelHistoryDto[];
     profilePhotoUrl: string | null;
 }

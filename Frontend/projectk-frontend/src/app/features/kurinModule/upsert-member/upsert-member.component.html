@@ -1,116 +1,186 @@
-<p>upsert-member works! {{memberKey}}</p>
 <p-confirmdialog />
 <form #form="ngForm">
-    <div>
-        <div>
-            <p-floatlabel variant="on">
-                <input 
-                    pInputText
-                    id="firstName"
-                    name="firstName"
-                    [(ngModel)]="member.firstName"
-                    required
-                    #firstNameCtrl="ngModel"
-                    [invalid]="firstNameCtrl.invalid && (firstNameCtrl.dirty || firstNameCtrl.touched)"
-                    autocomplete="off" />
-                <label for="firstName">First Name</label>
-            </p-floatlabel>
-            <p-floatlabel variant="on">
-                <input
-                    pInputText
-                    id="middleName"
-                    name="middleName"
-                    [(ngModel)]="member.middleName"
-                    required
-                    #middleNameCtrl="ngModel"
-                    [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
-                    autocomplete="off" />
-                <label for="middleName">Middle Name</label>
-            </p-floatlabel>
-            <p-floatlabel variant="on">
-                <input
-                    pInputText
-                    id="lastName"
-                    name="lastName"
-                    [(ngModel)]="member.lastName"
-                    required
-                    #lastNameCtrl="ngModel"
-                    [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
-                    autocomplete="off" />
-                <label for="lastName">Last Name</label>
-            </p-floatlabel>
-            <p-floatlabel variant="on">
-                <input
-                    pInputText
-                    id="email"
-                    name="email"
-                    [(ngModel)]="member.email"
-                    required
-                    email
-                    #emailCtrl="ngModel"
-                    [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
-                    autocomplete="off" />
-                <label for="email">Email</label>
-            </p-floatlabel>
-            <p-floatlabel variant="on">
-                <p-inputMask
-                    mask="999-999-9999"
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    [(ngModel)]="member.phoneNumber"
-                    required
-                    #phoneNumberCtrl="ngModel"
-                    [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
-                />
-                <label for="phoneNumber">Phone Number</label>
-            </p-floatlabel>
-            <p-floatlabel variant="on">
-                <p-datepicker
-                    name="dateOfBirth"
-                    [(ngModel)]="member.dateOfBirth"
-                    required
-                    minAge
-                    #dateOfBirthCtrl="ngModel"
-                    dateFormat="yy-mm-dd" />
-                <label for="dateOfBirth">Date of Birth</label>
-            </p-floatlabel>
-
-            <p-fileUpload
-                name="photo"
-                accept="image/*"
-                mode="basic"
-                chooseLabel="Завантажити фото"
-                (onSelect)="fileChangeEvent($event)"
-                >
-            </p-fileUpload>
-            <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{width: '400px'}">
-                <image-cropper
-                    [imageFile]="imageFile"
-                    [maintainAspectRatio]="true"
-                    [aspectRatio]="1 / 1"
-                    format="png"
-                    (imageCropped)="imageCropped($event)">
-                </image-cropper>
-
-                <div class="flex justify-content-end gap-2 mt-3">
-                    <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)"></p-button>
-                    <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()"></p-button>
+    <p-accordion value="0">
+        <p-accordion-panel value="0">
+            <p-accordion-header>General Info</p-accordion-header>
+            <p-accordion-content>
+                <div class="flex flex-column md:flex-row gap-4 m-5">
+                    <div class="flex flex-col gap-2">
+                        <p-floatlabel variant="on">
+                            <input 
+                                pInputText
+                                id="firstName"
+                                name="firstName"
+                                [(ngModel)]="member.firstName"
+                                required
+                                #firstNameCtrl="ngModel"
+                                [invalid]="firstNameCtrl.invalid && (firstNameCtrl.dirty || firstNameCtrl.touched)"
+                                autocomplete="off" />
+                            <label for="firstName">First Name</label>
+                        </p-floatlabel>
+                        <p-floatlabel variant="on">
+                            <input
+                                pInputText
+                                id="middleName"
+                                name="middleName"
+                                [(ngModel)]="member.middleName"
+                                required
+                                #middleNameCtrl="ngModel"
+                                [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
+                                autocomplete="off" />
+                            <label for="middleName">Middle Name</label>
+                        </p-floatlabel>
+                        <p-floatlabel variant="on">
+                            <input
+                                pInputText
+                                id="lastName"
+                                name="lastName"
+                                [(ngModel)]="member.lastName"
+                                required
+                                #lastNameCtrl="ngModel"
+                                [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
+                                autocomplete="off" />
+                            <label for="lastName">Last Name</label>
+                        </p-floatlabel>
+                        <p-floatlabel variant="on">
+                            <input
+                                pInputText
+                                id="email"
+                                name="email"
+                                [(ngModel)]="member.email"
+                                required
+                                email
+                                #emailCtrl="ngModel"
+                                [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
+                                autocomplete="off" />
+                            <label for="email">Email</label>
+                        </p-floatlabel>
+                        <p-floatlabel variant="on">
+                            <p-inputMask
+                                mask="999-999-9999"
+                                id="phoneNumber"
+                                name="phoneNumber"
+                                [(ngModel)]="member.phoneNumber"
+                                required
+                                #phoneNumberCtrl="ngModel"
+                                [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
+                            />
+                            <label for="phoneNumber">Phone Number</label>
+                        </p-floatlabel>
+                        <p-floatlabel variant="on">
+                            <p-datepicker
+                                name="dateOfBirth"
+                                [(ngModel)]="member.dateOfBirth"
+                                required
+                                minAge
+                                #dateOfBirthCtrl="ngModel"
+                                [dateFormat]="defaultDateFormat" />
+                            <label for="dateOfBirth">Date of Birth</label>
+                        </p-floatlabel>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <p-fileUpload
+                            name="photo"
+                            accept="image/*"
+                            mode="basic"
+                            chooseLabel="Завантажити фото"
+                            (onSelect)="fileChangeEvent($event)"
+                            >
+                        </p-fileUpload>
+                        <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{width: '400px'}">
+                            <image-cropper
+                                [imageFile]="imageFile"
+                                [maintainAspectRatio]="true"
+                                [aspectRatio]="1 / 1"
+                                format="png"
+                                (imageCropped)="imageCropped($event)">
+                            </image-cropper>
+            
+                            <div class="flex justify-content-end gap-2 mt-3">
+                                <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)"></p-button>
+                                <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()"></p-button>
+                            </div>
+                        </p-dialog>
+            
+                        @if (croppedImage || member.profilePhotoUrl) {
+                            <h4>Попередній перегляд</h4>
+                            <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" alt="{{member.firstName}} {{member.lastName}}" />
+                            <p-button type="button" icon="pi pi-trash" label="Очистити фото"
+                                [disabled]="!member.profilePhotoUrl && !croppedImage"
+                                (onClick)="clearProfilePhoto(form.form)"></p-button>
+                        }
+                    </div>
                 </div>
-            </p-dialog>
+            </p-accordion-content>
+        </p-accordion-panel>
+        <p-accordion-panel value="1">
+            <p-accordion-header>Пластові ступені</p-accordion-header>
+            <p-accordion-content>
+                <div class="flex flex-col gap-4">
+                    <div>
+                        УПЮ
+                        <p-toggleswitch [(ngModel)]="showUpuLevels" name="upuSwitch"></p-toggleswitch>
+                        УСП
+                        <p-toggleswitch [(ngModel)]="showUspLevels" name="uspSwitch"></p-toggleswitch>
+                        УПС
+                        <p-toggleswitch [(ngModel)]="showUpsLevels" name="upsSwitch"></p-toggleswitch>
+                    </div>
+                    <p-floatLabel variant="on">
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].date" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <label>Дата вступу в Пласт</label>
+                    </p-floatLabel>
+                    <p-floatLabel variant="on">
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].date" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <label>Дата заприсяження</label>
+                    </p-floatLabel>
 
-            @if (croppedImage || member.profilePhotoUrl) {
-                <h4>Попередній перегляд</h4>
-                <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" alt="{{member.firstName}} {{member.lastName}}" />
-                <p-button type="button" icon="pi pi-trash" label="Очистити фото"
-                    [disabled]="!member.profilePhotoUrl && !croppedImage"
-                    (onClick)="clearProfilePhoto(form.form)"></p-button>
-            }
-
-        </div>
+                    @if (showUpuLevels) {
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].date" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття розвідувача</label>
+                        </p-floatLabel>
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].date" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття скоба/вірлиці</label>
+                        </p-floatLabel>
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].date" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття гетьманського скоба/вірлиці</label>
+                        </p-floatLabel>
+                    }
+                    @if (showUspLevels) {
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].date" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата переходу в УСП</label>
+                        </p-floatLabel>
+                    }
+                    @if (showUpsLevels) {
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].date" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата переходу в УПС</label>
+                        </p-floatLabel>
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].date" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття пл. сен. праці</label>
+                        </p-floatLabel>
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].date" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття пл. сен. довір'я</label>
+                        </p-floatLabel>
+                        <p-floatLabel variant="on">
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].date" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <label>Дата здобуття пл. сен. керівництва</label>
+                        </p-floatLabel>
+                    }
+                </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+    </p-accordion>
+    <div>
         <div class="upsert-member-actions">
             <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || form.untouched"></p-button>
             @if (!isCreate) {
-            <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
+                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
             }
         </div>
     </div>

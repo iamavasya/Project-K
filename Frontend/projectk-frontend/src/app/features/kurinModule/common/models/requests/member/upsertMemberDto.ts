@@ -1,3 +1,5 @@
+import { PlastLevelHistoryDto } from "../../plastLevelHistoryDto";
+
 export interface UpsertMemberDto {
     groupKey?: string;
     firstName: string;
@@ -7,4 +9,5 @@ export interface UpsertMemberDto {
     phoneNumber: string;
     dateOfBirth: string;
     removeProfilePhoto?: boolean;
+    plastLevelHistories?: PlastLevelHistoryDto[];
 }

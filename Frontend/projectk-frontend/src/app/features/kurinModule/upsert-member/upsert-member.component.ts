@@ -16,11 +16,15 @@ import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { DialogModule } from 'primeng/dialog';
 import { base64ToBlob } from '../common/functions/base64ToBlob.function';
-import { Location } from '@angular/common';
+import { Location, NgFor } from '@angular/common';
+import { AccordionModule } from 'primeng/accordion';
+import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
+import { PlastLevel } from '../common/models/enums/plast-level.enum';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.component.html',
   styleUrl: './upsert-member.component.css'
@@ -36,6 +40,7 @@ export class UpsertMemberComponent implements OnInit {
     email: '',
     phoneNumber: '',
     dateOfBirth: null,
+    plastLevelHistories: [],
     profilePhotoUrl: null,
   };
 
@@ -52,6 +57,26 @@ export class UpsertMemberComponent implements OnInit {
 
   isCreate = false;
 
+  plastLevelMap: Record<PlastLevel, PlastLevelHistoryDto> = {} as Record<PlastLevel, PlastLevelHistoryDto>;
+  readonly PlastLevel = PlastLevel;
+  readonly levelsConfig: { level: PlastLevel, label: string }[] = [
+    { level: PlastLevel.Entry, label: 'Вступ' },
+    { level: PlastLevel.Uchasnyk, label: 'Уч.' },
+    { level: PlastLevel.Rozviduvach, label: 'Розвд.' },
+    { level: PlastLevel.Skob, label: 'Скоб' },
+    { level: PlastLevel.HetmanskiySkob, label: 'Гетьм. скоб' },
+    { level: PlastLevel.Starshoplastun, label: 'Старшопластун' },
+    { level: PlastLevel.Senior, label: 'пл. сен.' },
+    { level: PlastLevel.SeniorPratsi, label: 'пл. сен. пр.' },
+    { level: PlastLevel.SeniorDovirja, label: 'пл. сен. дов.' },
+    { level: PlastLevel.SeniorKerivnytstva, label: 'пл. сен. кер.' },
+  ];
+
+  plastLevelHistories: PlastLevelHistoryDto[] = [];
+  showUpuLevels = false;
+  showUspLevels = false;
+  showUpsLevels = false;
+
   imageFile?: File;
   croppedImage = '';
   croppedFile: File | null = null;
@@ -60,6 +85,8 @@ export class UpsertMemberComponent implements OnInit {
   removeProfilePhoto = false;
 
   private objectUrlToRevoke: string | null = null;
+
+  defaultDateFormat = 'yy-mm-dd';
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -80,6 +107,8 @@ export class UpsertMemberComponent implements OnInit {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
         this.member = member;
+        if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
+        this.ensureLevelRecords();
         console.log(member);
       },
       error: (error) => {
@@ -89,50 +118,63 @@ export class UpsertMemberComponent implements OnInit {
     });
   }
 
+  private ensureLevelRecords() {
+    this.levelsConfig.forEach(config => {
+      let rec = this.member.plastLevelHistories.find(x => x.level === config.level);
+      if (!rec) {
+        rec = { level: config.level, date: null };
+        this.member.plastLevelHistories.push(rec);
+      }
+      this.plastLevelMap[config.level] = rec;
+    });
+  }
+
+  private buildPlastLevelsPayload() {
+    const history = this.member?.plastLevelHistories ?? [];
+    return history
+      .filter(x => x.date != null)
+      .map(x => ({ level: x.level, date: this.toDateOnlyString(x.date) }));
+  }
+
   submit(): void {
+    const baseDto: UpsertMemberDto = {
+      groupKey: this.groupKey,
+      firstName: this.member.firstName,
+      middleName: this.member.middleName,
+      lastName: this.member.lastName,
+      email: this.member.email,
+      phoneNumber: this.member.phoneNumber,
+      dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
+      plastLevelHistories: this.buildPlastLevelsPayload(),
+    };
+
     if (this.isCreate) {
-      const memberDto: UpsertMemberDto = {
-        groupKey: this.groupKey,
-        firstName: this.member.firstName,
-        middleName: this.member.middleName,
-        lastName: this.member.lastName,
-        email: this.member.email,
-        phoneNumber: this.member.phoneNumber,
-        dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
-      };
-      this.memberService.create(memberDto, this.fileToUpload).subscribe({
+      this.memberService.create(baseDto, this.fileToUpload).subscribe({
         next: (createdMember) => {
           console.log('Member created:', createdMember);
           this.router.navigate(['/member', createdMember.memberKey], { replaceUrl: true });
         },
         error: (error) => {
-          console.error('Error creating member:', error, memberDto);
+          console.error('Error creating member:', error, baseDto);
         }
       });
     } else {
-      const memberDto: UpsertMemberDto = {
-        groupKey: this.member.groupKey,
-        firstName: this.member.firstName,
-        middleName: this.member.middleName,
-        lastName: this.member.lastName,
-        email: this.member.email,
-        phoneNumber: this.member.phoneNumber,
-        dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
-        removeProfilePhoto: this.removeProfilePhoto,
-      };
-      this.memberService.update(this.memberKey, memberDto, this.fileToUpload).subscribe({
-        next: (updatedMember) => {
-          console.log('Member updated:', updatedMember);
-          if (this.cameFromMember) {
-            this.location.back();
-            return;
-          }
-          this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
-        },
-        error: (error) => {
-          console.error('Error updating member:', error);
-        }
-      });
+      baseDto.removeProfilePhoto = this.removeProfilePhoto;
+
+      console.log(baseDto.plastLevelHistories);
+      // this.memberService.update(this.memberKey, baseDto, this.fileToUpload).subscribe({
+      //   next: (updatedMember) => {
+      //     console.log('Member updated:', updatedMember);
+      //     if (this.cameFromMember) {
+      //       this.location.back();
+      //       return;
+      //     }
+      //     this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
+      //   },
+      //   error: (error) => {
+      //     console.error('Error updating member:', error);
+      //   }
+      // });
     }
   }
 
