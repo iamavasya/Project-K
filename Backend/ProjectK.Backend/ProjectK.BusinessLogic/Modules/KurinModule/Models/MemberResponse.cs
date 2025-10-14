@@ -1,4 +1,7 @@
-﻿using System;
+﻿using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Leadership;
+using ProjectK.Common.Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +20,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public DateOnly DateOfBirth { get; set; }
+        public string? Address { get; set; }
+        public string? School { get; set; }
+        public PlastLevel? LatestPlastLevel { get; set; }
+        public ICollection<PlastLevelHistory> PlastLevelHistories { get; set; } = new List<PlastLevelHistory>();
+        public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
         public string? ProfilePhotoUrl { get; set; }
     }
 }
