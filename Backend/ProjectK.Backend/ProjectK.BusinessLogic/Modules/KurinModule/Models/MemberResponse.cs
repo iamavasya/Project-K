@@ -1,5 +1,6 @@
 ﻿using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Leadership;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public string? Address { get; set; }
         public string? School { get; set; }
         public PlastLevel? LatestPlastLevel { get; set; }
-        public ICollection<PlastLevelHistory> PlastLevelHistories { get; set; } = new List<PlastLevelHistory>();
+        public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
         public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
         public string? ProfilePhotoUrl { get; set; }
     }

@@ -71,8 +71,6 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
                 entity.Property(e => e.PlastLevel)
                       .HasConversion<int>();
-                entity.HasIndex(e => new { e.MemberKey, e.PlastLevel })
-                      .IsUnique();
             });
 
             modelBuilder.Entity<Leadership>(entity =>

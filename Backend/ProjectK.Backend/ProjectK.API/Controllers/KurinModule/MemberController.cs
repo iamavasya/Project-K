@@ -63,6 +63,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
+                PlastLevelHistories = request.PlastLevelHistories,
                 BlobContent = blobData,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
@@ -94,6 +95,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
+                PlastLevelHistories = request.PlastLevelHistories,
                 RemoveProfilePhoto = request.RemoveProfilePhoto ?? false,
                 BlobContent = blobData,
                 BlobFileName = request.Blob?.FileName,

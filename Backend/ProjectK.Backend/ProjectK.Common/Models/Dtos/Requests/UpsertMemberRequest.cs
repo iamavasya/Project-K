@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Models.Enums;
@@ -22,7 +23,7 @@ namespace ProjectK.Common.Models.Dtos.Requests
         public DateOnly DateOfBirth { get; set; }
         public string? Address { get; set; }
         public string? School { get; set; }
-        public ICollection<PlastLevelHistory> PlastLevelHistories { get; set; } = [];
+        public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
         public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = [];
         public bool? RemoveProfilePhoto { get; set; }
         public IFormFile? Blob { get; set; }

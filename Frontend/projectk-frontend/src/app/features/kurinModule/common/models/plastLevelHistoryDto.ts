@@ -1,6 +1,8 @@
 import { PlastLevel } from "./enums/plast-level.enum";
 
 export interface PlastLevelHistoryDto {
-    level: PlastLevel;
-    date?: string | null;
+    memberKey?: string;
+    plastLevelHistoryKey?: string;
+    plastLevel: PlastLevel;
+    dateAchieved?: string | null;
 }

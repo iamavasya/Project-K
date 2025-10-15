@@ -1,4 +1,5 @@
-﻿using ProjectK.Common.Entities.KurinModule;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Leadership;
 using System;
 using System.Collections.Generic;

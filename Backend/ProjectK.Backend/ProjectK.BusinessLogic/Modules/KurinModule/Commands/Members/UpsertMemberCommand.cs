@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public DateOnly DateOfBirth { get; set; }
+        public string? Address { get; set; }
+        public string? School { get; set; }
+        public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
         public bool RemoveProfilePhoto { get; set; }
         public byte[]? BlobContent { get; set; }
         public string? BlobFileName { get; set; }
