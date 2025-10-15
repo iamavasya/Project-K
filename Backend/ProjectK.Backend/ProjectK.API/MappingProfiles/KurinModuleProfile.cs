@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Infrastructure.Services;
 
 namespace ProjectK.API.MappingProfiles
@@ -43,7 +44,9 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
-                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
+                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore());
+
             CreateMap<Member, MemberResponse>()
                 .ForMember(dest => dest.MemberKey, opt => opt.MapFrom(src => src.MemberKey))
                 .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey))
@@ -54,7 +57,11 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+                .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
+
+            // Plast Level History Mapping
+            CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
         }
     }
 }

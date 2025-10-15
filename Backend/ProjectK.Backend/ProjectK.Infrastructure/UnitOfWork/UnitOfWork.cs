@@ -37,5 +37,10 @@ namespace ProjectK.Infrastructure.UnitOfWork
         {
             return _context.Database.BeginTransactionAsync(token);
         }
+
+        public void DetectChanges()
+        {
+            _context.ChangeTracker.DetectChanges();
+        }
     }
 }

@@ -15,5 +15,6 @@ namespace ProjectK.Common.Interfaces
         IMemberRepository Members { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
+        void DetectChanges();
     }
 }

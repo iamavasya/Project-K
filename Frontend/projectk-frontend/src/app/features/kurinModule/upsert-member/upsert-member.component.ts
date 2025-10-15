@@ -106,6 +106,7 @@ export class UpsertMemberComponent implements OnInit {
   private loadData(): void {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
+        console.log('Fetched member:', member);
         this.member = member;
         if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
         this.ensureLevelRecords();
@@ -120,9 +121,9 @@ export class UpsertMemberComponent implements OnInit {
 
   private ensureLevelRecords() {
     this.levelsConfig.forEach(config => {
-      let rec = this.member.plastLevelHistories.find(x => x.level === config.level);
+      let rec = this.member.plastLevelHistories.find(x => x.plastLevel === config.level);
       if (!rec) {
-        rec = { level: config.level, date: null };
+        rec = { plastLevel: config.level, dateAchieved: null };
         this.member.plastLevelHistories.push(rec);
       }
       this.plastLevelMap[config.level] = rec;
@@ -131,9 +132,10 @@ export class UpsertMemberComponent implements OnInit {
 
   private buildPlastLevelsPayload() {
     const history = this.member?.plastLevelHistories ?? [];
-    return history
-      .filter(x => x.date != null)
-      .map(x => ({ level: x.level, date: this.toDateOnlyString(x.date) }));
+    const filteredHistory = history.filter(x => x.dateAchieved != null);
+    filteredHistory.forEach(x => x.dateAchieved = this.toDateOnlyString(x.dateAchieved));
+    return filteredHistory;
+
   }
 
   submit(): void {
@@ -162,19 +164,19 @@ export class UpsertMemberComponent implements OnInit {
       baseDto.removeProfilePhoto = this.removeProfilePhoto;
 
       console.log(baseDto.plastLevelHistories);
-      // this.memberService.update(this.memberKey, baseDto, this.fileToUpload).subscribe({
-      //   next: (updatedMember) => {
-      //     console.log('Member updated:', updatedMember);
-      //     if (this.cameFromMember) {
-      //       this.location.back();
-      //       return;
-      //     }
-      //     this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
-      //   },
-      //   error: (error) => {
-      //     console.error('Error updating member:', error);
-      //   }
-      // });
+      this.memberService.update(this.memberKey, baseDto, this.fileToUpload).subscribe({
+        next: (updatedMember) => {
+          console.log('Member updated:', updatedMember);
+          if (this.cameFromMember) {
+            this.location.back();
+            return;
+          }
+          this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
+        },
+        error: (error) => {
+          console.error('Error updating member:', error);
+        }
+      });
     }
   }
 

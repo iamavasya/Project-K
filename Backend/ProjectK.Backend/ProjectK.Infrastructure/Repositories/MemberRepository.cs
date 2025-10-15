@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -13,7 +14,6 @@ namespace ProjectK.Infrastructure.Repositories
 {
     public class MemberRepository : IMemberRepository
     {
-        private readonly AppDbContext _context;
         public MemberRepository(AppDbContext context)
         {
             _context = context;
@@ -33,6 +33,7 @@ namespace ProjectK.Infrastructure.Repositories
         {
             return await _context.Members.Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.PlastLevelHistory)
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, token);
         }
 
