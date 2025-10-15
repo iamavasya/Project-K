@@ -38,10 +38,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
 
             if (group != null)
             {
+
                 if (existing == null)
                 {
                     // Create new Member
                     existing = _mapper.Map<Member>(request);
+
                     existing.KurinKey = group.KurinKey;
 
                     existing.LatestPlastLevel = existing.PlastLevelHistory
@@ -98,6 +100,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers
                 await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
             }
 
+            var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             if (changes <= 0)
             {
