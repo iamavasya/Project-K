@@ -14,7 +14,8 @@ import { Router } from '@angular/router';
   styleUrl: './member-list.css'
 })
 export class MemberList implements OnInit {
-  @Input() type: 'kurin' | 'group' = 'group';
+  @Input() type: 'kurin' | 'group' | 'leadership' = 'group';
+  @Input() leadershipType: 'kurin' | 'group' | 'kv' = 'group';
   @Input() typeKey = '';
 
   private readonly memberService = inject(MemberService);
@@ -22,6 +23,11 @@ export class MemberList implements OnInit {
   
   members: MemberDto[] = [];
   selectedMember: MemberDto | null = null;
+
+  // TODO: Список проводу (leadership).
+  // - [ ] Потрібно створити сервіс для leadership.
+  // - [ ] Темплейт під leadership з беджами ролей.
+  // - [ ] Кнопка налаштуваня проводу, де можна додати провід, змінити людей, каденції і т.д.
 
   ngOnInit(): void {
     if (this.type && this.typeKey) {
@@ -39,6 +45,9 @@ export class MemberList implements OnInit {
                 this.members = members;
               }
           });
+          break;
+        case 'leadership':
+          // Implement leadership service call
           break;
       }
     }
