@@ -93,6 +93,7 @@ export class UpsertMemberComponent implements OnInit {
       this.memberKey = params.get('memberKey')!;
       this.groupKey = params.get('groupKey')!;
     });
+    this.ensurePlastLevelMap();
     if (this.memberKey) {
       this.loadData();
       this.isCreate = false;
@@ -109,7 +110,6 @@ export class UpsertMemberComponent implements OnInit {
         console.log('Fetched member:', member);
         this.member = member;
         if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
-        this.ensureLevelRecords();
         console.log(member);
       },
       error: (error) => {
@@ -119,7 +119,7 @@ export class UpsertMemberComponent implements OnInit {
     });
   }
 
-  private ensureLevelRecords() {
+  private ensurePlastLevelMap() {
     this.levelsConfig.forEach(config => {
       let rec = this.member.plastLevelHistories.find(x => x.plastLevel === config.level);
       if (!rec) {
