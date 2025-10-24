@@ -1,4 +1,5 @@
 import { PlastLevelHistoryDto } from "./plastLevelHistoryDto";
+import { LeadershipHistoryDto } from "./requests/leadership/leadershipDto";
 
 export interface MemberDto {
     memberKey: string;
@@ -11,5 +12,6 @@ export interface MemberDto {
     phoneNumber: string;
     dateOfBirth: Date | null;
     plastLevelHistories: PlastLevelHistoryDto[];
+    leadershipHistories: LeadershipHistoryDto[];
     profilePhotoUrl: string | null;
 }
