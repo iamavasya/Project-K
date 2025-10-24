@@ -18,6 +18,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IKurinRepository Kurins { get; }
         public IGroupRepository Groups { get; }
         public IMemberRepository Members { get; }
+        public ILeadershipRepository Leaderships { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -26,6 +27,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             Kurins = new KurinRepository(_context);
             Groups = new GroupRepository(_context);
             Members = new MemberRepository(_context);
+            Leaderships = new LeadershipRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

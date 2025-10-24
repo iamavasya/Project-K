@@ -57,6 +57,9 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task CloseLeadershipAsync(Guid leadershipKey, DateOnly endDate, CancellationToken cancellationToken = default)
         {
+            // Винести в бізнес логіку
+            // Викликати тільки Update
+            throw new NotSupportedException();
             var leadership = await _context.Leaderships.FindAsync(leadershipKey, cancellationToken);
             if (leadership != null)
             {

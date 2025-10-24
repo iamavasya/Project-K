@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Infrastructure.Services;
 
@@ -62,6 +63,9 @@ namespace ProjectK.API.MappingProfiles
 
             // Plast Level History Mapping
             CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
+
+            // Leadership History Mapping
+            CreateMap<LeadershipHistory, LeadershipHistoryDto>();
         }
     }
 }

@@ -13,6 +13,7 @@ namespace ProjectK.Common.Interfaces
         IKurinRepository Kurins { get; }
         IGroupRepository Groups { get; }
         IMemberRepository Members { get; }
+        ILeadershipRepository Leaderships { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();
