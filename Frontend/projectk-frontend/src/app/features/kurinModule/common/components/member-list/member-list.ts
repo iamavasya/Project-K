@@ -6,6 +6,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputTextModule } from 'primeng/inputtext';
 import { Router } from '@angular/router';
+import { LeadershipService } from '../../services/leadership-service/leadership-service';
 
 @Component({
   selector: 'app-member-list',
@@ -19,6 +20,7 @@ export class MemberList implements OnInit {
   @Input() typeKey = '';
 
   private readonly memberService = inject(MemberService);
+  private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
   
   members: MemberDto[] = [];
@@ -47,7 +49,7 @@ export class MemberList implements OnInit {
           });
           break;
         case 'leadership':
-          // Implement leadership service call
+          this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType, this.typeKey).subscribe();
           break;
       }
     }

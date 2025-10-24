@@ -41,6 +41,7 @@ export class UpsertMemberComponent implements OnInit {
     phoneNumber: '',
     dateOfBirth: null,
     plastLevelHistories: [],
+    leadershipHistories: [],
     profilePhotoUrl: null,
   };
 
@@ -93,11 +94,11 @@ export class UpsertMemberComponent implements OnInit {
       this.memberKey = params.get('memberKey')!;
       this.groupKey = params.get('groupKey')!;
     });
-    this.ensurePlastLevelMap();
     if (this.memberKey) {
       this.loadData();
       this.isCreate = false;
     } else {
+      this.ensurePlastLevelMap();
       this.isCreate = true;
     }
     const navState = (this.router.getCurrentNavigation()?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
@@ -110,6 +111,7 @@ export class UpsertMemberComponent implements OnInit {
         console.log('Fetched member:', member);
         this.member = member;
         if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
+        this.ensurePlastLevelMap();
         console.log(member);
       },
       error: (error) => {
