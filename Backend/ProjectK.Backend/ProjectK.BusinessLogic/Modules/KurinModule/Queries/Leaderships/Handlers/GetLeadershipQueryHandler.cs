@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships.Handlers
 {
-    public class GetLeadershipQueryHandler : IRequestHandler<GetLeadershipQuery, ServiceResult<IEnumerable<MemberResponse>>>
+    public class GetLeadershipQueryHandler : IRequestHandler<GetLeadershipQuery, ServiceResult<LeadershipDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -23,17 +23,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships.Handler
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<IEnumerable<MemberResponse>>> Handle(GetLeadershipQuery request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipQuery request, CancellationToken cancellationToken)
         {
             var leadership = await _unitOfWork.Leaderships.GetAllByTypeAsync(request.LeadershipType, request.TypeKey, cancellationToken);
-            var leadershipMembers = leadership
-                                        .SelectMany(l => l.LeadershipHistories)
-                                        .Where(h => h.EndDate == null || h.EndDate > DateOnly.FromDateTime(DateTime.UtcNow))
-                                        .Select(h => h.Member)
-                                        .Distinct()
-                                        .ToList();
-            var memberResponses = _mapper.Map<IEnumerable<MemberResponse>>(leadershipMembers);
-            return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, memberResponses);
+            var currentLeadership = leadership.Where(l => l.EndDate == null);
+            if (leadership.Count() > 1)
+            {
+                throw new Exception("Multiple leaderships found for the given type and key.");
+            }
+            LeadershipDto leadershipResponse = _mapper.Map<LeadershipDto>(currentLeadership.FirstOrDefault());
+            return new ServiceResult<LeadershipDto>(
+                ResultType.Success,
+                leadershipResponse);
         }
     }
 }

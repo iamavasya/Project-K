@@ -5,9 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Infrastructure.Services;
 
 namespace ProjectK.API.MappingProfiles
 {
@@ -69,6 +67,15 @@ namespace ProjectK.API.MappingProfiles
             // Leadership History Mapping
             CreateMap<LeadershipHistory, LeadershipHistoryDto>();
             CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>();
+
+            // Leadership Mapping
+            CreateMap<Leadership, LeadershipDto>()
+                .ForMember(dest => dest.LeadershipKey, opt => opt.MapFrom(src => src.LeadershipKey))
+                .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistories))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+                .ForMember(dest => dest.EntityKey, opt => opt.MapFrom(src => src.EntityKey));
         }
     }
 }
