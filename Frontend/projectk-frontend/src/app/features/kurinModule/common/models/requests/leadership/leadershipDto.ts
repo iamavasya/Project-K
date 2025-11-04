@@ -2,8 +2,8 @@ import { MemberLookupDto } from "../member/memberLookupDto";
 
 export interface LeadershipDto {
     leadershipKey: string;
-    type: 'kurin' | 'group' | 'kv';
-    entityKey: string;
+    type?: 'kurin' | 'group' | 'kv';
+    entityKey?: string;
     startDate: Date;
     endDate: Date | null;
     leadershipHistories: LeadershipHistoryDto[];

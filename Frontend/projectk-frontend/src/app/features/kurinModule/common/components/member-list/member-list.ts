@@ -7,6 +7,8 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputTextModule } from 'primeng/inputtext';
 import { Router } from '@angular/router';
 import { LeadershipService } from '../../services/leadership-service/leadership-service';
+import { LeadershipDto } from '../../models/requests/leadership/leadershipDto';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 @Component({
   selector: 'app-member-list',
@@ -23,8 +25,10 @@ export class MemberList implements OnInit {
   private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
   
-  members: MemberDto[] = [];
-  selectedMember: MemberDto | null = null;
+  members: MemberDto[] = []; // TODO: Замінити на MemberLookupDto
+  membersLookup: MemberLookupDto[] = [];
+  leadership: LeadershipDto | null = null;
+  selectedMember: MemberLookupDto | null = null;
 
   // TODO: Список проводу (leadership).
   // - [ ] Потрібно створити сервіс для leadership.
@@ -37,19 +41,40 @@ export class MemberList implements OnInit {
         case 'kurin':
           this.memberService.getAll(undefined, this.typeKey).subscribe({
             next: (members) => {
-              this.members = members;
+              for (const member of members) {
+                this.membersLookup.push({
+                  memberKey: member.memberKey,
+                  firstName: member.firstName,
+                  lastName: member.lastName,
+                  middleName: member.middleName,
+                });
+              }
             }
           });
           break;
         case 'group':
           this.memberService.getAll(this.typeKey).subscribe({
             next: (members) => {
-                this.members = members;
+              for (const member of members) {
+                this.membersLookup.push({
+                  memberKey: member.memberKey,
+                  firstName: member.firstName,
+                  lastName: member.lastName,
+                  middleName: member.middleName,
+                });
               }
+            }
           });
           break;
         case 'leadership':
-          this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType, this.typeKey).subscribe();
+          this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType, this.typeKey).subscribe({
+            next: (leadership) => {
+              this.leadership = leadership;
+              for (const history of leadership.leadershipHistories) {
+                this.membersLookup.push(history.member);
+              }
+            }
+          });
           break;
       }
     }
@@ -59,5 +84,13 @@ export class MemberList implements OnInit {
     if (this.selectedMember) {
       this.router.navigate(['/member', this.selectedMember.memberKey]);
     }
+  }
+
+  getMemberRole(memberKey: string): string | null {
+    if (this.leadership) {
+      const history = this.leadership.leadershipHistories.find(h => h.member.memberKey === memberKey);
+      return history ? history.role : null;
+    }
+    return null;
   }
 }

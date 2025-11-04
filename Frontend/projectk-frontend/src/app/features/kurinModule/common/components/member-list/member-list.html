@@ -1,12 +1,20 @@
-@if (members.length > 0) {
+@if (members.length > 0 || leadership?.leadershipHistories!.length > 0) {
     <div class="mt-4">
-        <p-table #memberTable dataKey="memberKey" [value]="members" stripedRows [globalFilterFields]="['lastName', 'firstName']" selectionMode="single" [(selection)]="selectedMember" (onRowSelect)="onMemberSelect()">
+        <p-table #memberTable dataKey="memberKey" [value]="membersLookup" stripedRows [globalFilterFields]="['lastName', 'firstName']" selectionMode="single" [(selection)]="selectedMember" (onRowSelect)="onMemberSelect()">
             <ng-template #caption>
                 <div class="member-list-header">
                     @if (type === 'kurin') {
                         <h3 class="text-xl font-bold">Всі учасники куреня</h3>
                     } @else if (type === 'group') {
                         <h3 class="text-xl font-bold">Учасники гуртка</h3>
+                    } @else if (type === 'leadership') {
+                        @if (leadershipType === 'kurin') {
+                            <h3 class="text-xl font-bold">Провід куреня</h3>
+                        } @else if (leadershipType === 'group') {
+                            <h3 class="text-xl font-bold">Провід гуртка</h3>
+                        } @else if (leadershipType === 'kv') {
+                            <h3 class="text-xl font-bold">Кадра виховників</h3>
+                        }
                     }
                     <p-iconfield iconPosition="left" class="ml-auto">
                         <p-inputicon>
@@ -19,6 +27,9 @@
             <ng-template #header>
                 <tr>
                     <th scope="col">Member Key</th>
+                    @if (type === 'leadership') {
+                        <th scope="col">Role</th>
+                    }
                     <th pSortableColumn="lastName">
                         <div class="flex items-center gap-2">
                             Name
@@ -30,6 +41,9 @@
             <ng-template #body let-member>
                 <tr [pSelectableRow]="member">
                     <td>{{ member.memberKey }}</td>
+                    @if (type === 'leadership') {
+                        <td>{{ getMemberRole(member.memberKey) }}</td>
+                    }
                     <td>{{ member.lastName + ' ' + member.firstName }}</td>
                 </tr>
             </ng-template>
