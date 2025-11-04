@@ -1,3 +1,5 @@
+import { MemberLookupDto } from "../member/memberLookupDto";
+
 export interface LeadershipDto {
     leadershipKey: string;
     type: 'kurin' | 'group' | 'kv';
@@ -10,8 +12,8 @@ export interface LeadershipDto {
 export interface LeadershipHistoryDto {
     leadershipHistoryKey: string;
     leadershipKey: string;
-    memberKey: string;
     role: string;
     startDate: Date;
     endDate: Date | null;
+    member: MemberLookupDto;
 }

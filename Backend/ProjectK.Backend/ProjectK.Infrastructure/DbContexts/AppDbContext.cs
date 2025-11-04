@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Leadership;
 using System;
 using System.Collections.Generic;
 using System.Linq;

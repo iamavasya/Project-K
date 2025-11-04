@@ -21,7 +21,7 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [Authorize(Policy = "RequireUser")]
-        [HttpGet]
+        [HttpGet("{leadershipType}/{typeKey}")]
         public async Task<IActionResult> Get(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
         {
             var request = new GetLeadershipQuery(leadershipType, typeKey);
@@ -30,14 +30,11 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [Authorize(Policy = "RequireManager")]
-        [HttpPut("history/{historyKey}")]
-        public async Task<IActionResult> UpdateHistory(Guid historyKey, [FromBody] UpsertLeadershipHistoryRequest request)
+        [HttpGet("histories/{leadershipKey}")]
+        public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)
         {
-            var command = new UpsertLeadershipHistoryCommand
-            {
-
-            };
-            var response = await _mediator.Send(command);
+            var request = new GetLeadershipHistoriesQuery(leadershipKey);
+            var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
     }

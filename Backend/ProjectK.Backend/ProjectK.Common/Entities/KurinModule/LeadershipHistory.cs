@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Common.Entities.KurinModule.Leadership
+namespace ProjectK.Common.Entities.KurinModule
 {
     public class LeadershipHistory
     {

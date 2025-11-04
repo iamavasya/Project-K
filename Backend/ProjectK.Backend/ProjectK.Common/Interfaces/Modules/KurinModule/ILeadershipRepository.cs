@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.KurinModule.Leadership;
+﻿using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -17,5 +17,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         void Add(Leadership leadership, CancellationToken cancellationToken = default);
         void Update(Leadership updatedLeadership, CancellationToken cancellationToken = default);
         Task CloseLeadershipAsync(Guid leadershipKey, DateOnly endDate, CancellationToken cancellationToken = default);
+
+        Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
     }
 }
