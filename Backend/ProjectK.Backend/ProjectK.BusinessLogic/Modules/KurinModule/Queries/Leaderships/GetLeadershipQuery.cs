@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships
 {
-    public class GetLeadershipQuery : IRequest<ServiceResult<IEnumerable<MemberResponse>>>
+    public class GetLeadershipQuery : IRequest<ServiceResult<LeadershipDto>>
     {
         public LeadershipType LeadershipType { get; }
         public Guid TypeKey { get; }
