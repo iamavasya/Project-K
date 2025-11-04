@@ -61,11 +61,14 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
 
+            CreateMap<Member, MemberLookupDto>();
+
             // Plast Level History Mapping
             CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
 
             // Leadership History Mapping
             CreateMap<LeadershipHistory, LeadershipHistoryDto>();
+            CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>();
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Entities.KurinModule.Leadership;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
@@ -70,6 +70,15 @@ namespace ProjectK.Infrastructure.Repositories
             {
                 throw new Exception("Leadership not found");
             }
+        }
+
+        public async Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.LeadershipHistories
+                                 .Where(h => h.LeadershipKey == leadershipKey)
+                                 .Include(h => h.Member)
+                                 .AsNoTracking()
+                                 .ToListAsync(cancellationToken);
         }
     }
 }

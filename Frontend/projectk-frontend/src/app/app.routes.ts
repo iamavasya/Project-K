@@ -12,6 +12,7 @@ import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { UsersListComponent } from './features/adminModule/components/users-list/users-list';
+import { LeadershipComponent } from './features/kurinModule/common/components/leadership/leadership-component/leadership-component';
 
 export const routes: Routes = [
   {
@@ -70,5 +71,9 @@ export const routes: Routes = [
   {
     path: 'toolbar',
     component: ToolbarHeader,
+  },
+  {
+    path: 'leadership',
+    component: LeadershipComponent,
   }
 ];
