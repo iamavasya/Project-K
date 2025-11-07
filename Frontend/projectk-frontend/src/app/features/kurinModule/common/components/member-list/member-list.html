@@ -1,4 +1,4 @@
-@if (members.length > 0 || leadership?.leadershipHistories!.length > 0) {
+@if (membersLookup.length > 0 || leadership?.leadershipHistories!.length >= 0) {
     <div class="mt-4">
         <p-table #memberTable dataKey="memberKey" [value]="membersLookup" stripedRows [globalFilterFields]="['lastName', 'firstName']" selectionMode="single" [(selection)]="selectedMember" (onRowSelect)="onMemberSelect()">
             <ng-template #caption>
@@ -16,12 +16,16 @@
                             <h3 class="text-xl font-bold">Кадра виховників</h3>
                         }
                     }
-                    <p-iconfield iconPosition="left" class="ml-auto">
-                        <p-inputicon>
-                            <i class="pi pi-search"></i>
-                        </p-inputicon>
-                        <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Search keyword" />
-                    </p-iconfield>
+                    @if (type != 'leadership') {
+                        <p-iconfield iconPosition="left" class="ml-auto">
+                            <p-inputicon>
+                                <i class="pi pi-search"></i>
+                            </p-inputicon>
+                            <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Search keyword" />
+                        </p-iconfield>
+                    } @else {
+                        <p-button icon="pi pi-cog" [rounded]="true" [text]="true" (onClick)="onLeadershipSettingsSelect()"></p-button>
+                    }
                 </div>
             </ng-template>
             <ng-template #header>

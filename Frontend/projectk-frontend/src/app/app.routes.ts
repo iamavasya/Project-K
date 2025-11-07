@@ -73,7 +73,11 @@ export const routes: Routes = [
     component: ToolbarHeader,
   },
   {
-    path: 'leadership',
+    path: 'leadership/create/:type/:entityKey',
+    component: LeadershipComponent,
+  },
+  {
+    path: 'leadership/:leadershipKey',
     component: LeadershipComponent,
   }
 ];

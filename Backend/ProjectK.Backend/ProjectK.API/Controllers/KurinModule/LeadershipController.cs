@@ -21,11 +21,20 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [Authorize(Policy = "RequireUser")]
-        [HttpGet("{leadershipType}/{typeKey}")]
-        public async Task<IActionResult> Get(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
+        [HttpGet("type/{leadershipType}/{typeKey:guid}")]
+        public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
         {
-            var request = new GetLeadershipQuery(leadershipType, typeKey);
+            var request = new GetLeadershipByTypeQuery(leadershipType, typeKey);
             var response = await _mediator.Send(request, cancellationToken);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpGet("{leadershipKey:guid}")]
+        public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
+        {
+            var request = new GetLeadershipByKeyQuery(leadershipKey);
+            var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
 
