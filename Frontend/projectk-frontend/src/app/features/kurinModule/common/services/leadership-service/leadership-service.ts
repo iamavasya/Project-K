@@ -12,12 +12,22 @@ export class LeadershipService {
   private readonly apiUrl = `${environment.apiUrl}/leadership`;
 
   getLeadershipByTypeAndKey(type: 'kurin' | 'group' | 'kv', typeKey: string): Observable<LeadershipDto> {
-    return this.http.get<LeadershipDto>(`${this.apiUrl}/${type}/${typeKey}`);
+    return this.http.get<LeadershipDto>(`${this.apiUrl}/type/${type}/${typeKey}`);
+  }
+
+  getLeadershipByKey(leadershipKey: string): Observable<LeadershipDto> {
+    return this.http.get<LeadershipDto>(`${this.apiUrl}/${leadershipKey}`);
   }
 
   getLeadershipHistories(leadershipKey: string) {
     return this.http.get(`${this.apiUrl}/histories/${leadershipKey}`);
   }
 
-  createLeadership(type: 'kurin' | 'group' | 'kv', typeKey: string, data: any) {}
+  create(payload: LeadershipDto): Observable<LeadershipDto> {
+    return this.http.post<LeadershipDto>(this.apiUrl, payload);
+  }
+
+  update(leadershipKey: string, payload: LeadershipDto): Observable<LeadershipDto> {
+    return this.http.put<LeadershipDto>(`${this.apiUrl}/${leadershipKey}`, payload);
+  }
 }

@@ -12,18 +12,18 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships.Handlers
 {
-    public class GetLeadershipQueryHandler : IRequestHandler<GetLeadershipQuery, ServiceResult<LeadershipDto>>
+    public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTypeQuery, ServiceResult<LeadershipDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public GetLeadershipQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetLeadershipByTypeQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipQuery request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipByTypeQuery request, CancellationToken cancellationToken)
         {
             var leadership = await _unitOfWork.Leaderships.GetAllByTypeAsync(request.LeadershipType, request.TypeKey, cancellationToken);
             var currentLeadership = leadership.Where(l => l.EndDate == null);

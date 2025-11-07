@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships
 {
-    public class GetLeadershipQuery : IRequest<ServiceResult<LeadershipDto>>
+    public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipDto>>
     {
         public LeadershipType LeadershipType { get; }
         public Guid TypeKey { get; }
-        public GetLeadershipQuery(string leadershipType, Guid typeKey)
+        public GetLeadershipByTypeQuery(string leadershipType, Guid typeKey)
         {
             LeadershipType = Enum.Parse<LeadershipType>(leadershipType, true);
             TypeKey = typeKey;

@@ -9,10 +9,11 @@ import { Router } from '@angular/router';
 import { LeadershipService } from '../../services/leadership-service/leadership-service';
 import { LeadershipDto } from '../../models/requests/leadership/leadershipDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-member-list',
-  imports: [TableModule, InputIconModule, IconFieldModule, InputTextModule],
+  imports: [TableModule, InputIconModule, IconFieldModule, InputTextModule, ButtonModule],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css'
 })
@@ -83,6 +84,14 @@ export class MemberList implements OnInit {
   onMemberSelect(): void {
     if (this.selectedMember) {
       this.router.navigate(['/member', this.selectedMember.memberKey]);
+    }
+  }
+
+  onLeadershipSettingsSelect(): void {
+    if (this.leadership) {
+      this.router.navigate(['/leadership', this.leadership.leadershipKey]);
+    } else if (this.type && this.typeKey) {
+      this.router.navigate(['/leadership/create', this.leadershipType, this.typeKey]);
     }
   }
 

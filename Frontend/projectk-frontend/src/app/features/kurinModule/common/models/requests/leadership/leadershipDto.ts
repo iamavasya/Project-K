@@ -1,7 +1,7 @@
 import { MemberLookupDto } from "../member/memberLookupDto";
 
 export interface LeadershipDto {
-    leadershipKey: string;
+    leadershipKey: string | null;
     type?: 'kurin' | 'group' | 'kv';
     entityKey?: string;
     startDate: Date;

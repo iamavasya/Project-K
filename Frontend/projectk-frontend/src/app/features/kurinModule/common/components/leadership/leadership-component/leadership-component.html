@@ -1,20 +1,59 @@
-<p-table [value]="leaderships">
-  <ng-template #header>
-    <tr>
-      <th>Роль</th>
-      <th>Учасник</th>
-      <th>Дії</th>
-    </tr>
-  </ng-template>
-  <ng-template #body let-leadership>
-    <tr>
-      <td>{{ leadership.leadershipHistories[0].role }}</td>
-      <td>
-        <p-select [options]="members" optionLabel="fullName" placeholder="Виберіть учасника"></p-select>
-      </td>
-      <td>
-        <button pButton type="button" label="Зберегти"></button>
-      </td>
-    </tr>
-  </ng-template>
-</p-table>
+<form [formGroup]="leadershipForm" (ngSubmit)="saveCadence()">
+  <div class="p-field">
+    <label>Дата початку каденції*</label>
+    <p-datepicker formControlName="startDate"></p-datepicker>
+  </div>
+
+  <p-table [value]="leadershipHistories.controls" formArrayName="leadershipHistories">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Роль</th>
+        <th>Учасник</th>
+        <th>Дата початку</th>
+        <th>Дата кінця</th>
+        <th>Дії</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-rowControl let-i="rowIndex">
+      <tr [formGroupName]="i">
+        <td>
+          <input pInputText formControlName="role" />
+        </td>
+        <td>
+          <p-autocomplete [suggestions]="filteredMembers" formControlName="member" placeholder="Виберіть учасника"></p-autocomplete>
+        </td>
+        <td>
+          <p-datepicker formControlName="startDate"></p-datepicker>
+        </td>
+        <td>
+          <p-datepicker formControlName="endDate"></p-datepicker>
+        </td>
+        <td>
+          <button 
+            *ngIf="canHaveMultipleMembers(rowControl.get('role')?.value)"
+            pButton 
+            type="button" 
+            icon="pi pi-plus" 
+            class="p-button-rounded p-button-success p-button-sm"
+            (click)="addRoleRow(rowControl.get('role')?.value)"
+            pTooltip="Додати ще одну роль"
+            tooltipPosition="top">
+          </button>
+          
+          <button 
+            *ngIf="canHaveMultipleMembers(rowControl.get('role')?.value) && getRoleRowsCount(rowControl.get('role')?.value) > 1"
+            pButton 
+            type="button" 
+            icon="pi pi-trash" 
+            class="p-button-rounded p-button-danger p-button-sm"
+            (click)="removeRoleRow(i)"
+            pTooltip="Видалити"
+            tooltipPosition="top">
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  <p-button label="Зберегти" type="submit" [disabled]="leadershipForm.invalid"></p-button>
+</form>
