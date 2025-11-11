@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;

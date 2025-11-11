@@ -1,5 +1,5 @@
 ﻿using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule.Leadership;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.Entities;
