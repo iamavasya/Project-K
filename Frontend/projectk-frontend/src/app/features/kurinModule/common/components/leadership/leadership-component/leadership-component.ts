@@ -12,10 +12,10 @@ import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from "primeng/button";
-import { AutoCompleteCompleteEvent, AutoCompleteModule } from "primeng/autocomplete";
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { SelectModule } from 'primeng/select';
 
 const COMMON_ROLES = [ 'Суддя', 'Скарбник', 'Писар', 'Господарник', 'Хронікар', 'Хорунжий' ];
 const MULTI_MEMBER_ROLES = [ 'Впорядник', 'Інструктор' ]; // Roles that can have multiple members
@@ -32,7 +32,7 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
   selector: 'app-leadership-component',
   imports: [
     CommonModule, ReactiveFormsModule, TableModule, DatePickerModule,
-    ButtonModule, AutoCompleteModule, InputTextModule, TooltipModule,
+    ButtonModule, SelectModule, InputTextModule, TooltipModule,
     ProgressSpinnerModule
   ],
   templateUrl: './leadership-component.html',
@@ -183,15 +183,6 @@ export class LeadershipComponent implements OnInit {
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
       leadershipKey: [data?.leadershipKey || this.leadershipKey || null]
     });
-  }
-
-  searchMembers(event: AutoCompleteCompleteEvent): void {
-    const query = event.query.toLowerCase();
-    this.filteredMembers = this.allMembers.filter(m => 
-      (m.firstName?.toLowerCase() || '').includes(query) ||
-      (m.lastName?.toLowerCase() || '').includes(query) ||
-      `${m.lastName} ${m.firstName}`.toLowerCase().includes(query)
-    );
   }
 
   getMemberFullName(member: MemberLookupDto): string {

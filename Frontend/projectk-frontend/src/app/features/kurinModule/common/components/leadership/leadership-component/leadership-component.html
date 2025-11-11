@@ -21,13 +21,20 @@
           <input pInputText formControlName="role" />
         </td>
         <td>
-          <p-autocomplete [suggestions]="filteredMembers" formControlName="member" placeholder="Виберіть учасника"></p-autocomplete>
+          <p-select appendTo="body" [options]="allMembers" [filter]="true" [filterBy]="'firstName,lastName'" [loading]="isLoading" formControlName="member" placeholder="Виберіть учасника">
+            <ng-template let-member #selectedItem>
+              {{ member.lastName }} {{ member.firstName }}
+            </ng-template>
+            <ng-template let-member #item>
+              {{ member.lastName }} {{ member.firstName }}
+            </ng-template>
+          </p-select>
         </td>
         <td>
-          <p-datepicker formControlName="startDate"></p-datepicker>
+          <p-datepicker appendTo="body" formControlName="startDate"></p-datepicker>
         </td>
         <td>
-          <p-datepicker formControlName="endDate"></p-datepicker>
+          <p-datepicker appendTo="body" formControlName="endDate"></p-datepicker>
         </td>
         <td>
           <button 
