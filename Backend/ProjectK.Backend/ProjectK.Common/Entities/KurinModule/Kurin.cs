@@ -13,7 +13,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public int Number { get; set; } = number;
         public ICollection<Group> Groups { get; set; } = new List<Group>();
         public ICollection<Member> Members { get; set; } = new List<Member>();
-        public Leadership KV { get; set; }
-        public Leadership Provid { get; set; }
+        public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();
     }
 }

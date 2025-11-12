@@ -13,6 +13,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public Guid LeadershipKey { get; set; }
         public LeadershipType Type { get; set; }
         public Guid EntityKey { get; set; }
+        public Guid? KurinKey { get; set; }
+        public Guid? GroupKey { get; set; }
         public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistories { get; set; } = new List<LeadershipHistoryMemberDto>();
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }

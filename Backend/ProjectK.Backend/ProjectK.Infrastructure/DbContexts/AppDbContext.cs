@@ -77,7 +77,17 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasKey(e => e.LeadershipKey);
                 entity.Property(e => e.Type)
                       .HasConversion<int>();
-                entity.HasIndex(e => new { e.Type, e.EntityKey });
+                entity.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey});
+                entity.HasOne(e => e.Kurin)
+                    .WithMany(k => k.Leaderships)
+                    .HasForeignKey(e => e.KurinKey)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Group)
+                    .WithOne(g => g.Leadership)
+                    .HasForeignKey<Leadership>(e => e.GroupKey)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LeadershipHistory>(entity =>
