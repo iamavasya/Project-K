@@ -75,7 +75,8 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
-                .ForMember(dest => dest.EntityKey, opt => opt.MapFrom(src => src.EntityKey));
+                .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.KurinKey))
+                .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey));
         }
     }
 }

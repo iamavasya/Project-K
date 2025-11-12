@@ -38,7 +38,18 @@ namespace ProjectK.Infrastructure.Repositories
         public async Task<IEnumerable<Leadership>> GetAllByTypeAsync(LeadershipType type, Guid entityKey, CancellationToken cancellationToken = default)
         {
             return await _context.Leaderships
-                                 .Where(l => l.Type == type && l.EntityKey == entityKey)
+                                 .Where(l =>
+                                    l.Type == type &&
+                                    (
+                                        (type == LeadershipType.Kurin || type == LeadershipType.KV)
+                                        && l.KurinKey == entityKey
+                                    )
+                                    ||
+                                    (
+                                        type == LeadershipType.Group
+                                        && l.GroupKey == entityKey
+                                    )
+                                 )
                                  .Include(l => l.LeadershipHistories)
                                     .ThenInclude(h => h.Member)
                                  .AsNoTracking()
