@@ -33,20 +33,18 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpGet("{leadershipKey:guid}")]
         public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
         {
-            throw new NotImplementedException();
-            //var request = new GetLeadershipByKeyQuery(leadershipKey);
-            //var response = await _mediator.Send(request);
-            //return response.ToActionResult(this);
+            var request = new GetLeadershipByKeyQuery(leadershipKey);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
         }
 
         [Authorize(Policy = "RequireManager")]
         [HttpPost]
         public async Task<IActionResult> UpsertLeadership([FromBody] UpsertLeadershipRequest dto)
         {
-            throw new NotImplementedException();
-            //var request = new UpsertLeadershipCommand(dto);
-            //var response = await _mediator.Send(request);
-            //return response.ToActionResult(this);
+            var request = new UpsertLeadershipCommand(dto);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
         }
 
         [Authorize(Policy = "RequireManager")]

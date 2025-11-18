@@ -13,6 +13,6 @@ namespace ProjectK.Common.Models.Dtos.Requests
         public Guid? EntityKey { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; } = [];
+        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistories { get; set; } = [];
     }
 }

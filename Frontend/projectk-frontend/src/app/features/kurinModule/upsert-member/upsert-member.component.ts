@@ -21,6 +21,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { toDateOnlyString } from '../common/functions/toDateOnlyString.function';
 
 @Component({
   selector: 'app-upsert-member',
@@ -135,9 +136,8 @@ export class UpsertMemberComponent implements OnInit {
   private buildPlastLevelsPayload() {
     const history = this.member?.plastLevelHistories ?? [];
     const filteredHistory = history.filter(x => x.dateAchieved != null);
-    filteredHistory.forEach(x => x.dateAchieved = this.toDateOnlyString(x.dateAchieved));
+    filteredHistory.forEach(x => x.dateAchieved = toDateOnlyString(x.dateAchieved));
     return filteredHistory;
-
   }
 
   submit(): void {
@@ -148,7 +148,7 @@ export class UpsertMemberComponent implements OnInit {
       lastName: this.member.lastName,
       email: this.member.email,
       phoneNumber: this.member.phoneNumber,
-      dateOfBirth: this.toDateOnlyString(this.member.dateOfBirth),
+      dateOfBirth: toDateOnlyString(this.member.dateOfBirth)!,
       plastLevelHistories: this.buildPlastLevelsPayload(),
     };
 
@@ -210,19 +210,6 @@ export class UpsertMemberComponent implements OnInit {
             });
           }
       });
-  }
-
-  private toDateOnlyString(d: Date | string | null | undefined): string {
-    if (!d) return '';
-    if (typeof d === 'string') {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-      const only = d.split('T')[0];
-      return only;
-    }
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${day}`;
   }
 
   fileChangeEvent(event: FileSelectEvent): void {
