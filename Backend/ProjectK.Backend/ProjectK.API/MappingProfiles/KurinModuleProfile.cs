@@ -2,10 +2,12 @@
 using ProjectK.API.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.Requests;
 
 namespace ProjectK.API.MappingProfiles
 {
@@ -59,14 +61,34 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
 
-            CreateMap<Member, MemberLookupDto>();
+            CreateMap<Member, MemberLookupDto>()
+                .ForMember(dest => dest.MemberKey, opt => opt.MapFrom(src => src.MemberKey))
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+                .ForMember(dest => dest.MiddleName, opt => opt.MapFrom(src => src.MiddleName));
 
             // Plast Level History Mapping
             CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
 
             // Leadership History Mapping
-            CreateMap<LeadershipHistory, LeadershipHistoryDto>();
-            CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>();
+            CreateMap<LeadershipHistory, LeadershipHistoryDto>()
+                .ForMember(dest => dest.LeadershipHistoryKey, opt => opt.MapFrom(src => src.LeadershipHistoryKey));
+
+            CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>()
+                .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
+                .ForMember(dest => dest.Member, opt => opt.MapFrom(src => src.Member))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role));
+
+            CreateMap<LeadershipHistoryMemberDto, LeadershipHistory>()
+                .ForMember(dest => dest.Leadership, opt => opt.Ignore())
+                .ForMember(dest => dest.MemberKey, opt => opt.MapFrom(src => src.Member.MemberKey))
+                .ForMember(dest => dest.Member, opt => opt.Ignore())
+                .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate));
 
             // Leadership Mapping
             CreateMap<Leadership, LeadershipDto>()
@@ -77,6 +99,15 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.KurinKey))
                 .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey));
+
+            CreateMap<UpsertLeadershipCommand, Leadership>()
+                .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
+                .ForMember(dest => dest.Type, opt => opt.Ignore())
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
+                .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
         }
     }
 }

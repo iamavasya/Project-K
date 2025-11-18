@@ -18,7 +18,7 @@
     <ng-template pTemplate="body" let-rowControl let-i="rowIndex">
       <tr [formGroupName]="i">
         <td>
-          <input pInputText formControlName="role" />
+          {{ getRoleDisplayName(rowControl.get('role')?.value) }}
         </td>
         <td>
           <p-select appendTo="body" [options]="allMembers" [filter]="true" [filterBy]="'firstName,lastName'" [loading]="isLoading" formControlName="member" placeholder="Виберіть учасника">

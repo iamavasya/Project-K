@@ -16,14 +16,47 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
+import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
+import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
 
-const COMMON_ROLES = [ 'Суддя', 'Скарбник', 'Писар', 'Господарник', 'Хронікар', 'Хорунжий' ];
-const MULTI_MEMBER_ROLES = [ 'Впорядник', 'Інструктор' ]; // Roles that can have multiple members
+export const ROLE_DISPLAY_NAMES: Record<LeadershipRole, string> = {
+    [LeadershipRole.Kurinnuy]:   'Курінний',
+    [LeadershipRole.Hurtkoviy]:  'Гуртковий',
+    [LeadershipRole.Suddya]:     'Суддя',
+    [LeadershipRole.Pysar]:      'Писар',
+    [LeadershipRole.Skarbnyk]:   'Скарбник',
+    [LeadershipRole.Horunjiy]:   'Хорунжий',
+    [LeadershipRole.Gospodar]:   'Господар',
+    [LeadershipRole.Hronikar]:   'Хронікар',
+    [LeadershipRole.Instruktor]: 'Інструктор',
+    [LeadershipRole.Zvyazkovyi]: 'Зв\'язковий',
+    [LeadershipRole.Vykhovnyk]: 'Впорядник',
+};
 
-export const LEADERSHIP_ROLE_MAP = {
-  kv: [ 'Зв\'язковий', 'Впорядник', 'Інструктор' ],
-  kurin: [ 'Курінний', ...COMMON_ROLES ],
-  group: [ 'Гуртковий', ...COMMON_ROLES ]
+const COMMON_ROLES: LeadershipRole[] = [
+    LeadershipRole.Suddya,
+    LeadershipRole.Skarbnyk,
+    LeadershipRole.Pysar,
+    LeadershipRole.Gospodar,
+    LeadershipRole.Hronikar,
+    LeadershipRole.Horunjiy
+];
+const MULTI_MEMBER_ROLES: LeadershipRole[] = [ LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ]; // Roles that can have multiple members
+
+export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
+    kv: [
+        LeadershipRole.Zvyazkovyi,
+        LeadershipRole.Vykhovnyk,
+        LeadershipRole.Instruktor
+    ],
+    kurin: [
+        LeadershipRole.Kurinnuy,
+        ...COMMON_ROLES
+    ],
+    group: [
+        LeadershipRole.Hurtkoviy,
+        ...COMMON_ROLES
+    ]
 };
 
 type LeadershipType = 'kurin' | 'group' | 'kv';
@@ -133,26 +166,28 @@ export class LeadershipComponent implements OnInit {
   
   patchForm(data: LeadershipDto): void {
     this.leadershipForm.patchValue({
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null
+      startDate: data.startDate ? toDateOnlyString(data.startDate) : null,
+      endDate: data.endDate ? toDateOnlyString(data.endDate) : null
     });
 
     this.leadershipHistories.clear();
 
     const rolesForType = LEADERSHIP_ROLE_MAP[this.leadershipType!] || [];
-    const rolesFromData = new Map<string, LeadershipHistoryDto[]>();
+    const rolesFromData = new Map<LeadershipRole, LeadershipHistoryDto[]>();
 
     // Group data by role
     data.leadershipHistories.forEach(history => {
-      if (!rolesFromData.has(history.role)) {
-        rolesFromData.set(history.role, []);
+      const role = history.role as LeadershipRole;
+      if (!rolesFromData.has(role)) {
+        rolesFromData.set(role, []);
       }
-      rolesFromData.get(history.role)!.push(history);
+      rolesFromData.get(role)!.push(history);
     });
 
     // Add rows for roles that have data
     data.leadershipHistories.forEach(history => {
-      this.leadershipHistories.push(this.createHistoryRow(history.role, history));
+      const role = history.role as LeadershipRole;
+      this.leadershipHistories.push(this.createHistoryRow(role, history));
     });
 
     // Add empty rows for roles without data
@@ -174,12 +209,12 @@ export class LeadershipComponent implements OnInit {
     return this.leadershipForm.get('leadershipHistories') as FormArray;
   }
 
-  private createHistoryRow(role: string, data: LeadershipHistoryDto | null = null): FormGroup {
+  private createHistoryRow(role: LeadershipRole, data: LeadershipHistoryDto | null = null): FormGroup {
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
       member: [data?.member || null, Validators.required], 
-      startDate: [data?.startDate ? new Date(data.startDate) : null, Validators.required],
-      endDate: [data?.endDate ? new Date(data.endDate) : null],
+      startDate: [data?.startDate ? toDateOnlyString(data.startDate) : null, Validators.required],
+      endDate: [data?.endDate ? toDateOnlyString(data.endDate) : null],
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
       leadershipKey: [data?.leadershipKey || this.leadershipKey || null]
     });
@@ -216,13 +251,15 @@ export class LeadershipComponent implements OnInit {
       leadershipKey: this.leadershipKey,
       type: this.leadershipType!,
       entityKey: this.entityKey!,
-      startDate: formOutput.startDate,
-      endDate: formOutput.endDate,
+      startDate: toDateOnlyString(formOutput.startDate)!,
+      endDate: toDateOnlyString(formOutput.endDate),
       
       leadershipHistories: formOutput.leadershipHistories
         .filter((h: any) => h.member !== null)
         .map((h: any) => ({
           ...h,
+          startDate: toDateOnlyString(h.startDate)!,
+          endDate: toDateOnlyString(h.endDate),
           member: {
             memberKey: h.member.memberKey,
             firstName: h.member.firstName,
@@ -249,11 +286,11 @@ export class LeadershipComponent implements OnInit {
     });
   }
 
-  canHaveMultipleMembers(role: string): boolean {
+  canHaveMultipleMembers(role: LeadershipRole): boolean {
     return MULTI_MEMBER_ROLES.includes(role);
   }
 
-  addRoleRow(role: string): void {
+  addRoleRow(role: LeadershipRole): void {
     if (!this.canHaveMultipleMembers(role)) {
       console.warn(`Role ${role} cannot have multiple members`);
       return;
@@ -262,7 +299,7 @@ export class LeadershipComponent implements OnInit {
   }
 
   removeRoleRow(index: number): void {
-    const role = this.leadershipHistories.at(index).getRawValue().role;
+    const role = this.leadershipHistories.at(index).getRawValue().role as LeadershipRole;
     
     if (!this.canHaveMultipleMembers(role)) {
       console.warn(`Cannot remove the only entry for role ${role}`);
@@ -281,9 +318,13 @@ export class LeadershipComponent implements OnInit {
     }
   }
 
-  getRoleRowsCount(role: string): number {
+  getRoleRowsCount(role: LeadershipRole): number {
     return this.leadershipHistories.controls.filter(
       control => control.getRawValue().role === role
     ).length;
+  }
+
+  public getRoleDisplayName(role: LeadershipRole): string {
+        return ROLE_DISPLAY_NAMES[role] || role;
   }
 }
