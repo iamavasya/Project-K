@@ -91,5 +91,10 @@ namespace ProjectK.Infrastructure.Repositories
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);
         }
+
+        public void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories)
+        {
+            _context.LeadershipHistories.RemoveRange(histories);
+        }
     }
 }

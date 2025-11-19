@@ -5,7 +5,7 @@ import { MemberDto } from '../../../models/memberDto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberService } from '../../../services/member-service/member.service';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
@@ -18,20 +18,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
-
-export const ROLE_DISPLAY_NAMES: Record<LeadershipRole, string> = {
-    [LeadershipRole.Kurinnuy]:   'Курінний',
-    [LeadershipRole.Hurtkoviy]:  'Гуртковий',
-    [LeadershipRole.Suddya]:     'Суддя',
-    [LeadershipRole.Pysar]:      'Писар',
-    [LeadershipRole.Skarbnyk]:   'Скарбник',
-    [LeadershipRole.Horunjiy]:   'Хорунжий',
-    [LeadershipRole.Gospodar]:   'Господар',
-    [LeadershipRole.Hronikar]:   'Хронікар',
-    [LeadershipRole.Instruktor]: 'Інструктор',
-    [LeadershipRole.Zvyazkovyi]: 'Зв\'язковий',
-    [LeadershipRole.Vykhovnyk]: 'Впорядник',
-};
+import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { IconField, IconFieldModule } from 'primeng/iconfield';
 
 const COMMON_ROLES: LeadershipRole[] = [
     LeadershipRole.Suddya,
@@ -66,7 +55,7 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
   imports: [
     CommonModule, ReactiveFormsModule, TableModule, DatePickerModule,
     ButtonModule, SelectModule, InputTextModule, TooltipModule,
-    ProgressSpinnerModule
+    ProgressSpinnerModule, ToggleSwitchModule, IconFieldModule, FormsModule
   ],
   templateUrl: './leadership-component.html',
   styleUrl: './leadership-component.css'
@@ -83,6 +72,8 @@ export class LeadershipComponent implements OnInit {
   leadershipType: LeadershipType | null = null;
   entityKey: string | null = null;
   isLoading = false;
+
+  showArchived = false;
   
   allMembers: MemberLookupDto[] = [];
   filteredMembers: MemberLookupDto[] = [];
@@ -119,7 +110,7 @@ export class LeadershipComponent implements OnInit {
   loadData(key: string): void {
     this.leadershipService.getLeadershipByKey(key).subscribe({
       next: (leadership) => {
-        this.leadershipType = leadership.type!; 
+        this.leadershipType = leadership.type!.toLowerCase() as LeadershipType;
         this.entityKey = leadership.entityKey!;
 
         this.loadAllMembers(); 
@@ -138,10 +129,11 @@ export class LeadershipComponent implements OnInit {
 
     let groupKey: string | undefined = undefined;
     let kurinKey: string | undefined = undefined;
+    let leadershipType = this.leadershipType.toLowerCase();
 
-    if (this.leadershipType === 'group') {
+    if (leadershipType === 'group') {
       groupKey = this.entityKey ?? undefined;
-    } else if (this.leadershipType === 'kurin' || this.leadershipType === 'kv') {
+    } else if (leadershipType === 'kurin' || leadershipType === 'kv') {
       kurinKey = this.entityKey ?? undefined;
     }
 
@@ -166,16 +158,16 @@ export class LeadershipComponent implements OnInit {
   
   patchForm(data: LeadershipDto): void {
     this.leadershipForm.patchValue({
-      startDate: data.startDate ? toDateOnlyString(data.startDate) : null,
-      endDate: data.endDate ? toDateOnlyString(data.endDate) : null
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null
     });
 
     this.leadershipHistories.clear();
 
+    const type = this.leadershipType?.toLowerCase();
     const rolesForType = LEADERSHIP_ROLE_MAP[this.leadershipType!] || [];
     const rolesFromData = new Map<LeadershipRole, LeadershipHistoryDto[]>();
 
-    // Group data by role
     data.leadershipHistories.forEach(history => {
       const role = history.role as LeadershipRole;
       if (!rolesFromData.has(role)) {
@@ -184,15 +176,22 @@ export class LeadershipComponent implements OnInit {
       rolesFromData.get(role)!.push(history);
     });
 
-    // Add rows for roles that have data
-    data.leadershipHistories.forEach(history => {
-      const role = history.role as LeadershipRole;
-      this.leadershipHistories.push(this.createHistoryRow(role, history));
-    });
-
-    // Add empty rows for roles without data
     rolesForType.forEach(role => {
-      if (!rolesFromData.has(role)) {
+      const histories = rolesFromData.get(role) || [];
+
+      histories.sort((a, b) => {
+        if (a.endDate && !b.endDate) return -1;
+        if (!a.endDate && b.endDate) return 1;
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      });
+
+      histories.forEach(h => {
+        this.leadershipHistories.push(this.createHistoryRow(role, h));
+      });
+
+      const hasActiveMember = histories.some(h => !h.endDate);
+
+      if (!hasActiveMember) {
         this.leadershipHistories.push(this.createHistoryRow(role));
       }
     });
@@ -210,11 +209,14 @@ export class LeadershipComponent implements OnInit {
   }
 
   private createHistoryRow(role: LeadershipRole, data: LeadershipHistoryDto | null = null): FormGroup {
+    const isArchived = !!data?.endDate;
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
-      member: [data?.member || null, Validators.required], 
-      startDate: [data?.startDate ? toDateOnlyString(data.startDate) : null, Validators.required],
-      endDate: [data?.endDate ? toDateOnlyString(data.endDate) : null],
+      member: [{ value: data?.member || null, disabled: isArchived }, Validators.required], 
+      
+      startDate: [data?.startDate ? new Date(data.startDate) : null, Validators.required],
+      endDate: [data?.endDate ? new Date(data.endDate) : null],
+      
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
       leadershipKey: [data?.leadershipKey || this.leadershipKey || null]
     });
@@ -249,7 +251,7 @@ export class LeadershipComponent implements OnInit {
 
     const payload: LeadershipDto = {
       leadershipKey: this.leadershipKey,
-      type: this.leadershipType!,
+      type: this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1) as LeadershipType,
       entityKey: this.entityKey!,
       startDate: toDateOnlyString(formOutput.startDate)!,
       endDate: toDateOnlyString(formOutput.endDate),
@@ -277,7 +279,12 @@ export class LeadershipComponent implements OnInit {
       next: (response) => {
         console.log('Saved successfully!', response);
         this.isLoading = false;
-        this.patchForm(response); 
+        this.patchForm(response);
+
+        if (this.leadershipType?.toLowerCase() == 'kurin' || this.leadershipType?.toLowerCase() == 'kv')
+          this.router.navigate(['/kurin']);
+        else if (this.leadershipType?.toLowerCase() == 'group')
+          this.router.navigate(['/group', this.entityKey]);
       },
       error: (err) => {
         console.error('Failed to save', err);

@@ -8,7 +8,6 @@ namespace ProjectK.Common.Models.Dtos.Requests
 {
     public class UpsertLeadershipRequest
     {
-        public Guid? LeadershipKey { get; set; }
         public string? Type { get; set; }
         public Guid? EntityKey { get; set; }
         public DateOnly StartDate { get; set; }

@@ -77,7 +77,7 @@ export const routes: Routes = [
     component: LeadershipComponent,
   },
   {
-    path: 'leadership/:leadershipKey',
+    path: 'leadership/:leadershipKey/:type/:entityKey',
     component: LeadershipComponent,
   }
 ];

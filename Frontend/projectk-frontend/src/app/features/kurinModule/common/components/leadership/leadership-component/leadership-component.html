@@ -21,7 +21,7 @@
           {{ getRoleDisplayName(rowControl.get('role')?.value) }}
         </td>
         <td>
-          <p-select appendTo="body" [options]="allMembers" [filter]="true" [filterBy]="'firstName,lastName'" [loading]="isLoading" formControlName="member" placeholder="Виберіть учасника">
+          <p-select appendTo="body" [options]="allMembers" [filter]="true" [filterBy]="'firstName,lastName'" dataKey="memberKey" [loading]="isLoading" formControlName="member" placeholder="Виберіть учасника">
             <ng-template let-member #selectedItem>
               {{ member.lastName }} {{ member.firstName }}
             </ng-template>
