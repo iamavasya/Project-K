@@ -36,20 +36,38 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership.Handler
             {
                 // Update existing Leadership
                 _mapper.Map(request, existing);
-                existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!);
+
+                var incomingIds = request.LeadershipHistoryMembers
+                    .Where(x => x.LeadershipHistoryKey.HasValue)
+                    .Select(x => x.LeadershipHistoryKey!.Value)
+                    .ToList();
+
+                var historiesToDelete = existing.LeadershipHistories
+                    .Where(h => !incomingIds.Contains(h.LeadershipHistoryKey))
+                    .ToList();
+
+                if (historiesToDelete.Any())
+                {
+                    _unitOfWork.Leaderships.LeadershipHistoriesRemoveRange(historiesToDelete);
+
+                    foreach (var item in historiesToDelete)
+                    {
+                        existing.LeadershipHistories.Remove(item);
+                    }
+                }
+
+                _mapper.Map(request.LeadershipHistoryMembers, existing.LeadershipHistories);
+
+                existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
                 switch (existing.Type)
                 {
-                    case LeadershipType.Kurin:
+                    case LeadershipType.Kurin or LeadershipType.KV:
                         existing.KurinKey = request.EntityKey;
                         existing.GroupKey = null;
                         break;
                     case LeadershipType.Group:
                         existing.GroupKey = request.EntityKey;
                         existing.KurinKey = null;
-                        break;
-                    case LeadershipType.KV:
-                        existing.KurinKey = request.EntityKey;
-                        existing.GroupKey = null;
                         break;
                 }
                 _unitOfWork.Leaderships.Update(existing, cancellationToken);
@@ -58,20 +76,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership.Handler
             {
                 // Create new Leadership
                 existing = _mapper.Map<Common.Entities.KurinModule.Leadership>(request);
-                existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(char.ToUpper(request.Type[0]) + request.Type.Substring(1));
+                existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
                 switch (existing.Type)
                 {
-                    case LeadershipType.Kurin:
+                    case LeadershipType.Kurin or LeadershipType.KV:
                         existing.KurinKey = request.EntityKey;
                         existing.GroupKey = null;
                         break;
                     case LeadershipType.Group:
                         existing.GroupKey = request.EntityKey;
                         existing.KurinKey = null;
-                        break;
-                    case LeadershipType.KV:
-                        existing.KurinKey = request.EntityKey;
-                        existing.GroupKey = null;
                         break;
                 }
                 _unitOfWork.Leaderships.Add(existing, cancellationToken);

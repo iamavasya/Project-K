@@ -30,6 +30,15 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships.Handler
                 return new ServiceResult<LeadershipDto>(ResultType.NotFound);
             }
             var leadershipDto = _mapper.Map<LeadershipDto>(leadership);
+            switch (leadershipDto.Type)
+            {
+                case LeadershipType.Kurin or LeadershipType.KV:
+                    leadershipDto.EntityKey = leadershipDto.KurinKey ?? Guid.Empty;
+                    break;
+                case LeadershipType.Group:
+                    leadershipDto.EntityKey = leadershipDto.GroupKey ?? Guid.Empty;
+                    break;
+            }
             return new ServiceResult<LeadershipDto>(ResultType.Success, leadershipDto);
         }
     }

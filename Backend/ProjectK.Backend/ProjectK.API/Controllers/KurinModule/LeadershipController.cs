@@ -40,9 +40,18 @@ namespace ProjectK.API.Controllers.KurinModule
 
         [Authorize(Policy = "RequireManager")]
         [HttpPost]
-        public async Task<IActionResult> UpsertLeadership([FromBody] UpsertLeadershipRequest dto)
+        public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
         {
             var request = new UpsertLeadershipCommand(dto);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpPut("{leadershipKey:guid}")]
+        public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
+        {
+            var request = new UpsertLeadershipCommand(dto, leadershipKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }

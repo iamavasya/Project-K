@@ -22,7 +22,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership
 
         public UpsertLeadershipCommand(UpsertLeadershipRequest request)
         {
-            LeadershipKey = request.LeadershipKey;
+            Type = request.Type;
+            EntityKey = request.EntityKey;
+            StartDate = request.StartDate;
+            EndDate = request.EndDate;
+            LeadershipHistoryMembers = request.LeadershipHistories;
+        }
+
+        public UpsertLeadershipCommand(UpsertLeadershipRequest request, Guid leadershipKey)
+        {
+            LeadershipKey = leadershipKey;
             Type = request.Type;
             EntityKey = request.EntityKey;
             StartDate = request.StartDate;
