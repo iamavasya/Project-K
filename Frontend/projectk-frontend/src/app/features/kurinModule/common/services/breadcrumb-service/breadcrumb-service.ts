@@ -164,8 +164,8 @@ export class BreadcrumbService {
     
     // Convert parameters to regex pattern
     const regexPattern = normalizedPattern
-      .replace(/\//g, '\\/') // Escape slashes
-      .replace(/:[a-zA-Z0-9]+/g, '[^\\/]+'); // Replace params with wildcard pattern
+      .replaceAll(/\//g, '\\/') // Escape slashes
+      .replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+'); // Replace params with wildcard pattern
     
     for (const route of this.router.config) {
       if (!route.path) continue;
@@ -177,7 +177,7 @@ export class BreadcrumbService {
       
       // Pattern match
       if (new RegExp(`^${regexPattern}$`).test(route.path) || 
-          new RegExp(`^${route.path.replace(/:[a-zA-Z0-9]+/g, '[^\\/]+')}$`).test(normalizedPattern)) {
+          new RegExp(`^${route.path.replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+')}$`).test(normalizedPattern)) {
         return route;
       }
     }
