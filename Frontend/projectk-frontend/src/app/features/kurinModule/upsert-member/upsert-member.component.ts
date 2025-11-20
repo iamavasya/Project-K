@@ -16,7 +16,7 @@ import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { DialogModule } from 'primeng/dialog';
 import { base64ToBlob } from '../common/functions/base64ToBlob.function';
-import { Location, NgFor } from '@angular/common';
+import { Location } from '@angular/common';
 import { AccordionModule } from 'primeng/accordion';
 import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';

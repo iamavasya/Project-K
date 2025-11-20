@@ -127,49 +127,49 @@
                     </div>
                     <p-floatLabel variant="on">
                         <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                        <label>Дата вступу в Пласт</label>
+                        <label for="plastLevelEntry">Дата вступу в Пласт</label>
                     </p-floatLabel>
                     <p-floatLabel variant="on">
                         <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                        <label>Дата заприсяження</label>
+                        <label for="plastLevelUchasnyk">Дата заприсяження</label>
                     </p-floatLabel>
 
                     @if (showUpuLevels) {
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття розвідувача</label>
+                            <label for="plastLevelRozviduvach">Дата здобуття розвідувача</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття скоба/вірлиці</label>
+                            <label for="plastLevelSkob">Дата здобуття скоба/вірлиці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття гетьманського скоба/вірлиці</label>
+                            <label for="plastLevelHetmanskiySkob">Дата здобуття гетьманського скоба/вірлиці</label>
                         </p-floatLabel>
                     }
                     @if (showUspLevels) {
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата переходу в УСП</label>
+                            <label for="plastLevelStarshoplastun">Дата переходу в УСП</label>
                         </p-floatLabel>
                     }
                     @if (showUpsLevels) {
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата переходу в УПС</label>
+                            <label for="plastLevelSenior">Дата переходу в УПС</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття пл. сен. праці</label>
+                            <label for="plastLevelSeniorPratsi">Дата здобуття пл. сен. праці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття пл. сен. довір'я</label>
+                            <label for="plastLevelSeniorDovirja">Дата здобуття пл. сен. довір'я</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
                             <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
-                            <label>Дата здобуття пл. сен. керівництва</label>
+                            <label for="plastLevelSeniorKerivnytstva">Дата здобуття пл. сен. керівництва</label>
                         </p-floatLabel>
                     }
                 </div>
