@@ -21,13 +21,6 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet("test")]
-        public async Task<IActionResult> Test()
-        {
-            return Ok("Admin here");
-        }
-
         [Authorize(Policy = "RequireUser")]
         [HttpGet("{kurinKey}")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
