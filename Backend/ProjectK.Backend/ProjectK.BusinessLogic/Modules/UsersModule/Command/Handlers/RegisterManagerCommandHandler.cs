@@ -28,7 +28,6 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
         public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterManagerCommand request, CancellationToken cancellationToken)
         {
-            // TODO: Продовжити працювати над транзакціями
             await using var transaction = await _uow.BeginTransactionAsync(cancellationToken);
 
             try
@@ -48,7 +47,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 }, cancellationToken);
 
                 // Step 3: Create the new Member and associate with User
-                var memberResult = await _mediator.Send(new UpsertMemberCommand
+                await _mediator.Send(new UpsertMemberCommand
                 {
                     FirstName = request.FirstName,
                     MiddleName = request.MiddleName,

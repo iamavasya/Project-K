@@ -18,7 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
     private readonly router = inject(Router);
 
     private isRefreshing = false;
-    private refreshTokenSubject = new BehaviorSubject<string | null>(null);
+    private readonly refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         // Skip refresh token requests to avoid loops
@@ -49,7 +49,18 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     private tryRefreshAndRepeat(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        if (!this.isRefreshing) {
+        if (this.isRefreshing) {
+            return this.refreshTokenSubject.pipe(
+                filter(token => token !== null),
+                take(1),
+                switchMap(token => {
+                    if (token) {
+                        return next.handle(this.addTokenToRequest(req, token));
+                    }
+                    return throwError(() => new Error('Session expired'));
+                })
+            );
+        } else {
             this.isRefreshing = true;
             this.refreshTokenSubject.next(null);
 
@@ -68,17 +79,6 @@ export class AuthInterceptor implements HttpInterceptor {
                 }),
                 finalize(() => {
                     this.isRefreshing = false;
-                })
-            );
-        } else {
-            return this.refreshTokenSubject.pipe(
-                filter(token => token !== null),
-                take(1),
-                switchMap(token => {
-                    if (token) {
-                        return next.handle(this.addTokenToRequest(req, token));
-                    }
-                    return throwError(() => new Error('Session expired'));
                 })
             );
         }

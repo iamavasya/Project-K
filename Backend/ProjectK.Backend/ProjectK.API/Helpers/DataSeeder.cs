@@ -5,7 +5,7 @@ using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Helpers
 {
-    public class DataSeeder
+    public static class DataSeeder
     {
         public static async Task SeedAsync(IServiceProvider services)
         {
@@ -38,7 +38,7 @@ namespace ProjectK.API.Helpers
                 var result = await userManager.CreateAsync(adminUser, "Admin@12345");
                 if (!result.Succeeded)
                 {
-                    throw new ApplicationException($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
 
                 await userManager.AddToRoleAsync(adminUser, UserRole.Admin.ToClaimValue());

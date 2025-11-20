@@ -37,8 +37,8 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers
                     LastName = user.LastName!
                 };
                 result.Add(userDto);
-            };
-            return new ServiceResult<IEnumerable<UserDto>>(ResultType.Success, result ?? []);
+            }
+            return new ServiceResult<IEnumerable<UserDto>>(ResultType.Success, result);
         }
     }
 }

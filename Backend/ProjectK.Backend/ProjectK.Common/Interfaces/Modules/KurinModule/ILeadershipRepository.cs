@@ -15,7 +15,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<IEnumerable<Leadership>> GetAllByTypeAsync(LeadershipType type, Guid entityKey,  CancellationToken cancellationToken = default);
 
         void Add(Leadership leadership, CancellationToken cancellationToken = default);
-        void Update(Leadership updatedLeadership, CancellationToken cancellationToken = default);
+        void Update(Leadership leadership, CancellationToken cancellationToken = default);
         Task CloseLeadershipAsync(Guid leadershipKey, DateOnly endDate, CancellationToken cancellationToken = default);
 
         Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);

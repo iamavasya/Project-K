@@ -42,9 +42,9 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 30%">Роль</th>
-            <th style="width: 40%">Учасник</th>
-            <th style="width: 30%">Період</th>
+            <th id="role" style="width: 30%">Роль</th>
+            <th id="member" style="width: 40%">Учасник</th>
+            <th id="period" style="width: 30%">Період</th>
           </tr>
         </ng-template>
         
@@ -110,10 +110,10 @@
 
       <ng-template #header>
         <tr>
-          <th pSortableColumn="lastName">
+          <th id="fullName" pSortableColumn="lastName">
             Прізвище та Ім'я <p-sortIcon field="lastName" />
           </th>
-          <th>Статус</th> </tr>
+          <th id="role">Статус</th> </tr>
       </ng-template>
 
       <ng-template #body let-member>
