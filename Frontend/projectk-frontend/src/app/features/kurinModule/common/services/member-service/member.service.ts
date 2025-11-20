@@ -48,6 +48,7 @@ export class MemberService {
                 Object.entries(historyItem).forEach(([itemKey, itemValue]) => {
                     if (itemValue !== null && itemValue !== undefined) {
                         const formattedKey = `${key}[${index}].${itemKey}`;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         formData.append(formattedKey, (itemValue as any).toString());
                     }
                 });

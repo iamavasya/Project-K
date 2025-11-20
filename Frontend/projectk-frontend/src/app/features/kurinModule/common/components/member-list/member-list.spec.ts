@@ -5,7 +5,7 @@ import { LeadershipService } from '../../services/leadership-service/leadership-
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
-import { LeadershipDto } from '../../models/requests/leadership/leadershipDto';
+import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadershipDto';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 
 describe('MemberList', () => {
@@ -16,7 +16,7 @@ describe('MemberList', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   const mockMembers: MemberDto[] = [
-    { memberKey: 'm1', firstName: 'John', lastName: 'Doe', middleName: 'M' } as any
+    { memberKey: 'm1', firstName: 'John', lastName: 'Doe', middleName: 'M' } as MemberDto,
   ];
 
   const mockLeadership: LeadershipDto = {
@@ -136,7 +136,7 @@ describe('MemberList', () => {
 
   describe('Navigation', () => {
     it('onMemberSelect should navigate to member profile', () => {
-      const member = { memberKey: 'm1' } as any;
+      const member = { memberKey: 'm1' } as MemberDto;
       component.onMemberSelect(member);
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', 'm1']);
     });
@@ -165,17 +165,17 @@ describe('MemberList', () => {
 
   describe('Helpers', () => {
     it('getRoleSeverity should return secondary for archived', () => {
-      const history = { endDate: '2023-01-01' } as any;
+      const history = { endDate: '2023-01-01' } as LeadershipHistoryDto;
       expect(component.getRoleSeverity(history)).toBe('secondary');
     });
 
     it('getRoleSeverity should return danger for Kurinnuy', () => {
-      const history = { role: LeadershipRole.Kurinnuy, endDate: null } as any;
+      const history = { role: LeadershipRole.Kurinnuy, endDate: null } as LeadershipHistoryDto;
       expect(component.getRoleSeverity(history)).toBe('danger');
     });
 
     it('getRoleSeverity should return info for unknown roles', () => {
-      const history = { role: LeadershipRole.Pysar, endDate: null } as any;
+      const history = { role: LeadershipRole.Pysar, endDate: null } as LeadershipHistoryDto;
       expect(component.getRoleSeverity(history)).toBe('info');
     });
     

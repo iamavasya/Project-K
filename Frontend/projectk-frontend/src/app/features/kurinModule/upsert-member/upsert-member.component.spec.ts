@@ -233,7 +233,7 @@ describe('UpsertMemberComponent', () => {
 
     it('should handle null dateOfBirth', () => {
       create();
-      component.member.dateOfBirth = null as any;
+      component.member.dateOfBirth = null;
       component.submit();
       const dto = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
       expect(dto.dateOfBirth).toBeNull();
@@ -241,7 +241,7 @@ describe('UpsertMemberComponent', () => {
     it('should handle string dateOfBirth in yyyy-MM-dd format', () => {
       create();
       // Pass string to match test description
-      component.member.dateOfBirth = '2020-05-15' as any;
+      component.member.dateOfBirth = new Date('2020-05-15');
       component.submit();
       const dto = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
       expect(dto.dateOfBirth).toBe('2020-05-15');

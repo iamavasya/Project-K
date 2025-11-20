@@ -7,7 +7,6 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura'
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
-import { NgControl } from '@angular/forms';
 
 export const appConfig: ApplicationConfig = {
   providers: [

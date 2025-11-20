@@ -18,6 +18,7 @@ describe('LeadershipComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
   
   // Use BehaviorSubject to simulate route param changes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paramMapSubject = new BehaviorSubject<any>({ get: () => null });
 
   const mockMember: MemberDto = {
@@ -29,7 +30,7 @@ describe('LeadershipComponent', () => {
 
   const mockLeadership: LeadershipDto = {
     leadershipKey: 'l1',
-    type: 'Kurin' as any,
+    type: 'kurin',
     entityKey: 'k1',
     startDate: '2023-01-01',
     endDate: null,

@@ -5,7 +5,7 @@ import { MemberDto } from '../../../models/memberDto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberService } from '../../../services/member-service/member.service';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
@@ -254,15 +254,15 @@ export class LeadershipComponent implements OnInit {
 
     const payload: LeadershipDto = {
       leadershipKey: this.leadershipKey,
-      type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as any, 
+      type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as 'kurin' | 'group' | 'kv', 
       entityKey: this.entityKey!,
       startDate: toDateOnlyString(formOutput.startDate)!,
       endDate: toDateOnlyString(formOutput.endDate),
       
       // Відправляємо тільки заповнені рядки. Бекенд видалить ті, що ми прибрали.
       leadershipHistories: formOutput.leadershipHistories
-        .filter((h: any) => h.member !== null) 
-        .map((h: any) => ({
+        .filter((h: LeadershipHistoryDto) => h.member !== null) 
+        .map((h: LeadershipHistoryDto) => ({
           ...h,
           startDate: toDateOnlyString(h.startDate)!,
           endDate: toDateOnlyString(h.endDate),
