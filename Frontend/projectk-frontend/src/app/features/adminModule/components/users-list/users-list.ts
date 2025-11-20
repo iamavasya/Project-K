@@ -42,11 +42,11 @@ export class UsersListComponent implements OnInit {
   }
 
   onRowEditInit(user: UserDto) {
-    this.clonedUsers[user.userId as string] = { ...user };
+    this.clonedUsers[user.userId] = { ...user };
   }
 
   onRowEditSave(user: UserDto) {
-    delete this.clonedUsers[user.userId as string];
+    delete this.clonedUsers[user.userId];
     // this.userService.updateUser(user).subscribe({
     //   next: (updatedUser: UserDto) => {
     //     const index = this.users.findIndex(u => u.userId === updatedUser.userId);
@@ -58,7 +58,7 @@ export class UsersListComponent implements OnInit {
   }
 
   onRowEditCancel(user: UserDto, index: number) {
-    this.users[index] = this.clonedUsers[user.userId as string];
-    delete this.clonedUsers[user.userId as string];
+    this.users[index] = this.clonedUsers[user.userId];
+    delete this.clonedUsers[user.userId];
   }
 }

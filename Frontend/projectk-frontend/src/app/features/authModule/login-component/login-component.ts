@@ -12,7 +12,6 @@ import { Router } from '@angular/router';
   selector: 'app-login-component',
   imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule],
   templateUrl: './login-component.html',
-  styleUrl: './login-component.css'
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
@@ -28,7 +27,6 @@ export class LoginComponent {
     };
     this.authService.login(LoginRequest).subscribe({
       next: (response) => {
-        // TODO: Продовжити роботу з логіном і решту auth module
         alert(`Login successful: ${response}`);
         const state = this.authService.getAuthStateValue();
         if (state?.role === 'Admin') {

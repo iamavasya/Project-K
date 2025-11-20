@@ -5,7 +5,7 @@ import { MemberDto } from '../../../models/memberDto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberService } from '../../../services/member-service/member.service';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
@@ -19,7 +19,6 @@ import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { FormsModule } from '@angular/forms';
 
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
@@ -29,7 +28,7 @@ const COMMON_ROLES: LeadershipRole[] = [
   LeadershipRole.Suddya, LeadershipRole.Skarbnyk, LeadershipRole.Pysar,
   LeadershipRole.Gospodar, LeadershipRole.Hronikar, LeadershipRole.Horunjiy
 ];
-const MULTI_MEMBER_ROLES: LeadershipRole[] = [ LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ];
+const MULTI_MEMBER_ROLES = new Set<LeadershipRole>([LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor]);
 
 export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
   kv: [ LeadershipRole.Zvyazkovyi, LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ],
@@ -48,7 +47,6 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
     ToggleSwitchModule, IconFieldModule, InputIconModule
   ],
   templateUrl: './leadership-component.html',
-  styleUrl: './leadership-component.css'
 })
 export class LeadershipComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -295,7 +293,7 @@ export class LeadershipComponent implements OnInit {
   }
 
   canHaveMultipleMembers(role: LeadershipRole): boolean {
-    return MULTI_MEMBER_ROLES.includes(role);
+    return MULTI_MEMBER_ROLES.has(role);
   }
 
   addRoleRow(role: LeadershipRole): void {

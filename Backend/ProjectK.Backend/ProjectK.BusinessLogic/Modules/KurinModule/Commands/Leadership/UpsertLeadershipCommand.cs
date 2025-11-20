@@ -18,7 +18,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership
         public Guid? EntityKey { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; } = [];
+        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; }
 
         public UpsertLeadershipCommand(UpsertLeadershipRequest request)
         {

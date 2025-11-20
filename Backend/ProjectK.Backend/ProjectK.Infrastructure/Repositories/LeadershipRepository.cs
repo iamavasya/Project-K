@@ -71,16 +71,16 @@ namespace ProjectK.Infrastructure.Repositories
             // Винести в бізнес логіку
             // Викликати тільки Update
             throw new NotSupportedException();
-            var leadership = await _context.Leaderships.FindAsync(leadershipKey, cancellationToken);
-            if (leadership != null)
-            {
-                leadership.EndDate = endDate;
-                _context.Leaderships.Update(leadership);
-            }
-            else
-            {
-                throw new Exception("Leadership not found");
-            }
+            //var leadership = await _context.Leaderships.FindAsync(leadershipKey, cancellationToken);
+            //if (leadership != null)
+            //{
+            //    leadership.EndDate = endDate;
+            //    _context.Leaderships.Update(leadership);
+            //}
+            //else
+            //{
+            //    throw new Exception("Leadership not found");
+            //}
         }
 
         public async Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default)

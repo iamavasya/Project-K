@@ -41,7 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new ApplicationException($"User registration failed: {errors}");
+                throw new Exception($"User registration failed: {errors}");
             }
             
             var roleName = request.Role;

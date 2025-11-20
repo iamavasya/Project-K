@@ -24,18 +24,18 @@ namespace ProjectK.Infrastructure.DbContexts
         {
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder);
 
             // Kurin module entity configuration
-            modelBuilder.Entity<Kurin>(entity =>
+            builder.Entity<Kurin>(entity =>
             {
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
             });
 
-            modelBuilder.Entity<Group>(entity =>
+            builder.Entity<Group>(entity =>
             {
                 entity.HasKey(e => e.GroupKey);
                 entity.HasOne(e => e.Kurin)
@@ -44,7 +44,7 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<Member>(entity =>
+            builder.Entity<Member>(entity =>
             {
                 entity.HasKey(e => e.MemberKey);
                 entity.HasOne(entity => entity.Group)
@@ -61,7 +61,7 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<PlastLevelHistory>(entity =>
+            builder.Entity<PlastLevelHistory>(entity =>
             {
                 entity.HasKey(e => e.PlastLevelHistoryKey);
                 entity.HasOne(e => e.Member)
@@ -72,7 +72,7 @@ namespace ProjectK.Infrastructure.DbContexts
                       .HasConversion<int>();
             });
 
-            modelBuilder.Entity<Leadership>(entity =>
+            builder.Entity<Leadership>(entity =>
             {
                 entity.HasKey(e => e.LeadershipKey);
                 entity.Property(e => e.Type)
@@ -90,7 +90,7 @@ namespace ProjectK.Infrastructure.DbContexts
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            modelBuilder.Entity<LeadershipHistory>(entity =>
+            builder.Entity<LeadershipHistory>(entity =>
             {
                 entity.HasKey(e => e.LeadershipHistoryKey);
                 entity.HasOne(e => e.Member)

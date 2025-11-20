@@ -29,7 +29,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships.Handler
             var currentLeadership = leadership.Where(l => l.EndDate == null);
             if (leadership.Count() > 1)
             {
-                throw new Exception("Multiple leaderships found for the given type and key.");
+                throw new ArgumentOutOfRangeException("Multiple leaderships found for the given type and key.");
             }
             LeadershipDto leadershipResponse = _mapper.Map<LeadershipDto>(currentLeadership.FirstOrDefault());
             return new ServiceResult<LeadershipDto>(

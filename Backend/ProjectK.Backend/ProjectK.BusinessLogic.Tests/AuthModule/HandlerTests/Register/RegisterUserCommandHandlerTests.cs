@@ -341,7 +341,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .ReturnsAsync(IdentityResult.Failed(identityErrors));
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ApplicationException>(
+            var exception = await Assert.ThrowsAsync<Exception>(
                 () => _handler.Handle(command, CancellationToken.None));
 
             Assert.Contains("User registration failed", exception.Message);

@@ -93,7 +93,6 @@ export class AdminPanelComponent implements OnInit {
     switch (e.action) {
       case 'create':
         this.authService.registerFirstManager(e.entity).subscribe(() => { this.refreshData(); });
-        // this.kurinService.createKurin(e.entity).subscribe(() => this.refreshData());
         break;
       case 'update':
         this.kurinService.updateKurin(e.entity).subscribe(() => this.refreshData());

@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable @angular-eslint/directive-selector*/
 import { Directive } from '@angular/core';
 import { NG_VALIDATORS, Validator, AbstractControl, ValidationErrors } from '@angular/forms';
 

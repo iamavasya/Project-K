@@ -12,7 +12,7 @@ import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 })
 export class AuthService {
   private readonly apiUrl = environment.apiUrl;
-  private authState$ = new BehaviorSubject<AuthState | null>(null);
+  private readonly authState$ = new BehaviorSubject<AuthState | null>(null);
   private readonly http = inject(HttpClient);
 
   constructor() {

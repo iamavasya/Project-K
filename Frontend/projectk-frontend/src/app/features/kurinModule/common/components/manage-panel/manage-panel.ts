@@ -166,7 +166,7 @@ export class ManagePanel implements OnChanges {
     const action = this.parameter;
 
     let raw = {
-      ...(this.entity ?? this.config.createFactory?.() ?? {}),
+      ...(this.entity ?? this.config.createFactory?.()),
       ...this.form.getRawValue()
     };
 

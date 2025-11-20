@@ -24,6 +24,7 @@ namespace ProjectK.API.Controllers.AuthModule
     {
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
+        private const string refreshTokenCookieName = "refreshToken";
 
         public AuthController(IMediator mediator, IMapper mapper)
         {
@@ -74,7 +75,7 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies[refreshTokenCookieName];
             if (refreshToken == null)
             {
                 return Unauthorized();
@@ -99,10 +100,10 @@ namespace ProjectK.API.Controllers.AuthModule
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var command = new LogoutUserCommand(userKeyClaim!);
             var response = await _mediator.Send(command);
-            var refreshToken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies[refreshTokenCookieName];
             if (refreshToken != null)
             {
-                Response.Cookies.Delete("refreshToken");
+                Response.Cookies.Delete(refreshTokenCookieName);
             }
             return response.ToActionResult(this);
         }
@@ -131,7 +132,7 @@ namespace ProjectK.API.Controllers.AuthModule
                 SameSite = SameSiteMode.Strict,
                 Expires = expires
             };
-            Response.Cookies.Append("refreshToken", token, cookieOptions);
+            Response.Cookies.Append(refreshTokenCookieName, token, cookieOptions);
         }
     }
 }

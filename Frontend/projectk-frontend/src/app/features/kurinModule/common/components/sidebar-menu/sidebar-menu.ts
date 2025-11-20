@@ -15,7 +15,6 @@ import { TagModule } from 'primeng/tag';
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule],
   templateUrl: './sidebar-menu.html',
-  styleUrl: './sidebar-menu.css'
 })
 export class SidebarMenu implements OnChanges {
   private readonly router = inject(Router);

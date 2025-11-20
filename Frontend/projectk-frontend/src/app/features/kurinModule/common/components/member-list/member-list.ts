@@ -100,12 +100,12 @@ export class MemberList implements OnInit {
     if (!this.showArchived) {
       filtered = filtered.filter(h => !h.endDate);
     }
-    const sorted = filtered.sort((a, b) => {
+    filtered.sort((a, b) => {
       if (!a.endDate && b.endDate) return -1;
       if (a.endDate && !b.endDate) return 1;
       return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
     });
-    this.leadershipHistories = sorted.map(h => ({
+    this.leadershipHistories = filtered.map(h => ({
       ...h,
       roleNameUA: this.getRoleDisplayName(h.role)
     }));
