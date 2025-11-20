@@ -37,27 +37,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership.Handler
                 // Update existing Leadership
                 _mapper.Map(request, existing);
 
-                var incomingIds = request.LeadershipHistoryMembers
-                    .Where(x => x.LeadershipHistoryKey.HasValue)
-                    .Select(x => x.LeadershipHistoryKey!.Value)
-                    .ToList();
-
-                var historiesToDelete = existing.LeadershipHistories
-                    .Where(h => !incomingIds.Contains(h.LeadershipHistoryKey))
-                    .ToList();
-
-                if (historiesToDelete.Any())
-                {
-                    _unitOfWork.Leaderships.LeadershipHistoriesRemoveRange(historiesToDelete);
-
-                    foreach (var item in historiesToDelete)
-                    {
-                        existing.LeadershipHistories.Remove(item);
-                    }
-                }
-
-                _mapper.Map(request.LeadershipHistoryMembers, existing.LeadershipHistories);
-
                 existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
                 switch (existing.Type)
                 {

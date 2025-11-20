@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.EquivalencyExpression;
 using ProjectK.API.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
@@ -82,6 +83,8 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role));
 
             CreateMap<LeadershipHistoryMemberDto, LeadershipHistory>()
+                .EqualityComparison((src, dest) => src.LeadershipHistoryKey == dest.LeadershipHistoryKey)
+                .ForMember(dest => dest.LeadershipHistoryKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Leadership, opt => opt.Ignore())
                 .ForMember(dest => dest.MemberKey, opt => opt.MapFrom(src => src.Member.MemberKey))
                 .ForMember(dest => dest.Member, opt => opt.Ignore())
