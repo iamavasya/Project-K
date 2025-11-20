@@ -24,7 +24,9 @@ describe('MemberCardComponent', () => {
     email: 'john@example.com',
     phoneNumber: '123456789',
     dateOfBirth: null,
-    profilePhotoUrl: null
+    profilePhotoUrl: null,
+    plastLevelHistories: [],
+    leadershipHistories: []
   };
 
   beforeEach(async () => {

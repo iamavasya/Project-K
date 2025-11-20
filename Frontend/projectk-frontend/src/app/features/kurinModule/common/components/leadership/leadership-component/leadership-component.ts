@@ -5,7 +5,7 @@ import { MemberDto } from '../../../models/memberDto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberService } from '../../../services/member-service/member.service';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
@@ -16,36 +16,25 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { FormsModule } from '@angular/forms';
+
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
 import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { IconField, IconFieldModule } from 'primeng/iconfield';
 
 const COMMON_ROLES: LeadershipRole[] = [
-    LeadershipRole.Suddya,
-    LeadershipRole.Skarbnyk,
-    LeadershipRole.Pysar,
-    LeadershipRole.Gospodar,
-    LeadershipRole.Hronikar,
-    LeadershipRole.Horunjiy
+  LeadershipRole.Suddya, LeadershipRole.Skarbnyk, LeadershipRole.Pysar,
+  LeadershipRole.Gospodar, LeadershipRole.Hronikar, LeadershipRole.Horunjiy
 ];
-const MULTI_MEMBER_ROLES: LeadershipRole[] = [ LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ]; // Roles that can have multiple members
+const MULTI_MEMBER_ROLES: LeadershipRole[] = [ LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ];
 
 export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
-    kv: [
-        LeadershipRole.Zvyazkovyi,
-        LeadershipRole.Vykhovnyk,
-        LeadershipRole.Instruktor
-    ],
-    kurin: [
-        LeadershipRole.Kurinnuy,
-        ...COMMON_ROLES
-    ],
-    group: [
-        LeadershipRole.Hurtkoviy,
-        ...COMMON_ROLES
-    ]
+  kv: [ LeadershipRole.Zvyazkovyi, LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ],
+  kurin: [ LeadershipRole.Kurinnuy, ...COMMON_ROLES ],
+  group: [ LeadershipRole.Hurtkoviy, ...COMMON_ROLES ]
 };
 
 type LeadershipType = 'kurin' | 'group' | 'kv';
@@ -53,9 +42,10 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
 @Component({
   selector: 'app-leadership-component',
   imports: [
-    CommonModule, ReactiveFormsModule, TableModule, DatePickerModule,
-    ButtonModule, SelectModule, InputTextModule, TooltipModule,
-    ProgressSpinnerModule, ToggleSwitchModule, IconFieldModule, FormsModule
+    CommonModule, ReactiveFormsModule, FormsModule,
+    TableModule, DatePickerModule, ButtonModule, SelectModule, 
+    InputTextModule, TooltipModule, ProgressSpinnerModule,
+    ToggleSwitchModule, IconFieldModule, InputIconModule
   ],
   templateUrl: './leadership-component.html',
   styleUrl: './leadership-component.css'
@@ -72,11 +62,12 @@ export class LeadershipComponent implements OnInit {
   leadershipType: LeadershipType | null = null;
   entityKey: string | null = null;
   isLoading = false;
-
-  showArchived = false;
   
   allMembers: MemberLookupDto[] = [];
-  filteredMembers: MemberLookupDto[] = [];
+  
+  // Стан фільтрів
+  showArchived = false;
+  searchTerm = '';
 
   constructor() {
     this.leadershipForm = this.fb.group({
@@ -88,10 +79,10 @@ export class LeadershipComponent implements OnInit {
 
   ngOnInit(): void {
     this.isLoading = true;
-
     this.route.paramMap.subscribe(params => {
       this.leadershipKey = params.get('leadershipKey');
-      this.leadershipType = params.get('type') as LeadershipType;
+      const rawType = params.get('type');
+      this.leadershipType = rawType ? rawType.toLowerCase() as LeadershipType : null;
       this.entityKey = params.get('entityKey');
 
       if (this.leadershipKey) {
@@ -99,9 +90,6 @@ export class LeadershipComponent implements OnInit {
       } else if (this.leadershipType && this.entityKey) {
         this.loadAllMembers(); 
         this.buildFormRowsFromDefaults(this.leadershipType);
-        this.isLoading = false;
-      } else {
-        console.error('Missing route parameters');
         this.isLoading = false;
       }
     });
@@ -112,30 +100,23 @@ export class LeadershipComponent implements OnInit {
       next: (leadership) => {
         this.leadershipType = leadership.type!.toLowerCase() as LeadershipType;
         this.entityKey = leadership.entityKey!;
-
         this.loadAllMembers(); 
-        
         this.patchForm(leadership);
         this.isLoading = false;
       },
-      error: (err) => {
-        // ...
-      }
+      error: (err) => console.error(err)
     });
   }
 
   loadAllMembers(): void {
     if (!this.leadershipType) return;
-
+    // ... (Логіка завантаження мемберів без змін)
     let groupKey: string | undefined = undefined;
     let kurinKey: string | undefined = undefined;
-    let leadershipType = this.leadershipType.toLowerCase();
+    const type = this.leadershipType.toLowerCase();
 
-    if (leadershipType === 'group') {
-      groupKey = this.entityKey ?? undefined;
-    } else if (leadershipType === 'kurin' || leadershipType === 'kv') {
-      kurinKey = this.entityKey ?? undefined;
-    }
+    if (type === 'group') groupKey = this.entityKey ?? undefined;
+    else if (type === 'kurin' || type === 'kv') kurinKey = this.entityKey ?? undefined;
 
     this.memberService.getAll(groupKey, kurinKey).pipe(
       map((fullMembers: MemberDto[]) => 
@@ -147,12 +128,8 @@ export class LeadershipComponent implements OnInit {
         }))
       )
     ).subscribe({
-      next: (lookupMembers) => {
-        this.allMembers = lookupMembers;
-      },
-      error: (err) => {
-        console.error('Failed to load members for lookup', err);
-      }
+      next: (lookupMembers) => this.allMembers = lookupMembers,
+      error: (err) => console.error(err)
     });
   }
   
@@ -164,21 +141,21 @@ export class LeadershipComponent implements OnInit {
 
     this.leadershipHistories.clear();
 
-    const type = this.leadershipType?.toLowerCase();
-    const rolesForType = LEADERSHIP_ROLE_MAP[this.leadershipType!] || [];
+    const typeKey = this.leadershipType?.toLowerCase() || '';
+    const rolesForType = LEADERSHIP_ROLE_MAP[typeKey] || [];
     const rolesFromData = new Map<LeadershipRole, LeadershipHistoryDto[]>();
 
+    // Групуємо дані
     data.leadershipHistories.forEach(history => {
       const role = history.role as LeadershipRole;
-      if (!rolesFromData.has(role)) {
-        rolesFromData.set(role, []);
-      }
+      if (!rolesFromData.has(role)) rolesFromData.set(role, []);
       rolesFromData.get(role)!.push(history);
     });
 
     rolesForType.forEach(role => {
       const histories = rolesFromData.get(role) || [];
-
+      
+      // Сортуємо: Архівні зверху, активні знизу
       histories.sort((a, b) => {
         if (a.endDate && !b.endDate) return -1;
         if (!a.endDate && b.endDate) return 1;
@@ -189,8 +166,8 @@ export class LeadershipComponent implements OnInit {
         this.leadershipHistories.push(this.createHistoryRow(role, h));
       });
 
+      // Якщо немає активного (без дати кінця) - додаємо пустий рядок для вводу
       const hasActiveMember = histories.some(h => !h.endDate);
-
       if (!hasActiveMember) {
         this.leadershipHistories.push(this.createHistoryRow(role));
       }
@@ -213,51 +190,78 @@ export class LeadershipComponent implements OnInit {
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
       member: [{ value: data?.member || null, disabled: isArchived }, Validators.required], 
-      
       startDate: [data?.startDate ? new Date(data.startDate) : null, Validators.required],
       endDate: [data?.endDate ? new Date(data.endDate) : null],
-      
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
       leadershipKey: [data?.leadershipKey || this.leadershipKey || null]
     });
   }
 
-  getMemberFullName(member: MemberLookupDto): string {
-    if (!member) return '';
-    return `${member.lastName} ${member.firstName} ${member.middleName || ''}`;
+  // --- UI ФІЛЬТРАЦІЯ ---
+  // Ця функція викликається в HTML для кожного рядка
+  isRowVisible(index: number): boolean {
+    const control = this.leadershipHistories.at(index);
+    const val = control.getRawValue();
+    const isArchived = !!val.endDate;
+
+    // 1. Фільтр архіву
+    if (!this.showArchived && isArchived) {
+        return false; // Ховаємо
+    }
+
+    // 2. Пошук
+    if (this.searchTerm) {
+        const term = this.searchTerm.toLowerCase();
+        const roleName = this.getRoleDisplayName(val.role).toLowerCase();
+        const memberName = val.member 
+            ? `${val.member.lastName} ${val.member.firstName}`.toLowerCase() 
+            : '';
+        
+        // Якщо не знайшли ні в ролі, ні в імені - ховаємо
+        if (!roleName.includes(term) && !memberName.includes(term)) {
+            return false;
+        }
+    }
+
+    return true; // Показуємо
   }
 
-  closeEntireCadence(): void {
-    const today = new Date();
-    this.leadershipForm.get('endDate')?.setValue(today);
-    
-    this.leadershipHistories.controls.forEach(control => {
-      if (!control.get('endDate')?.value) {
-        control.get('endDate')?.setValue(today);
-      }
-    });
+  // --- ВИДАЛЕННЯ ---
+  onRemoveRow(index: number): void {
+    const control = this.leadershipHistories.at(index);
+    const role = control.getRawValue().role as LeadershipRole;
+
+    // 1. Видаляємо рядок
+    this.leadershipHistories.removeAt(index);
+
+    // 2. Якщо це була обов'язкова роль і ми видалили єдиний запис, додаємо пустий
+    if (!this.canHaveMultipleMembers(role)) {
+       const remainingRows = this.getRoleRowsCount(role);
+       if (remainingRows === 0) {
+           // Додаємо назад пустий, щоб роль не зникла зі списку
+           this.addRoleRow(role);
+       }
+    }
   }
 
   saveCadence(): void {
     if (this.leadershipForm.invalid) {
       this.leadershipForm.markAllAsTouched();
-      this.leadershipHistories.markAllAsTouched();
-      console.error('Form is invalid');
       return;
     }
-
     this.isLoading = true;
     const formOutput = this.leadershipForm.getRawValue();
 
     const payload: LeadershipDto = {
       leadershipKey: this.leadershipKey,
-      type: this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1) as LeadershipType,
+      type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as any, 
       entityKey: this.entityKey!,
       startDate: toDateOnlyString(formOutput.startDate)!,
       endDate: toDateOnlyString(formOutput.endDate),
       
+      // Відправляємо тільки заповнені рядки. Бекенд видалить ті, що ми прибрали.
       leadershipHistories: formOutput.leadershipHistories
-        .filter((h: any) => h.member !== null)
+        .filter((h: any) => h.member !== null) 
         .map((h: any) => ({
           ...h,
           startDate: toDateOnlyString(h.startDate)!,
@@ -265,8 +269,8 @@ export class LeadershipComponent implements OnInit {
           member: {
             memberKey: h.member.memberKey,
             firstName: h.member.firstName,
-            middleName: h.member.middleName,
             lastName: h.member.lastName,
+            middleName: h.member.middleName
           }
         }))
     };
@@ -277,17 +281,14 @@ export class LeadershipComponent implements OnInit {
 
     saveOperation.subscribe({
       next: (response) => {
-        console.log('Saved successfully!', response);
         this.isLoading = false;
         this.patchForm(response);
-
-        if (this.leadershipType?.toLowerCase() == 'kurin' || this.leadershipType?.toLowerCase() == 'kv')
-          this.router.navigate(['/kurin']);
-        else if (this.leadershipType?.toLowerCase() == 'group')
-          this.router.navigate(['/group', this.entityKey]);
+        const type = this.leadershipType?.toLowerCase();
+        if (type == 'kurin' || type == 'kv') this.router.navigate(['/kurin']);
+        else if (type == 'group') this.router.navigate(['/group', this.entityKey]);
       },
       error: (err) => {
-        console.error('Failed to save', err);
+        console.error(err);
         this.isLoading = false;
       }
     });
@@ -298,31 +299,7 @@ export class LeadershipComponent implements OnInit {
   }
 
   addRoleRow(role: LeadershipRole): void {
-    if (!this.canHaveMultipleMembers(role)) {
-      console.warn(`Role ${role} cannot have multiple members`);
-      return;
-    }
     this.leadershipHistories.push(this.createHistoryRow(role));
-  }
-
-  removeRoleRow(index: number): void {
-    const role = this.leadershipHistories.at(index).getRawValue().role as LeadershipRole;
-    
-    if (!this.canHaveMultipleMembers(role)) {
-      console.warn(`Cannot remove the only entry for role ${role}`);
-      return;
-    }
-
-    // Check if there's at least one more row with the same role
-    const sameRoleCount = this.leadershipHistories.controls.filter(
-      (control, i) => i !== index && control.getRawValue().role === role
-    ).length;
-
-    if (sameRoleCount > 0) {
-      this.leadershipHistories.removeAt(index);
-    } else {
-      console.warn(`Cannot remove the last entry for role ${role}`);
-    }
   }
 
   getRoleRowsCount(role: LeadershipRole): number {
@@ -332,6 +309,6 @@ export class LeadershipComponent implements OnInit {
   }
 
   public getRoleDisplayName(role: LeadershipRole): string {
-        return ROLE_DISPLAY_NAMES[role] || role;
+     return ROLE_DISPLAY_NAMES[role] || role;
   }
 }
