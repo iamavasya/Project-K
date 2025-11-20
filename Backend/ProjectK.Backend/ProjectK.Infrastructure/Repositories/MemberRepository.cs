@@ -8,12 +8,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ProjectK.Infrastructure.Repositories
 {
     public class MemberRepository : IMemberRepository
     {
         private readonly AppDbContext _context;
+        private readonly string memberMessage = "Member not found.";
         public MemberRepository(AppDbContext context)
         {
             _context = context;
@@ -77,7 +79,7 @@ namespace ProjectK.Infrastructure.Repositories
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
-            if (member == null) throw new ArgumentNullException("Member not found.");
+            if (member == null) throw new ArgumentNullException(memberMessage);
 
             member.PlastLevelHistory.Add(history);
 
@@ -88,13 +90,13 @@ namespace ProjectK.Infrastructure.Repositories
             }
         }
 
-        public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken)
+        public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken = default)
         {
             var member = await _context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
-            if (member == null) throw new ArgumentNullException("Member not found");
+            if (member == null) throw new ArgumentNullException(memberMessage);
 
             var history = member.PlastLevelHistory.FirstOrDefault(h => h.PlastLevelHistoryKey == historyKey);
             if (history != null)
@@ -107,7 +109,7 @@ namespace ProjectK.Infrastructure.Repositories
             }
         }
 
-        public async Task<IEnumerable<PlastLevelHistory>> GetPlastLevelHistoryAsync(Guid memberKey, CancellationToken cancellationToken)
+        public async Task<IEnumerable<PlastLevelHistory>> GetPlastLevelHistoryAsync(Guid memberKey, CancellationToken cancellationToken = default)
         {
             var member = await _context.Members
                 .Include(m => m.PlastLevelHistory)
@@ -116,14 +118,14 @@ namespace ProjectK.Infrastructure.Repositories
             return member?.PlastLevelHistory ?? Enumerable.Empty<PlastLevelHistory>();
         }
 
-        public async Task UpdatePlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory updatedHistory, CancellationToken cancellationToken)
+        public async Task UpdatePlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory updatedHistory, CancellationToken cancellationToken = default)
         {
             var member = await _context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
             if (member == null)
-                throw new ArgumentNullException("Member not found");
+                throw new ArgumentNullException(memberMessage);
 
             var history = member.PlastLevelHistory
                 .FirstOrDefault(h => h.PlastLevelHistoryKey == updatedHistory.PlastLevelHistoryKey);
@@ -146,15 +148,15 @@ namespace ProjectK.Infrastructure.Repositories
 
         #region LeadershipHistory Methods
 
-        public async Task AddLeadershipHistoryAsync(Guid memberKey, LeadershipHistory leadershipHistory, CancellationToken cancellationToken)
+        public async Task AddLeadershipHistoryAsync(Guid memberKey, LeadershipHistory history, CancellationToken cancellationToken)
         {
             var member = await _context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
-            if (member == null) throw new ArgumentNullException("Member not found");
+            if (member == null) throw new ArgumentNullException(memberMessage);
 
-            member.LeadershipHistories.Add(leadershipHistory);
+            member.LeadershipHistories.Add(history);
         }
 
         public async Task EndLeadershipAsync(Guid memberKey, Guid historyKey, DateOnly endDate, CancellationToken cancellationToken)
@@ -163,7 +165,7 @@ namespace ProjectK.Infrastructure.Repositories
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
-            if (member == null) throw new ArgumentNullException("Member not found");
+            if (member == null) throw new ArgumentNullException(memberMessage);
 
             var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
             
@@ -175,7 +177,7 @@ namespace ProjectK.Infrastructure.Repositories
             var member = await _context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
-            if (member == null) throw new ArgumentNullException("Member not found");
+            if (member == null) throw new ArgumentNullException(memberMessage);
             var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
             if (history != null)
             {

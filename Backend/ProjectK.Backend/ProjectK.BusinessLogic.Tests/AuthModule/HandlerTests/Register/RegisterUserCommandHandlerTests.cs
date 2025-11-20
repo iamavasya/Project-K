@@ -74,12 +74,6 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 Created = DateTime.UtcNow
             };
 
-            var jwtResponse = new JwtResponse
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
-
             _mapperMock.Setup(x => x.Map<AppUser>(command))
                 .Returns(user);
             _userManagerMock.Setup(x => x.CreateAsync(user, command.Password))
@@ -210,7 +204,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .Returns(accessToken);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(command, CancellationToken.None));
             
             // Verify that mapping was called but no further operations were performed
@@ -498,12 +492,6 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 Token = "structure-refresh-token",
                 Expires = DateTime.UtcNow.AddDays(7),
                 Created = DateTime.UtcNow
-            };
-
-            var jwtResponse = new JwtResponse
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
             };
 
             SetupSuccessfulRegistration(command, user, roles, accessToken, refreshToken);
