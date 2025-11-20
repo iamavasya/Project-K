@@ -95,6 +95,8 @@ export class MemberList implements OnInit {
     });
   }
 
+  // trigger
+
   refreshList(): void {
     let filtered = [...this.allHistories];
     if (!this.showArchived) {

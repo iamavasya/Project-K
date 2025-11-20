@@ -33,6 +33,8 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 DateOfBirth = new DateOnly(2000, 1, 1)
             };
 
+        //trigger
+
         [Fact]
         public async Task Create_And_GetByKeyAsync_ShouldPersistAndIncludeNavigation()
         {
