@@ -16,6 +16,7 @@ using ProjectK.Common.Extensions;
 using System.Text;
 using ProjectK.API.Helpers;
 using System.Security.Claims;
+using AutoMapper.EquivalencyExpression;
 
 namespace ProjectK.API
 {
@@ -121,7 +122,7 @@ namespace ProjectK.API
             builder.Services.AddHostedService<OrphanPhotoCleanupService>();
             // --- end Blob storage DI ---
 
-            builder.Services.AddAutoMapper(cfg => { }, typeof(KurinModuleProfile));
+            builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(GetKurinByKeyQueryHandler).Assembly)
             );
