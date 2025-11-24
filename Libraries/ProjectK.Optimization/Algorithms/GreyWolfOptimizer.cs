@@ -1,11 +1,12 @@
-﻿using ProjectK.Optimization.Abstractions;
+﻿using System.Security.Cryptography;
+using ProjectK.Optimization.Abstractions;
 using ProjectK.Optimization.Models;
 
 namespace ProjectK.Optimization.Algorithms;
 
-internal class GreyWolfOptimizer : IOptimizer
+internal class GreyWolfOptimizer : IOptimizer, IDisposable
 {
-    private readonly Random _rnd = new Random();
+    private readonly RandomNumberGenerator _rnd = RandomNumberGenerator.Create();
 
     public OptimizationResult Solve(IOptimizationProblem problem, int wolvesCount = 30, int maxIter = 100)
     {
@@ -18,7 +19,7 @@ internal class GreyWolfOptimizer : IOptimizer
             wolves[i] = new double[dim];
             for (int j = 0; j < dim; j++)
             {
-                wolves[i][j] = _rnd.NextDouble() * (problem.UpperBounds[j] - problem.LowerBounds[j]) + problem.LowerBounds[j];
+                wolves[i][j] = GetNextDouble() * (problem.UpperBounds[j] - problem.LowerBounds[j]) + problem.LowerBounds[j];
             }
         }
 
@@ -50,17 +51,17 @@ internal class GreyWolfOptimizer : IOptimizer
             {
                 for (int d = 0; d < dim; d++)
                 {
-                    double r1 = _rnd.NextDouble(); double r2 = _rnd.NextDouble();
+                    double r1 = GetNextDouble(); double r2 = GetNextDouble();
                     double A1 = 2 * a * r1 - a; double C1 = 2 * r2;
                     double D_alpha = Math.Abs(C1 * alphaPos[d] - wolves[i][d]);
                     double X1 = alphaPos[d] - A1 * D_alpha;
 
-                    r1 = _rnd.NextDouble(); r2 = _rnd.NextDouble();
+                    r1 = GetNextDouble(); r2 = GetNextDouble();
                     double A2 = 2 * a * r1 - a; double C2 = 2 * r2;
                     double D_beta = Math.Abs(C2 * betaPos[d] - wolves[i][d]);
                     double X2 = betaPos[d] - A2 * D_beta;
 
-                    r1 = _rnd.NextDouble(); r2 = _rnd.NextDouble();
+                    r1 = GetNextDouble(); r2 = GetNextDouble();
                     double A3 = 2 * a * r1 - a; double C3 = 2 * r2;
                     double D_delta = Math.Abs(C3 * deltaPos[d] - wolves[i][d]);
                     double X3 = deltaPos[d] - A3 * D_delta;
@@ -71,5 +72,27 @@ internal class GreyWolfOptimizer : IOptimizer
         }
 
         return new OptimizationResult { BestPosition = alphaPos, BestFitness = alphaScore };
+    }
+
+    private double GetNextDouble()
+    {
+        // Виділяємо 8 байт (UInt64) прямо на стеку (дуже швидко)
+        Span<byte> buffer = stackalloc byte[8];
+
+        // Заповнюємо випадковими даними
+        _rnd.GetBytes(buffer);
+
+        // Конвертуємо в число (ulong)
+        ulong ul = BitConverter.ToUInt64(buffer);
+
+        // Ділимо на максимальне значення ulong, щоб отримати діапазон 0.0 - 1.0
+        return (double)ul / ulong.MaxValue;
+    }
+
+    // Оскільки RandomNumberGenerator реалізує IDisposable, 
+    // хороший тон - звільнити його ресурси.
+    public void Dispose()
+    {
+        _rnd.Dispose();
     }
 }
