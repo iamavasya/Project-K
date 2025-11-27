@@ -6,93 +6,171 @@ namespace ProjectK.Optimization.Algorithms;
 
 internal class GreyWolfOptimizer : IOptimizer, IDisposable
 {
-    private readonly RandomNumberGenerator _rnd = RandomNumberGenerator.Create();
+    private readonly RandomNumberGenerator _rnd;
+    private bool _disposed;
 
-    public OptimizationResult Solve(IOptimizationProblem problem, int wolvesCount = 30, int maxIter = 100)
+    public GreyWolfOptimizer()
+    {
+        _rnd = RandomNumberGenerator.Create();
+    }
+
+    public OptimizationResult Solve(IOptimizationProblem problem, int wolves = 30, int iterations = 100)
     {
         int dim = problem.Dimension;
-        double[][] wolves = new double[wolvesCount][];
 
-        // Ініціалізація популяції
+        // 1. Ініціалізація
+        double[][] population = InitializePopulation(wolves, dim, problem);
+        double[] currentFitnesses = new double[wolves];
+
+        // Об'єкт для зберігання лідерів
+        var leaders = new LeaderContext(dim);
+
+        // 2. Головний цикл
+        for (int t = 0; t < iterations; t++)
+        {
+            // Крок А: Обмеження + Розрахунок
+            CalculateFitnessParallel(population, currentFitnesses, problem);
+
+            // Крок Б: Оновлення лідерів
+            UpdateLeaders(population, currentFitnesses, dim, leaders);
+
+            // Крок В: Оновлення позицій
+            UpdatePositions(population, dim, t, iterations, leaders);
+        }
+
+        return new OptimizationResult { BestPosition = leaders.AlphaPos, BestFitness = leaders.AlphaScore };
+    }
+
+    // --- Private Helpers ---
+
+    private double[][] InitializePopulation(int wolvesCount, int dim, IOptimizationProblem problem)
+    {
+        double[][] population = new double[wolvesCount][];
         for (int i = 0; i < wolvesCount; i++)
         {
-            wolves[i] = new double[dim];
+            population[i] = new double[dim];
             for (int j = 0; j < dim; j++)
             {
-                wolves[i][j] = GetNextDouble() * (problem.UpperBounds[j] - problem.LowerBounds[j]) + problem.LowerBounds[j];
+                population[i][j] = GetNextDouble() * (problem.UpperBounds[j] - problem.LowerBounds[j]) + problem.LowerBounds[j];
             }
         }
+        return population;
+    }
 
-        double[] alphaPos = new double[dim]; double alphaScore = double.MaxValue;
-        double[] betaPos = new double[dim]; double betaScore = double.MaxValue;
-        double[] deltaPos = new double[dim]; double deltaScore = double.MaxValue;
+    private static void CalculateFitnessParallel(double[][] population, double[] fitnesses, IOptimizationProblem problem)
+    {
+        int dim = problem.Dimension;
 
-        // Головний цикл
-        for (int t = 0; t < maxIter; t++)
+        Parallel.For(0, population.Length, i =>
         {
-            foreach (var wolf in wolves)
+            for (int d = 0; d < dim; d++)
             {
-                // Обмеження (стіни)
-                for (int d = 0; d < dim; d++)
-                {
-                    wolf[d] = Math.Clamp(wolf[d], problem.LowerBounds[d], problem.UpperBounds[d]);
-                }
-
-                double fitness = problem.CalculateFitness(wolf);
-
-                if (fitness < alphaScore) { alphaScore = fitness; alphaPos = (double[])wolf.Clone(); }
-                else if (fitness < betaScore) { betaScore = fitness; betaPos = (double[])wolf.Clone(); }
-                else if (fitness < deltaScore) { deltaScore = fitness; deltaPos = (double[])wolf.Clone(); }
+                population[i][d] = Math.Clamp(population[i][d], problem.LowerBounds[d], problem.UpperBounds[d]);
             }
+            fitnesses[i] = problem.CalculateFitness(population[i]);
+        });
+    }
 
-            double a = 2.0 - t * (2.0 / maxIter); // Лінійне зменшення від 2 до 0
+    private static void UpdateLeaders(double[][] population, double[] fitnesses, int dim, LeaderContext leaders)
+    {
+        for (int i = 0; i < population.Length; i++)
+        {
+            double fitness = fitnesses[i];
 
-            for (int i = 0; i < wolvesCount; i++)
+            if (fitness < leaders.AlphaScore)
             {
-                for (int d = 0; d < dim; d++)
-                {
-                    double r1 = GetNextDouble(); double r2 = GetNextDouble();
-                    double A1 = 2 * a * r1 - a; double C1 = 2 * r2;
-                    double D_alpha = Math.Abs(C1 * alphaPos[d] - wolves[i][d]);
-                    double X1 = alphaPos[d] - A1 * D_alpha;
-
-                    r1 = GetNextDouble(); r2 = GetNextDouble();
-                    double A2 = 2 * a * r1 - a; double C2 = 2 * r2;
-                    double D_beta = Math.Abs(C2 * betaPos[d] - wolves[i][d]);
-                    double X2 = betaPos[d] - A2 * D_beta;
-
-                    r1 = GetNextDouble(); r2 = GetNextDouble();
-                    double A3 = 2 * a * r1 - a; double C3 = 2 * r2;
-                    double D_delta = Math.Abs(C3 * deltaPos[d] - wolves[i][d]);
-                    double X3 = deltaPos[d] - A3 * D_delta;
-
-                    wolves[i][d] = (X1 + X2 + X3) / 3.0;
-                }
+                leaders.AlphaScore = fitness;
+                Array.Copy(population[i], leaders.AlphaPos, dim);
+            }
+            else if (fitness < leaders.BetaScore)
+            {
+                leaders.BetaScore = fitness;
+                Array.Copy(population[i], leaders.BetaPos, dim);
+            }
+            else if (fitness < leaders.DeltaScore)
+            {
+                leaders.DeltaScore = fitness;
+                Array.Copy(population[i], leaders.DeltaPos, dim);
             }
         }
+    }
 
-        return new OptimizationResult { BestPosition = alphaPos, BestFitness = alphaScore };
+    private void UpdatePositions(double[][] population, int dim, int currentIter, int maxIter, LeaderContext leaders)
+    {
+        double a = 2.0 - currentIter * (2.0 / maxIter);
+
+        for (int i = 0; i < population.Length; i++)
+        {
+            for (int d = 0; d < dim; d++)
+            {
+                // Alpha influence
+                double r1 = GetNextDouble(); double r2 = GetNextDouble();
+                double A1 = 2 * a * r1 - a; double C1 = 2 * r2;
+                double D_alpha = Math.Abs(C1 * leaders.AlphaPos[d] - population[i][d]);
+                double X1 = leaders.AlphaPos[d] - A1 * D_alpha;
+
+                // Beta influence
+                r1 = GetNextDouble(); r2 = GetNextDouble();
+                double A2 = 2 * a * r1 - a; double C2 = 2 * r2;
+                double D_beta = Math.Abs(C2 * leaders.BetaPos[d] - population[i][d]);
+                double X2 = leaders.BetaPos[d] - A2 * D_beta;
+
+                // Delta influence
+                r1 = GetNextDouble(); r2 = GetNextDouble();
+                double A3 = 2 * a * r1 - a; double C3 = 2 * r2;
+                double D_delta = Math.Abs(C3 * leaders.DeltaPos[d] - population[i][d]);
+                double X3 = leaders.DeltaPos[d] - A3 * D_delta;
+
+                population[i][d] = (X1 + X2 + X3) / 3.0;
+            }
+        }
     }
 
     private double GetNextDouble()
     {
-        // Виділяємо 8 байт (UInt64) прямо на стеку (дуже швидко)
         Span<byte> buffer = stackalloc byte[8];
-
-        // Заповнюємо випадковими даними
         _rnd.GetBytes(buffer);
-
-        // Конвертуємо в число (ulong)
-        ulong ul = BitConverter.ToUInt64(buffer);
-
-        // Ділимо на максимальне значення ulong, щоб отримати діапазон 0.0 - 1.0
-        return (double)ul / ulong.MaxValue;
+        return (double)BitConverter.ToUInt64(buffer) / ulong.MaxValue;
     }
 
-    // Оскільки RandomNumberGenerator реалізує IDisposable, 
-    // хороший тон - звільнити його ресурси.
+    // --- Inner Class for Parameter Object Pattern ---
+
+    private sealed class LeaderContext
+    {
+        public double[] AlphaPos;
+        public double AlphaScore = double.MaxValue;
+
+        public double[] BetaPos;
+        public double BetaScore = double.MaxValue;
+
+        public double[] DeltaPos;
+        public double DeltaScore = double.MaxValue;
+
+        public LeaderContext(int dim)
+        {
+            AlphaPos = new double[dim];
+            BetaPos = new double[dim];
+            DeltaPos = new double[dim];
+        }
+    }
+
+    // --- Dispose Pattern ---
+
     public void Dispose()
     {
-        _rnd.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _rnd?.Dispose();
+            }
+            _disposed = true;
+        }
     }
 }
