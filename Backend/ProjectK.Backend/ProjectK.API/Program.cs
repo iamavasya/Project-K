@@ -17,6 +17,7 @@ using System.Text;
 using ProjectK.API.Helpers;
 using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
+using ProjectK.Optimization.Extensions;
 
 namespace ProjectK.API
 {
@@ -133,6 +134,8 @@ namespace ProjectK.API
                 });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddWolfPackOptimization();
 
             builder.Services.AddProjectDependencies();
 
