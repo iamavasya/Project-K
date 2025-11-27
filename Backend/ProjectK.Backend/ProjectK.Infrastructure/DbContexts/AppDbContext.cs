@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Planning;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,9 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
         public DbSet<Leadership> Leaderships { get; set; }
         public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
+        public DbSet<PlanningSession> PlanningSessions { get; set; }
+        public DbSet<PlanningParticipant> PlanningParticipants { get; set; }
+        public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -103,6 +107,33 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(e => new { e.LeadershipKey, e.Role, e.StartDate });
                 entity.HasIndex(e => new { e.MemberKey, e.StartDate });
+            });
+
+            builder.Entity<PlanningSession>(entity =>
+            {
+                entity.HasKey(e => e.PlanningSessionKey);
+                entity.HasOne(e => e.Kurin)
+                      .WithMany(k => k.PlanningSessions)
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<PlanningParticipant>(entity =>
+            {
+                entity.HasKey(e => e.PlanningParticipantKey);
+                entity.HasOne(e => e.PlanningSession)
+                      .WithMany(ps => ps.Participants)
+                      .HasForeignKey(e => e.PlanningSessionKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<ParticipantBusyRange>(entity =>
+            {
+                entity.HasKey(e => e.ParticipantBusyRangeKey);
+                entity.HasOne(e => e.PlanningParticipant)
+                      .WithMany(pp => pp.BusyRanges)
+                      .HasForeignKey(e => e.PlanningParticipantKey)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
