@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using AutoMapper;
+using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Solvers;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Interfaces;
@@ -28,47 +29,17 @@ public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlannin
 {
     private readonly IUnitOfWork _uow;
     private readonly IOptimizer _optimizer;
-    public CreatePlanningSessionCommandHandler(IUnitOfWork uow, IOptimizer optimizer)
+    private readonly IMapper _mapper;
+    public CreatePlanningSessionCommandHandler(IUnitOfWork uow, IOptimizer optimizer, IMapper mapper)
     {
         _uow = uow;
         _optimizer = optimizer;
+        _mapper = mapper;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreatePlanningSessionCommand request, CancellationToken cancellationToken)
     {
-        var session = new PlanningSession
-        {
-            Name = request.Name,
-            KurinKey = request.KurinKey,
-            SearchStart = request.SearchStart,
-            SearchEnd = request.SearchEnd,
-            DurationDays = request.DurationDays,
-            IsCalculated = false,
-        };
-
-        foreach (var participantDto in request.Participants)
-        {
-            var participant = new PlanningParticipant
-            {
-                MemberKey = participantDto.MemberKey,
-                FullName = participantDto.FullName,
-                RoleWeight = participantDto.RoleWeight,
-                PlanningSession = session
-            };
-            
-            foreach (var rDto in participantDto.BusyRanges)
-            {
-                var busyRange = new ParticipantBusyRange
-                {
-                    Start = rDto.Start,
-                    End = rDto.End,
-                };
-                participant.BusyRanges.Add(busyRange);
-            }
-        }
-
-        // _uow.PlanningSessionsRepository.Add(session);
-        // await _uow.SaveChangesAsync(cancellationToken);
+        var session = _mapper.Map<PlanningSession>(request);
 
         var problem = new CampDateSolver(
             session.SearchStart,
@@ -85,6 +56,8 @@ public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlannin
         session.OptimalEndDate = bestStartDate.AddDays(session.DurationDays);
         session.ConflictScore = result.BestFitness;
         session.IsCalculated = true;
+
+        _uow.PlanningSessions.Create(session, cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
 

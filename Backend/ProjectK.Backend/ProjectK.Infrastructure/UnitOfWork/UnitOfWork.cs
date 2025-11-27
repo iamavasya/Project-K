@@ -19,6 +19,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IGroupRepository Groups { get; }
         public IMemberRepository Members { get; }
         public ILeadershipRepository Leaderships { get; }
+        public IPlanningSessionRepository PlanningSessions { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -28,6 +29,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             Groups = new GroupRepository(_context);
             Members = new MemberRepository(_context);
             Leaderships = new LeadershipRepository(_context);
+            PlanningSessions = new PlanningSessionRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

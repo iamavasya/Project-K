@@ -14,6 +14,7 @@ namespace ProjectK.Common.Interfaces
         IGroupRepository Groups { get; }
         IMemberRepository Members { get; }
         ILeadershipRepository Leaderships { get; }
+        IPlanningSessionRepository PlanningSessions { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();
