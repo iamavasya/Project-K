@@ -5,10 +5,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Planning;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.MappingProfiles
 {
@@ -111,6 +114,19 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
                 .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
+
+            // Planning Mapping
+            CreateMap<CreatePlanningSessionCommand, PlanningSession>()
+                .ForMember(dest => dest.IsCalculated, opt => opt.MapFrom(src => false))
+                                                                                        
+                .ForMember(dest => dest.OptimalStartDate, opt => opt.Ignore())
+                .ForMember(dest => dest.OptimalEndDate, opt => opt.Ignore())
+                .ForMember(dest => dest.ConflictScore, opt => opt.Ignore());
+
+            CreateMap<ParticipantInputDto, PlanningParticipant>()
+                .ForMember(dest => dest.BusyRanges, opt => opt.MapFrom(src => src.BusyRanges));
+
+            CreateMap<DateRangeDto, ParticipantBusyRange>();
         }
     }
 }
