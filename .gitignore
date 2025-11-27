@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 appsettings.Development.json
+
+# Nuget Config file that may contain sensitive information
+nuget.config
