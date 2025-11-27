@@ -1,4 +1,5 @@
-﻿using ProjectK.Infrastructure.Entities;
+﻿using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Infrastructure.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public ICollection<Group> Groups { get; set; } = new List<Group>();
         public ICollection<Member> Members { get; set; } = new List<Member>();
         public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();
+        public ICollection<PlanningSession> PlanningSessions { get; set; } = new List<PlanningSession>();
     }
 }
