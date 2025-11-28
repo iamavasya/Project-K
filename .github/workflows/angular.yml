@@ -1,4 +1,4 @@
-name: Frontend CI (Angular)
+name: Frontend (Angular)
 
 on:
   push:
