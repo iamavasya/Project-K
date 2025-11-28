@@ -127,6 +127,11 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.BusyRanges, opt => opt.MapFrom(src => src.BusyRanges));
 
             CreateMap<DateRangeDto, ParticipantBusyRange>();
+
+            // Entity -> Response DTO
+            CreateMap<PlanningSession, PlanningSessionDto>();
+            CreateMap<PlanningParticipant, PlanningParticipantDto>();
+            CreateMap<ParticipantBusyRange, DateRangeDto>();
         }
     }
 }

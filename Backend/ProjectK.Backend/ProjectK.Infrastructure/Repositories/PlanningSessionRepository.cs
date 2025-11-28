@@ -1,4 +1,5 @@
-﻿using ProjectK.Common.Entities.KurinModule.Planning;
+﻿using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using System;
@@ -37,14 +38,22 @@ namespace ProjectK.Infrastructure.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public async Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return await _context.PlanningSessions.FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
         }
 
         public void Update(PlanningSession entity, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<PlanningSession?> GetByKeyWithDetailsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.PlanningSessions
+                                 .Include(ps => ps.Participants)
+                                    .ThenInclude(p => p.BusyRanges)
+                                 .FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
         }
     }
 }
