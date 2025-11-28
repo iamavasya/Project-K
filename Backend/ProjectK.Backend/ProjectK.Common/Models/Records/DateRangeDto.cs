@@ -6,4 +6,4 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Common.Models.Records;
 
-public record DateRangeDto(DateTime Start, DateTime End);
+public readonly record struct DateRangeDto(DateTime Start, DateTime End);
