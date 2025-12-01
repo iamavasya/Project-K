@@ -9,7 +9,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
 public record PlanningSessionDto
 {
-    public Guid Id { get; set; }
+    public Guid PlanningSessionKey { get; set; }
     public string Name { get; set; } = string.Empty;
     public string KurinKey { get; set; } = string.Empty;
 

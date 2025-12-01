@@ -13,6 +13,8 @@ import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { UsersListComponent } from './features/adminModule/components/users-list/users-list';
 import { LeadershipComponent } from './features/kurinModule/common/components/leadership/leadership-component/leadership-component';
+import { PlanningListComponent } from './features/kurinModule/planning-list/planning-list';
+import { CreatePlanningComponent } from './features/kurinModule/create-planning/create-planning';
 
 export const routes: Routes = [
   {
@@ -79,5 +81,17 @@ export const routes: Routes = [
   {
     path: 'leadership/:leadershipKey/:type/:entityKey',
     component: LeadershipComponent,
+  },
+  {
+    path: 'planning/create/:kurinKey',
+    canActivate: [authGuard, kurinAccessGuard('planning')],
+    component: CreatePlanningComponent,
+    data: { breadcrumb: 'New Planning', parent: '/kurin', entityType: 'kurin' }
+  },
+  {
+    path: 'planning/:kurinKey',
+    canActivate: [authGuard, kurinAccessGuard('planning')],
+    component: PlanningListComponent,
+    data: { breadcrumb: 'Planning', parent: '/kurin', entityType: 'kurin' }
   }
 ];

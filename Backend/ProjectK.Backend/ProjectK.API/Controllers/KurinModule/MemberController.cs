@@ -116,5 +116,14 @@ namespace ProjectK.API.Controllers.KurinModule
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpGet("members/kv/{kurinKey:guid}")]
+        public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
+        {
+            var request = new GetKurinKvMembersQuery(kurinKey);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
     }
 }

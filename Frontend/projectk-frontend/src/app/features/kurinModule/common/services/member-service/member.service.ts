@@ -4,6 +4,7 @@ import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 @Injectable({
   providedIn: 'root'
@@ -33,6 +34,10 @@ export class MemberService {
   create(request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
     const formData = this.buildFormData(request, file);
     return this.http.post<MemberDto>(`${this.apiUrl}`, formData);
+  }
+
+  getKVMembers(kurinKey: string): Observable<MemberLookupDto[]> {
+    return this.http.get<MemberLookupDto[]>(`${this.apiUrl}/members/kv/${kurinKey}`);
   }
 
   private buildFormData(dto: UpsertMemberDto, file: Blob | null, blobFieldName = 'blob'): FormData {

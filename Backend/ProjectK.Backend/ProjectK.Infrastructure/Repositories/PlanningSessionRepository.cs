@@ -25,7 +25,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public void Delete(PlanningSession entity, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            _context.PlanningSessions.Remove(entity);
         }
 
         public Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
@@ -54,6 +54,14 @@ namespace ProjectK.Infrastructure.Repositories
                                  .Include(ps => ps.Participants)
                                     .ThenInclude(p => p.BusyRanges)
                                  .FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
+        }
+
+        public async Task<IEnumerable<PlanningSession>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.PlanningSessions
+                                 .Where(ps => ps.KurinKey == kurinKey)
+                                 .AsNoTracking()
+                                 .ToListAsync(cancellationToken);
         }
     }
 }
