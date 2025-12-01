@@ -46,7 +46,7 @@ export class SidebarMenu implements OnChanges {
     const disabled = !kurinKey;
     return [
       {
-        label: 'Kurin',
+        label: 'Курінь',
         routerLink: ['/kurin'],
         command: () => {
           this.close();
@@ -55,9 +55,17 @@ export class SidebarMenu implements OnChanges {
         disabled,
         visible: !!kurinKey
       },
-      { label: 'Groups', disabled: true, visible: !!kurinKey },
-      { label: 'All Members', disabled: true, visible: !!kurinKey },
-      { label: 'Settings', disabled: true, visible: !!kurinKey },
+      { label: 'Планування',
+        routerLink: ['/planning', kurinKey],
+        command: () => {
+          this.close();
+          this.router.navigate(['/planning', kurinKey]);
+        },
+        visible: !!kurinKey
+      },
+      { label: 'Гуртки', disabled: true, visible: !!kurinKey },
+      { label: 'Всі учасники', disabled: true, visible: !!kurinKey },
+      { label: 'Налаштування', disabled: true, visible: !!kurinKey },
       {
         label: 'Panel',
         visible: !kurinKey,

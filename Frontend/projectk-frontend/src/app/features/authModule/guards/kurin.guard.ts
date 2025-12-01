@@ -15,6 +15,10 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
             router.navigate(['/kurin', authService.getAuthStateValue()?.kurinKey]);
             return false;
         }
+        if (resource == 'planning' && authService.getAuthStateValue()?.kurinKey && authService.getAuthStateValue()?.role === 'User') {
+            router.navigate(['/kurin', authService.getAuthStateValue()?.kurinKey]);
+            return false;
+        }
         return true;
     }
 };
