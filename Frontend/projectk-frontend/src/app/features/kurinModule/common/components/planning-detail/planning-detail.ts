@@ -5,14 +5,13 @@ import { PlanningSessionDto } from '../../models/planningSessionDto';
 
 // PrimeNG Imports
 import { DialogModule } from 'primeng/dialog';
-import { ChartModule } from 'primeng/chart'; // <--- CHART
+import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
 
-import 'chartjs-adapter-date-fns'; // ВАЖЛИВО: Імпорт адаптера дат
-import { uk } from 'date-fns/locale'; // Локалізація для дат
+import 'chartjs-adapter-date-fns';
 
 @Component({
   selector: 'app-planning-detail',
@@ -118,7 +117,7 @@ export class PlanningDetailComponent implements OnChanges {
     this.service.getSessionByKey(id).subscribe({
       next: (data) => {
         this.session.set(data);
-        this.initChart(data); // Ініціалізуємо графік
+        this.initChart(data);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -131,7 +130,7 @@ export class PlanningDetailComponent implements OnChanges {
   }
 
   calculateHeight() {
-    // 50px на людину + 100px буфер
+
     const count = this.session()?.participants.length || 5;
     return `${Math.max(300, count * 50 + 100)}px`;
   }
@@ -144,33 +143,30 @@ export class PlanningDetailComponent implements OnChanges {
 
     const labels = ['Табір', ...s.participants.map(p => p.fullName)];
 
-    // 2. Формуємо Dataset для Оптимальної дати (Зелений)
     const optimalData = [];
     if (s.isCalculated && s.optimalStartDate && s.optimalEndDate) {
       optimalData.push({
-        x: [s.optimalStartDate, s.optimalEndDate], // Floating bar [Start, End]
-        y: labels[0] // Прив'язка до першого рядка
+        x: [s.optimalStartDate, s.optimalEndDate],
+        y: labels[0]
       });
     }
 
-    // 3. Формуємо Dataset для Зайнятості (Червоний)
     const busyData: any[] = [];
     s.participants.forEach(p => {
       p.busyRanges.forEach(range => {
         busyData.push({
           x: [range.start, range.end],
-          y: p.fullName // Прив'язка до імені
+          y: p.fullName
         });
       });
     });
 
-    // 4. Заповнюємо об'єкт даних
     this.chartData = {
       labels: labels,
       datasets: [
         {
           label: 'Оптимальний час',
-          backgroundColor: '#22c55e', // green-500
+          backgroundColor: '#22c55e',
           borderColor: '#16a34a',
           borderWidth: 1,
           barPercentage: 0.6,
@@ -178,7 +174,7 @@ export class PlanningDetailComponent implements OnChanges {
         },
         {
           label: 'Зайнятий',
-          backgroundColor: '#f87171', // red-400
+          backgroundColor: '#f87171',
           borderColor: '#ef4444',
           borderWidth: 1,
           barPercentage: 0.5,
@@ -187,9 +183,8 @@ export class PlanningDetailComponent implements OnChanges {
       ]
     };
 
-    // 5. Налаштування (Options)
     this.chartOptions = {
-      indexAxis: 'y', // РОБИТЬ ГРАФІК ГОРИЗОНТАЛЬНИМ (Gantt style)
+      indexAxis: 'y',
       maintainAspectRatio: false,
       aspectRatio: 0.8,
       plugins: {
@@ -198,7 +193,6 @@ export class PlanningDetailComponent implements OnChanges {
         },
         tooltip: {
           callbacks: {
-            // Форматуємо дату в тултіпі
             label: (context: any) => {
               const start = new Date(context.raw.x[0]).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'});
               const end = new Date(context.raw.x[1]).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'});
@@ -209,15 +203,15 @@ export class PlanningDetailComponent implements OnChanges {
       },
       scales: {
         x: {
-          type: 'time', // Важливо: вісь часу
+          type: 'time',
           time: {
-            unit: 'day', // Показувати дні
+            unit: 'day',
             tooltipFormat: 'dd.MM.yyyy',
             displayFormats: {
               day: 'dd MMM'
             }
           },
-          min: s.searchStart, // Обрізаємо графік по межах пошуку
+          min: s.searchStart,
           max: s.searchEnd,
           ticks: {
             color: textColorSecondary
