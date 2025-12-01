@@ -173,7 +173,6 @@ export class CreatePlanningComponent implements OnInit {
     });
   }
 
-  // 1. Встановити дефолтне літо (1 Червня - 31 Серпня поточного року)
   setDefaultDates() {
     const currentYear = new Date().getFullYear();
     const start = new Date(currentYear, 5, 1); // Червень (місяці з 0)
@@ -183,7 +182,6 @@ export class CreatePlanningComponent implements OnInit {
     this.form.get('name')?.setValue(`Табір ${currentYear}`);
   }
 
-  // 2. Завантажити мемберів і створити для них FormGroups
   loadMembers() {
     this.loading = true;
     this.memberService.getKVMembers(this.kurinKey).subscribe({
@@ -201,9 +199,8 @@ export class CreatePlanningComponent implements OnInit {
     return this.fb.group({
       memberKey: [member.memberKey], // ID
       fullName: [`${member.firstName} ${member.lastName}`],
-      // Дефолтна вага: якщо це admin/leader -> High, інакше Medium
-      roleWeight: [member.role === 'KurinHead' ? RoleWeight.High : RoleWeight.Medium],
-      busyRanges: this.fb.array([]) // Порожній список дат
+      roleWeight: [RoleWeight.Medium],
+      busyRanges: this.fb.array([])
     });
   }
 
@@ -215,7 +212,7 @@ export class CreatePlanningComponent implements OnInit {
 
   addBusyRange(participantIndex: number) {
     const rangeGroup = this.fb.group({
-      range: [null, Validators.required] // [Start, End]
+      range: [null, Validators.required]
     });
     this.getBusyRanges(participantIndex).push(rangeGroup);
   }
@@ -232,8 +229,6 @@ export class CreatePlanningComponent implements OnInit {
     this.loading = true;
     const formVal = this.form.value;
 
-    // Mapping Form -> API DTO
-    // Нам треба перетворити PrimeNG дати в формат DTO
     const payload = {
       name: formVal.name,
       kurinKey: formVal.kurinKey,
@@ -247,7 +242,7 @@ export class CreatePlanningComponent implements OnInit {
         busyRanges: p.busyRanges.map((r: any) => ({
           start: r.range[0],
           end: r.range[1]
-        })).filter((r: any) => r.start && r.end) // Фільтруємо незаповнені
+        })).filter((r: any) => r.start && r.end)
       }))
     };
 
