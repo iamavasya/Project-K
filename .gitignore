@@ -398,6 +398,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Config files that may contain sensitive information
-Backend/ProjectK.Backend/nuget.config
 Backend/ProjectK.Backend/ProjectK.API/appsettings.Development.json
-Backend/ProjectK.Backend/nuget.config
