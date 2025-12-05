@@ -9,7 +9,6 @@ export class PlanningService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/planning`;
 
-  // Отримати всі сесії куреня
   getSessions(kurinKey: string) {
     return this.http.get<PlanningSessionDto[]>(`${this.apiUrl}/${kurinKey}`);
   }
@@ -18,7 +17,6 @@ export class PlanningService {
     return this.http.get<PlanningSessionDto>(`${this.apiUrl}/session/${sessionKey}`);
   }
 
-  // Створити сесію
   createSession(payload: any) {
     return this.http.post(`${this.apiUrl}`, payload);
   }

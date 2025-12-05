@@ -102,7 +102,7 @@ export class PlanningListComponent implements OnInit {
   delete(id: string) {
     if(confirm('Видалити це планування?')) {
        this.planningService.deleteSession(id).subscribe(() => {
-        this.loadData()
+        this.loadData();
       });
     }
   }
