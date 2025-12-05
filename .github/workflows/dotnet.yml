@@ -24,14 +24,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-
-    - name: Add GitHub Package Source
-      run: dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/iamavasya/index.json"
-      working-directory: Backend/ProjectK.Backend
     
     - name: Restore dependencies
       run: dotnet restore
       working-directory: Backend/ProjectK.Backend
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
       
     - name: Build
       run: dotnet build --no-restore
