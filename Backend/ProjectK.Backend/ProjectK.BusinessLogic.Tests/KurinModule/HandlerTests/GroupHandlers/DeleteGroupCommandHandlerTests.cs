@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -12,14 +11,14 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 {
-    public class DeleteGroupCommandHandlerTests
+    public class DeleteGroupHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
-        private readonly DeleteGroupCommandHandler _handler;
+        private readonly DeleteGroupHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
 
-        public DeleteGroupCommandHandlerTests()
+        public DeleteGroupHandlerTests()
         {
             _groupRepositoryMock = new Mock<IGroupRepository>();
             _memberRepositoryMock = new Mock<IMemberRepository>();
@@ -28,7 +27,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
 
-            _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object);
+            _handler = new DeleteGroupHandler(_unitOfWorkMock.Object);
         }
 
         [Fact]
@@ -37,7 +36,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var groupKey = Guid.NewGuid();
             var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-            var command = new DeleteGroupCommand(groupKey);
+            var command  = new DeleteGroup(groupKey);
 
             _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
                 .ReturnsAsync(group);
@@ -62,7 +61,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var command = new DeleteGroupCommand(groupKey);
+            var command = new DeleteGroup(groupKey);
 
             _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
                 .ReturnsAsync((Group)null!);
@@ -81,7 +80,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         public async Task Handle_WhenGroupKeyIsEmpty_ShouldReturnBadRequest()
         {
             // Arrange
-            var command = new DeleteGroupCommand(Guid.Empty);
+            var command = new DeleteGroup(Guid.Empty);
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -100,7 +99,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var groupKey = Guid.NewGuid();
             var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-            var command = new DeleteGroupCommand(groupKey);
+            var command = new DeleteGroup(groupKey);
 
             _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
                 .ReturnsAsync(group);
@@ -126,7 +125,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var groupKey = Guid.NewGuid();
             var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-            var command = new DeleteGroupCommand(groupKey);
+            var command = new DeleteGroup(groupKey);
             var expected = new Exception("Test exception");
 
             _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))

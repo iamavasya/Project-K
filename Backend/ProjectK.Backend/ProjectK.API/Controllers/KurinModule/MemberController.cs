@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Helpers;
 using ProjectK.Common.Models.Dtos.Requests;
@@ -28,7 +29,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetByKey(Guid memberKey)
         {
-            var request = new GetMemberByKeyQuery(memberKey);
+            var request = new GetMemberByKey(memberKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -39,7 +40,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAll(Guid groupKey = default, Guid kurinKey = default)
         {
-            var request = new GetMembersQuery(groupKey, kurinKey);
+            var request = new GetMembers(groupKey, kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -54,7 +55,7 @@ namespace ProjectK.API.Controllers.KurinModule
                                                 CancellationToken cancellationToken)
         {
             byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
-            var command = new UpsertMemberCommand
+            var command = new UpsertMember
             {
                 GroupKey = request.GroupKey,
                 FirstName = request.FirstName,
@@ -85,7 +86,7 @@ namespace ProjectK.API.Controllers.KurinModule
         {
 
             byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
-            var command = new UpsertMemberCommand
+            var command = new UpsertMember
             {
                 MemberKey = memberKey,
                 GroupKey = request.GroupKey,
@@ -112,7 +113,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid memberKey)
         {
-            var command = new DeleteMemberCommand(memberKey);
+            var command = new DeleteMember(memberKey);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -121,7 +122,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpGet("members/kv/{kurinKey:guid}")]
         public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
         {
-            var request = new GetKurinKvMembersQuery(kurinKey);
+            var request = new GetKurinKvMembers(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }

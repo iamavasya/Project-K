@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;

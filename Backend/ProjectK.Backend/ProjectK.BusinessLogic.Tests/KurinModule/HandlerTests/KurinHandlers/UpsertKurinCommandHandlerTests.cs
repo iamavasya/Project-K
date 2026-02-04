@@ -3,8 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -17,14 +16,14 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
-    public class UpsertKurinCommandHandlerTests
+    public class UpsertKurinHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly UpsertKurinCommandHandler _handler;
+        private readonly UpsertKurinHandler _handler;
 
-        public UpsertKurinCommandHandlerTests()
+        public UpsertKurinHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
@@ -35,7 +34,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new UpsertKurinHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -43,7 +42,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var number = 123;
-            var command = new UpsertKurinCommand(number);
+            var command = new UpsertKurin(number);
             Kurin savedKurin = null!;
 
             _kurinRepositoryMock.Setup(r => r.Create(It.IsAny<Kurin>(), default))
@@ -78,7 +77,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             var oldNumber = 123;
             var newNumber = 456;
             var existingKurin = new Kurin(oldNumber) { KurinKey = kurinKey };
-            var command = new UpsertKurinCommand(kurinKey, newNumber);
+            var command = new UpsertKurin(kurinKey, newNumber);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(existingKurin);
@@ -106,7 +105,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var number = 123;
-            var command = new UpsertKurinCommand(number);
+            var command = new UpsertKurin(number);
 
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(0);
 
@@ -127,7 +126,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var number = 123;
-            var command = new UpsertKurinCommand(kurinKey, number);
+            var command = new UpsertKurin(kurinKey, number);
             var expectedException = new Exception("Database error");
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
@@ -143,7 +142,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var number = 123;
-            var command = new UpsertKurinCommand(number);
+            var command = new UpsertKurin(number);
             Kurin savedKurin = null!;
 
             _kurinRepositoryMock.Setup(r => r.Create(It.IsAny<Kurin>(), default))

@@ -1,26 +1,25 @@
 ﻿using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 {
-    public class ExistsGroupByKeyQueryHandlerTests
+    public class ExistsGroupByKeyHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
-        private readonly ExistsGroupByKeyQueryHandler _handler;
+        private readonly ExistsGroupByKeyHandler _handler;
 
-        public ExistsGroupByKeyQueryHandlerTests()
+        public ExistsGroupByKeyHandlerTests()
         {
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _groupRepositoryMock = new Mock<IGroupRepository>();
 
             _unitOfWorkMock.Setup(x => x.Groups).Returns(_groupRepositoryMock.Object);
 
-            _handler = new ExistsGroupByKeyQueryHandler(_unitOfWorkMock.Object);
+            _handler = new ExistsGroupByKeyHandler(_unitOfWorkMock.Object);
         }
 
         [Fact]
@@ -28,7 +27,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -47,7 +46,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
@@ -66,7 +65,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var emptyGroupKey = Guid.Empty;
-            var query = new ExistsGroupByKeyQuery(emptyGroupKey);
+            var query = new ExistsGroupByKey(emptyGroupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(emptyGroupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
@@ -85,7 +84,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
             var cancellationToken = new CancellationToken();
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, cancellationToken))
@@ -106,8 +105,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var groupKey1 = Guid.NewGuid();
             var groupKey2 = Guid.NewGuid();
-            var query1 = new ExistsGroupByKeyQuery(groupKey1);
-            var query2 = new ExistsGroupByKeyQuery(groupKey2);
+            var query1 = new ExistsGroupByKey(groupKey1);
+            var query2 = new ExistsGroupByKey(groupKey2);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -134,7 +133,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             // Test both true and false scenarios to ensure ResultType is always Success
             _groupRepositoryMock.SetupSequence(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -155,7 +154,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -174,7 +173,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
@@ -201,7 +200,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             foreach (var groupKey in testCases)
             {
-                var query = new ExistsGroupByKeyQuery(groupKey);
+                var query = new ExistsGroupByKey(groupKey);
                 _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(groupKey != Guid.Empty);
 
@@ -224,7 +223,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         public void Constructor_ShouldInitializeUnitOfWorkCorrectly()
         {
             // Arrange & Act
-            var handler = new ExistsGroupByKeyQueryHandler(_unitOfWorkMock.Object);
+            var handler = new ExistsGroupByKeyHandler(_unitOfWorkMock.Object);
 
             // Assert
             Assert.NotNull(handler);
@@ -235,7 +234,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -250,7 +249,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new ExistsGroupByKeyQuery(groupKey);
+            var query = new ExistsGroupByKey(groupKey);
             var cancelledToken = new CancellationToken(true);
 
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, cancelledToken))

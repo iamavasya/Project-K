@@ -4,8 +4,6 @@ using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.API.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -18,17 +16,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Logging;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
-    public class GetMembersQueryHandlerTests
+    public class GetMembersHandlerTests
     {
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly IMapper _mapper;
-        private readonly GetMembersQueryHandler _handler;
+        private readonly GetMembersHandler _handler;
 
-        public GetMembersQueryHandlerTests()
+        public GetMembersHandlerTests()
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _uowMock = new Mock<IUnitOfWork>();
@@ -48,7 +47,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             }, loggerFactory);
             _mapper = mapperConfig.CreateMapper();
 
-            _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper);
+            _handler = new GetMembersHandler(_uowMock.Object, _mapper);
         }
 
         private static Member MakeMember(Guid groupKey, Guid kurinKey, string first, string last, string? blob = null) =>
@@ -81,7 +80,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(members);
 
-            var query = new GetMembersQuery(groupKey, Guid.Empty);
+            var query = new GetMembers(groupKey, Guid.Empty);
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -109,7 +108,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(members);
 
-            var query = new GetMembersQuery(Guid.Empty, kurinKey);
+            var query = new GetMembers(Guid.Empty, kurinKey);
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -124,7 +123,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         [Fact]
         public async Task Handle_BothKeysProvided_ShouldReturnBadRequest()
         {
-            var query = new GetMembersQuery(Guid.NewGuid(), Guid.NewGuid());
+            var query = new GetMembers(Guid.NewGuid(), Guid.NewGuid());
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -143,7 +142,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Member>());
 
-            var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
+            var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Success);
             result.Data.Should().NotBeNull();
@@ -159,7 +158,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(expected);
 
-            var query = new GetMembersQuery(groupKey, Guid.Empty);
+            var query = new GetMembers(groupKey, Guid.Empty);
 
             var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(query, CancellationToken.None));
             ex.Should().BeSameAs(expected);
@@ -180,7 +179,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(members);
 
-            var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
+            var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Success);
             var direct = _mapper.Map<IEnumerable<MemberResponse>>(members);

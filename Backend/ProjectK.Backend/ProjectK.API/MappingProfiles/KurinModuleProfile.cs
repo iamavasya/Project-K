@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.API.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Planning;
+
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
@@ -21,7 +23,7 @@ namespace ProjectK.API.MappingProfiles
         {
             // Kurin Mapping
             CreateMap<Kurin, KurinResponse>();
-            CreateMap<UpsertKurinCommand, Kurin>()
+            CreateMap<UpsertKurin, Kurin>()
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Number, opt => opt.MapFrom(src => src.Number))
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
@@ -32,14 +34,14 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.KurinKey))
                 .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number));
-            CreateMap<UpsertGroupCommand, Group>()
+            CreateMap<UpsertGroup, Group>()
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore()   )
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
 
             // Member Mapping
-            CreateMap<UpsertMemberCommand, Member>()
+            CreateMap<UpsertMember, Member>()
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey))
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
@@ -106,7 +108,7 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.KurinKey))
                 .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey));
 
-            CreateMap<UpsertLeadershipCommand, Leadership>()
+            CreateMap<UpsertLeadership, Leadership>()
                 .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Type, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
@@ -116,7 +118,7 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
 
             // Planning Mapping
-            CreateMap<CreatePlanningSessionCommand, PlanningSession>()
+            CreateMap<CreatePlanningSession, PlanningSession>()
                 .ForMember(dest => dest.IsCalculated, opt => opt.MapFrom(src => false))
                                                                                         
                 .ForMember(dest => dest.OptimalStartDate, opt => opt.Ignore())

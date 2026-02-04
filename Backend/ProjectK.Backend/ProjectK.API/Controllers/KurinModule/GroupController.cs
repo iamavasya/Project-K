@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
@@ -28,7 +29,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetByKey(Guid groupKey)
         {
-            var request = new GetGroupByKeyQuery(groupKey);
+            var request = new GetGroupByKey(groupKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -39,7 +40,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Exists(Guid groupKey)
         {
-            var request = new ExistsGroupByKeyQuery(groupKey);
+            var request = new ExistsGroupByKey(groupKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -50,7 +51,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAll(Guid kurinKey)
         {
-            var request = new GetGroupsQuery(kurinKey);
+            var request = new GetGroups(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -62,7 +63,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
         {
-            var command = new UpsertGroupCommand(request.Name, request.KurinKey);
+            var command = new UpsertGroup(request.Name, request.KurinKey);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -75,7 +76,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(Guid groupKey, [FromBody] UpdateGroupRequest request)
         {
-            var command = new UpsertGroupCommand(groupKey, request.Name);
+            var command = new UpsertGroup(groupKey, request.Name);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -87,7 +88,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid groupKey)
         {
-            var command = new DeleteGroupCommand(groupKey);
+            var command = new DeleteGroup(groupKey);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }

@@ -3,9 +3,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -16,15 +15,15 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
-    public class GetKurinByKeyQueryHandlerTests
+    public class GetKurinByKeyHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 
-        private readonly GetKurinByKeyQueryHandler _handler;
+        private readonly GetKurinByKeyHandler _handler;
 
-        public GetKurinByKeyQueryHandlerTests()
+        public GetKurinByKeyHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
@@ -35,7 +34,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -44,7 +43,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var kurin = new Kurin(123) { KurinKey = kurinKey };
-            var query = new GetKurinByKeyQuery(kurinKey);
+            var query = new GetKurinByKey(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(kurin);
@@ -66,7 +65,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var query = new GetKurinByKeyQuery(kurinKey);
+            var query = new GetKurinByKey(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync((Kurin)null!);
@@ -86,7 +85,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var query = new GetKurinByKeyQuery(kurinKey);
+            var query = new GetKurinByKey(kurinKey);
             var expectedException = new Exception("Database error");
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
@@ -105,7 +104,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var kurin = new Kurin(456) { KurinKey = kurinKey };
-            var query = new GetKurinByKeyQuery(kurinKey);
+            var query = new GetKurinByKey(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(kurin);

@@ -3,9 +3,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -17,14 +16,14 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 {
-    public class GetGroupByKeyQueryHandlerTests
+    public class GetGroupByKeyHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly GetGroupByKeyQueryHandler _handler;
+        private readonly GetGroupByKeyHandler _handler;
 
-        public GetGroupByKeyQueryHandlerTests()
+        public GetGroupByKeyHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
@@ -35,7 +34,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-            _handler = new GetGroupByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetGroupByKeyHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -49,7 +48,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 GroupKey = groupKey,
                 Kurin = kurin
             };
-            var query = new GetGroupByKeyQuery(groupKey);
+            var query = new GetGroupByKey(groupKey);
 
             _groupRepositoryMock
                 .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -74,7 +73,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new GetGroupByKeyQuery(groupKey);
+            var query = new GetGroupByKey(groupKey);
 
             _groupRepositoryMock
                 .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -95,7 +94,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         {
             // Arrange
             var groupKey = Guid.NewGuid();
-            var query = new GetGroupByKeyQuery(groupKey);
+            var query = new GetGroupByKey(groupKey);
             var expected = new Exception("DB failure");
 
             _groupRepositoryMock
@@ -120,7 +119,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 GroupKey = Guid.NewGuid(),
                 Kurin = kurin
             };
-            var query = new GetGroupByKeyQuery(group.GroupKey);
+            var query = new GetGroupByKey(group.GroupKey);
 
             _groupRepositoryMock
                 .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))

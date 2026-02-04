@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -33,7 +34,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<KurinResponse>(ResultType.Success, new KurinResponse { KurinKey = key, Number = 1 });
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetKurinByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -50,7 +51,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<KurinResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetKurinByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -68,7 +69,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             };
             var serviceResult = new ServiceResult<IEnumerable<KurinResponse>>(ResultType.Success, kurins);
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetKurinsQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetKurins>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
             var result = await _controller.GetAll();
             var ok = Assert.IsType<OkObjectResult>(result);
@@ -88,7 +89,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
                 new { kurinKey = key });
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Create(kurinNumber);
@@ -105,7 +106,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<KurinResponse>(ResultType.BadRequest, new KurinResponse());
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Upsert(key, 10);
@@ -120,7 +121,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>(ResultType.Success);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(key);
@@ -135,7 +136,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>((ResultType)999); // невідомий тип
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(key);

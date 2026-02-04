@@ -3,8 +3,6 @@ using FluentAssertions;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -14,17 +12,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Logging;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
-    public class GetMemberByKeyQueryHandlerTests
+    public class GetMemberByKeyHandlerTests
     {
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IMapper> _mapperMock;
-        private readonly GetMemberByKeyQueryHandler _handler;
+        private readonly GetMemberByKeyHandler _handler;
 
-        public GetMemberByKeyQueryHandlerTests()
+        public GetMemberByKeyHandlerTests()
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _uowMock = new Mock<IUnitOfWork>();
@@ -32,7 +31,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             _mapperMock = new Mock<IMapper>(MockBehavior.Strict);
 
-            _handler = new GetMemberByKeyQueryHandler(_uowMock.Object, _mapperMock.Object);
+            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object);
         }
 
         [Fact]
@@ -76,7 +75,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                     ProfilePhotoUrl = null
                 });
 
-            var query = new GetMemberByKeyQuery(memberKey);
+            var query = new GetMemberByKey(memberKey);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -104,7 +103,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Member)null!);
 
-            var query = new GetMemberByKeyQuery(memberKey);
+            var query = new GetMemberByKey(memberKey);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);

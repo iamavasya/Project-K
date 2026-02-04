@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -13,6 +11,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {
@@ -35,7 +36,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, dto);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetGroupByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -52,7 +53,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetGroupByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -72,7 +73,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, groups);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetGroupsQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetGroups>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetAll(kurinKey);
@@ -96,7 +97,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new { groupKey = groupKey }); // note: handler currently sets KurinKey by mistake
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey };
@@ -116,7 +117,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey };
@@ -134,7 +135,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var updateRequest = new UpdateGroupRequest { Name = "Updated" };
@@ -153,7 +154,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var updateRequest = new UpdateGroupRequest { Name = "X" };
@@ -170,7 +171,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>(ResultType.Success);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(groupKey);
@@ -186,7 +187,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(groupKey);
@@ -201,7 +202,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>((ResultType)999);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(groupKey);

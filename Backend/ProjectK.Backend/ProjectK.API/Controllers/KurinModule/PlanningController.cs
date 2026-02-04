@@ -1,8 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Planning;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Planning;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
 using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Controllers.KurinModule;
@@ -19,7 +20,7 @@ public class PlanningController : ControllerBase
 
     [Authorize(Policy = "RequireManager")]
     [HttpPost]
-    public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSessionCommand request)
+    public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSession request)
     {
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
@@ -29,7 +30,7 @@ public class PlanningController : ControllerBase
     [HttpGet("session/{planningSessionKey:guid}")]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
     {
-        var request = new GetPlanningSessionByKeyQuery(planningSessionKey);
+        var request = new GetPlanningSessionByKey(planningSessionKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -38,7 +39,7 @@ public class PlanningController : ControllerBase
     [HttpGet("{kurinKey:guid}")]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)
     {
-        var request = new GetPlanningSessionsQuery(kurinKey);
+        var request = new GetPlanningSessions(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -47,7 +48,7 @@ public class PlanningController : ControllerBase
     [HttpDelete("{planningSessionKey:guid}")]
     public async Task<IActionResult> DeletePlanningSession(Guid planningSessionKey)
     {
-        var request = new DeletePlanningSessionCommand(planningSessionKey);
+        var request = new DeletePlanningSession(planningSessionKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }

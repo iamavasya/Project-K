@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
 using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Controllers.KurinModule
@@ -27,7 +28,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetByKey(Guid kurinKey)
         {
-            var request = new GetKurinByKeyQuery(kurinKey);
+            var request = new GetKurinByKey(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -38,7 +39,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAll()
         {
-            var request = new GetKurinsQuery();
+            var request = new GetKurins();
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -50,7 +51,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Create([FromBody] int kurinNumber)
         {
-            var request = new UpsertKurinCommand(kurinNumber);
+            var request = new UpsertKurin(kurinNumber);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -63,7 +64,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Upsert(Guid kurinKey, [FromBody] int kurinNumber)
         {
-            var request = new UpsertKurinCommand(kurinKey, kurinNumber);
+            var request = new UpsertKurin(kurinKey, kurinNumber);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -76,7 +77,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid kurinKey)
         {
-            var request = new DeleteKurinCommand(kurinKey);
+            var request = new DeleteKurin(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }

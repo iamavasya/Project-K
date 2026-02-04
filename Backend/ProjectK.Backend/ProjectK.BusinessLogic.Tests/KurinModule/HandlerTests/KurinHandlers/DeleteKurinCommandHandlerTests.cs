@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -11,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
-    public class DeleteKurinCommandHandlerTests
+    public class DeleteKurinHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
-        private readonly DeleteKurinCommandHandler _handler;
+        private readonly DeleteKurinHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
 
-        public DeleteKurinCommandHandlerTests()
+        public DeleteKurinHandlerTests()
         {
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -27,7 +26,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Members).Returns(_memberRepositoryMock.Object);
 
-            _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object);
+            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object);
         }
 
         [Fact]
@@ -36,7 +35,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var kurin = new Kurin(1) { KurinKey = kurinKey };
-            var command = new DeleteKurinCommand(kurinKey);
+            var command = new DeleteKurin(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(kurin);
@@ -61,7 +60,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var command = new DeleteKurinCommand(kurinKey);
+            var command = new DeleteKurin(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync((Kurin)null!);
@@ -80,7 +79,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         public async Task Handle_WhenKurinKeyIsEmpty_ShouldReturnInvalidData()
         {
             // Arrange
-            var command = new DeleteKurinCommand(Guid.Empty);
+            var command = new DeleteKurin(Guid.Empty);
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -99,7 +98,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var kurin = new Kurin(1) { KurinKey = kurinKey };
-            var command = new DeleteKurinCommand(kurinKey);
+            var command = new DeleteKurin(kurinKey);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(kurin);
@@ -125,7 +124,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Arrange
             var kurinKey = Guid.NewGuid();
             var kurin = new Kurin(1) { KurinKey = kurinKey };
-            var command = new DeleteKurinCommand(kurinKey);
+            var command = new DeleteKurin(kurinKey);
             var expectedException = new Exception("Test exception");
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))

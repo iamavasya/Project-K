@@ -3,9 +3,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -18,14 +17,14 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
-    public class GetKurinsQueryHandlerTests
+    public class GetKurinsHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly GetKurinsQueryHandler _handler;
+        private readonly GetKurinsHandler _handler;
 
-        public GetKurinsQueryHandlerTests()
+        public GetKurinsHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
@@ -36,7 +35,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new GetKurinsQueryHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetKurinsHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -53,7 +52,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(kurins);
 
-            var query = new GetKurinsQuery();
+            var query = new GetKurins();
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -81,7 +80,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Kurin>());
 
-            var query = new GetKurinsQuery();
+            var query = new GetKurins();
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -102,7 +101,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(expectedException);
 
-            var query = new GetKurinsQuery();
+            var query = new GetKurins();
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() =>
@@ -126,7 +125,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(kurins);
 
-            var query = new GetKurinsQuery();
+            var query = new GetKurins();
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);

@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
@@ -33,7 +35,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             try
             {
                 // Step 1: Create the new Kurin
-                var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
+                var kurinResult = await _mediator.Send(new UpsertKurin(request.KurinNumber), cancellationToken);
                 
                 // Step 2: Register the user
                 var userResult = await _mediator.Send(new RegisterUserCommand
@@ -47,7 +49,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 }, cancellationToken);
 
                 // Step 3: Create the new Member and associate with User
-                await _mediator.Send(new UpsertMemberCommand
+                await _mediator.Send(new UpsertMember
                 {
                     FirstName = request.FirstName,
                     MiddleName = request.MiddleName,

@@ -3,9 +3,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Groups.Handlers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -18,14 +17,14 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 {
-    public class GetGroupsQueryHandlerTests
+    public class GetGroupsHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly GetGroupsQueryHandler _handler;
+        private readonly GetGroupsHandler _handler;
 
-        public GetGroupsQueryHandlerTests()
+        public GetGroupsHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
@@ -36,7 +35,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-            _handler = new GetGroupsQueryHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetGroupsHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
@@ -57,7 +56,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(groups);
 
-            var query = new GetGroupsQuery(kurinKey);
+            var query = new GetGroups(kurinKey);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -88,7 +87,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Group>());
 
-            var query = new GetGroupsQuery(kurinKey);
+            var query = new GetGroups(kurinKey);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -112,7 +111,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(expected);
 
-            var query = new GetGroupsQuery(kurinKey);
+            var query = new GetGroups(kurinKey);
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(() =>
@@ -138,7 +137,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(groups);
 
-            var query = new GetGroupsQuery(kurinKey);
+            var query = new GetGroups(kurinKey);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);

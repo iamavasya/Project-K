@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Members;
 using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -47,7 +48,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success, dto);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -64,7 +65,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetByKey(key);
@@ -83,7 +84,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.GetAll();
@@ -126,7 +127,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new { memberKey = key });
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Create(request, CancellationToken.None);
@@ -136,7 +137,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             Assert.Equal(key, data.MemberKey);
 
             _mediatorMock.Verify(m => m.Send(
-                It.Is<UpsertMemberCommand>(c =>
+                It.Is<UpsertMember>(c =>
                     c.GroupKey == request.GroupKey &&
                     c.FirstName == request.FirstName &&
                     c.LastName == request.LastName),
@@ -161,7 +162,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Create(request, CancellationToken.None);
@@ -200,7 +201,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 });
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -210,7 +211,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             Assert.Equal(memberKey, data.MemberKey);
 
             _mediatorMock.Verify(m => m.Send(
-                It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
+                It.Is<UpsertMember>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
         }
@@ -233,7 +234,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -259,7 +260,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -274,7 +275,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>(ResultType.Success);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(memberKey);
@@ -289,7 +290,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<object>((ResultType)999);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
             var result = await _controller.Delete(memberKey);

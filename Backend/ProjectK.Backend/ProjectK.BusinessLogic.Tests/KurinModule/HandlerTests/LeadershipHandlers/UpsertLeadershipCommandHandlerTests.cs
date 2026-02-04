@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -18,17 +17,17 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers
 {
-    public class UpsertLeadershipCommandHandlerTests
+    public class UpsertLeadershipHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
         private readonly Mock<IMapper> _mapperMock = new();
-        private readonly UpsertLeadershipCommandHandler _handler;
+        private readonly UpsertLeadershipHandler _handler;
 
-        public UpsertLeadershipCommandHandlerTests()
+        public UpsertLeadershipHandlerTests()
         {
             _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-            _handler = new UpsertLeadershipCommandHandler(_unitOfWorkMock.Object, _mapperMock.Object);
+            _handler = new UpsertLeadershipHandler(_unitOfWorkMock.Object, _mapperMock.Object);
         }
 
         private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()
@@ -46,7 +45,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
             StartDate = new DateOnly(2024, 1, 1)
         };
 
-        private void SetupCreateMapping(UpsertLeadershipCommand command, Leadership entity)
+        private void SetupCreateMapping(UpsertLeadership command, Leadership entity)
         {
             _mapperMock
                 .Setup(m => m.Map<Leadership>(command))
@@ -73,7 +72,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 });
         }
 
-        private void SetupUpdateMapping(UpsertLeadershipCommand command, Leadership existing)
+        private void SetupUpdateMapping(UpsertLeadership command, Leadership existing)
         {
             _mapperMock
                 .Setup(m => m.Map(command, existing))
@@ -102,7 +101,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldCreateLeadership_WhenNoExistingFound()
         {
             var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
             var entity = BuildLeadershipEntity();
 
             _leadershipRepoMock
@@ -132,7 +131,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         {
             var providedKey = Guid.NewGuid();
             var requestDto = BuildRequest("group");
-            var command = new UpsertLeadershipCommand(requestDto, providedKey);
+            var command = new UpsertLeadership(requestDto, providedKey);
             var entity = BuildLeadershipEntity(providedKey);
 
             _leadershipRepoMock
@@ -153,7 +152,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldAssignKurinKey_OnKurinTypeCreation()
         {
             var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
             var entity = BuildLeadershipEntity();
 
             SetupCreateMapping(command, entity);
@@ -171,7 +170,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldAssignGroupKey_OnGroupTypeCreation()
         {
             var requestDto = BuildRequest("group");
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
             var entity = BuildLeadershipEntity();
 
             SetupCreateMapping(command, entity);
@@ -189,7 +188,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldAssignKurinKey_OnKvTypeCreation()
         {
             var requestDto = BuildRequest("kv"); // KV behaves like Kurin for key assignment
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
             var entity = BuildLeadershipEntity();
 
             SetupCreateMapping(command, entity);
@@ -211,7 +210,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
             existing.GroupKey = Guid.NewGuid();
 
             var requestDto = BuildRequest("kurin"); // change type
-            var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
+            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
 
             _leadershipRepoMock
                 .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -236,7 +235,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldReturnInternalServerError_WhenNoChangesPersisted_OnCreate()
         {
             var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
             var entity = BuildLeadershipEntity();
 
             SetupCreateMapping(command, entity);
@@ -257,7 +256,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
             existing.KurinKey = Guid.NewGuid();
 
             var requestDto = BuildRequest("group");
-            var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
+            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
 
             _leadershipRepoMock
                 .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -277,7 +276,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public async Task Handle_ShouldThrowArgumentException_WhenInvalidType()
         {
             var requestDto = BuildRequest("INVALID_TYPE");
-            var command = new UpsertLeadershipCommand(requestDto);
+            var command = new UpsertLeadership(requestDto);
 
             var entity = BuildLeadershipEntity();
             // Mapping for creation still needed before it attempts Enum.Parse
@@ -295,7 +294,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         {
             var requestDto = BuildRequest("group");
             // Mimic constructing with an empty leadership key (edge case)
-            var command = new UpsertLeadershipCommand(requestDto, Guid.Empty);
+            var command = new UpsertLeadership(requestDto, Guid.Empty);
             var entity = BuildLeadershipEntity();
 
             SetupCreateMapping(command, entity);

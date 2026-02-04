@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.API.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Kurins.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -18,6 +17,7 @@ using ProjectK.API.Helpers;
 using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 
 namespace ProjectK.API
 {
@@ -125,7 +125,7 @@ namespace ProjectK.API
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
-                cfg.RegisterServicesFromAssembly(typeof(GetKurinByKeyQueryHandler).Assembly)
+                cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly)
             );
             builder.Services.AddControllers()
                 .AddJsonOptions(opt =>

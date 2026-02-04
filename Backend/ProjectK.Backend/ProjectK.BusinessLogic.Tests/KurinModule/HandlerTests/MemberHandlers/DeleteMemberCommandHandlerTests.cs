@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -13,27 +12,27 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
-    public class DeleteMemberCommandHandlerTests
+    public class DeleteMemberHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
-        private readonly DeleteMemberCommandHandler _handler;
+        private readonly DeleteMemberHandler _handler;
 
-        public DeleteMemberCommandHandlerTests()
+        public DeleteMemberHandlerTests()
         {
             _memberRepositoryMock = new Mock<IMemberRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
 
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
 
-            _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object);
+            _handler = new DeleteMemberHandler(_unitOfWorkMock.Object);
         }
 
         [Fact]
         public async Task Handle_WhenMemberKeyIsEmpty_ShouldReturnBadRequest()
         {
             // Arrange
-            var command = new DeleteMemberCommand(Guid.Empty);
+            var command = new DeleteMember(Guid.Empty);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -51,7 +50,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             // Arrange
             var memberKey = Guid.NewGuid();
-            var command = new DeleteMemberCommand(memberKey);
+            var command = new DeleteMember(memberKey);
 
             _memberRepositoryMock
                 .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -73,7 +72,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             // Arrange
             var memberKey = Guid.NewGuid();
             var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "B", MiddleName = "C", Email = "a@example.com", PhoneNumber = "123", DateOfBirth = new DateOnly(2000,1,1) };
-            var command = new DeleteMemberCommand(memberKey);
+            var command = new DeleteMember(memberKey);
 
             _memberRepositoryMock
                 .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -98,7 +97,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             // Arrange
             var memberKey = Guid.NewGuid();
             var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "X", LastName = "Y", MiddleName = "Z", Email = "x@example.com", PhoneNumber = "000", DateOfBirth = new DateOnly(1999,1,1) };
-            var command = new DeleteMemberCommand(memberKey);
+            var command = new DeleteMember(memberKey);
 
             _memberRepositoryMock
                 .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -123,7 +122,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             // Arrange
             var memberKey = Guid.NewGuid();
             var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "Err", LastName = "Case", MiddleName = "M", Email = "err@example.com", PhoneNumber = "111", DateOfBirth = new DateOnly(1990,1,1) };
-            var command = new DeleteMemberCommand(memberKey);
+            var command = new DeleteMember(memberKey);
             var expected = new Exception("Delete failed");
 
             _memberRepositoryMock

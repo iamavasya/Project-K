@@ -4,8 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.API.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members.Handlers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -21,16 +20,16 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
-    public class UpsertMemberCommandHandlerTests
+    public class UpsertMemberHandlerTests
     {
         private readonly IMapper _mapper;
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IGroupRepository> _groupRepoMock;
         private readonly Mock<IPhotoService> _photoServiceMock;
-        private readonly UpsertMemberCommandHandler _handler;
+        private readonly UpsertMemberHandler _handler;
 
-        public UpsertMemberCommandHandlerTests()
+        public UpsertMemberHandlerTests()
         {
             var loggerFactory = LoggerFactory.Create(builder => { });
             var mapperConfig = new MapperConfiguration(cfg =>
@@ -53,7 +52,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
             _uowMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
 
-            _handler = new UpsertMemberCommandHandler(_uowMock.Object, _mapper, _photoServiceMock.Object);
+            _handler = new UpsertMemberHandler(_uowMock.Object, _mapper, _photoServiceMock.Object);
         }
 
         private static Group MakeGroup(Guid? kurinKey = null)
@@ -81,7 +80,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         public async Task Handle_Create_NewMember_ShouldReturnCreated()
         {
             var group = MakeGroup();
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 GroupKey = group.GroupKey,
                 FirstName = "Ivan",
@@ -112,7 +111,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         [Fact]
         public async Task Handle_Create_EmptyMemberRequest_ShouldReturnNotFound()
         {
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 GroupKey = Guid.NewGuid(),
                 FirstName = "Test"
@@ -135,7 +134,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var group = MakeGroup();
             var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
             var newBlob = new byte[] { 1, 2, 3 };
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 MemberKey = existing.MemberKey,
                 GroupKey = group.GroupKey,
@@ -178,7 +177,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             var group = MakeGroup();
             var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 MemberKey = existing.MemberKey,
                 GroupKey = group.GroupKey,
@@ -203,7 +202,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         public async Task Handle_SaveChangesFailed_ShouldReturnInternalServerError()
         {
             var group = MakeGroup();
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 GroupKey = group.GroupKey,
                 FirstName = "Ivan"
@@ -226,7 +225,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             var group = MakeGroup();
             var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            var cmd = new UpsertMemberCommand
+            var cmd = new UpsertMember
             {
                 MemberKey = existing.MemberKey,
                 GroupKey = group.GroupKey,

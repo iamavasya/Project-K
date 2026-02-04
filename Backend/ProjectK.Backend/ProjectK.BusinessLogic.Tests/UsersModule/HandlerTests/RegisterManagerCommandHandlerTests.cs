@@ -1,28 +1,28 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Kurins;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Members;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
+using ProjectK.BusinessLogic.Modules.UsersModule.Command;
+using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
-    public class RegisterManagerCommandHandlerTests
+    public class RegisterManagerHandlerTests
     {
         private readonly Mock<IMediator> _mediatorMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IDbContextTransaction> _transactionMock;
         private readonly RegisterManagerCommandHandler _handler;
 
-        public RegisterManagerCommandHandlerTests()
+        public RegisterManagerHandlerTests()
         {
             _mediatorMock = new Mock<IMediator>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -88,11 +88,11 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                     PhoneNumber = command.PhoneNumber
                 });
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(kurinResult);
             _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(userResult);
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(memberResult);
             _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
@@ -111,12 +111,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal("access-token", result.Data.Tokens.AccessToken);
 
             // Verify all commands were sent
-            _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurinCommand>(cmd => cmd.Number == 5), It.IsAny<CancellationToken>()), Times.Once);
+            _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurin>(cmd => cmd.Number == 5), It.IsAny<CancellationToken>()), Times.Once);
             _mediatorMock.Verify(x => x.Send(It.Is<RegisterUserCommand>(cmd =>
                 cmd.Email == command.Email &&
                 cmd.Role == "Manager" &&
                 cmd.KurinKey == kurinKey), It.IsAny<CancellationToken>()), Times.Once);
-            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
+            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
                 cmd.KurinKey == kurinKey &&
                 cmd.UserKey == userId &&
                 cmd.Email == command.Email), It.IsAny<CancellationToken>()), Times.Once);
@@ -129,7 +129,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_ShouldCreateCorrectUpsertKurinCommand()
+        public async Task Handle_ShouldCreateCorrectUpsertKurin()
         {
             // Arrange
             var command = new RegisterManagerCommand
@@ -148,13 +148,13 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurinCommand>(cmd =>
+            _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurin>(cmd =>
                 cmd.Number == 10 &&
                 cmd.KurinKey == Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ShouldCreateCorrectRegisterUserCommand()
+        public async Task Handle_ShouldCreateCorrectRegisterUser()
         {
             // Arrange
             var command = new RegisterManagerCommand
@@ -184,7 +184,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_ShouldCreateCorrectUpsertMemberCommand()
+        public async Task Handle_ShouldCreateCorrectUpsertMember()
         {
             // Arrange
             var command = new RegisterManagerCommand
@@ -206,7 +206,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
+            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
                 cmd.FirstName == "John" &&
                 cmd.MiddleName == "Middle" &&
                 cmd.LastName == "Doe" &&
@@ -220,10 +220,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldRollbackTransaction_WhenKurinCreationFails()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var exception = new Exception("Kurin creation failed");
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
             // Act & Assert
@@ -238,10 +238,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldRollbackTransaction_WhenUserRegistrationFails()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var exception = new Exception("User registration failed");
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
             _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
@@ -258,14 +258,14 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldRollbackTransaction_WhenMemberCreationFails()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var exception = new Exception("Member creation failed");
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
             _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
             // Act & Assert
@@ -280,10 +280,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldRollbackTransaction_WhenSaveChangesFails()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var exception = new Exception("Save changes failed");
 
-            SetupSuccessfulCommandResponses();
+            SetupSuccessfulResponses();
             _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
@@ -299,10 +299,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldRollbackTransaction_WhenCommitFails()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var exception = new Exception("Commit failed");
 
-            SetupSuccessfulCommandResponses();
+            SetupSuccessfulResponses();
             _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
             _transactionMock.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
@@ -337,18 +337,18 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
-            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
+            _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
                 cmd.MiddleName == null), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ShouldExecuteCommandsInCorrectOrder()
+        public async Task Handle_ShouldExecutesInCorrectOrder()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             var executionOrder = new List<string>();
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .Callback(() => executionOrder.Add("UpsertKurin"))
                 .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
 
@@ -356,7 +356,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 .Callback(() => executionOrder.Add("RegisterUser"))
                 .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .Callback(() => executionOrder.Add("UpsertMember"))
                 .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse()));
 
@@ -379,7 +379,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldDisposeTransaction()
         {
             // Arrange
-            var command = CreateValidCommand();
+            var command = CreateValid();
             SetupSuccessfulScenario(command);
 
             // Act
@@ -399,7 +399,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.NotNull(handler);
         }
 
-        private RegisterManagerCommand CreateValidCommand()
+        private RegisterManagerCommand CreateValid()
         {
             return new RegisterManagerCommand
             {
@@ -429,13 +429,13 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             };
         }
 
-        private void SetupSuccessfulCommandResponses()
+        private void SetupSuccessfulResponses()
         {
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
             _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse()));
         }
 
@@ -444,7 +444,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var actualKurinKey = kurinKey ?? Guid.NewGuid();
             var actualUserId = userId ?? Guid.NewGuid();
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = actualKurinKey, Number = command.KurinNumber }));
 
             _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
@@ -461,7 +461,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                     }
                 }));
 
-            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse
                 {
                     MemberKey = Guid.NewGuid(),

@@ -1,8 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.KurinModule.Commands.Leadership;
-using ProjectK.BusinessLogic.Modules.KurinModule.Queries.Leaderships;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Helpers;
 using ProjectK.Common.Models.Dtos.Requests;
@@ -24,7 +24,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpGet("type/{leadershipType}/{typeKey:guid}")]
         public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
         {
-            var request = new GetLeadershipByTypeQuery(leadershipType, typeKey);
+            var request = new GetLeadershipByType(leadershipType, typeKey);
             var response = await _mediator.Send(request, cancellationToken);
             return response.ToActionResult(this);
         }
@@ -33,7 +33,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpGet("{leadershipKey:guid}")]
         public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
         {
-            var request = new GetLeadershipByKeyQuery(leadershipKey);
+            var request = new GetLeadershipByKey(leadershipKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -42,7 +42,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpPost]
         public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
         {
-            var request = new UpsertLeadershipCommand(dto);
+            var request = new UpsertLeadership(dto);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -51,7 +51,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpPut("{leadershipKey:guid}")]
         public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
         {
-            var request = new UpsertLeadershipCommand(dto, leadershipKey);
+            var request = new UpsertLeadership(dto, leadershipKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
@@ -60,7 +60,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpGet("histories/{leadershipKey}")]
         public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)
         {
-            var request = new GetLeadershipHistoriesQuery(leadershipKey);
+            var request = new GetLeadershipHistories(leadershipKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }
