@@ -591,7 +591,6 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should clear all photo-related data', () => {
-      spyOn(console, 'log');
       component.imageFile = new File(['test'], 'test.jpg');
       component.croppedImage = 'data:image/png;base64,AAA';
       component.croppedFile = new File(['cropped'], 'cropped.png');
@@ -600,7 +599,6 @@ describe('UpsertMemberComponent', () => {
 
       component.clearProfilePhoto(mockForm);
 
-      expect(console.log).toHaveBeenCalledWith('Clearing profile photo');
       expect(component.imageFile).toBeUndefined();
       expect(component.croppedImage).toBe('');
       expect(component.croppedFile).toBeNull();
