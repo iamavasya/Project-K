@@ -36,5 +36,5 @@ jobs:
       working-directory: Frontend/projectk-frontend
 
     - name: Test
-      run: npm test
+      run: npm test -- --watch=false --browsers=ChromeHeadless
       working-directory: Frontend/projectk-frontend

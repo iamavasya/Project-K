@@ -26,36 +26,36 @@ import 'chartjs-adapter-date-fns';
     DividerModule
   ],
   template: `
-<p-dialog 
-      [(visible)]="visible" 
-      [style]="{ width: '95vw', maxWidth: '1200px' }" 
-      [header]="'Деталі: ' + (session()?.name || '...')" 
-      [modal]="true" 
-      [draggable]="false" 
-      [resizable]="false"
-      [dismissableMask]="true"
-      appendTo="body"
-      (onHide)="close()">
+<p-dialog
+  [(visible)]="visible"
+  [style]="{ width: '95vw', maxWidth: '1200px' }"
+  [header]="'Деталі: ' + (session()?.name || '...')"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  appendTo="body"
+  (onHide)="close()">
 
-      <ng-template pTemplate="content">
-        
-        <div *ngIf="loading(); else realContent" class="flex flex-col gap-4">
-          <p-skeleton height="100px" width="100%" />
-          <p-skeleton height="300px" width="100%" />
-        </div>
+  <ng-template pTemplate="content">
 
-        <ng-template #realContent>
-          <div *ngIf="session() as s" class="flex flex-col gap-6">
-
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Період пошуку</div>
-                <div class="font-bold text-lg text-slate-800">
-                  {{ s.searchStart | date:'dd.MM.yyyy' }} — {{ s.searchEnd | date:'dd.MM.yyyy' }}
-                </div>
+    @if (loading()) {
+      <div class="flex flex-col gap-4">
+        <p-skeleton height="100px" width="100%" />
+        <p-skeleton height="300px" width="100%" />
+      </div>
+    } @else {
+      @if (session(); as s) {
+        <div class="flex flex-col gap-6">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Період пошуку</div>
+              <div class="font-bold text-lg text-slate-800">
+                {{ s.searchStart | date:'dd.MM.yyyy' }} — {{ s.searchEnd | date:'dd.MM.yyyy' }}
               </div>
-
-              <div *ngIf="s.isCalculated" class="w-full md:w-auto flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-green-200 shadow-sm">
+            </div>
+            @if (s.isCalculated) {
+              <div class="w-full md:w-auto flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-green-200 shadow-sm">
                 <i class="pi pi-check-circle text-2xl text-green-500 shrink-0"></i>
                 <div>
                   <div class="text-[10px] text-green-700 font-bold uppercase">Оптимальна дата</div>
@@ -64,33 +64,36 @@ import 'chartjs-adapter-date-fns';
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div class="border border-slate-200 rounded-xl p-2 md:p-4 overflow-hidden bg-white shadow-sm">
-              <h3 class="font-bold text-slate-700 mb-4 ml-2">Графік зайнятості</h3>
-              
-              <div class="relative w-full" *ngIf="chartData">
-                <p-chart 
-                  type="bar" 
-                  [data]="chartData" 
-                  [options]="chartOptions" 
-                  [height]="calculateHeight()" 
+            }
+          </div>
+          <div class="border border-slate-200 rounded-xl p-2 md:p-4 overflow-hidden bg-white shadow-sm">
+            <h3 class="font-bold text-slate-700 mb-4 ml-2">Графік зайнятості</h3>
+            @if (chartData) {
+              <div class="relative w-full">
+                <p-chart
+                  type="bar"
+                  [data]="chartData"
+                  [options]="chartOptions"
+                  [height]="calculateHeight()"
                   [responsive]="true">
                 </p-chart>
               </div>
-
-              <div *ngIf="!chartData" class="text-center p-4 text-slate-400">
+            }
+            @if (!chartData) {
+              <div class="text-center p-4 text-slate-400">
                 Немає даних для відображення
               </div>
-            </div>
-
+            }
           </div>
-        </ng-template>
-      </ng-template> <ng-template pTemplate="footer">
-        <p-button label="Закрити" (click)="close()" [text]="true" severity="secondary" />
-      </ng-template>
-    </p-dialog>
-  `
+        </div>
+      }
+    }
+
+  </ng-template> <ng-template pTemplate="footer">
+  <p-button label="Закрити" (click)="close()" [text]="true" severity="secondary" />
+</ng-template>
+</p-dialog>
+`
 })
 export class PlanningDetailComponent implements OnChanges {
   @Input() visible = false;

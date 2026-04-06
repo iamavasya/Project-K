@@ -17,55 +17,56 @@ import { PlanningDetailComponent } from '../common/components/planning-detail/pl
     <div class="card p-6">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Планування Таборів</h1>
-        <p-button 
-          label="Створити нове" 
-          icon="pi pi-plus" 
+        <p-button
+          label="Створити нове"
+          icon="pi pi-plus"
           (click)="createNew()" />
-      </div>
-
-      <p-table [value]="sessions()" [tableStyle]="{ 'min-width': '50rem' }">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Назва</th>
-            <th>Період пошуку</th>
-            <th>Статус</th>
-            <th>Дії</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-session>
-          <tr>
-            <td class="font-semibold">{{ session.name }}</td>
-            <td>
-              {{ session.searchStart | date:'dd.MM' }} - {{ session.searchEnd | date:'dd.MM.yyyy' }}
-            </td>
-            <td>
-              <p-tag 
-                [severity]="session.isCalculated ? 'success' : 'info'" 
-                [value]="session.isCalculated ? 'Розраховано' : 'Нове'" />
-            </td>
-            <td>
-              <div class="flex gap-2">
-                <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
-                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="4" class="text-center p-4">Сесій ще немає. Створіть першу!</td>
-          </tr>
-        </ng-template>
-      </p-table>
-
-      <app-planning-detail 
-        *ngIf="detailsVisible" 
-        [(visible)]="detailsVisible" 
-        [sessionId]="selectedSessionId">
-      </app-planning-detail>
-
-    </div>
-  `
+        </div>
+    
+        <p-table [value]="sessions()" [tableStyle]="{ 'min-width': '50rem' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Назва</th>
+              <th>Період пошуку</th>
+              <th>Статус</th>
+              <th>Дії</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-session>
+            <tr>
+              <td class="font-semibold">{{ session.name }}</td>
+              <td>
+                {{ session.searchStart | date:'dd.MM' }} - {{ session.searchEnd | date:'dd.MM.yyyy' }}
+              </td>
+              <td>
+                <p-tag
+                  [severity]="session.isCalculated ? 'success' : 'info'"
+                  [value]="session.isCalculated ? 'Розраховано' : 'Нове'" />
+                </td>
+                <td>
+                  <div class="flex gap-2">
+                    <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="4" class="text-center p-4">Сесій ще немає. Створіть першу!</td>
+              </tr>
+            </ng-template>
+          </p-table>
+    
+          @if (detailsVisible) {
+            <app-planning-detail
+              [(visible)]="detailsVisible"
+              [sessionId]="selectedSessionId">
+            </app-planning-detail>
+          }
+    
+        </div>
+    `
 })
 export class PlanningListComponent implements OnInit {
   private readonly planningService = inject(PlanningService);

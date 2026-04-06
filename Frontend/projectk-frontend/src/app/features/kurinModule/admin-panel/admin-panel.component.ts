@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { CommonModule } from '@angular/common';
+
 import { KurinDto } from '../common/models/kurinDto';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MenuItem } from 'primeng/api';
@@ -13,7 +13,7 @@ import { AuthService } from '../../authModule/services/authService/auth.service'
 
 @Component({
   selector: 'app-admin-panel',
-  imports: [TableModule, SplitButtonModule, CommonModule, ManagePanel, ButtonModule, MessageModule],
+  imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, MessageModule],
   templateUrl: './admin-panel.component.html',
   styleUrls: ['./admin-panel.component.css']
 })
