@@ -91,7 +91,6 @@ export class PlanningListComponent implements OnInit {
     this.planningService.getSessions(this.kurinKey)
       .subscribe(data => {
         this.sessions.set(data);
-        console.log('Loaded sessions:', this.sessions());
       });
   }
 
@@ -109,7 +108,6 @@ export class PlanningListComponent implements OnInit {
 
   openDetails(id: string) {
     this.selectedSessionId = id;
-    console.log('Opening details for session ID:', id);
     this.detailsVisible = true;
   }
 }

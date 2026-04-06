@@ -249,10 +249,17 @@ describe('MemberList', () => {
       memberServiceSpy.getAll.and.returnValue(of([
         {
           memberKey: 'm1',
+          groupKey: 'g1',
+          kurinKey: 'k1',
           firstName: 'John',
           lastName: 'Doe',
           middleName: 'M',
-          dateOfBirth: '2000-12-31'
+          email: 'john@example.com',
+          phoneNumber: '123456789',
+          dateOfBirth: null,
+          plastLevelHistories: [],
+          leadershipHistories: [],
+          profilePhotoUrl: null
         } as MemberDto
       ]));
 

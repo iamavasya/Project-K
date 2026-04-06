@@ -109,11 +109,9 @@ export class UpsertMemberComponent implements OnInit {
   private loadData(): void {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
-        console.log('Fetched member:', member);
         this.member = member;
         if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
         this.ensurePlastLevelMap();
-        console.log(member);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -155,7 +153,6 @@ export class UpsertMemberComponent implements OnInit {
     if (this.isCreate) {
       this.memberService.create(baseDto, this.fileToUpload).subscribe({
         next: (createdMember) => {
-          console.log('Member created:', createdMember);
           this.router.navigate(['/member', createdMember.memberKey], { replaceUrl: true });
         },
         error: (error) => {
@@ -165,10 +162,8 @@ export class UpsertMemberComponent implements OnInit {
     } else {
       baseDto.removeProfilePhoto = this.removeProfilePhoto;
 
-      console.log(baseDto.plastLevelHistories);
       this.memberService.update(this.memberKey, baseDto, this.fileToUpload).subscribe({
         next: (updatedMember) => {
-          console.log('Member updated:', updatedMember);
           if (this.cameFromMember) {
             this.location.back();
             return;
@@ -275,7 +270,6 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   clearProfilePhoto(form: FormGroup) {
-    console.log('Clearing profile photo');
     if (this.objectUrlToRevoke) {
       URL.revokeObjectURL(this.objectUrlToRevoke);
       this.objectUrlToRevoke = null;

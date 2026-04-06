@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges, effect } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
@@ -103,8 +103,18 @@ export class PlanningDetailComponent implements OnChanges {
   loading = signal(false);
 
   // Дані для Chart.js
-  chartData: any;
-  chartOptions: any;
+  chartData: {
+    labels: string[];
+    datasets: {
+      label: string;
+      backgroundColor: string;
+      borderColor: string;
+      borderWidth: number;
+      barPercentage: number;
+      data: { x: [string, string]; y: string }[];
+    }[];
+  } | null = null;
+  chartOptions: Record<string, unknown> | null = null;
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible'] && this.visible && this.sessionId) {
@@ -143,7 +153,7 @@ export class PlanningDetailComponent implements OnChanges {
 
     const labels = ['Табір', ...s.participants.map(p => p.fullName)];
 
-    const optimalData = [];
+    const optimalData: { x: [string, string]; y: string }[] = [];
     if (s.isCalculated && s.optimalStartDate && s.optimalEndDate) {
       optimalData.push({
         x: [s.optimalStartDate, s.optimalEndDate],
@@ -151,7 +161,7 @@ export class PlanningDetailComponent implements OnChanges {
       });
     }
 
-    const busyData: any[] = [];
+    const busyData: { x: [string, string]; y: string }[] = [];
     s.participants.forEach(p => {
       p.busyRanges.forEach(range => {
         busyData.push({
@@ -193,7 +203,7 @@ export class PlanningDetailComponent implements OnChanges {
         },
         tooltip: {
           callbacks: {
-            label: (context: any) => {
+            label: (context: { raw: { x: [string, string] }; dataset: { label: string } }) => {
               const start = new Date(context.raw.x[0]).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'});
               const end = new Date(context.raw.x[1]).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'});
               return `${context.dataset.label}: ${start} - ${end}`;

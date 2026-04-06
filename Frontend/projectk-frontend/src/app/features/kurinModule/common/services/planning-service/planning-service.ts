@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
-import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 @Injectable({ providedIn: 'root' })
 export class PlanningService {
@@ -17,7 +16,7 @@ export class PlanningService {
     return this.http.get<PlanningSessionDto>(`${this.apiUrl}/session/${sessionKey}`);
   }
 
-  createSession(payload: any) {
+  createSession(payload: unknown) {
     return this.http.post(`${this.apiUrl}`, payload);
   }
 

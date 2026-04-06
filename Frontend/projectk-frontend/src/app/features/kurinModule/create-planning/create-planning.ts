@@ -17,6 +17,7 @@ import { RoleWeight, RoleWeightOptions } from '../common/models/enums/roleWeight
 
 import { PlanningService } from '../common/services/planning-service/planning-service';
 import { MemberService } from '../common/services/member-service/member.service';
+import { MemberLookupDto } from '../common/models/requests/member/memberLookupDto';
 
 
 @Component({
@@ -40,18 +41,19 @@ import { MemberService } from '../common/services/member-service/member.service'
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             <div class="flex flex-col gap-2">
-              <label class="font-semibold">Назва сесії</label>
-              <input pInputText formControlName="name" placeholder="Напр. Літо 2025" />
+              <label for="planning-name" class="font-semibold">Назва сесії</label>
+              <input id="planning-name" pInputText formControlName="name" placeholder="Напр. Літо 2025" />
             </div>
 
             <div class="flex flex-col gap-2">
-              <label class="font-semibold">Тривалість (днів)</label>
-              <p-input-number formControlName="durationDays" [min]="1" [max]="30" [showButtons]="true" />
+              <label for="planning-duration" class="font-semibold">Тривалість (днів)</label>
+              <p-input-number inputId="planning-duration" formControlName="durationDays" [min]="1" [max]="30" [showButtons]="true" />
             </div>
 
             <div class="flex flex-col gap-2">
-              <label class="font-semibold">Вікно пошуку</label>
+              <label for="planning-search-range" class="font-semibold">Вікно пошуку</label>
               <p-datepicker 
+                inputId="planning-search-range"
                 formControlName="searchRange" 
                 selectionMode="range" 
                 [showIcon]="true"
@@ -75,8 +77,9 @@ import { MemberService } from '../common/services/member-service/member.service'
                   </div>
                   
                   <div class="flex flex-col gap-1">
-                    <label class="text-sm text-slate-500">Важливість голосу</label>
+                    <label [for]="'participant-role-weight-' + i" class="text-sm text-slate-500">Важливість голосу</label>
                     <p-select 
+                      [inputId]="'participant-role-weight-' + i"
                       formControlName="roleWeight" 
                       [options]="weightOptions" 
                       optionLabel="label" 
@@ -89,9 +92,9 @@ import { MemberService } from '../common/services/member-service/member.service'
 
                 <div class="flex-1">
                   <div class="flex justify-between items-center mb-2">
-                    <label class="text-sm font-semibold text-slate-600">
+                    <span class="text-sm font-semibold text-slate-600">
                       Коли ця людина ЗАЙНЯТА?
-                    </label>
+                    </span>
                     <p-button 
                       label="Додати період" 
                       icon="pi pi-plus" 
@@ -195,7 +198,7 @@ export class CreatePlanningComponent implements OnInit {
     });
   }
 
-  createParticipantGroup(member: any): FormGroup {
+  createParticipantGroup(member: MemberLookupDto): FormGroup {
     return this.fb.group({
       memberKey: [member.memberKey], // ID
       fullName: [`${member.firstName} ${member.lastName}`],
@@ -228,6 +231,12 @@ export class CreatePlanningComponent implements OnInit {
 
     this.loading = true;
     const formVal = this.form.value;
+    const participants = (formVal.participants ?? []) as {
+      memberKey: string;
+      fullName: string;
+      roleWeight: RoleWeight;
+      busyRanges?: { range: Date[] | null }[];
+    }[];
 
     const payload = {
       name: formVal.name,
@@ -235,14 +244,14 @@ export class CreatePlanningComponent implements OnInit {
       durationDays: formVal.durationDays,
       searchStart: formVal.searchRange![0],
       searchEnd: formVal.searchRange![1],
-      participants: formVal.participants?.map((p: any) => ({
-        memberKey: p.memberKey,
-        fullName: p.fullName,
-        roleWeight: p.roleWeight,
-        busyRanges: p.busyRanges.map((r: any) => ({
-          start: r.range[0],
-          end: r.range[1]
-        })).filter((r: any) => r.start && r.end)
+      participants: participants.map((participant) => ({
+        memberKey: participant.memberKey,
+        fullName: participant.fullName,
+        roleWeight: participant.roleWeight,
+        busyRanges: (participant.busyRanges ?? []).map((rangeItem) => ({
+          start: rangeItem.range?.[0],
+          end: rangeItem.range?.[1]
+        })).filter((rangeItem): rangeItem is { start: Date; end: Date } => Boolean(rangeItem.start && rangeItem.end))
       }))
     };
 

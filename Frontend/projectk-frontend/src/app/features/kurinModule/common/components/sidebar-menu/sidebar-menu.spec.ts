@@ -56,7 +56,7 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         expect(items.length).toBeGreaterThan(0);
-        expect(items.some(item => item.label === 'Kurin')).toBeTrue();
+        expect(items.some(item => item.label === 'Курінь')).toBeTrue();
         done();
       });
     });
@@ -130,7 +130,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const kurinItem = items.find(item => item.label === 'Kurin');
+        const kurinItem = items.find(item => item.label === 'Курінь');
         const panelItem = items.find(item => item.label === 'Panel');
         const usersItem = items.find(item => item.label === 'Users');
 
@@ -159,7 +159,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const kurinItem = items.find(item => item.label === 'Kurin');
+        const kurinItem = items.find(item => item.label === 'Курінь');
         const panelItem = items.find(item => item.label === 'Panel');
         const usersItem = items.find(item => item.label === 'Users');
 
@@ -180,14 +180,14 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const kurinRelatedItems = items.filter(item => 
-          item.label === 'Kurin' || 
-          item.label === 'Groups' || 
-          item.label === 'All Members' || 
-          item.label === 'Settings'
+          item.label === 'Курінь' || 
+          item.label === 'Гуртки' || 
+          item.label === 'Всі учасники' || 
+          item.label === 'Налаштування'
         );
 
         kurinRelatedItems.forEach(item => {
-          if (item.label === 'Kurin') {
+          if (item.label === 'Курінь') {
             expect(item.disabled).toBeTrue();
           }
         });
@@ -210,7 +210,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const kurinItem = items.find(item => item.label === 'Kurin');
+        const kurinItem = items.find(item => item.label === 'Курінь');
         
         if (kurinItem?.command) {
           kurinItem.command({});
@@ -301,7 +301,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const kurinItem = items.find(item => item.label === 'Kurin');
+        const kurinItem = items.find(item => item.label === 'Курінь');
         
         if (kurinItem?.command) {
           kurinItem.command({});
@@ -384,7 +384,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        expect(items.find(item => item.label === 'Kurin')?.visible).toBeTrue();
+        expect(items.find(item => item.label === 'Курінь')?.visible).toBeTrue();
         expect(items.find(item => item.label === 'Panel')?.visible).toBeFalse();
 
         const adminState: AuthState = {
@@ -399,7 +399,7 @@ describe('SidebarMenu', () => {
         });
 
         component.items$.subscribe(newItems => {
-          expect(newItems.find(item => item.label === 'Kurin')?.visible).toBeFalse();
+          expect(newItems.find(item => item.label === 'Курінь')?.visible).toBeFalse();
           expect(newItems.find(item => item.label === 'Panel')?.visible).toBeTrue();
           done();
         });
@@ -416,7 +416,7 @@ describe('SidebarMenu', () => {
         if (authStateSubject.value === null) {
           expect(items.find(item => item.label === 'Panel')?.visible).toBeTrue();
         } else {
-          expect(items.find(item => item.label === 'Kurin')?.visible).toBeTrue();
+          expect(items.find(item => item.label === 'Курінь')?.visible).toBeTrue();
         }
       });
 
