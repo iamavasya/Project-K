@@ -7,14 +7,16 @@
   [style]="{ width: '30rem' }"
   [header]="header() | titlecase">
 
-  <ng-container *ngIf="isDeleteMode(); else formBlock">
+  @if (isDeleteMode()) {
     <div style="padding: .5rem 0 1rem;">
       <p>
         Ви впевнені, що хочете видалити
         <strong>{{ config.entityType | titlecase }}</strong>
-        <ng-container *ngIf="entity">
-          <ng-container *ngIf="entity.kurinKey"> ({{ entity.kurinKey }}) </ng-container>
-        </ng-container>
+        @if (entity) {
+          @if (entity.kurinKey) {
+            ({{ entity.kurinKey }})
+          }
+        }
         ?
       </p>
       <p style="font-size: .8rem; opacity: .65;">Цю дію неможливо скасувати.</p>
@@ -23,56 +25,64 @@
       <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
       <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()"></p-button>
     </div>
-  </ng-container>
+  } @else {
+    @if (ready) {
+      <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()">
+        @for (f of config.fields; track f) {
+          @if (!isHidden(f)) {
+            <div class="field">
+              <span>{{ f.label }} @if (f.required) {
+                <span class="req">*</span>
+              }</span>
+              @switch (f.type) {
+                @case ('text') {
+                  <input
+                    #autoField
+                    pInputText
+                    [placeholder]="f.placeholder"
+                    [formControlName]="f.name" />
+                }
+                @case ('number') {
+                  <input
+                    #autoField
+                    pInputText
+                    type="number"
+                    [placeholder]="f.placeholder"
+                    [formControlName]="f.name" />
+                }
+                @case ('textarea') {
+                  <textarea
+                    #autoField
+                    pInputText
+                    rows="3"
+                    [placeholder]="f.placeholder"
+                  [formControlName]="f.name"></textarea>
+                }
+              }
+              @if (form.get(f.name)?.touched && form.get(f.name)?.invalid) {
+                <small class="error">
+                  Поле обов'язкове
+                </small>
+              }
+            </div>
+          }
+        }
+        @if (visibleFields().length === 0) {
+          <div style="opacity:.6; font-size:.8rem;">
+            Немає полів для цієї дії.
+          </div>
+        }
+        <div class="actions">
+          <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
+          <p-button
+            type="submit"
+            [label]="actionLabel()"
+            [disabled]="parameter !== 'delete' && form.invalid">
+          </p-button>
+        </div>
+      </form>
+    }
+  }
 
   <!-- Режими CREATE / UPDATE -->
-  <ng-template #formBlock>
-    <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()" *ngIf="ready">
-      <ng-container *ngFor="let f of config.fields">
-        <div class="field" *ngIf="!isHidden(f)">
-          <span>{{ f.label }} <span *ngIf="f.required" class="req">*</span></span>
-
-          <ng-container [ngSwitch]="f.type">
-            <input
-              *ngSwitchCase="'text'"
-              #autoField
-              pInputText
-              [placeholder]="f.placeholder"
-              [formControlName]="f.name" />
-            <input
-              *ngSwitchCase="'number'"
-              #autoField
-              pInputText
-              type="number"
-              [placeholder]="f.placeholder"
-              [formControlName]="f.name" />
-            <textarea
-              *ngSwitchCase="'textarea'"
-              #autoField
-              pInputText
-              rows="3"
-              [placeholder]="f.placeholder"
-              [formControlName]="f.name"></textarea>
-          </ng-container>
-
-          <small class="error" *ngIf="form.get(f.name)?.touched && form.get(f.name)?.invalid">
-            Поле обов'язкове
-          </small>
-        </div>
-      </ng-container>
-
-      <div *ngIf="visibleFields().length === 0" style="opacity:.6; font-size:.8rem;">
-        Немає полів для цієї дії.
-      </div>
-
-      <div class="actions">
-        <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
-        <p-button
-          type="submit"
-          [label]="actionLabel()"
-          [disabled]="parameter !== 'delete' && form.invalid">
-        </p-button>
-      </div>
-    </form>
-  </ng-template>
 </p-dialog>

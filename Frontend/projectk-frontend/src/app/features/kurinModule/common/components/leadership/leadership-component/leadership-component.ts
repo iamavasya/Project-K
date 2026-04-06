@@ -9,7 +9,7 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, For
 import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
-import { CommonModule } from '@angular/common';
+
 import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from "primeng/button";
 import { InputTextModule } from 'primeng/inputtext';
@@ -41,11 +41,19 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
 @Component({
   selector: 'app-leadership-component',
   imports: [
-    CommonModule, ReactiveFormsModule, FormsModule,
-    TableModule, DatePickerModule, ButtonModule, SelectModule, 
-    InputTextModule, TooltipModule, ProgressSpinnerModule,
-    ToggleSwitchModule, IconFieldModule, InputIconModule
-  ],
+    ReactiveFormsModule,
+    FormsModule,
+    TableModule,
+    DatePickerModule,
+    ButtonModule,
+    SelectModule,
+    InputTextModule,
+    TooltipModule,
+    ProgressSpinnerModule,
+    ToggleSwitchModule,
+    IconFieldModule,
+    InputIconModule
+],
   templateUrl: './leadership-component.html',
 })
 export class LeadershipComponent implements OnInit {

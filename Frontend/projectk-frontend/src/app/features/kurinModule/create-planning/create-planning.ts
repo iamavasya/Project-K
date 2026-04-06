@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -24,123 +24,125 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
   selector: 'app-create-planning',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, 
-    InputTextModule, InputNumberModule, DatePickerModule, SelectModule, 
-    ButtonModule, PanelModule, DividerModule, FloatLabelModule
-  ],
+    ReactiveFormsModule,
+    InputTextModule,
+    InputNumberModule,
+    DatePickerModule,
+    SelectModule,
+    ButtonModule,
+    PanelModule,
+    DividerModule,
+    FloatLabelModule
+],
   template: `
     <div class="max-w-5xl mx-auto p-6">
       <div class="flex items-center gap-4 mb-6">
         <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()" />
         <h1 class="text-2xl font-bold">Нове планування</h1>
       </div>
-
+    
       <form [formGroup]="form" (ngSubmit)="submit()">
-        
+    
         <p-panel header="Основні налаштування" styleClass="mb-6">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+    
             <div class="flex flex-col gap-2">
               <label for="planning-name" class="font-semibold">Назва сесії</label>
               <input id="planning-name" pInputText formControlName="name" placeholder="Напр. Літо 2025" />
             </div>
-
+    
             <div class="flex flex-col gap-2">
               <label for="planning-duration" class="font-semibold">Тривалість (днів)</label>
               <p-input-number inputId="planning-duration" formControlName="durationDays" [min]="1" [max]="30" [showButtons]="true" />
             </div>
-
+    
             <div class="flex flex-col gap-2">
               <label for="planning-search-range" class="font-semibold">Вікно пошуку</label>
-              <p-datepicker 
+              <p-datepicker
                 inputId="planning-search-range"
-                formControlName="searchRange" 
-                selectionMode="range" 
+                formControlName="searchRange"
+                selectionMode="range"
                 [showIcon]="true"
                 dateFormat="dd.mm.yy"
                 placeholder="Виберіть період" />
-            </div>
-          </div>
-        </p-panel>
-
-        <p-panel header="Учасники та Зайнятість">
-          <div formArrayName="participants" class="flex flex-col gap-4">
-            
-            <div *ngFor="let p of participantsArray.controls; let i = index" [formGroupName]="i" 
-                 class="p-4 border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-              
-              <div class="flex flex-wrap md:flex-nowrap gap-4 items-start">
-                
-                <div class="w-full md:w-1/4 flex flex-col gap-3">
-                  <div class="font-bold text-lg text-slate-800">
-                    {{ p.get('fullName')?.value }}
-                  </div>
-                  
-                  <div class="flex flex-col gap-1">
-                    <label [for]="'participant-role-weight-' + i" class="text-sm text-slate-500">Важливість голосу</label>
-                    <p-select 
-                      [inputId]="'participant-role-weight-' + i"
-                      formControlName="roleWeight" 
-                      [options]="weightOptions" 
-                      optionLabel="label" 
-                      optionValue="value" 
-                      class="w-full" />
-                  </div>
-                </div>
-
-                <div class="hidden md:block w-px bg-slate-200 self-stretch mx-2"></div>
-
-                <div class="flex-1">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-slate-600">
-                      Коли ця людина ЗАЙНЯТА?
-                    </span>
-                    <p-button 
-                      label="Додати період" 
-                      icon="pi pi-plus" 
-                      size="small" 
-                      [outlined]="true" 
-                      (click)="addBusyRange(i)" />
-                  </div>
-
-                  <div formArrayName="busyRanges" class="flex flex-col gap-2">
-                    <div *ngFor="let range of getBusyRanges(i).controls; let j = index" [formGroupName]="j" 
-                         class="flex items-center gap-2">
-                      
-                      <p-datepicker 
-                        formControlName="range" 
-                        selectionMode="range" 
-                        [readonlyInput]="true"
-                        placeholder="Виберіть дати"
-                        appendTo="body"
-                        [style]="{'width':'240px'}" />
-                      
-                      <p-button 
-                        icon="pi pi-trash" 
-                        severity="danger" 
-                        [text]="true" 
-                        (click)="removeBusyRange(i, j)" />
-                    </div>
-                    
-                    <div *ngIf="getBusyRanges(i).length === 0" class="text-sm text-slate-400 italic py-2">
-                      Зазначте дати, якщо людина має плани...
-                    </div>
-                  </div>
-                </div>
-
               </div>
             </div>
-
-          </div>
-        </p-panel>
-
-        <div class="flex justify-end gap-4 mt-6 pb-10">
-          <p-button label="Скасувати" severity="secondary" (click)="goBack()" />
-          <p-button label="Створити та Розрахувати" icon="pi pi-cog" type="submit" [loading]="loading" />
-        </div>
-      </form>
-    </div>
-  `
+          </p-panel>
+    
+          <p-panel header="Учасники та Зайнятість">
+            <div formArrayName="participants" class="flex flex-col gap-4">
+    
+              @for (p of participantsArray.controls; track p; let i = $index) {
+                <div [formGroupName]="i"
+                  class="p-4 border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div class="flex flex-wrap md:flex-nowrap gap-4 items-start">
+                    <div class="w-full md:w-1/4 flex flex-col gap-3">
+                      <div class="font-bold text-lg text-slate-800">
+                        {{ p.get('fullName')?.value }}
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <label [for]="'participant-role-weight-' + i" class="text-sm text-slate-500">Важливість голосу</label>
+                        <p-select
+                          [inputId]="'participant-role-weight-' + i"
+                          formControlName="roleWeight"
+                          [options]="weightOptions"
+                          optionLabel="label"
+                          optionValue="value"
+                          class="w-full" />
+                        </div>
+                      </div>
+                      <div class="hidden md:block w-px bg-slate-200 self-stretch mx-2"></div>
+                      <div class="flex-1">
+                        <div class="flex justify-between items-center mb-2">
+                          <span class="text-sm font-semibold text-slate-600">
+                            Коли ця людина ЗАЙНЯТА?
+                          </span>
+                          <p-button
+                            label="Додати період"
+                            icon="pi pi-plus"
+                            size="small"
+                            [outlined]="true"
+                            (click)="addBusyRange(i)" />
+                          </div>
+                          <div formArrayName="busyRanges" class="flex flex-col gap-2">
+                            @for (range of getBusyRanges(i).controls; track range; let j = $index) {
+                              <div [formGroupName]="j"
+                                class="flex items-center gap-2">
+                                <p-datepicker
+                                  formControlName="range"
+                                  selectionMode="range"
+                                  [readonlyInput]="true"
+                                  placeholder="Виберіть дати"
+                                  appendTo="body"
+                                  [style]="{'width':'240px'}" />
+                                  <p-button
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    [text]="true"
+                                    (click)="removeBusyRange(i, j)" />
+                                  </div>
+                                }
+                                @if (getBusyRanges(i).length === 0) {
+                                  <div class="text-sm text-slate-400 italic py-2">
+                                    Зазначте дати, якщо людина має плани...
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+    
+                    </div>
+                  </p-panel>
+    
+                  <div class="flex justify-end gap-4 mt-6 pb-10">
+                    <p-button label="Скасувати" severity="secondary" (click)="goBack()" />
+                    <p-button label="Створити та Розрахувати" icon="pi pi-cog" type="submit" [loading]="loading" />
+                  </div>
+                </form>
+              </div>
+    `
 })
 export class CreatePlanningComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
