@@ -1,0 +1,43 @@
+<article class="mini-member-card group relative overflow-hidden rounded-2xl p-3">
+    <div class="mini-member-card__photo-shell relative overflow-hidden rounded-xl">
+        <img
+            src="{{ member.profilePhotoUrl || 'https://placehold.co/480x360?text=Member+Photo' }}"
+            alt="{{ member.firstName }} {{ member.lastName }}"
+            class="h-full w-full object-cover"
+        />
+
+        <div class="mini-member-card__overlay absolute inset-0 flex items-end justify-end p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <p-button
+                label="Перейти"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                severity="contrast"
+                size="small"
+                styleClass="!rounded-lg !px-3 !py-1.5 !text-xs"
+                (onClick)="onNavigate()"
+            ></p-button>
+        </div>
+    </div>
+
+    <div class="mt-3 space-y-2">
+        <div class="flex items-start justify-between gap-2">
+            <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
+                {{ member.firstName }} {{ member.lastName }}
+            </h4>
+
+            <p-tag
+                [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
+                severity="info"
+                styleClass="!rounded-full !px-2.5 !py-1 !text-[10px] !font-semibold"
+            ></p-tag>
+        </div>
+
+        <p class="mini-member-card__meta text-sm">
+            {{ member.phoneNumber || 'Телефон не вказано' }}
+        </p>
+
+        <p class="mini-member-card__meta text-sm">
+            {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Дата народження не вказана' }}
+        </p>
+    </div>
+</article>

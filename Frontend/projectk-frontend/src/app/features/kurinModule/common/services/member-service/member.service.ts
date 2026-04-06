@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
+import { mapMemberForView } from '../../functions/memberViewMapper.function';
 
 @Injectable({
   providedIn: 'root'
@@ -15,16 +16,22 @@ export class MemberService {
   private readonly guidNull = '00000000-0000-0000-0000-000000000000';
 
   getByKey(id: string): Observable<MemberDto> {
-    return this.http.get<MemberDto>(`${this.apiUrl}/${id}`);
+    return this.http.get<MemberDto>(`${this.apiUrl}/${id}`).pipe(
+      map(member => mapMemberForView(member))
+    );
   }
 
   getAll(groupKey?: string, kurinKey?: string): Observable<MemberDto[]> {
-    return this.http.get<MemberDto[]>(`${this.apiUrl}/members`, { params: { groupKey: groupKey ?? this.guidNull, kurinKey: kurinKey ?? this.guidNull } });
+    return this.http.get<MemberDto[]>(`${this.apiUrl}/members`, { params: { groupKey: groupKey ?? this.guidNull, kurinKey: kurinKey ?? this.guidNull } }).pipe(
+      map(members => members.map(member => mapMemberForView(member)))
+    );
   }
 
   update(memberKey: string, request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
     const formData = this.buildFormData(request, file);
-    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}`, formData);
+    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}`, formData).pipe(
+      map(member => mapMemberForView(member))
+    );
   }
 
   delete(memberKey: string): Observable<void> {
@@ -33,7 +40,9 @@ export class MemberService {
 
   create(request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
     const formData = this.buildFormData(request, file);
-    return this.http.post<MemberDto>(`${this.apiUrl}`, formData);
+    return this.http.post<MemberDto>(`${this.apiUrl}`, formData).pipe(
+      map(member => mapMemberForView(member))
+    );
   }
 
   getKVMembers(kurinKey: string): Observable<MemberLookupDto[]> {

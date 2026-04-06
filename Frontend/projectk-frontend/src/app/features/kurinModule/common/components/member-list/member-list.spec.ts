@@ -85,6 +85,7 @@ describe('MemberList', () => {
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith('g1');
       expect(component.membersLookup.length).toBe(1);
+      expect(component.membersLookup[0].phoneNumber).toBeUndefined();
     });
 
     it('should load members for kurin type', () => {
@@ -182,6 +183,84 @@ describe('MemberList', () => {
     it('getRoleDisplayName should return role name', () => {
         const role = LeadershipRole.Kurinnuy;
         expect(component.getRoleDisplayName(role)).toBeTruthy();
+    });
+  });
+
+  describe('Group card mode', () => {
+    beforeEach(() => {
+      component.type = 'group';
+      component.typeKey = 'g1';
+      memberServiceSpy.getAll.and.returnValue(of([
+        {
+          memberKey: 'm1',
+          firstName: 'John',
+          lastName: 'Doe',
+          middleName: 'M',
+          phoneNumber: '111',
+          latestPlastLevelDisplay: 'пл. уч.'
+        } as MemberDto,
+        {
+          memberKey: 'm2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          middleName: 'A',
+          phoneNumber: '222',
+          latestPlastLevelDisplay: 'ст. пл. скоб'
+        } as MemberDto
+      ]));
+      component.ngOnInit();
+    });
+
+    it('should filter members by search query', () => {
+      component.memberSearchQuery = 'smith';
+      expect(component.filteredMembersLookup.length).toBe(1);
+      expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
+    });
+
+    it('should filter by plast level localized label', () => {
+      component.memberSearchQuery = 'скоб';
+      expect(component.filteredMembersLookup.length).toBe(1);
+      expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
+    });
+
+    it('should restore card view state from session storage for current group key', () => {
+      const getItemSpy = spyOn(window.sessionStorage, 'getItem').and.returnValue('true');
+
+      component.type = 'group';
+      component.typeKey = 'g42';
+      component.ngOnInit();
+
+      expect(getItemSpy).toHaveBeenCalledWith('member-list:group-card-view:g42');
+      expect(component.showGroupCardView).toBeTrue();
+    });
+
+    it('should persist card view state to session storage on toggle change', () => {
+      const setItemSpy = spyOn(window.sessionStorage, 'setItem');
+
+      component.type = 'group';
+      component.typeKey = 'g77';
+      component.showGroupCardView = true;
+      component.onGroupCardViewToggleChange();
+
+      expect(setItemSpy).toHaveBeenCalledWith('member-list:group-card-view:g77', 'true');
+    });
+
+    it('should set hasUpcomingBirthdays to false when no birthdays within 30 days', () => {
+      memberServiceSpy.getAll.and.returnValue(of([
+        {
+          memberKey: 'm1',
+          firstName: 'John',
+          lastName: 'Doe',
+          middleName: 'M',
+          dateOfBirth: '2000-12-31'
+        } as MemberDto
+      ]));
+
+      component.type = 'group';
+      component.typeKey = 'g1';
+      component.ngOnInit();
+
+      expect(component.hasUpcomingBirthdays).toBeFalse();
     });
   });
 });

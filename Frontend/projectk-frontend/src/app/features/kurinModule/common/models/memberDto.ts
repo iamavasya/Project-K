@@ -11,6 +11,10 @@ export interface MemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: Date | null;
+    address?: string | null;
+    school?: string | null;
+    latestPlastLevel?: string | null;
+    latestPlastLevelDisplay?: string | null;
     plastLevelHistories: PlastLevelHistoryDto[];
     leadershipHistories: LeadershipHistoryDto[];
     profilePhotoUrl: string | null;

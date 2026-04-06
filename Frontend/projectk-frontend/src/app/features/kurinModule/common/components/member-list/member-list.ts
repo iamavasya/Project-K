@@ -16,6 +16,9 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/roleDisplayName';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';
+import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
+import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcoming-birthdays-tile';
+import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 
 @Component({
   selector: 'app-member-list',
@@ -29,7 +32,9 @@ import { FormsModule } from '@angular/forms';
     TagModule,
     TooltipModule,
     ToggleSwitchModule,
-    FormsModule
+    FormsModule,
+    MiniMemberCardComponent,
+    UpcomingBirthdaysTileComponent
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
@@ -39,6 +44,9 @@ export class MemberList implements OnInit {
   @Input() type: 'kurin' | 'group' | 'leadership' = 'group';
   @Input() leadershipType: 'kurin' | 'group' | 'kv' = 'group';
   @Input() typeKey = '';
+
+  private readonly groupCardViewStorageKeyPrefix = 'member-list:group-card-view';
+  private readonly upcomingBirthdaysWindowDays = 30;
 
   private readonly memberService = inject(MemberService);
   private readonly leadershipService = inject(LeadershipService);
@@ -51,6 +59,9 @@ export class MemberList implements OnInit {
   allHistories: LeadershipHistoryDto[] = [];
 
   showArchived = false;
+  showGroupCardView = false;
+  hasUpcomingBirthdays = false;
+  memberSearchQuery = '';
 
   selectedMember: MemberLookupDto | null = null;
 
@@ -59,7 +70,10 @@ export class MemberList implements OnInit {
 
     switch (this.type) {
       case 'kurin':
+        this.loadMembers();
+        break;
       case 'group':
+        this.restoreGroupCardViewState();
         this.loadMembers();
         break;
       case 'leadership':
@@ -80,9 +94,77 @@ export class MemberList implements OnInit {
           firstName: m.firstName,
           lastName: m.lastName,
           middleName: m.middleName,
+          profilePhotoUrl: m.profilePhotoUrl,
+          latestPlastLevel: m.latestPlastLevel ?? null,
+          latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
+          phoneNumber: m.phoneNumber,
+          dateOfBirth: m.dateOfBirth
         }));
+        this.hasUpcomingBirthdays = buildUpcomingBirthdays(this.membersLookup, this.upcomingBirthdaysWindowDays).length > 0;
       }
     });
+  }
+
+  get upcomingBirthdaysDaysAhead(): number {
+    return this.upcomingBirthdaysWindowDays;
+  }
+
+  get filteredMembersLookup(): MemberLookupDto[] {
+    const query = this.memberSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return this.membersLookup;
+    }
+
+    return this.membersLookup.filter(member => {
+      const fullName = `${member.lastName} ${member.firstName} ${member.middleName ?? ''}`.toLowerCase();
+      const latestPlastLevel = (member.latestPlastLevelDisplay ?? member.latestPlastLevel ?? '').toLowerCase();
+      const phoneNumber = (member.phoneNumber ?? '').toLowerCase();
+
+      return fullName.includes(query)
+        || latestPlastLevel.includes(query)
+        || phoneNumber.includes(query);
+    });
+  }
+
+  onGroupCardViewToggleChange(): void {
+    if (this.type !== 'group') {
+      return;
+    }
+
+    this.persistGroupCardViewState();
+  }
+
+  private getGroupCardViewStorageKey(): string {
+    return `${this.groupCardViewStorageKeyPrefix}:${this.typeKey}`;
+  }
+
+  private restoreGroupCardViewState(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const savedValue = window.sessionStorage.getItem(this.getGroupCardViewStorageKey());
+      if (savedValue === null) {
+        return;
+      }
+
+      this.showGroupCardView = savedValue === 'true';
+    } catch {
+      // Ignore storage access errors (private mode / blocked storage).
+    }
+  }
+
+  private persistGroupCardViewState(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(this.getGroupCardViewStorageKey(), String(this.showGroupCardView));
+    } catch {
+      // Ignore storage access errors (private mode / blocked storage).
+    }
   }
 
   private loadLeadership(): void {

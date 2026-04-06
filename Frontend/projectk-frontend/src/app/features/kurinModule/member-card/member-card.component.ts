@@ -4,10 +4,11 @@ import { MemberDto } from '../common/models/memberDto';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-member-card',
-  imports: [SkeletonModule, ButtonModule],
+  imports: [SkeletonModule, ButtonModule, TagModule],
   templateUrl: './member-card.component.html',
   styleUrl: './member-card.component.css'
 })

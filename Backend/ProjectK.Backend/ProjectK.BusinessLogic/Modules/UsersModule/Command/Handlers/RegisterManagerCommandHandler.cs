@@ -38,6 +38,15 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 var kurinResult = await _mediator.Send(new UpsertKurin(request.KurinNumber), cancellationToken);
                 
                 // Step 2: Register the user
+                
+                // TODO:
+                // Check if the user is created
+                // True:
+                //      Skip, add new kurinKey to user. (Need to make an array for this)
+                // False:
+                //      Register
+                
+                // BEST PRACTICE: Make a transaction for kurin, not for manager.
                 var userResult = await _mediator.Send(new RegisterUserCommand
                 {
                     Email = request.Email,

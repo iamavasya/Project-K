@@ -1,20 +1,43 @@
-.member-card {
-    display: flex;
-    flex-direction: row;
-    gap: 1.5rem;
-    padding: 1rem;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 60%;
-    font-size: 18px;
-
-    .member-card-edit {
-        margin-left: auto;
-    }
+.member-tile {
+    border: 1px solid var(--p-content-border-color);
+    background: var(--p-content-background);
+    box-shadow: 0 8px 26px -20px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
 }
-.member-card-container {
-    display: flex;
-    justify-content: center;
+
+.member-profile-tile {
+    position: relative;
+}
+
+.member-photo-frame {
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 0.8rem;
+    background: color-mix(in srgb, var(--p-content-background) 88%, var(--p-primary-100) 12%);
+}
+
+.member-photo {
+    border: 1px solid color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+}
+
+.member-name,
+.member-summary-value {
+    color: var(--p-text-color);
+}
+
+.member-middle-name,
+.member-summary-label {
+    color: var(--p-text-muted-color);
+}
+
+.member-summary-line {
+    line-height: 1.25rem;
+}
+
+.member-actions {
+    align-self: flex-start;
+}
+
+@media (max-width: 767px) {
+    .member-actions {
+        margin-top: 0.25rem;
+    }
 }

@@ -2,3 +2,17 @@
     display: flex;
     align-items: center;
 }
+
+.member-view-shell {
+    background: transparent;
+}
+
+.member-card-toggle span {
+    color: var(--p-text-muted-color);
+}
+
+.member-empty-state {
+    border: 1px dashed var(--p-content-border-color);
+    color: var(--p-text-muted-color);
+    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-primary-100) 10%);
+}
