@@ -2,6 +2,7 @@
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.UnitOfWork;
@@ -21,6 +22,10 @@ namespace ProjectK.API
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IMemberRepository, MemberRepository>();
             services.AddScoped<ILeadershipRepository, LeadershipRepository>();
+
+            // Probes and badges read-only catalog services.
+            services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
+            services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
             return services;
         }
     }
