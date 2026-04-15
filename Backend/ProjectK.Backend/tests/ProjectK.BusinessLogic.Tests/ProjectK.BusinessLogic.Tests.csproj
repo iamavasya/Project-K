@@ -28,7 +28,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProjectK.API\ProjectK.API.csproj" />
+    <ProjectReference Include="..\..\ProjectK.API\ProjectK.API.csproj" />
+    <ProjectReference Include="..\..\ProjectK.BusinessLogic\ProjectK.BusinessLogic.csproj" />
+    <ProjectReference Include="..\..\ProjectK.Common\ProjectK.Common.csproj" />
+    <ProjectReference Include="..\..\ProjectK.Infrastructure\ProjectK.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

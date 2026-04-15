@@ -131,7 +131,8 @@ namespace ProjectK.API.Tests.Controllers
             var request = new CheckEntityAccessRequest
             {
                 EntityType = "TestEntity",
-                EntityKey = "123"
+                EntityKey = "123",
+                ActiveKurinKey = Guid.NewGuid().ToString()
             };
 
             var serviceResult = new ServiceResult<bool>(ResultType.Success, true);
@@ -146,6 +147,13 @@ namespace ProjectK.API.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result);
             var boolValue = (bool)okResult.Value!;
             Assert.True(boolValue);
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<CheckEntityAccessQuery>(q =>
+                    q.EntityType == request.EntityType
+                    && q.EntityKey == request.EntityKey
+                    && q.ActiveKurinKey == null),
+                default), Times.Once);
         }
     }
 }
