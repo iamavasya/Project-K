@@ -107,6 +107,11 @@ public class ResourceAccessService : IResourceAccessService
                 return ResourceAccessDecision.Allow("User may update own member profile; validating ownership.");
             }
 
+            if (resourceType == ResourceType.BadgeProgress && action is ResourceAction.Create or ResourceAction.Update)
+            {
+                return ResourceAccessDecision.Allow("User may submit own badge progress; validating ownership.");
+            }
+
             if (resourceType == ResourceType.Member && action == ResourceAction.Manage)
             {
                 return ResourceAccessDecision.Deny("User role is limited to read access.");
@@ -158,10 +163,10 @@ public class ResourceAccessService : IResourceAccessService
                 await FromLeadershipAsync(resourceKey, cancellationToken),
 
             ResourceType.ProbeProgress =>
-                ResourceAccessScopeResolution.Deny("ProbeProgress resource scope resolution is not implemented yet."),
+                await FromProbeProgressAsync(resourceKey, cancellationToken),
 
             ResourceType.BadgeProgress =>
-                ResourceAccessScopeResolution.Deny("BadgeProgress resource scope resolution is not implemented yet."),
+                await FromBadgeProgressAsync(resourceKey, cancellationToken),
 
             _ => ResourceAccessScopeResolution.Deny("Unsupported resource type.")
         };
@@ -222,6 +227,40 @@ public class ResourceAccessService : IResourceAccessService
         return ResourceAccessScopeResolution.Allow(group.KurinKey, group.GroupKey, null);
     }
 
+    private async Task<ResourceAccessScopeResolution> FromProbeProgressAsync(Guid probeProgressKey, CancellationToken cancellationToken)
+    {
+        var probeProgress = await _unitOfWork.ProbeProgresses.GetByKeyAsync(probeProgressKey, cancellationToken);
+        if (probeProgress is null)
+        {
+            return ResourceAccessScopeResolution.Deny("ProbeProgress resource was not found.");
+        }
+
+        var member = await _unitOfWork.Members.GetByKeyAsync(probeProgress.MemberKey, cancellationToken);
+        if (member is null)
+        {
+            return ResourceAccessScopeResolution.Deny("ProbeProgress member scope could not be resolved.");
+        }
+
+        return ResourceAccessScopeResolution.Allow(member.KurinKey, member.GroupKey, member.UserKey);
+    }
+
+    private async Task<ResourceAccessScopeResolution> FromBadgeProgressAsync(Guid badgeProgressKey, CancellationToken cancellationToken)
+    {
+        var badgeProgress = await _unitOfWork.BadgeProgresses.GetByKeyAsync(badgeProgressKey, cancellationToken);
+        if (badgeProgress is null)
+        {
+            return ResourceAccessScopeResolution.Deny("BadgeProgress resource was not found.");
+        }
+
+        var member = await _unitOfWork.Members.GetByKeyAsync(badgeProgress.MemberKey, cancellationToken);
+        if (member is null)
+        {
+            return ResourceAccessScopeResolution.Deny("BadgeProgress member scope could not be resolved.");
+        }
+
+        return ResourceAccessScopeResolution.Allow(member.KurinKey, member.GroupKey, member.UserKey);
+    }
+
     private async Task<ResourceAccessDecision> EvaluateRoleSpecificScopeRulesAsync(
         ResourceType resourceType,
         ResourceAction action,
@@ -269,6 +308,20 @@ public class ResourceAccessService : IResourceAccessService
                 }
             }
 
+            if (resourceType is ResourceType.ProbeProgress or ResourceType.BadgeProgress)
+            {
+                var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
+                if (mentorGroupKey is null)
+                {
+                    return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
+                }
+
+                if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey.Value)
+                {
+                    return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from own group.");
+                }
+            }
+
             return ResourceAccessDecision.Allow("Mentor scoped checks passed.");
         }
 
@@ -285,6 +338,22 @@ public class ResourceAccessService : IResourceAccessService
             if (!scopeResolution.MemberUserKey.HasValue || scopeResolution.MemberUserKey.Value != currentUserId.Value)
             {
                 return ResourceAccessDecision.Deny("User can update only own member profile.");
+            }
+        }
+
+        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue())
+            && resourceType is ResourceType.BadgeProgress or ResourceType.ProbeProgress
+            && action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update)
+        {
+            var currentUserId = _currentUserContext.UserId;
+            if (currentUserId is null)
+            {
+                return ResourceAccessDecision.Deny("Current user id claim is missing.");
+            }
+
+            if (!scopeResolution.MemberUserKey.HasValue || scopeResolution.MemberUserKey.Value != currentUserId.Value)
+            {
+                return ResourceAccessDecision.Deny("User can access only own progress resources.");
             }
         }
 

@@ -5,7 +5,9 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -251,14 +253,49 @@ public class ResourceAccessServiceTests
     }
 
     [Fact]
-    public async Task ProbeProgressScopeResolution_ShouldReturnDeterministicDeny()
+    public async Task ProbeProgressScopeResolution_ShouldAllow_WhenMemberInSameKurin()
     {
-        var fixture = CreateFixture(true, Guid.NewGuid(), null, UserRole.Manager);
+        var kurinKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var probeProgressKey = Guid.NewGuid();
 
-        var decision = await fixture.Service.CheckAccessAsync(ResourceType.ProbeProgress, ResourceAction.Read, Guid.NewGuid());
+        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+
+        fixture.ProbeProgresses
+            .Setup(repo => repo.GetByKeyAsync(probeProgressKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProbeProgress { ProbeProgressKey = probeProgressKey, MemberKey = memberKey });
+
+        fixture.Members
+            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.ProbeProgress, ResourceAction.Read, probeProgressKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task BadgeProgressScopeResolution_ShouldDeny_WhenMemberInForeignKurin()
+    {
+        var userKurinKey = Guid.NewGuid();
+        var foreignKurinKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var badgeProgressKey = Guid.NewGuid();
+
+        var fixture = CreateFixture(true, userKurinKey, null, UserRole.Manager);
+
+        fixture.BadgeProgresses
+            .Setup(repo => repo.GetByKeyAsync(badgeProgressKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BadgeProgress { BadgeProgressKey = badgeProgressKey, MemberKey = memberKey });
+
+        fixture.Members
+            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = foreignKurinKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Read, badgeProgressKey);
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("not implemented", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("different kurin", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     private static ResourceAccessFixture CreateFixture(
@@ -293,6 +330,8 @@ public class ResourceAccessServiceTests
         var kurins = new Mock<IKurinRepository>();
         var leaderships = new Mock<ILeadershipRepository>();
         var planningSessions = new Mock<IPlanningSessionRepository>();
+        var badgeProgresses = new Mock<IBadgeProgressRepository>();
+        var probeProgresses = new Mock<IProbeProgressRepository>();
 
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.Members).Returns(members.Object);
@@ -300,6 +339,8 @@ public class ResourceAccessServiceTests
         unitOfWork.SetupGet(x => x.Kurins).Returns(kurins.Object);
         unitOfWork.SetupGet(x => x.Leaderships).Returns(leaderships.Object);
         unitOfWork.SetupGet(x => x.PlanningSessions).Returns(planningSessions.Object);
+        unitOfWork.SetupGet(x => x.BadgeProgresses).Returns(badgeProgresses.Object);
+        unitOfWork.SetupGet(x => x.ProbeProgresses).Returns(probeProgresses.Object);
 
         if (kurinKey.HasValue)
         {
@@ -318,7 +359,7 @@ public class ResourceAccessServiceTests
         }
 
         var service = new ResourceAccessService(unitOfWork.Object, currentUserContext.Object);
-        return new ResourceAccessFixture(service, members, groups, kurins, leaderships, planningSessions);
+        return new ResourceAccessFixture(service, members, groups, kurins, leaderships, planningSessions, badgeProgresses, probeProgresses);
     }
 
     private sealed record ResourceAccessFixture(
@@ -327,5 +368,7 @@ public class ResourceAccessServiceTests
         Mock<IGroupRepository> Groups,
         Mock<IKurinRepository> Kurins,
         Mock<ILeadershipRepository> Leaderships,
-        Mock<IPlanningSessionRepository> PlanningSessions);
+        Mock<IPlanningSessionRepository> PlanningSessions,
+        Mock<IBadgeProgressRepository> BadgeProgresses,
+        Mock<IProbeProgressRepository> ProbeProgresses);
 }

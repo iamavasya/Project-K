@@ -2,6 +2,7 @@
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.API.Helpers;
@@ -28,6 +29,8 @@ namespace ProjectK.API
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IMemberRepository, MemberRepository>();
             services.AddScoped<ILeadershipRepository, LeadershipRepository>();
+            services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
+            services.AddScoped<IProbeProgressRepository, ProbeProgressRepository>();
 
             // Probes and badges read-only catalog services.
             services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
