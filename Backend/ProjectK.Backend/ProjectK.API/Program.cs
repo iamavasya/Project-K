@@ -138,6 +138,9 @@ namespace ProjectK.API
 
             builder.Services.AddWolfPackOptimization();
 
+            builder.Services.Configure<SecurityPatchOptions>(
+                builder.Configuration.GetSection("SecurityPatch"));
+
             // Read-only badges/probes catalogs.
             builder.Services.AddProbeAndBadgesApi(options =>
             {

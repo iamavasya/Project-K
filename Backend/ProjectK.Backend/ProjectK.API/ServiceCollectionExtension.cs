@@ -3,6 +3,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.API.Helpers;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.UnitOfWork;
@@ -13,9 +14,12 @@ namespace ProjectK.API
     {
         public static IServiceCollection AddProjectDependencies(this IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
+
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();
