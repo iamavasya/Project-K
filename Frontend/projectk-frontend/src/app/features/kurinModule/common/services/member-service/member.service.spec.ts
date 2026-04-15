@@ -10,7 +10,6 @@ describe('MemberService', () => {
   let httpMock: HttpTestingController;
 
   const apiUrl = `${environment.apiUrl}/member`;
-  const guidNull = '00000000-0000-0000-0000-000000000000';
 
   const sampleUpsert: UpsertMemberDto = {
     groupKey: 'group-1',
@@ -65,34 +64,42 @@ describe('MemberService', () => {
     req.flush(sampleMember);
   });
 
-  it('getAll should send provided groupKey & kurinKey', () => {
+  it('getAll should call group members endpoint when groupKey is provided', () => {
     const groupKey = 'g1';
-    const kurinKey = 'k1';
 
-    service.getAll(groupKey, kurinKey).subscribe(res => {
+    service.getAll(groupKey).subscribe(res => {
       expect(res.length).toBe(1);
     });
 
-    const req = httpMock.expectOne(r =>
-      r.url === `${apiUrl}/members` &&
-      r.params.get('groupKey') === groupKey &&
-      r.params.get('kurinKey') === kurinKey
-    );
+    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
     expect(req).toBeTruthy();
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
   });
 
-  it('getAll should substitute null GUIDs when params are undefined', () => {
-    service.getAll().subscribe();
+  it('getAll should call kurin members endpoint when kurinKey is provided', () => {
+    const kurinKey = 'k1';
 
-    const req = httpMock.expectOne(r =>
-      r.url === `${apiUrl}/members` &&
-      r.params.get('groupKey') === guidNull &&
-      r.params.get('kurinKey') === guidNull
-    );
+    service.getAll(undefined, kurinKey).subscribe(res => {
+      expect(res.length).toBe(1);
+    });
+
+    const req = httpMock.expectOne(`${apiUrl}/kurins/${kurinKey}/members`);
     expect(req.request.method).toBe('GET');
-    req.flush([]);
+    req.flush([sampleMember]);
+  });
+
+  it('getAll should fail when both groupKey and kurinKey are missing', () => {
+    let receivedError: unknown;
+
+    service.getAll().subscribe({
+      error: (error) => {
+        receivedError = error;
+      }
+    });
+
+    expect(receivedError).toEqual(jasmine.any(Error));
+    expect((receivedError as Error).message).toContain('Either groupKey or kurinKey must be provided.');
   });
 
   it('create should POST FormData with individual dto properties and blob when file provided', () => {

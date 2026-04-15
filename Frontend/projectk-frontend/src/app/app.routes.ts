@@ -8,6 +8,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
+import { ForbiddenComponent } from './features/authModule/forbidden-component/forbidden-component';
 import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-header/toolbar-header';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
@@ -27,6 +28,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     component: LogoutComponent,
     data: { breadcrumb: 'Logout' }
+  },
+  {
+    path: 'forbidden',
+    component: ForbiddenComponent,
+    data: { breadcrumb: 'Forbidden' }
   },
   {
     path: 'users',
@@ -72,15 +78,31 @@ export const routes: Routes = [
   },
   {
     path: 'toolbar',
+    canActivate: [authGuard],
     component: ToolbarHeader,
+    data: { breadcrumb: 'Toolbar' }
   },
   {
     path: 'leadership/create/:type/:entityKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: LeadershipComponent,
+    data: {
+      breadcrumb: 'Create Leadership',
+      parent: '/kurin',
+      entityTypeParam: 'type',
+      entityKeyParam: 'entityKey'
+    }
   },
   {
     path: 'leadership/:leadershipKey/:type/:entityKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: LeadershipComponent,
+    data: {
+      breadcrumb: 'Edit Leadership',
+      parent: '/kurin',
+      entityTypeParam: 'type',
+      entityKeyParam: 'entityKey'
+    }
   },
   {
     path: 'planning/create/:kurinKey',

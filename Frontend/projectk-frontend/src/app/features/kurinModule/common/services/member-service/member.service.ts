@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { map, Observable } from 'rxjs';
+import { map, Observable, throwError } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
@@ -13,7 +13,6 @@ import { mapMemberForView } from '../../functions/memberViewMapper.function';
 export class MemberService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/member`;
-  private readonly guidNull = '00000000-0000-0000-0000-000000000000';
 
   getByKey(id: string): Observable<MemberDto> {
     return this.http.get<MemberDto>(`${this.apiUrl}/${id}`).pipe(
@@ -22,7 +21,15 @@ export class MemberService {
   }
 
   getAll(groupKey?: string, kurinKey?: string): Observable<MemberDto[]> {
-    return this.http.get<MemberDto[]>(`${this.apiUrl}/members`, { params: { groupKey: groupKey ?? this.guidNull, kurinKey: kurinKey ?? this.guidNull } }).pipe(
+    if (!groupKey && !kurinKey) {
+      return throwError(() => new Error('Either groupKey or kurinKey must be provided.'));
+    }
+
+    const requestUrl = groupKey
+      ? `${this.apiUrl}/groups/${groupKey}/members`
+      : `${this.apiUrl}/kurins/${kurinKey}/members`;
+
+    return this.http.get<MemberDto[]>(requestUrl).pipe(
       map(members => members.map(member => mapMemberForView(member)))
     );
   }
