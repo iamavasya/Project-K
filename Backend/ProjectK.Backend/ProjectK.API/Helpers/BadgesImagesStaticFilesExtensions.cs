@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -40,16 +41,32 @@ namespace ProjectK.API.Helpers
                 return app;
             }
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(assetsStore.AssetsDirectoryPath),
-                RequestPath = BadgesImagesRequestPath,
-                ContentTypeProvider = new FileExtensionContentTypeProvider(),
-                OnPrepareResponse = ctx =>
+            app.MapWhen(ctx =>
+                    ctx.Request.Path.StartsWithSegments(BadgesImagesRequestPath, StringComparison.OrdinalIgnoreCase),
+                branch =>
                 {
-                    ctx.Context.Response.Headers.CacheControl = $"public,max-age={CacheMaxAgeSeconds}";
-                }
-            });
+                    branch.Use(async (context, next) =>
+                    {
+                        if (context.User?.Identity?.IsAuthenticated != true)
+                        {
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            return;
+                        }
+
+                        await next();
+                    });
+
+                    branch.UseStaticFiles(new StaticFileOptions
+                    {
+                        FileProvider = new PhysicalFileProvider(assetsStore.AssetsDirectoryPath),
+                        RequestPath = BadgesImagesRequestPath,
+                        ContentTypeProvider = new FileExtensionContentTypeProvider(),
+                        OnPrepareResponse = ctx =>
+                        {
+                            ctx.Context.Response.Headers.CacheControl = $"private,max-age={CacheMaxAgeSeconds}";
+                        }
+                    });
+                });
 
             logger.LogInformation(
                 "Badges images static files mapped. RequestPath={RequestPath}, AssetsDirectoryPath={AssetsDirectoryPath}",

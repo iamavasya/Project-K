@@ -34,18 +34,6 @@ public class AuthorizationBaselineMatrixTests
         Assert.NotNull(allowAnonymous);
     }
 
-    [Theory]
-    [MemberData(nameof(TemporarilyUnprotectedEndpoints))]
-    public void Endpoint_ShouldBeTemporarilyUnprotected(MethodInfo action)
-    {
-        var authorize = action.GetCustomAttribute<AuthorizeAttribute>()
-            ?? action.DeclaringType?.GetCustomAttribute<AuthorizeAttribute>();
-        var allowAnonymous = action.GetCustomAttribute<AllowAnonymousAttribute>();
-
-        Assert.Null(authorize);
-        Assert.Null(allowAnonymous);
-    }
-
     public static IEnumerable<object[]> PolicyEndpoints()
     {
         yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterManager), "RequireAdmin");
@@ -86,23 +74,19 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), "RequireManager");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), "RequireManager");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), "RequireManager");
+
+        yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata), "RequireUser");
+        yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll), "RequireUser");
+        yield return Row<Action<BadgesCatalogController, string>>(nameof(BadgesCatalogController.GetById), "RequireUser");
+
+        yield return Row<Action<ProbesCatalogController>>(nameof(ProbesCatalogController.GetAll), "RequireUser");
+        yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById), "RequireUser");
     }
 
     public static IEnumerable<object[]> AllowAnonymousEndpoints()
     {
         yield return Row<Action<AuthController, LoginUserRequest>>(nameof(AuthController.Login));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
-    }
-
-    public static IEnumerable<object[]> TemporarilyUnprotectedEndpoints()
-    {
-        // Stage 0 baseline: catalog endpoints are currently open by design.
-        yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata));
-        yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll));
-        yield return Row<Action<BadgesCatalogController, string>>(nameof(BadgesCatalogController.GetById));
-
-        yield return Row<Action<ProbesCatalogController>>(nameof(ProbesCatalogController.GetAll));
-        yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById));
     }
 
     private static object[] Row<TDelegate>(string methodName)

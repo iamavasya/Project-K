@@ -168,8 +168,6 @@ namespace ProjectK.API
 
             app.UseRouting();
 
-            app.UseBadgesImagesStaticFiles();
-
             app.UseCors("AllowFrontend");
 
             app.UseAuthentication();
@@ -195,6 +193,8 @@ namespace ProjectK.API
             // --- End Debug Middleware ---
 
             app.UseAuthorization();
+
+            app.UseBadgesImagesStaticFiles();
 
             app.MapControllers();
 
