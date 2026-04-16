@@ -36,6 +36,100 @@
     align-self: flex-start;
 }
 
+.member-section-title,
+.dialog-skill-row {
+    color: var(--p-text-color);
+}
+
+.member-section-subtitle,
+.member-warning-text,
+.dialog-action-note,
+.dialog-skill-meta {
+    color: var(--p-text-muted-color);
+}
+
+.member-empty-state {
+    border: 1px dashed var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 92%, var(--p-primary-100) 8%);
+    color: var(--p-text-muted-color);
+}
+
+.probe-placeholder-row {
+    border: 1px solid var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
+}
+
+.probe-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--p-primary-color) 50%, transparent);
+}
+
+.dialog-section-title {
+    color: color-mix(in srgb, var(--p-text-muted-color) 90%, var(--p-text-color) 10%);
+}
+
+.dialog-skill-row {
+    border: 1px solid var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 94%, var(--p-primary-100) 6%);
+}
+
+.dialog-skill-row--pending {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-amber-100) 10%);
+}
+
+.dialog-skill-thumb {
+    border: 1px solid color-mix(in srgb, var(--p-primary-color) 28%, transparent);
+    background: color-mix(in srgb, var(--p-content-background) 84%, var(--p-primary-200) 16%);
+}
+
+.add-skill-search-wrap {
+    max-width: 40rem;
+}
+
+.add-skill-row {
+    border: 1px solid var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
+}
+
+.dialog-existing-status {
+    color: color-mix(in srgb, var(--p-amber-700) 84%, var(--p-text-color) 16%);
+}
+
+.dialog-success-text {
+    color: color-mix(in srgb, var(--p-green-700) 82%, var(--p-text-color) 18%);
+}
+
+.dialog-error-text {
+    color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
+}
+
+.skills-preview-grid > *:nth-child(n + 3) {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .skills-preview-grid > *:nth-child(n + 3) {
+        display: block;
+    }
+
+    .skills-preview-grid > *:nth-child(n + 4) {
+        display: none;
+    }
+}
+
+@media (min-width: 1280px) {
+    .skills-preview-grid > *:nth-child(n + 4) {
+        display: block;
+    }
+
+    .skills-preview-grid > *:nth-child(n + 5) {
+        display: none;
+    }
+}
+
 @media (max-width: 767px) {
     .member-actions {
         margin-top: 0.25rem;

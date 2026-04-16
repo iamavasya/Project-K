@@ -6,7 +6,7 @@ export interface BadgeProgressDto {
   memberKey: string;
   kurinKey: string;
   badgeId: string;
-  status: BadgeProgressStatus;
+  status: BadgeProgressStatus | keyof typeof BadgeProgressStatus;
   submittedAtUtc: string | null;
   reviewedAtUtc: string | null;
   reviewedByUserKey: string | null;

@@ -3,8 +3,24 @@ import { BadgeCatalogItemDto } from '../models/probes-and-badges/badgeCatalogIte
 import { BadgeProgressDto } from '../models/probes-and-badges/badgeProgressDto';
 import { MemberSkillItemView } from '../models/probes-and-badges/memberSkillItemView';
 import { MemberSkillsSummaryView } from '../models/probes-and-badges/memberSkillsSummaryView';
+import { environment } from '../../../environments/environment';
 
 const BADGES_IMAGES_BASE_PATH = '/badges_images';
+const API_ORIGIN = resolveApiOrigin(environment.apiUrl);
+
+export type BadgeProgressStatusLike = BadgeProgressStatus | keyof typeof BadgeProgressStatus | string | number;
+
+function resolveApiOrigin(apiUrl: string): string {
+  try {
+    return new URL(apiUrl).origin;
+  } catch {
+    return '';
+  }
+}
+
+function withApiOrigin(path: string): string {
+  return API_ORIGIN ? `${API_ORIGIN}${path}` : path;
+}
 
 function toUnixTime(value: string | null): number {
   if (!value) {
@@ -25,15 +41,15 @@ export function resolveBadgeImageUrl(imagePath: string | null | undefined): stri
   }
 
   if (imagePath.startsWith('/badges_images/')) {
-    return imagePath;
+    return withApiOrigin(imagePath);
   }
 
   const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
   if (normalized.startsWith('badges_images/')) {
-    return `/${normalized}`;
+    return withApiOrigin(`/${normalized}`);
   }
 
-  return `${BADGES_IMAGES_BASE_PATH}/${normalized}`;
+  return withApiOrigin(`${BADGES_IMAGES_BASE_PATH}/${normalized}`);
 }
 
 export function mapBadgeProgressToSkillView(
@@ -41,16 +57,32 @@ export function mapBadgeProgressToSkillView(
   badgeById: ReadonlyMap<string, BadgeCatalogItemDto>
 ): MemberSkillItemView {
   const badge = badgeById.get(progress.badgeId);
+  const normalizedStatus = normalizeBadgeProgressStatus(progress.status);
 
   return {
     badgeId: progress.badgeId,
     title: badge?.title ?? progress.badgeId,
     imageUrl: resolveBadgeImageUrl(badge?.imagePath ?? null),
-    status: progress.status,
+    status: normalizedStatus,
     submittedAtUtc: progress.submittedAtUtc,
     reviewedAtUtc: progress.reviewedAtUtc,
-    isPendingConfirmation: progress.status === BadgeProgressStatus.Submitted
+    isPendingConfirmation: normalizedStatus === BadgeProgressStatus.Submitted
   };
+}
+
+export function normalizeBadgeProgressStatus(status: BadgeProgressStatusLike): BadgeProgressStatus {
+  if (typeof status === 'number' && BadgeProgressStatus[status] !== undefined) {
+    return status as BadgeProgressStatus;
+  }
+
+  if (typeof status === 'string') {
+    const enumValue = BadgeProgressStatus[status as keyof typeof BadgeProgressStatus];
+    if (typeof enumValue === 'number') {
+      return enumValue;
+    }
+  }
+
+  return BadgeProgressStatus.Draft;
 }
 
 export function buildMemberSkillsSummary(
@@ -62,12 +94,12 @@ export function buildMemberSkillsSummary(
   const badgeById = new Map<string, BadgeCatalogItemDto>(badges.map(badge => [badge.id, badge]));
 
   const confirmed = progresses
-    .filter(progress => progress.status === BadgeProgressStatus.Confirmed)
+    .filter(progress => normalizeBadgeProgressStatus(progress.status) === BadgeProgressStatus.Confirmed)
     .sort((left, right) => toUnixTime(right.reviewedAtUtc) - toUnixTime(left.reviewedAtUtc))
     .map(progress => mapBadgeProgressToSkillView(progress, badgeById));
 
   const pending = progresses
-    .filter(progress => progress.status === BadgeProgressStatus.Submitted)
+    .filter(progress => normalizeBadgeProgressStatus(progress.status) === BadgeProgressStatus.Submitted)
     .sort((left, right) => toUnixTime(right.submittedAtUtc) - toUnixTime(left.submittedAtUtc))
     .map(progress => mapBadgeProgressToSkillView(progress, badgeById));
 

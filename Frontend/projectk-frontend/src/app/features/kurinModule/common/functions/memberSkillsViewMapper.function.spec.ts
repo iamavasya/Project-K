@@ -1,7 +1,8 @@
 import { BadgeProgressStatus } from '../models/enums/badge-progress-status.enum';
 import { BadgeCatalogItemDto } from '../models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../models/probes-and-badges/badgeProgressDto';
-import { buildMemberSkillsSummary, resolveBadgeImageUrl } from './memberSkillsViewMapper.function';
+import { buildMemberSkillsSummary, normalizeBadgeProgressStatus, resolveBadgeImageUrl } from './memberSkillsViewMapper.function';
+import { environment } from '../../../environments/environment';
 
 function createBadge(overrides: Partial<BadgeCatalogItemDto>): BadgeCatalogItemDto {
   return {
@@ -71,9 +72,32 @@ describe('memberSkillsViewMapper', () => {
   });
 
   it('resolveBadgeImageUrl should keep absolute urls and normalize relative paths', () => {
+    const apiOrigin = new URL(environment.apiUrl).origin;
+
     expect(resolveBadgeImageUrl('https://cdn.site/badge.png')).toBe('https://cdn.site/badge.png');
-    expect(resolveBadgeImageUrl('/badges_images/badge.png')).toBe('/badges_images/badge.png');
-    expect(resolveBadgeImageUrl('badges/badge.png')).toBe('/badges_images/badges/badge.png');
-    expect(resolveBadgeImageUrl('badges_images/badge.png')).toBe('/badges_images/badge.png');
+    expect(resolveBadgeImageUrl('/badges_images/badge.png')).toBe(`${apiOrigin}/badges_images/badge.png`);
+    expect(resolveBadgeImageUrl('badges/badge.png')).toBe(`${apiOrigin}/badges_images/badges/badge.png`);
+    expect(resolveBadgeImageUrl('badges_images/badge.png')).toBe(`${apiOrigin}/badges_images/badge.png`);
+  });
+
+  it('normalizeBadgeProgressStatus should support string enum values from backend JSON', () => {
+    expect(normalizeBadgeProgressStatus('Submitted')).toBe(BadgeProgressStatus.Submitted);
+    expect(normalizeBadgeProgressStatus('Confirmed')).toBe(BadgeProgressStatus.Confirmed);
+  });
+
+  it('should include pending badges when backend returns string statuses', () => {
+    const summary = buildMemberSkillsSummary(
+      [
+        createProgress({ badgeId: 'badge-1', status: 'Submitted' as unknown as BadgeProgressStatus }),
+        createProgress({ badgeId: 'badge-2', status: 'Confirmed' as unknown as BadgeProgressStatus, reviewedAtUtc: '2026-04-12T00:00:00Z' })
+      ],
+      [
+        createBadge({ id: 'badge-1', title: 'Pending Badge' }),
+        createBadge({ id: 'badge-2', title: 'Confirmed Badge' })
+      ]
+    );
+
+    expect(summary.pendingConfirmation.map(item => item.badgeId)).toEqual(['badge-1']);
+    expect(summary.recentConfirmed.map(item => item.badgeId)).toEqual(['badge-2']);
   });
 });
