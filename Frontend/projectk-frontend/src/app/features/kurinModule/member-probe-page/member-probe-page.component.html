@@ -1,0 +1,95 @@
+<div class="w-full px-4 py-6 md:px-8 md:py-10">
+    <div class="mx-auto w-full max-w-6xl space-y-4">
+        <section class="probe-page-tile rounded-2xl p-4 md:p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 class="probe-page-title text-xl font-semibold leading-tight md:text-2xl">
+                        {{ groupedProbe?.title || 'Деталі проби' }}
+                    </h1>
+                    <p class="probe-page-subtitle mt-1 text-sm">
+                        Учасник: {{ member?.firstName || '—' }} {{ member?.lastName || '' }}
+                    </p>
+                    @if (groupedProbe) {
+                    <p class="probe-page-subtitle text-sm">
+                        Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
+                    </p>
+                    }
+                </div>
+
+                <p-button
+                    (onClick)="goBackToMember()"
+                    label="До картки учасника"
+                    icon="pi pi-arrow-left"
+                    severity="secondary"
+                    styleClass="!rounded-lg !px-3 !py-2 !text-sm"
+                ></p-button>
+            </div>
+        </section>
+
+        <section class="probe-page-tile rounded-2xl p-4 md:p-5">
+            @if (isLoading) {
+            <div class="space-y-3">
+                @for (item of [1, 2, 3]; track item) {
+                <p-skeleton width="100%" height="4.5rem" borderRadius="0.75rem"></p-skeleton>
+                }
+            </div>
+            } @else if (loadFailed || !groupedProbe) {
+            <p class="probe-warning-text text-sm">Не вдалося завантажити деталі проби. Спробуй оновити сторінку.</p>
+            } @else {
+            @if (hasPartialDataWarning) {
+            <p class="probe-warning-text mb-3 text-xs">
+                Частина даних про статуси недоступна. Показано структуру проби та доступні дані.
+            </p>
+            }
+
+            <p class="probe-hint-text mb-3 text-xs">
+                Відображається read-only перегляд. Підписи точок поки будуються на агрегованому статусі проби.
+            </p>
+
+            <p-accordion [multiple]="true">
+                @for (section of probeSections; track section.sectionId; let sectionIndex = $index) {
+                <p-accordion-panel [value]="getSectionPanelValue(section, sectionIndex)">
+                    <p-accordion-header>
+                        <div class="flex w-full min-w-0 items-center justify-between gap-3 pr-2">
+                            <span class="truncate text-sm font-semibold">
+                                {{ section.sectionCode }} · {{ section.sectionTitle }}
+                            </span>
+                            <p-tag
+                                [value]="section.points.length + ' точок'"
+                                severity="secondary"
+                                styleClass="!rounded-full !text-[10px] !font-semibold"
+                            ></p-tag>
+                        </div>
+                    </p-accordion-header>
+                    <p-accordion-content>
+                        @if (section.points.length === 0) {
+                        <p class="probe-empty-text text-xs">У цьому розділі поки немає точок.</p>
+                        } @else {
+                        <div class="space-y-2">
+                            @for (point of section.points; track point.pointId) {
+                            <div class="probe-point-row rounded-xl px-3 py-2.5" [class.probe-point-row--signed]="point.isSigned">
+                                <div class="flex flex-wrap items-start justify-between gap-2">
+                                    <p class="probe-point-title text-sm font-semibold">{{ point.pointTitle }}</p>
+                                    <p-tag
+                                        [value]="point.isSigned ? 'Підписано' : 'Не підписано'"
+                                        [severity]="point.isSigned ? 'success' : 'secondary'"
+                                        styleClass="!rounded-full !text-[10px] !font-semibold"
+                                    ></p-tag>
+                                </div>
+
+                                <div class="mt-2 grid gap-1 sm:grid-cols-2">
+                                    <p class="probe-point-meta text-xs">Підпис: {{ getProbePointSignerLabel(point) }}</p>
+                                    <p class="probe-point-meta text-xs">Дата: {{ getProbePointSignedAtLabel(point) }}</p>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                    </p-accordion-content>
+                </p-accordion-panel>
+                }
+            </p-accordion>
+            }
+        </section>
+    </div>
+</div>

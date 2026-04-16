@@ -6,7 +6,7 @@ export interface ProbeProgressDto {
   memberKey: string;
   kurinKey: string;
   probeId: string;
-  status: ProbeProgressStatus;
+  status: ProbeProgressStatus | keyof typeof ProbeProgressStatus;
   completedAtUtc: string | null;
   completedByUserKey: string | null;
   completedByName: string | null;

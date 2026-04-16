@@ -16,6 +16,7 @@ import { UsersListComponent } from './features/adminModule/components/users-list
 import { LeadershipComponent } from './features/kurinModule/common/components/leadership/leadership-component/leadership-component';
 import { PlanningListComponent } from './features/kurinModule/planning-list/planning-list';
 import { CreatePlanningComponent } from './features/kurinModule/create-planning/create-planning';
+import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
 
 export const routes: Routes = [
   {
@@ -71,6 +72,12 @@ export const routes: Routes = [
     data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
   },
   { 
+    path: 'member/:memberKey/probe/:probeId',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    component: MemberProbePageComponent,
+    data: { breadcrumb: 'Probe Details', parent: '/member/:memberKey', entityType: 'member' }
+  },
+  {
     path: 'member/:memberKey', 
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: MemberCardComponent,

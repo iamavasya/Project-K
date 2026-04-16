@@ -1,7 +1,7 @@
 import { ProbeProgressStatus } from '../models/enums/probe-progress-status.enum';
 import { ProbeProgressDto } from '../models/probes-and-badges/probeProgressDto';
 import { ProbeSummaryDto } from '../models/probes-and-badges/probeSummaryDto';
-import { buildMemberProbeRows } from './memberProbeRowsViewMapper.function';
+import { buildMemberProbeRows, normalizeProbeProgressStatus } from './memberProbeRowsViewMapper.function';
 
 function createProbeSummary(overrides: Partial<ProbeSummaryDto>): ProbeSummaryDto {
   return {
@@ -63,5 +63,20 @@ describe('memberProbeRowsViewMapper', () => {
     expect(rows[0].title).toBe('Перша проба');
     expect(rows[0].status).toBe(ProbeProgressStatus.NotStarted);
     expect(rows[0].canOpenDetails).toBeFalse();
+  });
+
+  it('normalizeProbeProgressStatus should support string enum values from backend JSON', () => {
+    expect(normalizeProbeProgressStatus('InProgress')).toBe(ProbeProgressStatus.InProgress);
+    expect(normalizeProbeProgressStatus('Verified')).toBe(ProbeProgressStatus.Verified);
+  });
+
+  it('should mark probe completed when backend status is provided as string', () => {
+    const rows = buildMemberProbeRows(
+      [createProbeSummary({ id: 'probe-1', title: 'Перша проба' })],
+      [createProbeProgress({ probeId: 'probe-1', status: 'Completed' as unknown as ProbeProgressStatus })]
+    );
+
+    expect(rows[0].isCompleted).toBeTrue();
+    expect(rows[0].status).toBe(ProbeProgressStatus.Completed);
   });
 });

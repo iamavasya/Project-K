@@ -121,27 +121,58 @@
                 <div class="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <h2 class="member-section-title text-lg font-semibold">Проба</h2>
-                        <p class="member-section-subtitle text-sm">Повноцінний функціонал буде на Stage 9.4</p>
+                        <p class="member-section-subtitle text-sm">
+                            Завершено: {{ completedProbesCount }}/{{ activeProbesCount }} · Деталі відкриваються на окремій сторінці
+                        </p>
                     </div>
                 </div>
 
+                @if (isProbesLoading) {
                 <div class="space-y-2.5">
-                    @for (probe of probePlaceholderRows; track probe.id) {
-                    <div class="probe-placeholder-row flex items-center justify-between gap-3 rounded-lg px-3 py-2.5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="probe-dot"></span>
-                            <span class="text-sm font-medium">{{ probe.label }}</span>
+                    @for (item of [1, 2, 3]; track item) {
+                    <p-skeleton width="100%" height="3.5rem" borderRadius="0.75rem"></p-skeleton>
+                    }
+                </div>
+                } @else {
+                <div class="space-y-2.5">
+                    @for (probe of probeRows; track probe.probeId) {
+                    <div
+                        class="probe-summary-row flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                        [class.probe-summary-row--completed]="probe.isCompleted"
+                        [class.probe-summary-row--disabled]="probe.isDisabled"
+                    >
+                        <div class="flex min-w-0 items-center gap-2.5">
+                            <span class="probe-state-icon" [class.probe-state-icon--completed]="probe.isCompleted">
+                                @if (probe.isCompleted) {
+                                <span class="pi pi-check text-[11px]"></span>
+                                } @else {
+                                <span class="pi pi-minus text-[11px]"></span>
+                                }
+                            </span>
+
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-semibold">{{ probe.label }}</p>
+                                <p class="probe-row-meta text-xs">{{ getProbeSummaryMeta(probe) }}</p>
+                            </div>
                         </div>
 
                         <p-button
+                            (onClick)="openProbeDetails(probe)"
                             label="Деталі"
                             severity="secondary"
-                            [disabled]="true"
+                            [disabled]="probe.isDisabled || !probe.canOpenDetails"
                             styleClass="!rounded-lg !px-3 !py-1.5 !text-xs"
                         ></p-button>
                     </div>
                     }
                 </div>
+
+                @if (probesLoadFailed) {
+                <p class="member-warning-text mt-3 text-xs">
+                    Частина даних про проби тимчасово недоступна. Спробуй оновити сторінку.
+                </p>
+                }
+                }
             </section>
         </div>
     </div>

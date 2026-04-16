@@ -54,16 +54,40 @@
     color: var(--p-text-muted-color);
 }
 
-.probe-placeholder-row {
+.probe-summary-row {
     border: 1px solid var(--p-content-border-color);
     background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
 }
 
-.probe-dot {
-    width: 0.6rem;
-    height: 0.6rem;
+.probe-summary-row--completed {
+    border-color: color-mix(in srgb, var(--p-green-600) 28%, var(--p-content-border-color) 72%);
+    background: color-mix(in srgb, var(--p-content-background) 88%, var(--p-green-100) 12%);
+}
+
+.probe-summary-row--disabled {
+    border-style: dashed;
+    opacity: 0.9;
+}
+
+.probe-state-icon {
+    width: 1rem;
+    height: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--p-primary-color) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+    color: color-mix(in srgb, var(--p-primary-color) 75%, var(--p-text-color) 25%);
+}
+
+.probe-state-icon--completed {
+    border-color: color-mix(in srgb, var(--p-green-600) 60%, transparent);
+    background: color-mix(in srgb, var(--p-green-500) 22%, white 78%);
+    color: color-mix(in srgb, var(--p-green-700) 88%, var(--p-text-color) 12%);
+}
+
+.probe-row-meta {
+    color: var(--p-text-muted-color);
 }
 
 .dialog-section-title {

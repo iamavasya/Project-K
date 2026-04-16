@@ -6,10 +6,13 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
+import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
+import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../common/models/probes-and-badges/badgeProgressDto';
+import { ProbeSummaryDto } from '../common/models/probes-and-badges/probeSummaryDto';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -17,6 +20,7 @@ describe('MemberCardComponent', () => {
 
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let badgesCatalogServiceSpy: jasmine.SpyObj<BadgesCatalogService>;
+  let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
@@ -40,12 +44,30 @@ describe('MemberCardComponent', () => {
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress']);
+    probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
+    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'getProbeProgress']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
+    probesCatalogServiceSpy.getAll.and.returnValue(of([]));
     memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of([]));
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      probeProgressKey: null,
+      memberKey,
+      kurinKey: member.kurinKey,
+      probeId: 'probe-1',
+      status: ProbeProgressStatus.NotStarted,
+      completedAtUtc: null,
+      completedByUserKey: null,
+      completedByName: null,
+      completedByRole: null,
+      verifiedAtUtc: null,
+      verifiedByUserKey: null,
+      verifiedByName: null,
+      verifiedByRole: null,
+      auditTrail: []
+    }));
     memberProgressServiceSpy.submitBadgeProgress.and.returnValue(of({
       badgeProgressKey: 'new-progress',
       memberKey,
@@ -66,6 +88,7 @@ describe('MemberCardComponent', () => {
       providers: [
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },
+        { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
@@ -92,6 +115,75 @@ describe('MemberCardComponent', () => {
     expect(component.memberKey).toBe(memberKey);
     expect(memberServiceSpy.getByKey).toHaveBeenCalledWith(memberKey);
     expect(memberProgressServiceSpy.getBadgeProgresses).toHaveBeenCalledWith(memberKey);
+  });
+
+  it('should build probe rows and keep third probe disabled', () => {
+    const probes: ProbeSummaryDto[] = [
+      { id: 'probe-1', title: 'Перша проба', pointsCount: 10, sectionsCount: 3 },
+      { id: 'probe-2', title: 'Друга проба', pointsCount: 12, sectionsCount: 4 },
+      { id: 'probe-3', title: 'Третя проба', pointsCount: 14, sectionsCount: 5 }
+    ];
+
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    probesCatalogServiceSpy.getAll.and.returnValue(of(probes));
+    memberProgressServiceSpy.getProbeProgress.and.callFake((_mk, probeId) => of({
+      probeProgressKey: null,
+      memberKey,
+      kurinKey: member.kurinKey,
+      probeId,
+      status: probeId === 'probe-1' ? ProbeProgressStatus.Completed : ProbeProgressStatus.NotStarted,
+      completedAtUtc: probeId === 'probe-1' ? '2026-04-16T00:00:00Z' : null,
+      completedByUserKey: null,
+      completedByName: null,
+      completedByRole: null,
+      verifiedAtUtc: null,
+      verifiedByUserKey: null,
+      verifiedByName: null,
+      verifiedByRole: null,
+      auditTrail: []
+    }));
+
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.probeRows.map(row => row.probeId)).toEqual(['probe-1', 'probe-2', 'probe-3']);
+    expect(component.probeRows[0].isCompleted).toBeTrue();
+    expect(component.probeRows[2].isDisabled).toBeTrue();
+    expect(component.completedProbesCount).toBe(1);
+  });
+
+  it('openProbeDetails should navigate only for enabled probe rows', () => {
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    createComponent();
+    fixture.detectChanges();
+
+    const enabledProbe = {
+      probeId: 'probe-1',
+      label: 'Перша проба',
+      title: 'Перша проба',
+      status: ProbeProgressStatus.InProgress,
+      completedAtUtc: null,
+      isCompleted: false,
+      isDisabled: false,
+      canOpenDetails: true,
+      pointsCount: 10,
+      sectionsCount: 3
+    };
+
+    const disabledProbe = {
+      ...enabledProbe,
+      probeId: 'probe-3',
+      label: 'Третя проба',
+      isDisabled: true,
+      canOpenDetails: false
+    };
+
+    component.openProbeDetails(enabledProbe);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey, 'probe', 'probe-1']);
+
+    component.openProbeDetails(disabledProbe);
+
+    expect(routerSpy.navigate).toHaveBeenCalledTimes(1);
   });
 
   it('should set member on successful load', () => {

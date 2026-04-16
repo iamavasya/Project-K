@@ -3,6 +3,8 @@ import { MemberProbeRowView } from '../models/probes-and-badges/memberProbeRowVi
 import { ProbeProgressDto } from '../models/probes-and-badges/probeProgressDto';
 import { ProbeSummaryDto } from '../models/probes-and-badges/probeSummaryDto';
 
+export type ProbeProgressStatusLike = ProbeProgressStatus | keyof typeof ProbeProgressStatus | string | number;
+
 interface ProbeRowTemplate {
   probeId: string;
   label: string;
@@ -27,6 +29,21 @@ function isCompletedStatus(status: ProbeProgressStatus): boolean {
   return status === ProbeProgressStatus.Completed || status === ProbeProgressStatus.Verified;
 }
 
+export function normalizeProbeProgressStatus(status: ProbeProgressStatusLike): ProbeProgressStatus {
+  if (typeof status === 'number' && ProbeProgressStatus[status] !== undefined) {
+    return status as ProbeProgressStatus;
+  }
+
+  if (typeof status === 'string') {
+    const enumValue = ProbeProgressStatus[status as keyof typeof ProbeProgressStatus];
+    if (typeof enumValue === 'number') {
+      return enumValue;
+    }
+  }
+
+  return ProbeProgressStatus.NotStarted;
+}
+
 export function buildMemberProbeRows(
   probes: ProbeSummaryDto[],
   progresses: ProbeProgressDto[]
@@ -37,10 +54,10 @@ export function buildMemberProbeRows(
   return PROBE_ROW_TEMPLATES.map(template => {
     const probe = probeById.get(template.probeId);
     const progress = progressByProbeId.get(template.probeId);
-    const status = progress?.status ?? ProbeProgressStatus.NotStarted;
+    const status = normalizeProbeProgressStatus(progress?.status ?? ProbeProgressStatus.NotStarted);
 
     return {
-      probeId: template.probeId,
+      probeId: probe?.id ?? template.probeId,
       label: template.label,
       title: probe?.title ?? template.label,
       status,

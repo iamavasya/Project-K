@@ -7,18 +7,24 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
+import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { buildMemberSkillsSummary, normalizeBadgeProgressStatus, resolveBadgeImageUrl } from '../common/functions/memberSkillsViewMapper.function';
+import { buildMemberProbeRows } from '../common/functions/memberProbeRowsViewMapper.function';
 import { MemberSkillsSummaryView } from '../common/models/probes-and-badges/memberSkillsSummaryView';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../common/models/probes-and-badges/badgeProgressDto';
+import { ProbeSummaryDto } from '../common/models/probes-and-badges/probeSummaryDto';
+import { ProbeProgressDto } from '../common/models/probes-and-badges/probeProgressDto';
+import { MemberProbeRowView } from '../common/models/probes-and-badges/memberProbeRowView';
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
+import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { environment } from '../../environments/environment';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card.component';
 
@@ -43,17 +49,21 @@ export class MemberCardComponent implements OnInit, OnDestroy {
   router = inject(Router);
   memberService = inject(MemberService);
   badgesCatalogService = inject(BadgesCatalogService);
+  probesCatalogService = inject(ProbesCatalogService);
   memberProgressService = inject(MemberProgressService);
   http = inject(HttpClient);
 
   member: MemberDto | null = null;
   memberKey: string | null = null;
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
+  probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
   badgeProgresses: BadgeProgressDto[] = [];
 
   isSkillsLoading = false;
   skillsLoadFailed = false;
+  isProbesLoading = false;
+  probesLoadFailed = false;
   isAllSkillsDialogVisible = false;
   isAddSkillDialogVisible = false;
   isSubmittingSkill = false;
@@ -66,11 +76,6 @@ export class MemberCardComponent implements OnInit, OnDestroy {
 
   readonly addSkillPageSize = 12;
   readonly apiOrigin = this.resolveApiOrigin();
-  readonly probePlaceholderRows = [
-    { id: 'probe-1', label: 'Перша проба' },
-    { id: 'probe-2', label: 'Друга проба' },
-    { id: 'probe-3', label: 'Третя проба' }
-  ];
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -102,6 +107,7 @@ export class MemberCardComponent implements OnInit, OnDestroy {
     });
 
     this.loadSkills(this.memberKey);
+    this.loadProbes(this.memberKey);
   }
 
   get hasAnySkills(): boolean {
@@ -114,6 +120,14 @@ export class MemberCardComponent implements OnInit, OnDestroy {
 
   get pendingSkillsCount(): number {
     return this.skillsSummary.pendingConfirmation.length;
+  }
+
+  get completedProbesCount(): number {
+    return this.probeRows.filter(row => !row.isDisabled && row.isCompleted).length;
+  }
+
+  get activeProbesCount(): number {
+    return this.probeRows.filter(row => !row.isDisabled).length;
   }
 
   get filteredAddSkillCandidates(): BadgeCatalogItemDto[] {
@@ -194,6 +208,40 @@ export class MemberCardComponent implements OnInit, OnDestroy {
     return this.resolveImageForDisplay(imageUrl);
   }
 
+  getProbeStatusLabel(status: ProbeProgressStatus): string {
+    switch (status) {
+      case ProbeProgressStatus.InProgress:
+        return 'В процесі';
+      case ProbeProgressStatus.Completed:
+        return 'Завершено';
+      case ProbeProgressStatus.Verified:
+        return 'Підтверджено';
+      default:
+        return 'Не розпочато';
+    }
+  }
+
+  getProbeSummaryMeta(row: MemberProbeRowView): string {
+    if (row.completedAtUtc) {
+      return `Завершено: ${this.formatDate(row.completedAtUtc)}`;
+    }
+
+    const statusLabel = this.getProbeStatusLabel(row.status);
+    if (row.pointsCount === null) {
+      return statusLabel;
+    }
+
+    return `${statusLabel} · ${row.pointsCount} точок`;
+  }
+
+  openProbeDetails(row: MemberProbeRowView): void {
+    if (!this.memberKey || row.isDisabled || !row.canOpenDetails) {
+      return;
+    }
+
+    this.router.navigate(['/member', this.memberKey, 'probe', row.probeId]);
+  }
+
   submitBadge(badgeId: string): void {
     if (!this.memberKey || this.isSubmittingSkill || !this.canSubmitBadge(badgeId)) {
       return;
@@ -253,12 +301,69 @@ export class MemberCardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadProbes(memberKey: string): void {
+    this.isProbesLoading = true;
+    this.probesLoadFailed = false;
+
+    let hasLoadError = false;
+
+    this.probesCatalogService
+      .getAll()
+      .pipe(
+        catchError((error) => {
+          console.error('Error fetching probes catalog:', error);
+          hasLoadError = true;
+          return of([] as ProbeSummaryDto[]);
+        }),
+        switchMap((probes) => {
+          if (probes.length === 0) {
+            return of({ probes, progresses: [] as ProbeProgressDto[] });
+          }
+
+          return forkJoin(
+            probes.map(probe =>
+              this.memberProgressService.getProbeProgress(memberKey, probe.id).pipe(
+                catchError((error) => {
+                  console.error(`Error fetching probe progress for ${probe.id}:`, error);
+                  hasLoadError = true;
+                  return of(null);
+                })
+              )
+            )
+          ).pipe(
+            map(progresses => ({
+              probes,
+              progresses: progresses.filter((progress): progress is ProbeProgressDto => progress !== null)
+            }))
+          );
+        })
+      )
+      .subscribe(({ probes, progresses }) => {
+        this.probeRows = buildMemberProbeRows(probes, progresses);
+        this.probesLoadFailed = hasLoadError;
+        this.isProbesLoading = false;
+      });
+  }
+
   private createEmptySkillsSummary(): MemberSkillsSummaryView {
     return {
       recentConfirmed: [],
       pendingConfirmation: [],
       orderedPreview: []
     };
+  }
+
+  private createEmptyProbeRows(): MemberProbeRowView[] {
+    return buildMemberProbeRows([], []);
+  }
+
+  private formatDate(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleDateString('uk-UA');
   }
 
   private readonly objectUrlBySourceUrl = new Map<string, string>();
