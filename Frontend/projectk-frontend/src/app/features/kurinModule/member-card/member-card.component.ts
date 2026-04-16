@@ -222,6 +222,14 @@ export class MemberCardComponent implements OnInit, OnDestroy {
   }
 
   getProbeSummaryMeta(row: MemberProbeRowView): string {
+    if (row.probeId === 'probe-2' && row.isDisabled) {
+      return 'Відкриється після закриття першої проби';
+    }
+
+    if (row.probeId === 'probe-3' && row.isDisabled) {
+      return 'Третя проба буде реалізована окремим етапом';
+    }
+
     if (row.completedAtUtc) {
       return `Завершено: ${this.formatDate(row.completedAtUtc)}`;
     }

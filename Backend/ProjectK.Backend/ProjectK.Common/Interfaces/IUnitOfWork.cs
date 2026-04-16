@@ -18,6 +18,7 @@ namespace ProjectK.Common.Interfaces
         IPlanningSessionRepository PlanningSessions { get; }
         IBadgeProgressRepository BadgeProgresses { get; }
         IProbeProgressRepository ProbeProgresses { get; }
+        IProbePointProgressRepository ProbePointProgresses { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();

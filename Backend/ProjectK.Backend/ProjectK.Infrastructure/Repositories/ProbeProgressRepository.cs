@@ -27,6 +27,7 @@ public class ProbeProgressRepository : IProbeProgressRepository
     public async Task<ProbeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await _context.ProbeProgresses
+            .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.ProbeProgressKey == entityKey, cancellationToken);
     }
@@ -34,6 +35,19 @@ public class ProbeProgressRepository : IProbeProgressRepository
     public async Task<ProbeProgress?> GetByMemberAndProbeIdAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
     {
         return await _context.ProbeProgresses
+            .AsTracking()
+            .FirstOrDefaultAsync(
+                x => x.MemberKey == memberKey && x.ProbeId == probeId,
+                cancellationToken);
+    }
+
+    public async Task<ProbeProgress?> GetByMemberAndProbeIdWithAuditAsync(
+        Guid memberKey,
+        string probeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ProbeProgresses
+            .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.ProbeId == probeId,
@@ -62,6 +76,13 @@ public class ProbeProgressRepository : IProbeProgressRepository
 
     public void Update(ProbeProgress entity, CancellationToken cancellationToken = default)
     {
-        _context.ProbeProgresses.Update(entity);
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            _context.ProbeProgresses.Update(entity);
+            return;
+        }
+
+        entry.State = EntityState.Modified;
     }
 }

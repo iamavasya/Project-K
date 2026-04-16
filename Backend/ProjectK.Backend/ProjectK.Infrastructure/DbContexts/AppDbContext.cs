@@ -28,6 +28,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
         public DbSet<ProbeProgress> ProbeProgresses { get; set; }
         public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
+        public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -211,6 +212,25 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasForeignKey(e => e.ProbeProgressKey)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(e => e.ProbeProgressKey);
+            });
+
+            builder.Entity<ProbePointProgress>(entity =>
+            {
+                entity.HasKey(e => e.ProbePointProgressKey);
+                entity.Property(e => e.ProbeId)
+                    .HasMaxLength(200)
+                    .IsRequired();
+                entity.Property(e => e.PointId)
+                    .HasMaxLength(200)
+                    .IsRequired();
+                entity.Property(e => e.SignedByRole)
+                    .HasMaxLength(50);
+                entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
+                    .IsUnique();
+                entity.HasOne(e => e.Member)
+                    .WithMany(m => m.ProbePointProgresses)
+                    .HasForeignKey(e => e.MemberKey)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

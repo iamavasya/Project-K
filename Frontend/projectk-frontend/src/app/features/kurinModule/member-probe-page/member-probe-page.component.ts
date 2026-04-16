@@ -1,10 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { AccordionModule } from 'primeng/accordion';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -13,6 +14,8 @@ import { GroupedProbeDto } from '../common/models/probes-and-badges/groupedProbe
 import { ProbeProgressDto } from '../common/models/probes-and-badges/probeProgressDto';
 import { MemberProbeDetailPointRowView } from '../common/models/probes-and-badges/memberProbeDetailPointRowView';
 import { buildMemberProbeDetailPointRows } from '../common/functions/memberProbeDetailsViewMapper.function';
+import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
+import { normalizeProbeProgressStatus } from '../common/functions/memberProbeRowsViewMapper.function';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -30,9 +33,11 @@ interface ProbeDetailSectionView {
 export class MemberProbePageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly memberService = inject(MemberService);
   private readonly probesCatalogService = inject(ProbesCatalogService);
   private readonly memberProgressService = inject(MemberProgressService);
+  private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   memberKey: string | null = null;
   probeId: string | null = null;
@@ -47,11 +52,21 @@ export class MemberProbePageComponent implements OnInit {
   isLoading = false;
   loadFailed = false;
   hasPartialDataWarning = false;
+  isUpdatingProbeStatus = false;
+  reviewerActionErrorMessage: string | null = null;
+  reviewerActionSuccessMessage: string | null = null;
+
+  get canManageProbePoints(): boolean {
+    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
+    return this.reviewerRoles.has(role);
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey');
       this.probeId = params.get('probeId');
+      this.reviewerActionErrorMessage = null;
+      this.reviewerActionSuccessMessage = null;
       this.loadData();
     });
   }
@@ -70,12 +85,25 @@ export class MemberProbePageComponent implements OnInit {
       return 'Не підписано';
     }
 
-    if (point.signedByName && point.signedByRole) {
-      return `${point.signedByName} (${point.signedByRole})`;
+    const name = point.signedByName?.trim();
+    if (name && point.signedByRole) {
+      return `${name} (${point.signedByRole})`;
     }
 
-    if (point.signedByName) {
-      return point.signedByName;
+    if (name) {
+      return name;
+    }
+
+    if (point.signedByUserKey && point.signedByRole) {
+      return `${point.signedByUserKey} (${point.signedByRole})`;
+    }
+
+    if (point.signedByUserKey) {
+      return point.signedByUserKey;
+    }
+
+    if (point.signedByRole) {
+      return `Невідомий користувач (${point.signedByRole})`;
     }
 
     return 'Підписант не вказаний';
@@ -91,6 +119,133 @@ export class MemberProbePageComponent implements OnInit {
 
   getSectionPanelValue(section: ProbeDetailSectionView, sectionIndex: number): string {
     return section.sectionId || `section-${sectionIndex}`;
+  }
+
+  get canCloseProbe(): boolean {
+    if (!this.canManageProbePoints || !this.memberKey || !this.probeId) {
+      return false;
+    }
+
+    if (this.isUpdatingProbeStatus || !this.isCloseFlowSupportedProbe(this.probeId)) {
+      return false;
+    }
+
+    if (this.isProbeClosed()) {
+      return false;
+    }
+
+    return this.probeDetailPointRows.length > 0
+      && this.probeDetailPointRows.every(point => point.isSigned);
+  }
+
+  get showCloseProbeInfo(): boolean {
+    if (!this.probeId || !this.isCloseFlowSupportedProbe(this.probeId)) {
+      return false;
+    }
+
+    return this.isProbeClosed();
+  }
+
+  get closedProbeDateLabel(): string {
+    const closedAtUtc = this.probeProgress?.completedAtUtc ?? this.probeProgress?.verifiedAtUtc ?? null;
+    if (!closedAtUtc) {
+      return '—';
+    }
+
+    return this.formatDate(closedAtUtc);
+  }
+
+  onSignPoint(point: MemberProbeDetailPointRowView): void {
+    if (!this.canManageProbePoints || point.isSigned || this.isUpdatingProbeStatus) {
+      return;
+    }
+
+    const isConfirmed = window.confirm(
+      `Підписати точку "${point.pointTitle}"?`
+    );
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    this.updatePointSignature(point.pointId, true, 'Точку підписано.');
+  }
+
+  onUnsignPoint(point: MemberProbeDetailPointRowView): void {
+    if (!this.canManageProbePoints || !point.isSigned || this.isUpdatingProbeStatus) {
+      return;
+    }
+
+    const isConfirmed = window.confirm(
+      `Скасувати підпис точки "${point.pointTitle}"?\n\nПідтвердь дію, якщо дійсно потрібно відкотити підпис.`
+    );
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    this.updatePointSignature(point.pointId, false, 'Підпис скасовано.');
+  }
+
+  onCloseProbe(): void {
+    if (!this.memberKey || !this.probeId || !this.canCloseProbe) {
+      return;
+    }
+
+    const confirmationText = this.probeId === 'probe-1'
+      ? 'Закрити пробу?\n\nПісля закриття першої проби відкриється друга проба для перегляду.'
+      : 'Закрити пробу?\n\nБуде зафіксовано дату закриття другої проби.';
+
+    const isConfirmed = window.confirm(confirmationText);
+    if (!isConfirmed) {
+      return;
+    }
+
+    this.isUpdatingProbeStatus = true;
+    this.reviewerActionErrorMessage = null;
+    this.reviewerActionSuccessMessage = null;
+
+    this.memberProgressService
+      .updateProbeProgressStatus(this.memberKey, this.probeId, {
+        status: ProbeProgressStatus.Completed,
+        note: null
+      })
+      .pipe(finalize(() => {
+        this.isUpdatingProbeStatus = false;
+      }))
+      .subscribe({
+        next: (progress) => {
+          this.applyProbeProgress(progress);
+          this.reviewerActionSuccessMessage = this.probeId === 'probe-1'
+            ? 'Пробу здано і закрито. Друга проба тепер доступна до перегляду.'
+            : 'Пробу здано і закрито. Дату закриття зафіксовано.';
+        },
+        error: (error) => {
+          console.error('Error closing probe:', error);
+          if (error?.status === 409) {
+            const conflictProgress = this.extractConflictProbeProgress(error);
+            if (!conflictProgress) {
+              this.reviewerActionErrorMessage = 'Не вдалося закрити пробу через конфлікт. Оновлюю дані.';
+              this.loadData();
+              return;
+            }
+
+            this.applyProbeProgress(conflictProgress);
+            const conflictStatus = normalizeProbeProgressStatus(conflictProgress.status ?? ProbeProgressStatus.NotStarted);
+            if (conflictStatus === ProbeProgressStatus.Completed || conflictStatus === ProbeProgressStatus.Verified) {
+              this.reviewerActionErrorMessage = null;
+              this.reviewerActionSuccessMessage = 'Пробу вже закрито іншим запитом. Дані синхронізовано.';
+              this.loadData();
+              return;
+            }
+
+            this.reviewerActionErrorMessage = 'Пробу не вдалося закрити: не всі точки підписані або стан уже змінено.';
+            this.loadData();
+          } else {
+            this.reviewerActionErrorMessage = 'Не вдалося закрити пробу. Спробуй ще раз.';
+          }
+        }
+      });
   }
 
   private loadData(): void {
@@ -127,10 +282,7 @@ export class MemberProbePageComponent implements OnInit {
     }).subscribe(({ member, groupedProbe, progress }) => {
       this.member = member;
       this.groupedProbe = groupedProbe;
-      this.probeProgress = progress;
-
-      this.probeDetailPointRows = buildMemberProbeDetailPointRows(groupedProbe, progress);
-      this.probeSections = this.buildProbeSections(groupedProbe, this.probeDetailPointRows);
+      this.applyProbeProgress(progress);
 
       this.loadFailed = groupedProbe === null;
       this.hasPartialDataWarning = groupedProbe !== null && progress === null;
@@ -161,5 +313,87 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     return date.toLocaleDateString('uk-UA');
+  }
+
+  private applyProbeProgress(progress: ProbeProgressDto | null): void {
+    this.probeProgress = progress;
+    this.probeDetailPointRows = buildMemberProbeDetailPointRows(this.groupedProbe, progress);
+    this.probeSections = this.buildProbeSections(this.groupedProbe, this.probeDetailPointRows);
+  }
+
+  private isProbeClosed(): boolean {
+    const normalizedStatus = normalizeProbeProgressStatus(this.probeProgress?.status ?? ProbeProgressStatus.NotStarted);
+    return normalizedStatus === ProbeProgressStatus.Completed || normalizedStatus === ProbeProgressStatus.Verified;
+  }
+
+  private isCloseFlowSupportedProbe(probeId: string): boolean {
+    return probeId === 'probe-1' || probeId === 'probe-2';
+  }
+
+  private updatePointSignature(pointId: string, isSigned: boolean, successMessage: string): void {
+    if (!this.memberKey || !this.probeId || this.isUpdatingProbeStatus || !pointId) {
+      return;
+    }
+
+    this.isUpdatingProbeStatus = true;
+    this.reviewerActionErrorMessage = null;
+    this.reviewerActionSuccessMessage = null;
+
+    const request = { note: null };
+    const operation$ = isSigned
+      ? this.memberProgressService.signProbePoint(this.memberKey, this.probeId, pointId, request)
+      : this.memberProgressService.unsignProbePoint(this.memberKey, this.probeId, pointId, request);
+
+    operation$
+      .pipe(finalize(() => {
+        this.isUpdatingProbeStatus = false;
+      }))
+      .subscribe({
+        next: (progress) => {
+          this.applyProbeProgress(progress);
+          this.reviewerActionSuccessMessage = successMessage;
+        },
+        error: (error) => {
+          console.error('Error updating probe point signature:', error);
+          if (error?.status === 409) {
+            const conflictProgress = this.extractConflictProbeProgress(error);
+            if (!conflictProgress) {
+              this.reviewerActionErrorMessage = 'Не вдалося оновити підпис точки через конфлікт. Оновлюю дані.';
+              this.loadData();
+              return;
+            }
+
+            this.applyProbeProgress(conflictProgress);
+            this.reviewerActionErrorMessage = 'Конфлікт оновлення. Дані синхронізовано, перевір поточний стан точки.';
+            this.loadData();
+          } else {
+            this.reviewerActionErrorMessage = 'Не вдалося оновити підпис точки. Спробуй ще раз.';
+          }
+        }
+      });
+  }
+
+  private extractConflictProbeProgress(error: unknown): ProbeProgressDto | null {
+    if (!error || typeof error !== 'object') {
+      return null;
+    }
+
+    const payload = (error as { error?: unknown }).error;
+
+    if (Array.isArray(payload) && payload.length > 1) {
+      const maybeProgress = payload[1];
+      if (maybeProgress && typeof maybeProgress === 'object') {
+        return maybeProgress as ProbeProgressDto;
+      }
+    }
+
+    if (payload && typeof payload === 'object') {
+      const candidate = payload as Partial<ProbeProgressDto>;
+      if (candidate.probeId && candidate.status !== undefined) {
+        return candidate as ProbeProgressDto;
+      }
+    }
+
+    return null;
   }
 }

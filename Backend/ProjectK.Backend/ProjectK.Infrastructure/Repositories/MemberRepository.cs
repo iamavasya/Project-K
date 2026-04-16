@@ -57,6 +57,15 @@ namespace ProjectK.Infrastructure.Repositories
                                          .ToListAsync(cancellationToken);
         }
 
+        public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
+                .Include(m => m.Group)
+                .Include(m => m.Kurin)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
+        }
+
         public Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");

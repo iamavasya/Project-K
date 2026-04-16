@@ -42,9 +42,48 @@
             </p>
             }
 
-            <p class="probe-hint-text mb-3 text-xs">
-                Відображається read-only перегляд. Підписи точок поки будуються на агрегованому статусі проби.
+            @if (reviewerActionSuccessMessage) {
+            <p class="probe-action-success-text mb-3 text-xs">{{ reviewerActionSuccessMessage }}</p>
+            }
+
+            @if (reviewerActionErrorMessage) {
+            <p class="probe-action-error-text mb-3 text-xs">{{ reviewerActionErrorMessage }}</p>
+            }
+
+            @if (canCloseProbe) {
+            <div class="probe-close-card mb-3 rounded-xl p-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="probe-close-title text-sm font-semibold">Усі точки підписані</p>
+                        <p class="probe-close-meta mt-0.5 text-xs">Можна здати і закрити пробу.</p>
+                    </div>
+
+                    <p-button
+                        label="Здати і закрити пробу"
+                        icon="pi pi-check-circle"
+                        severity="contrast"
+                        [disabled]="isUpdatingProbeStatus"
+                        (onClick)="onCloseProbe()"
+                    ></p-button>
+                </div>
+            </div>
+            }
+
+            @if (showCloseProbeInfo) {
+            <p class="probe-close-meta mb-3 text-xs">
+                Дата закриття проби: {{ closedProbeDateLabel }}
             </p>
+            }
+
+            @if (canManageProbePoints) {
+            <p class="probe-hint-text mb-3 text-xs">
+                Для ролей mentor/manager/admin доступні дії "Підписати" і "Скасувати підпис" для кожної точки окремо.
+            </p>
+            } @else {
+            <p class="probe-hint-text mb-3 text-xs">
+                Відображається read-only перегляд point-level підписів.
+            </p>
+            }
 
             <p-accordion [multiple]="true">
                 @for (section of probeSections; track section.sectionId; let sectionIndex = $index) {
@@ -81,6 +120,31 @@
                                     <p class="probe-point-meta text-xs">Підпис: {{ getProbePointSignerLabel(point) }}</p>
                                     <p class="probe-point-meta text-xs">Дата: {{ getProbePointSignedAtLabel(point) }}</p>
                                 </div>
+
+                                @if (canManageProbePoints) {
+                                <div class="probe-point-actions mt-2 flex flex-wrap gap-2">
+                                    @if (!point.isSigned) {
+                                    <p-button
+                                        label="Підписати"
+                                        icon="pi pi-check"
+                                        size="small"
+                                        severity="success"
+                                        [disabled]="isUpdatingProbeStatus"
+                                        (onClick)="onSignPoint(point)"
+                                    ></p-button>
+                                    } @else {
+                                    <p-button
+                                        label="Скасувати підпис"
+                                        icon="pi pi-undo"
+                                        size="small"
+                                        severity="secondary"
+                                        [outlined]="true"
+                                        [disabled]="isUpdatingProbeStatus"
+                                        (onClick)="onUnsignPoint(point)"
+                                    ></p-button>
+                                    }
+                                </div>
+                                }
                             </div>
                             }
                         </div>

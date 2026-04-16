@@ -113,7 +113,6 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
                 Note = request.Note
             });
 
-            _unitOfWork.BadgeProgresses.Update(progress, cancellationToken);
         }
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

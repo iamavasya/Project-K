@@ -27,6 +27,7 @@ public class BadgeProgressRepository : IBadgeProgressRepository
     public async Task<BadgeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await _context.BadgeProgresses
+            .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.BadgeProgressKey == entityKey, cancellationToken);
     }
@@ -34,6 +35,7 @@ public class BadgeProgressRepository : IBadgeProgressRepository
     public async Task<BadgeProgress?> GetByMemberAndBadgeIdAsync(Guid memberKey, string badgeId, CancellationToken cancellationToken = default)
     {
         return await _context.BadgeProgresses
+            .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.BadgeId == badgeId,
@@ -62,6 +64,13 @@ public class BadgeProgressRepository : IBadgeProgressRepository
 
     public void Update(BadgeProgress entity, CancellationToken cancellationToken = default)
     {
-        _context.BadgeProgresses.Update(entity);
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            _context.BadgeProgresses.Update(entity);
+            return;
+        }
+
+        entry.State = EntityState.Modified;
     }
 }

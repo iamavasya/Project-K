@@ -79,8 +79,6 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             Note = request.Note
         });
 
-        _unitOfWork.BadgeProgresses.Update(progress, cancellationToken);
-
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {

@@ -5,6 +5,7 @@ export interface MemberProbeDetailPointRowView {
   pointId: string;
   pointTitle: string;
   isSigned: boolean;
+  signedByUserKey: string | null;
   signedByName: string | null;
   signedByRole: string | null;
   signedAtUtc: string | null;

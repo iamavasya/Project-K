@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -14,16 +15,43 @@ describe('MemberProbePageComponent', () => {
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'member-1';
   const probeId = 'probe-1';
 
+  function createProbeProgress(status: ProbeProgressStatus) {
+    return {
+      probeProgressKey: null,
+      memberKey,
+      kurinKey: 'kurin-1',
+      probeId,
+      status,
+      completedAtUtc: status === ProbeProgressStatus.Completed ? '2026-04-16T10:00:00Z' : null,
+      completedByUserKey: null,
+      completedByName: status === ProbeProgressStatus.Completed ? 'Впорядник' : null,
+      completedByRole: status === ProbeProgressStatus.Completed ? 'Mentor' : null,
+      verifiedAtUtc: null,
+      verifiedByUserKey: null,
+      verifiedByName: null,
+      verifiedByRole: null,
+      auditTrail: [],
+      pointSignatures: []
+    };
+  }
+
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getGroupedById']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getProbeProgress']);
+    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', [
+      'getProbeProgress',
+      'updateProbeProgressStatus',
+      'signProbePoint',
+      'unsignProbePoint'
+    ]);
+    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey, probeId }));
 
@@ -60,26 +88,22 @@ describe('MemberProbePageComponent', () => {
       ]
     }));
 
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
-      probeProgressKey: null,
-      memberKey,
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.signProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.unsignProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.updateProbeProgressStatus.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
+    authServiceSpy.getAuthStateValue.and.returnValue({
+      userKey: 'user-1',
+      email: 'mentor@example.com',
+      role: 'Mentor',
       kurinKey: 'kurin-1',
-      probeId,
-      status: ProbeProgressStatus.Completed,
-      completedAtUtc: '2026-04-16T10:00:00Z',
-      completedByUserKey: null,
-      completedByName: 'Впорядник',
-      completedByRole: 'Mentor',
-      verifiedAtUtc: null,
-      verifiedByUserKey: null,
-      verifiedByName: null,
-      verifiedByRole: null,
-      auditTrail: []
-    }));
+      accessToken: 'token'
+    });
 
     await TestBed.configureTestingModule({
       imports: [MemberProbePageComponent],
       providers: [
+        { provide: AuthService, useValue: authServiceSpy },
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
@@ -101,7 +125,197 @@ describe('MemberProbePageComponent', () => {
     expect(component).toBeTruthy();
     expect(component.probeSections.length).toBe(1);
     expect(component.probeSections[0].points.length).toBe(2);
-    expect(component.probeSections[0].points[0].isSigned).toBeTrue();
+    expect(component.probeSections[0].points[0].isSigned).toBeFalse();
+  });
+
+  it('should detect reviewer role access', () => {
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.canManageProbePoints).toBeTrue();
+  });
+
+  it('onSignPoint should confirm and sign point for reviewer', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    createComponent();
+    fixture.detectChanges();
+
+    const point = component.probeSections[0].points[0];
+    component.onSignPoint(point);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(memberProgressServiceSpy.signProbePoint).toHaveBeenCalledWith(memberKey, probeId, point.pointId, {
+      note: null
+    });
+  });
+
+  it('onSignPoint should do nothing for non-reviewer role', () => {
+    authServiceSpy.getAuthStateValue.and.returnValue({
+      userKey: 'user-1',
+      email: 'member@example.com',
+      role: 'User',
+      kurinKey: 'kurin-1',
+      accessToken: 'token'
+    });
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    createComponent();
+    fixture.detectChanges();
+
+    const point = component.probeSections[0].points[0];
+    component.onSignPoint(point);
+
+    expect(component.canManageProbePoints).toBeFalse();
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(memberProgressServiceSpy.signProbePoint).not.toHaveBeenCalled();
+  });
+
+  it('onUnsignPoint should confirm and unsign point for reviewer', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    createComponent();
+    fixture.detectChanges();
+
+    const point = component.probeSections[0].points[0];
+    component.onUnsignPoint(point);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(memberProgressServiceSpy.unsignProbePoint).toHaveBeenCalledWith(memberKey, probeId, point.pointId, {
+      note: null
+    });
+  });
+
+  it('getProbePointSignerLabel should fallback to userKey + role when signer name is absent', () => {
+    createComponent();
+    fixture.detectChanges();
+
+    const label = component.getProbePointSignerLabel({
+      sectionId: 'sec-1',
+      sectionCode: 'A',
+      sectionTitle: 'Розділ A',
+      pointId: 'point-1',
+      pointTitle: 'Точка 1',
+      isSigned: true,
+      signedByUserKey: '4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111',
+      signedByName: null,
+      signedByRole: 'Mentor',
+      signedAtUtc: null
+    });
+
+    expect(label).toBe('4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111 (Mentor)');
+  });
+
+  it('onUnsignPoint should show conflict message when API returns 409', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+    memberProgressServiceSpy.unsignProbePoint.and.returnValue(throwError(() => ({
+      status: 409,
+      error: ['conflict', createProbeProgress(ProbeProgressStatus.InProgress)]
+    })));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    createComponent();
+    fixture.detectChanges();
+
+    const point = component.probeSections[0].points[0];
+    component.onUnsignPoint(point);
+
+    expect(component.reviewerActionErrorMessage).toContain('Конфлікт оновлення');
+  });
+
+  it('should allow closing probe when all points are signed', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        },
+        {
+          probePointProgressKey: 'pp2',
+          pointId: 'point-2',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:05:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.canCloseProbe).toBeTrue();
+  });
+
+  it('onCloseProbe should call updateProbeProgressStatus with Completed', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        },
+        {
+          probePointProgressKey: 'pp2',
+          pointId: 'point-2',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:05:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    createComponent();
+    fixture.detectChanges();
+
+    component.onCloseProbe();
+
+    expect(memberProgressServiceSpy.updateProbeProgressStatus).toHaveBeenCalledWith(memberKey, probeId, {
+      status: ProbeProgressStatus.Completed,
+      note: null
+    });
   });
 
   it('goBackToMember should navigate to member card route', () => {

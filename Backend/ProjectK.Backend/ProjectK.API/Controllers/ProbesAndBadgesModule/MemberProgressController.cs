@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
@@ -88,6 +89,38 @@ public class MemberProgressController : ControllerBase
         [FromBody] UpdateProbeProgressStatusRequest request)
     {
         var response = await _mediator.Send(new UpdateProbeProgressStatus(memberKey, probeId, request.Status, request.Note));
+        return response.ToActionResult(this);
+    }
+
+    [Authorize(Policy = "RequireMentor")]
+    [HttpPut("probes/{probeId}/points/{pointId}/sign")]
+    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SignProbePoint(
+        Guid memberKey,
+        string probeId,
+        string pointId,
+        [FromBody] UpdateProbePointSignatureRequest? request)
+    {
+        var response = await _mediator.Send(new UpdateProbePointSignature(memberKey, probeId, pointId, true, request?.Note));
+        return response.ToActionResult(this);
+    }
+
+    [Authorize(Policy = "RequireMentor")]
+    [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
+    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UnsignProbePoint(
+        Guid memberKey,
+        string probeId,
+        string pointId,
+        [FromBody] UpdateProbePointSignatureRequest? request)
+    {
+        var response = await _mediator.Send(new UpdateProbePointSignature(memberKey, probeId, pointId, false, request?.Note));
         return response.ToActionResult(this);
     }
 }

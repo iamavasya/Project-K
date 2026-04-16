@@ -41,14 +41,35 @@ public sealed class GetProbeProgressHandler : IRequestHandler<GetProbeProgress, 
         }
 
         var progress = await _unitOfWork.ProbeProgresses
-            .GetByMemberAndProbeIdAsync(request.MemberKey, request.ProbeId, cancellationToken);
+            .GetByMemberAndProbeIdWithAuditAsync(request.MemberKey, request.ProbeId, cancellationToken);
+
+        var pointSignatures = await _unitOfWork.ProbePointProgresses
+            .GetByMemberAndProbeAsync(request.MemberKey, request.ProbeId.Trim(), cancellationToken);
+
+        var pointSignatureResponses = pointSignatures
+            .OrderBy(x => x.PointId)
+            .Select(x => new ProbePointProgressResponse(
+                x.ProbePointProgressKey,
+                x.PointId,
+                x.IsSigned,
+                x.SignedAtUtc,
+                x.SignedByUserKey,
+                x.SignedByName,
+                x.SignedByRole))
+            .ToList();
 
         if (progress is null)
         {
-            var notStarted = ProbeProgressResponse.CreateNotStarted(request.MemberKey, member.KurinKey, request.ProbeId.Trim());
+            var notStarted = ProbeProgressResponse.CreateNotStarted(
+                request.MemberKey,
+                member.KurinKey,
+                request.ProbeId.Trim(),
+                pointSignatureResponses);
             return new ServiceResult<ProbeProgressResponse>(ResultType.Success, notStarted);
         }
 
-        return new ServiceResult<ProbeProgressResponse>(ResultType.Success, ProbeProgressResponse.FromEntity(progress));
+        return new ServiceResult<ProbeProgressResponse>(
+            ResultType.Success,
+            ProbeProgressResponse.FromEntity(progress, pointSignatureResponses));
     }
 }

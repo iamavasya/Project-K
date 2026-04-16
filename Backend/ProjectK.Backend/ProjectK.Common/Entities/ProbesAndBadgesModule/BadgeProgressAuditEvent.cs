@@ -5,7 +5,7 @@ namespace ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 public class BadgeProgressAuditEvent : Entity
 {
-    public Guid BadgeProgressAuditEventKey { get; set; } = Guid.NewGuid();
+    public Guid BadgeProgressAuditEventKey { get; set; }
     public Guid BadgeProgressKey { get; set; }
     public BadgeProgressStatus? FromStatus { get; set; }
     public BadgeProgressStatus ToStatus { get; set; }

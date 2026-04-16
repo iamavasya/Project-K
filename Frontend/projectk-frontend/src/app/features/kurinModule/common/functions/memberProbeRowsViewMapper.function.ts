@@ -8,13 +8,13 @@ export type ProbeProgressStatusLike = ProbeProgressStatus | keyof typeof ProbePr
 interface ProbeRowTemplate {
   probeId: string;
   label: string;
-  isDisabled: boolean;
+  isPolicyDisabled: boolean;
 }
 
 const PROBE_ROW_TEMPLATES: ProbeRowTemplate[] = [
-  { probeId: 'probe-1', label: 'Перша проба', isDisabled: false },
-  { probeId: 'probe-2', label: 'Друга проба', isDisabled: false },
-  { probeId: 'probe-3', label: 'Третя проба', isDisabled: true }
+  { probeId: 'probe-1', label: 'Перша проба', isPolicyDisabled: false },
+  { probeId: 'probe-2', label: 'Друга проба', isPolicyDisabled: false },
+  { probeId: 'probe-3', label: 'Третя проба', isPolicyDisabled: true }
 ];
 
 function resolveCompletedAtUtc(progress: ProbeProgressDto | undefined): string | null {
@@ -51,7 +51,7 @@ export function buildMemberProbeRows(
   const probeById = new Map<string, ProbeSummaryDto>(probes.map(probe => [probe.id, probe]));
   const progressByProbeId = new Map<string, ProbeProgressDto>(progresses.map(progress => [progress.probeId, progress]));
 
-  return PROBE_ROW_TEMPLATES.map(template => {
+  const rows = PROBE_ROW_TEMPLATES.map(template => {
     const probe = probeById.get(template.probeId);
     const progress = progressByProbeId.get(template.probeId);
     const status = normalizeProbeProgressStatus(progress?.status ?? ProbeProgressStatus.NotStarted);
@@ -63,10 +63,29 @@ export function buildMemberProbeRows(
       status,
       completedAtUtc: resolveCompletedAtUtc(progress),
       isCompleted: isCompletedStatus(status),
-      isDisabled: template.isDisabled,
-      canOpenDetails: !template.isDisabled && !!probe,
+      isDisabled: template.isPolicyDisabled,
+      canOpenDetails: !template.isPolicyDisabled && !!probe,
       pointsCount: probe?.pointsCount ?? null,
       sectionsCount: probe?.sectionsCount ?? null
+    };
+  });
+
+  const firstProbe = rows[0];
+  const isFirstProbeClosed = !!firstProbe && firstProbe.isCompleted;
+
+  return rows.map(row => {
+    if (row.probeId !== 'probe-2') {
+      return row;
+    }
+
+    const hasOwnProgress = row.status !== ProbeProgressStatus.NotStarted || !!row.completedAtUtc;
+    const isUnlocked = isFirstProbeClosed || hasOwnProgress;
+    const isDisabled = !isUnlocked;
+
+    return {
+      ...row,
+      isDisabled,
+      canOpenDetails: !isDisabled && row.canOpenDetails
     };
   });
 }

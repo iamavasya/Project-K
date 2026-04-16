@@ -79,4 +79,32 @@ describe('memberProbeRowsViewMapper', () => {
     expect(rows[0].isCompleted).toBeTrue();
     expect(rows[0].status).toBe(ProbeProgressStatus.Completed);
   });
+
+  it('should keep second probe locked until first probe is completed', () => {
+    const probes = [
+      createProbeSummary({ id: 'probe-1', title: 'Перша проба' }),
+      createProbeSummary({ id: 'probe-2', title: 'Друга проба' })
+    ];
+
+    const rows = buildMemberProbeRows(probes, [
+      createProbeProgress({ probeId: 'probe-1', status: ProbeProgressStatus.InProgress })
+    ]);
+
+    expect(rows[1].isDisabled).toBeTrue();
+    expect(rows[1].canOpenDetails).toBeFalse();
+  });
+
+  it('should unlock second probe when first probe is completed', () => {
+    const probes = [
+      createProbeSummary({ id: 'probe-1', title: 'Перша проба' }),
+      createProbeSummary({ id: 'probe-2', title: 'Друга проба' })
+    ];
+
+    const rows = buildMemberProbeRows(probes, [
+      createProbeProgress({ probeId: 'probe-1', status: ProbeProgressStatus.Completed, completedAtUtc: '2026-04-16T08:00:00Z' })
+    ]);
+
+    expect(rows[1].isDisabled).toBeFalse();
+    expect(rows[1].canOpenDetails).toBeTrue();
+  });
 });

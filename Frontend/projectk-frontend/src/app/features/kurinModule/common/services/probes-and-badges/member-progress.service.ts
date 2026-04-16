@@ -6,6 +6,7 @@ import { BadgeProgressDto } from '../../models/probes-and-badges/badgeProgressDt
 import { ProbeProgressDto } from '../../models/probes-and-badges/probeProgressDto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/reviewBadgeProgressRequestDto';
 import { SubmitBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/submitBadgeProgressRequestDto';
+import { UpdateProbePointSignatureRequestDto } from '../../models/probes-and-badges/requests/updateProbePointSignatureRequestDto';
 import { UpdateProbeProgressStatusRequestDto } from '../../models/probes-and-badges/requests/updateProbeProgressStatusRequestDto';
 
 @Injectable({
@@ -52,6 +53,30 @@ export class MemberProgressService {
   ): Observable<ProbeProgressDto> {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/progress/status`,
+      request
+    );
+  }
+
+  signProbePoint(
+    memberKey: string,
+    probeId: string,
+    pointId: string,
+    request: UpdateProbePointSignatureRequestDto
+  ): Observable<ProbeProgressDto> {
+    return this.http.put<ProbeProgressDto>(
+      `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/sign`,
+      request
+    );
+  }
+
+  unsignProbePoint(
+    memberKey: string,
+    probeId: string,
+    pointId: string,
+    request: UpdateProbePointSignatureRequestDto
+  ): Observable<ProbeProgressDto> {
+    return this.http.put<ProbeProgressDto>(
+      `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/unsign`,
       request
     );
   }

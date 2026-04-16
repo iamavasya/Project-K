@@ -19,8 +19,13 @@ public sealed class ProbeProgressResponse
     public string? VerifiedByName { get; init; }
     public string? VerifiedByRole { get; init; }
     public IReadOnlyCollection<ProbeProgressAuditEventResponse> AuditTrail { get; init; } = [];
+    public IReadOnlyCollection<ProbePointProgressResponse> PointSignatures { get; init; } = [];
 
-    public static ProbeProgressResponse CreateNotStarted(Guid memberKey, Guid kurinKey, string probeId)
+    public static ProbeProgressResponse CreateNotStarted(
+        Guid memberKey,
+        Guid kurinKey,
+        string probeId,
+        IReadOnlyCollection<ProbePointProgressResponse>? pointSignatures = null)
     {
         return new ProbeProgressResponse
         {
@@ -29,11 +34,14 @@ public sealed class ProbeProgressResponse
             KurinKey = kurinKey,
             ProbeId = probeId,
             Status = ProbeProgressStatus.NotStarted,
-            AuditTrail = []
+            AuditTrail = [],
+            PointSignatures = pointSignatures ?? []
         };
     }
 
-    public static ProbeProgressResponse FromEntity(ProbeProgress entity)
+    public static ProbeProgressResponse FromEntity(
+        ProbeProgress entity,
+        IReadOnlyCollection<ProbePointProgressResponse>? pointSignatures = null)
     {
         var auditTrail = entity.AuditEvents
             .OrderBy(x => x.OccurredAtUtc)
@@ -64,7 +72,8 @@ public sealed class ProbeProgressResponse
             VerifiedByUserKey = entity.VerifiedByUserKey,
             VerifiedByName = entity.VerifiedByName,
             VerifiedByRole = entity.VerifiedByRole,
-            AuditTrail = auditTrail
+            AuditTrail = auditTrail,
+            PointSignatures = pointSignatures ?? []
         };
     }
 }

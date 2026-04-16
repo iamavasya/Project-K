@@ -1,5 +1,6 @@
 import { ProbeProgressStatus } from '../enums/probe-progress-status.enum';
 import { ProbeProgressAuditEventDto } from './probeProgressAuditEventDto';
+import { ProbePointProgressDto } from './probePointProgressDto';
 
 export interface ProbeProgressDto {
   probeProgressKey: string | null;
@@ -16,4 +17,5 @@ export interface ProbeProgressDto {
   verifiedByName: string | null;
   verifiedByRole: string | null;
   auditTrail: ProbeProgressAuditEventDto[];
+  pointSignatures?: ProbePointProgressDto[];
 }
