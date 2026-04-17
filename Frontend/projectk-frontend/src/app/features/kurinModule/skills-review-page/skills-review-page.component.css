@@ -1,0 +1,122 @@
+.skills-review-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.skills-review-page__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.skills-review-page__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.skills-review-page__subtitle {
+  margin: 0.25rem 0 0;
+  color: #475569;
+}
+
+.skills-review-page__header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.skills-review-page__skeleton-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.skills-review-page__actions-col {
+  width: 16rem;
+}
+
+.skills-review-page__row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.skills-review-page__empty {
+  text-align: center;
+  padding: 1.25rem;
+  color: #64748b;
+}
+
+.review-member {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.review-member__photo,
+.review-member__fallback {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.review-member__photo {
+  object-fit: cover;
+}
+
+.review-member__fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.review-member__name {
+  font-weight: 600;
+}
+
+.review-member__key {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.review-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-badge__image {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  background: #f8fafc;
+}
+
+.skills-review-dialog__text {
+  margin: 0;
+  color: #1f2937;
+}
+
+.skills-review-dialog__note-label {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .skills-review-page__header {
+    flex-direction: column;
+  }
+
+  .skills-review-page__header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

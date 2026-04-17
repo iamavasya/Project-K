@@ -7,6 +7,7 @@ import { ProbesCatalogService } from '../common/services/probes-and-badges/probe
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { MemberProbePageComponent } from './member-probe-page.component';
+import { ConfirmationService } from 'primeng/api';
 
 describe('MemberProbePageComponent', () => {
   let fixture: ComponentFixture<MemberProbePageComponent>;
@@ -135,15 +136,16 @@ describe('MemberProbePageComponent', () => {
     expect(component.canManageProbePoints).toBeTrue();
   });
 
-  it('onSignPoint should confirm and sign point for reviewer', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+  it('onSignPoint should sign point for reviewer without confirm dialog', () => {
     createComponent();
     fixture.detectChanges();
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    const confirmSpy = spyOn(confirmationService, 'confirm');
 
     const point = component.probeSections[0].points[0];
     component.onSignPoint(point);
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
     expect(memberProgressServiceSpy.signProbePoint).toHaveBeenCalledWith(memberKey, probeId, point.pointId, {
       note: null
     });
@@ -157,16 +159,16 @@ describe('MemberProbePageComponent', () => {
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });
-    spyOn(window, 'confirm').and.returnValue(true);
-
     createComponent();
     fixture.detectChanges();
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    const confirmSpy = spyOn(confirmationService, 'confirm');
 
     const point = component.probeSections[0].points[0];
     component.onSignPoint(point);
 
     expect(component.canManageProbePoints).toBeFalse();
-    expect(window.confirm).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
     expect(memberProgressServiceSpy.signProbePoint).not.toHaveBeenCalled();
   });
 
@@ -186,15 +188,18 @@ describe('MemberProbePageComponent', () => {
         }
       ]
     }));
-    spyOn(window, 'confirm').and.returnValue(true);
-
     createComponent();
     fixture.detectChanges();
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    const confirmSpy = spyOn(confirmationService, 'confirm').and.callFake((options) => {
+      options.accept?.();
+      return confirmationService;
+    });
 
     const point = component.probeSections[0].points[0];
     component.onUnsignPoint(point);
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirmSpy).toHaveBeenCalled();
     expect(memberProgressServiceSpy.unsignProbePoint).toHaveBeenCalledWith(memberKey, probeId, point.pointId, {
       note: null
     });
@@ -239,10 +244,13 @@ describe('MemberProbePageComponent', () => {
       status: 409,
       error: ['conflict', createProbeProgress(ProbeProgressStatus.InProgress)]
     })));
-    spyOn(window, 'confirm').and.returnValue(true);
-
     createComponent();
     fixture.detectChanges();
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    spyOn(confirmationService, 'confirm').and.callFake((options) => {
+      options.accept?.();
+      return confirmationService;
+    });
 
     const point = component.probeSections[0].points[0];
     component.onUnsignPoint(point);
@@ -305,13 +313,17 @@ describe('MemberProbePageComponent', () => {
         }
       ]
     }));
-    spyOn(window, 'confirm').and.returnValue(true);
-
     createComponent();
     fixture.detectChanges();
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    const confirmSpy = spyOn(confirmationService, 'confirm').and.callFake((options) => {
+      options.accept?.();
+      return confirmationService;
+    });
 
     component.onCloseProbe();
 
+    expect(confirmSpy).toHaveBeenCalled();
     expect(memberProgressServiceSpy.updateProbeProgressStatus).toHaveBeenCalledWith(memberKey, probeId, {
       status: ProbeProgressStatus.Completed,
       note: null

@@ -55,7 +55,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
                     return new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber));
                 }
                 // Create new Kurin
-                existing = new (request.Number);
+                existing = new(request.Number);
                 _unitOfWork.Kurins.Create(existing, cancellationToken);
                 isCreated = true;
             }

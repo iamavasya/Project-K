@@ -12,7 +12,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
     {
         Task<Leadership?> GetByKeyAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
         Task<IEnumerable<Leadership>> GetAllAsync(CancellationToken cancellationToken = default);
-        Task<IEnumerable<Leadership>> GetAllByTypeAsync(LeadershipType type, Guid entityKey,  CancellationToken cancellationToken = default);
+        Task<IEnumerable<Leadership>> GetAllByTypeAsync(LeadershipType type, Guid entityKey, CancellationToken cancellationToken = default);
 
         void Add(Leadership leadership, CancellationToken cancellationToken = default);
         void Update(Leadership leadership, CancellationToken cancellationToken = default);

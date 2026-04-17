@@ -87,7 +87,7 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasKey(e => e.LeadershipKey);
                 entity.Property(e => e.Type)
                       .HasConversion<int>();
-                entity.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey});
+                entity.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey });
                 entity.HasOne(e => e.Kurin)
                     .WithMany(k => k.Leaderships)
                     .HasForeignKey(e => e.KurinKey)

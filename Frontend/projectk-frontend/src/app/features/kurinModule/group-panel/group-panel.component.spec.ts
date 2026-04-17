@@ -108,8 +108,7 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
     paramMapSubject.next(convertToParamMap({ memberKey: 'newKey' }));
-    component.memberKey = 'newKey'; // mimic subscription assignment timing
-    component.refreshData();
+    expect(component.memberKey).toBe('newKey');
     expect(memberServiceSpy.getByKey).toHaveBeenCalledWith('newKey');
   });
 });

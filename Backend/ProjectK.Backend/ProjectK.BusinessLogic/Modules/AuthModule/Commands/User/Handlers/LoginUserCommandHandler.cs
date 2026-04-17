@@ -34,7 +34,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             {
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
-            
+
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
 
             if (!result.Succeeded)

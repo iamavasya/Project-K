@@ -177,7 +177,7 @@ namespace ProjectK.Infrastructure.Repositories
             if (member == null) throw new ArgumentNullException(memberMessage);
 
             var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
-            
+
             if (history != null) history.EndDate = endDate;
         }
 

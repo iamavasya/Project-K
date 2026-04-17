@@ -54,7 +54,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             }
 
             var response = _mapper.Map<IEnumerable<MemberResponse>>(members);
-            
+
             return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
         }
     }

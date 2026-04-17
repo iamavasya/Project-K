@@ -1,5 +1,4 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, inject, OnInit } from '@angular/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MemberDto } from '../common/models/memberDto';
 import { MemberService } from '../common/services/member-service/member.service';
@@ -7,7 +6,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
+import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -23,10 +24,12 @@ import { BadgeProgressDto } from '../common/models/probes-and-badges/badgeProgre
 import { ProbeSummaryDto } from '../common/models/probes-and-badges/probeSummaryDto';
 import { ProbeProgressDto } from '../common/models/probes-and-badges/probeProgressDto';
 import { MemberProbeRowView } from '../common/models/probes-and-badges/memberProbeRowView';
+import { MemberSkillItemView } from '../common/models/probes-and-badges/memberSkillItemView';
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
-import { environment } from '../../environments/environment';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card.component';
+import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 
 @Component({
   selector: 'app-member-card',
@@ -35,23 +38,28 @@ import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-
     ButtonModule,
     TagModule,
     DialogModule,
+    ConfirmDialogModule,
     FormsModule,
     InputTextModule,
     IconFieldModule,
     InputIconModule,
     SkillMiniCardComponent
   ],
+  providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
   styleUrl: './member-card.component.css'
 })
-export class MemberCardComponent implements OnInit, OnDestroy {
+export class MemberCardComponent implements OnInit {
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
   badgesCatalogService = inject(BadgesCatalogService);
   probesCatalogService = inject(ProbesCatalogService);
   memberProgressService = inject(MemberProgressService);
-  http = inject(HttpClient);
+  badgeImageBlobService = inject(BadgeImageBlobService);
+  authService = inject(AuthService);
+  confirmationService = inject(ConfirmationService);
+  private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   member: MemberDto | null = null;
   memberKey: string | null = null;
@@ -68,24 +76,21 @@ export class MemberCardComponent implements OnInit, OnDestroy {
   isAddSkillDialogVisible = false;
   isSubmittingSkill = false;
   submittingBadgeId: string | null = null;
+  inlineModerationBadgeId: string | null = null;
 
   addSkillSearchTerm = '';
   addSkillVisibleCount = 12;
   addSkillErrorMessage: string | null = null;
   addSkillSuccessMessage: string | null = null;
+  inlineModerationMessage: string | null = null;
+  inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
 
   readonly addSkillPageSize = 12;
-  readonly apiOrigin = this.resolveApiOrigin();
-
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey');
       this.refreshData();
     });
-  }
-
-  ngOnDestroy(): void {
-    this.releaseObjectUrls();
   }
 
   refreshData(): void {
@@ -156,6 +161,7 @@ export class MemberCardComponent implements OnInit, OnDestroy {
   openAllSkillsDialog(): void {
     this.addSkillSuccessMessage = null;
     this.addSkillErrorMessage = null;
+    this.inlineModerationMessage = null;
     this.isAllSkillsDialogVisible = true;
   }
 
@@ -175,9 +181,28 @@ export class MemberCardComponent implements OnInit, OnDestroy {
     this.addSkillVisibleCount += this.addSkillPageSize;
   }
 
+  get canOpenSkillsReview(): boolean {
+    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
+    const kurinKey = this.member?.kurinKey || this.authService.getAuthStateValue()?.kurinKey;
+    return this.reviewerRoles.has(role) && !!kurinKey;
+  }
+
+  get canInlineModerateSkills(): boolean {
+    return this.canOpenSkillsReview && !!this.memberKey;
+  }
+
+  get isInlineModerationBusy(): boolean {
+    return this.inlineModerationBadgeId !== null;
+  }
+
   canSubmitBadge(badgeId: string): boolean {
     const existing = this.badgeProgresses.find(item => item.badgeId === badgeId);
-    return !existing;
+    if (!existing) {
+      return true;
+    }
+
+    const normalizedStatus = normalizeBadgeProgressStatus(existing.status);
+    return normalizedStatus === BadgeProgressStatus.Rejected || normalizedStatus === BadgeProgressStatus.Draft;
   }
 
   getExistingBadgeStatusLabel(badgeId: string): string | null {
@@ -194,18 +219,36 @@ export class MemberCardComponent implements OnInit, OnDestroy {
       case BadgeProgressStatus.Confirmed:
         return 'Вже підтверджено';
       case BadgeProgressStatus.Rejected:
-        return 'Було відхилено';
+        return 'Було відхилено. Можна подати повторно';
       default:
         return 'Вже додано';
     }
   }
 
+  getSubmitBadgeButtonLabel(badgeId: string): string {
+    if (this.submittingBadgeId === badgeId) {
+      return 'Додаємо...';
+    }
+
+    const existing = this.badgeProgresses.find(item => item.badgeId === badgeId);
+    if (!existing) {
+      return 'Додати';
+    }
+
+    const normalizedStatus = normalizeBadgeProgressStatus(existing.status);
+    if (normalizedStatus === BadgeProgressStatus.Rejected) {
+      return 'Подати знову';
+    }
+
+    return 'Додати';
+  }
+
   getCatalogBadgeImageUrl(imagePath: string): string | null {
-    return this.resolveImageForDisplay(resolveBadgeImageUrl(imagePath));
+    return this.badgeImageBlobService.resolveBadgeImageForDisplay(resolveBadgeImageUrl(imagePath));
   }
 
   getSkillBadgeImageUrl(imageUrl: string | null): string | null {
-    return this.resolveImageForDisplay(imageUrl);
+    return this.badgeImageBlobService.resolveBadgeImageForDisplay(imageUrl);
   }
 
   getProbeStatusLabel(status: ProbeProgressStatus): string {
@@ -275,6 +318,99 @@ export class MemberCardComponent implements OnInit, OnDestroy {
           this.isSubmittingSkill = false;
           this.submittingBadgeId = null;
           this.addSkillErrorMessage = 'Не вдалося подати вмілість. Спробуй ще раз.';
+        }
+      });
+  }
+
+  isInlineModerationInProgress(badgeId: string): boolean {
+    return this.inlineModerationBadgeId === badgeId;
+  }
+
+  approvePendingSkill(skill: MemberSkillItemView): void {
+    this.inlineModerateSkill(skill, true);
+  }
+
+  removeConfirmedSkill(skill: MemberSkillItemView): void {
+    this.inlineModerateSkill(skill, false);
+  }
+
+  openSkillsReviewFromDialog(): void {
+    const kurinKey = this.member?.kurinKey || this.authService.getAuthStateValue()?.kurinKey;
+    if (!kurinKey || !this.canOpenSkillsReview) {
+      return;
+    }
+
+    this.isAllSkillsDialogVisible = false;
+    this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
+  }
+
+  private inlineModerateSkill(skill: MemberSkillItemView, isApproved: boolean): void {
+    if (!this.memberKey || !this.canInlineModerateSkills || this.isInlineModerationBusy) {
+      return;
+    }
+
+    if (isApproved) {
+      this.executeInlineModeration(skill, true);
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Видалення підтвердженої вмілості',
+      message: `Видалити підтверджену вмілість "${skill.title}"?`,
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Скасувати',
+      rejectButtonProps: {
+        label: 'Скасувати',
+        severity: 'secondary',
+        outlined: true
+      },
+      acceptButtonProps: {
+        label: 'Видалити',
+        severity: 'danger'
+      },
+      accept: () => {
+        this.executeInlineModeration(skill, false);
+      }
+    });
+  }
+
+  private executeInlineModeration(skill: MemberSkillItemView, isApproved: boolean): void {
+    if (!this.memberKey || this.isInlineModerationBusy) {
+      return;
+    }
+
+    this.inlineModerationBadgeId = skill.badgeId;
+    this.inlineModerationMessage = null;
+
+    this.memberProgressService
+      .reviewBadgeProgress(this.memberKey, skill.badgeId, { isApproved, note: null })
+      .pipe(finalize(() => {
+        this.inlineModerationBadgeId = null;
+      }))
+      .subscribe({
+        next: () => {
+          this.inlineModerationSeverity = 'success';
+          this.inlineModerationMessage = isApproved
+            ? `Вмілість "${skill.title}" підтверджено.`
+            : `Вмілість "${skill.title}" видалено з підтверджених.`;
+          this.loadSkills(this.memberKey!);
+        },
+        error: (error) => {
+          if (error?.status === 409) {
+            this.inlineModerationSeverity = 'warn';
+            this.inlineModerationMessage = 'Стан вмілості вже змінено в іншому запиті. Дані оновлено.';
+            this.loadSkills(this.memberKey!);
+            return;
+          }
+
+          if (error?.status === 403) {
+            this.inlineModerationSeverity = 'error';
+            this.inlineModerationMessage = 'Немає доступу для цієї дії модерації.';
+            return;
+          }
+
+          this.inlineModerationSeverity = 'error';
+          this.inlineModerationMessage = 'Не вдалося виконати дію. Спробуй ще раз.';
         }
       });
   }
@@ -372,70 +508,6 @@ export class MemberCardComponent implements OnInit, OnDestroy {
     }
 
     return date.toLocaleDateString('uk-UA');
-  }
-
-  private readonly objectUrlBySourceUrl = new Map<string, string>();
-  private readonly pendingImageLoads = new Set<string>();
-
-  private resolveApiOrigin(): string {
-    try {
-      return new URL(environment.apiUrl).origin;
-    } catch {
-      return '';
-    }
-  }
-
-  private resolveImageForDisplay(imageUrl: string | null): string | null {
-    if (!imageUrl) {
-      return null;
-    }
-
-    if (!this.isProtectedBadgesImageUrl(imageUrl)) {
-      return imageUrl;
-    }
-
-    const cached = this.objectUrlBySourceUrl.get(imageUrl);
-    if (cached) {
-      return cached;
-    }
-
-    if (!this.pendingImageLoads.has(imageUrl)) {
-      this.pendingImageLoads.add(imageUrl);
-      this.http.get(imageUrl, { responseType: 'blob' }).subscribe({
-        next: (blob) => {
-          const objectUrl = URL.createObjectURL(blob);
-          this.objectUrlBySourceUrl.set(imageUrl, objectUrl);
-          this.pendingImageLoads.delete(imageUrl);
-        },
-        error: (error) => {
-          console.error('Error fetching protected badge image:', error);
-          this.pendingImageLoads.delete(imageUrl);
-        }
-      });
-    }
-
-    return null;
-  }
-
-  private isProtectedBadgesImageUrl(imageUrl: string): boolean {
-    if (imageUrl.startsWith('/badges_images/')) {
-      return true;
-    }
-
-    if (!this.apiOrigin) {
-      return imageUrl.includes('/badges_images/');
-    }
-
-    return imageUrl.startsWith(`${this.apiOrigin}/badges_images/`);
-  }
-
-  private releaseObjectUrls(): void {
-    for (const objectUrl of this.objectUrlBySourceUrl.values()) {
-      URL.revokeObjectURL(objectUrl);
-    }
-
-    this.objectUrlBySourceUrl.clear();
-    this.pendingImageLoads.clear();
   }
 
   onEditMember() {

@@ -1,3 +1,4 @@
+<p-confirmdialog />
 <div class="w-full px-4 py-6 md:px-8 md:py-10">
     @if (member) {
     <div class="member-tiles mx-auto w-full max-w-6xl space-y-5">
@@ -206,19 +207,34 @@
                 <div class="space-y-2">
                     @for (skill of skillsSummary.recentConfirmed; track skill.badgeId) {
                     <div class="dialog-skill-row rounded-xl px-3 py-2">
-                        <div class="flex min-w-0 items-center gap-3">
-                            <span class="dialog-skill-thumb flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
-                                @if (getSkillBadgeImageUrl(skill.imageUrl); as imageUrl) {
-                                <img [src]="imageUrl" [alt]="skill.title" class="h-full w-full object-cover" loading="lazy" />
-                                } @else {
-                                <span class="pi pi-star text-xs"></span>
-                                }
-                            </span>
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="dialog-skill-thumb flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
+                                    @if (getSkillBadgeImageUrl(skill.imageUrl); as imageUrl) {
+                                    <img [src]="imageUrl" [alt]="skill.title" class="h-full w-full object-cover" loading="lazy" />
+                                    } @else {
+                                    <span class="pi pi-star text-xs"></span>
+                                    }
+                                </span>
 
-                            <div class="min-w-0">
-                                <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc || 'Дата відсутня' }}</p>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
+                                    <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc || 'Дата відсутня' }}</p>
+                                </div>
                             </div>
+
+                            @if (canInlineModerateSkills) {
+                            <p-button
+                                (onClick)="removeConfirmedSkill(skill)"
+                                icon="pi pi-times"
+                                severity="danger"
+                                [rounded]="true"
+                                [text]="true"
+                                [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                [disabled]="isInlineModerationBusy"
+                                styleClass="dialog-inline-action-btn"
+                            ></p-button>
+                            }
                         </div>
                     </div>
                     }
@@ -237,19 +253,34 @@
                 <div class="space-y-2">
                     @for (skill of skillsSummary.pendingConfirmation; track skill.badgeId) {
                     <div class="dialog-skill-row dialog-skill-row--pending rounded-xl px-3 py-2">
-                        <div class="flex min-w-0 items-center gap-3">
-                            <span class="dialog-skill-thumb flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
-                                @if (getSkillBadgeImageUrl(skill.imageUrl); as imageUrl) {
-                                <img [src]="imageUrl" [alt]="skill.title" class="h-full w-full object-cover" loading="lazy" />
-                                } @else {
-                                <span class="pi pi-clock text-xs"></span>
-                                }
-                            </span>
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="dialog-skill-thumb flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
+                                    @if (getSkillBadgeImageUrl(skill.imageUrl); as imageUrl) {
+                                    <img [src]="imageUrl" [alt]="skill.title" class="h-full w-full object-cover" loading="lazy" />
+                                    } @else {
+                                    <span class="pi pi-clock text-xs"></span>
+                                    }
+                                </span>
 
-                            <div class="min-w-0">
-                                <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc || 'Дата відсутня' }}</p>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
+                                    <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc || 'Дата відсутня' }}</p>
+                                </div>
                             </div>
+
+                            @if (canInlineModerateSkills) {
+                            <p-button
+                                (onClick)="approvePendingSkill(skill)"
+                                icon="pi pi-check"
+                                severity="success"
+                                [rounded]="true"
+                                [text]="true"
+                                [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                [disabled]="isInlineModerationBusy"
+                                styleClass="dialog-inline-action-btn"
+                            ></p-button>
+                            }
                         </div>
                     </div>
                     }
@@ -257,15 +288,38 @@
                 }
             </section>
 
+            @if (inlineModerationMessage) {
+            <p
+                class="text-sm"
+                [class.dialog-success-text]="inlineModerationSeverity === 'success'"
+                [class.dialog-warn-text]="inlineModerationSeverity === 'warn'"
+                [class.dialog-error-text]="inlineModerationSeverity === 'error'"
+            >
+                {{ inlineModerationMessage }}
+            </p>
+            }
+
             <div class="dialog-actions mt-2 flex flex-wrap items-center justify-between gap-2">
                 <p class="dialog-action-note text-xs">Обери дію для керування списком вмілостей.</p>
-                <p-button
-                    (onClick)="openAddSkillDialog()"
-                    label="Додати вмілість"
-                    icon="pi pi-plus"
-                    severity="contrast"
-                    styleClass="!rounded-lg !px-4 !py-2 !text-sm"
-                ></p-button>
+                <div class="flex flex-wrap items-center gap-2">
+                    @if (canOpenSkillsReview) {
+                    <p-button
+                        (onClick)="openSkillsReviewFromDialog()"
+                        label="До модерації"
+                        icon="pi pi-verified"
+                        severity="secondary"
+                        [outlined]="true"
+                        styleClass="!rounded-lg !px-4 !py-2 !text-sm"
+                    ></p-button>
+                    }
+                    <p-button
+                        (onClick)="openAddSkillDialog()"
+                        label="Додати вмілість"
+                        icon="pi pi-plus"
+                        severity="contrast"
+                        styleClass="!rounded-lg !px-4 !py-2 !text-sm"
+                    ></p-button>
+                </div>
             </div>
 
             @if (addSkillSuccessMessage) {
@@ -334,7 +388,7 @@
 
                     <p-button
                         (onClick)="submitBadge(badge.id)"
-                        [label]="submittingBadgeId === badge.id ? 'Додаємо...' : 'Додати'"
+                        [label]="getSubmitBadgeButtonLabel(badge.id)"
                         icon="pi pi-plus"
                         [disabled]="!canSubmitBadge(badge.id) || isSubmittingSkill"
                         severity="secondary"

@@ -17,6 +17,7 @@ import { LeadershipComponent } from './features/kurinModule/common/components/le
 import { PlanningListComponent } from './features/kurinModule/planning-list/planning-list';
 import { CreatePlanningComponent } from './features/kurinModule/create-planning/create-planning';
 import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
+import { SkillsReviewPageComponent } from './features/kurinModule/skills-review-page/skills-review-page.component';
 
 export const routes: Routes = [
   {
@@ -110,6 +111,12 @@ export const routes: Routes = [
       entityTypeParam: 'type',
       entityKeyParam: 'entityKey'
     }
+  },
+  {
+    path: 'kurin/:kurinKey/review/skills',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    component: SkillsReviewPageComponent,
+    data: { breadcrumb: 'Skills Review', parent: '/kurin', entityType: 'kurin' }
   },
   {
     path: 'planning/create/:kurinKey',

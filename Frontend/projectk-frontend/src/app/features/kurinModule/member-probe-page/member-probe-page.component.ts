@@ -5,6 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { AccordionModule } from 'primeng/accordion';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
@@ -26,7 +28,8 @@ interface ProbeDetailSectionView {
 
 @Component({
   selector: 'app-member-probe-page',
-  imports: [ButtonModule, AccordionModule, SkeletonModule, TagModule],
+  imports: [ButtonModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
+  providers: [ConfirmationService],
   templateUrl: './member-probe-page.component.html',
   styleUrl: './member-probe-page.component.css'
 })
@@ -34,6 +37,7 @@ export class MemberProbePageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly memberService = inject(MemberService);
   private readonly probesCatalogService = inject(ProbesCatalogService);
   private readonly memberProgressService = inject(MemberProgressService);
@@ -160,14 +164,6 @@ export class MemberProbePageComponent implements OnInit {
       return;
     }
 
-    const isConfirmed = window.confirm(
-      `Підписати точку "${point.pointTitle}"?`
-    );
-
-    if (!isConfirmed) {
-      return;
-    }
-
     this.updatePointSignature(point.pointId, true, 'Точку підписано.');
   }
 
@@ -176,15 +172,24 @@ export class MemberProbePageComponent implements OnInit {
       return;
     }
 
-    const isConfirmed = window.confirm(
-      `Скасувати підпис точки "${point.pointTitle}"?\n\nПідтвердь дію, якщо дійсно потрібно відкотити підпис.`
-    );
-
-    if (!isConfirmed) {
-      return;
-    }
-
-    this.updatePointSignature(point.pointId, false, 'Підпис скасовано.');
+    this.confirmationService.confirm({
+      header: 'Скасування підпису',
+      message: `Скасувати підпис точки "${point.pointTitle}"?`,
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Ні',
+      rejectButtonProps: {
+        label: 'Ні',
+        severity: 'secondary',
+        outlined: true
+      },
+      acceptButtonProps: {
+        label: 'Так, скасувати',
+        severity: 'danger'
+      },
+      accept: () => {
+        this.updatePointSignature(point.pointId, false, 'Підпис скасовано.');
+      }
+    });
   }
 
   onCloseProbe(): void {
@@ -193,11 +198,31 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     const confirmationText = this.probeId === 'probe-1'
-      ? 'Закрити пробу?\n\nПісля закриття першої проби відкриється друга проба для перегляду.'
-      : 'Закрити пробу?\n\nБуде зафіксовано дату закриття другої проби.';
+      ? 'Після закриття першої проби відкриється друга проба для перегляду.'
+      : 'Буде зафіксовано дату закриття другої проби.';
 
-    const isConfirmed = window.confirm(confirmationText);
-    if (!isConfirmed) {
+    this.confirmationService.confirm({
+      header: 'Закриття проби',
+      message: confirmationText,
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Скасувати',
+      rejectButtonProps: {
+        label: 'Скасувати',
+        severity: 'secondary',
+        outlined: true
+      },
+      acceptButtonProps: {
+        label: 'Закрити',
+        severity: 'contrast'
+      },
+      accept: () => {
+        this.executeCloseProbe();
+      }
+    });
+  }
+
+  private executeCloseProbe(): void {
+    if (!this.memberKey || !this.probeId || !this.canCloseProbe) {
       return;
     }
 

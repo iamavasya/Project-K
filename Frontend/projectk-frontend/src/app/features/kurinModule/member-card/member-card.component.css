@@ -130,6 +130,16 @@
     color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
 }
 
+.dialog-warn-text {
+    color: color-mix(in srgb, var(--p-amber-700) 82%, var(--p-text-color) 18%);
+}
+
+.dialog-inline-action-btn {
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+}
+
 .skills-preview-grid > *:nth-child(n + 3) {
     display: none;
 }

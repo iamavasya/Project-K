@@ -51,7 +51,10 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.NotFound);
         }
 
-        if (progress.Status != BadgeProgressStatus.Submitted)
+        var fromStatus = progress.Status;
+        var canReviewSubmitted = fromStatus == BadgeProgressStatus.Submitted;
+        var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !request.IsApproved;
+        if (!canReviewSubmitted && !canRemoveConfirmed)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.Conflict);
         }
@@ -59,6 +62,11 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         var now = DateTime.UtcNow;
         var actor = ProgressActorResolver.Resolve(_currentUserContext);
         var targetStatus = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
+        var action = request.IsApproved
+            ? "Confirmed"
+            : fromStatus == BadgeProgressStatus.Confirmed
+                ? "RemovedConfirmed"
+                : "Rejected";
 
         progress.Status = targetStatus;
         progress.ReviewedAtUtc = now;
@@ -69,9 +77,9 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
 
         progress.AuditEvents.Add(new BadgeProgressAuditEvent
         {
-            FromStatus = BadgeProgressStatus.Submitted,
+            FromStatus = fromStatus,
             ToStatus = targetStatus,
-            Action = request.IsApproved ? "Confirmed" : "Rejected",
+            Action = action,
             ActorUserKey = actor.UserKey,
             ActorName = actor.ActorName,
             ActorRole = actor.ActorRole,

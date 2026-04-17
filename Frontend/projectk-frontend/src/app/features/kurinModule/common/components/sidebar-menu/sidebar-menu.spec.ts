@@ -131,15 +131,38 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const kurinItem = items.find(item => item.label === 'Курінь');
+        const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
         const panelItem = items.find(item => item.label === 'Panel');
         const usersItem = items.find(item => item.label === 'Users');
 
         expect(kurinItem).toBeDefined();
         expect(kurinItem?.visible).toBeTrue();
         expect(kurinItem?.disabled).toBeFalse();
+        expect(skillsReviewItem?.visible).toBeTrue();
         
         expect(panelItem?.visible).toBeFalse();
         expect(usersItem?.visible).toBeFalse();
+        done();
+      });
+    });
+
+    it('should hide skills moderation item for non-reviewer role', (done) => {
+      const mockState: AuthState = {
+        userKey: 'user-999',
+        email: 'user@example.com',
+        role: 'User',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.state$ = of(mockState);
+      component.ngOnChanges({
+        state$: new SimpleChange(null, component.state$, true)
+      });
+
+      component.items$.subscribe(items => {
+        const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
+        expect(skillsReviewItem?.visible).toBeFalse();
         done();
       });
     });
@@ -265,6 +288,31 @@ describe('SidebarMenu', () => {
         if (usersItem?.command) {
           usersItem.command({});
           expect(mockRouter.navigate).toHaveBeenCalledWith(['/users']);
+        }
+        done();
+      });
+    });
+
+    it('should navigate to skills review route when moderation item is clicked', (done) => {
+      const mockState: AuthState = {
+        userKey: 'user-123',
+        email: 'mentor@example.com',
+        role: 'Mentor',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.state$ = of(mockState);
+      component.ngOnChanges({
+        state$: new SimpleChange(null, component.state$, true)
+      });
+
+      component.items$.subscribe(items => {
+        const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
+
+        if (skillsReviewItem?.command) {
+          skillsReviewItem.command({});
+          expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'review', 'skills']);
         }
         done();
       });

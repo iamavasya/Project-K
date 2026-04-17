@@ -11,9 +11,9 @@ namespace ProjectK.Common.Extensions
     {
         public static string ToClaimValue(this UserRole role) => role.ToString();
 
-        public static UserRole ToUserRole(this string role) => 
-            Enum.TryParse<UserRole>(role, out var parsed) 
-                ? parsed 
+        public static UserRole ToUserRole(this string role) =>
+            Enum.TryParse<UserRole>(role, out var parsed)
+                ? parsed
                 : throw new ArgumentException($"Invalid role {role}");
     }
 }

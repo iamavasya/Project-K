@@ -36,7 +36,7 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number));
             CreateMap<UpsertGroup, Group>()
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore()   )
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
 
@@ -120,7 +120,7 @@ namespace ProjectK.API.MappingProfiles
             // Planning Mapping
             CreateMap<CreatePlanningSession, PlanningSession>()
                 .ForMember(dest => dest.IsCalculated, opt => opt.MapFrom(src => false))
-                                                                                        
+
                 .ForMember(dest => dest.OptimalStartDate, opt => opt.Ignore())
                 .ForMember(dest => dest.OptimalEndDate, opt => opt.Ignore())
                 .ForMember(dest => dest.ConflictScore, opt => opt.Ignore());

@@ -8,6 +8,8 @@ import { MemberDto } from '../common/models/memberDto';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
+import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
@@ -22,6 +24,8 @@ describe('MemberCardComponent', () => {
   let badgesCatalogServiceSpy: jasmine.SpyObj<BadgesCatalogService>;
   let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
+  let badgeImageBlobServiceSpy: jasmine.SpyObj<BadgeImageBlobService>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
@@ -45,9 +49,20 @@ describe('MemberCardComponent', () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'getProbeProgress']);
+    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
+    badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
+    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
+
+    badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
+    authServiceSpy.getAuthStateValue.and.returnValue({
+      userKey: 'user-mentor',
+      email: 'mentor@example.com',
+      role: 'Mentor',
+      kurinKey: member.kurinKey,
+      accessToken: 'token'
+    });
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
     probesCatalogServiceSpy.getAll.and.returnValue(of([]));
@@ -82,6 +97,20 @@ describe('MemberCardComponent', () => {
       reviewNote: null,
       auditTrail: []
     }));
+    memberProgressServiceSpy.reviewBadgeProgress.and.returnValue(of({
+      badgeProgressKey: 'reviewed-progress',
+      memberKey,
+      kurinKey: member.kurinKey,
+      badgeId: 'badge-reviewed',
+      status: BadgeProgressStatus.Confirmed,
+      submittedAtUtc: '2026-04-16T00:00:00Z',
+      reviewedAtUtc: '2026-04-16T00:10:00Z',
+      reviewedByUserKey: 'reviewer-1',
+      reviewedByName: 'Mentor',
+      reviewedByRole: 'Mentor',
+      reviewNote: null,
+      auditTrail: []
+    }));
 
     await TestBed.configureTestingModule({
       imports: [MemberCardComponent, HttpClientTestingModule],
@@ -90,6 +119,8 @@ describe('MemberCardComponent', () => {
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
+        { provide: BadgeImageBlobService, useValue: badgeImageBlobServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
       ]
@@ -224,15 +255,15 @@ describe('MemberCardComponent', () => {
   it('refreshData should use latest paramMap value if it changes', () => {
     memberServiceSpy.getByKey.and.returnValues(
       of(member),
-      of({ ...member, memberKey: 'newKey' }),
       of({ ...member, memberKey: 'newKey' })
     );
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValues(of([]), of([]), of([]));
+    memberProgressServiceSpy.getBadgeProgresses.and.returnValues(of([]), of([]));
     createComponent();
     fixture.detectChanges();
+
     paramMapSubject.next(convertToParamMap({ memberKey: 'newKey' }));
-    component.memberKey = 'newKey'; // emulate subscription update timing
-    component.refreshData();
+
+    expect(component.memberKey).toBe('newKey');
     expect(memberServiceSpy.getByKey).toHaveBeenCalledWith('newKey');
   });
 
@@ -396,5 +427,142 @@ describe('MemberCardComponent', () => {
     expect(memberProgressServiceSpy.submitBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-new', { note: null });
     expect(component.isAddSkillDialogVisible).toBeFalse();
     expect(component.addSkillSuccessMessage).toContain('успішно');
+  });
+
+  it('canSubmitBadge should allow re-submission for rejected badge', () => {
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of([
+      {
+        badgeProgressKey: 'rejected-progress',
+        memberKey,
+        kurinKey: member.kurinKey,
+        badgeId: 'badge-rejected',
+        status: BadgeProgressStatus.Rejected,
+        submittedAtUtc: '2026-04-10T00:00:00Z',
+        reviewedAtUtc: '2026-04-11T00:00:00Z',
+        reviewedByUserKey: 'reviewer-1',
+        reviewedByName: 'Mentor',
+        reviewedByRole: 'Mentor',
+        reviewNote: 'needs updates',
+        auditTrail: []
+      }
+    ]));
+
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.canSubmitBadge('badge-rejected')).toBeTrue();
+    expect(component.getSubmitBadgeButtonLabel('badge-rejected')).toBe('Подати знову');
+  });
+
+  it('openSkillsReviewFromDialog should navigate to kurin skills review route for reviewer', () => {
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    createComponent();
+    fixture.detectChanges();
+
+    component.isAllSkillsDialogVisible = true;
+    component.openSkillsReviewFromDialog();
+
+    expect(component.isAllSkillsDialogVisible).toBeFalse();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/kurin', member.kurinKey, 'review', 'skills']);
+  });
+
+  it('approvePendingSkill should call review API with isApproved=true', () => {
+    const badges: BadgeCatalogItemDto[] = [{
+      id: 'badge-1',
+      title: 'Badge A',
+      imagePath: 'https://example.com/a.png',
+      country: 'UA',
+      specialization: 'Scout',
+      status: 'active',
+      level: 1,
+      lastUpdated: '2026-04-01',
+      seekerRequirements: '',
+      instructorRequirements: '',
+      fixNotes: []
+    }];
+
+    const progresses: BadgeProgressDto[] = [{
+      badgeProgressKey: 'p-submitted',
+      memberKey,
+      kurinKey: member.kurinKey,
+      badgeId: 'badge-1',
+      status: BadgeProgressStatus.Submitted,
+      submittedAtUtc: '2026-04-11T00:00:00Z',
+      reviewedAtUtc: null,
+      reviewedByUserKey: null,
+      reviewedByName: null,
+      reviewedByRole: null,
+      reviewNote: null,
+      auditTrail: []
+    }];
+
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    badgesCatalogServiceSpy.getAll.and.returnValue(of(badges));
+    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of(progresses));
+
+    createComponent();
+    fixture.detectChanges();
+
+    const confirmSpy = spyOn(component.confirmationService, 'confirm');
+
+    component.approvePendingSkill(component.skillsSummary.pendingConfirmation[0]);
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(memberProgressServiceSpy.reviewBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-1', {
+      isApproved: true,
+      note: null
+    });
+  });
+
+  it('removeConfirmedSkill should call review API with isApproved=false', () => {
+    const badges: BadgeCatalogItemDto[] = [{
+      id: 'badge-2',
+      title: 'Badge B',
+      imagePath: 'https://example.com/b.png',
+      country: 'UA',
+      specialization: 'Scout',
+      status: 'active',
+      level: 1,
+      lastUpdated: '2026-04-01',
+      seekerRequirements: '',
+      instructorRequirements: '',
+      fixNotes: []
+    }];
+
+    const progresses: BadgeProgressDto[] = [{
+      badgeProgressKey: 'p-confirmed',
+      memberKey,
+      kurinKey: member.kurinKey,
+      badgeId: 'badge-2',
+      status: BadgeProgressStatus.Confirmed,
+      submittedAtUtc: '2026-04-10T00:00:00Z',
+      reviewedAtUtc: '2026-04-11T00:00:00Z',
+      reviewedByUserKey: 'reviewer-1',
+      reviewedByName: 'Mentor',
+      reviewedByRole: 'Mentor',
+      reviewNote: null,
+      auditTrail: []
+    }];
+
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    badgesCatalogServiceSpy.getAll.and.returnValue(of(badges));
+    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of(progresses));
+
+    createComponent();
+    fixture.detectChanges();
+
+    const confirmSpy = spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
+      options.accept?.();
+      return component.confirmationService;
+    });
+
+    component.removeConfirmedSkill(component.skillsSummary.recentConfirmed[0]);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(memberProgressServiceSpy.reviewBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-2', {
+      isApproved: false,
+      note: null
+    });
   });
 });

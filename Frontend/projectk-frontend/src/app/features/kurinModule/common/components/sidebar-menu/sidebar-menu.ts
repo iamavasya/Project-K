@@ -31,7 +31,7 @@ export class SidebarMenu implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
       this.items$ = this.state$.pipe(
-        map(state => this.buildItems(state?.kurinKey ?? null))
+        map(state => this.buildItems(state))
       );
       this.email$ = this.state$.pipe(
         map(state => state?.email ?? null)
@@ -42,7 +42,10 @@ export class SidebarMenu implements OnChanges {
     }
   }
   
-  private buildItems(kurinKey: string | null): MenuItem[] {
+  private buildItems(state: AuthState | null): MenuItem[] {
+    const kurinKey = state?.kurinKey ?? null;
+    const role = state?.role?.trim().toLowerCase() ?? '';
+    const canReviewSkills = role === 'mentor' || role === 'manager' || role === 'admin';
     const disabled = !kurinKey;
     return [
       {
@@ -65,6 +68,15 @@ export class SidebarMenu implements OnChanges {
       },
       { label: 'Гуртки', disabled: true, visible: !!kurinKey },
       { label: 'Всі учасники', disabled: true, visible: !!kurinKey },
+      {
+        label: 'Модерація вмілостей',
+        routerLink: ['/kurin', kurinKey, 'review', 'skills'],
+        command: () => {
+          this.close();
+          this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
+        },
+        visible: !!kurinKey && canReviewSkills
+      },
       { label: 'Налаштування', disabled: true, visible: !!kurinKey },
       {
         label: 'Panel',
