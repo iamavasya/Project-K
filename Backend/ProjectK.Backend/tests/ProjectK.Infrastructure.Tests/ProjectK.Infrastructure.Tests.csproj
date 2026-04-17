@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProjectK.Common\ProjectK.Common.csproj" />
-    <ProjectReference Include="..\ProjectK.Infrastructure\ProjectK.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\ProjectK.Common\ProjectK.Common.csproj" />
+    <ProjectReference Include="..\..\ProjectK.Infrastructure\ProjectK.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
