@@ -112,12 +112,10 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("check-access")]
         public async Task<IActionResult> CheckAccess([FromBody] CheckEntityAccessRequest request)
         {
-            var activeKurinKey = string.IsNullOrEmpty(request.ActiveKurinKey) ? User.FindFirstValue("kurinKey") : request.ActiveKurinKey;
             var query = new CheckEntityAccessQuery
             {
                 EntityType = request.EntityType,
-                EntityKey = request.EntityKey,
-                ActiveKurinKey = activeKurinKey
+                EntityKey = request.EntityKey
             };
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);

@@ -1,0 +1,19 @@
+.skill-preview-item {
+    border: 1px solid var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-primary-100) 10%);
+}
+
+.skill-preview-item--pending {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--p-content-background) 88%, var(--p-amber-100) 12%);
+}
+
+.skill-preview-icon {
+    border: 1px solid color-mix(in srgb, var(--p-primary-color) 25%, transparent);
+    background: color-mix(in srgb, var(--p-content-background) 84%, var(--p-primary-200) 16%);
+    color: var(--p-primary-color);
+}
+
+.skill-preview-title {
+    color: var(--p-text-color);
+}

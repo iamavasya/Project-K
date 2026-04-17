@@ -45,6 +45,11 @@ export class AuthInterceptor implements HttpInterceptor {
         if (error instanceof HttpErrorResponse && error.status === 401) {
             return this.tryRefreshAndRepeat(req, next);
         }
+
+        if (error instanceof HttpErrorResponse && error.status === 403) {
+            this.router.navigate(['/forbidden']);
+        }
+
         return throwError(() => error);
     }
 

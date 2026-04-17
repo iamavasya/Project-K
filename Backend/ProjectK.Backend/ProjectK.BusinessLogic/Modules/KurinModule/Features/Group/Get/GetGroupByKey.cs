@@ -34,7 +34,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get
         public async Task<ServiceResult<GroupResponse>> Handle(GetGroupByKey request, CancellationToken cancellationToken)
         {
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
-            
+
             if (group is null)
             {
                 return new ServiceResult<GroupResponse>(ResultType.NotFound);

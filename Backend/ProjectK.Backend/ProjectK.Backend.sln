@@ -13,11 +13,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.Infrastructure", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.BusinessLogic.Tests", "ProjectK.BusinessLogic.Tests\ProjectK.BusinessLogic.Tests.csproj", "{D7F7675E-2B63-4325-8D32-528B2E93F58C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.BusinessLogic.Tests", "tests\ProjectK.BusinessLogic.Tests\ProjectK.BusinessLogic.Tests.csproj", "{D7F7675E-2B63-4325-8D32-528B2E93F58C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.API.Tests", "ProjectK.API.Tests\ProjectK.API.Tests.csproj", "{19F88C0D-0867-44E8-B1FF-3EB3424562A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.API.Tests", "tests\ProjectK.API.Tests\ProjectK.API.Tests.csproj", "{19F88C0D-0867-44E8-B1FF-3EB3424562A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.Infrastructure.Tests", "ProjectK.Infrastructure.Tests\ProjectK.Infrastructure.Tests.csproj", "{50DEDD42-88D0-411A-BB20-D504B62EFD56}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectK.Infrastructure.Tests", "tests\ProjectK.Infrastructure.Tests\ProjectK.Infrastructure.Tests.csproj", "{50DEDD42-88D0-411A-BB20-D504B62EFD56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

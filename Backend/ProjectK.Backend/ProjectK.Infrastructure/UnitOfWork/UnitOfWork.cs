@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using System;
@@ -20,6 +21,9 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IMemberRepository Members { get; }
         public ILeadershipRepository Leaderships { get; }
         public IPlanningSessionRepository PlanningSessions { get; }
+        public IBadgeProgressRepository BadgeProgresses { get; }
+        public IProbeProgressRepository ProbeProgresses { get; }
+        public IProbePointProgressRepository ProbePointProgresses { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -30,6 +34,9 @@ namespace ProjectK.Infrastructure.UnitOfWork
             Members = new MemberRepository(_context);
             Leaderships = new LeadershipRepository(_context);
             PlanningSessions = new PlanningSessionRepository(_context);
+            BadgeProgresses = new BadgeProgressRepository(_context);
+            ProbeProgresses = new ProbeProgressRepository(_context);
+            ProbePointProgresses = new ProbePointProgressRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

@@ -1,0 +1,56 @@
+.probe-page-tile {
+    border: 1px solid var(--p-content-border-color);
+    background: var(--p-content-background);
+    box-shadow: 0 8px 26px -20px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+}
+
+.probe-page-title,
+.probe-point-title {
+    color: var(--p-text-color);
+}
+
+.probe-page-subtitle,
+.probe-point-meta,
+.probe-hint-text,
+.probe-empty-text {
+    color: var(--p-text-muted-color);
+}
+
+.probe-warning-text {
+    color: color-mix(in srgb, var(--p-amber-700) 82%, var(--p-text-color) 18%);
+}
+
+.probe-action-success-text {
+    color: color-mix(in srgb, var(--p-green-700) 80%, var(--p-text-color) 20%);
+}
+
+.probe-action-error-text {
+    color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
+}
+
+.probe-close-card {
+    border: 1px solid color-mix(in srgb, var(--p-green-600) 28%, var(--p-content-border-color) 72%);
+    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-green-100) 10%);
+}
+
+.probe-close-title {
+    color: color-mix(in srgb, var(--p-green-800) 80%, var(--p-text-color) 20%);
+}
+
+.probe-close-meta {
+    color: var(--p-text-muted-color);
+}
+
+.probe-point-row {
+    border: 1px solid var(--p-content-border-color);
+    background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
+}
+
+.probe-point-row--signed {
+    border-color: color-mix(in srgb, var(--p-green-600) 28%, var(--p-content-border-color) 72%);
+    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-green-100) 10%);
+}
+
+.probe-point-actions {
+    align-items: center;
+}

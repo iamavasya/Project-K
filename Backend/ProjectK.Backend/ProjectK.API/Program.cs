@@ -18,6 +18,7 @@ using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.ProbeAndBadges.DependencyInjection;
 
 namespace ProjectK.API
 {
@@ -137,6 +138,15 @@ namespace ProjectK.API
 
             builder.Services.AddWolfPackOptimization();
 
+            builder.Services.Configure<SecurityPatchOptions>(
+                builder.Configuration.GetSection("SecurityPatch"));
+
+            // Read-only badges/probes catalogs.
+            builder.Services.AddProbeAndBadgesApi(options =>
+            {
+                builder.Configuration.GetSection("ProbeAndBadges").Bind(options);
+            });
+
             builder.Services.AddProjectDependencies();
 
 
@@ -184,11 +194,13 @@ namespace ProjectK.API
 
             app.UseAuthorization();
 
+            app.UseBadgesImagesStaticFiles();
+
             app.MapControllers();
 
             app.MapGet("/", () => "Backend Started");
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

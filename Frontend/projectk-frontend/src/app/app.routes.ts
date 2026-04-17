@@ -8,6 +8,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
+import { ForbiddenComponent } from './features/authModule/forbidden-component/forbidden-component';
 import { ToolbarHeader } from './features/kurinModule/common/components/toolbar-header/toolbar-header';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
@@ -15,6 +16,8 @@ import { UsersListComponent } from './features/adminModule/components/users-list
 import { LeadershipComponent } from './features/kurinModule/common/components/leadership/leadership-component/leadership-component';
 import { PlanningListComponent } from './features/kurinModule/planning-list/planning-list';
 import { CreatePlanningComponent } from './features/kurinModule/create-planning/create-planning';
+import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
+import { SkillsReviewPageComponent } from './features/kurinModule/skills-review-page/skills-review-page.component';
 
 export const routes: Routes = [
   {
@@ -27,6 +30,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     component: LogoutComponent,
     data: { breadcrumb: 'Logout' }
+  },
+  {
+    path: 'forbidden',
+    component: ForbiddenComponent,
+    data: { breadcrumb: 'Forbidden' }
   },
   {
     path: 'users',
@@ -65,6 +73,12 @@ export const routes: Routes = [
     data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
   },
   { 
+    path: 'member/:memberKey/probe/:probeId',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    component: MemberProbePageComponent,
+    data: { breadcrumb: 'Probe Details', parent: '/member/:memberKey', entityType: 'member' }
+  },
+  {
     path: 'member/:memberKey', 
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: MemberCardComponent,
@@ -72,15 +86,37 @@ export const routes: Routes = [
   },
   {
     path: 'toolbar',
+    canActivate: [authGuard],
     component: ToolbarHeader,
+    data: { breadcrumb: 'Toolbar' }
   },
   {
     path: 'leadership/create/:type/:entityKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: LeadershipComponent,
+    data: {
+      breadcrumb: 'Create Leadership',
+      parent: '/kurin',
+      entityTypeParam: 'type',
+      entityKeyParam: 'entityKey'
+    }
   },
   {
     path: 'leadership/:leadershipKey/:type/:entityKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: LeadershipComponent,
+    data: {
+      breadcrumb: 'Edit Leadership',
+      parent: '/kurin',
+      entityTypeParam: 'type',
+      entityKeyParam: 'entityKey'
+    }
+  },
+  {
+    path: 'kurin/:kurinKey/review/skills',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    component: SkillsReviewPageComponent,
+    data: { breadcrumb: 'Skills Review', parent: '/kurin', entityType: 'kurin' }
   },
   {
     path: 'planning/create/:kurinKey',

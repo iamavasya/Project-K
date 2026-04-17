@@ -17,7 +17,7 @@ namespace ProjectK.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -531,6 +531,268 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("PlastLevelHistories");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
+                {
+                    b.Property<Guid>("BadgeProgressKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BadgeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewedByRole")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ReviewedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BadgeProgressKey");
+
+                    b.HasIndex("MemberKey", "BadgeId")
+                        .IsUnique();
+
+                    b.ToTable("BadgeProgresses");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgressAuditEvent", b =>
+                {
+                    b.Property<Guid>("BadgeProgressAuditEventKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BadgeProgressKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FromStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BadgeProgressAuditEventKey");
+
+                    b.HasIndex("BadgeProgressKey");
+
+                    b.ToTable("BadgeProgressAuditEvents");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress", b =>
+                {
+                    b.Property<Guid>("ProbePointProgressKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsSigned")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PointId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProbeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("SignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SignedByRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("SignedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProbePointProgressKey");
+
+                    b.HasIndex("MemberKey", "ProbeId", "PointId")
+                        .IsUnique();
+
+                    b.ToTable("ProbePointProgresses");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", b =>
+                {
+                    b.Property<Guid>("ProbeProgressKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompletedByRole")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CompletedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProbeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerifiedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VerifiedByRole")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("VerifiedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ProbeProgressKey");
+
+                    b.HasIndex("MemberKey", "ProbeId")
+                        .IsUnique();
+
+                    b.ToTable("ProbeProgresses");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgressAuditEvent", b =>
+                {
+                    b.Property<Guid>("ProbeProgressAuditEventKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FromStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProbeProgressKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProbeProgressAuditEventKey");
+
+                    b.HasIndex("ProbeProgressKey");
+
+                    b.ToTable("ProbeProgressAuditEvents");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppRole", null)
@@ -698,6 +960,61 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
+                        .WithMany("BadgeProgresses")
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgressAuditEvent", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", "BadgeProgress")
+                        .WithMany("AuditEvents")
+                        .HasForeignKey("BadgeProgressKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BadgeProgress");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
+                        .WithMany("ProbePointProgresses")
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
+                        .WithMany("ProbeProgresses")
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgressAuditEvent", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", "ProbeProgress")
+                        .WithMany("AuditEvents")
+                        .HasForeignKey("ProbeProgressKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProbeProgress");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Group", b =>
                 {
                     b.Navigation("Leadership")
@@ -724,9 +1041,15 @@ namespace ProjectK.Infrastructure.Migrations
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Member", b =>
                 {
+                    b.Navigation("BadgeProgresses");
+
                     b.Navigation("LeadershipHistories");
 
                     b.Navigation("PlastLevelHistory");
+
+                    b.Navigation("ProbePointProgresses");
+
+                    b.Navigation("ProbeProgresses");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningParticipant", b =>
@@ -737,6 +1060,16 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningSession", b =>
                 {
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
+                {
+                    b.Navigation("AuditEvents");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", b =>
+                {
+                    b.Navigation("AuditEvents");
                 });
 #pragma warning restore 612, 618
         }

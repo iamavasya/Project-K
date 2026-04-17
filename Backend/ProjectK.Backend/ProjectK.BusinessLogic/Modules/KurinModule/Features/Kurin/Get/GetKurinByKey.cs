@@ -43,7 +43,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
             }
 
             var kurinResponse = _mapper.Map<KurinResponse>(kurin);
-            
+
             return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
         }
     }

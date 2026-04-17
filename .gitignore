@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 # Config files that may contain sensitive information
 Backend/ProjectK.Backend/ProjectK.API/appsettings.Development.json
+todo/*

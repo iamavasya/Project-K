@@ -1,7 +1,7 @@
 import { inject, Injectable } from "@angular/core";
 import { environment } from "../../environments/environment";
 import { HttpClient } from "@angular/common/http";
-import { AuthService } from "./authService/auth.service";
+import { Observable } from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -9,17 +9,13 @@ import { AuthService } from "./authService/auth.service";
 export class EntityService {
     private readonly apiUrl = environment.apiUrl;
     private readonly http = inject(HttpClient);
-    private readonly authService = inject(AuthService);
 
-    checkEntityAccess(entityType: string, entityKey: string) {
-        const activeKurinKey = this.authService.getAuthStateValue()?.kurinKey;
-        console.log('checkEntityAccess', { entityType, entityKey, activeKurinKey });
+    checkEntityAccess(entityType: string, entityKey: string): Observable<boolean> {
         return this.http.post<boolean>(
             `${this.apiUrl}/auth/check-access`,
             { 
                 entityType, 
-                entityKey, 
-                activeKurinKey: activeKurinKey || '' 
+                entityKey
             },
             { 
                 headers: { 'Content-Type': 'application/json' },

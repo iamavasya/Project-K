@@ -10,7 +10,7 @@ namespace ProjectK.Common.Entities.KurinModule
     public class PlastLevelHistory
     {
         public Guid PlastLevelHistoryKey { get; set; }
-        
+
         public Guid MemberKey { get; set; }
         public Member Member { get; set; }
 

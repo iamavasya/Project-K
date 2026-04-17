@@ -40,7 +40,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
                 return new ServiceResult<MemberResponse>(ResultType.NotFound);
             }
             var memberResponse = _mapper.Map<MemberResponse>(member);
-            
+
             return new ServiceResult<MemberResponse>(ResultType.Success, memberResponse);
         }
     }

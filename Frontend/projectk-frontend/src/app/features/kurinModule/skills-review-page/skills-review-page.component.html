@@ -1,0 +1,157 @@
+<section class="skills-review-page">
+  <div class="skills-review-page__header">
+    <div>
+      <h1 class="skills-review-page__title">Модерація вмілостей</h1>
+      <p class="skills-review-page__subtitle">Черга заявок на підтвердження в курені</p>
+    </div>
+
+    <div class="skills-review-page__header-actions">
+      <p-button
+        label="Оновити"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="isLoading"
+        (onClick)="refreshQueue()" />
+      <p-button
+        label="Назад до куреня"
+        icon="pi pi-arrow-left"
+        [outlined]="true"
+        (onClick)="goBackToKurin()" />
+    </div>
+  </div>
+
+  @if (feedbackMessage) {
+    <p-message [severity]="feedbackSeverity">{{ feedbackMessage }}</p-message>
+  }
+
+  @if (roleRestricted) {
+    <p-message severity="warn">Роль користувача не має доступу до модерації вмілостей.</p-message>
+  } @else if (loadFailed) {
+    <p-message severity="error">Не вдалося завантажити чергу модерації. Спробуй оновити сторінку.</p-message>
+  } @else if (isLoading) {
+    <div class="skills-review-page__skeleton-grid">
+      <p-skeleton width="100%" height="3rem"></p-skeleton>
+      <p-skeleton width="100%" height="3rem"></p-skeleton>
+      <p-skeleton width="100%" height="3rem"></p-skeleton>
+    </div>
+  } @else {
+    <p-table [value]="reviewItems" [tableStyle]="{ 'min-width': '60rem' }">
+      <ng-template #header>
+        <tr>
+          <th scope="col">Учасник</th>
+          <th scope="col">Вмілість</th>
+          <th scope="col">Подано</th>
+          <th scope="col">Статус</th>
+          <th scope="col" class="skills-review-page__actions-col">Дії</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-item>
+        <tr>
+          <td>
+            <div class="review-member">
+              @if (item.memberPhotoUrl) {
+                <img class="review-member__photo" [src]="item.memberPhotoUrl" alt="Фото учасника" />
+              } @else {
+                <div class="review-member__fallback">{{ item.memberInitials }}</div>
+              }
+
+              <div class="review-member__meta">
+                <div class="review-member__name">{{ item.memberDisplayName }}</div>
+                <div class="review-member__key">{{ item.memberKey }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="review-badge">
+              @if (getBadgeImageUrl(item.badgeImageSourceUrl); as badgeImageUrl) {
+                <img class="review-badge__image" [src]="badgeImageUrl" alt="Зображення вмілості" />
+              }
+              <span>{{ item.badgeTitle }}</span>
+            </div>
+          </td>
+          <td>{{ formatSubmittedDate(item.submittedAtUtc) }}</td>
+          <td>
+            <p-tag value="Очікує підтвердження" severity="warn"></p-tag>
+          </td>
+          <td class="skills-review-page__actions-col">
+            <div class="skills-review-page__row-actions">
+              <p-button
+                label="Підтвердити"
+                icon="pi pi-check"
+                size="small"
+                severity="success"
+                [disabled]="isReviewing(item)"
+                (onClick)="onReview(item, true)" />
+              <p-button
+                label="Відхилити"
+                icon="pi pi-times"
+                size="small"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="isReviewing(item)"
+                (onClick)="onReview(item, false)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="5" class="skills-review-page__empty">Черга модерації порожня.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <p-dialog
+    [header]="getReviewDialogHeader()"
+    [(visible)]="isReviewDialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(92vw, 32rem)' }"
+    (onHide)="cancelReviewDialog()"
+  >
+    @if (pendingReviewItem; as item) {
+      <div class="skills-review-dialog space-y-3">
+        <p class="skills-review-dialog__text text-sm">
+          @if (pendingReviewIsApproved) {
+            Підтвердити вмілість "{{ item.badgeTitle }}" для {{ item.memberDisplayName }}?
+          } @else {
+            Відхилити вмілість "{{ item.badgeTitle }}" для {{ item.memberDisplayName }}?
+          }
+        </p>
+
+        <div class="skills-review-dialog__note-wrap">
+          <label class="skills-review-dialog__note-label text-xs" for="review-note-input">Нотатка (необов'язково)</label>
+          <textarea
+            id="review-note-input"
+            pInputTextarea
+            [(ngModel)]="pendingReviewNote"
+            rows="4"
+            maxlength="500"
+            class="w-full"
+            placeholder="Додай короткий коментар до рішення"
+          ></textarea>
+        </div>
+
+        <div class="skills-review-dialog__actions flex justify-end gap-2">
+          <p-button
+            label="Скасувати"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="cancelReviewDialog()"
+          ></p-button>
+          <p-button
+            [label]="getReviewDialogActionLabel()"
+            [severity]="pendingReviewIsApproved ? 'success' : 'danger'"
+            (onClick)="confirmReviewDialog()"
+          ></p-button>
+        </div>
+      </div>
+    }
+  </p-dialog>
+</section>

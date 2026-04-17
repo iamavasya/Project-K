@@ -57,6 +57,15 @@ namespace ProjectK.Infrastructure.Repositories
                                          .ToListAsync(cancellationToken);
         }
 
+        public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
+                .Include(m => m.Group)
+                .Include(m => m.Kurin)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
+        }
+
         public Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");
@@ -131,7 +140,7 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefault(h => h.PlastLevelHistoryKey == updatedHistory.PlastLevelHistoryKey);
 
             if (history == null)
-                throw new ArgumentNullException("PlastLevelHistory not found");
+                throw new InvalidOperationException($"Plast level history '{updatedHistory.PlastLevelHistoryKey}' not found for member '{memberKey}'.");
 
             // Updating fields
             history.PlastLevel = updatedHistory.PlastLevel;
@@ -168,7 +177,7 @@ namespace ProjectK.Infrastructure.Repositories
             if (member == null) throw new ArgumentNullException(memberMessage);
 
             var history = member.LeadershipHistories.FirstOrDefault(h => h.LeadershipHistoryKey == historyKey);
-            
+
             if (history != null) history.EndDate = endDate;
         }
 

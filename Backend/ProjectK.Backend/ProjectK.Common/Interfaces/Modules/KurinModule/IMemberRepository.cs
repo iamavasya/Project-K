@@ -12,6 +12,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
     {
         Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default);
         Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+        Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
 
         #region PlastLevelHistory Methods
         Task AddPlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory history, CancellationToken cancellationToken = default);

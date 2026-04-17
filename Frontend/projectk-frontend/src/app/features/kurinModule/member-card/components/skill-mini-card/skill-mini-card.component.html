@@ -1,0 +1,29 @@
+<article class="skill-preview-item rounded-xl p-3" [class.skill-preview-item--pending]="isPendingConfirmation()">
+    <div class="skill-preview-icon mx-auto mb-2 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full">
+        @if (imageUrl()) {
+        <img
+            [src]="imageUrl()"
+            [alt]="title()"
+            class="h-full w-full object-cover"
+            loading="lazy"
+        />
+        } @else {
+        <span class="pi pi-star-fill text-sm"></span>
+        }
+    </div>
+
+    <p class="skill-preview-title line-clamp-2 text-center text-xs font-semibold">
+        {{ title() }}
+    </p>
+
+    @if (isPendingConfirmation()) {
+    <div class="mt-1 flex justify-center">
+        <p-tag
+            value="Очікує"
+            severity="warn"
+            [rounded]="true"
+            class="text-[10px]!"
+        ></p-tag>
+    </div>
+    }
+</article>
