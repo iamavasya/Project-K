@@ -205,21 +205,16 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
     private sealed record CatalogAuthState(string? RoleClaim);
 
-    private sealed class CatalogAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class CatalogAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        CatalogAuthState authState)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "CatalogTest";
 
-        private readonly CatalogAuthState _authState;
-
-        public CatalogAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            CatalogAuthState authState)
-            : base(options, logger, encoder)
-        {
-            _authState = authState;
-        }
+        private readonly CatalogAuthState _authState = authState;
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {

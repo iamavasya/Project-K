@@ -10,6 +10,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 public class ResourceAccessService : IResourceAccessService
 {
+    private const string MentorScopeChecksPassed = "Mentor scoped checks passed.";
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
 
@@ -77,50 +79,62 @@ public class ResourceAccessService : IResourceAccessService
     {
         if (_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
         {
-            if (resourceType == ResourceType.Kurin && action is ResourceAction.Update or ResourceAction.Delete or ResourceAction.Manage)
-            {
-                return ResourceAccessDecision.Deny("Manager cannot perform irreversible kurin actions.");
-            }
-
-            return ResourceAccessDecision.Allow("Manager action is allowed; validating scope.");
+            return EvaluateManagerActionPermission(resourceType, action);
         }
 
         if (_currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
         {
-            if (!IsMentorActionAllowed(resourceType, action))
-            {
-                return ResourceAccessDecision.Deny("Mentor role is not allowed to perform this action.");
-            }
-
-            return ResourceAccessDecision.Allow("Mentor action is allowed; validating scope.");
+            return EvaluateMentorActionPermission(resourceType, action);
         }
 
         if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue()))
         {
-            if (action == ResourceAction.Read)
-            {
-                return ResourceAccessDecision.Allow("User read access is allowed; validating scope.");
-            }
-
-            if (resourceType == ResourceType.Member && action == ResourceAction.Update)
-            {
-                return ResourceAccessDecision.Allow("User may update own member profile; validating ownership.");
-            }
-
-            if (resourceType == ResourceType.BadgeProgress && action is ResourceAction.Create or ResourceAction.Update)
-            {
-                return ResourceAccessDecision.Allow("User may submit own badge progress; validating ownership.");
-            }
-
-            if (resourceType == ResourceType.Member && action == ResourceAction.Manage)
-            {
-                return ResourceAccessDecision.Deny("User role is limited to read access.");
-            }
-
-            return ResourceAccessDecision.Deny("User role is limited to read access and own member profile update.");
+            return EvaluateUserActionPermission(resourceType, action);
         }
 
         return ResourceAccessDecision.Deny("Current user does not have a supported role for resource access.");
+    }
+
+    private static ResourceAccessDecision EvaluateManagerActionPermission(ResourceType resourceType, ResourceAction action)
+    {
+        if (resourceType == ResourceType.Kurin && action is ResourceAction.Update or ResourceAction.Delete or ResourceAction.Manage)
+        {
+            return ResourceAccessDecision.Deny("Manager cannot perform irreversible kurin actions.");
+        }
+
+        return ResourceAccessDecision.Allow("Manager action is allowed; validating scope.");
+    }
+
+    private static ResourceAccessDecision EvaluateMentorActionPermission(ResourceType resourceType, ResourceAction action)
+    {
+        if (!IsMentorActionAllowed(resourceType, action))
+        {
+            return ResourceAccessDecision.Deny("Mentor role is not allowed to perform this action.");
+        }
+
+        return ResourceAccessDecision.Allow("Mentor action is allowed; validating scope.");
+    }
+
+    private static ResourceAccessDecision EvaluateUserActionPermission(ResourceType resourceType, ResourceAction action)
+    {
+        if (action == ResourceAction.Read)
+        {
+            return ResourceAccessDecision.Allow("User read access is allowed; validating scope.");
+        }
+
+        if (resourceType == ResourceType.Member && action == ResourceAction.Update)
+        {
+            return ResourceAccessDecision.Allow("User may update own member profile; validating ownership.");
+        }
+
+        if (resourceType == ResourceType.BadgeProgress && action is ResourceAction.Create or ResourceAction.Update)
+        {
+            return ResourceAccessDecision.Allow("User may submit own badge progress; validating ownership.");
+        }
+
+        return resourceType == ResourceType.Member && action == ResourceAction.Manage
+            ? ResourceAccessDecision.Deny("User role is limited to read access.")
+            : ResourceAccessDecision.Deny("User role is limited to read access and own member profile update.");
     }
 
     private static bool IsMentorActionAllowed(ResourceType resourceType, ResourceAction action)
@@ -275,86 +289,126 @@ public class ResourceAccessService : IResourceAccessService
 
         if (_currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
         {
-            if (resourceType == ResourceType.Group)
-            {
-                if (action != ResourceAction.Read)
-                {
-                    return ResourceAccessDecision.Deny("Mentor cannot rename or delete group data.");
-                }
-
-                var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
-                if (mentorGroupKey is null)
-                {
-                    return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
-                }
-
-                if (scopeResolution.GroupKey != mentorGroupKey)
-                {
-                    return ResourceAccessDecision.Deny("Mentor has access only to own group.");
-                }
-            }
-
-            if (resourceType == ResourceType.Member)
-            {
-                var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
-                if (mentorGroupKey is null)
-                {
-                    return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
-                }
-
-                if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey.Value)
-                {
-                    return ResourceAccessDecision.Deny("Mentor can manage only members from own group.");
-                }
-            }
-
-            if (resourceType is ResourceType.ProbeProgress or ResourceType.BadgeProgress)
-            {
-                var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
-                if (mentorGroupKey is null)
-                {
-                    return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
-                }
-
-                if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey.Value)
-                {
-                    return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from own group.");
-                }
-            }
-
-            return ResourceAccessDecision.Allow("Mentor scoped checks passed.");
+            return await EvaluateMentorScopeRulesAsync(resourceType, action, scopeResolution, currentKurinKey, cancellationToken);
         }
 
-        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue())
-            && resourceType == ResourceType.Member
-            && action == ResourceAction.Update)
+        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue()))
         {
-            var currentUserId = _currentUserContext.UserId;
-            if (currentUserId is null)
-            {
-                return ResourceAccessDecision.Deny("Current user id claim is missing.");
-            }
-
-            if (!scopeResolution.MemberUserKey.HasValue || scopeResolution.MemberUserKey.Value != currentUserId.Value)
-            {
-                return ResourceAccessDecision.Deny("User can update only own member profile.");
-            }
+            return EvaluateUserScopeRules(resourceType, action, scopeResolution);
         }
 
-        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue())
-            && resourceType is ResourceType.BadgeProgress or ResourceType.ProbeProgress
-            && action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update)
-        {
-            var currentUserId = _currentUserContext.UserId;
-            if (currentUserId is null)
-            {
-                return ResourceAccessDecision.Deny("Current user id claim is missing.");
-            }
+        return ResourceAccessDecision.Allow("Role scoped checks passed.");
+    }
 
-            if (!scopeResolution.MemberUserKey.HasValue || scopeResolution.MemberUserKey.Value != currentUserId.Value)
-            {
-                return ResourceAccessDecision.Deny("User can access only own progress resources.");
-            }
+    private async Task<ResourceAccessDecision> EvaluateMentorScopeRulesAsync(
+        ResourceType resourceType,
+        ResourceAction action,
+        ResourceAccessScopeResolution scopeResolution,
+        Guid currentKurinKey,
+        CancellationToken cancellationToken)
+    {
+        if (!RequiresMentorGroupScope(resourceType))
+        {
+            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+        }
+
+        var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
+        if (mentorGroupKey is null)
+        {
+            return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
+        }
+
+        return resourceType switch
+        {
+            ResourceType.Group => ValidateMentorGroupAccess(action, scopeResolution, mentorGroupKey.Value),
+            ResourceType.Member => ValidateMentorMemberAccess(scopeResolution, mentorGroupKey.Value),
+            ResourceType.ProbeProgress or ResourceType.BadgeProgress => ValidateMentorProgressAccess(scopeResolution, mentorGroupKey.Value),
+            _ => ResourceAccessDecision.Allow(MentorScopeChecksPassed)
+        };
+    }
+
+    private ResourceAccessDecision EvaluateUserScopeRules(
+        ResourceType resourceType,
+        ResourceAction action,
+        ResourceAccessScopeResolution scopeResolution)
+    {
+        if (resourceType == ResourceType.Member && action == ResourceAction.Update)
+        {
+            return ValidateCurrentUserOwnership(scopeResolution, "User can update only own member profile.");
+        }
+
+        if (resourceType is ResourceType.BadgeProgress or ResourceType.ProbeProgress &&
+            action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update)
+        {
+            return ValidateCurrentUserOwnership(scopeResolution, "User can access only own progress resources.");
+        }
+
+        return ResourceAccessDecision.Allow("Role scoped checks passed.");
+    }
+
+    private static bool RequiresMentorGroupScope(ResourceType resourceType)
+    {
+        return resourceType == ResourceType.Group ||
+               resourceType == ResourceType.Member ||
+               resourceType == ResourceType.BadgeProgress ||
+               resourceType == ResourceType.ProbeProgress;
+    }
+
+    private static ResourceAccessDecision ValidateMentorGroupAccess(
+        ResourceAction action,
+        ResourceAccessScopeResolution scopeResolution,
+        Guid mentorGroupKey)
+    {
+        if (action != ResourceAction.Read)
+        {
+            return ResourceAccessDecision.Deny("Mentor cannot rename or delete group data.");
+        }
+
+        if (scopeResolution.GroupKey != mentorGroupKey)
+        {
+            return ResourceAccessDecision.Deny("Mentor has access only to own group.");
+        }
+
+        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+    }
+
+    private static ResourceAccessDecision ValidateMentorMemberAccess(
+        ResourceAccessScopeResolution scopeResolution,
+        Guid mentorGroupKey)
+    {
+        if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey)
+        {
+            return ResourceAccessDecision.Deny("Mentor can manage only members from own group.");
+        }
+
+        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+    }
+
+    private static ResourceAccessDecision ValidateMentorProgressAccess(
+        ResourceAccessScopeResolution scopeResolution,
+        Guid mentorGroupKey)
+    {
+        if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey)
+        {
+            return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from own group.");
+        }
+
+        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+    }
+
+    private ResourceAccessDecision ValidateCurrentUserOwnership(
+        ResourceAccessScopeResolution scopeResolution,
+        string denyMessage)
+    {
+        var currentUserId = _currentUserContext.UserId;
+        if (currentUserId is null)
+        {
+            return ResourceAccessDecision.Deny("Current user id claim is missing.");
+        }
+
+        if (!scopeResolution.MemberUserKey.HasValue || scopeResolution.MemberUserKey.Value != currentUserId.Value)
+        {
+            return ResourceAccessDecision.Deny(denyMessage);
         }
 
         return ResourceAccessDecision.Allow("Role scoped checks passed.");

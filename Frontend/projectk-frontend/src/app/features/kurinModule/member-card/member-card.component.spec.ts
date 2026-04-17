@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card.component';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
@@ -113,8 +114,10 @@ describe('MemberCardComponent', () => {
     }));
 
     await TestBed.configureTestingModule({
-      imports: [MemberCardComponent, HttpClientTestingModule],
+      imports: [MemberCardComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },

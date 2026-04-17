@@ -186,8 +186,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
 
             builder.WebHost.UseTestServer();
 
-            builder.Services.AddSingleton(new AnonymousAuthState());
-
             builder.Services
                 .AddAuthentication(options =>
                 {
@@ -243,20 +241,13 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         }
     }
 
-    private sealed record AnonymousAuthState;
-
-    private sealed class AnonymousAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class AnonymousAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "AnonymousOnly";
-
-        public AnonymousAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            AnonymousAuthState authState)
-            : base(options, logger, encoder)
-        {
-        }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {

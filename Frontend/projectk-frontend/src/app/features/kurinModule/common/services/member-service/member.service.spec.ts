@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { MemberService } from './member.service';
 import { environment } from '../../../../environments/environment';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
@@ -38,8 +39,11 @@ describe('MemberService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [MemberService]
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        MemberService
+      ]
     });
     service = TestBed.inject(MemberService);
     httpMock = TestBed.inject(HttpTestingController);

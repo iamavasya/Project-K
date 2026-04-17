@@ -62,11 +62,19 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         var now = DateTime.UtcNow;
         var actor = ProgressActorResolver.Resolve(_currentUserContext);
         var targetStatus = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
-        var action = request.IsApproved
-            ? "Confirmed"
-            : fromStatus == BadgeProgressStatus.Confirmed
-                ? "RemovedConfirmed"
-                : "Rejected";
+        string action;
+        if (request.IsApproved)
+        {
+            action = "Confirmed";
+        }
+        else if (fromStatus == BadgeProgressStatus.Confirmed)
+        {
+            action = "RemovedConfirmed";
+        }
+        else
+        {
+            action = "Rejected";
+        }
 
         progress.Status = targetStatus;
         progress.ReviewedAtUtc = now;

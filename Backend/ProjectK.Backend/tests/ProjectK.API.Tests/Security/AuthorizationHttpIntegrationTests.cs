@@ -119,21 +119,16 @@ public class AuthorizationHttpIntegrationTests
 
     private sealed record TestAuthState(UserRole? Role);
 
-    private sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class TestAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        TestAuthState authState)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "Test";
 
-        private readonly TestAuthState _authState;
-
-        public TestAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            TestAuthState authState)
-            : base(options, logger, encoder)
-        {
-            _authState = authState;
-        }
+        private readonly TestAuthState _authState = authState;
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {

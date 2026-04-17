@@ -3,7 +3,7 @@ import { MemberProbeRowView } from '../models/probes-and-badges/memberProbeRowVi
 import { ProbeProgressDto } from '../models/probes-and-badges/probeProgressDto';
 import { ProbeSummaryDto } from '../models/probes-and-badges/probeSummaryDto';
 
-export type ProbeProgressStatusLike = ProbeProgressStatus | keyof typeof ProbeProgressStatus | string | number;
+export type ProbeProgressStatusLike = ProbeProgressStatus | string | number;
 
 interface ProbeRowTemplate {
   probeId: string;

@@ -345,21 +345,16 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
     private sealed record MemberProgressAuthState(UserRole? Role, Guid UserId, Guid KurinKey);
 
-    private sealed class MemberProgressAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class MemberProgressAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        MemberProgressAuthState authState)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "MemberProgressSecurityTest";
 
-        private readonly MemberProgressAuthState _authState;
-
-        public MemberProgressAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            MemberProgressAuthState authState)
-            : base(options, logger, encoder)
-        {
-            _authState = authState;
-        }
+        private readonly MemberProgressAuthState _authState = authState;
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {

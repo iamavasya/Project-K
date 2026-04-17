@@ -223,34 +223,75 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         out object? value,
         out string error)
     {
-        if (selector.StartsWith("route:", StringComparison.OrdinalIgnoreCase))
+        if (TryResolveRouteSelector(context, selector, out value, out error))
         {
-            var key = selector["route:".Length..];
-            if (context.RouteData.Values.TryGetValue(key, out value) && value is not null)
-            {
-                error = string.Empty;
-                return true;
-            }
+            return true;
+        }
 
-            error = $"Route value '{key}' was not found.";
+        if (TryResolveQuerySelector(context, selector, out value, out error))
+        {
+            return true;
+        }
+
+        return TryResolveArgumentPathSelector(context, selector, out value, out error);
+    }
+
+    private static bool TryResolveRouteSelector(
+        ActionExecutingContext context,
+        string selector,
+        out object? value,
+        out string error)
+    {
+        value = null;
+        error = string.Empty;
+
+        if (!selector.StartsWith("route:", StringComparison.OrdinalIgnoreCase))
+        {
             return false;
         }
 
-        if (selector.StartsWith("query:", StringComparison.OrdinalIgnoreCase))
+        var key = selector["route:".Length..];
+        if (context.RouteData.Values.TryGetValue(key, out value) && value is not null)
         {
-            var key = selector["query:".Length..];
-            if (context.HttpContext.Request.Query.TryGetValue(key, out var queryValue)
-                && !string.IsNullOrWhiteSpace(queryValue.FirstOrDefault()))
-            {
-                value = queryValue.FirstOrDefault();
-                error = string.Empty;
-                return true;
-            }
+            return true;
+        }
 
-            value = null;
-            error = $"Query value '{key}' was not found.";
+        error = $"Route value '{key}' was not found.";
+        return false;
+    }
+
+    private static bool TryResolveQuerySelector(
+        ActionExecutingContext context,
+        string selector,
+        out object? value,
+        out string error)
+    {
+        value = null;
+        error = string.Empty;
+
+        if (!selector.StartsWith("query:", StringComparison.OrdinalIgnoreCase))
+        {
             return false;
         }
+
+        var key = selector["query:".Length..];
+        if (context.HttpContext.Request.Query.TryGetValue(key, out var queryValue) &&
+            !string.IsNullOrWhiteSpace(queryValue.FirstOrDefault()))
+        {
+            value = queryValue.FirstOrDefault();
+            return true;
+        }
+
+        error = $"Query value '{key}' was not found.";
+        return false;
+    }
+
+    private static bool TryResolveArgumentPathSelector(
+        ActionExecutingContext context,
+        string selector,
+        out object? value,
+        out string error)
+    {
 
         var argumentPath = selector.StartsWith("arg:", StringComparison.OrdinalIgnoreCase)
             ? selector["arg:".Length..]

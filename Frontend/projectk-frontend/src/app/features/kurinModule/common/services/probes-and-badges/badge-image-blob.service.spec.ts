@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { BadgeImageBlobService } from './badge-image-blob.service';
 
 describe('BadgeImageBlobService', () => {
@@ -8,8 +9,11 @@ describe('BadgeImageBlobService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [BadgeImageBlobService]
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        BadgeImageBlobService
+      ]
     });
 
     service = TestBed.inject(BadgeImageBlobService);

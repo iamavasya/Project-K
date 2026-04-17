@@ -3,6 +3,7 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Helpers;
 
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
 public sealed class ResourceAuthorizeAttribute : TypeFilterAttribute
 {
     public ResourceAuthorizeAttribute(ResourceType resourceType, ResourceAction action, string resourceKeySelector)

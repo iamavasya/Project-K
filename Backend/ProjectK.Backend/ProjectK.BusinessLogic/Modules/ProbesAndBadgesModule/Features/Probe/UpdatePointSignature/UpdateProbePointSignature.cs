@@ -65,95 +65,33 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var actor = ProgressActorResolver.Resolve(_currentUserContext);
         var actorName = await ResolveActorDisplayNameAsync(actor.UserKey, cancellationToken);
         var now = DateTime.UtcNow;
-        var hasChanges = false;
-        var pointWasActuallyUnsigned = false;
+        var pointUpdateContext = new PointSignatureUpdateContext(
+            IsSigned: request.IsSigned,
+            MemberKey: request.MemberKey,
+            KurinKey: member.KurinKey,
+            ProbeId: normalizedProbeId,
+            PointId: normalizedPointId,
+            TimestampUtc: now,
+            ActorUserKey: actor.UserKey,
+            ActorRole: actor.ActorRole,
+            ActorName: actorName,
+            CancellationToken: cancellationToken);
 
-        if (request.IsSigned)
-        {
-            if (pointProgress is null)
-            {
-                pointProgress = new ProbePointProgress
-                {
-                    MemberKey = request.MemberKey,
-                    KurinKey = member.KurinKey,
-                    ProbeId = normalizedProbeId,
-                    PointId = normalizedPointId,
-                    IsSigned = true,
-                    SignedAtUtc = now,
-                    SignedByUserKey = actor.UserKey,
-                    SignedByName = actorName,
-                    SignedByRole = actor.ActorRole
-                };
-                _unitOfWork.ProbePointProgresses.Create(pointProgress, cancellationToken);
-                hasChanges = true;
-            }
-            else if (!pointProgress.IsSigned)
-            {
-                pointProgress.IsSigned = true;
-                pointProgress.SignedAtUtc = now;
-                pointProgress.SignedByUserKey = actor.UserKey;
-                pointProgress.SignedByName = actorName;
-                pointProgress.SignedByRole = actor.ActorRole;
-                _unitOfWork.ProbePointProgresses.Update(pointProgress, cancellationToken);
-                hasChanges = true;
-            }
-        }
-        else
-        {
-            if (pointProgress is not null && pointProgress.IsSigned)
-            {
-                pointProgress.IsSigned = false;
-                pointProgress.SignedAtUtc = null;
-                pointProgress.SignedByUserKey = null;
-                pointProgress.SignedByName = null;
-                pointProgress.SignedByRole = null;
-                _unitOfWork.ProbePointProgresses.Update(pointProgress, cancellationToken);
-                hasChanges = true;
-                pointWasActuallyUnsigned = true;
-            }
-        }
+        var pointUpdate = ApplyPointSignatureUpdate(
+            pointProgress,
+            pointUpdateContext);
 
-        if (probeProgress is null)
-        {
-            if (request.IsSigned)
-            {
-                probeProgress = new ProbeProgress
-                {
-                    MemberKey = request.MemberKey,
-                    KurinKey = member.KurinKey,
-                    ProbeId = normalizedProbeId,
-                    Status = ProbeProgressStatus.InProgress
-                };
-                _unitOfWork.ProbeProgresses.Create(probeProgress, cancellationToken);
-                hasChanges = true;
-            }
-        }
-        else if (!request.IsSigned
-            && pointWasActuallyUnsigned
-            && (probeProgress.Status == ProbeProgressStatus.Completed || probeProgress.Status == ProbeProgressStatus.Verified))
-        {
-            var previousStatus = probeProgress.Status;
-            probeProgress.Status = ProbeProgressStatus.InProgress;
-            probeProgress.CompletedAtUtc = null;
-            probeProgress.CompletedByUserKey = null;
-            probeProgress.CompletedByName = null;
-            probeProgress.CompletedByRole = null;
-            probeProgress.VerifiedAtUtc = null;
-            probeProgress.VerifiedByUserKey = null;
-            probeProgress.VerifiedByName = null;
-            probeProgress.VerifiedByRole = null;
-            hasChanges = true;
-        }
-        else if (!request.IsSigned
-            && !pointWasActuallyUnsigned
-            && (probeProgress.Status == ProbeProgressStatus.Completed || probeProgress.Status == ProbeProgressStatus.Verified))
-        {
-        }
-        else if (request.IsSigned && probeProgress.Status == ProbeProgressStatus.NotStarted)
-        {
-            probeProgress.Status = ProbeProgressStatus.InProgress;
-            hasChanges = true;
-        }
+        var probeUpdate = ApplyProbeProgressUpdate(
+            probeProgress,
+            request.IsSigned,
+            pointUpdate.PointWasActuallyUnsigned,
+            request.MemberKey,
+            member.KurinKey,
+            normalizedProbeId,
+            cancellationToken);
+        probeProgress = probeUpdate.ProbeProgress;
+
+        var hasChanges = pointUpdate.HasChanges || probeUpdate.HasChanges;
 
         if (hasChanges)
         {
@@ -179,6 +117,126 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         return new ServiceResult<ProbeProgressResponse>(
             ResultType.Success,
             ProbeProgressResponse.FromEntity(probeProgress, latestPointSignatures));
+    }
+
+    private (ProbePointProgress? PointProgress, bool HasChanges, bool PointWasActuallyUnsigned) ApplyPointSignatureUpdate(
+        ProbePointProgress? pointProgress,
+        PointSignatureUpdateContext context)
+    {
+        if (context.IsSigned)
+        {
+            if (pointProgress is null)
+            {
+                pointProgress = new ProbePointProgress
+                {
+                    MemberKey = context.MemberKey,
+                    KurinKey = context.KurinKey,
+                    ProbeId = context.ProbeId,
+                    PointId = context.PointId,
+                    IsSigned = true,
+                    SignedAtUtc = context.TimestampUtc,
+                    SignedByUserKey = context.ActorUserKey,
+                    SignedByName = context.ActorName,
+                    SignedByRole = context.ActorRole
+                };
+                _unitOfWork.ProbePointProgresses.Create(pointProgress, context.CancellationToken);
+                return (pointProgress, true, false);
+            }
+
+            if (!pointProgress.IsSigned)
+            {
+                pointProgress.IsSigned = true;
+                pointProgress.SignedAtUtc = context.TimestampUtc;
+                pointProgress.SignedByUserKey = context.ActorUserKey;
+                pointProgress.SignedByName = context.ActorName;
+                pointProgress.SignedByRole = context.ActorRole;
+                _unitOfWork.ProbePointProgresses.Update(pointProgress, context.CancellationToken);
+                return (pointProgress, true, false);
+            }
+
+            return (pointProgress, false, false);
+        }
+
+        if (pointProgress is null || !pointProgress.IsSigned)
+        {
+            return (pointProgress, false, false);
+        }
+
+        pointProgress.IsSigned = false;
+        pointProgress.SignedAtUtc = null;
+        pointProgress.SignedByUserKey = null;
+        pointProgress.SignedByName = null;
+        pointProgress.SignedByRole = null;
+        _unitOfWork.ProbePointProgresses.Update(pointProgress, context.CancellationToken);
+
+        return (pointProgress, true, true);
+    }
+
+    private sealed record PointSignatureUpdateContext(
+        bool IsSigned,
+        Guid MemberKey,
+        Guid KurinKey,
+        string ProbeId,
+        string PointId,
+        DateTime TimestampUtc,
+        Guid? ActorUserKey,
+        string? ActorRole,
+        string? ActorName,
+        CancellationToken CancellationToken);
+
+    private (ProbeProgress? ProbeProgress, bool HasChanges) ApplyProbeProgressUpdate(
+        ProbeProgress? probeProgress,
+        bool isSigned,
+        bool pointWasActuallyUnsigned,
+        Guid memberKey,
+        Guid kurinKey,
+        string probeId,
+        CancellationToken cancellationToken)
+    {
+        if (probeProgress is null)
+        {
+            if (!isSigned)
+            {
+                return (null, false);
+            }
+
+            var createdProbeProgress = new ProbeProgress
+            {
+                MemberKey = memberKey,
+                KurinKey = kurinKey,
+                ProbeId = probeId,
+                Status = ProbeProgressStatus.InProgress
+            };
+            _unitOfWork.ProbeProgresses.Create(createdProbeProgress, cancellationToken);
+            return (createdProbeProgress, true);
+        }
+
+        if (!isSigned && pointWasActuallyUnsigned && IsCompletedOrVerified(probeProgress.Status))
+        {
+            probeProgress.Status = ProbeProgressStatus.InProgress;
+            probeProgress.CompletedAtUtc = null;
+            probeProgress.CompletedByUserKey = null;
+            probeProgress.CompletedByName = null;
+            probeProgress.CompletedByRole = null;
+            probeProgress.VerifiedAtUtc = null;
+            probeProgress.VerifiedByUserKey = null;
+            probeProgress.VerifiedByName = null;
+            probeProgress.VerifiedByRole = null;
+            return (probeProgress, true);
+        }
+
+        if (isSigned && probeProgress.Status == ProbeProgressStatus.NotStarted)
+        {
+            probeProgress.Status = ProbeProgressStatus.InProgress;
+            return (probeProgress, true);
+        }
+
+        return (probeProgress, false);
+    }
+
+    private static bool IsCompletedOrVerified(ProbeProgressStatus status)
+    {
+        return status == ProbeProgressStatus.Completed || status == ProbeProgressStatus.Verified;
     }
 
     private async Task<IReadOnlyCollection<ProbePointProgressResponse>> BuildPointSignatureResponsesAsync(

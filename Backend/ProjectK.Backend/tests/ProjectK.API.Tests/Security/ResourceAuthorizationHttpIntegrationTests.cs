@@ -141,21 +141,16 @@ public class ResourceAuthorizationHttpIntegrationTests
 
     private sealed record ResourceGuardAuthState(UserRole Role, Guid UserId, Guid KurinKey);
 
-    private sealed class ResourceGuardAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class ResourceGuardAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        ResourceGuardAuthState authState)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "ResourceGuardTest";
 
-        private readonly ResourceGuardAuthState _authState;
-
-        public ResourceGuardAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            ResourceGuardAuthState authState)
-            : base(options, logger, encoder)
-        {
-            _authState = authState;
-        }
+        private readonly ResourceGuardAuthState _authState = authState;
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {

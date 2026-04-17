@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
 const BADGES_IMAGES_BASE_PATH = '/badges_images';
 const API_ORIGIN = resolveApiOrigin(environment.apiUrl);
 
-export type BadgeProgressStatusLike = BadgeProgressStatus | keyof typeof BadgeProgressStatus | string | number;
+export type BadgeProgressStatusLike = BadgeProgressStatus | string | number;
 
 function resolveApiOrigin(apiUrl: string): string {
   try {

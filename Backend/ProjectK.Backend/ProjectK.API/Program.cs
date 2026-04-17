@@ -200,7 +200,7 @@ namespace ProjectK.API
 
             app.MapGet("/", () => "Backend Started");
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

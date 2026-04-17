@@ -140,7 +140,7 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefault(h => h.PlastLevelHistoryKey == updatedHistory.PlastLevelHistoryKey);
 
             if (history == null)
-                throw new ArgumentNullException("PlastLevelHistory not found");
+                throw new InvalidOperationException($"Plast level history '{updatedHistory.PlastLevelHistoryKey}' not found for member '{memberKey}'.");
 
             // Updating fields
             history.PlastLevel = updatedHistory.PlastLevel;

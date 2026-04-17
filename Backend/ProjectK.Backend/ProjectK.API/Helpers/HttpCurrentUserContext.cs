@@ -23,13 +23,7 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
 
     public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue("kurinKey"));
 
-    public IReadOnlyCollection<string> Roles =>
-        Principal?
-            .FindAll(ClaimTypes.Role)
-            .Select(claim => claim.Value)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray()
-        ?? [];
+    public IReadOnlyCollection<string> Roles => ResolveRoles();
 
     public bool IsInRole(string role)
     {
@@ -39,5 +33,15 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
     private static Guid? ParseGuid(string? value)
     {
         return Guid.TryParse(value, out var guid) ? guid : null;
+    }
+
+    private IReadOnlyCollection<string> ResolveRoles()
+    {
+        return Principal?
+            .FindAll(ClaimTypes.Role)
+            .Select(claim => claim.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray()
+            ?? [];
     }
 }
