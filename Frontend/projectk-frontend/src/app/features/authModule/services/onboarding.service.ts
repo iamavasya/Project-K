@@ -7,6 +7,8 @@ export interface WaitlistRegistration {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber: string;
+  dateOfBirth: string;
   isKurinLeaderCandidate: boolean;
   claimedKurinNameOrNumber?: string;
 }
@@ -31,7 +33,7 @@ export interface InvitationValidationResponse {
   providedIn: 'root'
 })
 export class OnboardingService {
-  private apiUrl = `${environment.apiUrl}/api/auth/onboarding`;
+  private apiUrl = `${environment.apiUrl}/auth/onboarding`;
 
   constructor(private http: HttpClient) {}
 

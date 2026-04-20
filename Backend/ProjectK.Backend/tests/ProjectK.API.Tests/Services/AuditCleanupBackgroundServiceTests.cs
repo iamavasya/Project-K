@@ -74,10 +74,12 @@ namespace ProjectK.API.Tests.Services
                 context.WaitlistEntries.AddRange(
                     new WaitlistEntry { 
                         WaitlistEntryKey = Guid.NewGuid(), FirstName = "Old", LastName = "User", Email = "old@example.com",
+                        PhoneNumber = "1234567890", DateOfBirth = oldDateOnboarding,
                         VerificationStatus = WaitlistVerificationStatus.Rejected, ReviewedAtUtc = oldDateOnboarding 
                     },
                     new WaitlistEntry { 
                         WaitlistEntryKey = Guid.NewGuid(), FirstName = "New", LastName = "User", Email = "new@example.com",
+                        PhoneNumber = "0987654321", DateOfBirth = newDateOnboarding,
                         VerificationStatus = WaitlistVerificationStatus.Rejected, ReviewedAtUtc = newDateOnboarding 
                     }
                 );

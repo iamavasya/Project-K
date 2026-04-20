@@ -42,11 +42,11 @@ import { ToastModule } from 'primeng/toast';
             <td>{{ entry.requestedAtUtc | date:'short' }}</td>
             <td>
               <div class="flex gap-2">
-                <p-button *ngIf="entry.verificationStatus === 0" icon="pi pi-check" severity="success" 
+                <p-button *ngIf="isInitial(entry.verificationStatus)" icon="pi pi-check" severity="success" 
                           (onClick)="approve(entry)" pTooltip="Approve & Send Invitation"></p-button>
-                <p-button *ngIf="entry.verificationStatus === 0" icon="pi pi-times" severity="danger" 
+                <p-button *ngIf="isInitial(entry.verificationStatus)" icon="pi pi-times" severity="danger" 
                           (onClick)="reject(entry)" pTooltip="Reject"></p-button>
-                <p-button *ngIf="entry.verificationStatus === 4" icon="pi pi-refresh" severity="info" 
+                <p-button *ngIf="isApproved(entry.verificationStatus)" icon="pi pi-refresh" severity="info" 
                           (onClick)="resend(entry)" pTooltip="Resend Invitation"></p-button>
               </div>
             </td>
@@ -116,25 +116,47 @@ export class WaitlistManagementComponent implements OnInit {
     });
   }
 
-  getStatusLabel(status: number): string {
-    switch (status) {
-      case 0: return 'Submitted';
-      case 1: return 'Verification Required';
-      case 2: return 'Verified';
-      case 3: return 'Rejected';
-      case 4: return 'Approved';
-      default: return 'Unknown';
+  getStatusLabel(status: any): string {
+    const s = String(status);
+    switch (s) {
+      case '0':
+      case 'Submitted': return 'Submitted';
+      case '1':
+      case 'NeedsManualVerification': return 'Verification Required';
+      case '2':
+      case 'Verified': return 'Verified';
+      case '3':
+      case 'Rejected': return 'Rejected';
+      case '4':
+      case 'ApprovedForInvitation': return 'Approved';
+      default: return 'Unknown (' + s + ')';
     }
   }
 
-  getStatusSeverity(status: number): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | undefined {
-    switch (status) {
-      case 0: return 'info';
-      case 1: return 'warn';
-      case 2: return 'success';
-      case 3: return 'danger';
-      case 4: return 'success';
+  getStatusSeverity(status: any): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | undefined {
+    const s = String(status);
+    switch (s) {
+      case '0':
+      case 'Submitted': return 'info';
+      case '1':
+      case 'NeedsManualVerification': return 'warn';
+      case '2':
+      case 'Verified': return 'success';
+      case '3':
+      case 'Rejected': return 'danger';
+      case '4':
+      case 'ApprovedForInvitation': return 'success';
       default: return 'secondary';
     }
+  }
+
+  isInitial(status: any): boolean {
+    const s = String(status);
+    return s === '0' || s === 'Submitted';
+  }
+
+  isApproved(status: any): boolean {
+    const s = String(status);
+    return s === '4' || s === 'ApprovedForInvitation';
   }
 }

@@ -247,6 +247,28 @@ namespace ProjectK.Infrastructure.DbContexts
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
             });
+
+            builder.Entity<WaitlistEntry>(entity =>
+            {
+                entity.HasKey(e => e.WaitlistEntryKey);
+                entity.Property(e => e.VerificationStatus)
+                    .HasConversion<string>();
+                entity.HasIndex(e => e.Email).IsUnique();
+            });
+
+            builder.Entity<Invitation>(entity =>
+            {
+                entity.HasKey(e => e.InvitationKey);
+                entity.HasOne(e => e.WaitlistEntry)
+                    .WithMany()
+                    .HasForeignKey(e => e.WaitlistEntryKey)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.TargetUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetUserKey)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(e => e.Token).IsUnique();
+            });
         }
     }
 }

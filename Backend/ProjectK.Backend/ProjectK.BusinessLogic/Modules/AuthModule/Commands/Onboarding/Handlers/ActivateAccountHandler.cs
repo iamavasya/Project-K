@@ -63,6 +63,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"Failed to update user status: {errors}");
             }
 
+            // 3.5. Assign Role
+            var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
+            string roleToAssign = (entry?.IsKurinLeaderCandidate ?? false) 
+                ? UserRole.Manager.ToString() 
+                : UserRole.User.ToString();
+
+            await _userManager.AddToRoleAsync(user, roleToAssign);
+
             // 4. Mark Invitation as used
             invitation.UsedAtUtc = DateTime.UtcNow;
             _unitOfWork.Invitations.Update(invitation, cancellationToken);
@@ -77,8 +85,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email!,
+                    PhoneNumber = entry?.PhoneNumber ?? "0000000000",
+                    DateOfBirth = entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
                     UserKey = user.Id,
-                    KurinKey = user.KurinKey ?? Guid.Empty // Should be set during approval if leader
+                    KurinKey = user.KurinKey ?? Guid.Empty
                 };
                 _unitOfWork.Members.Create(member, cancellationToken);
             }

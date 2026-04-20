@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectK.Infrastructure.DbContexts;
 
@@ -11,9 +12,11 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260420130555_CBTOnBoardingFlowMultiMentor")]
+    partial class CBTOnBoardingFlowMultiMentor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,6 +260,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("TargetUserKey")
                         .HasColumnType("uniqueidentifier");
 
@@ -274,14 +280,14 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("WaitlistEntryKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("WaitlistEntryKey1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("InvitationKey");
 
-                    b.HasIndex("TargetUserKey");
+                    b.HasIndex("TargetUserId");
 
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.HasIndex("WaitlistEntryKey");
+                    b.HasIndex("WaitlistEntryKey1");
 
                     b.ToTable("Invitations");
                 });
@@ -300,9 +306,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -332,11 +335,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -357,14 +355,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("VerificationStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("int");
 
                     b.HasKey("WaitlistEntryKey");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
 
                     b.ToTable("WaitlistEntries");
                 });
@@ -1021,12 +1015,11 @@ namespace ProjectK.Infrastructure.Migrations
                 {
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "TargetUser")
                         .WithMany()
-                        .HasForeignKey("TargetUserKey")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("TargetUserId");
 
                     b.HasOne("ProjectK.Common.Entities.AuthModule.WaitlistEntry", "WaitlistEntry")
                         .WithMany()
-                        .HasForeignKey("WaitlistEntryKey")
+                        .HasForeignKey("WaitlistEntryKey1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

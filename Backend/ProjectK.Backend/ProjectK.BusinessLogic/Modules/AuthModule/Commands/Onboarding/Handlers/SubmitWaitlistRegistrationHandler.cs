@@ -42,6 +42,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                DateOfBirth = request.DateOfBirth,
                 IsKurinLeaderCandidate = request.IsKurinLeaderCandidate,
                 ClaimedKurinNameOrNumber = request.ClaimedKurinNameOrNumber,
                 VerificationStatus = WaitlistVerificationStatus.Submitted,

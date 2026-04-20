@@ -17,6 +17,11 @@ namespace ProjectK.Common.Entities.AuthModule
         
         [Required, EmailAddress, MaxLength(256)]
         public string Email { get; set; } = null!;
+
+        [Required, MaxLength(20)]
+        public string PhoneNumber { get; set; } = null!;
+
+        public DateTime DateOfBirth { get; set; }
         
         public bool IsKurinLeaderCandidate { get; set; }
         
