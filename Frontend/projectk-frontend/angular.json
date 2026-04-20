@@ -54,6 +54,14 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "tailscale": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.tailscale.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -66,6 +74,10 @@
             },
             "development": {
               "buildTarget": "projectk-frontend:build:development"
+            },
+            "tailscale": {
+              "buildTarget": "projectk-frontend:build:tailscale"
+
             }
           },
           "defaultConfiguration": "development"

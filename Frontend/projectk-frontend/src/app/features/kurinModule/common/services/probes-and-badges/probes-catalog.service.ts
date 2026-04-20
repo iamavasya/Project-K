@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../../environments/environment';
 import { GroupedProbeDto } from '../../models/probes-and-badges/groupedProbeDto';
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probeSummaryDto';
 
