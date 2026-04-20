@@ -10,7 +10,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public Guid MentorAssignmentKey { get; set; } = Guid.NewGuid();
 
         public Guid MentorUserKey { get; set; }
-        
+
         public Guid GroupKey { get; set; }
         public Group Group { get; set; } = null!;
 

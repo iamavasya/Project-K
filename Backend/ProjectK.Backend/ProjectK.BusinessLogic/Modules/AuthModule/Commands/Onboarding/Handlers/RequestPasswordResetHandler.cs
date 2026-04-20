@@ -23,7 +23,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
         public async Task<ServiceResult<bool>> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
-            
+
             // For security reasons, we return success even if user not found, 
             // but we don't send the email.
             if (user != null && user.OnboardingStatus == OnboardingStatus.Active)

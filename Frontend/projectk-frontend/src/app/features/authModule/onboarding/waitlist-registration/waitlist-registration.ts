@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OnboardingService, WaitlistRegistration } from '../../services/onboarding.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -51,16 +51,20 @@ import { ToastModule } from 'primeng/toast';
             <p-checkbox formControlName="isKurinLeaderCandidate" [binary]="true" inputId="leader"></p-checkbox>
             <label for="leader">Я є зв'язковим куреня</label>
           </div>
-          <div class="flex flex-col gap-2" *ngIf="form.get('isKurinLeaderCandidate')?.value">
-            <label for="kurin">Число куреня</label>
-            <input pInputText id="kurin" formControlName="claimedKurinNameOrNumber" />
-          </div>
+          @if (form.get('isKurinLeaderCandidate')?.value) {
+            <div class="flex flex-col gap-2">
+              <label for="kurin">Число куреня</label>
+              <input pInputText id="kurin" formControlName="claimedKurinNameOrNumber" />
+            </div>
+          }
           
           <p-button label="Подати заявку" type="submit" [disabled]="form.invalid || loading" [loading]="loading" styleClass="w-full"></p-button>
           
-          <div *ngIf="submitted" class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
-            Дякуємо! Ваш запит був надісланий і очікує на розгляд. Ми зв'яжемося з вами найближчим часом через пошту.
-          </div>
+          @if (submitted) {
+            <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
+              Дякуємо! Ваш запит був надісланий і очікує на розгляд. Ми зв'яжемося з вами найближчим часом через пошту.
+            </div>
+          }
         </form>
       </p-card>
     </div>
@@ -68,11 +72,15 @@ import { ToastModule } from 'primeng/toast';
 })
 export class WaitlistRegistrationComponent {
   form: FormGroup;
-  loading: boolean = false;
-  submitted: boolean = false;
-  maxDate: Date = new Date();
+  loading = false;
+  submitted = false;
+  maxDate = new Date();
 
-  constructor(private fb: FormBuilder, private onboardingService: OnboardingService, private messageService: MessageService) {
+  private fb = inject(FormBuilder);
+  private onboardingService = inject(OnboardingService);
+  private messageService = inject(MessageService);
+
+  constructor() {
     this.form = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],

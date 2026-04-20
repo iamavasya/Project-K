@@ -10,7 +10,7 @@
     <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="ProjectK.Optimization" Version="1.1.0" />
+    <PackageReference Include="ProjectK.Optimization" Version="1.1.1" />
     <PackageReference Include="ProjectK.ProbeAndBadges.Abstractions" Version="1.0.0" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding.service';
 import { TableModule } from 'primeng/table';
@@ -33,8 +33,11 @@ import { ToastModule } from 'primeng/toast';
             <td>{{ entry.firstName }} {{ entry.lastName }}</td>
             <td>{{ entry.email }}</td>
             <td>
-              <p-tag *ngIf="entry.isKurinLeaderCandidate" severity="info" [value]="'Kurin ' + entry.claimedKurinNameOrNumber"></p-tag>
-              <span *ngIf="!entry.isKurinLeaderCandidate">No</span>
+              @if (entry.isKurinLeaderCandidate) {
+                <p-tag severity="info" [value]="'Kurin ' + entry.claimedKurinNameOrNumber"></p-tag>
+              } @else {
+                <span>No</span>
+              }
             </td>
             <td>
               <p-tag [severity]="getStatusSeverity(entry.verificationStatus)" [value]="getStatusLabel(entry.verificationStatus)"></p-tag>
@@ -42,12 +45,16 @@ import { ToastModule } from 'primeng/toast';
             <td>{{ entry.requestedAtUtc | date:'short' }}</td>
             <td>
               <div class="flex gap-2">
-                <p-button *ngIf="isInitial(entry.verificationStatus)" icon="pi pi-check" severity="success" 
-                          (onClick)="approve(entry)" pTooltip="Approve & Send Invitation"></p-button>
-                <p-button *ngIf="isInitial(entry.verificationStatus)" icon="pi pi-times" severity="danger" 
-                          (onClick)="reject(entry)" pTooltip="Reject"></p-button>
-                <p-button *ngIf="isApproved(entry.verificationStatus)" icon="pi pi-refresh" severity="info" 
-                          (onClick)="resend(entry)" pTooltip="Resend Invitation"></p-button>
+                @if (isInitial(entry.verificationStatus)) {
+                  <p-button icon="pi pi-check" severity="success" 
+                            (onClick)="approve(entry)" pTooltip="Approve & Send Invitation"></p-button>
+                  <p-button icon="pi pi-times" severity="danger" 
+                            (onClick)="reject(entry)" pTooltip="Reject"></p-button>
+                }
+                @if (isApproved(entry.verificationStatus)) {
+                  <p-button icon="pi pi-refresh" severity="info" 
+                            (onClick)="resend(entry)" pTooltip="Resend Invitation"></p-button>
+                }
               </div>
             </td>
           </tr>
@@ -58,9 +65,10 @@ import { ToastModule } from 'primeng/toast';
 })
 export class WaitlistManagementComponent implements OnInit {
   entries: WaitlistEntry[] = [];
-  loading: boolean = true;
+  loading = true;
 
-  constructor(private onboardingService: OnboardingService, private messageService: MessageService) {}
+  private onboardingService = inject(OnboardingService);
+  private messageService = inject(MessageService);
 
   ngOnInit() {
     this.loadEntries();
@@ -116,7 +124,7 @@ export class WaitlistManagementComponent implements OnInit {
     });
   }
 
-  getStatusLabel(status: any): string {
+  getStatusLabel(status: string | number): string {
     const s = String(status);
     switch (s) {
       case '0':
@@ -133,7 +141,7 @@ export class WaitlistManagementComponent implements OnInit {
     }
   }
 
-  getStatusSeverity(status: any): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | undefined {
+  getStatusSeverity(status: string | number): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | undefined {
     const s = String(status);
     switch (s) {
       case '0':
@@ -143,6 +151,7 @@ export class WaitlistManagementComponent implements OnInit {
       case '2':
       case 'Verified': return 'success';
       case '3':
+      case 'danger':
       case 'Rejected': return 'danger';
       case '4':
       case 'ApprovedForInvitation': return 'success';
@@ -150,12 +159,12 @@ export class WaitlistManagementComponent implements OnInit {
     }
   }
 
-  isInitial(status: any): boolean {
+  isInitial(status: string | number): boolean {
     const s = String(status);
     return s === '0' || s === 'Submitted';
   }
 
-  isApproved(status: any): boolean {
+  isApproved(status: string | number): boolean {
     const s = String(status);
     return s === '4' || s === 'ApprovedForInvitation';
   }

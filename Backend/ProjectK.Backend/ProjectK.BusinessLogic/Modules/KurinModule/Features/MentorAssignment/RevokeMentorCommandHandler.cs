@@ -20,7 +20,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
         public async Task<ServiceResult<bool>> Handle(RevokeMentorCommand request, CancellationToken cancellationToken)
         {
             var existingAssignment = await _unitOfWork.MentorAssignments.GetSpecificAssignmentAsync(request.MentorUserKey, request.GroupKey, cancellationToken);
-            
+
             if (existingAssignment == null)
             {
                 return new ServiceResult<bool>(ResultType.NotFound, false, "Mentor assignment not found.");
@@ -33,7 +33,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
 
             existingAssignment.RevokedAtUtc = DateTime.UtcNow;
             _unitOfWork.MentorAssignments.Update(existingAssignment, cancellationToken);
-            
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new ServiceResult<bool>(ResultType.Success, true);

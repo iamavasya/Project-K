@@ -211,12 +211,12 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, mentorPrimaryGroupKey, new[] { UserRole.Mentor }, mentorUserId);
-        
+
         fixture.MentorAssignments
             .Setup(repo => repo.GetByMentorUserKeyAsync(mentorUserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<MentorAssignment> 
-            { 
-                new MentorAssignment { MentorUserKey = mentorUserId, GroupKey = assignedSecondaryGroupKey } 
+            .ReturnsAsync(new List<MentorAssignment>
+            {
+                new MentorAssignment { MentorUserKey = mentorUserId, GroupKey = assignedSecondaryGroupKey }
             });
 
         fixture.Members

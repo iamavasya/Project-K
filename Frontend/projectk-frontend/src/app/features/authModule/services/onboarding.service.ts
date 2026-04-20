@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -15,11 +15,11 @@ export interface WaitlistRegistration {
 
 export interface WaitlistEntry extends WaitlistRegistration {
   waitlistEntryKey: string;
-  verificationStatus: number;
+  verificationStatus: string | number;
   requestedAtUtc: string;
   approvedAtUtc?: string;
   invitationSentAtUtc?: string;
-  onboardingStatus?: number;
+  onboardingStatus?: string | number;
 }
 
 export interface InvitationValidationResponse {
@@ -29,13 +29,23 @@ export interface InvitationValidationResponse {
   isValid: boolean;
 }
 
+export interface AccountActivationPayload {
+  token: string | null;
+  password: string;
+}
+
+export interface PasswordResetPayload {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class OnboardingService {
   private apiUrl = `${environment.apiUrl}/auth/onboarding`;
-
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   submitWaitlist(registration: WaitlistRegistration): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/waitlist`, registration);
@@ -63,7 +73,7 @@ export class OnboardingService {
     return this.http.get<InvitationValidationResponse>(`${this.apiUrl}/invitation/${token}/validate`);
   }
 
-  activateAccount(payload: any): Observable<string> {
+  activateAccount(payload: AccountActivationPayload): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/activate`, payload);
   }
 
@@ -71,7 +81,7 @@ export class OnboardingService {
     return this.http.post<boolean>(`${this.apiUrl}/password-reset/request`, { email });
   }
 
-  resetPassword(payload: any): Observable<boolean> {
+  resetPassword(payload: PasswordResetPayload): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/password-reset/reset`, payload);
   }
 }

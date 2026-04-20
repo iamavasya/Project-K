@@ -28,9 +28,9 @@ namespace ProjectK.API
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             services.AddScoped<IEmailService, MockEmailService>();
-            
+
             services.AddScoped<ResourceAccessService>();
-            services.AddScoped<IResourceAccessService>(sp => 
+            services.AddScoped<IResourceAccessService>(sp =>
                 new ResourceAccessServiceInstrumentationDecorator(
                     sp.GetRequiredService<ResourceAccessService>(),
                     sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));

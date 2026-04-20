@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,63 +19,73 @@ import { ToastModule } from 'primeng/toast';
     <p-toast></p-toast>
     <div class="flex justify-center items-center min-h-screen bg-gray-100 p-4">
       <p-card header="Account Activation" [style]="{ width: '400px' }">
-        <div *ngIf="loading && !validationData" class="text-center p-4">
-          <i class="pi pi-spin pi-spinner text-4xl"></i>
-          <p>Validating invitation...</p>
-        </div>
-
-        <div *ngIf="!loading && !validationData?.isValid" class="text-center p-4">
-          <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
-          <p class="text-gray-600 mb-4">The activation link you followed is no longer valid.</p>
-          <p-button label="Back to Login" (onClick)="goToLogin()"></p-button>
-        </div>
-
-        <div *ngIf="validationData?.isValid">
-          <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-            <p class="font-bold text-blue-800">Welcome, {{ validationData?.firstName }}!</p>
-            <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData?.email }}.</p>
+        @if (loading && !validationData) {
+          <div class="text-center p-4">
+            <i class="pi pi-spin pi-spinner text-4xl"></i>
+            <p>Validating invitation...</p>
           </div>
+        }
 
-          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
-            <div class="flex flex-col gap-2">
-              <label for="password">New Password</label>
-              <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label for="confirmPassword">Confirm Password</label>
-              <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
-              <small *ngIf="form.errors?.['mismatch'] && form.get('confirmPassword')?.touched" class="p-error text-red-500">
-                Passwords do not match
-              </small>
-            </div>
-            
-            <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full"></p-button>
-          </form>
-        </div>
+        @if (!loading && !validationData?.isValid) {
+          <div class="text-center p-4">
+            <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
+            <p class="text-gray-600 mb-4">The activation link you followed is no longer valid.</p>
+            <p-button label="Back to Login" (onClick)="goToLogin()"></p-button>
+          </div>
+        }
 
-        <div *ngIf="activated" class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
-          Success! Your account is active. Redirecting you...
-        </div>
+        @if (validationData?.isValid) {
+          <div>
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+              <p class="font-bold text-blue-800">Welcome, {{ validationData?.firstName }}!</p>
+              <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData?.email }}.</p>
+            </div>
+
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <label for="password">New Password</label>
+                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
+              </div>
+              <div class="flex flex-col gap-2">
+                <label for="confirmPassword">Confirm Password</label>
+                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
+                @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
+                  <small class="p-error text-red-500">
+                    Passwords do not match
+                  </small>
+                }
+              </div>
+              
+              <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full"></p-button>
+            </form>
+          </div>
+        }
+
+        @if (activated) {
+          <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
+            Success! Your account is active. Redirecting you...
+          </div>
+        }
       </p-card>
     </div>
   `
 })
 export class AccountActivationComponent implements OnInit {
   token: string | null = null;
-  loading: boolean = true;
-  submitting: boolean = false;
-  activated: boolean = false;
+  loading = true;
+  submitting = false;
+  activated = false;
   validationData: InvitationValidationResponse | null = null;
   form: FormGroup;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private fb: FormBuilder,
-    private onboardingService: OnboardingService,
-    private messageService: MessageService
-  ) {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private onboardingService = inject(OnboardingService);
+  private messageService = inject(MessageService);
+
+  constructor() {
     this.form = this.fb.group({
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required]

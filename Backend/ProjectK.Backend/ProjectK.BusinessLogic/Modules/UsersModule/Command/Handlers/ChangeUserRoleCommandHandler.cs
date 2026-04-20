@@ -67,7 +67,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
             // Perform Role Change
             var currentRoles = await _userManager.GetRolesAsync(targetUser);
-            
+
             // If already in role, do nothing
             if (currentRoles.Count == 1 && currentRoles.First() == request.NewRole.ToString())
             {
@@ -75,7 +75,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             }
 
             // Check if this is a downgrade
-            bool isDowngradeToUser = (currentRoles.Contains(UserRole.Mentor.ToString()) || currentRoles.Contains(UserRole.Manager.ToString())) 
+            bool isDowngradeToUser = (currentRoles.Contains(UserRole.Mentor.ToString()) || currentRoles.Contains(UserRole.Manager.ToString()))
                                      && request.NewRole == UserRole.User;
             bool isDowngradeToMentor = currentRoles.Contains(UserRole.Manager.ToString()) && request.NewRole == UserRole.Mentor;
 
@@ -98,14 +98,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             }
 
             // Log Side Effects (Audit / Cleanup)
-            _logger.LogInformation("AUDIT: User {UserId} changed role of user {TargetUserId} to {NewRole}.", 
+            _logger.LogInformation("AUDIT: User {UserId} changed role of user {TargetUserId} to {NewRole}.",
                 _currentUserContext.UserId, targetUser.Id, request.NewRole);
 
             if (isDowngradeToUser || isDowngradeToMentor)
             {
-                _logger.LogInformation("SIDE EFFECT: User {TargetUserId} downgraded to {NewRole}. Revoking explicit group assignments.", 
+                _logger.LogInformation("SIDE EFFECT: User {TargetUserId} downgraded to {NewRole}. Revoking explicit group assignments.",
                     targetUser.Id, request.NewRole);
-                
+
                 var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(targetUser.Id, cancellationToken);
                 foreach (var assignment in assignments.Where(a => a.RevokedAtUtc == null))
                 {

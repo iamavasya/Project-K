@@ -51,7 +51,7 @@ namespace ProjectK.API.Tests.Services
 
             var oldDateProgress = DateTime.UtcNow.AddDays(-181);
             var newDateProgress = DateTime.UtcNow.AddDays(-179);
-            
+
             var oldDateOnboarding = DateTime.UtcNow.AddDays(-31);
             var newDateOnboarding = DateTime.UtcNow.AddDays(-29);
 
@@ -60,7 +60,7 @@ namespace ProjectK.API.Tests.Services
                 // Note: BadgeProgress requires a related BadgeProgress entity, but we only need the audit event for the test if FKs allow, 
                 // but SQLite will enforce FKs. So we create dummy parents or disable FKs.
                 // SQLite in-memory PRAGMA foreign_keys = OFF is default unless enabled. We'll see.
-                
+
                 context.BadgeProgressAuditEvents.AddRange(
                     new BadgeProgressAuditEvent { BadgeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = oldDateProgress },
                     new BadgeProgressAuditEvent { BadgeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = newDateProgress }
@@ -72,15 +72,27 @@ namespace ProjectK.API.Tests.Services
                 );
 
                 context.WaitlistEntries.AddRange(
-                    new WaitlistEntry { 
-                        WaitlistEntryKey = Guid.NewGuid(), FirstName = "Old", LastName = "User", Email = "old@example.com",
-                        PhoneNumber = "1234567890", DateOfBirth = oldDateOnboarding,
-                        VerificationStatus = WaitlistVerificationStatus.Rejected, ReviewedAtUtc = oldDateOnboarding 
+                    new WaitlistEntry
+                    {
+                        WaitlistEntryKey = Guid.NewGuid(),
+                        FirstName = "Old",
+                        LastName = "User",
+                        Email = "old@example.com",
+                        PhoneNumber = "1234567890",
+                        DateOfBirth = oldDateOnboarding,
+                        VerificationStatus = WaitlistVerificationStatus.Rejected,
+                        ReviewedAtUtc = oldDateOnboarding
                     },
-                    new WaitlistEntry { 
-                        WaitlistEntryKey = Guid.NewGuid(), FirstName = "New", LastName = "User", Email = "new@example.com",
-                        PhoneNumber = "0987654321", DateOfBirth = newDateOnboarding,
-                        VerificationStatus = WaitlistVerificationStatus.Rejected, ReviewedAtUtc = newDateOnboarding 
+                    new WaitlistEntry
+                    {
+                        WaitlistEntryKey = Guid.NewGuid(),
+                        FirstName = "New",
+                        LastName = "User",
+                        Email = "new@example.com",
+                        PhoneNumber = "0987654321",
+                        DateOfBirth = newDateOnboarding,
+                        VerificationStatus = WaitlistVerificationStatus.Rejected,
+                        ReviewedAtUtc = newDateOnboarding
                     }
                 );
 

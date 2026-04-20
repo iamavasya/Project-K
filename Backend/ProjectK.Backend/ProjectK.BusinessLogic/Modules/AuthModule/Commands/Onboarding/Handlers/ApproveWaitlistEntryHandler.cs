@@ -59,7 +59,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                     {
                         var activeUsersCount = await _userManager.Users
                             .CountAsync(u => u.KurinKey == existingKurin.KurinKey && u.OnboardingStatus == OnboardingStatus.Active, cancellationToken);
-                        
+
                         if (activeUsersCount >= existingKurin.ZbtUserCap)
                         {
                             return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"ZBT Cap reached for kurin {num}. Hard cap is {existingKurin.ZbtUserCap}.");

@@ -59,7 +59,7 @@ namespace ProjectK.API.Services
             var deletedBadgeAuditEvents = await dbContext.BadgeProgressAuditEvents
                 .Where(e => e.OccurredAtUtc < progressRetentionDate)
                 .ExecuteDeleteAsync(cancellationToken);
-            
+
             if (deletedBadgeAuditEvents > 0)
                 _logger.LogInformation("Cleaned up {Count} old BadgeProgressAuditEvents.", deletedBadgeAuditEvents);
 
@@ -67,14 +67,14 @@ namespace ProjectK.API.Services
             var deletedProbeAuditEvents = await dbContext.ProbeProgressAuditEvents
                 .Where(e => e.OccurredAtUtc < progressRetentionDate)
                 .ExecuteDeleteAsync(cancellationToken);
-            
+
             if (deletedProbeAuditEvents > 0)
                 _logger.LogInformation("Cleaned up {Count} old ProbeProgressAuditEvents.", deletedProbeAuditEvents);
 
             // 3. Cleanup Waitlist Entries (Terminal status and > 30 days)
             var deletedWaitlistEntries = await dbContext.WaitlistEntries
-                .Where(e => 
-                    (e.VerificationStatus == WaitlistVerificationStatus.Rejected || 
+                .Where(e =>
+                    (e.VerificationStatus == WaitlistVerificationStatus.Rejected ||
                      e.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation) &&
                     (e.ReviewedAtUtc < onboardingRetentionDate || e.ApprovedAtUtc < onboardingRetentionDate))
                 .ExecuteDeleteAsync(cancellationToken);
@@ -84,7 +84,7 @@ namespace ProjectK.API.Services
 
             // 4. Cleanup expired/used Invitations (> 30 days)
             var deletedInvitations = await dbContext.Invitations
-                .Where(i => 
+                .Where(i =>
                     (i.UsedAtUtc.HasValue && i.UsedAtUtc < onboardingRetentionDate) ||
                     (!i.UsedAtUtc.HasValue && i.ExpiresAtUtc < onboardingRetentionDate))
                 .ExecuteDeleteAsync(cancellationToken);

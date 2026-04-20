@@ -46,7 +46,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var targetUserId = Guid.NewGuid();
             _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(false);
             _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Manager.ToString())).Returns(false);
-            
+
             _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
                 .ReturnsAsync(new AppUser { Id = targetUserId });
 
@@ -69,7 +69,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(false);
             _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Manager.ToString())).Returns(true);
             _currentUserContextMock.Setup(c => c.KurinKey).Returns(kurinKey);
-            
+
             _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
                 .ReturnsAsync(new AppUser { Id = targetUserId, KurinKey = kurinKey });
 
@@ -82,18 +82,18 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             result.Type.Should().Be(ResultType.Forbidden);
             result.CreatedAtActionName.Should().Contain("cannot promote to Admin");
         }
-        
+
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenAdminChangesRole()
         {
             // Arrange
             var targetUserId = Guid.NewGuid();
             _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(true);
-            
+
             var user = new AppUser { Id = targetUserId };
             _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
                 .ReturnsAsync(user);
-            
+
             _userManagerMock.Setup(m => m.GetRolesAsync(user))
                 .ReturnsAsync(new List<string> { UserRole.User.ToString() });
 

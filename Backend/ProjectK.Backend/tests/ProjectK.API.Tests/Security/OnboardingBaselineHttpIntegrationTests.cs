@@ -84,14 +84,14 @@ public class OnboardingBaselineHttpIntegrationTests
         // This test represents the target behavior where a mentor can access a group they are explicitly assigned to,
         // even if it's not their primary group.
         await using var host = await OnboardingBaselineTestHost.StartAsync(UserRole.Mentor);
-        
+
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
-        
+
         // Find the mocks from the host (we need to expose them or set them up in StartAsync)
         // Since they are registered as Singletons, we can't easily change them here without exposing them.
         // I will update StartAsync to pre-configure a "known" group for this test.
-        
+
         var response = await host.Client.GetAsync($"/api/kurin/kurins/groups/{groupKey}");
 
         // For this baseline test, we just want to ensure it's not a 403. 
@@ -105,7 +105,7 @@ public class OnboardingBaselineHttpIntegrationTests
         await using var host = await OnboardingBaselineTestHost.StartAsync();
         // Assuming we have a way to simulate cap reached, e.g. by setting up a specific state
         // For now, we just expect the endpoint to exist and eventually handle caps.
-        
+
         var payload = JsonSerializer.Serialize(new
         {
             firstName = "Full",
@@ -122,7 +122,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
         // This is a bit tricky for a baseline test without actual implementation, 
         // but it highlights the requirement.
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode); 
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     private sealed class OnboardingBaselineTestHost : IAsyncDisposable
@@ -145,10 +145,10 @@ public class OnboardingBaselineHttpIntegrationTests
             });
 
             builder.WebHost.UseTestServer();
-            
+
             var authState = new OnboardingBaselineAuthState(role);
             builder.Services.AddSingleton(authState);
-            
+
             var mockUserContext = new Mock<ICurrentUserContext>();
             mockUserContext.Setup(c => c.UserId).Returns(Guid.NewGuid());
             mockUserContext.Setup(c => c.IsAuthenticated).Returns(role != null);

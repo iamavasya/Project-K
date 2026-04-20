@@ -163,7 +163,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.NotNull(result.Data);
             Assert.IsType<bool>(result.Data);
             Assert.True(result.Data);
         }

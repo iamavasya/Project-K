@@ -49,16 +49,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers
 
             report.DuplicateEmailConflicts.AddRange(memberEmails);
             // Combine with cross-table duplicates if needed, but usually email is unique in Identity
-            
+
             // 2. Orphan Members
             foreach (var member in members.Where(m => m.UserKey.HasValue))
             {
                 if (!users.Any(u => u.Id == member.UserKey.Value))
                 {
                     report.OrphanMembers.Add(new OrphanMemberInfo(
-                        member.MemberKey, 
-                        $"{member.FirstName} {member.LastName}", 
-                        member.Email, 
+                        member.MemberKey,
+                        $"{member.FirstName} {member.LastName}",
+                        member.Email,
                         member.UserKey));
                 }
             }

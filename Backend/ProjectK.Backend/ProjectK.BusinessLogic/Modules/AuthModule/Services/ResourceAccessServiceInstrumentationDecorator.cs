@@ -28,11 +28,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
             CancellationToken cancellationToken = default)
         {
             var sw = Stopwatch.StartNew();
-            
+
             // Note: Query count instrumentation would ideally be handled at the UnitOfWork/DbContext level,
             // but for this baseline we can log the high-level latency per resource type.
             var decision = await _inner.CheckAccessAsync(resourceType, action, resourceKey, cancellationToken);
-            
+
             sw.Stop();
 
             _logger.LogInformation(

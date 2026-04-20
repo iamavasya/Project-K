@@ -437,7 +437,7 @@ public class ResourceAccessService : IResourceAccessService
         var members = await _unitOfWork.Members.GetAllByKurinKeyAsync(currentKurinKey, cancellationToken);
         var currentUserMember = (members ?? Enumerable.Empty<Member>())
             .FirstOrDefault(member => member.UserKey == currentUserId.Value);
-        
+
         if (currentUserMember?.GroupKey != null)
         {
             assignedGroups.Add(currentUserMember.GroupKey.Value);

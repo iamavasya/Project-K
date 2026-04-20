@@ -26,8 +26,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
             if (invitation == null || invitation.ExpiresAtUtc < DateTime.UtcNow)
             {
                 return new ServiceResult<InvitationValidationResponse>(
-                    ResultType.NotFound, 
-                    new InvitationValidationResponse("", "", "", false), 
+                    ResultType.NotFound,
+                    new InvitationValidationResponse("", "", "", false),
                     "Invalid or expired invitation token.");
             }
 
@@ -35,13 +35,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
             if (entry == null)
             {
                 return new ServiceResult<InvitationValidationResponse>(
-                    ResultType.NotFound, 
-                    new InvitationValidationResponse("", "", "", false), 
+                    ResultType.NotFound,
+                    new InvitationValidationResponse("", "", "", false),
                     "Associated waitlist entry not found.");
             }
 
             return new ServiceResult<InvitationValidationResponse>(
-                ResultType.Success, 
+                ResultType.Success,
                 new InvitationValidationResponse(entry.Email, entry.FirstName, entry.LastName, true));
         }
     }

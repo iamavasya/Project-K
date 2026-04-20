@@ -56,7 +56,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
             user.OnboardingStatus = OnboardingStatus.Active;
             user.EmailConfirmed = true; // Invitation activation implies email verification
             var updateResult = await _userManager.UpdateAsync(user);
-            
+
             if (!updateResult.Succeeded)
             {
                 var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
@@ -65,8 +65,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
 
             // 3.5. Assign Role
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
-            string roleToAssign = (entry?.IsKurinLeaderCandidate ?? false) 
-                ? UserRole.Manager.ToString() 
+            string roleToAssign = (entry?.IsKurinLeaderCandidate ?? false)
+                ? UserRole.Manager.ToString()
                 : UserRole.User.ToString();
 
             await _userManager.AddToRoleAsync(user, roleToAssign);
