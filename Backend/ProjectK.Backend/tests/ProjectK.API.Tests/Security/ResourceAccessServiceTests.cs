@@ -201,7 +201,7 @@ public class ResourceAccessServiceTests
         Assert.Contains("assigned groups", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "Baseline test met its purpose")]
+    [Fact]
     public async Task Mentor_ShouldBeAllowedToUpdateMemberInAssignedSecondaryGroup_WhenAssignmentModelIsImplemented()
     {
         var kurinKey = Guid.NewGuid();
@@ -211,22 +211,17 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, mentorPrimaryGroupKey, new[] { UserRole.Mentor }, mentorUserId);
+        
+        fixture.MentorAssignments
+            .Setup(repo => repo.GetByMentorUserKeyAsync(mentorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MentorAssignment> 
+            { 
+                new MentorAssignment { MentorUserKey = mentorUserId, GroupKey = assignedSecondaryGroupKey } 
+            });
+
         fixture.Members
             .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = assignedSecondaryGroupKey });
-
-        fixture.Members
-            .Setup(repo => repo.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-            [
-                new Member
-                {
-                    MemberKey = Guid.NewGuid(),
-                    KurinKey = kurinKey,
-                    GroupKey = mentorPrimaryGroupKey,
-                    UserKey = mentorUserId
-                }
-            ]);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
