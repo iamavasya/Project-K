@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -6,6 +7,7 @@ using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.API.Helpers;
+using ProjectK.API.Services;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.UnitOfWork;
@@ -18,11 +20,20 @@ namespace ProjectK.API
         {
             services.AddHttpContextAccessor();
 
+            // Background Services
+            services.AddHostedService<AuditCleanupBackgroundService>();
+
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
-            services.AddScoped<IResourceAccessService, ResourceAccessService>();
+            services.AddScoped<IEmailService, MockEmailService>();
+            
+            services.AddScoped<ResourceAccessService>();
+            services.AddScoped<IResourceAccessService>(sp => 
+                new ResourceAccessServiceInstrumentationDecorator(
+                    sp.GetRequiredService<ResourceAccessService>(),
+                    sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
 
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();

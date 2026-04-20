@@ -14,5 +14,16 @@ namespace ProjectK.Common.Entities.AuthModule
         public Guid? KurinKey { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        public OnboardingStatus OnboardingStatus { get; set; }
+        public bool IsBetaParticipant { get; set; }
+    }
+
+    public enum OnboardingStatus
+    {
+        RegisteredInactive = 0,
+        PendingActivation = 1,
+        Active = 2,
+        Suspended = 3,
+        Archived = 4
     }
 }

@@ -16,4 +16,12 @@ export class UserService {
             { withCredentials: true }
         );
     }
+
+    changeUserRole(userId: string, newRole: number) {
+        return this.http.post<boolean>(
+            `${this.apiUrl}/user/${userId}/role`,
+            newRole,
+            { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
 }

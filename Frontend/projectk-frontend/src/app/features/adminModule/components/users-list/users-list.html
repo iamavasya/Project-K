@@ -1,4 +1,5 @@
 <div class="w-3/4 mx-auto mt-6">
+    <p-toast></p-toast>
     <p-table #usersTable [value]="users" dataKey="userId" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']">
         <ng-template #caption>
             <div class="flex">
@@ -22,45 +23,18 @@
         <ng-template #body let-user let-editing="editing" let-ri="rowIndex">
             <tr [pEditableRow]="user">
                 <td>
-                    <p-cellEditor>
-                        <ng-template #input>
-                            <input
-                                pInputText type="text"
-                                [(ngModel)]="user.firstName" />
-                        </ng-template>
-                        <ng-template #output>
-                            {{user.firstName}}
-                        </ng-template>
-                    </p-cellEditor>
+                    {{user.firstName}}
+                </td>
+                <td>
+                    {{user.lastName}}
+                </td>
+                <td>
+                    {{user.email}}
                 </td>
                 <td>
                     <p-cellEditor>
                         <ng-template #input>
-                            <input
-                                pInputText type="text"
-                                [(ngModel)]="user.lastName" />
-                        </ng-template>
-                        <ng-template #output>
-                            {{user.lastName}}
-                        </ng-template>
-                    </p-cellEditor>
-                </td>
-                <td>
-                    <p-cellEditor>
-                        <ng-template #input>
-                            <input
-                                pInputText type="text"
-                                [(ngModel)]="user.email" />
-                        </ng-template>
-                        <ng-template #output>
-                            {{user.email}}
-                        </ng-template>
-                    </p-cellEditor>
-                </td>
-                <td>
-                    <p-cellEditor>
-                        <ng-template #input>
-                            <p-select />
+                            <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body"></p-select>
                         </ng-template>
                         <ng-template #output>
                             {{user.role}}
@@ -78,8 +52,7 @@
                                 (click)="onRowEditInit(user)"
                                 text
                                 rounded
-                                severity="secondary"
-                                disabled> <!-- Functionality not implemented -->
+                                severity="secondary">
                             </button>
                         }
                         @else if (editing) {

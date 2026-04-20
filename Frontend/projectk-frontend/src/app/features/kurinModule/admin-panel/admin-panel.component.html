@@ -1,4 +1,11 @@
 <div class="admin-panel">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Admin Panel</h2>
+        <div class="flex gap-2">
+            <p-button label="Waitlist Management" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']"></p-button>
+            <p-button label="User Management" icon="pi pi-users" severity="secondary" [routerLink]="['/users']"></p-button>
+        </div>
+    </div>
     <p-table [value]="data">
         <ng-template #header>
             <tr>
