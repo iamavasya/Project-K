@@ -3,7 +3,7 @@ import { BadgeCatalogItemDto } from '../models/probes-and-badges/badgeCatalogIte
 import { BadgeProgressDto } from '../models/probes-and-badges/badgeProgressDto';
 import { MemberSkillItemView } from '../models/probes-and-badges/memberSkillItemView';
 import { MemberSkillsSummaryView } from '../models/probes-and-badges/memberSkillsSummaryView';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 const BADGES_IMAGES_BASE_PATH = '/badges_images';
 const API_ORIGIN = resolveApiOrigin(environment.apiUrl);

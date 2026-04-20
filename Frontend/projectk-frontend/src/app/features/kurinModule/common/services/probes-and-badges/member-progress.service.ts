@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../../environments/environment';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badgeProgressDto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probeProgressDto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/reviewBadgeProgressRequestDto';

@@ -33,6 +33,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "Tailscale": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://0.0.0.0:5205",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Tailscale"
+      }
     }
   }
 }

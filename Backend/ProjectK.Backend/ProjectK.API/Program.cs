@@ -89,6 +89,16 @@ namespace ProjectK.API
                           .AllowAnyMethod()
                           .AllowCredentials();
                 });
+
+                options.AddPolicy("TailscalePolicy", policy =>
+                {
+                    var frontendUrl = builder.Configuration["TailscaleCorsOrigin"]; 
+                    
+                    policy.WithOrigins(frontendUrl)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
 
             builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -168,7 +178,14 @@ namespace ProjectK.API
 
             app.UseRouting();
 
-            app.UseCors("AllowFrontend");
+            if (app.Environment.IsEnvironment("Tailscale"))
+            {
+                app.UseCors("TailscalePolicy");
+            }
+            else
+            {
+                app.UseCors("AllowFrontend");
+            }
 
             app.UseAuthentication();
 
