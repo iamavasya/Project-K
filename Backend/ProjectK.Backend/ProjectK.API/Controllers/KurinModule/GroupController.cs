@@ -100,5 +100,25 @@ namespace ProjectK.API.Controllers.KurinModule
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpPost("{groupKey}/mentors/{mentorUserKey}")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        public async Task<IActionResult> AssignMentor(Guid groupKey, Guid mentorUserKey)
+        {
+            var command = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.AssignMentorCommand(mentorUserKey, groupKey);
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpDelete("{groupKey}/mentors/{mentorUserKey}")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        public async Task<IActionResult> RevokeMentor(Guid groupKey, Guid mentorUserKey)
+        {
+            var command = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.RevokeMentorCommand(mentorUserKey, groupKey);
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
     }
 }

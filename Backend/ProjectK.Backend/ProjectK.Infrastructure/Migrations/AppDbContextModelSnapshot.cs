@@ -177,6 +177,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsBetaParticipant")
+                        .HasColumnType("bit");
+
                     b.Property<Guid?>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 
@@ -197,6 +200,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("OnboardingStatus")
+                        .HasColumnType("int");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -236,6 +242,133 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>
+                {
+                    b.Property<Guid>("InvitationKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("TargetUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("WaitlistEntryKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("InvitationKey");
+
+                    b.HasIndex("TargetUserKey");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("WaitlistEntryKey");
+
+                    b.ToTable("Invitations");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.WaitlistEntry", b =>
+                {
+                    b.Property<Guid>("WaitlistEntryKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClaimedKurinNameOrNumber")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("InvitationAcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("InvitationSentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsBetaParticipant")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsKurinLeaderCandidate")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerificationChannel")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VerificationNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("WaitlistEntryKey");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("WaitlistEntries");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Group", b =>
                 {
                     b.Property<Guid>("GroupKey")
@@ -271,11 +404,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsZbtKurin")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ZbtUserCap")
+                        .HasColumnType("int");
 
                     b.HasKey("KurinKey");
 
@@ -418,6 +557,40 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasFilter("[UserKey] IS NOT NULL");
 
                     b.ToTable("Members");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>
+                {
+                    b.Property<Guid>("MentorAssignmentKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MentorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MentorAssignmentKey");
+
+                    b.HasIndex("GroupKey");
+
+                    b.HasIndex("MentorUserKey", "GroupKey")
+                        .IsUnique();
+
+                    b.ToTable("MentorAssignments");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.ParticipantBusyRange", b =>
@@ -844,6 +1017,24 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "TargetUser")
+                        .WithMany()
+                        .HasForeignKey("TargetUserKey")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjectK.Common.Entities.AuthModule.WaitlistEntry", "WaitlistEntry")
+                        .WithMany()
+                        .HasForeignKey("WaitlistEntryKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TargetUser");
+
+                    b.Navigation("WaitlistEntry");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Group", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
@@ -914,6 +1105,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Kurin");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Group", "Group")
+                        .WithMany("MentorAssignments")
+                        .HasForeignKey("GroupKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.ParticipantBusyRange", b =>
@@ -1021,6 +1223,8 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Members");
+
+                    b.Navigation("MentorAssignments");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Kurin", b =>

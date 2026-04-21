@@ -206,7 +206,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(command, CancellationToken.None));
-            
+
             // Verify that mapping was called but no further operations were performed
             _mapperMock.Verify(x => x.Map<AppUser>(command), Times.Once);
             _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);

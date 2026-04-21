@@ -5,7 +5,7 @@ import { GroupService } from './group.service';
 import { CreateGroupDto } from '../../models/requests/createGroupDto';
 import { UpdateGroupDto } from '../../models/requests/updateGroupDto';
 import { GroupDto } from '../../models/groupDto';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../../environments/environment';
 
 describe('GroupService', () => {
   let service: GroupService;

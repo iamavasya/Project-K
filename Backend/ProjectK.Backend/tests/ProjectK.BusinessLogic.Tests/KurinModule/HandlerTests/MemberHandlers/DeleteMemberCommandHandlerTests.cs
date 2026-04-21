@@ -71,7 +71,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             // Arrange
             var memberKey = Guid.NewGuid();
-            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "B", MiddleName = "C", Email = "a@example.com", PhoneNumber = "123", DateOfBirth = new DateOnly(2000,1,1) };
+            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "B", MiddleName = "C", Email = "a@example.com", PhoneNumber = "123", DateOfBirth = new DateOnly(2000, 1, 1) };
             var command = new DeleteMember(memberKey);
 
             _memberRepositoryMock
@@ -96,7 +96,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             // Arrange
             var memberKey = Guid.NewGuid();
-            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "X", LastName = "Y", MiddleName = "Z", Email = "x@example.com", PhoneNumber = "000", DateOfBirth = new DateOnly(1999,1,1) };
+            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "X", LastName = "Y", MiddleName = "Z", Email = "x@example.com", PhoneNumber = "000", DateOfBirth = new DateOnly(1999, 1, 1) };
             var command = new DeleteMember(memberKey);
 
             _memberRepositoryMock
@@ -121,7 +121,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             // Arrange
             var memberKey = Guid.NewGuid();
-            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "Err", LastName = "Case", MiddleName = "M", Email = "err@example.com", PhoneNumber = "111", DateOfBirth = new DateOnly(1990,1,1) };
+            var member = new Member { MemberKey = memberKey, GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "Err", LastName = "Case", MiddleName = "M", Email = "err@example.com", PhoneNumber = "111", DateOfBirth = new DateOnly(1990, 1, 1) };
             var command = new DeleteMember(memberKey);
             var expected = new Exception("Delete failed");
 

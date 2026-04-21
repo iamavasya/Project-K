@@ -29,6 +29,11 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<ProbeProgress> ProbeProgresses { get; set; }
         public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
         public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
+        public DbSet<MentorAssignment> MentorAssignments { get; set; }
+
+        // Auth module DbSet
+        public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
+        public DbSet<Invitation> Invitations { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -231,6 +236,38 @@ namespace ProjectK.Infrastructure.DbContexts
                     .WithMany(m => m.ProbePointProgresses)
                     .HasForeignKey(e => e.MemberKey)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<MentorAssignment>(entity =>
+            {
+                entity.HasKey(e => e.MentorAssignmentKey);
+                entity.HasOne(e => e.Group)
+                    .WithMany(g => g.MentorAssignments)
+                    .HasForeignKey(e => e.GroupKey)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
+            });
+
+            builder.Entity<WaitlistEntry>(entity =>
+            {
+                entity.HasKey(e => e.WaitlistEntryKey);
+                entity.Property(e => e.VerificationStatus)
+                    .HasConversion<string>();
+                entity.HasIndex(e => e.Email).IsUnique();
+            });
+
+            builder.Entity<Invitation>(entity =>
+            {
+                entity.HasKey(e => e.InvitationKey);
+                entity.HasOne(e => e.WaitlistEntry)
+                    .WithMany()
+                    .HasForeignKey(e => e.WaitlistEntryKey)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.TargetUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetUserKey)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(e => e.Token).IsUnique();
             });
         }
     }

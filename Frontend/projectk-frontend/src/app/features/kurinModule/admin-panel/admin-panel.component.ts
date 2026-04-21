@@ -7,13 +7,13 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MenuItem } from 'primeng/api';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 
 @Component({
   selector: 'app-admin-panel',
-  imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, MessageModule],
+  imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, MessageModule, RouterModule],
   templateUrl: './admin-panel.component.html',
   styleUrls: ['./admin-panel.component.css']
 })

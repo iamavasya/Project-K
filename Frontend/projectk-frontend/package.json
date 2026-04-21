@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "tailscale": "ng serve --configuration tailscale --host 0.0.0.0",
-    "test": "ng test",
+    "test": "ng test --watch=false --browsers=ChromeHeadless",
     "test-c": "ng test --code-coverage",
     "lint": "ng lint"
   },
@@ -53,15 +53,15 @@
     "@eslint/js": "^10.0.1",
     "@types/jasmine": "~6.0.0",
     "angular-eslint": "^21.3.1",
-    "eslint": "^10.2.0",
-    "jasmine-core": "~6.1.0",
+    "eslint": "^10.2.1",
+    "jasmine-core": "^6.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.2.0",
     "postcss": "^8.5.3",
-    "typescript": "~5.9.3",
+    "typescript": "5.9.3",
     "typescript-eslint": "^8.58.0"
   },
   "overrides": {

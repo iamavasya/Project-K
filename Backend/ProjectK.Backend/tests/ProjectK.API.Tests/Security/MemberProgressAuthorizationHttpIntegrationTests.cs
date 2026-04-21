@@ -267,6 +267,11 @@ public class MemberProgressAuthorizationHttpIntegrationTests
             var unitOfWork = new Mock<IUnitOfWork>();
             unitOfWork.SetupGet(x => x.Members).Returns(memberRepository.Object);
 
+            var mentorAssignments = new Mock<IMentorAssignmentRepository>();
+            mentorAssignments.Setup(m => m.GetByMentorUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<MentorAssignment>());
+            unitOfWork.SetupGet(x => x.MentorAssignments).Returns(mentorAssignments.Object);
+
             var mediator = new Mock<IMediator>();
             mediator
                 .Setup(x => x.Send(It.IsAny<GetBadgeProgresses>(), It.IsAny<CancellationToken>()))

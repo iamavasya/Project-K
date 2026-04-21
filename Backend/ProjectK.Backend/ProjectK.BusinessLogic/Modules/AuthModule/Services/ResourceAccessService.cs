@@ -312,17 +312,17 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
         }
 
-        var mentorGroupKey = await ResolveCurrentUserGroupKeyAsync(currentKurinKey, cancellationToken);
-        if (mentorGroupKey is null)
+        var mentorGroupKeys = await ResolveCurrentUserGroupKeysAsync(currentKurinKey, cancellationToken);
+        if (!mentorGroupKeys.Any())
         {
-            return ResourceAccessDecision.Deny("Mentor group scope could not be resolved.");
+            return ResourceAccessDecision.Deny("Mentor group scope could not be resolved or no groups assigned.");
         }
 
         return resourceType switch
         {
-            ResourceType.Group => ValidateMentorGroupAccess(action, scopeResolution, mentorGroupKey.Value),
-            ResourceType.Member => ValidateMentorMemberAccess(scopeResolution, mentorGroupKey.Value),
-            ResourceType.ProbeProgress or ResourceType.BadgeProgress => ValidateMentorProgressAccess(scopeResolution, mentorGroupKey.Value),
+            ResourceType.Group => ValidateMentorGroupAccess(action, scopeResolution, mentorGroupKeys),
+            ResourceType.Member => ValidateMentorMemberAccess(scopeResolution, mentorGroupKeys),
+            ResourceType.ProbeProgress or ResourceType.BadgeProgress => ValidateMentorProgressAccess(scopeResolution, mentorGroupKeys),
             _ => ResourceAccessDecision.Allow(MentorScopeChecksPassed)
         };
     }
@@ -357,16 +357,16 @@ public class ResourceAccessService : IResourceAccessService
     private static ResourceAccessDecision ValidateMentorGroupAccess(
         ResourceAction action,
         ResourceAccessScopeResolution scopeResolution,
-        Guid mentorGroupKey)
+        IEnumerable<Guid> mentorGroupKeys)
     {
         if (action != ResourceAction.Read)
         {
             return ResourceAccessDecision.Deny("Mentor cannot rename or delete group data.");
         }
 
-        if (scopeResolution.GroupKey != mentorGroupKey)
+        if (!scopeResolution.GroupKey.HasValue || !mentorGroupKeys.Contains(scopeResolution.GroupKey.Value))
         {
-            return ResourceAccessDecision.Deny("Mentor has access only to own group.");
+            return ResourceAccessDecision.Deny("Mentor has access only to assigned groups.");
         }
 
         return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
@@ -374,11 +374,11 @@ public class ResourceAccessService : IResourceAccessService
 
     private static ResourceAccessDecision ValidateMentorMemberAccess(
         ResourceAccessScopeResolution scopeResolution,
-        Guid mentorGroupKey)
+        IEnumerable<Guid> mentorGroupKeys)
     {
-        if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey)
+        if (!scopeResolution.GroupKey.HasValue || !mentorGroupKeys.Contains(scopeResolution.GroupKey.Value))
         {
-            return ResourceAccessDecision.Deny("Mentor can manage only members from own group.");
+            return ResourceAccessDecision.Deny("Mentor can manage only members from assigned groups.");
         }
 
         return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
@@ -386,11 +386,11 @@ public class ResourceAccessService : IResourceAccessService
 
     private static ResourceAccessDecision ValidateMentorProgressAccess(
         ResourceAccessScopeResolution scopeResolution,
-        Guid mentorGroupKey)
+        IEnumerable<Guid> mentorGroupKeys)
     {
-        if (!scopeResolution.GroupKey.HasValue || scopeResolution.GroupKey.Value != mentorGroupKey)
+        if (!scopeResolution.GroupKey.HasValue || !mentorGroupKeys.Contains(scopeResolution.GroupKey.Value))
         {
-            return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from own group.");
+            return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from assigned groups.");
         }
 
         return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
@@ -414,18 +414,36 @@ public class ResourceAccessService : IResourceAccessService
         return ResourceAccessDecision.Allow("Role scoped checks passed.");
     }
 
-    private async Task<Guid?> ResolveCurrentUserGroupKeyAsync(Guid currentKurinKey, CancellationToken cancellationToken)
+    private async Task<IEnumerable<Guid>> ResolveCurrentUserGroupKeysAsync(Guid currentKurinKey, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUserContext.UserId;
         if (currentUserId is null)
         {
-            return null;
+            return Enumerable.Empty<Guid>();
         }
 
+        var assignedGroups = new HashSet<Guid>();
+
+        // 1. Explicit Mentor Assignments
+        var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(currentUserId.Value, cancellationToken);
+        var activeAssignments = (assignments ?? Enumerable.Empty<MentorAssignment>()).Where(a => a.RevokedAtUtc == null);
+        foreach (var assignment in activeAssignments)
+        {
+            assignedGroups.Add(assignment.GroupKey);
+        }
+
+        // 2. Compatibility Fallback: Inferred own group
+        // If the compatibility flag is enabled (here we assume it is implicitly on as per baseline), we add their own group.
         var members = await _unitOfWork.Members.GetAllByKurinKeyAsync(currentKurinKey, cancellationToken);
         var currentUserMember = (members ?? Enumerable.Empty<Member>())
             .FirstOrDefault(member => member.UserKey == currentUserId.Value);
-        return currentUserMember?.GroupKey;
+
+        if (currentUserMember?.GroupKey != null)
+        {
+            assignedGroups.Add(currentUserMember.GroupKey.Value);
+        }
+
+        return assignedGroups;
     }
 
     private sealed record ResourceAccessScopeResolution(

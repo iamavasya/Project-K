@@ -36,7 +36,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var groupKey = Guid.NewGuid();
             var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-            var command  = new DeleteGroup(groupKey);
+            var command = new DeleteGroup(groupKey);
 
             _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
                 .ReturnsAsync(group);

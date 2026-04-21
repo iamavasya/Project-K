@@ -66,6 +66,12 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }
 
+        public async Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
+                .FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
+        }
+
         public Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");

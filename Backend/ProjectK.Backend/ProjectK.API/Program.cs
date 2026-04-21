@@ -92,8 +92,8 @@ namespace ProjectK.API
 
                 options.AddPolicy("TailscalePolicy", policy =>
                 {
-                    var frontendUrl = builder.Configuration["TailscaleCorsOrigin"]; 
-                    
+                    var frontendUrl = builder.Configuration["TailscaleCorsOrigin"];
+
                     policy.WithOrigins(frontendUrl)
                         .AllowAnyHeader()
                         .AllowAnyMethod()

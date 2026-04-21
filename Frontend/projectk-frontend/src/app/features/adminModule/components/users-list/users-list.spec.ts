@@ -38,8 +38,9 @@ describe('UsersListComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockUserService = jasmine.createSpyObj('UserService', ['getAllUsers', 'updateUser', 'deleteUser']);
+    mockUserService = jasmine.createSpyObj('UserService', ['getAllUsers', 'changeUserRole']);
     mockUserService.getAllUsers.and.returnValue(of(JSON.parse(JSON.stringify(mockUsers))));
+    mockUserService.changeUserRole.and.returnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [UsersListComponent],

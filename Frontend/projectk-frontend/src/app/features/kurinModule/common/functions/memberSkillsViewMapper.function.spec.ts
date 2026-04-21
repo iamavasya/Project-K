@@ -2,7 +2,7 @@ import { BadgeProgressStatus } from '../models/enums/badge-progress-status.enum'
 import { BadgeCatalogItemDto } from '../models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../models/probes-and-badges/badgeProgressDto';
 import { buildMemberSkillsSummary, normalizeBadgeProgressStatus, resolveBadgeImageUrl } from './memberSkillsViewMapper.function';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 function createBadge(overrides: Partial<BadgeCatalogItemDto>): BadgeCatalogItemDto {
   return {

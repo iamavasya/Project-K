@@ -19,7 +19,21 @@ import { CreatePlanningComponent } from './features/kurinModule/create-planning/
 import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
 import { SkillsReviewPageComponent } from './features/kurinModule/skills-review-page/skills-review-page.component';
 
+import { WaitlistRegistrationComponent } from './features/authModule/onboarding/waitlist-registration/waitlist-registration';
+import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
+import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
+
 export const routes: Routes = [
+  {
+    path: 'join',
+    component: WaitlistRegistrationComponent,
+    data: { breadcrumb: 'Join Waitlist' }
+  },
+  {
+    path: 'activate/:token',
+    component: AccountActivationComponent,
+    data: { breadcrumb: 'Activate Account' }
+  },
   {
     path: 'login',
     component: LoginComponent,
@@ -41,6 +55,12 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
     component: UsersListComponent,
     data: { breadcrumb: 'Users', parent: '/panel' }
+  },
+  {
+    path: 'waitlist',
+    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    component: WaitlistManagementComponent,
+    data: { breadcrumb: 'Waitlist', parent: '/panel' }
   },
   {
     path: 'panel',

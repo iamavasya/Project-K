@@ -5,7 +5,7 @@ import { LoginRequest } from '../../models/login-request.model';
 import { LoginResponse } from '../../models/login-response.model';
 import { AuthState } from '../../models/auth-state.model';
 import { KurinDto } from '../../../kurinModule/common/models/kurinDto';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
