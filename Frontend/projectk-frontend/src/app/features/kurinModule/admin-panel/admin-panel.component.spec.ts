@@ -7,6 +7,7 @@ import { KurinDto } from '../common/models/kurinDto';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 describe('AdminPanelComponent', () => {
   let component: AdminPanelComponent;
@@ -31,6 +32,7 @@ describe('AdminPanelComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations(),
+        provideRouter([]),
         { provide: KurinService, useValue: kurinServiceSpy },
         { provide: AuthService, useValue: authServiceSpy }
       ]
