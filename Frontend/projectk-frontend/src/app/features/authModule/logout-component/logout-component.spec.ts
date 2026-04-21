@@ -37,26 +37,14 @@ describe('LogoutComponent', () => {
   describe('logout', () => {
     it('should call authService.logout', () => {
       mockAuthService.logout.and.returnValue(of('Logged out successfully'));
-      spyOn(window, 'alert');
 
       component.logout();
 
       expect(mockAuthService.logout).toHaveBeenCalled();
     });
 
-    it('should show alert on successful logout', () => {
-      const message = 'Logged out successfully';
-      mockAuthService.logout.and.returnValue(of(message));
-      spyOn(window, 'alert');
-
-      component.logout();
-
-      expect(window.alert).toHaveBeenCalledWith(message);
-    });
-
     it('should navigate to /login on successful logout', () => {
       mockAuthService.logout.and.returnValue(of('Logged out successfully'));
-      spyOn(window, 'alert');
 
       component.logout();
 
@@ -73,25 +61,14 @@ describe('LogoutComponent', () => {
       expect(console.log).toHaveBeenCalledWith(jasmine.stringContaining('Logout failed'));
     });
 
-    it('should not navigate on logout error', () => {
+    it('should navigate to /login on logout error', () => {
       const error = { status: 500, message: 'Server error' };
       mockAuthService.logout.and.returnValue(throwError(() => error));
       spyOn(console, 'log');
 
       component.logout();
 
-      expect(mockRouter.navigate).not.toHaveBeenCalled();
-    });
-
-    it('should not show alert on logout error', () => {
-      const error = { status: 500, message: 'Server error' };
-      mockAuthService.logout.and.returnValue(throwError(() => error));
-      spyOn(window, 'alert');
-      spyOn(console, 'log');
-
-      component.logout();
-
-      expect(window.alert).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
     });
   });
 
@@ -99,16 +76,14 @@ describe('LogoutComponent', () => {
     it('should complete full logout flow', () => {
       const message = 'Successfully logged out';
       mockAuthService.logout.and.returnValue(of(message));
-      spyOn(window, 'alert');
 
       component.logout();
 
       expect(mockAuthService.logout).toHaveBeenCalled();
-      expect(window.alert).toHaveBeenCalledWith(message);
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
     });
 
-    it('should handle network error gracefully', () => {
+    it('should handle network error gracefully and navigate', () => {
       const networkError = new Error('Network error');
       mockAuthService.logout.and.returnValue(throwError(() => networkError));
       spyOn(console, 'log');
@@ -117,10 +92,10 @@ describe('LogoutComponent', () => {
 
       expect(mockAuthService.logout).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(jasmine.stringContaining('Logout failed'));
-      expect(mockRouter.navigate).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
     });
 
-    it('should handle 401 unauthorized error', () => {
+    it('should handle 401 unauthorized error and navigate', () => {
       const error = { status: 401, message: 'Unauthorized' };
       mockAuthService.logout.and.returnValue(throwError(() => error));
       spyOn(console, 'log');
@@ -128,7 +103,7 @@ describe('LogoutComponent', () => {
       component.logout();
 
       expect(console.log).toHaveBeenCalled();
-      expect(mockRouter.navigate).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
     });
   });
 });

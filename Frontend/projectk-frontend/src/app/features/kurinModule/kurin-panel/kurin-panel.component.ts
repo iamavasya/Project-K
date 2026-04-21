@@ -8,14 +8,17 @@ import { SplitButton } from 'primeng/splitbutton';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { MenuItem } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberList } from '../common/components/member-list/member-list';
+import { KurinDto } from '../common/models/kurinDto';
 
 @Component({
   selector: 'app-kurin-panel',
-  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent, MemberList],
+  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent, MemberList, TagModule, TooltipModule],
   templateUrl: './kurin-panel.component.html',
   styleUrls: ['./kurin-panel.component.css']
 })
@@ -33,6 +36,7 @@ export class KurinPanelComponent implements OnInit {
 
   kurinKey = '';
   kurinNumber: number | null = null;
+  kurinData: KurinDto | null = null;
 
   groupPanelConfig: ManagePanelConfig = {
     entityType: 'group',
@@ -90,6 +94,7 @@ export class KurinPanelComponent implements OnInit {
     this.kurinService.getByKey(this.kurinKey).subscribe({
       next: (kurin) => {
         this.kurinNumber = kurin.number;
+        this.kurinData = kurin;
       },
       error: (error) => {
         console.error('Error fetching kurin:', error);

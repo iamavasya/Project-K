@@ -14,16 +14,26 @@ export class BreadcrumbService {
   private readonly activatedRoute = inject(ActivatedRoute);
 
   constructor() {
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      // Update param cache with parameters from the URL
-      this.updateParamCache();
-      
-      // Create breadcrumbs
+    if (this.router && this.router.events) {
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe(() => {
+        // Update param cache with parameters from the URL
+        this.updateParamCache();
+        
+        // Create breadcrumbs
+        const breadcrumbs = this.createBreadcrumbs();
+        this.breadcrumbsSubject.next(breadcrumbs);
+      });
+    }
+  }
+
+  public setParam(key: string, value: string): void {
+    if (this.paramCache[key] !== value) {
+      this.paramCache[key] = value;
       const breadcrumbs = this.createBreadcrumbs();
       this.breadcrumbsSubject.next(breadcrumbs);
-    });
+    }
   }
 
   private updateParamCache(): void {

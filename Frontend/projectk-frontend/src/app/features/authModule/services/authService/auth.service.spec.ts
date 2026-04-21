@@ -216,7 +216,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('should not clear auth state if logout request fails', (done) => {
+    it('should clear auth state if logout request fails', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
         email: 'test@example.com',
@@ -229,8 +229,8 @@ describe('AuthService', () => {
         service.logout().subscribe({
           next: () => fail('should have failed'),
           error: () => {
-            expect(service.getAuthStateValue()).toEqual(mockAuthState);
-            expect(localStorage.getItem('authState')).toBe(JSON.stringify(mockAuthState));
+            expect(service.getAuthStateValue()).toBeNull();
+            expect(localStorage.getItem('authState')).toBeNull();
             done();
           }
         });

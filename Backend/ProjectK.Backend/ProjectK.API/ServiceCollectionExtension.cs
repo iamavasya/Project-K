@@ -12,13 +12,21 @@ using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.UnitOfWork;
 
+using Microsoft.Extensions.Configuration;
+using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.EmailService;
+using Resend;
+
 namespace ProjectK.API
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddProjectDependencies(this IServiceCollection services)
+        public static IServiceCollection AddProjectDependencies(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddHttpContextAccessor();
+
+            // Options
+            services.Configure<EmailSettings>(configuration.GetSection("Email"));
 
             // Background Services
             services.AddHostedService<AuditCleanupBackgroundService>();
@@ -27,7 +35,24 @@ namespace ProjectK.API
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
-            services.AddScoped<IEmailService, MockEmailService>();
+
+            // Email Service Registration
+            var emailProvider = configuration["Email:Provider"] ?? "Mock";
+            if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddOptions();
+                services.AddHttpClient<IResend, ResendClient>();
+                services.Configure<ResendClientOptions>(options =>
+                {
+                    options.ApiToken = configuration["Email:ApiKey"]!;
+                });
+                services.AddTransient<IResend, ResendClient>();
+                services.AddScoped<IEmailService, ResendEmailService>();
+            }
+            else
+            {
+                services.AddScoped<IEmailService, MockEmailService>();
+            }
 
             services.AddScoped<ResourceAccessService>();
             services.AddScoped<IResourceAccessService>(sp =>

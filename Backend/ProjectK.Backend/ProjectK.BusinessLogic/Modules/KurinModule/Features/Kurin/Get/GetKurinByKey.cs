@@ -11,6 +11,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.AuthModule;
+
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
 {
     public class GetKurinByKey : IRequest<ServiceResult<KurinResponse>>
@@ -27,10 +31,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public GetKurinByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly UserManager<AppUser> _userManager;
+
+        public GetKurinByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userManager = userManager;
         }
 
         public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKey request, CancellationToken cancellationToken)
@@ -42,7 +49,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
                 return new ServiceResult<KurinResponse>(ResultType.NotFound);
             }
 
+            var activeBetaUsersCount = await _userManager.Users
+                .CountAsync(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active, cancellationToken);
+
             var kurinResponse = _mapper.Map<KurinResponse>(kurin);
+            kurinResponse.CurrentUserCount = activeBetaUsersCount;
 
             return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
         }

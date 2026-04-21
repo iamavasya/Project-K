@@ -50,13 +50,14 @@ export class AuthService {
     );
   }
 
+  clearLocalState(): void {
+    this.authState$.next(null);
+    localStorage.removeItem('authState');
+  }
+
   logout() {
-    return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true, responseType: 'text' }).pipe(
-      tap(() => {
-        this.authState$.next(null);
-        localStorage.removeItem('authState');
-      })
-    );
+    this.clearLocalState();
+    return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true, responseType: 'text' });
   }
 
   refreshToken(): Observable<string> {

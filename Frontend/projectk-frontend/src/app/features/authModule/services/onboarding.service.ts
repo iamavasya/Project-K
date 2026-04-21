@@ -40,6 +40,14 @@ export interface PasswordResetPayload {
   newPassword: string;
 }
 
+export interface ZbtStats {
+  currentActiveUsers: number;
+  betaCap: number;
+  isCapReached: boolean;
+  kurinName?: string;
+  scope: 'Global' | 'Kurin';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -53,6 +61,14 @@ export class OnboardingService {
 
   getWaitlistEntries(): Observable<WaitlistEntry[]> {
     return this.http.get<WaitlistEntry[]>(`${this.apiUrl}/waitlist`);
+  }
+
+  getOnboardingStats(kurinKey?: string): Observable<ZbtStats> {
+    let url = `${this.apiUrl}/stats`;
+    if (kurinKey) {
+      url += `?kurinKey=${kurinKey}`;
+    }
+    return this.http.get<ZbtStats>(url);
   }
 
   approveWaitlistEntry(key: string): Observable<string> {

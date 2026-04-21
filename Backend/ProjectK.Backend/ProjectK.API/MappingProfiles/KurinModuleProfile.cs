@@ -22,7 +22,10 @@ namespace ProjectK.API.MappingProfiles
         public KurinModuleProfile()
         {
             // Kurin Mapping
-            CreateMap<Kurin, KurinResponse>();
+            CreateMap<Kurin, KurinResponse>()
+                .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
+                .ForMember(dest => dest.ZbtUserCap, opt => opt.MapFrom(src => src.ZbtUserCap))
+                .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Members.Count));
             CreateMap<UpsertKurin, Kurin>()
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Number, opt => opt.MapFrom(src => src.Number))

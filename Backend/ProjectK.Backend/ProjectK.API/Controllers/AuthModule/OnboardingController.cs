@@ -59,6 +59,14 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireAdmin")]
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetOnboardingStats([FromQuery] Guid? kurinKey)
+        {
+            var response = await _mediator.Send(new GetOnboardingStatsQuery(kurinKey));
+            return response.ToActionResult(this);
+        }
+
         [AllowAnonymous]
         [HttpGet("invitation/{token}/validate")]
         public async Task<IActionResult> ValidateInvitationToken(string token)
