@@ -1,12 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GroupPanelComponent } from './group-panel.component';
-import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { MemberService } from '../common/services/member-service/member.service';
 import { GroupService } from '../common/services/group-service/group.service';
 import { LeadershipService } from '../common/services/leadership-service/leadership-service';
 import { GroupDto } from '../common/models/groupDto';
 import { LeadershipDto } from '../common/models/requests/leadership/leadershipDto';
+import { MemberDto } from '../common/models/memberDto';
 
 describe('GroupPanelComponent', () => {
   let fixture: ComponentFixture<GroupPanelComponent>;
@@ -16,7 +17,7 @@ describe('GroupPanelComponent', () => {
   let groupServiceSpy: jasmine.SpyObj<GroupService>;
   let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
   let routerSpy: jasmine.SpyObj<Router>;
-  let paramMapSubject: BehaviorSubject<any>;
+  let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const groupKey = 'group1';
   const group: GroupDto = {
@@ -82,7 +83,7 @@ describe('GroupPanelComponent', () => {
   });
 
   it('onMemberSelect should navigate to member card', () => {
-    component.selectedMember = { memberKey: 'm1' } as any;
+    component.selectedMember = { memberKey: 'm1' } as unknown as MemberDto;
     component.onMemberSelect();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', 'm1']);
   });
