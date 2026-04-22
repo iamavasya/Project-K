@@ -18,6 +18,8 @@ jobs:
 
     - name: Restore
       run: dotnet restore Backend/ProjectK.Backend
+      env: 
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
       
     - name: Build
       run: dotnet build Backend/ProjectK.Backend --configuration Release --no-restore
