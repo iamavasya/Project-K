@@ -160,7 +160,6 @@ namespace ProjectK.API
             builder.Services.Configure<SecurityPatchOptions>(
                 builder.Configuration.GetSection("SecurityPatch"));
 
-            // Read-only badges/probes catalogs.
             builder.Services.AddProbeAndBadgesApi(options =>
             {
                 builder.Configuration.GetSection("ProbeAndBadges").Bind(options);
