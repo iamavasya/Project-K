@@ -127,7 +127,7 @@ namespace ProjectK.API.Controllers.AuthModule
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = expires
             };
             Response.Cookies.Append(refreshTokenCookieName, token, cookieOptions);
