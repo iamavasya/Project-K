@@ -10,5 +10,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
     {
         public Guid KurinKey { get; set; }
         public int Number { get; set; }
+        public string? Name { get; set; }
+        public bool IsZbtEnabled { get; set; }
+        public int ZbtUserCap { get; set; }
+        public int CurrentUserCount { get; set; }
     }
 }

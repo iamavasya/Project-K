@@ -43,6 +43,9 @@ export class AuthInterceptor implements HttpInterceptor {
 
     private handleError(error: any, req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         if (error instanceof HttpErrorResponse && error.status === 401) {
+            if (req.url.includes('/api/auth/logout')) {
+                return throwError(() => error);
+            }
             return this.tryRefreshAndRepeat(req, next);
         }
 
@@ -78,7 +81,7 @@ export class AuthInterceptor implements HttpInterceptor {
                 catchError(() => {
                     this.isRefreshing = false;
                     this.refreshTokenSubject.next(null);
-                    this.authService.logout();
+                    this.authService.clearLocalState();
                     this.router.navigate(['/login'], { replaceUrl: true });
                     return throwError(() => new Error('Session expired'));
                 }),

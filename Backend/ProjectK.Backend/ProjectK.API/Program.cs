@@ -157,7 +157,7 @@ namespace ProjectK.API
                 builder.Configuration.GetSection("ProbeAndBadges").Bind(options);
             });
 
-            builder.Services.AddProjectDependencies();
+            builder.Services.AddProjectDependencies(builder.Configuration);
 
 
             var app = builder.Build();

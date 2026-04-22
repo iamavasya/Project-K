@@ -383,6 +383,52 @@ describe('BreadcrumbService', () => {
     routerEventsSubject.next(new NavigationEnd(1, '/category/electronics/product/laptop', '/category/electronics/product/laptop'));
   });
 
+  it('should resolve parameters dynamically injected via setParam', (done) => {
+    mockRouter = createMockRouter('/member/789', [
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group Details' } },
+      { path: 'member/:memberKey', data: { breadcrumb: 'Member Profile', parent: '/group/:groupKey' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Member Profile', parent: '/group/:groupKey' },
+      { memberKey: '789' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        // Initial state, groupKey is not resolved
+        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs[0].label).toBe('Group Details');
+        expect(breadcrumbs[0].routerLink).toBe('/group/:groupKey'); // unresolved
+        
+        // Dynamically set missing parameter
+        service.setParam('groupKey', 'group-42');
+      } else if (emissionCount === 3) {
+        // State after setParam
+        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs[0].label).toBe('Group Details');
+        expect(breadcrumbs[0].routerLink).toBe('/group/group-42'); // resolved correctly
+        expect(breadcrumbs[1].label).toBe('Member Profile');
+        expect(breadcrumbs[1].routerLink).toBe('/member/789');
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/789', '/member/789'));
+  });
+
   it('should handle complex nested route structure with multiple children', (done) => {
     mockRouter = createMockRouter('/admin/users/123/edit', [
       { path: 'admin', data: { breadcrumb: 'Admin' } },

@@ -30,6 +30,7 @@ import { ProbeProgressStatus } from '../common/models/enums/probe-progress-statu
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card.component';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { BreadcrumbService } from '../common/services/breadcrumb-service/breadcrumb-service';
 
 @Component({
   selector: 'app-member-card',
@@ -59,6 +60,7 @@ export class MemberCardComponent implements OnInit {
   badgeImageBlobService = inject(BadgeImageBlobService);
   authService = inject(AuthService);
   confirmationService = inject(ConfirmationService);
+  breadcrumbService = inject(BreadcrumbService);
   private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   member: MemberDto | null = null;
@@ -101,6 +103,9 @@ export class MemberCardComponent implements OnInit {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
         this.member = member;
+        if (member.groupKey) {
+          this.breadcrumbService.setParam('groupKey', member.groupKey);
+        }
       },
       error: (error) => {
         console.error('Error fetching member:', error);
