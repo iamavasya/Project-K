@@ -194,7 +194,6 @@ namespace ProjectK.API
 
             if (!app.Environment.IsEnvironment("Production"))
             {
-                // --- Debug Middleware ---
                 app.Use(async (context, next) =>
                 {
                     if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
@@ -212,7 +211,6 @@ namespace ProjectK.API
 
                     await next();
                 });
-                // --- End Debug Middleware ---
             }
 
             app.UseAuthorization();
