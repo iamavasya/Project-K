@@ -167,6 +167,7 @@ namespace ProjectK.API
 
             builder.Services.AddProjectDependencies(builder.Configuration);
 
+            // Trigger workflow
 
             var app = builder.Build();
 
