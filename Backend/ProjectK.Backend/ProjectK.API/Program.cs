@@ -30,7 +30,6 @@ namespace ProjectK.API
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
             {
-                // Flag for skip secure passwords
                 bool.TryParse(builder.Configuration["DebugMode:SecurePasswordOptions"], out bool securePasswordOption);
 
                 options.Password.RequiredLength = 8;
