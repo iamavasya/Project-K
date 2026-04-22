@@ -1,40 +1,54 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: Backend (.NET)
+name: Backend CI/CD
 
 on:
   push:
-    branches: [ "main", "new-monolith" ]
-    paths:
-      - 'Backend/**'
-  pull_request:
-    branches: [ "main", "new-monolith" ]
+    branches: [ "main" ]
     paths:
       - 'Backend/**'
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
-    
-    - name: Restore dependencies
-      run: dotnet restore
-      working-directory: Backend/ProjectK.Backend
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
+        dotnet-version: '10.0.x'
+
+    - name: Restore
+      run: dotnet restore Backend/ProjectK.Backend
       
     - name: Build
-      run: dotnet build --no-restore
-      working-directory: Backend/ProjectK.Backend
+      run: dotnet build Backend/ProjectK.Backend --configuration Release --no-restore
     
     - name: Test
-      run: dotnet test --no-build --verbosity normal
-      working-directory: Backend/ProjectK.Backend
+      run: dotnet test Backend/ProjectK.Backend --no-build --verbosity normal
+
+    - name: Publish Artifact
+      run: dotnet publish Backend/ProjectK.Backend -c Release -o ./publish
+      
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-app
+        path: ./publish
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: dotnet-app
+        path: ./publish
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'api-projectk-prod'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./publish
