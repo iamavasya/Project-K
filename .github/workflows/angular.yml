@@ -46,26 +46,11 @@ jobs:
     name: Build and Deploy to Azure SWA
     environment:
       name: ${{ github.event_name == 'push' && 'production' || 'staging' }}
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
-          
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-        
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
            
       - name: Build And Deploy
         id: builddeploy
@@ -76,7 +61,6 @@ jobs:
           app_location: "./Frontend"
           api_location: ""
           output_location: "dist/projectk-frontend/browser"
-          github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
