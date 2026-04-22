@@ -49,8 +49,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
                 return new ServiceResult<KurinResponse>(ResultType.NotFound);
             }
 
-            var activeBetaUsersCount = await _userManager.Users
-                .CountAsync(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active, cancellationToken);
+            var activeBetaUsersCount = _userManager.Users
+                .Count(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active);
 
             var kurinResponse = _mapper.Map<KurinResponse>(kurin);
             kurinResponse.CurrentUserCount = activeBetaUsersCount;

@@ -4,7 +4,7 @@ import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { AuthInterceptor } from './auth.interceptor';
 import { AuthService } from './authService/auth.service';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 
 describe('AuthInterceptor', () => {
   let httpMock: HttpTestingController;
