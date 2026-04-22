@@ -99,6 +99,16 @@ namespace ProjectK.API
                         .AllowAnyMethod()
                         .AllowCredentials();
                 });
+
+                options.AddPolicy("ProdCorsPolicy", policy =>
+                {
+                    var frontendUrl = builder.Configuration["ProdCorsOrigin"];
+
+                    policy.WithOrigins(frontendUrl)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
 
             builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -178,36 +188,34 @@ namespace ProjectK.API
 
             app.UseRouting();
 
-            if (app.Environment.IsEnvironment("Tailscale"))
-            {
-                app.UseCors("TailscalePolicy");
-            }
-            else
-            {
-                app.UseCors("AllowFrontend");
-            }
+            if (app.Environment.IsEnvironment("Tailscale")) app.UseCors("TailscalePolicy");
+            else if (app.Environment.IsEnvironment("Production")) app.UseCors("ProdCorsPolicy");
+            else app.UseCors("AllowFrontend");
 
             app.UseAuthentication();
 
-            // --- Debug Middleware ---
-            app.Use(async (context, next) =>
+            if (!app.Environment.IsEnvironment("Production"))
             {
-                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                // --- Debug Middleware ---
+                app.Use(async (context, next) =>
                 {
-                    Console.WriteLine("User is authenticated!");
-                    foreach (var claim in context.User.Claims)
+                    if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
                     {
-                        Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+                        Console.WriteLine("User is authenticated!");
+                        foreach (var claim in context.User.Claims)
+                        {
+                            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+                        }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("User is NOT authenticated.");
-                }
+                    else
+                    {
+                        Console.WriteLine("User is NOT authenticated.");
+                    }
 
-                await next();
-            });
-            // --- End Debug Middleware ---
+                    await next();
+                });
+                // --- End Debug Middleware ---
+            }
 
             app.UseAuthorization();
 
