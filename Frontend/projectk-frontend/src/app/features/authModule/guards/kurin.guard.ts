@@ -12,11 +12,11 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
             return false;
         }
         if (resource == 'panel' && authService.getAuthStateValue()?.kurinKey) {
-            router.navigate(['/kurin', authService.getAuthStateValue()?.kurinKey]);
+            router.navigate(['/kurin']);
             return false;
         }
         if (resource == 'planning' && authService.getAuthStateValue()?.kurinKey && authService.getAuthStateValue()?.role === 'User') {
-            router.navigate(['/kurin', authService.getAuthStateValue()?.kurinKey]);
+            router.navigate(['/kurin']);
             return false;
         }
         return true;

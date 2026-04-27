@@ -44,58 +44,92 @@ export class SidebarMenu implements OnChanges {
   
   private buildItems(state: AuthState | null): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
+    const memberKey = state?.memberKey ?? null;
     const role = state?.role?.trim().toLowerCase() ?? '';
-    const canReviewSkills = role === 'mentor' || role === 'manager' || role === 'admin';
+    const isAdmin = role === 'admin';
+    const canReviewSkills = role === 'mentor' || role === 'manager' || isAdmin;
     const disabled = !kurinKey;
-    return [
-      {
-        label: 'Курінь',
-        routerLink: ['/kurin'],
+
+    const items: MenuItem[] = [];
+
+    if (memberKey) {
+      items.push({
+        label: 'Мій профіль',
+        icon: 'pi pi-user',
+        routerLink: ['/member', memberKey],
         command: () => {
           this.close();
-          this.router.navigate(['/kurin']);
-        },
-        disabled,
-        visible: !!kurinKey
-      },
-      { label: 'Планування',
-        routerLink: ['/planning', kurinKey],
-        command: () => {
-          this.close();
-          this.router.navigate(['/planning', kurinKey]);
-        },
-        visible: !!kurinKey
-      },
-      { label: 'Гуртки', disabled: true, visible: !!kurinKey },
-      { label: 'Всі учасники', disabled: true, visible: !!kurinKey },
-      {
-        label: 'Модерація вмілостей',
-        routerLink: ['/kurin', kurinKey, 'review', 'skills'],
-        command: () => {
-          this.close();
-          this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
-        },
-        visible: !!kurinKey && canReviewSkills
-      },
-      { label: 'Налаштування', disabled: true, visible: !!kurinKey },
-      {
-        label: 'Panel',
-        visible: !kurinKey,
-        command: () => {
-          this.close();
-          this.router.navigate(['/panel']);
+          this.router.navigate(['/member', memberKey]);
         }
-      },
-      { 
-        label: 'Users',
-        visible: !kurinKey,
-        command: () => {
-          this.close();
-          this.router.navigate(['/users']);
-        } 
-      },
-      { label: 'Global Settings', visible: !kurinKey, disabled: true },
-    ];
+      });
+    }
+
+    if (kurinKey) {
+      items.push(
+        {
+          label: 'Курінь',
+          routerLink: ['/kurin'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin']);
+          },
+          disabled
+        }
+      );
+
+      if (role !== 'user') {
+        items.push({ 
+          label: 'Планування',
+          routerLink: ['/planning', kurinKey],
+          command: () => {
+            this.close();
+            this.router.navigate(['/planning', kurinKey]);
+          }
+        });
+      }
+
+      items.push(
+        { label: 'Гуртки', disabled: true },
+        { label: 'Всі учасники', disabled: true }
+      );
+
+      if (canReviewSkills) {
+        items.push({
+          label: 'Модерація вмілостей',
+          routerLink: ['/kurin', kurinKey, 'review', 'skills'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
+          }
+        });
+      }
+
+      items.push({ label: 'Налаштування', disabled: true });
+    }
+
+    if (isAdmin && !kurinKey) {
+      items.push(
+        {
+          label: 'Admin Panel',
+          icon: 'pi pi-lock',
+          command: () => {
+            this.close();
+            this.router.navigate(['/panel']);
+          }
+        },
+        { 
+          label: 'Users Management',
+          icon: 'pi pi-users',
+          command: () => {
+            this.close();
+            this.router.navigate(['/users']);
+          } 
+        },
+        { label: 'Global Settings', disabled: true }
+      );
+    }
+
+    return items;
   }
 
   close() {

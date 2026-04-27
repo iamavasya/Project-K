@@ -6,6 +6,7 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
@@ -98,6 +99,17 @@ namespace ProjectK.API.Controllers.KurinModule
         {
             var command = new DeleteGroup(groupKey);
             var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpGet("{groupKey}/mentors")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMentors(Guid groupKey)
+        {
+            var query = new GetGroupMentorsQuery(groupKey);
+            var response = await _mediator.Send(query);
             return response.ToActionResult(this);
         }
 

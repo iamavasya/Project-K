@@ -198,10 +198,10 @@ export class SkillsReviewPageComponent implements OnInit {
     this.isLoading = true;
 
     forkJoin({
-      members: this.memberService.getAll(undefined, this.kurinKey).pipe(
+      progresses: this.memberProgressService.getBadgeReviewQueue(this.kurinKey).pipe(
         catchError((error) => {
-          console.error('Error loading kurin members for skills review:', error);
-          return of([] as MemberDto[]);
+          console.error('Error loading badge review queue:', error);
+          return of([] as BadgeProgressDto[]);
         })
       ),
       badges: this.badgesCatalogService.getAll(500).pipe(
@@ -212,36 +212,13 @@ export class SkillsReviewPageComponent implements OnInit {
       )
     })
       .pipe(
-        switchMap(({ members, badges }) => {
-          if (!members.length) {
-            return of({
-              members,
-              badges,
-              progressByMember: [] as { memberKey: string; progresses: BadgeProgressDto[] }[]
-            });
-          }
-
-          const progressRequests = members.map(member =>
-            this.memberProgressService.getBadgeProgresses(member.memberKey).pipe(
-              map(progresses => ({ memberKey: member.memberKey, progresses })),
-              catchError((error) => {
-                console.error(`Error loading badge progresses for member ${member.memberKey}:`, error);
-                return of({ memberKey: member.memberKey, progresses: [] as BadgeProgressDto[] });
-              })
-            )
-          );
-
-          return forkJoin(progressRequests).pipe(
-            map(progressByMember => ({ members, badges, progressByMember }))
-          );
-        }),
         finalize(() => {
           this.isLoading = false;
         })
       )
       .subscribe({
-        next: ({ members, badges, progressByMember }) => {
-          this.reviewItems = this.buildReviewItems(members, badges, progressByMember);
+        next: ({ progresses, badges }) => {
+          this.reviewItems = this.buildReviewItemsFromQueue(progresses, badges);
         },
         error: (error) => {
           console.error('Error building skills review queue:', error);
@@ -258,42 +235,28 @@ export class SkillsReviewPageComponent implements OnInit {
     this.isReviewDialogVisible = true;
   }
 
-  private buildReviewItems(
-    members: MemberDto[],
-    badges: BadgeCatalogItemDto[],
-    progressByMember: { memberKey: string; progresses: BadgeProgressDto[] }[]
+  private buildReviewItemsFromQueue(
+    progresses: BadgeProgressDto[],
+    badges: BadgeCatalogItemDto[]
   ): SkillsReviewItemView[] {
-    const membersByKey = new Map<string, MemberDto>(members.map(member => [member.memberKey, member]));
     const badgesById = new Map<string, BadgeCatalogItemDto>(badges.map(badge => [badge.id, badge]));
 
-    const queue: SkillsReviewItemView[] = [];
-    for (const memberProgresses of progressByMember) {
-      const member = membersByKey.get(memberProgresses.memberKey);
-      if (!member) {
-        continue;
-      }
-
-      for (const progress of memberProgresses.progresses) {
-        const normalizedStatus = normalizeBadgeProgressStatus(progress.status);
-        if (normalizedStatus !== BadgeProgressStatus.Submitted) {
-          continue;
-        }
-
-        const badge = badgesById.get(progress.badgeId);
-        const memberDisplayName = this.formatMemberDisplayName(member);
-        queue.push({
-          reviewKey: `${progress.memberKey}:${progress.badgeId}`,
-          memberKey: progress.memberKey,
-          memberDisplayName,
-          memberPhotoUrl: member.profilePhotoUrl,
-          memberInitials: this.resolveInitials(memberDisplayName),
-          badgeId: progress.badgeId,
-          badgeTitle: badge?.title ?? progress.badgeId,
-          badgeImageSourceUrl: resolveBadgeImageUrl(badge?.imagePath ?? null),
-          submittedAtUtc: progress.submittedAtUtc
-        });
-      }
-    }
+    const queue: SkillsReviewItemView[] = progresses.map(progress => {
+      const badge = badgesById.get(progress.badgeId);
+      const memberDisplayName = [progress.memberFirstName?.trim(), progress.memberLastName?.trim()].filter(Boolean).join(' ') || progress.memberKey;
+      
+      return {
+        reviewKey: `${progress.memberKey}:${progress.badgeId}`,
+        memberKey: progress.memberKey,
+        memberDisplayName,
+        memberPhotoUrl: this.badgeImageBlobService.resolveBadgeImageForDisplay(progress.memberPhotoUrl || null),
+        memberInitials: this.resolveInitials(memberDisplayName),
+        badgeId: progress.badgeId,
+        badgeTitle: badge?.title ?? progress.badgeId,
+        badgeImageSourceUrl: resolveBadgeImageUrl(badge?.imagePath ?? null),
+        submittedAtUtc: progress.submittedAtUtc
+      };
+    });
 
     return queue.sort((left, right) => this.toUnixTime(right.submittedAtUtc) - this.toUnixTime(left.submittedAtUtc));
   }

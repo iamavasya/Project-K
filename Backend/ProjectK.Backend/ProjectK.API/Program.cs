@@ -92,21 +92,25 @@ namespace ProjectK.API
                 options.AddPolicy("TailscalePolicy", policy =>
                 {
                     var frontendUrl = builder.Configuration["TailscaleCorsOrigin"];
-
-                    policy.WithOrigins(frontendUrl)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                    if (!string.IsNullOrEmpty(frontendUrl))
+                    {
+                        policy.WithOrigins(frontendUrl)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
                 });
 
                 options.AddPolicy("ProdCorsPolicy", policy =>
                 {
                     var frontendUrl = builder.Configuration["ProdCorsOrigin"];
-
-                    policy.WithOrigins(frontendUrl)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                    if (!string.IsNullOrEmpty(frontendUrl))
+                    {
+                        policy.WithOrigins(frontendUrl)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
                 });
             });
 

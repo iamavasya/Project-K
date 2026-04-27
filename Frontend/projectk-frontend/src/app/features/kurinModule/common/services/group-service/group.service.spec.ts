@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 import { GroupService } from './group.service';
@@ -6,6 +6,7 @@ import { CreateGroupDto } from '../../models/requests/createGroupDto';
 import { UpdateGroupDto } from '../../models/requests/updateGroupDto';
 import { GroupDto } from '../../models/groupDto';
 import { environment } from '../../../../../../environments/environment';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 describe('GroupService', () => {
   let service: GroupService;
@@ -94,4 +95,36 @@ describe('GroupService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('getMentors sends GET to /group/:key/mentors', () => {
+    const mentors: MemberLookupDto[] = [
+      { memberKey: 'm1', userKey: 'u1', firstName: 'A', middleName: 'B', lastName: 'C' }
+    ];
+
+    service.getMentors('g1').subscribe(res => {
+      expect(res).toEqual(mentors);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/mentors`);
+    expect(req.request.method).toBe('GET');
+    req.flush(mentors);
+  });
+
+  it('assignMentor sends POST to /group/:key/mentors/:mentorUserKey', () => {
+    service.assignMentor('g1', 'u1').subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/mentors/u1`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush({});
+  });
+
+  it('revokeMentor sends DELETE to /group/:key/mentors/:mentorUserKey', () => {
+    service.revokeMentor('g1', 'u1').subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/mentors/u1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({});
+  });
 });
+

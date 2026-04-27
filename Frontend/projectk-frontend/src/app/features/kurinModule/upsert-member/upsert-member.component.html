@@ -109,6 +109,12 @@
                                 [disabled]="!member.profilePhotoUrl && !croppedImage"
                                 (onClick)="clearProfilePhoto(form.form)"></p-button>
                         }
+                        @if (isCreate) {
+                            <div class="flex align-items-center gap-2 mt-2">
+                                <input type="checkbox" id="createUserAccount" name="createUserAccount" [(ngModel)]="createUserAccount" />
+                                <label for="createUserAccount">Створити акаунт User та надіслати лист активації</label>
+                            </div>
+                        }
                     </div>
                 </div>
             </p-accordion-content>

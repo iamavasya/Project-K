@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Threading;
@@ -20,18 +21,25 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     {
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
+        private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly GetMemberByKeyHandler _handler;
 
         public GetMemberByKeyHandlerTests()
         {
             _memberRepoMock = new Mock<IMemberRepository>();
+            _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
             _uowMock = new Mock<IUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
+            _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
 
             _mapperMock = new Mock<IMapper>(MockBehavior.Strict);
+            
+            _currentUserContextMock = new Mock<ICurrentUserContext>();
+            _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true);
 
-            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object);
+            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object);
         }
 
         [Fact]

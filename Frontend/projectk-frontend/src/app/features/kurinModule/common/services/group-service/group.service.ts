@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { GroupDto } from '../../models/groupDto';
 import { CreateGroupDto } from '../../models/requests/createGroupDto';
 import { UpdateGroupDto } from '../../models/requests/updateGroupDto';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 @Injectable({
   providedIn: 'root'
@@ -35,5 +36,17 @@ export class GroupService {
     
   exists(groupKey: string): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/exists/${groupKey}`);
+  }
+
+  getMentors(groupKey: string): Observable<MemberLookupDto[]> {
+    return this.http.get<MemberLookupDto[]>(`${this.apiUrl}/${groupKey}/mentors`);
+  }
+
+  assignMentor(groupKey: string, mentorUserKey: string): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/${groupKey}/mentors/${mentorUserKey}`, null);
+  }
+
+  revokeMentor(groupKey: string, mentorUserKey: string): Observable<unknown> {
+    return this.http.delete(`${this.apiUrl}/${groupKey}/mentors/${mentorUserKey}`);
   }
 }

@@ -71,10 +71,16 @@ namespace ProjectK.API.Controllers.KurinModule
         public async Task<IActionResult> Create([FromForm] UpsertMemberRequest request,
                                                 CancellationToken cancellationToken)
         {
+            if (!request.GroupKey.HasValue || request.GroupKey.Value == Guid.Empty)
+            {
+                return BadRequest("groupKey is required.");
+            }
+
             byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
             var command = new UpsertMember
             {
-                GroupKey = request.GroupKey,
+                GroupKey = request.GroupKey.Value,
+                KurinKey = request.KurinKey,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 MiddleName = request.MiddleName,
@@ -82,6 +88,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
                 PlastLevelHistories = request.PlastLevelHistories,
+                CreateUserAccount = request.CreateUserAccount,
                 BlobContent = blobData,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
@@ -91,6 +98,39 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [Authorize(Policy = "RequireMentor")]
+        [HttpPost("kurins/{kurinKey:guid}/members")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateByKurin(Guid kurinKey,
+            [FromForm] UpsertMemberRequest request,
+            CancellationToken cancellationToken)
+        {
+            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
+            var command = new UpsertMember
+            {
+                KurinKey = kurinKey,
+                GroupKey = null,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                MiddleName = request.MiddleName,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                DateOfBirth = request.DateOfBirth,
+                PlastLevelHistories = request.PlastLevelHistories,
+                CreateUserAccount = request.CreateUserAccount,
+                BlobContent = blobData,
+                BlobFileName = request.Blob?.FileName,
+                BlobContentType = request.Blob?.ContentType
+            };
+
+            var response = await _mediator.Send(command, cancellationToken);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
         [HttpPut("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [Consumes("multipart/form-data")]
@@ -108,6 +148,7 @@ namespace ProjectK.API.Controllers.KurinModule
             {
                 MemberKey = memberKey,
                 GroupKey = request.GroupKey,
+                KurinKey = request.KurinKey,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 MiddleName = request.MiddleName,
@@ -116,6 +157,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 DateOfBirth = request.DateOfBirth,
                 PlastLevelHistories = request.PlastLevelHistories,
                 RemoveProfilePhoto = request.RemoveProfilePhoto ?? false,
+                CreateUserAccount = request.CreateUserAccount,
                 BlobContent = blobData,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
@@ -143,6 +185,16 @@ namespace ProjectK.API.Controllers.KurinModule
         public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
         {
             var request = new GetKurinKvMembers(kurinKey);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpGet("members/mentor-candidates/{kurinKey:guid}")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
+        {
+            var request = new GetKurinMentorCandidates(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
         }

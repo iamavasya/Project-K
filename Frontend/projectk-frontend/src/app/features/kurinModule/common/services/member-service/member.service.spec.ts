@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { MemberService } from './member.service';
@@ -166,6 +166,39 @@ describe('MemberService', () => {
     req.flush(sampleMember);
   });
 
+  it('create should POST to kurin endpoint when kurinKey is provided', () => {
+    const request: UpsertMemberDto = {
+      ...sampleUpsert,
+      groupKey: undefined,
+      kurinKey: 'kurin-42'
+    };
+
+    service.create(request, null).subscribe(res => {
+      expect(res).toEqual(sampleMember);
+    });
+
+    const req = httpMock.expectOne(`${apiUrl}/kurins/kurin-42/members`);
+    expect(req.request.method).toBe('POST');
+    req.flush(sampleMember);
+  });
+
+  it('create should fail when both groupKey and kurinKey are missing', () => {
+    let receivedError: unknown;
+
+    service.create({
+      ...sampleUpsert,
+      groupKey: undefined,
+      kurinKey: undefined
+    }, null).subscribe({
+      error: (error) => {
+        receivedError = error;
+      }
+    });
+
+    expect(receivedError).toEqual(jasmine.any(Error));
+    expect((receivedError as Error).message).toContain('Either groupKey or kurinKey must be provided for create.');
+  });
+
   it('update should PUT FormData to correct URL with individual properties and file', () => {
     const memberKey = 'member-key-1';
     const file = new File(['xx'], 'photo.jpg', { type: 'image/jpeg' });
@@ -224,4 +257,16 @@ describe('MemberService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('getMentorCandidates should call mentor-candidates endpoint', () => {
+    service.getMentorCandidates('k-1').subscribe(res => {
+      expect(res.length).toBe(1);
+      expect(res[0].userKey).toBe('u1');
+    });
+
+    const req = httpMock.expectOne(`${apiUrl}/members/mentor-candidates/k-1`);
+    expect(req.request.method).toBe('GET');
+    req.flush([{ memberKey: 'm1', userKey: 'u1', firstName: 'Mentor', middleName: 'M', lastName: 'One' }]);
+  });
 });
+

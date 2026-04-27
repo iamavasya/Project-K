@@ -13,3 +13,25 @@
 .group-panel {
     margin: 5rem;
 }
+
+.group-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.mentor-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mentor-dialog-hint {
+    margin: 0;
+}
+
+.mentor-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}

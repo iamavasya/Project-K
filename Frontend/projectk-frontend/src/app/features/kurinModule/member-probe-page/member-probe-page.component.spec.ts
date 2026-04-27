@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from '../../authModule/services/authService/auth.service';
@@ -95,6 +95,7 @@ describe('MemberProbePageComponent', () => {
     memberProgressServiceSpy.updateProbeProgressStatus.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-1',
+      memberKey: 'test-member-key',
       email: 'mentor@example.com',
       role: 'Mentor',
       kurinKey: 'kurin-1',
@@ -154,6 +155,7 @@ describe('MemberProbePageComponent', () => {
   it('onSignPoint should do nothing for non-reviewer role', () => {
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-1',
+      memberKey: 'test-member-key',
       email: 'member@example.com',
       role: 'User',
       kurinKey: 'kurin-1',
@@ -339,3 +341,4 @@ describe('MemberProbePageComponent', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey]);
   });
 });
+

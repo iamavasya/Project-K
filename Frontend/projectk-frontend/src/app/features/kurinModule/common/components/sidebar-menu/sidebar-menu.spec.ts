@@ -43,6 +43,7 @@ describe('SidebarMenu', () => {
     it('should update items$ when state$ changes', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -64,6 +65,7 @@ describe('SidebarMenu', () => {
     it('should update email$ when state$ changes', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -84,6 +86,7 @@ describe('SidebarMenu', () => {
     it('should update role$ when state$ changes', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -118,6 +121,7 @@ describe('SidebarMenu', () => {
     it('should build menu items with kurinKey (Manager view)', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -132,16 +136,15 @@ describe('SidebarMenu', () => {
       component.items$.subscribe(items => {
         const kurinItem = items.find(item => item.label === 'Курінь');
         const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
-        const panelItem = items.find(item => item.label === 'Panel');
-        const usersItem = items.find(item => item.label === 'Users');
+        const panelItem = items.find(item => item.label === 'Admin Panel');
+        const usersItem = items.find(item => item.label === 'Users Management');
 
         expect(kurinItem).toBeDefined();
-        expect(kurinItem?.visible).toBeTrue();
         expect(kurinItem?.disabled).toBeFalse();
-        expect(skillsReviewItem?.visible).toBeTrue();
+        expect(skillsReviewItem).toBeDefined();
         
-        expect(panelItem?.visible).toBeFalse();
-        expect(usersItem?.visible).toBeFalse();
+        expect(panelItem).toBeUndefined();
+        expect(usersItem).toBeUndefined();
         done();
       });
     });
@@ -149,6 +152,7 @@ describe('SidebarMenu', () => {
     it('should hide skills moderation item for non-reviewer role', (done) => {
       const mockState: AuthState = {
         userKey: 'user-999',
+        memberKey: 'test-member-key',
         email: 'user@example.com',
         role: 'User',
         kurinKey: 'kurin-456',
@@ -162,7 +166,7 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
-        expect(skillsReviewItem?.visible).toBeFalse();
+        expect(skillsReviewItem).toBeUndefined();
         done();
       });
     });
@@ -170,6 +174,7 @@ describe('SidebarMenu', () => {
     it('should build menu items without kurinKey (Admin view)', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'admin@example.com',
         role: 'Admin',
         kurinKey: null,
@@ -183,37 +188,26 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const kurinItem = items.find(item => item.label === 'Курінь');
-        const panelItem = items.find(item => item.label === 'Panel');
-        const usersItem = items.find(item => item.label === 'Users');
+        const panelItem = items.find(item => item.label === 'Admin Panel');
+        const usersItem = items.find(item => item.label === 'Users Management');
 
-        expect(kurinItem?.visible).toBeFalse();
+        expect(kurinItem).toBeUndefined();
         expect(panelItem).toBeDefined();
-        expect(panelItem?.visible).toBeTrue();
         expect(usersItem).toBeDefined();
-        expect(usersItem?.visible).toBeTrue();
         done();
       });
     });
 
-    it('should disable kurin-related items when kurinKey is null', (done) => {
+    it('should disable kurin-related items when kurinKey is null and NOT show them if they rely on kurinKey', (done) => {
       component.state$ = of(null);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
 
       component.items$.subscribe(items => {
-        const kurinRelatedItems = items.filter(item => 
-          item.label === 'Курінь' || 
-          item.label === 'Гуртки' || 
-          item.label === 'Всі учасники' || 
-          item.label === 'Налаштування'
-        );
-
-        kurinRelatedItems.forEach(item => {
-          if (item.label === 'Курінь') {
-            expect(item.disabled).toBeTrue();
-          }
-        });
+        // Without kurinKey, they shouldn't even be pushed, except maybe if admin
+        const kurinItem = items.find(item => item.label === 'Курінь');
+        expect(kurinItem).toBeUndefined();
         done();
       });
     });
@@ -221,6 +215,7 @@ describe('SidebarMenu', () => {
     it('should navigate to /kurin when Kurin menu item is clicked', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -246,6 +241,7 @@ describe('SidebarMenu', () => {
     it('should navigate to /panel when Panel menu item is clicked', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'admin@example.com',
         role: 'Admin',
         kurinKey: null,
@@ -258,7 +254,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const panelItem = items.find(item => item.label === 'Panel');
+        const panelItem = items.find(item => item.label === 'Admin Panel');
         
         if (panelItem?.command) {
           panelItem.command({});
@@ -271,6 +267,7 @@ describe('SidebarMenu', () => {
     it('should navigate to /users when Users menu item is clicked', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'admin@example.com',
         role: 'Admin',
         kurinKey: null,
@@ -283,7 +280,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const usersItem = items.find(item => item.label === 'Users');
+        const usersItem = items.find(item => item.label === 'Users Management');
         
         if (usersItem?.command) {
           usersItem.command({});
@@ -296,6 +293,7 @@ describe('SidebarMenu', () => {
     it('should navigate to skills review route when moderation item is clicked', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'mentor@example.com',
         role: 'Mentor',
         kurinKey: 'kurin-456',
@@ -336,6 +334,7 @@ describe('SidebarMenu', () => {
     it('should close sidebar when menu item is clicked', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -420,6 +419,7 @@ describe('SidebarMenu', () => {
     it('should update menu items when switching from Manager to Admin', (done) => {
       const managerState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'manager@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -432,8 +432,8 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        expect(items.find(item => item.label === 'Курінь')?.visible).toBeTrue();
-        expect(items.find(item => item.label === 'Panel')?.visible).toBeFalse();
+        expect(items.find(item => item.label === 'Курінь')).toBeDefined();
+        expect(items.find(item => item.label === 'Admin Panel')).toBeUndefined();
 
         const adminState: AuthState = {
           ...managerState,
@@ -447,8 +447,8 @@ describe('SidebarMenu', () => {
         });
 
         component.items$.subscribe(newItems => {
-          expect(newItems.find(item => item.label === 'Курінь')?.visible).toBeFalse();
-          expect(newItems.find(item => item.label === 'Panel')?.visible).toBeTrue();
+          expect(newItems.find(item => item.label === 'Курінь')).toBeUndefined();
+          expect(newItems.find(item => item.label === 'Admin Panel')).toBeDefined();
           done();
         });
       });
@@ -462,14 +462,15 @@ describe('SidebarMenu', () => {
 
       const subscription = component.items$.subscribe(items => {
         if (authStateSubject.value === null) {
-          expect(items.find(item => item.label === 'Panel')?.visible).toBeTrue();
+          expect(items.find(item => item.label === 'Admin Panel')).toBeUndefined();
         } else {
-          expect(items.find(item => item.label === 'Курінь')?.visible).toBeTrue();
+          expect(items.find(item => item.label === 'Курінь')).toBeDefined();
         }
       });
 
       authStateSubject.next({
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',

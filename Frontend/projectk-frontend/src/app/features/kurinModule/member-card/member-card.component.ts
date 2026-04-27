@@ -124,6 +124,24 @@ export class MemberCardComponent implements OnInit {
     return this.confirmedSkillsCount > 0 || this.pendingSkillsCount > 0;
   }
 
+  get canEditMember(): boolean {
+    if (!this.member) return false;
+
+    const authState = this.authService.getAuthStateValue();
+    if (!authState) return false;
+
+    const role = authState.role?.trim().toLowerCase();
+    if (role && this.reviewerRoles.has(role)) {
+      return true;
+    }
+
+    if (role === 'user' && this.member.userKey && authState.userKey && this.member.userKey.toLowerCase() === authState.userKey.toLowerCase()) {
+      return true;
+    }
+
+    return false;
+  }
+
   get confirmedSkillsCount(): number {
     return this.skillsSummary.recentConfirmed.length;
   }

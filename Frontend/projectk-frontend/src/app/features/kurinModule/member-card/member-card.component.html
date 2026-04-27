@@ -46,18 +46,23 @@
                             <span class="member-summary-value"> {{ member.dateOfBirth || 'Не вказано' }}</span>
                         </p>
 
+                        @if (member.school) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Школа:</span>
-                            <span class="member-summary-value"> {{ member.school || 'Не вказано' }}</span>
+                            <span class="member-summary-value"> {{ member.school }}</span>
                         </p>
+                        }
 
+                        @if (member.address) {
                         <p class="member-summary-line text-sm sm:col-span-2">
                             <span class="member-summary-label">Адреса:</span>
-                            <span class="member-summary-value"> {{ member.address || 'Не вказано' }}</span>
+                            <span class="member-summary-value"> {{ member.address }}</span>
                         </p>
+                        }
                     </div>
                 </div>
 
+                @if (canEditMember) {
                 <div class="member-actions md:justify-self-end">
                     <p-button
                         (onClick)="onEditMember()"
@@ -67,6 +72,7 @@
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
                     ></p-button>
                 </div>
+                }
             </div>
         </section>
 
@@ -312,6 +318,7 @@
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm"
                     ></p-button>
                     }
+                    @if (canEditMember) {
                     <p-button
                         (onClick)="openAddSkillDialog()"
                         label="Додати вмілість"
@@ -319,6 +326,7 @@
                         severity="contrast"
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm"
                     ></p-button>
+                    }
                 </div>
             </div>
 

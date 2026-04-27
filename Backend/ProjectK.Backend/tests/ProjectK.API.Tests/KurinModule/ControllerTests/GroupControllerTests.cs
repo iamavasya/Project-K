@@ -14,6 +14,8 @@ using Xunit;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
+using ProjectK.Common.Models.Dtos;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {
@@ -209,6 +211,28 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
 
             var obj = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetMentors_ShouldReturnOk_WhenSuccess()
+        {
+            var groupKey = Guid.NewGuid();
+            var mentors = new List<MemberLookupDto>
+            {
+                new() { MemberKey = Guid.NewGuid(), UserKey = Guid.NewGuid(), FirstName = "I", LastName = "Mentor", MiddleName = "M" }
+            };
+            var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetGroupMentorsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.GetMentors(groupKey);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
+            Assert.Single(data);
+            Assert.Equal("Mentor", data[0].LastName);
         }
     }
 }

@@ -38,6 +38,9 @@ export class KurinPanelComponent implements OnInit {
   kurinNumber: number | null = null;
   kurinData: KurinDto | null = null;
 
+  canManageGroups = false;
+  canManageMembers = false;
+
   groupPanelConfig: ManagePanelConfig = {
     entityType: 'group',
     title: 'Group',
@@ -77,12 +80,17 @@ export class KurinPanelComponent implements OnInit {
     this.authService.getAuthState().subscribe(state => {
       if (state?.kurinKey) {
         this.kurinKey = state.kurinKey;
+        const role = state.role?.trim().toLowerCase();
+        this.canManageGroups = role === 'admin' || role === 'manager';
+        this.canManageMembers = role === 'admin' || role === 'manager';
+        this.refreshData();
       }
     });
-    this.refreshData();
   }
 
   refreshData() {
+    if (!this.kurinKey) return;
+
     this.groupService.getAllByKurinKey(this.kurinKey).subscribe({
       next: (groups) => {
         this.groups = groups;
@@ -131,5 +139,9 @@ export class KurinPanelComponent implements OnInit {
 
   onOpenClick(groupKey: string): void {
     this.router.navigate(['/group', groupKey]);
+  }
+
+  onMemberCreate(): void {
+    this.router.navigate(['/kurin', this.kurinKey, 'member', 'upsert']);
   }
 }

@@ -1,4 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
@@ -12,10 +15,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
     public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<AppUser> _userManager;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         public async Task<ServiceResult<Guid>> Handle(AssignMentorCommand request, CancellationToken cancellationToken)
@@ -52,9 +57,32 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
             };
 
             _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
+            await EnsureMentorRoleAsync(request.MentorUserKey);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);
+        }
+
+        private async Task EnsureMentorRoleAsync(Guid mentorUserKey)
+        {
+            var user = await _userManager.FindByIdAsync(mentorUserKey.ToString());
+            if (user == null)
+            {
+                return;
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Contains(UserRole.Admin.ToClaimValue()) || currentRoles.Contains(UserRole.Manager.ToClaimValue()))
+            {
+                return;
+            }
+
+            if (currentRoles.Count > 0)
+            {
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            }
+
+            await _userManager.AddToRoleAsync(user, UserRole.Mentor.ToClaimValue());
         }
     }
 }

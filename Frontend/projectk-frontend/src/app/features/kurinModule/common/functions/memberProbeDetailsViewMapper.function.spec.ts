@@ -1,4 +1,4 @@
-import { ProbeProgressStatus } from '../models/enums/probe-progress-status.enum';
+﻿import { ProbeProgressStatus } from '../models/enums/probe-progress-status.enum';
 import { GroupedProbeDto } from '../models/probes-and-badges/groupedProbeDto';
 import { ProbeProgressDto } from '../models/probes-and-badges/probeProgressDto';
 import { buildMemberProbeDetailPointRows } from './memberProbeDetailsViewMapper.function';
@@ -126,3 +126,4 @@ describe('memberProbeDetailsViewMapper', () => {
     expect(rows[1].signedByName).toBeNull();
   });
 });
+
