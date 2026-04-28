@@ -19,6 +19,7 @@ using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.ProbeAndBadges.DependencyInjection;
+using Spectre.Console;
 
 namespace ProjectK.API
 {
@@ -27,6 +28,8 @@ namespace ProjectK.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            
+            PrintTitle(builder.Configuration);
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
             {
@@ -227,6 +230,23 @@ namespace ProjectK.API
             app.MapGet("/", () => "Backend Started");
 
             await app.RunAsync();
+        }
+
+        private static void PrintTitle(IConfiguration config)
+        {
+            var version = config["ReleaseInfo:Version"] ?? "v0.0.0";
+            var codeName = config["ReleaseInfo:CodeName"] ?? "Unknown";
+
+            AnsiConsole.Write(new FigletText("Project K").Color(Color.Green));
+            
+            AnsiConsole.Write(new Rule($"[yellow]{version} \"{codeName}\"[/]") 
+            { 
+                Justification = Justify.Left 
+            });
+            
+            AnsiConsole.WriteLine();
+
+            Thread.Sleep(2000);
         }
     }
 }
