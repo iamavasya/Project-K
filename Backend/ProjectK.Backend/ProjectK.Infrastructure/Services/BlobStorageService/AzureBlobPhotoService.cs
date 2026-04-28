@@ -3,14 +3,20 @@ using Azure.Core;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService
@@ -44,10 +50,11 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
         private volatile bool _containerInitialized;
         private readonly SemaphoreSlim _containerInitLock = new(1, 1);
         private readonly IPhotoReferenceProvider? _referenceProvider;
+        private readonly ILogger<AzureBlobPhotoService>? _logger;
 
         private readonly ConcurrentDictionary<string, bool> _usageCache = new();
 
-        public AzureBlobPhotoService(BlobStorageOptions options, IPhotoReferenceProvider? referenceProvider)
+        public AzureBlobPhotoService(BlobStorageOptions options, IPhotoReferenceProvider? referenceProvider, ILogger<AzureBlobPhotoService>? logger = null)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             if (string.IsNullOrWhiteSpace(_options.ConnectionString))
@@ -57,7 +64,9 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
             _container = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
             _referenceProvider = referenceProvider;
+            _logger = logger;
         }
+
         public async Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
         {
             if (photoBytes is null || photoBytes.Length == 0)
@@ -67,23 +76,65 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
 
             await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
 
-            var ext = Path.GetExtension(fileName);
-            var safeExt = string.IsNullOrWhiteSpace(ext) ? ".bin" : ext.ToLowerInvariant();
-            var blobName = BuildBlobName(safeExt);
+            var (processedBytes, finalExtension) = await CompressImageAsync(photoBytes, fileName, cancellationToken).ConfigureAwait(false);
+
+            var blobName = BuildBlobName(finalExtension);
             var blobClient = _container.GetBlobClient(blobName);
 
             var headers = new BlobHttpHeaders
             {
-                ContentType = ResolveContentType(fileName, safeExt) ?? "application/octet-stream",
+                ContentType = ResolveContentType(fileName, finalExtension) ?? "image/jpeg",
                 CacheControl = "public, max-age=31536000"
             };
 
-            await using var ms = new MemoryStream(photoBytes);
+            await using var ms = new MemoryStream(processedBytes);
             await blobClient.UploadAsync(ms, new BlobUploadOptions { HttpHeaders = headers }, cancellationToken)
                 .ConfigureAwait(false);
 
             var url = BuildPublicUrl(blobClient);
             return new PhotoUploadResult(blobName, url);
+        }
+
+        internal async Task<(byte[] ProcessedBytes, string FinalExtension)> CompressImageAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
+        {
+            var originalSize = photoBytes.Length;
+            string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            try
+            {
+                using var image = Image.Load(photoBytes);
+                
+                // Resize if too large (max 1920x1920)
+                const int MaxDimension = 1920;
+                if (image.Width > MaxDimension || image.Height > MaxDimension)
+                {
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(MaxDimension, MaxDimension)
+                    }));
+                }
+
+                // Compress and convert to JPEG to ensure small size (Quality 75 is a good balance)
+                using var msCompressed = new MemoryStream();
+                var encoder = new JpegEncoder { Quality = 75 };
+                await image.SaveAsync(msCompressed, encoder, cancellationToken).ConfigureAwait(false);
+                
+                byte[] processedBytes = msCompressed.ToArray();
+                
+                _logger?.LogInformation("Image {FileName} compressed: {OriginalSize} bytes -> {CompressedSize} bytes (Saved {SavedBytes} bytes)", 
+                    fileName, originalSize, processedBytes.Length, originalSize - processedBytes.Length);
+
+                return (processedBytes, ".jpg"); // Force extension to jpg since we encoded as jpeg
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to compress image {FileName}. Proceeding with original bytes.", fileName);
+                // If it's not a valid image (e.g. corrupted), we fallback to original bytes
+                // The API shouldn't accept non-images, but this is a fallback.
+                finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
+                return (photoBytes, finalExtension);
+            }
         }
 
         public async Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken)
