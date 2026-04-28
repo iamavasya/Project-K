@@ -10,6 +10,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Models
     {
         public Guid UserId { get; set; }
         public Guid? KurinKey { get; set; }
+        public int? KurinNumber { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }

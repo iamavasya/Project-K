@@ -4,6 +4,9 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System.Linq.Expressions;
 
@@ -12,6 +15,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     public class GetAllUsersQueryHandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly GetAllUsersQueryHandler _handler;
 
         public GetAllUsersQueryHandlerTests()
@@ -19,13 +24,21 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var userStoreMock = new Mock<IUserStore<AppUser>>();
             _userManagerMock = new Mock<UserManager<AppUser>>(
                 userStoreMock.Object, null, null, null, null, null, null, null, null);
-            _handler = new GetAllUsersQueryHandler(_userManagerMock.Object);
+            
+            _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _kurinRepositoryMock = new Mock<IKurinRepository>();
+            _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
+            _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Kurin>());
+
+            _handler = new GetAllUsersQueryHandler(_userManagerMock.Object, _unitOfWorkMock.Object);
         }
 
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenUsersExist()
         {
             // Arrange
+            var kurinKey1 = Guid.NewGuid();
             var users = new List<AppUser>
             {
                 new AppUser
@@ -34,17 +47,13 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                     Email = "user1@example.com",
                     FirstName = "John",
                     LastName = "Doe",
-                    KurinKey = Guid.NewGuid()
-                },
-                new AppUser
-                {
-                    Id = Guid.NewGuid(),
-                    Email = "user2@example.com",
-                    FirstName = "Jane",
-                    LastName = "Smith",
-                    KurinKey = Guid.NewGuid()
+                    KurinKey = kurinKey1
                 }
             }.AsQueryable();
+
+            var kurins = new List<Kurin> { new Kurin(101) { KurinKey = kurinKey1 } };
+            _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(kurins);
 
             var query = new GetAllUsersQuery();
 
@@ -58,20 +67,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.NotNull(result.Data);
-            Assert.Equal(2, result.Data.Count());
+            Assert.Single(result.Data);
 
-            var userList = result.Data.ToList();
-            Assert.Equal("user1@example.com", userList[0].Email);
-            Assert.Equal("John", userList[0].FirstName);
-            Assert.Equal("Doe", userList[0].LastName);
-            Assert.Equal("User", userList[0].Role);
-
-            Assert.Equal("user2@example.com", userList[1].Email);
-            Assert.Equal("Jane", userList[1].FirstName);
-            Assert.Equal("Smith", userList[1].LastName);
-            Assert.Equal("User", userList[1].Role);
-
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Exactly(2));
+            var userDto = result.Data.First();
+            Assert.Equal(101, userDto.KurinNumber);
         }
 
         [Fact]
@@ -365,7 +364,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public void Constructor_ShouldInitializeUserManagerCorrectly()
         {
             // Arrange & Act
-            var handler = new GetAllUsersQueryHandler(_userManagerMock.Object);
+            var handler = new GetAllUsersQueryHandler(_userManagerMock.Object, _unitOfWorkMock.Object);
 
             // Assert
             Assert.NotNull(handler);

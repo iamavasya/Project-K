@@ -39,7 +39,7 @@ describe('UserService', () => {
         firstName: 'John',
         lastName: 'Doe',
         role: 'Manager',
-        kurinKey: 'kurin-1'
+        kurinNumber: 101, kurinKey: 'kurin-1'
       },
       {
         userId: 'user-2',
@@ -47,7 +47,7 @@ describe('UserService', () => {
         firstName: 'Jane',
         lastName: 'Smith',
         role: 'Admin',
-        kurinKey: null
+        kurinNumber: 101, kurinKey: null
       },
       {
         userId: 'user-3',
@@ -55,7 +55,7 @@ describe('UserService', () => {
         firstName: 'Bob',
         lastName: 'Johnson',
         role: 'Mentor',
-        kurinKey: 'kurin-2'
+        kurinNumber: 101, kurinKey: 'kurin-2'
       }
     ];
 
@@ -198,7 +198,7 @@ describe('UserService', () => {
         firstName: 'Single',
         lastName: 'User',
         role: 'Manager',
-        kurinKey: 'kurin-1'
+        kurinNumber: 101, kurinKey: 'kurin-1'
       }];
 
       service.getAllUsers().subscribe(users => {
@@ -218,7 +218,7 @@ describe('UserService', () => {
         firstName: "O'Brien",
         lastName: 'Müller-Schmidt',
         role: 'Manager',
-        kurinKey: null
+        kurinNumber: 101, kurinKey: null
       }];
 
       service.getAllUsers().subscribe(users => {

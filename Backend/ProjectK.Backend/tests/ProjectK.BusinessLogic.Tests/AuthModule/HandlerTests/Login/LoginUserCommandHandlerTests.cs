@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login

@@ -27,6 +27,15 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        [Authorize(Policy = "RequireAdmin")]
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var request = new DeleteUserCommand(userId);
+            var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+
         [Authorize(Policy = "RequireManager")]
         [HttpPost("{userId}/role")]
         public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] UserRole newRole)
