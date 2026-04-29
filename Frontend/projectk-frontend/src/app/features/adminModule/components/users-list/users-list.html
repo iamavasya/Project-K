@@ -1,6 +1,8 @@
 <div class="w-3/4 mx-auto mt-6">
     <p-toast></p-toast>
-    <p-table #usersTable [value]="users" dataKey="userId" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']">
+    <p-confirmDialog></p-confirmDialog>
+    <p-table #usersTable [value]="users" dataKey="userId" editMode="row" [globalFilterFields]="['email', 'firstName', 'lastName']"
+             rowGroupMode="subheader" groupRowsBy="kurinNumber" [sortField]="'kurinNumber'" sortMode="single">
         <ng-template #caption>
             <div class="flex">
                 <p-iconfield iconPosition="left" class="ml-auto">
@@ -17,69 +19,90 @@
                 <th id="lastName">Last Name</th>
                 <th id="email">Email</th>
                 <th id="role">Role</th>
-                <th id="actions" style="width: 10%"></th>
+                <th id="actions" style="width: 15%"></th>
+            </tr>
+        </ng-template>
+        <ng-template #groupheader let-user>
+            <tr pRowGroupHeader>
+                <td colspan="5">
+                    <button type="button" pButton pRipple class="p-button-text p-button-rounded p-button-plain mr-2" 
+                            [icon]="expandedRows[user.kurinNumber?.toString() ?? 'null'] ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" 
+                            (click)="toggleGroup(user.kurinNumber)"></button>
+                    <span class="font-bold ml-2">Kurin {{user.kurinNumber ?? 'None'}}</span>
+                </td>
             </tr>
         </ng-template>
         <ng-template #body let-user let-editing="editing" let-ri="rowIndex">
-            <tr [pEditableRow]="user">
-                <td>
-                    {{user.firstName}}
-                </td>
-                <td>
-                    {{user.lastName}}
-                </td>
-                <td>
-                    {{user.email}}
-                </td>
-                <td>
-                    <p-cellEditor>
-                        <ng-template #input>
-                            <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body"></p-select>
-                        </ng-template>
-                        <ng-template #output>
-                            {{user.role}}
-                        </ng-template>
-                    </p-cellEditor>
-                </td>
-                <td>
-                    <div>
-                        @if (!editing) {
-                            <button
-                                pButton
-                                type="button"
-                                pInitEditableRow
-                                icon="pi pi-pencil"
-                                (click)="onRowEditInit(user)"
-                                text
-                                rounded
-                                severity="secondary">
-                            </button>
-                        }
-                        @else if (editing) {
-                            <button
-                                pButton
-                                type="button"
-                                pSaveEditableRow
-                                icon="pi pi-check"
-                                (click)="onRowEditSave(user)"
-                                text
-                                rounded
-                                severity="success">
-                            </button>
-                            <button
-                                pButton
-                                type="button"
-                                pCancelEditableRow
-                                icon="pi pi-times"
-                                (click)="onRowEditCancel(user, ri)"
-                                text
-                                rounded
-                                severity="danger">
-                            </button>
-                        }
-                    </div>
-                </td>
-            </tr>
+            @if (expandedRows[user.kurinNumber?.toString() ?? 'null']) {
+                <tr [pEditableRow]="user">
+                    <td>
+                        {{user.firstName}}
+                    </td>
+                    <td>
+                        {{user.lastName}}
+                    </td>
+                    <td>
+                        {{user.email}}
+                    </td>
+                    <td>
+                        <p-cellEditor>
+                            <ng-template #input>
+                                <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body"></p-select>
+                            </ng-template>
+                            <ng-template #output>
+                                {{user.role}}
+                            </ng-template>
+                        </p-cellEditor>
+                    </td>
+                    <td>
+                        <div class="flex gap-2">
+                            @if (!editing) {
+                                <button
+                                    pButton
+                                    type="button"
+                                    pInitEditableRow
+                                    icon="pi pi-pencil"
+                                    (click)="onRowEditInit(user)"
+                                    text
+                                    rounded
+                                    severity="secondary">
+                                </button>
+                                <button
+                                    pButton
+                                    type="button"
+                                    icon="pi pi-trash"
+                                    (click)="deleteUser(user)"
+                                    text
+                                    rounded
+                                    severity="danger">
+                                </button>
+                            }
+                            @else if (editing) {
+                                <button
+                                    pButton
+                                    type="button"
+                                    pSaveEditableRow
+                                    icon="pi pi-check"
+                                    (click)="onRowEditSave(user)"
+                                    text
+                                    rounded
+                                    severity="success">
+                                </button>
+                                <button
+                                    pButton
+                                    type="button"
+                                    pCancelEditableRow
+                                    icon="pi pi-times"
+                                    (click)="onRowEditCancel(user, ri)"
+                                    text
+                                    rounded
+                                    severity="danger">
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
         </ng-template>
     </p-table>
 </div>

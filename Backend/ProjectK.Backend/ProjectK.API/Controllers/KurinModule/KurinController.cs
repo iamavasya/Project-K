@@ -11,6 +11,9 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+
 namespace ProjectK.API.Controllers.KurinModule
 {
     [Route("api/[controller]")]
@@ -22,6 +25,16 @@ namespace ProjectK.API.Controllers.KurinModule
         public KurinController(IMediator mediator)
         {
             _mediator = mediator;
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpGet("{kurinKey:guid}/badges/review")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBadgeReviewQueue(Guid kurinKey)
+        {
+            var response = await _mediator.Send(new GetBadgeReviewQueue(kurinKey));
+            return response.ToActionResult(this);
         }
 
         [Authorize(Policy = "RequireUser")]

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card.component';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
@@ -59,6 +59,7 @@ describe('MemberCardComponent', () => {
     badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-mentor',
+      memberKey: 'test-member-key',
       email: 'mentor@example.com',
       role: 'Mentor',
       kurinKey: member.kurinKey,
@@ -569,3 +570,4 @@ describe('MemberCardComponent', () => {
     });
   });
 });
+

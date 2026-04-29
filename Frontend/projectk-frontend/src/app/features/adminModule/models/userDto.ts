@@ -3,6 +3,7 @@ export interface UserDto {
     email: string;
     role: string;
     kurinKey: string | null;
+    kurinNumber: number | null;
     firstName: string;
     lastName: string;
 }

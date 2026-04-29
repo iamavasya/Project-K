@@ -52,6 +52,7 @@ describe('LoginComponent', () => {
 
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -64,7 +65,6 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockAuthService.login).toHaveBeenCalledWith(credentials);
@@ -73,6 +73,7 @@ describe('LoginComponent', () => {
     it('should navigate to /panel for Admin role', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'admin@example.com',
         role: 'Admin',
         kurinKey: null,
@@ -85,15 +86,15 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/panel']);
     });
 
-    it('should navigate to /kurin for Manager role with kurinKey', () => {
+    it('should navigate to /member/:memberKey when memberKey is present and not Admin', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'manager@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -106,15 +107,36 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
+      component.onSubmit();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/member', 'test-member-key']);
+    });
+
+    it('should navigate to /kurin when no memberKey but has kurinKey', () => {
+      const mockAuthState: AuthState = {
+        userKey: 'user-123',
+        memberKey: null,
+        email: 'user@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.email = 'user@example.com';
+      component.password = 'password123';
+
+      mockAuthService.login.and.returnValue(of(mockAuthState));
+      mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
+
       component.onSubmit();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin']);
     });
-
-    it('should navigate to / when no kurinKey and not Admin', () => {
+    
+    it('should navigate to / when no memberKey, no kurinKey and not Admin', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: null,
         email: 'user@example.com',
         role: 'Manager',
         kurinKey: null,
@@ -127,31 +149,9 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
-    });
-
-    it('should show success alert on successful login', () => {
-      const mockAuthState: AuthState = {
-        userKey: 'user-123',
-        email: 'test@example.com',
-        role: 'Manager',
-        kurinKey: 'kurin-456',
-        accessToken: 'token-789'
-      };
-
-      component.email = 'test@example.com';
-      component.password = 'password123';
-
-      mockAuthService.login.and.returnValue(of(mockAuthState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
-
-      spyOn(window, 'alert');
-      component.onSubmit();
-
-      expect(window.alert).toHaveBeenCalledWith(jasmine.stringContaining('Login successful'));
     });
 
     it('should handle login error', () => {
@@ -185,6 +185,7 @@ describe('LoginComponent', () => {
     it('should handle empty email and password', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: '',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -197,7 +198,6 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockAuthService.login).toHaveBeenCalledWith({
@@ -220,12 +220,13 @@ describe('LoginComponent', () => {
   });
 
   describe('Navigation logic', () => {
-    it('should prioritize Admin navigation over kurinKey', () => {
+    it('should prioritize Admin navigation over memberKey or kurinKey', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'admin@example.com',
         role: 'Admin',
-        kurinKey: 'kurin-456', // Has kurinKey but should still go to /panel
+        kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
@@ -235,16 +236,17 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/panel']);
       expect(mockRouter.navigate).not.toHaveBeenCalledWith(['/kurin']);
+      expect(mockRouter.navigate).not.toHaveBeenCalledWith(['/member', 'test-member-key']);
     });
 
     it('should navigate to / when state is null', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+        memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: null,
@@ -257,7 +259,6 @@ describe('LoginComponent', () => {
       mockAuthService.login.and.returnValue(of(mockAuthState));
       mockAuthService.getAuthStateValue.and.returnValue(null);
 
-      spyOn(window, 'alert');
       component.onSubmit();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
@@ -265,35 +266,6 @@ describe('LoginComponent', () => {
   });
 
   describe('Integration scenarios', () => {
-    it('should complete full login flow for Manager with kurinKey', () => {
-      const credentials = {
-        email: 'manager@example.com',
-        password: 'securepassword'
-      };
-
-      const mockAuthState: AuthState = {
-        userKey: 'user-456',
-        email: credentials.email,
-        role: 'Manager',
-        kurinKey: 'kurin-789',
-        accessToken: 'access-token-123'
-      };
-
-      component.email = credentials.email;
-      component.password = credentials.password;
-
-      mockAuthService.login.and.returnValue(of(mockAuthState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockAuthState);
-
-      spyOn(window, 'alert');
-      component.onSubmit();
-
-      expect(mockAuthService.login).toHaveBeenCalledWith(credentials);
-      expect(mockAuthService.getAuthStateValue).toHaveBeenCalled();
-      expect(window.alert).toHaveBeenCalled();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin']);
-    });
-
     it('should handle network error gracefully', () => {
       const networkError = new Error('Network error');
 

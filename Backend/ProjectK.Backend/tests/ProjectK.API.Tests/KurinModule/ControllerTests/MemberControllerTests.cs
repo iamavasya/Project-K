@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -148,7 +149,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new MemberResponse
                 {
                     MemberKey = key,
-                    GroupKey = request.GroupKey,
+                    GroupKey = request.GroupKey!.Value,
                     KurinKey = Guid.NewGuid(),
                     FirstName = request.FirstName,
                     MiddleName = request.MiddleName,
@@ -224,7 +225,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new MemberResponse
                 {
                     MemberKey = memberKey,
-                    GroupKey = request.GroupKey,
+                    GroupKey = request.GroupKey!.Value,
                     KurinKey = Guid.NewGuid(),
                     FirstName = request.FirstName,
                     MiddleName = request.MiddleName,
@@ -331,6 +332,28 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
 
             var obj = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetKurinMentorCandidates_ShouldReturnOk_WhenSuccess()
+        {
+            var kurinKey = Guid.NewGuid();
+            var mentors = new List<MemberLookupDto>
+            {
+                new() { MemberKey = Guid.NewGuid(), UserKey = Guid.NewGuid(), FirstName = "Mentor", MiddleName = "M", LastName = "One" }
+            };
+            var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidates>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.GetKurinMentorCandidates(kurinKey);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
+            Assert.Single(data);
+            Assert.Equal("One", data[0].LastName);
         }
     }
 }

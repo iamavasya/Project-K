@@ -312,6 +312,11 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
         }
 
+        if (action == ResourceAction.Read)
+        {
+            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+        }
+
         var mentorGroupKeys = await ResolveCurrentUserGroupKeysAsync(currentKurinKey, cancellationToken);
         if (!mentorGroupKeys.Any())
         {

@@ -17,7 +17,7 @@ describe('UsersListComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       role: 'Manager',
-      kurinKey: 'kurin-1'
+      kurinNumber: 101, kurinKey: 'kurin-1'
     },
     {
       userId: 'user-2',
@@ -25,7 +25,7 @@ describe('UsersListComponent', () => {
       firstName: 'Jane',
       lastName: 'Smith',
       role: 'Admin',
-      kurinKey: null
+      kurinNumber: 101, kurinKey: null
     },
     {
       userId: 'user-3',
@@ -33,7 +33,7 @@ describe('UsersListComponent', () => {
       firstName: 'Bob',
       lastName: 'Johnson',
       role: 'Mentor',
-      kurinKey: 'kurin-2'
+      kurinNumber: 101, kurinKey: 'kurin-2'
     }
   ];
 

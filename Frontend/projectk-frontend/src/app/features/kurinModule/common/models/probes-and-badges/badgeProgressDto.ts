@@ -14,4 +14,7 @@ export interface BadgeProgressDto {
   reviewedByRole: string | null;
   reviewNote: string | null;
   auditTrail: BadgeProgressAuditEventDto[];
+  memberFirstName?: string | null;
+  memberLastName?: string | null;
+  memberPhotoUrl?: string | null;
 }

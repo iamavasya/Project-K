@@ -132,7 +132,7 @@ describe('UpsertMemberComponent', () => {
       setRouteParams({ groupKey });
       create();
       expect(component.isCreate).toBeTrue();
-      expect(component.memberKey).toBeNull();
+      expect(component.memberKey).toBe('');
       expect(component.groupKey).toBe(groupKey);
       expect(memberServiceSpy.getByKey).not.toHaveBeenCalled();
     });
@@ -257,6 +257,34 @@ describe('UpsertMemberComponent', () => {
 
       expect(console.error).toHaveBeenCalledWith('Error creating member:', error, jasmine.any(Object));
       expect(routerSpy.navigate).not.toHaveBeenCalled();
+    });
+
+    it('should create member in kurin scope without groupKey', () => {
+      setRouteParams({ kurinKey: 'kurin-123' });
+      create();
+      component.member.firstName = 'Kurin';
+      component.member.lastName = 'Member';
+      component.member.dateOfBirth = new Date(2012, 6, 9, 12, 0, 0);
+
+      component.submit();
+
+      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      expect(dtoArg.groupKey).toBeUndefined();
+      expect(dtoArg.kurinKey).toBe('kurin-123');
+    });
+
+    it('should include createUserAccount flag in create payload', () => {
+      setRouteParams({ groupKey });
+      create();
+      component.member.firstName = 'Account';
+      component.member.lastName = 'Target';
+      component.member.dateOfBirth = new Date(2011, 0, 2, 12, 0, 0);
+      component.createUserAccount = true;
+
+      component.submit();
+
+      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      expect(dtoArg.createUserAccount).toBeTrue();
     });
   });
 

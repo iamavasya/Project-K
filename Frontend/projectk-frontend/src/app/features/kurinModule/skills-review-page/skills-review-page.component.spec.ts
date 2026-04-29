@@ -25,7 +25,7 @@ describe('SkillsReviewPageComponent', () => {
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getAll']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'reviewBadgeProgress']);
+    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeReviewQueue', 'reviewBadgeProgress']);
     badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ kurinKey: 'kurin-1' }));
@@ -34,42 +34,12 @@ describe('SkillsReviewPageComponent', () => {
 
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-1',
+      memberKey: 'test-member-key',
       email: 'mentor@example.com',
       role: 'Mentor',
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });
-
-    memberServiceSpy.getAll.and.returnValue(of([
-      {
-        memberKey: 'member-1',
-        groupKey: 'group-1',
-        kurinKey: 'kurin-1',
-        firstName: 'Іван',
-        middleName: '',
-        lastName: 'Петренко',
-        email: 'm1@example.com',
-        phoneNumber: '0990000001',
-        dateOfBirth: null,
-        profilePhotoUrl: null,
-        plastLevelHistories: [],
-        leadershipHistories: []
-      },
-      {
-        memberKey: 'member-2',
-        groupKey: 'group-1',
-        kurinKey: 'kurin-1',
-        firstName: 'Марія',
-        middleName: '',
-        lastName: 'Коваль',
-        email: 'm2@example.com',
-        phoneNumber: '0990000002',
-        dateOfBirth: null,
-        profilePhotoUrl: null,
-        plastLevelHistories: [],
-        leadershipHistories: []
-      }
-    ]));
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([
       {
@@ -87,43 +57,25 @@ describe('SkillsReviewPageComponent', () => {
       }
     ]));
 
-    memberProgressServiceSpy.getBadgeProgresses.and.callFake((memberKey: string) => {
-      if (memberKey === 'member-1') {
-        return of([
-          {
-            badgeProgressKey: 'bp-1',
-            memberKey,
-            kurinKey: 'kurin-1',
-            badgeId: 'badge-1',
-            status: BadgeProgressStatus.Submitted,
-            submittedAtUtc: '2026-04-17T10:00:00Z',
-            reviewedAtUtc: null,
-            reviewedByUserKey: null,
-            reviewedByName: null,
-            reviewedByRole: null,
-            reviewNote: null,
-            auditTrail: []
-          }
-        ]);
+    memberProgressServiceSpy.getBadgeReviewQueue.and.returnValue(of([
+      {
+        badgeProgressKey: 'bp-1',
+        memberKey: 'member-1',
+        kurinKey: 'kurin-1',
+        badgeId: 'badge-1',
+        status: BadgeProgressStatus.Submitted,
+        submittedAtUtc: '2026-04-17T10:00:00Z',
+        reviewedAtUtc: null,
+        reviewedByUserKey: null,
+        reviewedByName: null,
+        reviewedByRole: null,
+        reviewNote: null,
+        auditTrail: [],
+        memberFirstName: 'Іван',
+        memberLastName: 'Петренко',
+        memberPhotoUrl: null
       }
-
-      return of([
-        {
-          badgeProgressKey: 'bp-2',
-          memberKey,
-          kurinKey: 'kurin-1',
-          badgeId: 'badge-1',
-          status: BadgeProgressStatus.Confirmed,
-          submittedAtUtc: '2026-04-15T10:00:00Z',
-          reviewedAtUtc: '2026-04-16T10:00:00Z',
-          reviewedByUserKey: 'reviewer-1',
-          reviewedByName: 'Mentor',
-          reviewedByRole: 'Mentor',
-          reviewNote: null,
-          auditTrail: []
-        }
-      ]);
-    });
+    ]));
 
     memberProgressServiceSpy.reviewBadgeProgress.and.returnValue(of({
       badgeProgressKey: 'bp-1',
@@ -208,6 +160,7 @@ describe('SkillsReviewPageComponent', () => {
   it('should block queue loading for non-reviewer role', () => {
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-2',
+      memberKey: 'test-member-key',
       email: 'member@example.com',
       role: 'User',
       kurinKey: 'kurin-1',
@@ -218,7 +171,7 @@ describe('SkillsReviewPageComponent', () => {
     fixture.detectChanges();
 
     expect(component.roleRestricted).toBeTrue();
-    expect(memberServiceSpy.getAll).not.toHaveBeenCalled();
+    expect(memberProgressServiceSpy.getBadgeReviewQueue).not.toHaveBeenCalled();
     expect(component.reviewItems.length).toBe(0);
   });
 

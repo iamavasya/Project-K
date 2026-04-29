@@ -5,12 +5,39 @@ on:
     branches: [ "main" ]
     paths:
       - 'Backend/**'
+  release:
+    types: [published]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Extract Release Info
+      if: github.event_name == 'release'
+      shell: bash
+      run: |
+        TAG_NAME="${{ github.event.release.tag_name }}"
+        FULL_NAME="${{ github.event.release.name }}"
+        CODE_NAME=$(echo "$FULL_NAME" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+        
+        echo "VERSION=$TAG_NAME" >> $GITHUB_ENV
+        echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
+
+    - name: Inject Versioning
+      if: github.event_name == 'release'
+      shell: bash
+      run: |
+        # Шукаємо всі файли конфігурації в папці API
+        FILES=$(find Backend/ProjectK.Backend/ProjectK.API/ -name "appsettings*.json")
+        echo "Updating files: $FILES"
+        
+        for file in $FILES; do
+          sed -i "s/v0.0.0-dev/${{ env.VERSION }}/g" "$file"
+          sed -i "s/LocalDevelopment/${{ env.CODENAME }}/g" "$file"
+        done
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -37,6 +64,7 @@ jobs:
         path: ./publish/
 
   deploy:
+    if: github.event_name == 'release'
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: production

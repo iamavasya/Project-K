@@ -31,10 +31,12 @@
                       class="p-inputtext-sm w-40 sm:w-60" />
                 </p-iconfield>
               }
-            <p-button icon="pi pi-cog" [rounded]="true" [text]="true" 
-                    pTooltip="Налаштувати провід" tooltipPosition="left"
-                    (onClick)="onLeadershipSettingsSelect()">
-            </p-button>
+            @if (canSetupLeadership) {
+              <p-button icon="pi pi-cog" [rounded]="true" [text]="true" 
+                      pTooltip="Налаштувати провід" tooltipPosition="left"
+                      (onClick)="onLeadershipSettingsSelect()">
+              </p-button>
+            }
             <p-toggleswitch pTooltip="Архівні записи" tooltipPosition="bottom" [(ngModel)]="showArchived" (onChange)="refreshList()" />
           </div>
           </div>
@@ -76,7 +78,11 @@
         <ng-template pTemplate="emptymessage">
           <tr>
             <td colspan="3" class="text-center p-4">
-              Провід ще не призначено. Натисніть на ⚙️ щоб додати.
+              @if (canSetupLeadership) {
+                Провід ще не призначено. Натисніть на ⚙️ щоб додати.
+              } @else {
+                Провід ще не призначено.
+              }
             </td>
           </tr>
         </ng-template>

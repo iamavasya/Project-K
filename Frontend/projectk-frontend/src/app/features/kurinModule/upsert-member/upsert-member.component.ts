@@ -48,6 +48,8 @@ export class UpsertMemberComponent implements OnInit {
 
   memberKey = '';
   groupKey = '';
+  kurinKey = '';
+  createUserAccount = false;
 
   route = inject(ActivatedRoute);
   router = inject(Router);
@@ -92,8 +94,9 @@ export class UpsertMemberComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      this.memberKey = params.get('memberKey')!;
-      this.groupKey = params.get('groupKey')!;
+      this.memberKey = params.get('memberKey') ?? '';
+      this.groupKey = params.get('groupKey') ?? '';
+      this.kurinKey = params.get('kurinKey') ?? '';
     });
     if (this.memberKey) {
       this.loadData();
@@ -140,7 +143,6 @@ export class UpsertMemberComponent implements OnInit {
 
   submit(): void {
     const baseDto: UpsertMemberDto = {
-      groupKey: this.groupKey,
       firstName: this.member.firstName,
       middleName: this.member.middleName,
       lastName: this.member.lastName,
@@ -150,7 +152,15 @@ export class UpsertMemberComponent implements OnInit {
       plastLevelHistories: this.buildPlastLevelsPayload(),
     };
 
+    if (this.groupKey) {
+      baseDto.groupKey = this.groupKey;
+    } else if (this.kurinKey) {
+      baseDto.kurinKey = this.kurinKey;
+    }
+
     if (this.isCreate) {
+      baseDto.createUserAccount = this.createUserAccount;
+
       this.memberService.create(baseDto, this.fileToUpload).subscribe({
         next: (createdMember) => {
           this.router.navigate(['/member', createdMember.memberKey], { replaceUrl: true });

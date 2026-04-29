@@ -24,4 +24,11 @@ export class UserService {
             { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
         );
     }
+
+    deleteUser(userId: string) {
+        return this.http.delete<boolean>(
+            `${this.apiUrl}/user/${userId}`,
+            { withCredentials: true }
+        );
+    }
 }

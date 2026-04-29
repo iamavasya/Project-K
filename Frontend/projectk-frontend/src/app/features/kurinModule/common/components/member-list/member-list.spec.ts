@@ -7,12 +7,14 @@ import { of } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadershipDto';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { AuthService } from '../../../../authModule/services/authService/auth.service';
 
 describe('MemberList', () => {
   let component: MemberList;
   let fixture: ComponentFixture<MemberList>;
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
 
   const mockMembers: MemberDto[] = [
@@ -48,13 +50,17 @@ describe('MemberList', () => {
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj('MemberService', ['getAll']);
     leadershipServiceSpy = jasmine.createSpyObj('LeadershipService', ['getLeadershipByTypeAndKey']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['getAuthStateValue']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+
+    authServiceSpy.getAuthStateValue.and.returnValue({ role: 'Manager' } as any);
 
     await TestBed.configureTestingModule({
       imports: [MemberList],
       providers: [
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: LeadershipService, useValue: leadershipServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy },
         { provide: Router, useValue: routerSpy }
       ]
     }).compileComponents();

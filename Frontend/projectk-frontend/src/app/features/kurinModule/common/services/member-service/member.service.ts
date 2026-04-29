@@ -46,14 +46,26 @@ export class MemberService {
   }
 
   create(request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
+    if (!request.groupKey && !request.kurinKey) {
+      return throwError(() => new Error('Either groupKey or kurinKey must be provided for create.'));
+    }
+
+    const requestUrl = request.groupKey
+      ? `${this.apiUrl}`
+      : `${this.apiUrl}/kurins/${request.kurinKey}/members`;
+
     const formData = this.buildFormData(request, file);
-    return this.http.post<MemberDto>(`${this.apiUrl}`, formData).pipe(
+    return this.http.post<MemberDto>(requestUrl, formData).pipe(
       map(member => mapMemberForView(member))
     );
   }
 
   getKVMembers(kurinKey: string): Observable<MemberLookupDto[]> {
     return this.http.get<MemberLookupDto[]>(`${this.apiUrl}/members/kv/${kurinKey}`);
+  }
+
+  getMentorCandidates(kurinKey: string): Observable<MemberLookupDto[]> {
+    return this.http.get<MemberLookupDto[]>(`${this.apiUrl}/members/mentor-candidates/${kurinKey}`);
   }
 
   private buildFormData(dto: UpsertMemberDto, file: Blob | null, blobFieldName = 'blob'): FormData {

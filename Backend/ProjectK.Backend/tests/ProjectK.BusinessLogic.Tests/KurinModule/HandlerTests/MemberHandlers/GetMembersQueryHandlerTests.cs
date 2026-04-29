@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using System;
@@ -24,14 +25,21 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     {
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
+        private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
         private readonly IMapper _mapper;
+        private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly GetMembersHandler _handler;
 
         public GetMembersHandlerTests()
         {
             _memberRepoMock = new Mock<IMemberRepository>();
+            _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
             _uowMock = new Mock<IUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
+            _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
+            
+            _currentUserContextMock = new Mock<ICurrentUserContext>();
+            _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests
 
             var loggerFactory = LoggerFactory.Create(builder => { });
 
@@ -47,7 +55,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             }, loggerFactory);
             _mapper = mapperConfig.CreateMapper();
 
-            _handler = new GetMembersHandler(_uowMock.Object, _mapper);
+            _handler = new GetMembersHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object);
         }
 
         private static Member MakeMember(Guid groupKey, Guid kurinKey, string first, string last, string? blob = null) =>

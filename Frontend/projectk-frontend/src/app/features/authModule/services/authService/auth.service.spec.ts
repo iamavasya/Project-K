@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { LoginRequest } from '../../models/login-request.model';
@@ -37,6 +37,7 @@ describe('AuthService', () => {
     it('should load auth state from localStorage on initialization', () => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -69,6 +70,7 @@ describe('AuthService', () => {
     it('should return auth state as observable', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -80,6 +82,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -101,6 +104,7 @@ describe('AuthService', () => {
     it('should return updated auth state value after login', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -115,6 +119,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -132,6 +137,7 @@ describe('AuthService', () => {
 
       const mockResponse: LoginResponse = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -142,6 +148,7 @@ describe('AuthService', () => {
 
       const expectedState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -186,6 +193,7 @@ describe('AuthService', () => {
     it('should send logout request and clear auth state', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -209,6 +217,7 @@ describe('AuthService', () => {
       const loginReq = httpMock.expectOne(`${apiUrl}/auth/login`);
       loginReq.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -219,6 +228,7 @@ describe('AuthService', () => {
     it('should clear auth state if logout request fails', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -242,6 +252,7 @@ describe('AuthService', () => {
       const loginReq = httpMock.expectOne(`${apiUrl}/auth/login`);
       loginReq.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -254,6 +265,7 @@ describe('AuthService', () => {
     it('should refresh access token and update auth state', (done) => {
       const initialState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -376,6 +388,7 @@ describe('AuthService', () => {
     it('should return access token when auth state exists', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -390,6 +403,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -402,6 +416,7 @@ describe('AuthService', () => {
     it('should update kurin key in auth state', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -425,6 +440,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -435,6 +451,7 @@ describe('AuthService', () => {
     it('should set kurin key to null', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -452,6 +469,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -469,6 +487,7 @@ describe('AuthService', () => {
     it('should clear kurin key from auth state', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
+      memberKey: 'test-member-key',
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
@@ -486,6 +505,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush({
         userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
         role: mockAuthState.role,
         kurinKey: mockAuthState.kurinKey,
@@ -499,3 +519,4 @@ describe('AuthService', () => {
     });
   });
 });
+

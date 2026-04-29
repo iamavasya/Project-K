@@ -42,6 +42,10 @@ export class MemberProgressService {
     );
   }
 
+  getBadgeReviewQueue(kurinKey: string): Observable<BadgeProgressDto[]> {
+    return this.http.get<BadgeProgressDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/badges/review`);
+  }
+
   getProbeProgress(memberKey: string, probeId: string): Observable<ProbeProgressDto> {
     return this.http.get<ProbeProgressDto>(`${this.apiUrl}/${memberKey}/probes/${probeId}/progress`);
   }
