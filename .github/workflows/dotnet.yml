@@ -18,18 +18,20 @@ jobs:
       if: github.event_name == 'release'
       shell: bash
       run: |
-        TAG_NAME="${{ github.event.release.tag_name }}"
-        FULL_NAME="${{ github.event.release.name }}"
-        CODE_NAME=$(echo "$FULL_NAME" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+        RAW_TAG="${{ github.event.release.tag_name }}"
+        CLEAN_VERSION="${RAW_TAG#v}"
         
-        echo "VERSION=$TAG_NAME" >> $GITHUB_ENV
+        RELEASE_NAME='${{ github.event.release.name }}'
+        
+        CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
+        
+        echo "VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
         echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
 
     - name: Inject Versioning
       if: github.event_name == 'release'
       shell: bash
       run: |
-        # Шукаємо всі файли конфігурації в папці API
         FILES=$(find Backend/ProjectK.Backend/ProjectK.API/ -name "appsettings*.json")
         echo "Updating files: $FILES"
         
