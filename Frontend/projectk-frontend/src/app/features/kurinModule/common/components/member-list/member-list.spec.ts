@@ -8,6 +8,7 @@ import { MemberDto } from '../../models/memberDto';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadershipDto';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
+import { AuthState } from '../../../../authModule/models/auth-state.model';
 
 describe('MemberList', () => {
   let component: MemberList;
@@ -53,7 +54,7 @@ describe('MemberList', () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getAuthStateValue']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
-    authServiceSpy.getAuthStateValue.and.returnValue({ role: 'Manager' } as any);
+    authServiceSpy.getAuthStateValue.and.returnValue({ role: 'Manager' } as AuthState);
 
     await TestBed.configureTestingModule({
       imports: [MemberList],

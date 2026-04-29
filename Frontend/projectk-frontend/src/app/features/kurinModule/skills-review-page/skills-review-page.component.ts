@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -10,8 +10,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { AuthService } from '../../authModule/services/authService/auth.service';
-import { normalizeBadgeProgressStatus, resolveBadgeImageUrl } from '../common/functions/memberSkillsViewMapper.function';
-import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
+import { resolveBadgeImageUrl } from '../common/functions/memberSkillsViewMapper.function';
 import { MemberDto } from '../common/models/memberDto';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../common/models/probes-and-badges/badgeProgressDto';

@@ -26,7 +26,7 @@ export class LoginComponent {
       password: this.password
     };
     this.authService.login(LoginRequest).subscribe({
-      next: (response) => {
+      next: () => {
         const state = this.authService.getAuthStateValue();
         const role = state?.role?.trim().toLowerCase();
         

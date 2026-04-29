@@ -27,7 +27,8 @@
                 <td colspan="5">
                     <button type="button" pButton pRipple class="p-button-text p-button-rounded p-button-plain mr-2" 
                             [icon]="expandedRows[user.kurinNumber?.toString() ?? 'null'] ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" 
-                            (click)="toggleGroup(user.kurinNumber)"></button>
+                            (click)="toggleGroup(user.kurinNumber)"
+                            aria-label="Toggle group"></button>
                     <span class="font-bold ml-2">Kurin {{user.kurinNumber ?? 'None'}}</span>
                 </td>
             </tr>
