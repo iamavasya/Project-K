@@ -12,6 +12,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="ProjectK.Optimization" Version="1.1.1" />
     <PackageReference Include="ProjectK.ProbeAndBadges.Abstractions" Version="1.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>
