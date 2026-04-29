@@ -20,6 +20,8 @@ import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
 import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcoming-birthdays-tile';
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 
+import { AuthService } from '../../../../authModule/services/authService/auth.service';
+
 @Component({
   selector: 'app-member-list',
   imports: [
@@ -51,6 +53,12 @@ export class MemberList implements OnInit {
   private readonly memberService = inject(MemberService);
   private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+
+  get canSetupLeadership(): boolean {
+    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase();
+    return role !== 'user';
+  }
 
   membersLookup: MemberLookupDto[] = [];
   

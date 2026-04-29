@@ -47,7 +47,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
         yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), "RequireMentor");
-        yield return Row<Action<MemberController, Guid, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Update), "RequireMentor");
+        yield return Row<Action<MemberController, Guid, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Update), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), "RequireMentor");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetKurinKvMembers), "RequireManager");
 

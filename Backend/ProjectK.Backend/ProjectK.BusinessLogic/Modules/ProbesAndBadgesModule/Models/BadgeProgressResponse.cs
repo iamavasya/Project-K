@@ -18,7 +18,16 @@ public sealed class BadgeProgressResponse
     public string? ReviewNote { get; init; }
     public IReadOnlyCollection<BadgeProgressAuditEventResponse> AuditTrail { get; init; } = [];
 
+    public string? MemberFirstName { get; init; }
+    public string? MemberLastName { get; init; }
+    public string? MemberPhotoUrl { get; init; }
+
     public static BadgeProgressResponse FromEntity(BadgeProgress entity)
+    {
+        return FromEntity(entity, null);
+    }
+
+    public static BadgeProgressResponse FromEntity(BadgeProgress entity, ProjectK.Common.Entities.KurinModule.Member? member)
     {
         var auditTrail = entity.AuditEvents
             .OrderBy(x => x.OccurredAtUtc)
@@ -47,7 +56,10 @@ public sealed class BadgeProgressResponse
             ReviewedByName = entity.ReviewedByName,
             ReviewedByRole = entity.ReviewedByRole,
             ReviewNote = entity.ReviewNote,
-            AuditTrail = auditTrail
+            AuditTrail = auditTrail,
+            MemberFirstName = member?.FirstName,
+            MemberLastName = member?.LastName,
+            MemberPhotoUrl = member?.ProfilePhotoBlobName // Resolver will handle this on frontend or mapping if needed. Wait, API mapping resolves blob to URL.
         };
     }
 }

@@ -38,6 +38,7 @@ export class AuthService {
     ).pipe(
       map(response => ({
         userKey: response.userKey,
+        memberKey: response.memberKey,
         email: response.email,
         role: response.role,
         kurinKey: response.kurinKey,

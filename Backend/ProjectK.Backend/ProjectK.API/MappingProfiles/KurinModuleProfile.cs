@@ -46,6 +46,7 @@ namespace ProjectK.API.MappingProfiles
             // Member Mapping
             CreateMap<UpsertMember, Member>()
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
+                .ForMember(dest => dest.UserKey, opt => opt.Ignore())
                 .ForMember(dest => dest.GroupKey, opt => opt.MapFrom(src => src.GroupKey))
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
@@ -72,6 +73,7 @@ namespace ProjectK.API.MappingProfiles
 
             CreateMap<Member, MemberLookupDto>()
                 .ForMember(dest => dest.MemberKey, opt => opt.MapFrom(src => src.MemberKey))
+                .ForMember(dest => dest.UserKey, opt => opt.MapFrom(src => src.UserKey))
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
                 .ForMember(dest => dest.MiddleName, opt => opt.MapFrom(src => src.MiddleName));

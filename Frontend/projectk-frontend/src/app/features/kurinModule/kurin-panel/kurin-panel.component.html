@@ -22,7 +22,9 @@
                     <th scope="col">{{ header }}</th>
                 }
                 <th scope="col" class="group-actions">
-                    <p-button label="Create" (onClick)="onGroupActionClick(null, 'create')" severity="info" icon="pi pi-plus" iconPos="right" />
+                    @if (canManageGroups) {
+                        <p-button label="Create" (onClick)="onGroupActionClick(null, 'create')" severity="info" icon="pi pi-plus" iconPos="right" />
+                    }
                 </th>
             </tr>
         </ng-template>
@@ -32,9 +34,11 @@
                 <td>{{ group.name }}</td>
                 <td>{{ group.kurinNumber }}</td>
                 <td class="group-actions">
-                    <p-splitButton label="Open" (onClick)="onOpenClick(group.groupKey)" [model]="actions" (onDropdownClick)="prepareItemActions(group)">
-
-                    </p-splitButton>
+                    @if (canManageGroups) {
+                        <p-splitButton label="Open" (onClick)="onOpenClick(group.groupKey)" [model]="actions" (onDropdownClick)="prepareItemActions(group)"></p-splitButton>
+                    } @else {
+                        <p-button label="Open" (onClick)="onOpenClick(group.groupKey)"></p-button>
+                    }
                 </td>
             </tr>
         </ng-template>
@@ -48,6 +52,11 @@
     <app-member-list [type]="'leadership'" [leadershipType]="'kurin'" [typeKey]="kurinKey"></app-member-list>
 
     <app-member-list [type]="'kurin'" [typeKey]="kurinKey"></app-member-list>
+    @if (canManageMembers) {
+        <div class="mt-3">
+            <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" iconPos="right" />
+        </div>
+    }
 </div>
 <app-manage-panel
   [(visible)]="groupPanelVisible"

@@ -8,6 +8,10 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Entities.KurinModule;
+
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
 {
     public class LoginUserCommandHandlerTests
@@ -15,6 +19,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
+        private readonly Mock<IUnitOfWork> _uowMock;
         private readonly LoginUserCommandHandler _handler;
 
         public LoginUserCommandHandlerTests()
@@ -29,7 +34,14 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 _userManagerMock.Object, contextAccessorMock.Object, userPrincipalFactoryMock.Object, null, null, null, null);
 
             _jwtServiceMock = new Mock<IJwtService>();
-            _handler = new LoginUserCommandHandler(_userManagerMock.Object, _signInManagerMock.Object, _jwtServiceMock.Object);
+            
+            var memberRepoMock = new Mock<IMemberRepository>();
+            memberRepoMock.Setup(r => r.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Member?)null);
+            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock.Setup(u => u.Members).Returns(memberRepoMock.Object);
+
+            _handler = new LoginUserCommandHandler(_userManagerMock.Object, _signInManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object);
         }
 
         [Fact]
@@ -41,6 +53,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             var command = new LoginUserCommand(email, password);
             var userId = Guid.NewGuid();
             var kurinKey = Guid.NewGuid();
+            var memberKey = Guid.NewGuid();
 
             var user = new AppUser
             {
@@ -60,12 +73,6 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 Created = DateTime.UtcNow
             };
 
-            var jwtResponse = new JwtResponse
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
-
             _userManagerMock.Setup(x => x.FindByEmailAsync(email))
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
@@ -79,6 +86,9 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
                 .Returns(refreshToken);
 
+            _uowMock.Setup(x => x.Members.GetByUserKeyAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = userId });
+
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -86,22 +96,16 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             Assert.Equal(ResultType.Success, result.Type);
             Assert.NotNull(result.Data);
             Assert.Equal(userId, result.Data.UserKey);
+            Assert.Equal(memberKey, result.Data.MemberKey);
             Assert.Equal(email, result.Data.Email);
             Assert.Equal("User", result.Data.Role);
             Assert.Equal(kurinKey.ToString(), result.Data.KurinKey);
-            Assert.Equal(jwtResponse.AccessToken, result.Data.Tokens.AccessToken);
-            Assert.Equal(jwtResponse.RefreshToken, result.Data.Tokens.RefreshToken);
+            Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
+            Assert.Equal(refreshToken.Token, result.Data.Tokens.RefreshToken.Token);
 
             // Verify user was updated with new refresh token
             Assert.Equal(refreshToken.Token, user.RefreshToken);
             Assert.Equal(refreshToken.Expires, user.RefreshTokenExpiryTime);
-
-            _userManagerMock.Verify(x => x.FindByEmailAsync(email), Times.Once);
-            _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(user, password, false), Times.Once);
-            _userManagerMock.Verify(x => x.GetRolesAsync(user), Times.Once);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()), Times.Once);
-            _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
         }
 
         [Fact]

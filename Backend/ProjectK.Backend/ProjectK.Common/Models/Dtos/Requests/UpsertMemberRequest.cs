@@ -13,7 +13,9 @@ namespace ProjectK.Common.Models.Dtos.Requests
     public class UpsertMemberRequest
     {
         public Guid? MemberKey { get; set; }
-        public Guid GroupKey { get; set; }
+        public Guid? GroupKey { get; set; }
+        public Guid? KurinKey { get; set; }
+        public bool CreateUserAccount { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string? MiddleName { get; set; }

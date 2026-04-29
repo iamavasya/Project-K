@@ -1,5 +1,6 @@
 export interface MemberLookupDto {
     memberKey: string;
+    userKey?: string | null;
     firstName: string;
     middleName: string;
     lastName: string;

@@ -18,6 +18,7 @@ import { PlanningListComponent } from './features/kurinModule/planning-list/plan
 import { CreatePlanningComponent } from './features/kurinModule/create-planning/create-planning';
 import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
 import { SkillsReviewPageComponent } from './features/kurinModule/skills-review-page/skills-review-page.component';
+import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
 
 import { WaitlistRegistrationComponent } from './features/authModule/onboarding/waitlist-registration/waitlist-registration';
 import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
@@ -92,6 +93,12 @@ export const routes: Routes = [
     component: UpsertMemberComponent,
     data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
   },
+  {
+    path: 'kurin/:kurinKey/member/upsert',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    component: UpsertMemberComponent,
+    data: { breadcrumb: 'New Kurin Member', parent: '/kurin', entityType: 'kurin' }
+  },
   { 
     path: 'member/:memberKey/probe/:probeId',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
@@ -112,7 +119,7 @@ export const routes: Routes = [
   },
   {
     path: 'leadership/create/:type/:entityKey',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), leadershipAccessGuard, EntityGuard],
     component: LeadershipComponent,
     data: {
       breadcrumb: 'Create Leadership',
@@ -123,7 +130,7 @@ export const routes: Routes = [
   },
   {
     path: 'leadership/:leadershipKey/:type/:entityKey',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), leadershipAccessGuard, EntityGuard],
     component: LeadershipComponent,
     data: {
       breadcrumb: 'Edit Leadership',

@@ -5,6 +5,7 @@ export interface MemberDto {
     memberKey: string;
     groupKey: string;
     kurinKey: string;
+    userKey?: string | null;
     firstName: string;
     middleName: string;
     lastName: string;

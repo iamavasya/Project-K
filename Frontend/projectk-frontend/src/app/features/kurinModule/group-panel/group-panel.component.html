@@ -1,4 +1,4 @@
-<div class="group-header">
+﻿<div class="group-header">
     <app-group-chevron></app-group-chevron>
     <span class="group-head-message"> Main page of {{ group?.name }}</span>
 </div>
@@ -7,6 +7,36 @@
     <div class="mb-4">
         <app-member-list [type]="'group'" [typeKey]="groupKey"></app-member-list>
     </div>
-    <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" iconPos="right" />
+
+    <div class="group-actions">
+        @if (canManageMembers) {
+            <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" iconPos="right" />
+        }
+        @if (canManageMentors) {
+            <p-button label="Налаштувати виховників" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
+        }
+    </div>
 </div>
 
+<p-dialog [(visible)]="mentorDialogVisible" [modal]="true" [closable]="true" [style]="{ width: '34rem' }" header="Налаштування виховників групи">
+    <div class="mentor-dialog-body">
+        <p class="mentor-dialog-hint">Оберіть виховників із КВ, які матимуть доступ до цієї групи.</p>
+        <p-multiselect
+            [options]="mentorOptions"
+            [(ngModel)]="selectedMentorUserKeys"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            filterBy="label"
+            display="chip"
+            placeholder="Оберіть виховників"
+            [style]="{ width: '100%' }">
+        </p-multiselect>
+    </div>
+    <ng-template pTemplate="footer">
+        <div class="mentor-dialog-actions">
+            <p-button label="Скасувати" severity="secondary" (onClick)="mentorDialogVisible = false" />
+            <p-button label="Зберегти" [loading]="mentorSaveInProgress" (onClick)="saveMentorAssignments()" />
+        </div>
+    </ng-template>
+</p-dialog>

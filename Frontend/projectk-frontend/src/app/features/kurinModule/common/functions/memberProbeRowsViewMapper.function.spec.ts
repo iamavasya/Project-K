@@ -1,4 +1,4 @@
-import { ProbeProgressStatus } from '../models/enums/probe-progress-status.enum';
+﻿import { ProbeProgressStatus } from '../models/enums/probe-progress-status.enum';
 import { ProbeProgressDto } from '../models/probes-and-badges/probeProgressDto';
 import { ProbeSummaryDto } from '../models/probes-and-badges/probeSummaryDto';
 import { buildMemberProbeRows, normalizeProbeProgressStatus } from './memberProbeRowsViewMapper.function';

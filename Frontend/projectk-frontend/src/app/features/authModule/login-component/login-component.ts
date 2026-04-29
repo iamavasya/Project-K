@@ -27,10 +27,13 @@ export class LoginComponent {
     };
     this.authService.login(LoginRequest).subscribe({
       next: (response) => {
-        alert(`Login successful: ${response}`);
         const state = this.authService.getAuthStateValue();
-        if (state?.role === 'Admin') {
+        const role = state?.role?.trim().toLowerCase();
+        
+        if (role === 'admin') {
           this.router.navigate(['/panel']);
+        } else if (state?.memberKey) {
+          this.router.navigate(['/member', state.memberKey]);
         } else if (state?.kurinKey) {
           this.router.navigate(['/kurin']);
         }
