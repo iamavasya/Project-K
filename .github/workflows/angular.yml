@@ -1,25 +1,45 @@
-name: Frontend CI/CD to Azure SWA
+name: Frontend CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'Frontend/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'Frontend/**'
+  release:
+    types: [published]
 
 jobs:
   lint_and_test:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Lint and Test
     steps:
       - uses: actions/checkout@v4
+
+      - name: Extract Release Info
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          FULL_NAME="${{ github.event.release.name }}"
+          CODE_NAME=$(echo "$FULL_NAME" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+          echo "VERSION=$TAG_NAME" >> $GITHUB_ENV
+          echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
+
+      - name: Inject Versioning to Angular
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
+          for file in $ENV_FILES; do
+            sed -i "s/v0.0.0-dev/${{ env.VERSION }}/g" "$file"
+            sed -i "s/LocalDevelopment/${{ env.CODENAME }}/g" "$file"
+          done
 
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
@@ -41,17 +61,29 @@ jobs:
 
   build_and_deploy:
     needs: lint_and_test
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy to Azure SWA
     environment:
-      name: ${{ github.event_name == 'push' && 'production' || 'staging' }}
+      name: ${{ github.event_name == 'release' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
           
+      - name: Re-inject Versioning
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          CODE_NAME=$(echo "${{ github.event.release.name }}" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
+          for file in $ENV_FILES; do
+            sed -i "s/v0.0.0-dev/$TAG_NAME/g" "$file"
+            sed -i "s/LocalDevelopment/$CODE_NAME/g" "$file"
+          done
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
