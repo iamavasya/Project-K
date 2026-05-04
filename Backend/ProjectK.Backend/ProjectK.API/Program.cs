@@ -19,6 +19,7 @@ using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.ProbeAndBadges.DependencyInjection;
+using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
 
 namespace ProjectK.API
@@ -29,6 +30,7 @@ namespace ProjectK.API
         {
             var builder = WebApplication.CreateBuilder(args);
             
+            AnsiConsole.Clear();
             PrintTitle(builder.Configuration);
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
@@ -178,13 +180,7 @@ namespace ProjectK.API
 
             var app = builder.Build();
 
-            using (var scope = app.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await dbContext.Database.MigrateAsync();
-
-                await DataSeeder.SeedAsync(scope.ServiceProvider);
-            }
+            await RunStartupTasksAsync(app);
 
             if (app.Environment.IsDevelopment())
             {
@@ -255,6 +251,32 @@ namespace ProjectK.API
             AnsiConsole.WriteLine();
 
             Thread.Sleep(2000);
+        }
+
+        private static async Task RunStartupTasksAsync(WebApplication app)
+        {
+            await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .SpinnerStyle(Style.Parse("yellow"))
+                .StartAsync("Booting the kettle...", async ctx =>
+                {
+                    using var scope = app.Services.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    ctx.Status("Summoning database goblins...");
+                    await dbContext.Database.MigrateAsync();
+
+                    ctx.Status("Planting heroic seed data...");
+                    await DataSeeder.SeedAsync(scope.ServiceProvider);
+
+                    ctx.Status("Waking the badges archive...");
+                    _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();
+
+                        ctx.Status("Startup complete.");
+                });
+
+                    AnsiConsole.MarkupLine("[green]✔ Startup successful![/]");
+                    await Task.Delay(2000);
         }
     }
 }
