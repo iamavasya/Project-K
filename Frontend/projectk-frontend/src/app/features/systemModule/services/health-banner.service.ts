@@ -69,7 +69,8 @@ export class HealthBannerService {
   }
 
   private scheduleNextPing(attempt: number): void {
-    const delay = this.backoffDelaysMs[attempt] ?? this.backoffDelaysMs[this.backoffDelaysMs.length - 1];
+    const fallbackDelay = this.backoffDelaysMs.at(-1) ?? 0;
+    const delay = this.backoffDelaysMs[attempt] ?? fallbackDelay;
     this.clearTimer();
     this.pollingTimer = setTimeout(() => {
       void this.runPollingAttempt(attempt);

@@ -1,12 +1,12 @@
 @if (isVisible()) {
-  <div class="cold-start-banner" role="status" aria-live="polite">
-    <div class="cold-start-banner__pulse" aria-hidden="true"></div>
-    <div class="cold-start-banner__card">
+  <output class="cold-start-banner" aria-live="polite">
+    <span class="cold-start-banner__pulse" aria-hidden="true"></span>
+    <span class="cold-start-banner__card">
       <span class="cold-start-banner__spinner" aria-hidden="true"></span>
-      <div class="cold-start-banner__copy">
+      <span class="cold-start-banner__copy">
         <span class="cold-start-banner__title">Сервер запускається</span>
         <span class="cold-start-banner__message">Можливий cold start. Спробуйте зачекати до хвилини, поки сервер відповість.</span>
-      </div>
-    </div>
-  </div>
+      </span>
+    </span>
+  </output>
 }
