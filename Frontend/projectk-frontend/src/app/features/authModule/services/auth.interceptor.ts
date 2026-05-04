@@ -22,7 +22,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         // Skip refresh token requests to avoid loops
-        if (req.url.includes('/api/auth/refresh')) {
+        if (req.url.includes('/api/auth/refresh') || req.url.includes('/health')) {
             return next.handle(req);
         }
 
