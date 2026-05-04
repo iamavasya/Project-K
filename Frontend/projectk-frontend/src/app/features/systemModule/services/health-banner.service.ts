@@ -8,12 +8,17 @@ export class HealthBannerService {
   private readonly http = inject(HttpClient);
   private readonly bannerVisible = signal(false);
   private readonly isPolling = signal(false);
+  private readonly hasConfirmedHealthy = signal(false);
   private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly backoffDelaysMs = [3000, 5000, 10000];
   private readonly healthUrl = this.buildHealthUrl(environment.apiUrl);
   private readonly healthReady$ = new Subject<void>();
 
   readonly isBannerVisible = this.bannerVisible.asReadonly();
+
+  shouldApplyTimeoutRequests(): boolean {
+    return this.isEnabled() && !this.hasConfirmedHealthy();
+  }
 
   waitForHealthy() {
     if (!this.isEnabled()) {
@@ -77,6 +82,7 @@ export class HealthBannerService {
   }
 
   private setHealthy(): void {
+    this.hasConfirmedHealthy.set(true);
     this.healthReady$.next();
     this.stopPolling();
   }

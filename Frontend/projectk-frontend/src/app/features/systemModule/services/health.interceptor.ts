@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { Observable, TimeoutError, catchError, switchMap, throwError, timeout } from 'rxjs';
 import { HealthBannerService } from './health-banner.service';
 
 @Injectable()
@@ -12,9 +12,17 @@ export class HealthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    return next.handle(req).pipe(
+    const shouldTimeout = this.healthBannerService.shouldApplyTimeoutRequests();
+    const request$ = shouldTimeout
+      ? next.handle(req).pipe(timeout({ first: 10000 }))
+      : next.handle(req);
+
+    return request$.pipe(
       catchError(error => {
-        if (!(error instanceof HttpErrorResponse) || error.status !== 0) {
+        const isTimeout = error instanceof TimeoutError;
+        const isNetworkError = error instanceof HttpErrorResponse && error.status === 0;
+
+        if (!isTimeout && !isNetworkError) {
           return throwError(() => error);
         }
 
