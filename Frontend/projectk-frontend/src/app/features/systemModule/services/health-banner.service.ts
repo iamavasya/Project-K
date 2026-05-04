@@ -1,14 +1,16 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { catchError, firstValueFrom, of, Subject, take, timeout } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class HealthBannerService {
-  private readonly http = inject(HttpClient);
+  private readonly httpBackend = inject(HttpBackend);
+  private readonly http = new HttpClient(this.httpBackend);
   private readonly bannerVisible = signal(false);
   private readonly isPolling = signal(false);
   private readonly hasConfirmedHealthy = signal(false);
+  private readonly hasStartedSessionCheck = signal(false);
   private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly backoffDelaysMs = [3000, 5000, 10000];
   private readonly healthUrl = this.buildHealthUrl(environment.apiUrl);
@@ -31,6 +33,16 @@ export class HealthBannerService {
     }
 
     return this.healthReady$.pipe(take(1));
+  }
+
+  startSessionCheck(): void {
+    if (!this.isEnabled() || this.hasStartedSessionCheck()) {
+      return;
+    }
+
+    this.hasStartedSessionCheck.set(true);
+    this.isPolling.set(true);
+    void this.runCheckSequence();
   }
 
   private async runCheckSequence(): Promise<void> {

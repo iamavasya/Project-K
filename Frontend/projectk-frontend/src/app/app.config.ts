@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -8,6 +8,11 @@ import Aura from '@primeuix/themes/aura';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
+import { HealthBannerService } from './features/systemModule/services/health-banner.service';
+
+const startHealthSessionCheck = (service: HealthBannerService) => () => {
+  service.startSessionCheck();
+};
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -34,6 +39,7 @@ export const appConfig: ApplicationConfig = {
         }
     }),
     provideHttpClient(withInterceptorsFromDi()),
+    { provide: APP_INITIALIZER, useFactory: startHealthSessionCheck, deps: [HealthBannerService], multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }
   ]
