@@ -227,6 +227,14 @@ namespace ProjectK.API
 
             app.MapControllers();
 
+            app.MapGet("/health", (IConfiguration config) => Results.Ok(new
+            {
+                status = "ready",
+                version = config["ReleaseInfo:Version"] ?? "unknown",
+                codeName = config["ReleaseInfo:CodeName"] ?? "unknown",
+                utc = DateTimeOffset.UtcNow
+            }));
+
             app.MapGet("/", () => "Backend Started");
 
             await app.RunAsync();

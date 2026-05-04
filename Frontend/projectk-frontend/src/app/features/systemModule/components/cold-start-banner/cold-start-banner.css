@@ -1,0 +1,107 @@
+.cold-start-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  overflow: hidden;
+  border-bottom: 1px solid #f2cf66;
+  background: linear-gradient(135deg, #fff8d7, #ffeaa0 55%, #ffd861);
+  color: #5a4700;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cold-start-banner__card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 252, 236, 0.95);
+  border-color: rgba(255, 214, 97, 0.9);
+  box-shadow: 0 10px 24px rgba(136, 100, 0, 0.2);
+  border: 1px solid rgba(255, 214, 97, 0.9);
+  z-index: 1;
+}
+
+.cold-start-banner__pulse {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: translateX(-100%);
+  animation: banner-sweep 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.cold-start-banner__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(90, 71, 0, 0.2);
+  border-top-color: #5a4700;
+  animation: banner-spin 1s linear infinite;
+  flex: 0 0 auto;
+}
+
+.cold-start-banner__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cold-start-banner__title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
+
+.cold-start-banner__message {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+@keyframes banner-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes banner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .cold-start-banner {
+    padding: 12px 10px;
+  }
+
+  .cold-start-banner__card {
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .cold-start-banner__message {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cold-start-banner__pulse,
+  .cold-start-banner__spinner {
+    animation: none;
+  }
+}
