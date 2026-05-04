@@ -16,7 +16,7 @@ export class HealthBannerService {
 
   readonly isBannerVisible = this.bannerVisible.asReadonly();
 
-  shouldApplyTimeoutRequests(): boolean {
+  shouldGateRequests(): boolean {
     return this.isEnabled() && !this.hasConfirmedHealthy();
   }
 
