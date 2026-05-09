@@ -28,6 +28,7 @@ import { MemberSkillItemView } from '../common/models/probes-and-badges/memberSk
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card.component';
+import { BentoTileSkeletonComponent } from '../common/components/bento-tile-skeleton/bento-tile-skeleton';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { BreadcrumbService } from '../common/services/breadcrumb-service/breadcrumb-service';
@@ -44,7 +45,8 @@ import { BreadcrumbService } from '../common/services/breadcrumb-service/breadcr
     InputTextModule,
     IconFieldModule,
     InputIconModule,
-    SkillMiniCardComponent
+    SkillMiniCardComponent,
+    BentoTileSkeletonComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
