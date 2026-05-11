@@ -30,6 +30,8 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
         public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
         public DbSet<MentorAssignment> MentorAssignments { get; set; }
+        public DbSet<MemberWarning> MemberWarnings { get; set; }
+        public DbSet<MemberAward> MemberAwards { get; set; }
 
         // Auth module DbSet
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
@@ -74,6 +76,33 @@ namespace ProjectK.Infrastructure.DbContexts
                       .WithOne()
                       .HasForeignKey<Member>(e => e.UserKey)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<MemberWarning>(entity =>
+            {
+                entity.HasKey(e => e.MemberWarningKey);
+                entity.Property(e => e.Level)
+                    .HasConversion<int>();
+                entity.HasIndex(e => new { e.MemberKey, e.Level });
+                entity.HasIndex(e => e.ExpiresAtUtc);
+                entity.HasOne(e => e.Member)
+                      .WithMany(m => m.MemberWarnings)
+                      .HasForeignKey(e => e.MemberKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<MemberAward>(entity =>
+            {
+                entity.HasKey(e => e.MemberAwardKey);
+                entity.Property(e => e.Level)
+                    .HasConversion<int>();
+                entity.Property(e => e.Status)
+                    .HasConversion<int>();
+                entity.HasIndex(e => new { e.MemberKey, e.Level });
+                entity.HasOne(e => e.Member)
+                      .WithMany(m => m.MemberAwards)
+                      .HasForeignKey(e => e.MemberKey)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<PlastLevelHistory>(entity =>

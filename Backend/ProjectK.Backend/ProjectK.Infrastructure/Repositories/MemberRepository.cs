@@ -36,6 +36,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
         }
 
@@ -44,6 +46,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.GroupKey == groupKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
@@ -53,6 +57,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.KurinKey == kurinKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
@@ -62,6 +68,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members
                 .Include(m => m.Group)
                 .Include(m => m.Kurin)
+                .Include(m => m.MemberWarnings)
+                .Include(m => m.MemberAwards)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }

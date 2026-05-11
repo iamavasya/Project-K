@@ -21,9 +21,26 @@
 
     <div class="mt-3 space-y-2">
         <div class="flex items-start justify-between gap-2">
-            <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
-                {{ member.firstName }} {{ member.lastName }}
-            </h4>
+            <div class="mini-member-card__header flex flex-col gap-2">
+                <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
+                    {{ member.firstName }} {{ member.lastName }}
+                </h4>
+
+                @if (hasActiveWarnings) {
+                <div
+                    class="mini-member-card__warnings"
+                    pTooltip="{{ warningTooltip }}"
+                    tooltipPosition="top"
+                >
+                    @for (level of warningLevels; track level) {
+                    <span
+                        class="mini-member-card__warning-dot"
+                        [class.mini-member-card__warning-dot--active]="getWarningDotActive(level)"
+                    ></span>
+                    }
+                </div>
+                }
+            </div>
 
             <p-tag
                 [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"

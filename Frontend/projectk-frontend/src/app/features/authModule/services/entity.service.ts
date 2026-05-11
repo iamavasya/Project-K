@@ -10,12 +10,13 @@ export class EntityService {
     private readonly apiUrl = environment.apiUrl;
     private readonly http = inject(HttpClient);
 
-    checkEntityAccess(entityType: string, entityKey: string): Observable<boolean> {
+    checkEntityAccess(entityType: string, entityKey: string, action?: string): Observable<boolean> {
         return this.http.post<boolean>(
             `${this.apiUrl}/auth/check-access`,
             { 
                 entityType, 
-                entityKey
+                entityKey,
+                action
             },
             { 
                 headers: { 'Content-Type': 'application/json' },

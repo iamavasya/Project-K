@@ -35,6 +35,8 @@ namespace ProjectK.Common.Entities.KurinModule
         public ICollection<BadgeProgress> BadgeProgresses { get; set; } = new List<BadgeProgress>();
         public ICollection<ProbeProgress> ProbeProgresses { get; set; } = new List<ProbeProgress>();
         public ICollection<ProbePointProgress> ProbePointProgresses { get; set; } = new List<ProbePointProgress>();
+        public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();
+        public ICollection<MemberAward> MemberAwards { get; set; } = new List<MemberAward>();
         public AppUser? User { get; set; }
     }
 }

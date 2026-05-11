@@ -69,6 +69,8 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
+                .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => src.MemberWarnings))
+                .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
 
             CreateMap<Member, MemberLookupDto>()
@@ -80,6 +82,14 @@ namespace ProjectK.API.MappingProfiles
 
             // Plast Level History Mapping
             CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
+
+            // Member Warning Mapping
+            CreateMap<MemberWarning, MemberWarningDto>();
+
+            // Member Award Mapping
+            CreateMap<MemberAward, MemberAwardDto>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src =>
+                    $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
 
             // Leadership History Mapping
             CreateMap<LeadershipHistory, LeadershipHistoryDto>()

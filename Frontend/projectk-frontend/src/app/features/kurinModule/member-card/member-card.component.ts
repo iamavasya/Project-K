@@ -32,6 +32,12 @@ import { BentoTileSkeletonComponent } from '../common/components/bento-tile-skel
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { BreadcrumbService } from '../common/services/breadcrumb-service/breadcrumb-service';
+import { TooltipModule } from 'primeng/tooltip';
+import { MemberWarningDto } from '../common/models/memberWarningDto';
+import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
+import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
+import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services/member-award-service/member-award.service';
+import { EntityService } from '../../authModule/services/entity.service';
 
 @Component({
   selector: 'app-member-card',
@@ -45,8 +51,10 @@ import { BreadcrumbService } from '../common/services/breadcrumb-service/breadcr
     InputTextModule,
     IconFieldModule,
     InputIconModule,
+    TooltipModule,
     SkillMiniCardComponent,
-    BentoTileSkeletonComponent
+    BentoTileSkeletonComponent,
+    MemberAwardsTileComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
@@ -61,8 +69,10 @@ export class MemberCardComponent implements OnInit {
   memberProgressService = inject(MemberProgressService);
   badgeImageBlobService = inject(BadgeImageBlobService);
   authService = inject(AuthService);
+  entityService = inject(EntityService);
   confirmationService = inject(ConfirmationService);
   breadcrumbService = inject(BreadcrumbService);
+  memberAwardService = inject(MemberAwardService);
   private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   member: MemberDto | null = null;
@@ -88,8 +98,14 @@ export class MemberCardComponent implements OnInit {
   addSkillSuccessMessage: string | null = null;
   inlineModerationMessage: string | null = null;
   inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
+  canManageMemberActions = false;
 
   readonly addSkillPageSize = 12;
+  readonly warningLevels = [
+    MemberWarningLevel.Level1,
+    MemberWarningLevel.Level2,
+    MemberWarningLevel.Level3
+  ];
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey');
@@ -108,6 +124,7 @@ export class MemberCardComponent implements OnInit {
         if (member.groupKey) {
           this.breadcrumbService.setParam('groupKey', member.groupKey);
         }
+        this.updateMemberAccess(member.memberKey ?? this.memberKey);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -127,21 +144,23 @@ export class MemberCardComponent implements OnInit {
   }
 
   get canEditMember(): boolean {
-    if (!this.member) return false;
+    return this.canManageMemberActions;
+  }
 
-    const authState = this.authService.getAuthStateValue();
-    if (!authState) return false;
-
-    const role = authState.role?.trim().toLowerCase();
-    if (role && this.reviewerRoles.has(role)) {
-      return true;
+  private updateMemberAccess(memberKey: string | null): void {
+    if (!memberKey) {
+      this.canManageMemberActions = false;
+      return;
     }
 
-    if (role === 'user' && this.member.userKey && authState.userKey && this.member.userKey.toLowerCase() === authState.userKey.toLowerCase()) {
-      return true;
-    }
-
-    return false;
+    this.entityService.checkEntityAccess('member', memberKey, 'Update').subscribe({
+      next: (canUpdate) => {
+        this.canManageMemberActions = canUpdate;
+      },
+      error: () => {
+        this.canManageMemberActions = false;
+      }
+    });
   }
 
   get confirmedSkillsCount(): number {
@@ -183,6 +202,89 @@ export class MemberCardComponent implements OnInit {
     return this.filteredAddSkillCandidates.length > this.addSkillVisibleCount;
   }
 
+  get hasActiveWarnings(): boolean {
+    return this.getActiveWarnings().length > 0;
+  }
+
+  get activeWarningLevel(): MemberWarningLevel | null {
+    const activeWarnings = this.getActiveWarnings();
+    if (!activeWarnings.length) {
+      return null;
+    }
+
+    return activeWarnings
+      .map(warning => warning.level)
+      .sort((left, right) => this.getWarningLevelWeight(right) - this.getWarningLevelWeight(left))[0];
+  }
+
+  get warningTooltip(): string {
+    const activeWarning = this.getActiveWarnings()
+      .sort((left, right) => this.getWarningLevelWeight(right.level) - this.getWarningLevelWeight(left.level))[0];
+
+    if (!activeWarning) {
+      return '';
+    }
+
+    const levelLabel = this.getWarningLevelLabel(activeWarning.level);
+    const daysLeft = this.getWarningDaysLeft(activeWarning.expiresAtUtc);
+    return `Поточна пересторога: ${levelLabel}. Залишилось днів: ${daysLeft}.`;
+  }
+
+  getWarningDotActive(level: MemberWarningLevel): boolean {
+    if (!this.activeWarningLevel) {
+      return false;
+    }
+
+    return this.getWarningLevelWeight(level) <= this.getWarningLevelWeight(this.activeWarningLevel);
+  }
+
+  private getWarningLevelWeight(level: MemberWarningLevel): number {
+    switch (level) {
+      case MemberWarningLevel.Level3: return 3;
+      case MemberWarningLevel.Level2: return 2;
+      case MemberWarningLevel.Level1: return 1;
+      default: return 0;
+    }
+  }
+
+  private getActiveWarnings(): MemberWarningDto[] {
+    const warnings = this.member?.warnings ?? [];
+    const now = Date.now();
+
+    return warnings.filter(warning =>
+      !warning.revokedAtUtc &&
+      this.parseUtcDate(warning.expiresAtUtc) > now
+    );
+  }
+
+  private parseUtcDate(value: string | null | undefined): number {
+    if (!value) {
+      return 0;
+    }
+
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  private getWarningLevelLabel(level: MemberWarningLevel): string {
+    switch (level) {
+      case MemberWarningLevel.Level1:
+        return 'Перша';
+      case MemberWarningLevel.Level2:
+        return 'Друга';
+      case MemberWarningLevel.Level3:
+        return 'Третя';
+      default:
+        return 'Пересторога';
+    }
+  }
+
+  private getWarningDaysLeft(expiresAtUtc: string): number {
+    const expiresAt = this.parseUtcDate(expiresAtUtc);
+    const diffMs = expiresAt - Date.now();
+    return Math.max(0, Math.ceil(diffMs / 86400000));
+  }
+
   openAllSkillsDialog(): void {
     this.addSkillSuccessMessage = null;
     this.addSkillErrorMessage = null;
@@ -209,7 +311,7 @@ export class MemberCardComponent implements OnInit {
   get canOpenSkillsReview(): boolean {
     const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
     const kurinKey = this.member?.kurinKey || this.authService.getAuthStateValue()?.kurinKey;
-    return this.reviewerRoles.has(role) && !!kurinKey;
+    return this.reviewerRoles.has(role) && this.canManageMemberActions && !!kurinKey;
   }
 
   get canInlineModerateSkills(): boolean {
@@ -540,5 +642,41 @@ export class MemberCardComponent implements OnInit {
       ['/group', this.member?.groupKey, 'member', 'upsert', this.memberKey],
       { state: { fromMember: true } }
     );
+  }
+
+  onSaveAward(request: UpsertMemberAwardRequest): void {
+    if (!this.memberKey) return;
+    this.memberAwardService.upsertAward(this.memberKey, request).subscribe({
+      next: () => {
+        this.refreshData();
+      },
+      error: (error) => {
+        console.error('Error saving award:', error);
+      }
+    });
+  }
+
+  onDeleteAward(awardKey: string): void {
+    if (!this.memberKey) return;
+    this.memberAwardService.deleteAward(this.memberKey, awardKey).subscribe({
+      next: () => {
+        this.refreshData();
+      },
+      error: (error) => {
+        console.error('Error deleting award:', error);
+      }
+    });
+  }
+
+  onReviewAward(request: { awardKey: string, isApproved: boolean }): void {
+    if (!this.memberKey) return;
+    this.memberAwardService.reviewAward(this.memberKey, request.awardKey, { isApproved: request.isApproved, note: null }).subscribe({
+      next: () => {
+        this.refreshData();
+      },
+      error: (error) => {
+        console.error('Error reviewing award:', error);
+      }
+    });
   }
 }

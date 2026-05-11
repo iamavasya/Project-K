@@ -1,0 +1,210 @@
+using AutoMapper;
+using FluentAssertions;
+using MediatR;
+using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
+
+public class MemberAwardHandlerTests
+{
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberRepository> _memberRepositoryMock;
+    private readonly Mock<IMemberAwardRepository> _memberAwardRepositoryMock;
+    private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<IMapper> _mapperMock;
+
+    private readonly UpsertMemberAwardHandler _upsertHandler;
+    private readonly ReviewMemberAwardHandler _reviewHandler;
+    private readonly DeleteMemberAwardHandler _deleteHandler;
+
+    public MemberAwardHandlerTests()
+    {
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _memberRepositoryMock = new Mock<IMemberRepository>();
+        _memberAwardRepositoryMock = new Mock<IMemberAwardRepository>();
+        _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _mapperMock = new Mock<IMapper>();
+
+        _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
+        _unitOfWorkMock.SetupGet(x => x.MemberAwards).Returns(_memberAwardRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+
+        _upsertHandler = new UpsertMemberAwardHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
+        _reviewHandler = new ReviewMemberAwardHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
+        _deleteHandler = new DeleteMemberAwardHandler(_unitOfWorkMock.Object);
+    }
+
+    [Fact]
+    public async Task Upsert_ShouldCreateNewAward_WhenKeyIsNotProvided()
+    {
+        var memberKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var userKey = _currentUserContextMock.Object.UserId!.Value;
+        var dateAcquired = DateTime.UtcNow.AddDays(-1);
+
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+
+        MemberAward? created = null;
+        _memberAwardRepositoryMock
+            .Setup(x => x.Create(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()))
+            .Callback<MemberAward, CancellationToken>((award, _) => created = award);
+
+        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
+
+        var result = await _upsertHandler.Handle(new UpsertMemberAward 
+        { 
+            MemberKey = memberKey, 
+            Level = MemberAwardLevel.First, 
+            DateAcquired = dateAcquired, 
+            Note = "Test" 
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        created.Should().NotBeNull();
+        created!.MemberKey.Should().Be(memberKey);
+        created.KurinKey.Should().Be(kurinKey);
+        created.Level.Should().Be(MemberAwardLevel.First);
+        created.DateAcquired.Should().Be(dateAcquired);
+        created.Note.Should().Be("Test");
+        created.Status.Should().Be(BadgeProgressStatus.Submitted);
+        created.SubmittedByUserKey.Should().Be(userKey);
+        created.SubmittedAtUtc.Should().NotBeNull();
+        created.ReviewedByUserKey.Should().BeNull();
+        created.ReviewedAtUtc.Should().BeNull();
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Upsert_ShouldUpdateExistingAward_WhenKeyIsProvided()
+    {
+        var memberKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var awardKey = Guid.NewGuid();
+        var userKey = _currentUserContextMock.Object.UserId!.Value;
+        var dateAcquired = DateTime.UtcNow.AddDays(-1);
+
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+
+        var existingAward = new MemberAward 
+        {
+            MemberAwardKey = awardKey,
+            MemberKey = memberKey,
+            KurinKey = kurinKey,
+            Level = MemberAwardLevel.First,
+            DateAcquired = DateTime.UtcNow.AddDays(-10),
+            Note = "Old Note",
+            Status = BadgeProgressStatus.Confirmed,
+            ReviewedByUserKey = Guid.NewGuid(),
+            ReviewedAtUtc = DateTime.UtcNow.AddDays(-5)
+        };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingAward);
+
+        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
+
+        var result = await _upsertHandler.Handle(new UpsertMemberAward 
+        { 
+            MemberAwardKey = awardKey,
+            MemberKey = memberKey, 
+            Level = MemberAwardLevel.First, 
+            DateAcquired = dateAcquired, 
+            Note = "New Note" 
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        
+        _memberAwardRepositoryMock.Verify(x => x.Update(existingAward, It.IsAny<CancellationToken>()), Times.Once);
+        
+        existingAward.DateAcquired.Should().Be(dateAcquired);
+        existingAward.Note.Should().Be("New Note");
+        existingAward.Status.Should().Be(BadgeProgressStatus.Submitted);
+        existingAward.SubmittedByUserKey.Should().Be(userKey);
+        existingAward.SubmittedAtUtc.Should().NotBeNull();
+        existingAward.ReviewedByUserKey.Should().BeNull();
+        existingAward.ReviewedAtUtc.Should().BeNull();
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Review_ShouldReturnConflict_WhenTryingToRemoveConfirmedAward()
+    {
+        var awardKey = Guid.NewGuid();
+        var existingAward = new MemberAward
+        {
+            MemberAwardKey = awardKey,
+            Status = BadgeProgressStatus.Confirmed,
+            ReviewedAtUtc = DateTime.UtcNow.AddDays(-1),
+            ReviewedByUserKey = Guid.NewGuid()
+        };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingAward);
+
+        var result = await _reviewHandler.Handle(new ReviewMemberAward
+        {
+            MemberAwardKey = awardKey,
+            IsApproved = false
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        existingAward.Status.Should().Be(BadgeProgressStatus.Confirmed);
+        _memberAwardRepositoryMock.Verify(x => x.Update(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldDeleteAward_WhenItExists()
+    {
+        var awardKey = Guid.NewGuid();
+        var existingAward = new MemberAward { MemberAwardKey = awardKey };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingAward);
+
+        var result = await _deleteHandler.Handle(new DeleteMemberAward { MemberAwardKey = awardKey }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(existingAward, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldReturnNotFound_WhenItDoesNotExist()
+    {
+        var awardKey = Guid.NewGuid();
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemberAward?)null);
+
+        var result = await _deleteHandler.Handle(new DeleteMemberAward { MemberAwardKey = awardKey }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.NotFound);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+}

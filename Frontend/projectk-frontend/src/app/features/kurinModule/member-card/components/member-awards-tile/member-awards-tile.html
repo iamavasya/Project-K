@@ -1,0 +1,52 @@
+﻿<div class="flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+        <h3 class="text-xl font-semibold m-0">Відзначення УПЮ</h3>
+        <p-button *ngIf="canEdit" icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" (onClick)="openDialog()"></p-button>
+    </div>
+
+    <div *ngIf="awards.length === 0" class="text-gray-500 italic">
+        Немає здобутих відзначень
+    </div>
+
+    <div *ngIf="groupedAwards.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div *ngFor="let group of groupedAwards; trackBy: trackAwardGroup" class="relative group cursor-pointer" (click)="openDialog(group.latest)">
+            <article class="award-preview-item" [class.award-preview-item--pending]="isPendingConfirmation(group.latest)">
+                <div class="award-preview-image-wrap">
+                    <img
+                        *ngIf="getAwardImageUrl(group.latest) as imageUrl; else awardFallback"
+                        [src]="imageUrl"
+                        [alt]="getAwardTitle(group.level)"
+                        class="award-preview-image"
+                        loading="lazy"
+                    />
+
+                    <ng-template #awardFallback>
+                        <span class="pi pi-star-fill award-preview-fallback"></span>
+                    </ng-template>
+                </div>
+
+                <p class="award-preview-title">
+                    {{ getAwardTitle(group.level) + (group.count > 1 ? ' x' + group.count : '') }}
+                </p>
+
+                <div *ngIf="isPendingConfirmation(group.latest)" class="award-preview-pending">
+                    Очікує
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+
+<app-member-awards-dialog
+    [(visible)]="dialogVisible"
+    [awardToEdit]="selectedAward"
+    [existingAwards]="awards"
+    [canEdit]="canEdit"
+    [canReview]="canReview"
+    (save)="onSave($event)"
+    (approve)="approveAward($event)"
+    (delete)="confirmDelete($event)">
+</app-member-awards-dialog>
+
+<p-confirmDialog></p-confirmDialog>
+

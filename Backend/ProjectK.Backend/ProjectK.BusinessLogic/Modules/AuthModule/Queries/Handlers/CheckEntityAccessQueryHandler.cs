@@ -31,9 +31,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers
                 return new ServiceResult<bool>(ResultType.BadRequest, false, "Invalid entity type.");
             }
 
+            if (!TryResolveResourceAction(request.Action, out var action, out var actionError))
+            {
+                return new ServiceResult<bool>(ResultType.BadRequest, false, actionError);
+            }
+
             var decision = await _resourceAccessService.CheckAccessAsync(
                 resourceType,
-                ResourceAction.Read,
+                action,
                 parsedEntityKey,
                 cancellationToken);
 
@@ -61,6 +66,26 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers
         {
             mapped = type;
             return result;
+        }
+
+        private static bool TryResolveResourceAction(string? actionValue, out ResourceAction action, out string error)
+        {
+            if (string.IsNullOrWhiteSpace(actionValue))
+            {
+                action = ResourceAction.Read;
+                error = string.Empty;
+                return true;
+            }
+
+            if (Enum.TryParse<ResourceAction>(actionValue, ignoreCase: true, out action))
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            action = ResourceAction.Read;
+            error = "Invalid resource action.";
+            return false;
         }
     }
 }

@@ -26,6 +26,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public PlastLevel? LatestPlastLevel { get; set; }
         public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
         public ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];
+        public ICollection<MemberWarningDto> Warnings { get; set; } = [];
+        public ICollection<MemberAwardDto> Awards { get; set; } = [];
         public string? ProfilePhotoUrl { get; set; }
     }
 }

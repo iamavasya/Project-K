@@ -323,10 +323,12 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Mentor group scope could not be resolved or no groups assigned.");
         }
 
+        var currentUserId = _currentUserContext.UserId;
+
         return resourceType switch
         {
             ResourceType.Group => ValidateMentorGroupAccess(action, scopeResolution, mentorGroupKeys),
-            ResourceType.Member => ValidateMentorMemberAccess(scopeResolution, mentorGroupKeys),
+            ResourceType.Member => ValidateMentorMemberAccess(scopeResolution, mentorGroupKeys, currentUserId),
             ResourceType.ProbeProgress or ResourceType.BadgeProgress => ValidateMentorProgressAccess(scopeResolution, mentorGroupKeys),
             _ => ResourceAccessDecision.Allow(MentorScopeChecksPassed)
         };
@@ -364,7 +366,7 @@ public class ResourceAccessService : IResourceAccessService
         ResourceAccessScopeResolution scopeResolution,
         IEnumerable<Guid> mentorGroupKeys)
     {
-        if (action != ResourceAction.Read)
+        if (action != ResourceAction.Read && action != ResourceAction.Create)
         {
             return ResourceAccessDecision.Deny("Mentor cannot rename or delete group data.");
         }
@@ -379,11 +381,19 @@ public class ResourceAccessService : IResourceAccessService
 
     private static ResourceAccessDecision ValidateMentorMemberAccess(
         ResourceAccessScopeResolution scopeResolution,
-        IEnumerable<Guid> mentorGroupKeys)
+        IEnumerable<Guid> mentorGroupKeys,
+        Guid? currentUserId)
     {
+        if (currentUserId.HasValue &&
+            scopeResolution.MemberUserKey.HasValue &&
+            scopeResolution.MemberUserKey.Value == currentUserId.Value)
+        {
+            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
+        }
+
         if (!scopeResolution.GroupKey.HasValue || !mentorGroupKeys.Contains(scopeResolution.GroupKey.Value))
         {
-            return ResourceAccessDecision.Deny("Mentor can manage only members from assigned groups.");
+            return ResourceAccessDecision.Deny("Mentor can manage only own member profile or members from assigned groups.");
         }
 
         return ResourceAccessDecision.Allow(MentorScopeChecksPassed);

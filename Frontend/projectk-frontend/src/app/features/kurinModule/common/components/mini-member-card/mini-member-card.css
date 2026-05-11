@@ -28,3 +28,28 @@
 .mini-member-card__meta {
     color: var(--p-text-muted-color);
 }
+
+.mini-member-card__header {
+    min-width: 0;
+}
+
+.mini-member-card__warnings {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--p-red-600) 35%, transparent);
+    background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
+}
+
+.mini-member-card__warning-dot {
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--p-surface-400) 70%, var(--p-content-background) 30%);
+}
+
+.mini-member-card__warning-dot--active {
+    background: color-mix(in srgb, var(--p-red-600) 75%, var(--p-red-300) 25%);
+}

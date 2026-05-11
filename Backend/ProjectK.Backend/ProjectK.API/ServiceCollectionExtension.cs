@@ -30,6 +30,7 @@ namespace ProjectK.API
 
             // Background Services
             services.AddHostedService<AuditCleanupBackgroundService>();
+            services.AddHostedService<MemberWarningExpiryBackgroundService>();
 
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -65,6 +66,7 @@ namespace ProjectK.API
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IMemberRepository, MemberRepository>();
             services.AddScoped<ILeadershipRepository, LeadershipRepository>();
+            services.AddScoped<IMemberWarningRepository, MemberWarningRepository>();
             services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
             services.AddScoped<IProbeProgressRepository, ProbeProgressRepository>();
 

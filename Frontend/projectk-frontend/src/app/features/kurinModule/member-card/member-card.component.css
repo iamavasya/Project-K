@@ -32,6 +32,27 @@
     line-height: 1.25rem;
 }
 
+.member-warning-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--p-red-600) 35%, transparent);
+    background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
+}
+
+.member-warning-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--p-surface-400) 70%, var(--p-content-background) 30%);
+}
+
+.member-warning-dot--active {
+    background: color-mix(in srgb, var(--p-red-600) 75%, var(--p-red-300) 25%);
+}
+
 .member-actions {
     align-self: flex-start;
 }
