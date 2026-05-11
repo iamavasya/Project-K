@@ -13,6 +13,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.MappingProfiles
@@ -68,6 +69,11 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+                .ForMember(dest => dest.LatestPlastLevel, opt => opt.MapFrom(src =>
+                    src.PlastLevelHistory
+                        .OrderByDescending(history => history.DateAchieved)
+                        .Select(history => (PlastLevel?)history.PlastLevel)
+                        .FirstOrDefault() ?? src.LatestPlastLevel))
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
                 .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => src.MemberWarnings))
                 .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))

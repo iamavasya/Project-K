@@ -106,11 +106,11 @@ namespace ProjectK.Infrastructure.Repositories
 
             member.PlastLevelHistory.Add(history);
 
-            // Updating LatestPlastLevel
-            if (member.LatestPlastLevel == null || history.PlastLevel > member.LatestPlastLevel)
-            {
-                member.LatestPlastLevel = history.PlastLevel;
-            }
+            // Updating LatestPlastLevel based on most recent achievement date
+            var lastHistory = member.PlastLevelHistory
+                .OrderByDescending(h => h.DateAchieved)
+                .FirstOrDefault();
+            member.LatestPlastLevel = lastHistory?.PlastLevel;
         }
 
         public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken = default)
