@@ -9,9 +9,11 @@
     [focusOnShow]="false"
     (onHide)="close()"
 >
-    <div *ngIf="statusLabel" class="award-dialog-status">
-        {{ statusLabel }}
-    </div>
+    @if (statusLabel) {
+        <div class="award-dialog-status">
+            {{ statusLabel }}
+        </div>
+    }
 
     <form [formGroup]="form" class="flex flex-col gap-4 mt-2">
         <div class="flex flex-col gap-2">
@@ -33,21 +35,23 @@
     <ng-template pTemplate="footer">
         <div class="award-dialog-footer">
             <div class="award-dialog-danger-actions">
-                <p-button
-                    *ngIf="canDeleteAward"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    [outlined]="true"
-                    styleClass="award-dialog-action"
-                    (click)="onDelete()"
-                ></p-button>
-                <p-button
-                    *ngIf="canApproveAward"
-                    icon="pi pi-check"
-                    severity="success"
-                    styleClass="award-dialog-action"
-                    (click)="onApprove()"
-                ></p-button>
+                @if (canDeleteAward) {
+                    <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [outlined]="true"
+                        styleClass="award-dialog-action"
+                        (click)="onDelete()"
+                    ></p-button>
+                }
+                @if (canApproveAward) {
+                    <p-button
+                        icon="pi pi-check"
+                        severity="success"
+                        styleClass="award-dialog-action"
+                        (click)="onApprove()"
+                    ></p-button>
+                }
             </div>
 
             <div class="award-dialog-main-actions">
