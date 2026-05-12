@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -59,8 +59,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 });
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(It.IsAny<Leadership>()))
-                .Returns((Leadership src) => new LeadershipDto
+                .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
+                .Returns((Leadership src) => new LeadershipResponse
                 {
                     LeadershipKey = src.LeadershipKey,
                     Type = src.Type,
@@ -84,8 +84,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 });
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(It.IsAny<Leadership>()))
-                .Returns((Leadership src) => new LeadershipDto
+                .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
+                .Returns((Leadership src) => new LeadershipResponse
                 {
                     LeadershipKey = src.LeadershipKey,
                     Type = src.Type,
@@ -245,7 +245,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             Assert.Equal(ResultType.InternalServerError, result.Type);
             Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipDto>(It.IsAny<Leadership>()), Times.Never);
+            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
         }
 
         [Fact]
@@ -269,7 +269,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             Assert.Equal(ResultType.InternalServerError, result.Type);
             Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipDto>(It.IsAny<Leadership>()), Times.Never);
+            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
         }
 
         [Fact]

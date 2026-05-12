@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
 {
-    public class GetLeadershipByKey : IRequest<ServiceResult<LeadershipDto>>
+    public class GetLeadershipByKey : IRequest<ServiceResult<LeadershipResponse>>
     {
         public Guid LeadershipKey { get; }
         public GetLeadershipByKey(Guid leadershipKey)
@@ -21,7 +21,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
         }
     }
 
-    public class GetLeadershipByKeyHandler : IRequestHandler<GetLeadershipByKey, ServiceResult<LeadershipDto>>
+    public class GetLeadershipByKeyHandler : IRequestHandler<GetLeadershipByKey, ServiceResult<LeadershipResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -31,24 +31,24 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipByKey request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<LeadershipResponse>> Handle(GetLeadershipByKey request, CancellationToken cancellationToken)
         {
             var leadership = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey, cancellationToken);
             if (leadership == null)
             {
-                return new ServiceResult<LeadershipDto>(ResultType.NotFound);
+                return new ServiceResult<LeadershipResponse>(ResultType.NotFound);
             }
-            var leadershipDto = _mapper.Map<LeadershipDto>(leadership);
-            switch (leadershipDto.Type)
+            var LeadershipResponse = _mapper.Map<LeadershipResponse>(leadership);
+            switch (LeadershipResponse.Type)
             {
                 case LeadershipType.Kurin or LeadershipType.KV:
-                    leadershipDto.EntityKey = leadershipDto.KurinKey ?? Guid.Empty;
+                    LeadershipResponse.EntityKey = LeadershipResponse.KurinKey ?? Guid.Empty;
                     break;
                 case LeadershipType.Group:
-                    leadershipDto.EntityKey = leadershipDto.GroupKey ?? Guid.Empty;
+                    LeadershipResponse.EntityKey = LeadershipResponse.GroupKey ?? Guid.Empty;
                     break;
             }
-            return new ServiceResult<LeadershipDto>(ResultType.Success, leadershipDto);
+            return new ServiceResult<LeadershipResponse>(ResultType.Success, LeadershipResponse);
         }
     }
 }

@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { forkJoin, of } from 'rxjs';
 import { EntityService } from '../../authModule/services/entity.service';
+import { PermissionService } from '../../authModule/services/permission.service';
 
 @Component({
   selector: 'app-group-panel',
@@ -30,6 +31,7 @@ export class GroupPanelComponent implements OnInit {
   private readonly groupService = inject(GroupService);
   private readonly authService = inject(AuthService);
   private readonly entityService = inject(EntityService);
+  private readonly permissionService = inject(PermissionService);
   groupKey = '';
   group: GroupDto | null = null;
   members: MemberDto[] = [];
@@ -57,8 +59,7 @@ export class GroupPanelComponent implements OnInit {
   }
 
   get canManageMentors(): boolean {
-    const role = this.authService.getAuthStateValue()?.role;
-    return role === 'Manager' || role === 'Admin';
+    return this.permissionService.canManageMentors();
   }
 
   get canManageMembers(): boolean {

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -37,7 +37,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 StartDate = new DateOnly(2024, 1, 1)
             };
 
-        private static LeadershipDto BuildDto(Leadership entity) =>
+        private static LeadershipResponse BuildDto(Leadership entity) =>
             new()
             {
                 LeadershipKey = entity.LeadershipKey,
@@ -62,7 +62,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             Assert.Equal(ResultType.NotFound, result.Type);
             Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipDto>(It.IsAny<Leadership>()), Times.Never);
+            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -99,7 +99,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -121,7 +121,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -143,7 +143,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -163,7 +163,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -184,7 +184,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .ReturnsAsync(entity);
 
             _mapperMock
-                .Setup(m => m.Map<LeadershipDto>(entity))
+                .Setup(m => m.Map<LeadershipResponse>(entity))
                 .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, cts.Token);

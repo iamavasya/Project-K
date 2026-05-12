@@ -12,6 +12,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
     {
         Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default);
         Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 

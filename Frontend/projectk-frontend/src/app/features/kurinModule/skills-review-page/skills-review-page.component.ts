@@ -10,6 +10,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { PermissionService } from '../../authModule/services/permission.service';
 import { resolveBadgeImageUrl } from '../common/functions/memberSkillsViewMapper.function';
 import { MemberDto } from '../common/models/memberDto';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
@@ -50,11 +51,11 @@ export class SkillsReviewPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
   private readonly memberService = inject(MemberService);
   private readonly badgesCatalogService = inject(BadgesCatalogService);
   private readonly memberProgressService = inject(MemberProgressService);
   private readonly badgeImageBlobService = inject(BadgeImageBlobService);
-  private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   kurinKey: string | null = null;
   reviewItems: SkillsReviewItemView[] = [];
@@ -72,8 +73,7 @@ export class SkillsReviewPageComponent implements OnInit {
   feedbackSeverity: 'success' | 'info' | 'warn' | 'error' = 'info';
 
   get canReviewSkills(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
-    return this.reviewerRoles.has(role);
+    return this.permissionService.canReviewSkills();
   }
 
   ngOnInit(): void {

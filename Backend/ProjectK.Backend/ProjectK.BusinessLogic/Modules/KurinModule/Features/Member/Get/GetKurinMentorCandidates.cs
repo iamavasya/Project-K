@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos;
@@ -12,19 +11,15 @@ public record GetKurinMentorCandidates(Guid KurinKey) : IRequest<ServiceResult<I
 public class GetKurinMentorCandidatesHandler : IRequestHandler<GetKurinMentorCandidates, ServiceResult<IEnumerable<MemberLookupDto>>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
 
-    public GetKurinMentorCandidatesHandler(IUnitOfWork uow, IMapper mapper)
+    public GetKurinMentorCandidatesHandler(IUnitOfWork uow)
     {
         _uow = uow;
-        _mapper = mapper;
     }
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetKurinMentorCandidates request, CancellationToken cancellationToken)
     {
-        var members = await _uow.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
-        var linkedMembers = members.Where(m => m.UserKey.HasValue).ToList();
-        var response = _mapper.Map<IEnumerable<MemberLookupDto>>(linkedMembers);
+        var response = await _uow.Members.GetMentorCandidatesLookupAsync(request.KurinKey, cancellationToken);
         return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, response);
     }
 }

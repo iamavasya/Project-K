@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -10,7 +10,7 @@ using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
 {
-    public class UpsertLeadership : IRequest<ServiceResult<LeadershipDto>>
+    public class UpsertLeadership : IRequest<ServiceResult<LeadershipResponse>>
     {
         public Guid? LeadershipKey { get; set; }
         public string? Type { get; set; }
@@ -38,7 +38,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
         }
     }
 
-    public class UpsertLeadershipHandler : IRequestHandler<UpsertLeadership, ServiceResult<LeadershipDto>>
+    public class UpsertLeadershipHandler : IRequestHandler<UpsertLeadership, ServiceResult<LeadershipResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -48,7 +48,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<LeadershipDto>> Handle(UpsertLeadership request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadership request, CancellationToken cancellationToken)
         {
             LeadershipEntity? existing = null;
             bool isCreated = false;
@@ -100,14 +100,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
 
             if (changes <= 0)
             {
-                return new ServiceResult<LeadershipDto>(ResultType.InternalServerError);
+                return new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
             }
 
-            var response = _mapper.Map<LeadershipDto>(existing);
+            var response = _mapper.Map<LeadershipResponse>(existing);
 
             return isCreated
-                ? new ServiceResult<LeadershipDto>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
-                : new ServiceResult<LeadershipDto>(ResultType.Success, response);
+                ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
+                : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
         }
     }
 }

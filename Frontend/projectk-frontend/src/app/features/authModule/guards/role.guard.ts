@@ -10,7 +10,7 @@ export const roleGuard = (requiredRole: string): CanActivateFn => {
 
         return authService.getAuthState().pipe(
             map(authState => {
-                if (authState?.role === requiredRole) {
+                if (authState?.role?.toLowerCase() === requiredRole.toLowerCase()) {
                     return true;
                 } else {
                     router.navigate(['/forbidden']);

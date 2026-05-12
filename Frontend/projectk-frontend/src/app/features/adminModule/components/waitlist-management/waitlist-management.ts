@@ -13,6 +13,12 @@ import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../features/authModule/services/authService/auth.service';
+import {
+  getWaitlistStatusLabel,
+  getWaitlistStatusSeverity,
+  isWaitlistApproved,
+  isWaitlistInitial
+} from '../../common/functions/waitlist-status.function';
 
 @Component({
   selector: 'app-waitlist-management',
@@ -240,47 +246,18 @@ export class WaitlistManagementComponent implements OnInit {
   }
 
   getStatusLabel(status: string | number): string {
-    const s = String(status);
-    switch (s) {
-      case '0':
-      case 'Submitted': return 'Submitted';
-      case '1':
-      case 'NeedsManualVerification': return 'Verification Required';
-      case '2':
-      case 'Verified': return 'Verified';
-      case '3':
-      case 'Rejected': return 'Rejected';
-      case '4':
-      case 'ApprovedForInvitation': return 'Approved';
-      default: return 'Unknown (' + s + ')';
-    }
+    return getWaitlistStatusLabel(status);
   }
 
   getStatusSeverity(status: string | number): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | undefined {
-    const s = String(status);
-    switch (s) {
-      case '0':
-      case 'Submitted': return 'info';
-      case '1':
-      case 'NeedsManualVerification': return 'warn';
-      case '2':
-      case 'Verified': return 'success';
-      case '3':
-      case 'danger':
-      case 'Rejected': return 'danger';
-      case '4':
-      case 'ApprovedForInvitation': return 'success';
-      default: return 'secondary';
-    }
+    return getWaitlistStatusSeverity(status);
   }
 
   isInitial(status: string | number): boolean {
-    const s = String(status);
-    return s === '0' || s === 'Submitted';
+    return isWaitlistInitial(status);
   }
 
   isApproved(status: string | number): boolean {
-    const s = String(status);
-    return s === '4' || s === 'ApprovedForInvitation';
+    return isWaitlistApproved(status);
   }
 }

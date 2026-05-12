@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
@@ -28,7 +28,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             _controller = new LeadershipController(_mediatorMock.Object);
         }
 
-        private static LeadershipDto SampleLeadershipDto(Guid? key = null) => new()
+        private static LeadershipResponse SampleLeadershipResponse(Guid? key = null) => new()
         {
             LeadershipKey = key ?? Guid.NewGuid(),
             Type = LeadershipType.Kurin,
@@ -54,8 +54,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         {
             var typeString = "kurin";
             var typeKey = Guid.NewGuid();
-            var dto = SampleLeadershipDto();
-            var result = new ServiceResult<LeadershipDto>(ResultType.Success, dto);
+            var dto = SampleLeadershipResponse();
+            var result = new ServiceResult<LeadershipResponse>(ResultType.Success, dto);
 
             _mediatorMock
                 .Setup(m => m.Send(It.Is<GetLeadershipByType>(q => q.LeadershipType == LeadershipType.Kurin && q.TypeKey == typeKey), It.IsAny<CancellationToken>()))
@@ -65,7 +65,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var actionResult = await _controller.GetLeadershipByType(typeString, typeKey, token);
 
             var ok = Assert.IsType<OkObjectResult>(actionResult);
-            var data = Assert.IsType<LeadershipDto>(ok.Value);
+            var data = Assert.IsType<LeadershipResponse>(ok.Value);
             Assert.Equal(dto.LeadershipKey, data.LeadershipKey);
 
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetLeadershipByType>(), token), Times.Once);
@@ -74,7 +74,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         [Fact]
         public async Task GetLeadershipByType_ShouldReturnNotFound_WhenNotFound()
         {
-            var result = new ServiceResult<LeadershipDto>(ResultType.NotFound);
+            var result = new ServiceResult<LeadershipResponse>(ResultType.NotFound);
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetLeadershipByType>(), It.IsAny<CancellationToken>()))
@@ -88,7 +88,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         [Fact]
         public async Task GetLeadershipByType_ShouldReturnInternalServerError_WhenUnhandledResultType()
         {
-            var result = new ServiceResult<LeadershipDto>(ResultType.InternalServerError);
+            var result = new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetLeadershipByType>(), It.IsAny<CancellationToken>()))
@@ -116,8 +116,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task GetLeadershipByKey_ShouldReturnOk_WhenSuccess()
         {
             var key = Guid.NewGuid();
-            var dto = SampleLeadershipDto(key);
-            var result = new ServiceResult<LeadershipDto>(ResultType.Success, dto);
+            var dto = SampleLeadershipResponse(key);
+            var result = new ServiceResult<LeadershipResponse>(ResultType.Success, dto);
 
             _mediatorMock
                 .Setup(m => m.Send(It.Is<GetLeadershipByKey>(q => q.LeadershipKey == key), It.IsAny<CancellationToken>()))
@@ -126,7 +126,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var actionResult = await _controller.GetLeadershipByKey(key);
 
             var ok = Assert.IsType<OkObjectResult>(actionResult);
-            var data = Assert.IsType<LeadershipDto>(ok.Value);
+            var data = Assert.IsType<LeadershipResponse>(ok.Value);
             Assert.Equal(key, data.LeadershipKey);
         }
 
@@ -135,7 +135,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         {
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetLeadershipByKey>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<LeadershipDto>(ResultType.NotFound));
+                .ReturnsAsync(new ServiceResult<LeadershipResponse>(ResultType.NotFound));
 
             var actionResult = await _controller.GetLeadershipByKey(Guid.NewGuid());
 
@@ -148,8 +148,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task CreateLeadership_ShouldReturnCreatedAtAction_WhenCreatedWithActionName()
         {
             var request = SampleUpsertRequest();
-            var dto = SampleLeadershipDto();
-            var result = new ServiceResult<LeadershipDto>(
+            var dto = SampleLeadershipResponse();
+            var result = new ServiceResult<LeadershipResponse>(
                 ResultType.Created,
                 dto,
                 "GetLeadershipByKey",
@@ -174,8 +174,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task CreateLeadership_ShouldReturnCreated_WhenCreatedWithoutActionName()
         {
             var request = SampleUpsertRequest();
-            var dto = SampleLeadershipDto();
-            var result = new ServiceResult<LeadershipDto>(ResultType.Created, dto);
+            var dto = SampleLeadershipResponse();
+            var result = new ServiceResult<LeadershipResponse>(ResultType.Created, dto);
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
@@ -191,7 +191,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task CreateLeadership_ShouldReturnBadRequest_WhenBadRequest()
         {
             var request = SampleUpsertRequest();
-            var result = new ServiceResult<LeadershipDto>(ResultType.BadRequest, null);
+            var result = new ServiceResult<LeadershipResponse>(ResultType.BadRequest, null);
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
@@ -206,8 +206,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         public async Task CreateLeadership_ShouldReturnConflict_WhenConflict()
         {
             var request = SampleUpsertRequest();
-            var dto = SampleLeadershipDto();
-            var result = new ServiceResult<LeadershipDto>(ResultType.Conflict, dto);
+            var dto = SampleLeadershipResponse();
+            var result = new ServiceResult<LeadershipResponse>(ResultType.Conflict, dto);
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
@@ -228,8 +228,8 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         {
             var key = Guid.NewGuid();
             var request = SampleUpsertRequest();
-            var dto = SampleLeadershipDto(key);
-            var result = new ServiceResult<LeadershipDto>(ResultType.Success, dto);
+            var dto = SampleLeadershipResponse(key);
+            var result = new ServiceResult<LeadershipResponse>(ResultType.Success, dto);
 
             _mediatorMock
                 .Setup(m => m.Send(It.Is<UpsertLeadership>(c =>
@@ -241,7 +241,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var actionResult = await _controller.UpdateLeadership(key, request);
 
             var ok = Assert.IsType<OkObjectResult>(actionResult);
-            var data = Assert.IsType<LeadershipDto>(ok.Value);
+            var data = Assert.IsType<LeadershipResponse>(ok.Value);
             Assert.Equal(key, data.LeadershipKey);
         }
 
@@ -250,7 +250,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         {
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<LeadershipDto>(ResultType.NotFound));
+                .ReturnsAsync(new ServiceResult<LeadershipResponse>(ResultType.NotFound));
 
             var actionResult = await _controller.UpdateLeadership(Guid.NewGuid(), SampleUpsertRequest());
 
@@ -262,7 +262,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
         {
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<LeadershipDto>(ResultType.InternalServerError));
+                .ReturnsAsync(new ServiceResult<LeadershipResponse>(ResultType.InternalServerError));
 
             var actionResult = await _controller.UpdateLeadership(Guid.NewGuid(), SampleUpsertRequest());
 

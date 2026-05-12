@@ -109,71 +109,40 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 }
             }
 
-            if (group != null)
+            if (group == null && (!request.KurinKey.HasValue || request.KurinKey.Value == Guid.Empty))
             {
-                if (existing == null)
-                {
-                    existing = _mapper.Map<MemberEntity>(request);
-                    existing.KurinKey = group.KurinKey;
-                    existing.LatestPlastLevel = existing.PlastLevelHistory
-                        .OrderByDescending(p => p.DateAchieved)
-                        .FirstOrDefault()?.PlastLevel;
-
-                    _unitOfWork.Members.Create(existing, cancellationToken);
-                    isCreated = true;
-                }
-                else
-                {
-                    oldBlobName = existing.ProfilePhotoBlobName;
-                    _mapper.Map(request, existing);
-
-                    existing.KurinKey = group.KurinKey;
-                    if (CanEditRestrictedFields())
-                    {
-                        UpdatePlastLevelHistory(existing.MemberKey, request.PlastLevelHistories, existing.PlastLevelHistory);
-                        existing.LatestPlastLevel = existing.PlastLevelHistory
-                            .OrderByDescending(p => p.DateAchieved)
-                            .FirstOrDefault()?.PlastLevel;
-                    }
-
-                    _unitOfWork.Members.Update(existing, cancellationToken);
-                }
+                return new ServiceResult<MemberResponse>(ResultType.NotFound);
             }
-            else if (request.KurinKey.HasValue && request.KurinKey.Value != Guid.Empty)
+
+            if (existing == null)
             {
-                if (existing == null)
-                {
-                    existing = _mapper.Map<MemberEntity>(request);
-                    existing.GroupKey = null;
-                    existing.KurinKey = request.KurinKey.Value;
-                    existing.LatestPlastLevel = existing.PlastLevelHistory
-                        .OrderByDescending(p => p.DateAchieved)
-                        .FirstOrDefault()?.PlastLevel;
+                existing = _mapper.Map<MemberEntity>(request);
+                existing.GroupKey = group?.GroupKey;
+                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
+                existing.LatestPlastLevel = existing.PlastLevelHistory
+                    .OrderByDescending(p => p.DateAchieved)
+                    .FirstOrDefault()?.PlastLevel;
 
-                    _unitOfWork.Members.Create(existing, cancellationToken);
-                    isCreated = true;
-                }
-                else
-                {
-                    oldBlobName = existing.ProfilePhotoBlobName;
-                    _mapper.Map(request, existing);
-
-                    existing.GroupKey = null;
-                    existing.KurinKey = request.KurinKey.Value;
-                    if (CanEditRestrictedFields())
-                    {
-                        UpdatePlastLevelHistory(existing.MemberKey, request.PlastLevelHistories, existing.PlastLevelHistory);
-                        existing.LatestPlastLevel = existing.PlastLevelHistory
-                            .OrderByDescending(p => p.DateAchieved)
-                            .FirstOrDefault()?.PlastLevel;
-                    }
-
-                    _unitOfWork.Members.Update(existing, cancellationToken);
-                }
+                _unitOfWork.Members.Create(existing, cancellationToken);
+                isCreated = true;
             }
             else
             {
-                return new ServiceResult<MemberResponse>(ResultType.NotFound);
+                oldBlobName = existing.ProfilePhotoBlobName;
+                _mapper.Map(request, existing);
+
+                existing.GroupKey = group?.GroupKey;
+                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
+                
+                if (CanEditRestrictedFields())
+                {
+                    UpdatePlastLevelHistory(existing.MemberKey, request.PlastLevelHistories, existing.PlastLevelHistory);
+                    existing.LatestPlastLevel = existing.PlastLevelHistory
+                        .OrderByDescending(p => p.DateAchieved)
+                        .FirstOrDefault()?.PlastLevel;
+                }
+
+                _unitOfWork.Members.Update(existing, cancellationToken);
             }
 
             if (request.BlobContent is { Length: > 0 } && !string.IsNullOrWhiteSpace(request.BlobFileName))

@@ -30,17 +30,17 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<Kurin?> GetByKeyAsync(Guid entityKey, CancellationToken token = default)
         {
-            return await _context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
+            return await _context.Kurins.Include(k => k.Members).FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
         }
 
         public async Task<Kurin?> GetByNumberAsync(int number, CancellationToken token = default)
         {
-            return await _context.Kurins.FirstOrDefaultAsync(k => k.Number == number, token);
+            return await _context.Kurins.Include(k => k.Members).FirstOrDefaultAsync(k => k.Number == number, token);
         }
 
         public async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken token = default)
         {
-            return await _context.Kurins.ToListAsync(token);
+            return await _context.Kurins.Include(k => k.Members).ToListAsync(token);
         }
 
         public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken token = default)

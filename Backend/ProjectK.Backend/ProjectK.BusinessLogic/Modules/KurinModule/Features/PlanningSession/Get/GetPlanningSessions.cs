@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
 
-public record GetPlanningSessions(Guid kurinKey) : IRequest<ServiceResult<IEnumerable<PlanningSessionDto>>>;
+public record GetPlanningSessions(Guid kurinKey) : IRequest<ServiceResult<IEnumerable<PlanningSessionResponse>>>;
 
-public class GetPlanningSessionsHandler : IRequestHandler<GetPlanningSessions, ServiceResult<IEnumerable<PlanningSessionDto>>>
+public class GetPlanningSessionsHandler : IRequestHandler<GetPlanningSessions, ServiceResult<IEnumerable<PlanningSessionResponse>>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
@@ -23,10 +23,10 @@ public class GetPlanningSessionsHandler : IRequestHandler<GetPlanningSessions, S
         _uow = uow;
         _mapper = mapper;
     }
-    public async Task<ServiceResult<IEnumerable<PlanningSessionDto>>> Handle(GetPlanningSessions request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<PlanningSessionResponse>>> Handle(GetPlanningSessions request, CancellationToken cancellationToken)
     {
         var entities = await _uow.PlanningSessions.GetAllByKurinKeyAsync(request.kurinKey, cancellationToken);
-        var dtos = _mapper.Map<IEnumerable<PlanningSessionDto>>(entities);
-        return new ServiceResult<IEnumerable<PlanningSessionDto>>(ResultType.Success, dtos);
+        var dtos = _mapper.Map<IEnumerable<PlanningSessionResponse>>(entities);
+        return new ServiceResult<IEnumerable<PlanningSessionResponse>>(ResultType.Success, dtos);
     }
 }

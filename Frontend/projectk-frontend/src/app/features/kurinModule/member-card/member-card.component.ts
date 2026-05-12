@@ -38,6 +38,8 @@ import { MemberWarningLevel } from '../common/models/enums/member-warning-level.
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services/member-award-service/member-award.service';
 import { EntityService } from '../../authModule/services/entity.service';
+import { PermissionService } from '../../authModule/services/permission.service';
+import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../common/functions/progress-status-labels.function';
 
 @Component({
   selector: 'app-member-card',
@@ -70,10 +72,10 @@ export class MemberCardComponent implements OnInit {
   badgeImageBlobService = inject(BadgeImageBlobService);
   authService = inject(AuthService);
   entityService = inject(EntityService);
+  permissionService = inject(PermissionService);
   confirmationService = inject(ConfirmationService);
   breadcrumbService = inject(BreadcrumbService);
   memberAwardService = inject(MemberAwardService);
-  private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   member: MemberDto | null = null;
   memberKey: string | null = null;
@@ -309,9 +311,8 @@ export class MemberCardComponent implements OnInit {
   }
 
   get canOpenSkillsReview(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
     const kurinKey = this.member?.kurinKey || this.authService.getAuthStateValue()?.kurinKey;
-    return this.reviewerRoles.has(role) && this.canManageMemberActions && !!kurinKey;
+    return this.permissionService.canReviewSkills() && this.canManageMemberActions && !!kurinKey;
   }
 
   get canInlineModerateSkills(): boolean {
@@ -339,17 +340,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     const normalizedStatus = normalizeBadgeProgressStatus(existing.status);
-
-    switch (normalizedStatus) {
-      case BadgeProgressStatus.Submitted:
-        return 'Вже подано, очікує підтвердження';
-      case BadgeProgressStatus.Confirmed:
-        return 'Вже підтверджено';
-      case BadgeProgressStatus.Rejected:
-        return 'Було відхилено. Можна подати повторно';
-      default:
-        return 'Вже додано';
-    }
+    return getBadgeProgressStatusLabel(normalizedStatus);
   }
 
   getSubmitBadgeButtonLabel(badgeId: string): string {
@@ -379,16 +370,7 @@ export class MemberCardComponent implements OnInit {
   }
 
   getProbeStatusLabel(status: ProbeProgressStatus): string {
-    switch (status) {
-      case ProbeProgressStatus.InProgress:
-        return 'В процесі';
-      case ProbeProgressStatus.Completed:
-        return 'Завершено';
-      case ProbeProgressStatus.Verified:
-        return 'Підтверджено';
-      default:
-        return 'Не розпочато';
-    }
+    return getProbeProgressStatusLabel(status);
   }
 
   getProbeSummaryMeta(row: MemberProbeRowView): string {

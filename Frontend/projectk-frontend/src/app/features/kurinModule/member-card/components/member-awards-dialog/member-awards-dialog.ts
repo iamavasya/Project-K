@@ -10,6 +10,7 @@ import { MemberAwardDto } from '../../../common/models/memberAwardDto';
 import { MemberAwardLevel } from '../../../common/models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../common/models/enums/badge-progress-status.enum';
 import { UpsertMemberAwardRequest } from '../../../common/services/member-award-service/member-award.service';
+import { getBadgeProgressShortStatusLabel } from '../../../common/functions/progress-status-labels.function';
 
 @Component({
   selector: 'app-member-awards-dialog',
@@ -126,17 +127,7 @@ export class MemberAwardsDialogComponent {
     if (!this.awardToEdit) {
       return null;
     }
-
-    switch (this.normalizeStatus(this.awardToEdit.status)) {
-      case BadgeProgressStatus.Submitted:
-        return 'Очікує підтвердження';
-      case BadgeProgressStatus.Confirmed:
-        return 'Підтверджено';
-      case BadgeProgressStatus.Rejected:
-        return 'Відхилено';
-      default:
-        return null;
-    }
+    return getBadgeProgressShortStatusLabel(this.normalizeStatus(this.awardToEdit.status));
   }
 
   private normalizeStatus(status: BadgeProgressStatus | string | number): BadgeProgressStatus {

@@ -1,9 +1,9 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/authService/auth.service';
+import { PermissionService } from '../services/permission.service';
 
 export const leadershipAccessGuard: CanActivateFn = (route) => {
-  const authService = inject(AuthService);
+  const permissionService = inject(PermissionService);
   const router = inject(Router);
 
   const type = (route.paramMap.get('type') ?? '').toLowerCase();
@@ -11,8 +11,7 @@ export const leadershipAccessGuard: CanActivateFn = (route) => {
     return true;
   }
 
-  const role = authService.getAuthStateValue()?.role;
-  if (role === 'Manager' || role === 'Admin') {
+  if (permissionService.canManageGroups()) {
     return true;
   }
 

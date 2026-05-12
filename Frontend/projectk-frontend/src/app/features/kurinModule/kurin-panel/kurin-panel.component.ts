@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { KurinNumberComponent } from '../common/components/kurin-number/kurin-number';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { PermissionService } from '../../authModule/services/permission.service';
 import { MemberList } from '../common/components/member-list/member-list';
 import { KurinDto } from '../common/models/kurinDto';
 
@@ -29,6 +30,7 @@ export class KurinPanelComponent implements OnInit {
   private readonly groupService = inject(GroupService);
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
   groups: GroupDto[] = [];
   actions: MenuItem[] = [];
 
@@ -80,9 +82,8 @@ export class KurinPanelComponent implements OnInit {
     this.authService.getAuthState().subscribe(state => {
       if (state?.kurinKey) {
         this.kurinKey = state.kurinKey;
-        const role = state.role?.trim().toLowerCase();
-        this.canManageGroups = role === 'admin' || role === 'manager';
-        this.canManageMembers = role === 'admin' || role === 'manager';
+        this.canManageGroups = this.permissionService.canManageGroups();
+        this.canManageMembers = this.permissionService.canManageMembers();
         this.refreshData();
       }
     });

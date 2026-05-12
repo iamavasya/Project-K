@@ -1,4 +1,4 @@
-п»їusing ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
-public record PlanningSessionDto
+public record PlanningSessionResponse
 {
     public Guid PlanningSessionKey { get; set; }
     public string Name { get; set; } = string.Empty;
     public string KurinKey { get; set; } = string.Empty;
 
-    // РџР°СЂР°РјРµС‚СЂРё
+    // Параметри
     public DateTime SearchStart { get; set; }
     public DateTime SearchEnd { get; set; }
     public int DurationDays { get; set; }
 
-    // Р РµР·СѓР»СЊС‚Р°С‚ (РјРѕР¶Рµ Р±СѓС‚Рё null, СЏРєС‰Рѕ С‰Рµ РЅРµ РїРѕСЂР°С…РѕРІР°РЅРѕ)
+    // Результат (може бути null, якщо ще не пораховано)
     public bool IsCalculated { get; set; }
     public DateTime? OptimalStartDate { get; set; }
     public DateTime? OptimalEndDate { get; set; }
     public double ConflictScore { get; set; }
 
-    // Р’РєР»Р°РґРµРЅС– РґР°РЅС–
+    // Вкладені дані
     public List<PlanningParticipantDto> Participants { get; set; } = [];
 }
 

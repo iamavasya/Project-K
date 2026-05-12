@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
 {
-    public class LeadershipDto
+    public class LeadershipResponse
     {
         public Guid LeadershipKey { get; set; }
         public LeadershipType Type { get; set; }

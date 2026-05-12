@@ -9,6 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { EntityService } from '../../authModule/services/entity.service';
+import { PermissionService } from '../../authModule/services/permission.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -39,11 +40,11 @@ export class MemberProbePageComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly entityService = inject(EntityService);
+  private readonly permissionService = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly memberService = inject(MemberService);
   private readonly probesCatalogService = inject(ProbesCatalogService);
   private readonly memberProgressService = inject(MemberProgressService);
-  private readonly reviewerRoles = new Set(['mentor', 'manager', 'admin']);
 
   memberKey: string | null = null;
   probeId: string | null = null;
@@ -64,8 +65,7 @@ export class MemberProbePageComponent implements OnInit {
   canManageMemberActions = false;
 
   get canManageProbePoints(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
-    return this.reviewerRoles.has(role) && this.canManageMemberActions;
+    return this.permissionService.canReviewSkills() && this.canManageMemberActions;
   }
 
   ngOnInit(): void {

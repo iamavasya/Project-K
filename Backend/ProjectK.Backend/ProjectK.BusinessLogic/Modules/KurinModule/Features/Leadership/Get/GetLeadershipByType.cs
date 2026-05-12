@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
 {
-    public class GetLeadershipByType : IRequest<ServiceResult<LeadershipDto>>
+    public class GetLeadershipByType : IRequest<ServiceResult<LeadershipResponse>>
     {
         public LeadershipType LeadershipType { get; }
         public Guid TypeKey { get; }
@@ -23,7 +23,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
         }
     }
 
-    public class GetLeadershipByTypeHandler : IRequestHandler<GetLeadershipByType, ServiceResult<LeadershipDto>>
+    public class GetLeadershipByTypeHandler : IRequestHandler<GetLeadershipByType, ServiceResult<LeadershipResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -34,7 +34,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
             _mapper = mapper;
         }
 
-        public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipByType request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<LeadershipResponse>> Handle(GetLeadershipByType request, CancellationToken cancellationToken)
         {
             var leadership = await _unitOfWork.Leaderships.GetAllByTypeAsync(request.LeadershipType, request.TypeKey, cancellationToken);
             var currentLeadership = leadership.Where(l => l.EndDate == null);
@@ -42,8 +42,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
             {
                 throw new ArgumentOutOfRangeException("Multiple leaderships found for the given type and key.");
             }
-            LeadershipDto leadershipResponse = _mapper.Map<LeadershipDto>(currentLeadership.FirstOrDefault());
-            return new ServiceResult<LeadershipDto>(
+            LeadershipResponse leadershipResponse = _mapper.Map<LeadershipResponse>(currentLeadership.FirstOrDefault());
+            return new ServiceResult<LeadershipResponse>(
                 ResultType.Success,
                 leadershipResponse);
         }

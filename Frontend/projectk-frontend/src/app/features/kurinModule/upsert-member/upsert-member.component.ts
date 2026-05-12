@@ -26,6 +26,7 @@ import { MemberWarningService } from '../common/services/member-warning-service/
 import { MemberWarningDto } from '../common/models/memberWarningDto';
 import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { PermissionService } from '../../authModule/services/permission.service';
 import { concatMap, from, Observable, of, toArray } from 'rxjs';
 
 @Component({
@@ -65,6 +66,7 @@ export class UpsertMemberComponent implements OnInit {
   memberService = inject(MemberService);
   memberWarningService = inject(MemberWarningService);
   authService = inject(AuthService);
+  permissionService = inject(PermissionService);
   confirmationService = inject(ConfirmationService);
 
   private cameFromMember = false;
@@ -209,8 +211,7 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   private resolveCanManageWarnings(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
-    return role === 'mentor' || role === 'manager' || role === 'admin';
+    return this.permissionService.canManageWarnings();
   }
 
   private isWarningActive(warning: MemberWarningDto, now: Date): boolean {

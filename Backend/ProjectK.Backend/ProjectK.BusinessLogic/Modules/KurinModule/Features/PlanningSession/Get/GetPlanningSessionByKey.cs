@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
 
-public record GetPlanningSessionByKey(Guid entityKey) : IRequest<ServiceResult<PlanningSessionDto>>;
+public record GetPlanningSessionByKey(Guid entityKey) : IRequest<ServiceResult<PlanningSessionResponse>>;
 
-public class GetPlanningSessionHandler : IRequestHandler<GetPlanningSessionByKey, ServiceResult<PlanningSessionDto>>
+public class GetPlanningSessionHandler : IRequestHandler<GetPlanningSessionByKey, ServiceResult<PlanningSessionResponse>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
@@ -25,16 +25,16 @@ public class GetPlanningSessionHandler : IRequestHandler<GetPlanningSessionByKey
         _mapper = mapper;
     }
 
-    public async Task<ServiceResult<PlanningSessionDto>> Handle(GetPlanningSessionByKey request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<PlanningSessionResponse>> Handle(GetPlanningSessionByKey request, CancellationToken cancellationToken)
     {
         var entity = await _uow.PlanningSessions.GetByKeyWithDetailsAsync(request.entityKey);
 
         if (entity == null)
         {
-            return new ServiceResult<PlanningSessionDto>(ResultType.NotFound);
+            return new ServiceResult<PlanningSessionResponse>(ResultType.NotFound);
         }
 
-        var dto = _mapper.Map<PlanningSessionDto>(entity);
-        return new ServiceResult<PlanningSessionDto>(ResultType.Success, dto);
+        var dto = _mapper.Map<PlanningSessionResponse>(entity);
+        return new ServiceResult<PlanningSessionResponse>(ResultType.Success, dto);
     }
 }

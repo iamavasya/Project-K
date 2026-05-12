@@ -63,6 +63,22 @@ namespace ProjectK.Infrastructure.Repositories
                                          .ToListAsync(cancellationToken);
         }
 
+        public async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
+                .Where(m => m.KurinKey == kurinKey && m.UserKey != null)
+                .Select(m => new ProjectK.Common.Models.Dtos.MemberLookupDto
+                {
+                    MemberKey = m.MemberKey,
+                    UserKey = m.UserKey,
+                    FirstName = m.FirstName,
+                    MiddleName = m.MiddleName,
+                    LastName = m.LastName
+                })
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
         {
             return await _context.Members

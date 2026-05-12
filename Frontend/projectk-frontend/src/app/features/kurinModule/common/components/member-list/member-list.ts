@@ -21,6 +21,7 @@ import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcom
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
+import { PermissionService } from '../../../../authModule/services/permission.service';
 
 @Component({
   selector: 'app-member-list',
@@ -54,10 +55,10 @@ export class MemberList implements OnInit {
   private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
 
   get canSetupLeadership(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase();
-    return role !== 'user';
+    return this.permissionService.canSetupLeadership();
   }
 
   membersLookup: MemberLookupDto[] = [];

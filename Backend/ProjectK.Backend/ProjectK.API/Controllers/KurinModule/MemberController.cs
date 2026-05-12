@@ -8,7 +8,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Helpers;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.Requests;
 
@@ -76,7 +75,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 return BadRequest("groupKey is required.");
             }
 
-            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
+            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 GroupKey = request.GroupKey.Value,
@@ -108,7 +107,7 @@ namespace ProjectK.API.Controllers.KurinModule
             [FromForm] UpsertMemberRequest request,
             CancellationToken cancellationToken)
         {
-            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
+            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 KurinKey = kurinKey,
@@ -143,7 +142,7 @@ namespace ProjectK.API.Controllers.KurinModule
                                                 CancellationToken cancellationToken)
         {
 
-            byte[]? blobData = await ReadFileHelperFunction.ReadFileAsync(request.Blob, cancellationToken);
+            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 MemberKey = memberKey,
