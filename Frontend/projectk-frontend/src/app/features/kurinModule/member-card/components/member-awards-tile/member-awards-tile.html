@@ -14,7 +14,7 @@
 
     @if (groupedAwards.length > 0) {
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @for (group of groupedAwards; track trackAwardGroup) {
+            @for (group of groupedAwards; track trackAwardGroup($index, group)) {
                 <div
                     class="relative group cursor-pointer"
                     role="button"
