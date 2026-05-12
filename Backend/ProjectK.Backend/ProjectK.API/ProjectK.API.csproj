@@ -13,6 +13,10 @@
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">
       <PrivateAssets>all</PrivateAssets>
@@ -21,7 +25,7 @@
     <PackageReference Include="Spectre.Console" Version="0.55.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     <PackageReference Include="ProjectK.Optimization" Version="1.1.1" />
-    <PackageReference Include="ProjectK.ProbeAndBadges.DependencyInjection" Version="1.0.0" />
+    <PackageReference Include="ProjectK.ProbeAndBadges.DependencyInjection" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

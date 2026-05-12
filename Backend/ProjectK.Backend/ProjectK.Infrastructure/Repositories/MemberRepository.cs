@@ -36,6 +36,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
         }
 
@@ -44,6 +46,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.GroupKey == groupKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
@@ -53,6 +57,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.KurinKey == kurinKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.MemberWarnings)
+                                         .Include(m => m.MemberAwards)
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
@@ -62,6 +68,8 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members
                 .Include(m => m.Group)
                 .Include(m => m.Kurin)
+                .Include(m => m.MemberWarnings)
+                .Include(m => m.MemberAwards)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }
@@ -98,11 +106,11 @@ namespace ProjectK.Infrastructure.Repositories
 
             member.PlastLevelHistory.Add(history);
 
-            // Updating LatestPlastLevel
-            if (member.LatestPlastLevel == null || history.PlastLevel > member.LatestPlastLevel)
-            {
-                member.LatestPlastLevel = history.PlastLevel;
-            }
+            // Updating LatestPlastLevel based on most recent achievement date
+            var lastHistory = member.PlastLevelHistory
+                .OrderByDescending(h => h.DateAchieved)
+                .FirstOrDefault();
+            member.LatestPlastLevel = lastHistory?.PlastLevel;
         }
 
         public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken = default)

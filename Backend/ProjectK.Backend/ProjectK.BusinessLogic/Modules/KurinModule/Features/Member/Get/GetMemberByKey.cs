@@ -49,7 +49,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             {
                 var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(_currentUserContext.UserId!.Value, ct);
                 bool isAssignedMentor = assignments.Any(a => a.GroupKey == entity.GroupKey && a.RevokedAtUtc == null);
-                canViewPrivate = isAssignedMentor;
+                canViewPrivate = canViewPrivate || isAssignedMentor;
             }
 
             if (!canViewPrivate)

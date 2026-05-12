@@ -26,6 +26,8 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IProbeProgressRepository ProbeProgresses { get; }
         public IProbePointProgressRepository ProbePointProgresses { get; }
         public IMentorAssignmentRepository MentorAssignments { get; }
+        public IMemberWarningRepository MemberWarnings { get; }
+        public IMemberAwardRepository MemberAwards { get; }
         public IWaitlistRepository WaitlistEntries { get; }
         public IInvitationRepository Invitations { get; }
 
@@ -42,6 +44,8 @@ namespace ProjectK.Infrastructure.UnitOfWork
             ProbeProgresses = new ProbeProgressRepository(_context);
             ProbePointProgresses = new ProbePointProgressRepository(_context);
             MentorAssignments = new MentorAssignmentRepository(_context);
+            MemberWarnings = new MemberWarningRepository(_context);
+            MemberAwards = new MemberAwardRepository(_context);
             WaitlistEntries = new WaitlistRepository(_context);
             Invitations = new InvitationRepository(_context);
         }

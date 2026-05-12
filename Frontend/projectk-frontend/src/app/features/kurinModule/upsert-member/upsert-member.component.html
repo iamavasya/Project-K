@@ -1,6 +1,6 @@
 <p-confirmdialog />
 <form #form="ngForm">
-    <p-accordion value="0">
+    <p-accordion [multiple]="true" [(value)]="activeAccordionPanels">
         <p-accordion-panel value="0">
             <p-accordion-header>General Info</p-accordion-header>
             <p-accordion-content>
@@ -71,6 +71,7 @@
                             <p-datepicker
                                 name="dateOfBirth"
                                 [(ngModel)]="member.dateOfBirth"
+                                (ngModelChange)="markFormDirty()"
                                 required
                                 minAge
                                 #dateOfBirthCtrl="ngModel"
@@ -125,66 +126,93 @@
                 <div class="flex flex-col gap-4">
                     <div>
                         УПЮ
-                        <p-toggleswitch [(ngModel)]="showUpuLevels" name="upuSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUpuLevels" (ngModelChange)="onUpuToggle($event)" name="upuSwitch"></p-toggleswitch>
                         УСП
-                        <p-toggleswitch [(ngModel)]="showUspLevels" name="uspSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUspLevels" (ngModelChange)="onUspToggle($event)" name="uspSwitch"></p-toggleswitch>
                         УПС
-                        <p-toggleswitch [(ngModel)]="showUpsLevels" name="upsSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUpsLevels" (ngModelChange)="onUpsToggle($event)" name="upsSwitch"></p-toggleswitch>
                     </div>
                     <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" (ngModelChange)="markFormDirty()" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                         <label for="plastLevelEntry">Дата вступу в Пласт</label>
                     </p-floatLabel>
                     <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                         <label for="plastLevelUchasnyk">Дата заприсяження</label>
                     </p-floatLabel>
 
                     @if (showUpuLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" (ngModelChange)="markFormDirty()" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelRozviduvach">Дата здобуття розвідувача</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelSkob">Дата здобуття скоба/вірлиці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelHetmanskiySkob">Дата здобуття гетьманського скоба/вірлиці</label>
                         </p-floatLabel>
                     }
                     @if (showUspLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" (ngModelChange)="markFormDirty()" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelStarshoplastun">Дата переходу в УСП</label>
                         </p-floatLabel>
                     }
                     @if (showUpsLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelSenior">Дата переходу в УПС</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelSeniorPratsi">Дата здобуття пл. сен. праці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelSeniorDovirja">Дата здобуття пл. сен. довір'я</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
                             <label for="plastLevelSeniorKerivnytstva">Дата здобуття пл. сен. керівництва</label>
                         </p-floatLabel>
                     }
                 </div>
             </p-accordion-content>
         </p-accordion-panel>
+        @if (canManageWarnings && !isCreate) {
+        <p-accordion-panel value="2">
+            <p-accordion-header>Перестороги</p-accordion-header>
+            <p-accordion-content>
+                <div class="warning-section flex flex-col gap-3">
+                    @for (warning of warningLevels; track warning.level) {
+                    <div class="warning-item flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            [id]="'warning-' + warning.level"
+                            [checked]="isWarningChecked(warning.level)"
+                            [disabled]="isWarningBusy(warning.level) || (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) || (isWarningChecked(warning.level) && !canClearWarning(warning.level))"
+                            (change)="onWarningToggle(warning.level, $any($event.target).checked)"
+                        />
+                        <label [for]="'warning-' + warning.level">{{ warning.label }}</label>
+                        @if (isWarningChecked(warning.level) && !canClearWarning(warning.level)) {
+                        <span class="warning-hint text-xs">Скасувати може лише автор перестороги.</span>
+                        }
+                        @if (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) {
+                        <span class="warning-hint text-xs">Доступно після попереднього рівня.</span>
+                        }
+                    </div>
+                    }
+                </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+        }
     </p-accordion>
     <div>
         <div class="upsert-member-actions">
-            <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || form.untouched"></p-button>
+            <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)"></p-button>
             @if (!isCreate) {
                 <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
             }

@@ -106,7 +106,8 @@ export class MemberList implements OnInit {
           latestPlastLevel: m.latestPlastLevel ?? null,
           latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
           phoneNumber: m.phoneNumber,
-          dateOfBirth: m.dateOfBirth
+          dateOfBirth: m.dateOfBirth,
+          warnings: m.warnings ?? []
         }));
         this.hasUpcomingBirthdays = buildUpcomingBirthdays(this.membersLookup, this.upcomingBirthdaysWindowDays).length > 0;
       }

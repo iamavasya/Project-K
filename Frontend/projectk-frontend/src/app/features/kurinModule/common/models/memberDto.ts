@@ -1,5 +1,7 @@
 import { PlastLevelHistoryDto } from "./plastLevelHistoryDto";
 import { LeadershipHistoryDto } from "./requests/leadership/leadershipDto";
+import { MemberWarningDto } from "./memberWarningDto";
+import { MemberAwardDto } from "./memberAwardDto";
 
 export interface MemberDto {
     memberKey: string;
@@ -18,5 +20,7 @@ export interface MemberDto {
     latestPlastLevelDisplay?: string | null;
     plastLevelHistories: PlastLevelHistoryDto[];
     leadershipHistories: LeadershipHistoryDto[];
+    warnings?: MemberWarningDto[];
+    awards?: MemberAwardDto[];
     profilePhotoUrl: string | null;
 }

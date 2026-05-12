@@ -115,7 +115,8 @@ namespace ProjectK.API.Controllers.AuthModule
             var query = new CheckEntityAccessQuery
             {
                 EntityType = request.EntityType,
-                EntityKey = request.EntityKey
+                EntityKey = request.EntityKey,
+                Action = request.Action
             };
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);

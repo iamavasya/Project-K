@@ -1,7 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { FormGroup, FormsModule } from '@angular/forms';
+import { FormGroup, FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -22,6 +22,11 @@ import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { toDateOnlyString } from '../common/functions/toDateOnlyString.function';
+import { MemberWarningService } from '../common/services/member-warning-service/member-warning.service';
+import { MemberWarningDto } from '../common/models/memberWarningDto';
+import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
+import { AuthService } from '../../authModule/services/authService/auth.service';
+import { concatMap, from, Observable, of, toArray } from 'rxjs';
 
 @Component({
   selector: 'app-upsert-member',
@@ -31,6 +36,9 @@ import { toDateOnlyString } from '../common/functions/toDateOnlyString.function'
   styleUrl: './upsert-member.component.css'
 })
 export class UpsertMemberComponent implements OnInit {
+  @ViewChild('form') form!: NgForm;
+  activeAccordionPanels: string[] = ['0'];
+
   member: MemberDto = {
     memberKey: '',
     groupKey: '',
@@ -55,11 +63,14 @@ export class UpsertMemberComponent implements OnInit {
   router = inject(Router);
   location = inject(Location);
   memberService = inject(MemberService);
+  memberWarningService = inject(MemberWarningService);
+  authService = inject(AuthService);
   confirmationService = inject(ConfirmationService);
 
   private cameFromMember = false;
 
   isCreate = false;
+  canManageWarnings = false;
 
   plastLevelMap: Record<PlastLevel, PlastLevelHistoryDto> = {} as Record<PlastLevel, PlastLevelHistoryDto>;
   readonly PlastLevel = PlastLevel;
@@ -80,6 +91,17 @@ export class UpsertMemberComponent implements OnInit {
   showUpuLevels = false;
   showUspLevels = false;
   showUpsLevels = false;
+  memberWarnings: MemberWarningDto[] = [];
+  
+  warningsToAssign = new Set<MemberWarningLevel>();
+  warningsToCancel = new Set<string>(); // memberWarningKeys
+
+  readonly MemberWarningLevel = MemberWarningLevel;
+  readonly warningLevels = [
+    { level: MemberWarningLevel.Level1, label: 'Перша пересторога (3 місяці)' },
+    { level: MemberWarningLevel.Level2, label: 'Друга пересторога (6 місяців)' },
+    { level: MemberWarningLevel.Level3, label: 'Третя пересторога (12 місяців)' }
+  ];
 
   imageFile?: File;
   croppedImage = '';
@@ -103,24 +125,183 @@ export class UpsertMemberComponent implements OnInit {
       this.isCreate = false;
     } else {
       this.ensurePlastLevelMap();
+      this.setupAccordionAndToggles();
       this.isCreate = true;
     }
     const navState = (this.router.getCurrentNavigation()?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
     this.cameFromMember = navState?.fromMember === true;
+    this.canManageWarnings = this.resolveCanManageWarnings();
   }
 
   private loadData(): void {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
         this.member = member;
-        if (!this.member.plastLevelHistories) this.member.plastLevelHistories = [];
+        this.memberWarnings = member.warnings ?? [];
+        if (this.member.dateOfBirth) {
+          this.member.dateOfBirth = new Date(this.member.dateOfBirth);
+        }
+        if (!this.member.plastLevelHistories) {
+          this.member.plastLevelHistories = [];
+        } else {
+          this.member.plastLevelHistories.forEach(h => {
+            if (h.dateAchieved) {
+              h.dateAchieved = new Date(h.dateAchieved);
+            }
+          });
+        }
         this.ensurePlastLevelMap();
+        this.setupAccordionAndToggles();
       },
       error: (error) => {
         console.error('Error fetching member:', error);
         this.router.navigate(['/group', this.groupKey], { replaceUrl: true });
       }
     });
+  }
+
+  private setupAccordionAndToggles() {
+    const hasAnyPlastLevel = this.levelsConfig.some(config => this.plastLevelMap[config.level]?.dateAchieved != null);
+    if (hasAnyPlastLevel && !this.activeAccordionPanels.includes('1')) {
+      this.activeAccordionPanels.push('1');
+    }
+
+    if (this.memberWarnings.some(w => this.isWarningActive(w, new Date())) && !this.activeAccordionPanels.includes('2')) {
+      this.activeAccordionPanels.push('2');
+    }
+
+    this.showUpuLevels = [PlastLevel.Rozviduvach, PlastLevel.Skob, PlastLevel.HetmanskiySkob].some(l => this.plastLevelMap[l]?.dateAchieved != null);
+    this.showUspLevels = [PlastLevel.Starshoplastun].some(l => this.plastLevelMap[l]?.dateAchieved != null);
+    this.showUpsLevels = [PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva].some(l => this.plastLevelMap[l]?.dateAchieved != null);
+  }
+
+  markFormDirty() {
+    this.form?.form.markAsDirty();
+  }
+
+  onUpuToggle(value: boolean) {
+    this.showUpuLevels = value;
+    this.markFormDirty();
+    if (!value) {
+      this.plastLevelMap[PlastLevel.Rozviduvach].dateAchieved = null;
+      this.plastLevelMap[PlastLevel.Skob].dateAchieved = null;
+      this.plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved = null;
+    }
+  }
+
+  onUspToggle(value: boolean) {
+    this.showUspLevels = value;
+    this.markFormDirty();
+    if (!value) {
+      this.plastLevelMap[PlastLevel.Starshoplastun].dateAchieved = null;
+    }
+  }
+
+  onUpsToggle(value: boolean) {
+    this.showUpsLevels = value;
+    this.markFormDirty();
+    if (!value) {
+      this.plastLevelMap[PlastLevel.Senior].dateAchieved = null;
+      this.plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved = null;
+      this.plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved = null;
+      this.plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved = null;
+    }
+  }
+
+  private resolveCanManageWarnings(): boolean {
+    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
+    return role === 'mentor' || role === 'manager' || role === 'admin';
+  }
+
+  private isWarningActive(warning: MemberWarningDto, now: Date): boolean {
+    if (warning.revokedAtUtc) {
+      return false;
+    }
+
+    const expiresAt = Date.parse(warning.expiresAtUtc);
+    return !Number.isNaN(expiresAt) && expiresAt > now.getTime();
+  }
+
+  getActiveWarning(level: MemberWarningLevel): MemberWarningDto | null {
+    if (this.warningsToAssign.has(level)) {
+      return {
+        memberWarningKey: 'dummy',
+        memberKey: this.memberKey,
+        level: level,
+        issuedAtUtc: new Date().toISOString(),
+        expiresAtUtc: new Date(Date.now() + 86400000).toISOString(),
+        issuedByUserKey: this.authService.getAuthStateValue()?.userKey ?? ''
+      } as MemberWarningDto;
+    }
+
+    const now = new Date();
+    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, now));
+    if (warning && !this.warningsToCancel.has(warning.memberWarningKey)) {
+      return warning;
+    }
+
+    return null;
+  }
+
+  isWarningChecked(level: MemberWarningLevel): boolean {
+    return this.getActiveWarning(level) !== null;
+  }
+
+  canSelectWarning(level: MemberWarningLevel): boolean {
+    if (!this.canManageWarnings) {
+      return false;
+    }
+
+    if (level === MemberWarningLevel.Level1) {
+      return true;
+    }
+
+    if (level === MemberWarningLevel.Level2) {
+      return this.isWarningChecked(MemberWarningLevel.Level1);
+    }
+
+    return this.isWarningChecked(MemberWarningLevel.Level2);
+  }
+
+  canClearWarning(level: MemberWarningLevel): boolean {
+    if (this.warningsToAssign.has(level)) return true;
+
+    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
+    if (!warning) return false;
+
+    const currentUserKey = this.authService.getAuthStateValue()?.userKey?.toLowerCase();
+    return !!currentUserKey && warning.issuedByUserKey.toLowerCase() === currentUserKey;
+  }
+
+  isWarningBusy(level: MemberWarningLevel): boolean {
+    return false; // we don't have flight status for inline anymore
+  }
+
+  onWarningToggle(level: MemberWarningLevel, isChecked: boolean): void {
+    this.markFormDirty();
+    if (!this.memberKey) return;
+
+    if (isChecked) {
+      if (!this.canSelectWarning(level)) return;
+
+      const existing = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
+      if (existing && this.warningsToCancel.has(existing.memberWarningKey)) {
+        this.warningsToCancel.delete(existing.memberWarningKey);
+      } else {
+        this.warningsToAssign.add(level);
+      }
+    } else {
+      if (!this.canClearWarning(level)) return;
+
+      if (this.warningsToAssign.has(level)) {
+        this.warningsToAssign.delete(level);
+      } else {
+        const existing = this.getActiveWarning(level);
+        if (existing) {
+          this.warningsToCancel.add(existing.memberWarningKey);
+        }
+      }
+    }
   }
 
   private ensurePlastLevelMap() {
@@ -141,6 +322,28 @@ export class UpsertMemberComponent implements OnInit {
     return filteredHistory;
   }
 
+  private processPendingWarnings(memberKey: string): Observable<any> {
+    const tasks: Observable<any>[] = [];
+
+    for (const key of this.warningsToCancel) {
+      tasks.push(this.memberWarningService.cancelWarning(memberKey, key));
+    }
+
+    const levelsToAssign = Array.from(this.warningsToAssign).sort();
+    for (const level of levelsToAssign) {
+      tasks.push(this.memberWarningService.assignWarning(memberKey, { level }));
+    }
+
+    if (tasks.length === 0) {
+      return of(null);
+    }
+
+    return from(tasks).pipe(
+      concatMap(task => task),
+      toArray()
+    );
+  }
+
   submit(): void {
     const baseDto: UpsertMemberDto = {
       firstName: this.member.firstName,
@@ -158,33 +361,35 @@ export class UpsertMemberComponent implements OnInit {
       baseDto.kurinKey = this.kurinKey;
     }
 
-    if (this.isCreate) {
-      baseDto.createUserAccount = this.createUserAccount;
+    const saveObs = this.isCreate 
+      ? this.memberService.create({ ...baseDto, createUserAccount: this.createUserAccount }, this.fileToUpload)
+      : this.memberService.update(this.memberKey, { ...baseDto, removeProfilePhoto: this.removeProfilePhoto }, this.fileToUpload);
 
-      this.memberService.create(baseDto, this.fileToUpload).subscribe({
-        next: (createdMember) => {
-          this.router.navigate(['/member', createdMember.memberKey], { replaceUrl: true });
-        },
-        error: (error) => {
-          console.error('Error creating member:', error, baseDto);
-        }
-      });
-    } else {
-      baseDto.removeProfilePhoto = this.removeProfilePhoto;
-
-      this.memberService.update(this.memberKey, baseDto, this.fileToUpload).subscribe({
-        next: (updatedMember) => {
-          if (this.cameFromMember) {
-            this.location.back();
-            return;
+    saveObs.subscribe({
+      next: (savedMember) => {
+        this.processPendingWarnings(savedMember.memberKey).subscribe({
+          next: () => {
+            if (this.cameFromMember) {
+              this.location.back();
+            } else {
+              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
+            }
+          },
+          error: (warnErr) => {
+            console.error('Error processing warnings:', warnErr);
+            // Still navigate even if warnings failed partially
+            if (this.cameFromMember) {
+              this.location.back();
+            } else {
+              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
+            }
           }
-          this.router.navigate(['/member', updatedMember.memberKey], { replaceUrl: true });
-        },
-        error: (error) => {
-          console.error('Error updating member:', error);
-        }
-      });
-    }
+        });
+      },
+      error: (error) => {
+        console.error('Error saving member:', error);
+      }
+    });
   }
 
   confirmDeleteMember(event: Event) {

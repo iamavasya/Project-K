@@ -19,6 +19,21 @@
                             {{ member.firstName }} {{ member.lastName }}
                         </h1>
 
+                        @if (hasActiveWarnings) {
+                        <div
+                            class="member-warning-indicator"
+                            pTooltip="{{ warningTooltip }}"
+                            tooltipPosition="top"
+                        >
+                            @for (level of warningLevels; track level) {
+                            <span
+                                class="member-warning-dot"
+                                [class.member-warning-dot--active]="getWarningDotActive(level)"
+                            ></span>
+                            }
+                        </div>
+                        }
+
                         <p-tag
                             [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
                             severity="info"
@@ -182,6 +197,17 @@
                 }
             </section>
         </div>
+
+        <section class="member-tile rounded-2xl p-4 md:p-5">
+            <app-member-awards-tile
+                [awards]="member.awards || []"
+                [canEdit]="canEditMember"
+                [canReview]="canInlineModerateSkills"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (reviewAward)="onReviewAward($event)">
+            </app-member-awards-tile>
+        </section>
 
         <div class="grid gap-5 lg:grid-cols-6">
             <app-bento-tile-skeleton class="lg:col-span-3" variant="media"></app-bento-tile-skeleton>

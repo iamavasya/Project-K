@@ -12,6 +12,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries
     {
         public string EntityType { get; set; }
         public string EntityKey { get; set; }
+        public string? Action { get; set; }
 
         // Deprecated: ignored by handler. Kept only for compatibility.
         public string? ActiveKurinKey { get; set; }

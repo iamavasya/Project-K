@@ -9,4 +9,5 @@ export interface MemberLookupDto {
     latestPlastLevelDisplay?: string | null;
     phoneNumber?: string | null;
     dateOfBirth?: string | Date | null;
+    warnings?: import('../../memberWarningDto').MemberWarningDto[];
 }
