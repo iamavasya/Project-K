@@ -1,0 +1,64 @@
+﻿<p-dialog
+    [(visible)]="visible"
+    [header]="awardToEdit ? 'Редагувати відзначення' : 'Додати відзначення'"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(94vw, 30rem)' }"
+    [focusOnShow]="false"
+    (onHide)="close()"
+>
+    <div *ngIf="statusLabel" class="award-dialog-status">
+        {{ statusLabel }}
+    </div>
+
+    <form [formGroup]="form" class="flex flex-col gap-4 mt-2">
+        <div class="flex flex-col gap-2">
+            <label for="level">Ступінь відзначення</label>
+            <p-select id="level" [options]="availableLevels" formControlName="level" optionLabel="label" optionValue="value" placeholder="Оберіть ступінь"></p-select>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="dateAcquired">Дата здобуття</label>
+            <p-datepicker id="dateAcquired" formControlName="dateAcquired" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true"></p-datepicker>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="note">Нотатка</label>
+            <textarea id="note" pTextarea formControlName="note" rows="3" class="w-full"></textarea>
+        </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+        <div class="award-dialog-footer">
+            <div class="award-dialog-danger-actions">
+                <p-button
+                    *ngIf="canDeleteAward"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    styleClass="award-dialog-action"
+                    (click)="onDelete()"
+                ></p-button>
+                <p-button
+                    *ngIf="canApproveAward"
+                    icon="pi pi-check"
+                    severity="success"
+                    styleClass="award-dialog-action"
+                    (click)="onApprove()"
+                ></p-button>
+            </div>
+
+            <div class="award-dialog-main-actions">
+                <p-button
+                    label="Зберегти"
+                    icon="pi pi-save"
+                    [disabled]="form.invalid"
+                    styleClass="award-dialog-action"
+                    (click)="onSave()"
+                ></p-button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>

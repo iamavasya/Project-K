@@ -21,6 +21,8 @@ namespace ProjectK.Common.Interfaces
         IProbeProgressRepository ProbeProgresses { get; }
         IProbePointProgressRepository ProbePointProgresses { get; }
         IMentorAssignmentRepository MentorAssignments { get; }
+        IMemberWarningRepository MemberWarnings { get; }
+        IMemberAwardRepository MemberAwards { get; }
         IWaitlistRepository WaitlistEntries { get; }
         IInvitationRepository Invitations { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);

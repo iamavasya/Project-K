@@ -17,25 +17,27 @@ export class BadgeImageBlobService {
       return null;
     }
 
-    if (!this.isProtectedBadgesImageUrl(imageUrl)) {
-      return imageUrl;
+    const sourceUrl = this.resolveSourceUrl(imageUrl);
+
+    if (!this.isProtectedImageUrl(sourceUrl)) {
+      return sourceUrl;
     }
 
-    const cachedObjectUrl = this.objectUrlBySourceUrl.get(imageUrl);
+    const cachedObjectUrl = this.objectUrlBySourceUrl.get(sourceUrl);
     if (cachedObjectUrl) {
       return cachedObjectUrl;
     }
 
-    if (!this.pendingImageLoads.has(imageUrl)) {
-      this.pendingImageLoads.add(imageUrl);
-      this.http.get(imageUrl, { responseType: 'blob' }).subscribe({
+    if (!this.pendingImageLoads.has(sourceUrl)) {
+      this.pendingImageLoads.add(sourceUrl);
+      this.http.get(sourceUrl, { responseType: 'blob' }).subscribe({
         next: (blob) => {
           const objectUrl = URL.createObjectURL(blob);
-          this.objectUrlBySourceUrl.set(imageUrl, objectUrl);
-          this.pendingImageLoads.delete(imageUrl);
+          this.objectUrlBySourceUrl.set(sourceUrl, objectUrl);
+          this.pendingImageLoads.delete(sourceUrl);
         },
         error: () => {
-          this.pendingImageLoads.delete(imageUrl);
+          this.pendingImageLoads.delete(sourceUrl);
         }
       });
     }
@@ -43,16 +45,33 @@ export class BadgeImageBlobService {
     return null;
   }
 
-  private isProtectedBadgesImageUrl(imageUrl: string): boolean {
+  private isProtectedImageUrl(imageUrl: string): boolean {
     if (imageUrl.startsWith('/badges_images/')) {
       return true;
     }
 
-    if (!this.apiOrigin) {
-      return imageUrl.includes('/badges_images/');
+    if (imageUrl.startsWith('/api/awards/images/')) {
+      return true;
     }
 
-    return imageUrl.startsWith(`${this.apiOrigin}/badges_images/`);
+    if (!this.apiOrigin) {
+      return imageUrl.includes('/badges_images/') || imageUrl.includes('/api/awards/images/');
+    }
+
+    return imageUrl.startsWith(`${this.apiOrigin}/badges_images/`)
+      || imageUrl.startsWith(`${this.apiOrigin}/api/awards/images/`);
+  }
+
+  private resolveSourceUrl(imageUrl: string): string {
+    if (!this.apiOrigin) {
+      return imageUrl;
+    }
+
+    if (imageUrl.startsWith('/badges_images/') || imageUrl.startsWith('/api/awards/images/')) {
+      return `${this.apiOrigin}${imageUrl}`;
+    }
+
+    return imageUrl;
   }
 
   private resolveApiOrigin(): string {

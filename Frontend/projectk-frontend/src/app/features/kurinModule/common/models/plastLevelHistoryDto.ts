@@ -4,5 +4,5 @@ export interface PlastLevelHistoryDto {
     memberKey?: string;
     plastLevelHistoryKey?: string;
     plastLevel: PlastLevel;
-    dateAchieved?: string | null;
+    dateAchieved?: Date | string | null;
 }

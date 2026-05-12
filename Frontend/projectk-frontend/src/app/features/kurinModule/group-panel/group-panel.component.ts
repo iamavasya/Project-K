@@ -14,6 +14,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { forkJoin, of } from 'rxjs';
+import { EntityService } from '../../authModule/services/entity.service';
 
 @Component({
   selector: 'app-group-panel',
@@ -28,6 +29,7 @@ export class GroupPanelComponent implements OnInit {
   private readonly memberService = inject(MemberService);
   private readonly groupService = inject(GroupService);
   private readonly authService = inject(AuthService);
+  private readonly entityService = inject(EntityService);
   groupKey = '';
   group: GroupDto | null = null;
   members: MemberDto[] = [];
@@ -38,6 +40,7 @@ export class GroupPanelComponent implements OnInit {
   selectedMentorUserKeys: string[] = [];
   initialMentorUserKeys: string[] = [];
   mentorSaveInProgress = false;
+  canCreateMembers = false;
 
 
   tableHeaders: string[] = [
@@ -59,8 +62,7 @@ export class GroupPanelComponent implements OnInit {
   }
 
   get canManageMembers(): boolean {
-    const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase();
-    return role !== 'user';
+    return this.canCreateMembers;
   }
 
   get mentorOptions(): { label: string; value: string; }[] {
@@ -88,6 +90,7 @@ export class GroupPanelComponent implements OnInit {
         }
       }
     });
+    this.updateGroupAccess();
     this.memberService.getAll(this.groupKey).subscribe({
       next: (members) => {
         this.members = members;
@@ -170,6 +173,22 @@ export class GroupPanelComponent implements OnInit {
       error: (err) => {
         console.error('Error saving mentor assignments:', err);
         this.mentorSaveInProgress = false;
+      }
+    });
+  }
+
+  private updateGroupAccess(): void {
+    if (!this.groupKey) {
+      this.canCreateMembers = false;
+      return;
+    }
+
+    this.entityService.checkEntityAccess('group', this.groupKey, 'Create').subscribe({
+      next: (canCreate) => {
+        this.canCreateMembers = canCreate;
+      },
+      error: () => {
+        this.canCreateMembers = false;
       }
     });
   }

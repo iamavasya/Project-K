@@ -1,0 +1,70 @@
+:host {
+    display: block;
+    --p-skeleton-animation-background: var(--p-skeleton-background);
+}
+
+.bento-tile-skeleton {
+    position: relative;
+    min-height: 16rem;
+    overflow: hidden;
+    border: 1px solid var(--p-content-border-color);
+    background: linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--p-content-background) 94%, var(--p-primary-100) 6%),
+        var(--p-content-background)
+    );
+    box-shadow: 0 10px 30px -22px color-mix(in srgb, var(--p-primary-color) 55%, transparent);
+}
+
+.bento-tile-skeleton--compact {
+    min-height: 12.5rem;
+}
+
+.bento-tile-skeleton--tall {
+    min-height: 22rem;
+}
+
+.bento-header,
+.bento-content {
+    position: relative;
+    z-index: 1;
+}
+
+.bento-tile-skeleton .p-skeleton {
+    background-color: var(--p-skeleton-background);
+}
+
+.bento-tile-skeleton .p-skeleton::after {
+    animation: none;
+    background-image: none;
+}
+
+.bento-ribbon {
+    position: absolute;
+    left: -18%;
+    right: -18%;
+    top: 50%;
+    transform: translateY(-50%) rotate(-2.5deg);
+    padding: 0.35rem 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    border-top: 1px solid color-mix(in srgb, var(--p-primary-color) 60%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--p-primary-color) 60%, transparent);
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--p-primary-color) 78%, var(--p-primary-200) 22%),
+        color-mix(in srgb, var(--p-primary-color) 45%, var(--p-content-background) 55%)
+    );
+    box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--p-primary-color) 55%, transparent);
+    opacity: 0.95;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.bento-ribbon__text {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--p-content-background);
+}

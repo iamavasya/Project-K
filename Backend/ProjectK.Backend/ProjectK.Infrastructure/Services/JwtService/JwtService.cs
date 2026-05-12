@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Infrastructure.Services.JwtService
 {
-    // TODO: Винести змінні днів в конфіг аппсетінгів
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
@@ -68,7 +67,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
             return new RefreshToken
             {
                 Token = Convert.ToBase64String(randomBytes),
-                Expires = DateTime.UtcNow.AddDays(7), // приклад: 7 днів
+                Expires = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:RefreshTokenExpiresInDays"])),
                 Created = DateTime.UtcNow
             };
         }

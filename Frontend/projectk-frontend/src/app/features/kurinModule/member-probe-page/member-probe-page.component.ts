@@ -8,6 +8,7 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { EntityService } from '../../authModule/services/entity.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -37,6 +38,7 @@ export class MemberProbePageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly entityService = inject(EntityService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly memberService = inject(MemberService);
   private readonly probesCatalogService = inject(ProbesCatalogService);
@@ -59,10 +61,11 @@ export class MemberProbePageComponent implements OnInit {
   isUpdatingProbeStatus = false;
   reviewerActionErrorMessage: string | null = null;
   reviewerActionSuccessMessage: string | null = null;
+  canManageMemberActions = false;
 
   get canManageProbePoints(): boolean {
     const role = this.authService.getAuthStateValue()?.role?.trim().toLowerCase() ?? '';
-    return this.reviewerRoles.has(role);
+    return this.reviewerRoles.has(role) && this.canManageMemberActions;
   }
 
   ngOnInit(): void {
@@ -71,6 +74,7 @@ export class MemberProbePageComponent implements OnInit {
       this.probeId = params.get('probeId');
       this.reviewerActionErrorMessage = null;
       this.reviewerActionSuccessMessage = null;
+      this.updateMemberAccess();
       this.loadData();
     });
   }
@@ -217,6 +221,22 @@ export class MemberProbePageComponent implements OnInit {
       },
       accept: () => {
         this.executeCloseProbe();
+      }
+    });
+  }
+
+  private updateMemberAccess(): void {
+    if (!this.memberKey) {
+      this.canManageMemberActions = false;
+      return;
+    }
+
+    this.entityService.checkEntityAccess('member', this.memberKey, 'Update').subscribe({
+      next: (canUpdate) => {
+        this.canManageMemberActions = canUpdate;
+      },
+      error: () => {
+        this.canManageMemberActions = false;
       }
     });
   }
