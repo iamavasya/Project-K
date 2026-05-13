@@ -43,49 +43,6 @@ public sealed class SecurityHardeningMiddleware
             }
         }
 
-        // 2. Tailscale Restriction for Admins/Managers
-        if (_options.Value.EnableTailscaleOnlyForAdmins)
-        {
-            var user = context.User;
-            var isPrivileged = user.IsInRole(UserRole.Admin.ToClaimValue()) || 
-                             user.IsInRole(UserRole.Manager.ToClaimValue());
-
-            if (isPrivileged)
-            {
-                var ipAddr = context.Connection.RemoteIpAddress!;
-                if (!IsIpInTailscaleRange(ipAddr, _options.Value.TailscaleIpRange))
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsync("Administrative access is only allowed via Tailscale.");
-                    return;
-                }
-            }
-        }
-        
         await _next(context);
-    }
-
-    private bool IsIpInTailscaleRange(IPAddress ip, string cidr)
-    {
-        if (ip.AddressFamily != AddressFamily.InterNetwork) return false;
-
-        try 
-        {
-            string[] parts = cidr.Split('/');
-            if (parts.Length != 2) return false;
-
-            var networkAddress = IPAddress.Parse(parts[0]);
-            int maskLength = int.Parse(parts[1]);
-
-            uint ipAddress = BitConverter.ToUInt32(ip.GetAddressBytes().Reverse().ToArray(), 0);
-            uint networkAddr = BitConverter.ToUInt32(networkAddress.GetAddressBytes().Reverse().ToArray(), 0);
-            uint mask = uint.MaxValue << (32 - maskLength);
-
-            return (ipAddress & mask) == (networkAddr & mask);
-        }
-        catch
-        {
-            return false;
-        }
     }
 }
