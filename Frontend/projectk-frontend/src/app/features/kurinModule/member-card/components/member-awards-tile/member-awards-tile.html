@@ -15,15 +15,7 @@
     @if (groupedAwards.length > 0) {
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             @for (group of groupedAwards; track trackAwardGroup($index, group)) {
-                <div
-                    class="relative group cursor-pointer"
-                    role="button"
-                    tabindex="0"
-                    [attr.aria-label]="getAwardTitle(group.level)"
-                    (click)="openDialog(group.latest)"
-                    (keydown.enter)="openDialog(group.latest)"
-                    (keydown.space)="openDialog(group.latest)"
-                >
+                <button type="button" class="relative group cursor-pointer border-0 bg-transparent p-0 text-left" (click)="openDialog(group.latest)">
                     <article class="award-preview-item" [class.award-preview-item--pending]="isPendingConfirmation(group.latest)">
                         <div class="award-preview-image-wrap">
                             @if (getAwardImageUrl(group.latest); as imageUrl) {
@@ -48,7 +40,7 @@
                             </div>
                         }
                     </article>
-                </div>
+                </button>
             }
         </div>
     }
@@ -66,3 +58,4 @@
 </app-member-awards-dialog>
 
 <p-confirmDialog></p-confirmDialog>
+

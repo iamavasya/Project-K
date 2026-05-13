@@ -11,6 +11,7 @@ import { ProbesCatalogService } from '../common/services/probes-and-badges/probe
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { EntityService } from '../../authModule/services/entity.service';
 import { BadgeProgressStatus } from '../common/models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
@@ -27,6 +28,7 @@ describe('MemberCardComponent', () => {
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
   let badgeImageBlobServiceSpy: jasmine.SpyObj<BadgeImageBlobService>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let entityServiceSpy: jasmine.SpyObj<EntityService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
@@ -53,6 +55,7 @@ describe('MemberCardComponent', () => {
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
     badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
+    entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
 
@@ -85,6 +88,7 @@ describe('MemberCardComponent', () => {
       verifiedByRole: null,
       auditTrail: []
     }));
+    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
     memberProgressServiceSpy.submitBadgeProgress.and.returnValue(of({
       badgeProgressKey: 'new-progress',
       memberKey,
@@ -125,6 +129,7 @@ describe('MemberCardComponent', () => {
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
         { provide: BadgeImageBlobService, useValue: badgeImageBlobServiceSpy },
         { provide: AuthService, useValue: authServiceSpy },
+        { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
       ]
@@ -464,6 +469,7 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
 
+    component.canManageMemberActions = true;
     component.isAllSkillsDialogVisible = true;
     component.openSkillsReviewFromDialog();
 
@@ -508,6 +514,7 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
 
+    component.canManageMemberActions = true;
     const confirmSpy = spyOn(component.confirmationService, 'confirm');
 
     component.approvePendingSkill(component.skillsSummary.pendingConfirmation[0]);
@@ -556,6 +563,7 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
 
+    component.canManageMemberActions = true;
     const confirmSpy = spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
       options.accept?.();
       return component.confirmationService;

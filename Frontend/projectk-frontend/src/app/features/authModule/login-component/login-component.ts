@@ -5,6 +5,7 @@ import { FloatLabel } from 'primeng/floatlabel';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../services/authService/auth.service';
+import { PermissionService } from '../services/permission.service';
 import { LoginRequest } from '../models/login-request.model';
 import { Router } from '@angular/router';
 
@@ -15,6 +16,7 @@ import { Router } from '@angular/router';
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
   private readonly router = inject(Router);
 
   email = '';
@@ -28,9 +30,9 @@ export class LoginComponent {
     this.authService.login(LoginRequest).subscribe({
       next: () => {
         const state = this.authService.getAuthStateValue();
-        const role = state?.role?.trim().toLowerCase();
+        const isAdmin = this.permissionService.isAdmin(state?.role);
         
-        if (role === 'admin') {
+        if (isAdmin) {
           this.router.navigate(['/panel']);
         } else if (state?.memberKey) {
           this.router.navigate(['/member', state.memberKey]);

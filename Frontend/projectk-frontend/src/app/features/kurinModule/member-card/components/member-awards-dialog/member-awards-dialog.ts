@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, inject, Input, OnChanges, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -39,12 +39,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
   @Output() approve = new EventEmitter<string>();
   @Output() delete = new EventEmitter<MemberAwardDto>();
 
-  private readonly fb = inject(FormBuilder);
-  readonly form: FormGroup = this.fb.group({
-    level: [null, Validators.required],
-    dateAcquired: [null, Validators.required],
-    note: ['']
-  });
+  form: FormGroup;
 
   levels = [
     { label: 'Перша', value: MemberAwardLevel.First },
@@ -52,6 +47,16 @@ export class MemberAwardsDialogComponent implements OnChanges {
     { label: 'Третя', value: MemberAwardLevel.Third },
     { label: 'Четверта', value: MemberAwardLevel.Fourth }
   ];
+
+  private readonly fb = inject(FormBuilder);
+
+  constructor() {
+    this.form = this.fb.group({
+      level: [null, Validators.required],
+      dateAcquired: [null, Validators.required],
+      note: ['']
+    });
+  }
 
   ngOnChanges(): void {
     if (this.visible) {

@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
