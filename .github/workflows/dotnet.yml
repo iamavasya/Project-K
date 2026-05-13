@@ -2,7 +2,7 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     paths:
       - 'Backend/**'
   release:
@@ -20,21 +20,23 @@ jobs:
       run: |
         RAW_TAG="${{ github.event.release.tag_name }}"
         CLEAN_VERSION="${RAW_TAG#v}"
-        
         RELEASE_NAME='${{ github.event.release.name }}'
-        
         CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
-        
         echo "VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
         echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
 
+    - name: Extract Dev Info
+      if: github.event_name == 'push'
+      shell: bash
+      run: |
+        echo "VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
+        echo "CODENAME=StagingBuild" >> $GITHUB_ENV
+
     - name: Inject Versioning
-      if: github.event_name == 'release'
       shell: bash
       run: |
         FILES=$(find Backend/ProjectK.Backend/ProjectK.API/ -name "appsettings*.json")
         echo "Updating files: $FILES"
-        
         for file in $FILES; do
           sed -i "s/v0.0.0-dev/${{ env.VERSION }}/g" "$file"
           sed -i "s/LocalDevelopment/${{ env.CODENAME }}/g" "$file"
@@ -66,10 +68,11 @@ jobs:
         path: ./publish/
 
   deploy:
-    if: github.event_name == 'release'
+    if: github.event_name == 'push' || github.event_name == 'release'
     needs: build-and-test
     runs-on: ubuntu-latest
-    environment: production
+    environment: 
+      name: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
     
     steps:
     - name: Download Artifact
@@ -81,6 +84,5 @@ jobs:
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: 'api-projectk-prod'
+        app-name: ${{ vars.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./publish

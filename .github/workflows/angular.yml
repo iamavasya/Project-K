@@ -2,12 +2,12 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [ "main", "dev" ]
     paths:
       - 'Frontend/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches: [main]
+    branches: [ "main", "dev" ]
     paths:
       - 'Frontend/**'
   release:
@@ -29,12 +29,17 @@ jobs:
           CLEAN_VERSION="${RAW_TAG#v}"
           RELEASE_NAME='${{ github.event.release.name }}'
           CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
-          
           echo "VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
           echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
 
+      - name: Extract Dev Info
+        if: github.event_name != 'release'
+        shell: bash
+        run: |
+          echo "VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "CODENAME=StagingBuild" >> $GITHUB_ENV
+
       - name: Inject Versioning to Angular
-        if: github.event_name == 'release'
         shell: bash
         run: |
           ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
@@ -63,23 +68,28 @@ jobs:
 
   build_and_deploy:
     needs: lint_and_test
-    if: github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy to Azure SWA
     environment:
-      name: ${{ github.event_name == 'release' && 'production' || 'staging' }}
+      name: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
           
-      - name: Re-inject Versioning
-        if: github.event_name == 'release'
+      - name: Inject Versioning
         shell: bash
         run: |
-          TAG_NAME="${{ github.event.release.tag_name }}"
-          CODE_NAME=$(echo "${{ github.event.release.name }}" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            CODE_NAME=$(echo "${{ github.event.release.name }}" | grep -oP '"\K[^"]+' || echo "Ant-Era")
+          else
+            TAG_NAME="dev-${GITHUB_SHA::7}"
+            CODE_NAME="StagingBuild"
+          fi
+          
           ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
           for file in $ENV_FILES; do
             sed -i "s/v0.0.0-dev/$TAG_NAME/g" "$file"
@@ -100,6 +110,8 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+    environment:
+      name: ${{ github.base_ref == 'main' && 'production' || 'staging' }}
     steps:
       - name: Close Pull Request
         id: closepullrequest

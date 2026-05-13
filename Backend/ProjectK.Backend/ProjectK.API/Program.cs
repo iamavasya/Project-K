@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,6 +14,7 @@ using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Common.Extensions;
 using System.Text;
+using System.Threading.RateLimiting;
 using ProjectK.API.Helpers;
 using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
@@ -86,29 +88,9 @@ namespace ProjectK.API
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend", policy =>
+                options.AddPolicy("EnvCorsPolicy", policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-
-                options.AddPolicy("TailscalePolicy", policy =>
-                {
-                    var frontendUrl = builder.Configuration["TailscaleCorsOrigin"];
-                    if (!string.IsNullOrEmpty(frontendUrl))
-                    {
-                        policy.WithOrigins(frontendUrl)
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                    }
-                });
-
-                options.AddPolicy("ProdCorsPolicy", policy =>
-                {
-                    var frontendUrl = builder.Configuration["ProdCorsOrigin"];
+                    var frontendUrl = builder.Configuration["EnvCorsOrigin"];
                     if (!string.IsNullOrEmpty(frontendUrl))
                     {
                         policy.WithOrigins(frontendUrl)
@@ -152,6 +134,43 @@ namespace ProjectK.API
             builder.Services.AddHostedService<OrphanPhotoCleanupService>();
             // --- end Blob storage DI ---
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                // Global limit
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 100,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+
+                // Strict limit for Auth (Login/Register)
+                options.AddPolicy("StrictAuthLimit", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 5,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(5)
+                        }));
+
+                options.OnRejected = async (context, token) =>
+                {
+                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
+                };
+            });
+
+            builder.Services.AddMemoryCache();
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<ProjectK.API.Services.GeoIPService>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly)
@@ -176,8 +195,6 @@ namespace ProjectK.API
 
             builder.Services.AddProjectDependencies(builder.Configuration);
 
-            // Trigger workflow
-
             var app = builder.Build();
 
             await RunStartupTasksAsync(app);
@@ -190,32 +207,13 @@ namespace ProjectK.API
 
             app.UseRouting();
 
-            if (app.Environment.IsEnvironment("Tailscale")) app.UseCors("TailscalePolicy");
-            else if (app.Environment.IsEnvironment("Production")) app.UseCors("ProdCorsPolicy");
-            else app.UseCors("AllowFrontend");
+            app.UseCors("EnvCorsPolicy");
 
             app.UseAuthentication();
 
-            if (!app.Environment.IsEnvironment("Production"))
-            {
-                app.Use(async (context, next) =>
-                {
-                    if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
-                    {
-                        Console.WriteLine("User is authenticated!");
-                        foreach (var claim in context.User.Claims)
-                        {
-                            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("User is NOT authenticated.");
-                    }
-
-                    await next();
-                });
-            }
+            app.UseRateLimiter();
+            
+            app.UseMiddleware<ProjectK.API.Middleware.SecurityHardeningMiddleware>();
 
             app.UseAuthorization();
 

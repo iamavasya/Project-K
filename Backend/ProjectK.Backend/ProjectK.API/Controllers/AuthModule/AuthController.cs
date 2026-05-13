@@ -11,6 +11,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.Common.Models.Records;
@@ -50,6 +51,7 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         [Authorize(Policy = "RequireManager")]
+        [EnableRateLimiting("StrictAuthLimit")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
         {
@@ -59,6 +61,7 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("StrictAuthLimit")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest request)
         {
