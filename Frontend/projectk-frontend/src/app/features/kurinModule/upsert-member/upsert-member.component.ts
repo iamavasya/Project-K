@@ -275,6 +275,7 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   isWarningBusy(level: MemberWarningLevel): boolean {
+    void level;
     return false; // we don't have flight status for inline anymore
   }
 
@@ -323,16 +324,16 @@ export class UpsertMemberComponent implements OnInit {
     return filteredHistory;
   }
 
-  private processPendingWarnings(memberKey: string): Observable<any> {
-    const tasks: Observable<any>[] = [];
+  private processPendingWarnings(memberKey: string): Observable<unknown[] | null> {
+    const tasks: Observable<unknown>[] = [];
 
     for (const key of this.warningsToCancel) {
       tasks.push(this.memberWarningService.cancelWarning(memberKey, key));
     }
 
-    const levelsToAssign = Array.from(this.warningsToAssign).sort();
-    for (const level of levelsToAssign) {
-      tasks.push(this.memberWarningService.assignWarning(memberKey, { level }));
+    const levelsToAssign = Array.from(this.warningsToAssign).sort((left, right) => left.localeCompare(right));
+    for (const warningLevel of levelsToAssign) {
+      tasks.push(this.memberWarningService.assignWarning(memberKey, { level: warningLevel }));
     }
 
     if (tasks.length === 0) {
@@ -388,7 +389,11 @@ export class UpsertMemberComponent implements OnInit {
         });
       },
       error: (error) => {
-        console.error('Error saving member:', error);
+        if (this.isCreate) {
+          console.error('Error creating member:', error, { isCreate: true });
+        } else {
+          console.error('Error updating member:', error);
+        }
       }
     });
   }

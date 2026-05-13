@@ -7,55 +7,58 @@ import { AuthService } from './authService/auth.service';
 export class PermissionService {
   private readonly authService = inject(AuthService);
 
-  getRole(): string {
-    return (this.authService.getAuthStateValue()?.role ?? '').trim().toLowerCase();
+  getRole(providedRole?: string | null): string {
+    if (providedRole !== undefined && providedRole !== null) {
+      return providedRole.trim().toLowerCase();
+    }
+    return (this.authService.getAuthStateValue?.()?.role ?? '').trim().toLowerCase();
   }
 
-  isAdmin(): boolean {
-    return this.getRole() === 'admin';
+  isAdmin(role?: string | null): boolean {
+    return this.getRole(role) === 'admin';
   }
 
-  isManager(): boolean {
-    return this.getRole() === 'manager';
+  isManager(role?: string | null): boolean {
+    return this.getRole(role) === 'manager';
   }
 
-  isMentor(): boolean {
-    return this.getRole() === 'mentor';
+  isMentor(role?: string | null): boolean {
+    return this.getRole(role) === 'mentor';
   }
 
-  isReviewer(): boolean {
-    const role = this.getRole();
-    return role === 'mentor' || role === 'manager' || role === 'admin';
+  isReviewer(role?: string | null): boolean {
+    const r = this.getRole(role);
+    return r === 'mentor' || r === 'manager' || r === 'admin';
   }
 
-  canManageGroups(): boolean {
-    return this.isAdmin() || this.isManager();
+  canManageGroups(role?: string | null): boolean {
+    return this.isAdmin(role) || this.isManager(role);
   }
 
-  canManageMembers(): boolean {
-    const role = this.getRole();
-    return role !== '' && role !== 'user';
+  canManageMembers(role?: string | null): boolean {
+    const r = this.getRole(role);
+    return r !== '' && r !== 'user';
   }
 
-  canManageMentors(): boolean {
-    return this.isAdmin() || this.isManager();
+  canManageMentors(role?: string | null): boolean {
+    return this.isAdmin(role) || this.isManager(role);
   }
 
-  canManageWarnings(): boolean {
-    return this.isReviewer();
+  canManageWarnings(role?: string | null): boolean {
+    return this.isReviewer(role);
   }
 
-  canSetupLeadership(): boolean {
-    const role = this.getRole();
-    return role !== '' && role !== 'user';
+  canSetupLeadership(role?: string | null): boolean {
+    const r = this.getRole(role);
+    return r !== '' && r !== 'user';
   }
 
-  canReviewSkills(): boolean {
-    return this.isReviewer();
+  canReviewSkills(role?: string | null): boolean {
+    return this.isReviewer(role);
   }
 
   getRoleSeverity(role?: string | null): string {
-    const normalized = (role ?? this.getRole()).toLowerCase();
+    const normalized = this.getRole(role);
     switch (normalized) {
       case 'admin':
         return 'danger';

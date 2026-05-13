@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -11,7 +11,11 @@ import { UpsertMemberAwardRequest } from '../../../common/services/member-award-
 import { BadgeImageBlobService } from '../../../common/services/probes-and-badges/badge-image-blob.service';
 import { environment } from '../../../../../../environments/environment';
 
-type AwardGroup = { level: MemberAwardLevel, count: number, latest: MemberAwardDto };
+interface AwardGroup {
+  level: MemberAwardLevel;
+  count: number;
+  latest: MemberAwardDto;
+}
 
 @Component({
   selector: 'app-member-awards-tile',
@@ -38,10 +42,8 @@ export class MemberAwardsTileComponent {
   dialogVisible = false;
   selectedAward: MemberAwardDto | null = null;
 
-  constructor(
-    private confirmationService: ConfirmationService,
-    private badgeImageBlobService: BadgeImageBlobService
-  ) {}
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly badgeImageBlobService = inject(BadgeImageBlobService);
 
   getAwardTitle(level: MemberAwardLevel): string {
     switch (level) {

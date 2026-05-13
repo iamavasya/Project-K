@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { MemberAwardDto } from '../../models/memberAwardDto';
@@ -18,8 +18,7 @@ export interface UpsertMemberAwardRequest {
 })
 export class MemberAwardService {
     private apiUrl = `${environment.apiUrl}/member`;
-
-    constructor(private http: HttpClient) { }
+    private readonly http = inject(HttpClient);
 
     upsertAward(memberKey: string, request: UpsertMemberAwardRequest): Observable<MemberAwardDto> {
         return this.http.post<MemberAwardDto>(`${this.apiUrl}/${memberKey}/awards`, request);

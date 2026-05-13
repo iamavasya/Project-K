@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { LogoutComponent } from "../../../../authModule/logout-component/logout-component";
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
+import { PermissionService } from '../../../../authModule/services/permission.service';
 import { AsyncPipe } from '@angular/common';
 import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
 import { Router } from '@angular/router';
@@ -15,6 +16,7 @@ import { Router } from '@angular/router';
 })
 export class ToolbarHeader {
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
   state$ = this.authService.getAuthState();
   private readonly router = inject(Router);
 
@@ -22,6 +24,10 @@ export class ToolbarHeader {
 
   toggleSidebar() {
     this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  isAdmin(role?: string | null): boolean {
+    return this.permissionService.isAdmin(role);
   }
 
   backToKurinPanel() {

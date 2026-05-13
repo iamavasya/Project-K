@@ -2,6 +2,7 @@
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { EntityService } from '../../authModule/services/entity.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -17,6 +18,7 @@ describe('MemberProbePageComponent', () => {
   let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let entityServiceSpy: jasmine.SpyObj<EntityService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
@@ -53,6 +55,7 @@ describe('MemberProbePageComponent', () => {
       'unsignProbePoint'
     ]);
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
+    entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey, probeId }));
 
@@ -93,6 +96,7 @@ describe('MemberProbePageComponent', () => {
     memberProgressServiceSpy.signProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
     memberProgressServiceSpy.unsignProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
     memberProgressServiceSpy.updateProbeProgressStatus.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
+    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',
@@ -106,6 +110,7 @@ describe('MemberProbePageComponent', () => {
       imports: [MemberProbePageComponent],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
+        { provide: EntityService, useValue: entityServiceSpy },
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },

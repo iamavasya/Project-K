@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -27,7 +27,7 @@ import { getBadgeProgressShortStatusLabel } from '../../../common/functions/prog
   templateUrl: './member-awards-dialog.html',
   styleUrl: './member-awards-dialog.css'
 })
-export class MemberAwardsDialogComponent {
+export class MemberAwardsDialogComponent implements OnChanges {
   @Input() visible = false;
   @Input() awardToEdit: MemberAwardDto | null = null;
   @Input() existingAwards: MemberAwardDto[] = [];
@@ -48,7 +48,9 @@ export class MemberAwardsDialogComponent {
     { label: 'Четверта', value: MemberAwardLevel.Fourth }
   ];
 
-  constructor(private fb: FormBuilder) {
+  private readonly fb = inject(FormBuilder);
+
+  constructor() {
     this.form = this.fb.group({
       level: [null, Validators.required],
       dateAcquired: [null, Validators.required],

@@ -5,7 +5,6 @@ import { PanelMenuModule } from 'primeng/panelmenu';
 import { MenuItem } from 'primeng/api';
 import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
-import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
 import { map, Observable, of } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
@@ -19,7 +18,6 @@ import { TagModule } from 'primeng/tag';
 })
 export class SidebarMenu implements OnChanges {
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   @Input() visible = false;
   @Input() state$: Observable<AuthState | null> = of(null);
@@ -48,8 +46,9 @@ export class SidebarMenu implements OnChanges {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const role = state?.role ?? '';
-    const isAdmin = this.permissionService.isAdmin();
-    const canReviewSkills = this.permissionService.canReviewSkills();
+    const isAdmin = this.permissionService.isAdmin(role);
+    const canReviewSkills = this.permissionService.canReviewSkills(role);
+    const canManageMembers = this.permissionService.canManageMembers(role);
     const disabled = !kurinKey;
 
     const items: MenuItem[] = [];
@@ -79,7 +78,7 @@ export class SidebarMenu implements OnChanges {
         }
       );
 
-      if (role !== 'user') {
+      if (canManageMembers) {
         items.push({ 
           label: 'Планування',
           routerLink: ['/planning', kurinKey],
