@@ -43,6 +43,7 @@ export interface PasswordResetPayload {
 export interface ZbtStats {
   currentActiveUsers: number;
   betaCap: number;
+  isClosedBeta: boolean;
   isCapReached: boolean;
   kurinName?: string;
   scope: 'Global' | 'Kurin';

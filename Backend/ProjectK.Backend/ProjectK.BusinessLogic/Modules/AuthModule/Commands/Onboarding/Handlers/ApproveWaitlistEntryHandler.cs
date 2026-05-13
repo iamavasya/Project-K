@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -20,17 +21,20 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IConfiguration _configuration;
 
         public ApproveWaitlistEntryHandler(
             IUnitOfWork unitOfWork,
             UserManager<AppUser> userManager,
             IEmailService emailService,
-            ICurrentUserContext currentUserContext)
+            ICurrentUserContext currentUserContext,
+            IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
+            _configuration = configuration;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
@@ -46,11 +50,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 return new ServiceResult<Guid>(ResultType.Conflict, Guid.Empty, "Waitlist entry is already approved.");
             }
 
+            var isClosedBeta = _configuration.GetValue<bool>("Onboarding:IsClosedBeta", true);
+
             // 1. ZBT Cap Validation (Simplified for now)
-            // In a real scenario, we'd check the target kurin's active user count.
-            // For bootstrap, we're creating a NEW kurin, so cap is always 10 and current is 0.
-            // But if they were joining an existing kurin, we'd check:
-            if (!entry.IsKurinLeaderCandidate && entry.ClaimedKurinNameOrNumber != null)
+            if (isClosedBeta && !entry.IsKurinLeaderCandidate && entry.ClaimedKurinNameOrNumber != null)
             {
                 if (int.TryParse(entry.ClaimedKurinNameOrNumber, out int num))
                 {
@@ -77,7 +80,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 FirstName = entry.FirstName,
                 LastName = entry.LastName,
                 OnboardingStatus = OnboardingStatus.PendingActivation,
-                IsBetaParticipant = true
+                IsBetaParticipant = isClosedBeta
             };
 
             var createResult = await _userManager.CreateAsync(user);
@@ -94,8 +97,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 int.TryParse(entry.ClaimedKurinNameOrNumber, out int kurinNumber);
                 var kurin = new Kurin(kurinNumber)
                 {
-                    IsZbtKurin = true,
-                    ZbtUserCap = 10
+                    IsZbtKurin = isClosedBeta,
+                    ZbtUserCap = 15
                 };
                 _unitOfWork.Kurins.Create(kurin, cancellationToken);
                 user.KurinKey = kurin.KurinKey;

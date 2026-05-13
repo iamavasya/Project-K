@@ -59,7 +59,7 @@ import {
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Waitlist Management</h2>
         
-        @if (stats) {
+        @if (stats && stats.isClosedBeta) {
           <div class="flex flex-col items-end gap-1">
             <div class="flex items-center gap-3">
               <span class="text-sm font-semibold text-gray-600">

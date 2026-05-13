@@ -74,6 +74,34 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
+        public class LoadTestLoginRequest { public string ApiKey { get; set; } = string.Empty; }
+
+        [AllowAnonymous]
+        [HttpPost("loadtest-login")]
+        public async Task<IActionResult> LoadTestLogin(
+            [FromBody] LoadTestLoginRequest request,
+            [FromServices] Microsoft.Extensions.Configuration.IConfiguration config,
+            [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
+            [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService)
+        {
+            var expectedKey = config["LoadTestApiKey"];
+            if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
+            {
+                return Unauthorized(new { message = "Invalid or disabled load test API key." });
+            }
+
+            var user = await userManager.FindByEmailAsync("loadtest@projectk.com");
+            if (user == null) 
+            {
+                return NotFound(new { message = "Load test user not found." });
+            }
+
+            var roles = await userManager.GetRolesAsync(user);
+            var token = jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, user.KurinKey?.ToString());
+
+            return Ok(new { data = new { accessToken = token } });
+        }
+
         [AllowAnonymous]
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()

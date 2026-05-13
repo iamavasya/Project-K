@@ -4,8 +4,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Models
     {
         public int CurrentActiveUsers { get; init; }
         public int BetaCap { get; init; }
-        public bool IsCapReached => CurrentActiveUsers >= BetaCap;
+        public bool IsClosedBeta { get; init; }
+        public bool IsCapReached => IsClosedBeta && CurrentActiveUsers >= BetaCap;
         public string? KurinName { get; init; }
-        public string? Scope { get; init; } // "Global" or "Kurin"
+        public string Scope { get; init; } = "Global";
     }
 }

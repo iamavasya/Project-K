@@ -140,7 +140,16 @@ namespace ProjectK.API
 
                 // Global limit
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
+                {
+                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    if (!string.IsNullOrEmpty(bypassKey) && 
+                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) && 
+                        providedKey == bypassKey)
+                    {
+                        return RateLimitPartition.GetNoLimiter("Bypass");
+                    }
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
                         factory: partition => new FixedWindowRateLimiterOptions
                         {
@@ -148,11 +157,21 @@ namespace ProjectK.API
                             PermitLimit = 100,
                             QueueLimit = 0,
                             Window = TimeSpan.FromMinutes(1)
-                        }));
+                        });
+                });
 
                 // Strict limit for Auth (Login/Register)
                 options.AddPolicy("StrictAuthLimit", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
+                {
+                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    if (!string.IsNullOrEmpty(bypassKey) && 
+                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) && 
+                        providedKey == bypassKey)
+                    {
+                        return RateLimitPartition.GetNoLimiter("Bypass");
+                    }
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                         factory: partition => new FixedWindowRateLimiterOptions
                         {
@@ -160,7 +179,8 @@ namespace ProjectK.API
                             PermitLimit = 5,
                             QueueLimit = 0,
                             Window = TimeSpan.FromMinutes(5)
-                        }));
+                        });
+                });
 
                 options.OnRejected = async (context, token) =>
                 {

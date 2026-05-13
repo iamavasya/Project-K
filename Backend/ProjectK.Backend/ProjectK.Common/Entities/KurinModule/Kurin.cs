@@ -12,7 +12,7 @@ namespace ProjectK.Common.Entities.KurinModule
     {
         public Guid KurinKey { get; set; } = Guid.NewGuid();
         public int Number { get; set; } = number;
-        public int ZbtUserCap { get; set; } = 10;
+        public int ZbtUserCap { get; set; } = 15;
         public bool IsZbtKurin { get; set; }
         public ICollection<Group> Groups { get; set; } = new List<Group>();
         public ICollection<Member> Members { get; set; } = new List<Member>();

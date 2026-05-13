@@ -31,6 +31,9 @@ namespace ProjectK.API.Helpers
             // 2. Seed System Admin (Required for initial setup)
             await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
 
+            // 3. Seed Load Test User (Required for load tests across all environments)
+            await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.User);
+
             // --- STOP HERE FOR PRODUCTION ---
             // Only seed comprehensive test data in Development or other non-prod environments
             if (env.IsProduction())
@@ -328,6 +331,39 @@ namespace ProjectK.API.Helpers
                 });
                 await dbContext.SaveChangesAsync();
             }
+        }
+
+        private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, Guid? kurinKey = null)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new AppUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    KurinKey = kurinKey,
+                    OnboardingStatus = OnboardingStatus.Active
+                };
+
+                // Create user without a password
+                var result = await userManager.CreateAsync(user);
+                if (!result.Succeeded)
+                {
+                    throw new Exception($"Failed to create passwordless user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+
+                await userManager.AddToRoleAsync(user, role.ToClaimValue());
+            }
+            else if (user.KurinKey != kurinKey)
+            {
+                user.KurinKey = kurinKey;
+                await userManager.UpdateAsync(user);
+            }
+            return user;
         }
 
         private static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password, Guid? kurinKey = null)

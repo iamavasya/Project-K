@@ -4,10 +4,10 @@
         @if (kurinNumber) {
             <span class="kurin-head-message">Main page of {{ kurinNumber }} kurin</span>
         }
-        @if (kurinData?.isZbtEnabled) {
+        @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
             <div class="mt-1 ml-8">
-                <p-tag [severity]="(kurinData?.currentUserCount || 0) >= (kurinData?.zbtUserCap || 10) ? 'danger' : 'info'" 
-                       [value]="'СBT Active users: ' + (kurinData?.currentUserCount || 0) + ' / ' + (kurinData?.zbtUserCap || 10)"
+                <p-tag [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'" 
+                       [value]="'СBT Active users: ' + (zbtStats?.currentActiveUsers || 0) + ' / ' + (zbtStats?.betaCap || 15)"
                        pTooltip="Ліміт активних користувачів для закритого бета тестування."
                        tooltipPosition="bottom"></p-tag>
             </div>

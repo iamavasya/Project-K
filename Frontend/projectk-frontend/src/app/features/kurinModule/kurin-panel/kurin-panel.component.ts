@@ -16,6 +16,7 @@ import { AuthService } from '../../authModule/services/authService/auth.service'
 import { PermissionService } from '../../authModule/services/permission.service';
 import { MemberList } from '../common/components/member-list/member-list';
 import { KurinDto } from '../common/models/kurinDto';
+import { OnboardingService, ZbtStats } from '../../authModule/services/onboarding.service';
 
 @Component({
   selector: 'app-kurin-panel',
@@ -31,6 +32,8 @@ export class KurinPanelComponent implements OnInit {
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
+  private readonly onboardingService = inject(OnboardingService);
+
   groups: GroupDto[] = [];
   actions: MenuItem[] = [];
 
@@ -39,6 +42,7 @@ export class KurinPanelComponent implements OnInit {
   kurinKey = '';
   kurinNumber: number | null = null;
   kurinData: KurinDto | null = null;
+  zbtStats: ZbtStats | null = null;
 
   canManageGroups = false;
   canManageMembers = false;
@@ -107,6 +111,14 @@ export class KurinPanelComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching kurin:', error);
+      }
+    });
+    this.onboardingService.getOnboardingStats(this.kurinKey).subscribe({
+      next: (stats) => {
+        this.zbtStats = stats;
+      },
+      error: (error) => {
+        console.error('Error fetching stats:', error);
       }
     });
   }

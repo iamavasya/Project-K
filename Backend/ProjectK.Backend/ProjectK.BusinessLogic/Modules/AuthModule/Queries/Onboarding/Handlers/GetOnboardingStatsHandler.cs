@@ -49,9 +49,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
             string? kurinName = null;
             string scope = "Global";
 
-            var betaCapString = _configuration["Email:BetaCap"] ?? "10";
-            int.TryParse(betaCapString, out var betaCap);
-            if (betaCap == 0) betaCap = 10;
+            var isClosedBeta = _configuration.GetValue<bool>("Onboarding:IsClosedBeta", true);
+            var betaCap = _configuration.GetValue<int>("Onboarding:GlobalBetaCap", 10);
 
             if (kurinKey.HasValue)
             {
@@ -68,10 +67,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
 
             var activeBetaUsersCount = await query.CountAsync(cancellationToken);
 
+            // If not in closed beta, we can return effectively infinite cap or just signal it via a large number
+            if (!isClosedBeta)
+            {
+                betaCap = 999999;
+            }
+
             var stats = new ZbtStatsDto
             {
                 CurrentActiveUsers = activeBetaUsersCount,
                 BetaCap = betaCap,
+                IsClosedBeta = isClosedBeta,
                 KurinName = kurinName,
                 Scope = scope
             };
