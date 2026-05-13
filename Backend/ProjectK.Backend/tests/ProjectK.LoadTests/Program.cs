@@ -36,7 +36,7 @@ namespace ProjectK.LoadTests
                 Console.WriteLine("Usage: dotnet run --url <URL> --api-key <YOUR_SECRET>");
             }
 
-            using var httpClient = new HttpClient();
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
             string jwtToken = string.Empty;
 
             var scenario = Scenario.Create("read_probes_catalog", async context =>
@@ -50,8 +50,20 @@ namespace ProjectK.LoadTests
                     request = request.WithHeader("X-LoadTest-Bypass", apiKey);
                 }
 
-                var response = await Http.Send(httpClient, request);
-                return response;
+                try
+                {
+                    var response = await Http.Send(httpClient, request);
+                    return response;
+                }
+                catch (TaskCanceledException)
+                {
+                    // Timeout occurred
+                    return Response.Fail(statusCode: "Timeout", message: "Request took longer than 3s");
+                }
+                catch (Exception ex)
+                {
+                    return Response.Fail(statusCode: "Error", message: ex.Message);
+                }
             })
             .WithInit(async context =>
             {
@@ -64,7 +76,9 @@ namespace ProjectK.LoadTests
                 var loginPayload = new { apiKey = apiKey };
                 var content = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
 
-                var authResponse = await httpClient.PostAsync($"{baseUrl}/api/auth/loadtest-login", content);
+                // Temporary HttpClient without the strict 3s timeout for initialization
+                using var initClient = new HttpClient();
+                var authResponse = await initClient.PostAsync($"{baseUrl}/api/auth/loadtest-login", content);
                 if (!authResponse.IsSuccessStatusCode)
                 {
                     var errBody = await authResponse.Content.ReadAsStringAsync();
@@ -85,12 +99,16 @@ namespace ProjectK.LoadTests
             })
             .WithoutWarmUp()
             .WithLoadSimulations(
-                Simulation.Inject(rate: 5, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(5)),
-                Simulation.Inject(rate: 10, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(5)),
-                Simulation.Inject(rate: 25, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(5)),
-                Simulation.Inject(rate: 50, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(10)),
-                Simulation.Inject(rate: 100, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(10)),
-                Simulation.Inject(rate: 200, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(15))
+                // Warmup phase
+                Simulation.Inject(rate: 10, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(10)),
+                Simulation.Inject(rate: 50, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(15)),
+                
+                // Stress phase
+                Simulation.Inject(rate: 100, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(30)),
+                Simulation.Inject(rate: 200, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromMinutes(1)),
+                Simulation.Inject(rate: 300, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromMinutes(1)),
+                Simulation.Inject(rate: 400, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromMinutes(1)),
+                Simulation.Inject(rate: 500, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromMinutes(1))
             );
 
             NBomberRunner
