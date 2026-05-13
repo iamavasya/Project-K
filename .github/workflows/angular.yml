@@ -12,10 +12,11 @@ on:
       - 'Frontend/**'
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   lint_and_test:
-    if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Lint and Test
     steps:
@@ -69,7 +70,7 @@ jobs:
 
   build_and_deploy:
     needs: lint_and_test
-    if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy to Azure SWA
     environment:
