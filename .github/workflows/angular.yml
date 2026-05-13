@@ -107,6 +107,7 @@ jobs:
           app_location: "Frontend/projectk-frontend" 
           api_location: ""
           output_location: "dist/projectk-frontend/browser"
+          app_build_command: "npm run build -- --configuration ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
