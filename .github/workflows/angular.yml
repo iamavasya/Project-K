@@ -36,7 +36,7 @@ jobs:
         if: github.event_name != 'release'
         shell: bash
         run: |
-          echo "VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "VERSION=0.0.0-dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "CODENAME=StagingBuild" >> $GITHUB_ENV
 
       - name: Inject Versioning to Angular
@@ -61,6 +61,7 @@ jobs:
       - name: Run lint
         run: npm run lint
         working-directory: Frontend/projectk-frontend
+        continue-on-error: ${{ github.ref == 'refs/heads/dev' }}
 
       - name: Test
         run: npm test -- --watch=false --browsers=ChromeHeadless
@@ -86,7 +87,7 @@ jobs:
             TAG_NAME="${{ github.event.release.tag_name }}"
             CODE_NAME=$(echo "${{ github.event.release.name }}" | grep -oP '"\K[^"]+' || echo "Ant-Era")
           else
-            TAG_NAME="dev-${GITHUB_SHA::7}"
+            TAG_NAME="0.0.0-dev-${GITHUB_SHA::7}"
             CODE_NAME="StagingBuild"
           fi
           

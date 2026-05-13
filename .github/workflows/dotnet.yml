@@ -29,7 +29,7 @@ jobs:
       if: github.event_name == 'push'
       shell: bash
       run: |
-        echo "VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
+        echo "VERSION=0.0.0-dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
         echo "CODENAME=StagingBuild" >> $GITHUB_ENV
 
     - name: Inject Versioning
