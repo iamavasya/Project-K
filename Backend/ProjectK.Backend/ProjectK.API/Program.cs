@@ -24,6 +24,7 @@ using ProjectK.ProbeAndBadges.DependencyInjection;
 using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
 using Serilog;
+using Serilog.Enrichers.Sensitive;
 
 namespace ProjectK.API
 {
@@ -36,7 +37,8 @@ namespace ProjectK.API
             builder.Host.UseSerilog((context, services, configuration) => configuration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
-                .Enrich.FromLogContext());
+                .Enrich.FromLogContext()
+                .Enrich.WithSensitiveDataMasking());
 
             AnsiConsole.Clear();
             PrintTitle(builder.Configuration);
