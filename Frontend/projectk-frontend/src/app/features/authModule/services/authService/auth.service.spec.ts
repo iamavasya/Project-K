@@ -141,6 +141,7 @@ describe('AuthService', () => {
         email: 'test@example.com',
         role: 'Manager',
         kurinKey: 'kurin-456',
+        requiresMfa: false,
         tokens: {
           accessToken: 'access-token-789'
         }
@@ -156,7 +157,7 @@ describe('AuthService', () => {
       };
 
       service.login(credentials).subscribe(state => {
-        expect(state).toEqual(expectedState);
+        expect(state).toEqual(mockResponse);
         expect(service.getAuthStateValue()).toEqual(expectedState);
         expect(localStorage.getItem('authState')).toBe(JSON.stringify(expectedState));
         done();
@@ -167,6 +168,155 @@ describe('AuthService', () => {
       expect(req.request.body).toEqual(credentials);
       expect(req.request.withCredentials).toBeTrue();
       req.flush(mockResponse);
+    });
+
+    it('should not update auth state when login requires mfa', (done) => {
+      const credentials: LoginRequest = {
+        email: 'mfa@example.com',
+        password: 'password123'
+      };
+
+      const mockResponse: LoginResponse = {
+        userKey: 'user-123',
+        memberKey: null,
+        email: 'mfa@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        requiresMfa: true,
+        tokens: null
+      };
+
+      service.login(credentials).subscribe(response => {
+        expect(response).toEqual(mockResponse);
+        expect(service.getAuthStateValue()).toBeNull();
+        expect(localStorage.getItem('authState')).toBeNull();
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/login`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(mockResponse);
+    });
+
+    it('should verify mfa login and update auth state', (done) => {
+      const mockResponse: LoginResponse = {
+        userKey: 'user-123',
+        memberKey: 'member-123',
+        email: 'mfa@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        requiresMfa: false,
+        tokens: {
+          accessToken: 'mfa-access-token'
+        }
+      };
+
+      const expectedState: AuthState = {
+        userKey: 'user-123',
+        memberKey: 'member-123',
+        email: 'mfa@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        accessToken: 'mfa-access-token'
+      };
+
+      service.verifyMfaLogin('mfa@example.com', '123456').subscribe(state => {
+        expect(state).toEqual(expectedState);
+        expect(service.getAuthStateValue()).toEqual(expectedState);
+        expect(localStorage.getItem('authState')).toBe(JSON.stringify(expectedState));
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/login-verify`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ email: 'mfa@example.com', code: '123456', rememberMe: true });
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(mockResponse);
+    });
+
+    it('should fail mfa login when tokens are missing', (done) => {
+      const mockResponse: LoginResponse = {
+        userKey: 'user-123',
+        memberKey: null,
+        email: 'mfa@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        requiresMfa: false,
+        tokens: null
+      };
+
+      service.verifyMfaLogin('mfa@example.com', '123456').subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
+          expect(error.message).toBe('No tokens in response');
+          expect(service.getAuthStateValue()).toBeNull();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/login-verify`);
+      req.flush(mockResponse);
+    });
+
+    it('should request mfa setup with credentials', (done) => {
+      const setup = {
+        sharedKey: 'shared-key',
+        authenticatorUri: 'otpauth://totp/Project-K:user@example.com',
+        qrCodeBase64: 'qr-base64'
+      };
+
+      service.getMfaSetup().subscribe(response => {
+        expect(response).toEqual(setup);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/setup`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(setup);
+    });
+
+    it('should enable mfa with verification code', (done) => {
+      const response = { enabled: true, recoveryCodes: ['code-1', 'code-2'] };
+
+      service.enableMfa('123456').subscribe(result => {
+        expect(result).toEqual(response);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/enable`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ code: '123456' });
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(response);
+    });
+
+    it('should rotate mfa recovery codes with current password', (done) => {
+      const response = { recoveryCodes: ['code-1', 'code-2'] };
+
+      service.rotateMfaRecoveryCodes('current-password').subscribe(result => {
+        expect(result).toEqual(response);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/recovery-codes`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ currentPassword: 'current-password' });
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(response);
+    });
+
+    it('should request mfa status with credentials', (done) => {
+      service.getMfaStatus().subscribe(response => {
+        expect(response).toEqual({ isMfaEnabled: true });
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/mfa/status`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush({ isMfaEnabled: true });
     });
 
     it('should handle login error', (done) => {

@@ -1,0 +1,74 @@
+<p-dialog
+  header="Налаштування MFA"
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="!mandatory"
+  [closeOnEscape]="!mandatory"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(92vw, 34rem)' }"
+  styleClass="mfa-dialog"
+>
+  <div class="mfa-setup">
+    <div class="mfa-copy">
+      <h2>Захистіть обліковий запис</h2>
+      <p>
+        Відскануйте QR-код у Google Authenticator, Microsoft Authenticator або іншому TOTP-застосунку,
+        потім введіть 6-значний код підтвердження.
+      </p>
+    </div>
+
+    <div *ngIf="loadingSetup" class="mfa-loading">
+      Завантаження...
+    </div>
+
+    <ng-container *ngIf="!loadingSetup && setup && recoveryCodes.length === 0">
+      <div class="mfa-qr">
+        <img [src]="setup.qrCodeBase64" alt="QR-код для налаштування MFA" />
+      </div>
+
+      <div class="mfa-key">
+        <span>Ключ для ручного введення</span>
+        <code>{{ setup.sharedKey }}</code>
+      </div>
+
+      <div class="mfa-code">
+        <label for="mfa-code">Код із застосунку</label>
+        <p-inputotp
+          inputId="mfa-code"
+          name="mfa-code"
+          [ngModel]="verificationCode"
+          (ngModelChange)="onCodeChange($event)"
+          [length]="6"
+          [integerOnly]="true"
+          styleClass="mfa-otp"
+        />
+      </div>
+
+      <div class="mfa-actions">
+        <p-button
+          label="Увімкнути MFA"
+          icon="pi pi-shield"
+          [loading]="saving"
+          [disabled]="!canEnable"
+          (onClick)="enable()"
+          styleClass="w-full"
+        />
+      </div>
+    </ng-container>
+
+    <div *ngIf="recoveryCodes.length > 0" class="mfa-recovery">
+      <h2>Recovery codes</h2>
+      <p>Save these codes now. Each code can be used once if you lose access to your authenticator.</p>
+      <div class="recovery-grid">
+        <code *ngFor="let code of recoveryCodes">{{ code }}</code>
+      </div>
+      <p-button
+        label="I saved these codes"
+        icon="pi pi-check"
+        (onClick)="closeAfterSavingCodes()"
+        styleClass="w-full"
+      />
+    </div>
+  </div>
+</p-dialog>

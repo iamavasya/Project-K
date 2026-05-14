@@ -49,11 +49,23 @@ export class AuthInterceptor implements HttpInterceptor {
             return this.tryRefreshAndRepeat(req, next);
         }
 
-        if (error instanceof HttpErrorResponse && error.status === 403) {
+        if (error instanceof HttpErrorResponse && error.status === 403 && !this.isMfaRequiredError(error)) {
             this.router.navigate(['/forbidden']);
         }
 
         return throwError(() => error);
+    }
+
+    private isMfaRequiredError(error: HttpErrorResponse): boolean {
+        const errorBody = error.error;
+        if (!errorBody) return false;
+
+        const message = typeof errorBody === 'string'
+            ? errorBody
+            : (errorBody.message || errorBody.Message || errorBody.detail || errorBody.title);
+
+        return typeof message === 'string'
+            && message.toLowerCase().includes('mfa is required');
     }
 
     private tryRefreshAndRepeat(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {

@@ -128,6 +128,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             }
             else
             {
+                if (existing.UserKey.HasValue)
+                {
+                    var emailChanged = !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase);
+                    var phoneChanged = !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.OrdinalIgnoreCase);
+
+                    if (emailChanged || phoneChanged)
+                    {
+                        return ServiceResult<MemberResponse>.Failure(
+                            ResultType.BadRequest, 
+                            "ContactInfoLinked", 
+                            "Cannot change email or phone number for a member linked to an active user account. The user must update this via their account settings.");
+                    }
+                }
+
                 oldBlobName = existing.ProfilePhotoBlobName;
                 _mapper.Map(request, existing);
 

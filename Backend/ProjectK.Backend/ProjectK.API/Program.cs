@@ -23,6 +23,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.ProbeAndBadges.DependencyInjection;
 using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
+using Serilog;
 
 namespace ProjectK.API
 {
@@ -31,7 +32,12 @@ namespace ProjectK.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
+
+            builder.Host.UseSerilog((context, services, configuration) => configuration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext());
+
             AnsiConsole.Clear();
             PrintTitle(builder.Configuration);
 
@@ -182,6 +188,33 @@ namespace ProjectK.API
                         });
                 });
 
+                // Account security endpoints have a lower per-user/IP budget because they perform
+                // sensitive verification or token-producing operations.
+                options.AddPolicy("AccountSecurityLimit", httpContext =>
+                {
+                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    if (!string.IsNullOrEmpty(bypassKey) &&
+                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) &&
+                        providedKey == bypassKey)
+                    {
+                        return RateLimitPartition.GetNoLimiter("Bypass");
+                    }
+
+                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                        ?? "anonymous";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: partitionKey,
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 10,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(5)
+                        });
+                });
+
                 options.OnRejected = async (context, token) =>
                 {
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
@@ -234,6 +267,7 @@ namespace ProjectK.API
             app.UseRateLimiter();
             
             app.UseMiddleware<ProjectK.API.Middleware.SecurityHardeningMiddleware>();
+            app.UseMiddleware<ProjectK.API.Middleware.PrivilegedMfaEnforcementMiddleware>();
 
             app.UseAuthorization();
 

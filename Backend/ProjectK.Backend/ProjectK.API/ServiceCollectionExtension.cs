@@ -35,6 +35,8 @@ namespace ProjectK.API
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IMfaService, ProjectK.Infrastructure.Services.MfaService>();
+            services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 
             // Email Service Registration

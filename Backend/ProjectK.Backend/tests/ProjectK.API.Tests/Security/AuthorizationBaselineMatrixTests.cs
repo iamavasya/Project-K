@@ -5,7 +5,10 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
+using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.Requests;
 
 namespace ProjectK.API.Tests.Security;
@@ -40,8 +43,21 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), "RequireManager");
         yield return Row<Action<AuthController>>(nameof(AuthController.Logout), "RequireUser");
         yield return Row<Action<AuthController, CheckEntityAccessRequest>>(nameof(AuthController.CheckAccess), "RequireUser");
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");
+        yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa), "RequireUser");
+        yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes), "RequireUser");
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus), "RequireUser");
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAllUsers), "RequireAdmin");
+        yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings), "RequireUser");
+        yield return Row<Action<UserController, UpdateAccountProfileRequestDto>>(nameof(UserController.UpdateAccountProfile), "RequireUser");
+        yield return Row<Action<UserController, ConfirmAccountEmailChangeRequestDto>>(nameof(UserController.ConfirmAccountEmailChange), "RequireUser");
+        yield return Row<Action<UserController, ChangePasswordRequestDto>>(nameof(UserController.ChangePassword), "RequireUser");
+        yield return Row<Action<UserController, ResetMfaRequestDto>>(nameof(UserController.ResetMfa), "RequireUser");
+        yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa), "RequireUser");
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa), "RequireManager");
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.DeleteUser), "RequireAdmin");
+        yield return Row<Action<UserController, Guid, UserRole>>(nameof(UserController.ChangeUserRole), "RequireManager");
 
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
@@ -93,6 +109,7 @@ public class AuthorizationBaselineMatrixTests
     {
         yield return Row<Action<AuthController, LoginUserRequest>>(nameof(AuthController.Login));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
+        yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
     }
 
     private static object[] Row<TDelegate>(string methodName)

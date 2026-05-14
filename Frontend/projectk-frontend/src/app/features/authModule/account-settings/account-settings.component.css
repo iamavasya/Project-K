@@ -1,0 +1,158 @@
+.account-settings-page {
+  background: var(--p-surface-ground);
+  min-height: calc(100vh - 4rem);
+  padding: 1.5rem;
+}
+
+.settings-shell {
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  margin: 0 auto;
+  max-width: 64rem;
+  padding: 1.5rem;
+}
+
+.settings-header,
+.settings-section {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+}
+
+.settings-header {
+  align-items: start;
+}
+
+.settings-header h1,
+.section-copy h2 {
+  color: var(--p-text-color);
+  margin: 0;
+}
+
+.settings-header h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.section-copy h2 {
+  font-size: 1.1rem;
+}
+
+.settings-header p,
+.section-copy p {
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0.4rem 0 0;
+}
+
+.settings-loading {
+  color: var(--p-text-muted-color);
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.settings-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-form label {
+  color: var(--p-text-color);
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.settings-form input {
+  width: 100%;
+}
+
+.pending-email {
+  background: var(--p-highlight-bg);
+  border: 1px solid var(--p-highlight-color);
+  border-radius: 6px;
+  color: var(--p-text-color);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  padding: 0.75rem;
+}
+
+.mfa-panel {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.mfa-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.mfa-password {
+  display: grid;
+  gap: 0.4rem;
+  min-width: min(18rem, 100%);
+}
+
+.mfa-status {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.mfa-status span {
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+}
+
+.recovery-panel {
+  border-top: 1px solid var(--p-content-border-color);
+  display: grid;
+  flex-basis: 100%;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.recovery-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.recovery-grid code {
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  color: var(--p-text-color);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 0.6rem;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .account-settings-page {
+    padding: 1rem;
+  }
+
+  .settings-shell {
+    padding: 1rem;
+  }
+
+  .settings-header,
+  .settings-section {
+    grid-template-columns: 1fr;
+  }
+
+  .mfa-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mfa-actions {
+    flex-direction: column;
+    justify-content: stretch;
+  }
+}

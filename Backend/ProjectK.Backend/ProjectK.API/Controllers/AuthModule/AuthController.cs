@@ -2,6 +2,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.UsersModule.Command;
+using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 
@@ -67,7 +69,7 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             var command = _mapper.Map<LoginUserCommand>(request);
             var response = await _mediator.Send(command);
-            if (response.Type != ResultType.Unauthorized)
+            if (response.Type == ResultType.Success && response.Data.Tokens != null)
             {
                 SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
             }
@@ -151,6 +153,63 @@ namespace ProjectK.API.Controllers.AuthModule
             };
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpGet("mfa/setup")]
+        public async Task<IActionResult> GetMfaSetup()
+        {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var query = new GetMfaSetupQuery(Guid.Parse(userKeyClaim!));
+            var response = await _mediator.Send(query);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpPost("mfa/enable")]
+        public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequestDto request)
+        {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var command = new EnableMfaCommand(Guid.Parse(userKeyClaim!), request.Code);
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpPost("mfa/recovery-codes")]
+        public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequestDto request)
+        {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var command = new GenerateMfaRecoveryCodesCommand(Guid.Parse(userKeyClaim!), request.CurrentPassword);
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [AllowAnonymous]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpPost("mfa/login-verify")]
+        public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request)
+        {
+            var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe);
+            var response = await _mediator.Send(command);
+            if (response.Type == ResultType.Success && response.Data.Tokens != null)
+            {
+                SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            }
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpGet("mfa/status")]
+        public async Task<IActionResult> GetMfaStatus()
+        {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _mediator.Send(new GetUserQuery(Guid.Parse(userKeyClaim!)));
+            return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled });
         }
 
         private void SetRefreshTokenCookie(string token, DateTime expires)

@@ -23,14 +23,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null || user.OnboardingStatus != OnboardingStatus.Active)
             {
-                return new ServiceResult<bool>(ResultType.NotFound, false, "User not found or not active.");
+                return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
             }
 
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return new ServiceResult<bool>(ResultType.BadRequest, false, $"Failed to reset password: {errors}");
+                return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
             }
 
             return new ServiceResult<bool>(ResultType.Success, true);

@@ -90,6 +90,12 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }
 
+        public async Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
+                .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
+        }
+
         public async Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Members

@@ -23,6 +23,7 @@ import { leadershipAccessGuard } from './features/authModule/guards/leadership-a
 import { WaitlistRegistrationComponent } from './features/authModule/onboarding/waitlist-registration/waitlist-registration';
 import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
 import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
+import { AccountSettingsComponent } from './features/authModule/account-settings/account-settings.component';
 
 export const routes: Routes = [
   {
@@ -45,6 +46,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     component: LogoutComponent,
     data: { breadcrumb: 'Logout' }
+  },
+  {
+    path: 'settings/account',
+    canActivate: [authGuard],
+    component: AccountSettingsComponent,
+    data: { breadcrumb: 'Account Settings' }
   },
   {
     path: 'forbidden',

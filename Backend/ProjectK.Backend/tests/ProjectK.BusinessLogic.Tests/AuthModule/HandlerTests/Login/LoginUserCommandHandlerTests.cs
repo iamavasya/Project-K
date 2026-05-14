@@ -2,7 +2,7 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -20,6 +20,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly LoginResponseFactory _loginResponseFactory;
         private readonly LoginUserCommandHandler _handler;
 
         public LoginUserCommandHandlerTests()
@@ -41,7 +42,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _uowMock = new Mock<IUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(memberRepoMock.Object);
 
-            _handler = new LoginUserCommandHandler(_userManagerMock.Object, _signInManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object);
+            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object);
+            _handler = new LoginUserCommandHandler(_userManagerMock.Object, _signInManagerMock.Object, _loginResponseFactory);
         }
 
         [Fact]
@@ -260,7 +262,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         }
 
         [Fact]
-        public async Task Handle_ShouldReturnUnauthorized_WhenTwoFactorRequired()
+        public async Task Handle_ShouldReturnRequiresMfa_WhenTwoFactorRequired()
         {
             // Arrange
             var email = "2fa@example.com";
@@ -273,6 +275,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 Id = userId,
                 Email = email,
                 KurinKey = Guid.NewGuid(),
+                TwoFactorEnabled = true,
                 FirstName = "TwoFactor",
                 LastName = "User"
             };
@@ -280,16 +283,22 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _userManagerMock.Setup(x => x.FindByEmailAsync(email))
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
-                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.TwoFactorRequired);
+                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Null(result.Data);
+            Assert.Equal(ResultType.Success, result.Type);
+            Assert.NotNull(result.Data);
+            Assert.Equal(userId, result.Data.UserKey);
+            Assert.Equal(email, result.Data.Email);
+            Assert.True(result.Data.RequiresMfa);
+            Assert.Null(result.Data.Tokens);
 
             _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(user, password, false), Times.Once);
+            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
+            _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
 
         [Fact]

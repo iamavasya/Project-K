@@ -1,11 +1,15 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.UsersModule;
+using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
+using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using System.Security.Claims;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
 {
@@ -178,6 +182,178 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
         }
 
         [Fact]
+        public async Task UpdateAccountProfile_ShouldSendCommandForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var request = new UpdateAccountProfileRequestDto("new@example.com", "123456789", "current-password");
+            var settings = new AccountSettingsDto(userKey, null, "current@example.com", "123456789", "John", "Doe", "User", false, "new@example.com");
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpdateAccountProfileCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
+
+            // Act
+            var result = await _controller.UpdateAccountProfile(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedSettings = Assert.IsType<AccountSettingsDto>(okResult.Value);
+            Assert.Equal("new@example.com", returnedSettings.PendingEmail);
+
+            _mediatorMock.Verify(m => m.Send(It.Is<UpdateAccountProfileCommand>(cmd =>
+                cmd.UserKey == userKey &&
+                cmd.Email == request.Email &&
+                cmd.PhoneNumber == request.PhoneNumber &&
+                cmd.CurrentPassword == request.CurrentPassword), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetAccountSettings_ShouldSendQueryForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var settings = new AccountSettingsDto(userKey, null, "user@example.com", "123456789", "John", "Doe", "User", true);
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetAccountSettingsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
+
+            // Act
+            var result = await _controller.GetAccountSettings();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(settings, okResult.Value);
+
+            _mediatorMock.Verify(m => m.Send(It.Is<GetAccountSettingsQuery>(query =>
+                query.UserKey == userKey), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePassword_ShouldSendCommandForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var request = new ChangePasswordRequestDto("current-password", "new-password");
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ChangeOwnPasswordCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True(Assert.IsType<bool>(okResult.Value));
+
+            _mediatorMock.Verify(m => m.Send(It.Is<ChangeOwnPasswordCommand>(cmd =>
+                cmd.UserKey == userKey &&
+                cmd.CurrentPassword == request.CurrentPassword &&
+                cmd.NewPassword == request.NewPassword), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetMfa_ShouldSendCommandForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var request = new ResetMfaRequestDto("current-password");
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ResetOwnMfaCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            // Act
+            var result = await _controller.ResetMfa(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True(Assert.IsType<bool>(okResult.Value));
+
+            _mediatorMock.Verify(m => m.Send(It.Is<ResetOwnMfaCommand>(cmd =>
+                cmd.UserKey == userKey &&
+                cmd.CurrentPassword == request.CurrentPassword), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DisableMfa_ShouldSendCommandForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var request = new DisableMfaRequestDto("current-password");
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<DisableOwnMfaCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            // Act
+            var result = await _controller.DisableMfa(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True(Assert.IsType<bool>(okResult.Value));
+
+            _mediatorMock.Verify(m => m.Send(It.Is<DisableOwnMfaCommand>(cmd =>
+                cmd.UserKey == userKey &&
+                cmd.CurrentPassword == request.CurrentPassword), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetUserMfa_ShouldSendCommandForTargetUser()
+        {
+            // Arrange
+            var targetUserKey = Guid.NewGuid();
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ResetUserMfaCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            // Act
+            var result = await _controller.ResetUserMfa(targetUserKey);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True(Assert.IsType<bool>(okResult.Value));
+
+            _mediatorMock.Verify(m => m.Send(It.Is<ResetUserMfaCommand>(cmd =>
+                cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ConfirmAccountEmailChange_ShouldSendCommandForCurrentUser()
+        {
+            // Arrange
+            var userKey = Guid.NewGuid();
+            SetCurrentUser(userKey);
+            var request = new ConfirmAccountEmailChangeRequestDto("confirmed@example.com", "token");
+            var settings = new AccountSettingsDto(userKey, null, request.Email, null, "John", "Doe", "User", false);
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ConfirmAccountEmailChangeCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
+
+            // Act
+            var result = await _controller.ConfirmAccountEmailChange(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedSettings = Assert.IsType<AccountSettingsDto>(okResult.Value);
+            Assert.Equal(request.Email, returnedSettings.Email);
+
+            _mediatorMock.Verify(m => m.Send(It.Is<ConfirmAccountEmailChangeCommand>(cmd =>
+                cmd.UserKey == userKey &&
+                cmd.Email == request.Email &&
+                cmd.Token == request.Token), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public void Constructor_ShouldInitializeMediatorCorrectly()
         {
             // Arrange & Act
@@ -186,6 +362,18 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             // Assert
             Assert.NotNull(controller);
             Assert.Equal(_mediatorMock.Object, controller._mediator);
+        }
+
+        private void SetCurrentUser(Guid userKey)
+        {
+            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userKey.ToString()) };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims))
+                }
+            };
         }
     }
 }

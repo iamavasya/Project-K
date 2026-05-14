@@ -1,0 +1,52 @@
+using System.Reflection;
+using Microsoft.AspNetCore.RateLimiting;
+using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.UsersModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Dtos.UserModule;
+
+namespace ProjectK.API.Tests.Security;
+
+public class AccountSecurityRateLimitingTests
+{
+    [Theory]
+    [MemberData(nameof(AccountSecurityEndpoints))]
+    public void AccountSecurityEndpoint_ShouldUseAccountSecurityRateLimit(MethodInfo action)
+    {
+        var attribute = action.GetCustomAttribute<EnableRateLimitingAttribute>();
+
+        Assert.NotNull(attribute);
+        Assert.Equal("AccountSecurityLimit", attribute!.PolicyName);
+    }
+
+    public static IEnumerable<object[]> AccountSecurityEndpoints()
+    {
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup));
+        yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa));
+        yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes));
+        yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus));
+
+        yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings));
+        yield return Row<Action<UserController, UpdateAccountProfileRequestDto>>(nameof(UserController.UpdateAccountProfile));
+        yield return Row<Action<UserController, ConfirmAccountEmailChangeRequestDto>>(nameof(UserController.ConfirmAccountEmailChange));
+        yield return Row<Action<UserController, ChangePasswordRequestDto>>(nameof(UserController.ChangePassword));
+        yield return Row<Action<UserController, ResetMfaRequestDto>>(nameof(UserController.ResetMfa));
+        yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa));
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa));
+
+        yield return Row<Action<OnboardingController, ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.RequestPasswordResetCommand>>(nameof(OnboardingController.RequestPasswordReset));
+        yield return Row<Action<OnboardingController, ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.ResetPasswordCommand>>(nameof(OnboardingController.ResetPassword));
+    }
+
+    private static object[] Row<TDelegate>(string methodName)
+    {
+        var invoke = typeof(TDelegate).GetMethod("Invoke")!;
+        var parameters = invoke.GetParameters();
+        var controllerType = parameters[0].ParameterType;
+        var actionParameterTypes = parameters.Skip(1).Select(p => p.ParameterType).ToArray();
+        var method = controllerType.GetMethod(methodName, actionParameterTypes);
+
+        return [method ?? throw new InvalidOperationException($"Unable to resolve {controllerType.Name}.{methodName}.")];
+    }
+}
