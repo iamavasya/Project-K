@@ -102,13 +102,24 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = "RequireMentor")]
         [HttpGet("{groupKey}/mentors")]
-        [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
         [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMentors(Guid groupKey)
         {
             var query = new GetGroupMentorsQuery(groupKey);
+            var response = await _mediator.Send(query);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpGet("groups/{kurinKey}/mentor-assignments")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(IEnumerable<MentorAssignmentDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetKurinMentorAssignments(Guid kurinKey)
+        {
+            var query = new GetKurinMentorAssignmentsQuery(kurinKey);
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);
         }

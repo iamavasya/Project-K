@@ -28,20 +28,15 @@ export class AdminPanelComponent implements OnInit {
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
   data: KurinDto[] = [];
 
-  tableHeaders = [
-    "KurinKey",
-    "Number"
-  ];
-
   actions: MenuItem[] = [];
 
   managePanelConfig: ManagePanelConfig = {
     entityType: 'kurin',
-    title: 'Kurin',
+    title: 'Курінь',
     fields: [
       {
         name: 'kurinKey',
-        label: 'Kurin Key',
+        label: 'Системний ключ',
         type: 'text',
         required: true,
         hiddenOn: ['create', 'delete'],
@@ -49,31 +44,36 @@ export class AdminPanelComponent implements OnInit {
       },
       {
         name: 'number',
-        label: 'Number',
+        label: 'Номер куреня',
         type: 'number',
+        placeholder: 'Наприклад: 101',
         required: true,
         hiddenOn: ['delete'],
       },
       {
         name: 'managerEmail',
-        label: 'Manager Email',
+        label: 'Email звʼязкового',
         type: 'text',
+        placeholder: 'manager@example.com',
         required: true,
         hiddenOn: ['delete'],
         disabledOn: ['update']
       }
     ],
+    displayName: (entity: KurinDto) => `${entity.number} курінь`,
     createFactory: () => ({ kurinKey: '', number: null, managerEmail: '' }),
   }
 
   prepareItemActions(item: KurinDto): void {
     this.actions = [
       {
-        label: 'Update',
+        label: 'Редагувати',
+        icon: 'pi pi-pencil',
         command: () => { this.onActionClick(item, 'update') }
       },
       {
-        label: 'Delete',
+        label: 'Видалити',
+        icon: 'pi pi-trash',
         command: () => { this.onActionClick(item, 'delete') }
       }
     ];

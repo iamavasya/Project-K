@@ -1,0 +1,110 @@
+.users-list-shell {
+  width: min(100% - 2rem, 72rem);
+  margin: 1.5rem auto 0;
+}
+
+.users-list-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.users-list-caption > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.users-list-caption > p-iconfield {
+  flex-shrink: 1;
+  margin-left: auto;
+  min-width: 12rem;
+}
+
+.users-list-caption h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.users-list-caption p {
+  margin: 0.15rem 0 0;
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+.users-list-actions {
+  width: 8rem;
+}
+
+:host ::ng-deep .project-table .p-datatable-table {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .users-list-caption {
+    align-items: center;
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 640px) {
+  .users-list-shell {
+    width: min(100% - 1rem, 72rem);
+    margin-top: 1rem;
+  }
+
+  :host ::ng-deep .project-table .p-datatable-wrapper {
+    overflow-x: visible;
+  }
+
+  :host ::ng-deep .project-table .p-datatable-thead {
+    display: none;
+  }
+
+  :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-group-row > td {
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-row {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-row > td {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.15rem 0 !important;
+    border: 0 !important;
+    overflow-wrap: anywhere;
+  }
+
+  :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-row > td::before {
+    content: attr(data-mobile-label);
+    color: var(--p-text-muted-color);
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+
+  .users-list-actions {
+    width: 100%;
+  }
+
+  :host ::ng-deep .users-list-actions > .flex {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  :host ::ng-deep .users-list-row .p-select {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -71,7 +71,9 @@ namespace ProjectK.API.MappingProfiles
                     $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
 
             // Leadership History Mapping
-            CreateMap<LeadershipHistory, LeadershipHistoryDto>();
+            CreateMap<LeadershipHistory, LeadershipHistoryDto>()
+                .ForMember(dest => dest.LeadershipType, opt => opt.MapFrom(src => src.Leadership.Type))
+                .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Leadership.Group != null ? src.Leadership.Group.Name : null));
 
             CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>()
                 .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore());

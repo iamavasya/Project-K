@@ -8,6 +8,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using System;
@@ -37,6 +38,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _uowMock = new Mock<IUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
             _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
+            _memberRepoMock.Setup(r => r.GetMentorCandidatesLookupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<MemberLookupDto>());
             
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests
@@ -126,6 +129,38 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             _memberRepoMock.Verify(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
             _memberRepoMock.Verify(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldIncludeUserRole_WhenMemberHasLinkedUser()
+        {
+            var kurinKey = Guid.NewGuid();
+            var userKey = Guid.NewGuid();
+            var member = MakeMember(Guid.NewGuid(), kurinKey, "Lead", "Mentor");
+            member.UserKey = userKey;
+
+            _memberRepoMock
+                .Setup(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Member> { member });
+            _memberRepoMock
+                .Setup(r => r.GetMentorCandidatesLookupAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<MemberLookupDto>
+                {
+                    new()
+                    {
+                        MemberKey = member.MemberKey,
+                        UserKey = userKey,
+                        FirstName = member.FirstName,
+                        MiddleName = member.MiddleName,
+                        LastName = member.LastName,
+                        UserRole = UserRole.Mentor.ToString()
+                    }
+                });
+
+            var result = await _handler.Handle(new GetMembers(Guid.Empty, kurinKey), CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            result.Data!.Single().UserRole.Should().Be(UserRole.Mentor.ToString());
         }
 
         [Fact]

@@ -51,6 +51,24 @@ describe('AuthInterceptor', () => {
     expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
   });
 
+  it('should not try to refresh token if 401 occurs on /api/auth/login', () => {
+    mockAuthService.getAccessToken.and.returnValue(null);
+
+    httpClient.post('/api/auth/login', { email: 'bad', password: 'bad' }).subscribe({
+      next: () => fail('should have failed with 401'),
+      error: (error) => {
+        expect(error.status).toBe(401);
+      }
+    });
+
+    const req = httpMock.expectOne('/api/auth/login');
+    req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+    expect(mockAuthService.clearLocalState).not.toHaveBeenCalled();
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
   it('should call clearLocalState and navigate to login when refresh fails', () => {
     mockAuthService.getAccessToken.and.returnValue('valid-token');
     mockAuthService.refreshToken.and.returnValue(throwError(() => new Error('refresh failed')));

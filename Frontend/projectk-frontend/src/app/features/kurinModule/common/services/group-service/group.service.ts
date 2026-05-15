@@ -7,6 +7,16 @@ import { CreateGroupDto } from '../../models/requests/createGroupDto';
 import { UpdateGroupDto } from '../../models/requests/updateGroupDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
+export interface MentorAssignmentDto {
+  mentorAssignmentKey: string;
+  mentorUserKey: string;
+  groupKey: string;
+  groupName: string;
+  assignedAtUtc: string;
+  revokedAtUtc: string | null;
+  member: MemberLookupDto | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -40,6 +50,10 @@ export class GroupService {
 
   getMentors(groupKey: string): Observable<MemberLookupDto[]> {
     return this.http.get<MemberLookupDto[]>(`${this.apiUrl}/${groupKey}/mentors`);
+  }
+
+  getMentorAssignments(kurinKey: string): Observable<MentorAssignmentDto[]> {
+    return this.http.get<MentorAssignmentDto[]>(`${this.apiUrl}/groups/${kurinKey}/mentor-assignments`);
   }
 
   assignMentor(groupKey: string, mentorUserKey: string): Observable<unknown> {

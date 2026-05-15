@@ -46,6 +46,15 @@ namespace ProjectK.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IEnumerable<MentorAssignment>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.MentorAssignments
+                .Include(ma => ma.Group)
+                .Where(ma => ma.Group.KurinKey == kurinKey)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<MentorAssignment?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
             return await _context.MentorAssignments

@@ -16,10 +16,11 @@ import { AuthService } from '../../authModule/services/authService/auth.service'
 import { forkJoin, of } from 'rxjs';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
+import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, GroupChevron, MemberList, DialogModule, MultiSelectModule, FormsModule],
+  imports: [TableModule, ButtonModule, GroupChevron, MemberList, DialogModule, MultiSelectModule, FormsModule, LeadershipPanelComponent],
   templateUrl: './group-panel.component.html',
   styleUrl: './group-panel.component.css'
 })

@@ -1,5 +1,5 @@
 import { inject, Injectable } from "@angular/core";
-import { BehaviorSubject, map, Observable, tap } from "rxjs";
+import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, tap } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "../../../../../environments/environment";
 import { LoginRequest } from "../../models/login-request.model";
@@ -33,11 +33,12 @@ export class AuthService {
   private readonly apiUrl = environment.apiUrl;
   private readonly authState$ = new BehaviorSubject<AuthState | null>(null);
   private readonly http = inject(HttpClient);
+  private refreshTokenRequest$: Observable<string> | null = null;
 
   constructor() {
     const savedState = localStorage.getItem('authState');
     if (savedState) {
-      this.authState$.next(JSON.parse(savedState));
+      this.authState$.next(this.deserializeStoredState(savedState));
     }
   }
 
@@ -66,7 +67,7 @@ export class AuthService {
             accessToken: response.tokens.accessToken,
           };
           this.authState$.next(state);
-          localStorage.setItem('authState', JSON.stringify(state));
+          this.persistAuthState(state);
         }
       })
     );
@@ -91,7 +92,7 @@ export class AuthService {
       }),
       tap(state => {
         this.authState$.next(state);
-        localStorage.setItem('authState', JSON.stringify(state));
+        this.persistAuthState(state);
       })
     );
   }
@@ -137,7 +138,11 @@ export class AuthService {
   }
 
   refreshToken(): Observable<string> {
-    return this.http.post<{ accessToken: string }>(
+    if (this.refreshTokenRequest$) {
+      return this.refreshTokenRequest$;
+    }
+
+    this.refreshTokenRequest$ = this.http.post<{ accessToken: string }>(
       `${this.apiUrl}/auth/refresh`,
       {},
       { withCredentials: true }
@@ -147,11 +152,17 @@ export class AuthService {
         if (state) {
           const newState = { ...state, accessToken: res.accessToken };
           this.authState$.next(newState);
-          localStorage.setItem('authState', JSON.stringify(newState));
+          this.persistAuthState(newState);
         }
       }),
-      map(res => res.accessToken)
+      map(res => res.accessToken),
+      finalize(() => {
+        this.refreshTokenRequest$ = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: true })
     );
+
+    return this.refreshTokenRequest$;
   }
 
   registerFirstManager(kurinDto: KurinDto): Observable<void> {
@@ -176,12 +187,31 @@ export class AuthService {
     return this.authState$.value?.accessToken ?? null;
   }
 
+  ensureAccessToken(): Observable<boolean> {
+    const state = this.authState$.value;
+    if (!state?.userKey) {
+      return of(false);
+    }
+
+    if (state.accessToken) {
+      return of(true);
+    }
+
+    return this.refreshToken().pipe(
+      map(() => true),
+      catchError(() => {
+        this.clearLocalState();
+        return of(false);
+      })
+    );
+  }
+
   setKurinKey(kurinKey: string | null): void {
     const state = this.authState$.value;
     if (state) {
       const newState = { ...state, kurinKey };
       this.authState$.next(newState);
-      localStorage.setItem('authState', JSON.stringify(newState));
+      this.persistAuthState(newState);
     }
   }
 
@@ -190,11 +220,45 @@ export class AuthService {
     if (state) {
       const newState = { ...state, email };
       this.authState$.next(newState);
-      localStorage.setItem('authState', JSON.stringify(newState));
+      this.persistAuthState(newState);
+    }
+  }
+
+  updateRole(role: string): void {
+    const state = this.authState$.value;
+    if (state) {
+      const newState = { ...state, role };
+      this.authState$.next(newState);
+      this.persistAuthState(newState);
     }
   }
 
   clearKurinKey(): void {
     this.setKurinKey(null);
+  }
+
+  private persistAuthState(state: AuthState): void {
+    localStorage.setItem('authState', JSON.stringify(this.toStoredState(state)));
+  }
+
+  private deserializeStoredState(rawState: string): AuthState | null {
+    try {
+      const parsed = JSON.parse(rawState) as AuthState;
+      return this.toStoredState(parsed);
+    } catch {
+      localStorage.removeItem('authState');
+      return null;
+    }
+  }
+
+  private toStoredState(state: AuthState): AuthState {
+    return {
+      userKey: state.userKey,
+      memberKey: state.memberKey,
+      email: state.email,
+      role: state.role,
+      kurinKey: state.kurinKey,
+      accessToken: null
+    };
   }
 }

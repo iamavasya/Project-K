@@ -15,6 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public Guid GroupKey { get; set; }
         public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }
+        public string? UserRole { get; set; }
         public string FirstName { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }

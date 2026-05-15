@@ -43,7 +43,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     private handleError(error: any, req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         if (error instanceof HttpErrorResponse && error.status === 401) {
-            if (req.url.includes('/api/auth/logout')) {
+            if (this.shouldSkipRefreshOnUnauthorized(req)) {
                 return throwError(() => error);
             }
             return this.tryRefreshAndRepeat(req, next);
@@ -66,6 +66,13 @@ export class AuthInterceptor implements HttpInterceptor {
 
         return typeof message === 'string'
             && message.toLowerCase().includes('mfa is required');
+    }
+
+    private shouldSkipRefreshOnUnauthorized(req: HttpRequest<any>): boolean {
+        return req.url.includes('/api/auth/login')
+            || req.url.includes('/api/auth/mfa/login-verify')
+            || req.url.includes('/api/auth/logout')
+            || req.url.includes('/api/auth/refresh');
     }
 
     private tryRefreshAndRepeat(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {

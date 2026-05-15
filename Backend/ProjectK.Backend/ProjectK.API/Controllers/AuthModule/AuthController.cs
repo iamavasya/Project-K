@@ -108,22 +108,25 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
-            var refreshToken = Request.Cookies[refreshTokenCookieName];
-            if (refreshToken == null)
+            var refreshTokens = GetRefreshTokenCookieValues();
+            if (refreshTokens.Count == 0)
             {
                 return Unauthorized();
             }
-            var command = new RefreshTokenCommand(refreshToken);
-            var response = await _mediator.Send(command);
-            if (response.Type == ResultType.Unauthorized)
+
+            foreach (var refreshToken in refreshTokens.Distinct(StringComparer.Ordinal))
             {
-                await Logout();
+                var command = new RefreshTokenCommand(refreshToken);
+                var response = await _mediator.Send(command);
+                if (response.Type == ResultType.Success && response.Data?.RefreshToken != null)
+                {
+                    SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
+                    return response.ToActionResult(this);
+                }
             }
-            else
-            {
-                SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
-            }
-            return response.ToActionResult(this);
+
+            DeleteRefreshTokenCookie();
+            return Unauthorized();
         }
 
         [Authorize(Policy = "RequireUser")]
@@ -136,7 +139,7 @@ namespace ProjectK.API.Controllers.AuthModule
             var refreshToken = Request.Cookies[refreshTokenCookieName];
             if (refreshToken != null)
             {
-                Response.Cookies.Delete(refreshTokenCookieName);
+                DeleteRefreshTokenCookie();
             }
             return response.ToActionResult(this);
         }
@@ -214,14 +217,51 @@ namespace ProjectK.API.Controllers.AuthModule
 
         private void SetRefreshTokenCookie(string token, DateTime expires)
         {
+            DeleteRefreshTokenCookie();
+
+            var isSecureRequest = IsSecureRequest();
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = expires
+                Secure = isSecureRequest,
+                SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+                Expires = expires,
+                Path = "/api/auth"
             };
             Response.Cookies.Append(refreshTokenCookieName, token, cookieOptions);
+        }
+
+        private void DeleteRefreshTokenCookie()
+        {
+            var isSecureRequest = IsSecureRequest();
+
+            foreach (var path in new[] { "/api/auth", "/api", "/" })
+            {
+                Response.Cookies.Delete(refreshTokenCookieName, new CookieOptions
+                {
+                    Secure = isSecureRequest,
+                    SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+                    Path = path
+                });
+            }
+        }
+
+        private List<string> GetRefreshTokenCookieValues()
+        {
+            return Request.Headers.Cookie
+                .SelectMany(header => header?.Split(';') ?? [])
+                .Select(cookie => cookie.Trim())
+                .Where(cookie => cookie.StartsWith($"{refreshTokenCookieName}=", StringComparison.Ordinal))
+                .Select(cookie => cookie[(refreshTokenCookieName.Length + 1)..])
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => Uri.UnescapeDataString(value.Trim('"')))
+                .ToList();
+        }
+
+        private bool IsSecureRequest()
+        {
+            return Request.IsHttps
+                || string.Equals(Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -7,12 +7,115 @@
     background: transparent;
 }
 
+.member-list-heading {
+    color: var(--p-text-color);
+}
+
+.member-list-title {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+.member-list-controls {
+    color: var(--p-text-color);
+}
+
+.member-list-search {
+    width: 16rem;
+    max-width: 100%;
+}
+
+.member-list-search-input {
+    width: 100%;
+}
+
 .member-card-toggle span {
     color: var(--p-text-muted-color);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.member-role-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
 }
 
 .member-empty-state {
     border: 1px dashed var(--p-content-border-color);
     color: var(--p-text-muted-color);
     background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-primary-100) 10%);
+}
+
+:host ::ng-deep .member-list-table .p-datatable-table {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+    :host ::ng-deep .member-list-table .p-datatable-wrapper {
+        overflow-x: visible;
+    }
+
+    :host ::ng-deep .member-list-table .p-datatable-thead {
+        display: none;
+    }
+
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row,
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row {
+        display: grid;
+        gap: 0.45rem;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--p-content-border-color);
+    }
+
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td,
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row > td {
+        display: grid;
+        grid-template-columns: 5.25rem minmax(0, 1fr);
+        gap: 0.6rem;
+        align-items: center;
+        min-width: 0;
+        padding: 0.1rem 0 !important;
+        border: 0 !important;
+        overflow-wrap: anywhere;
+    }
+
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td::before,
+    :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row > td::before {
+        content: attr(data-mobile-label);
+        color: var(--p-text-muted-color);
+        font-size: 0.75rem;
+        font-weight: 650;
+    }
+
+    .member-list-heading,
+    :host ::ng-deep .member-list-table .p-datatable-header .member-list-heading {
+        align-items: stretch;
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .member-list-controls,
+    :host ::ng-deep .member-list-table .p-datatable-header .member-list-controls {
+        justify-content: flex-start;
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    .member-list-search,
+    :host ::ng-deep .member-list-table .p-datatable-header .member-list-search {
+        width: 100%;
+    }
+
+    .member-list-search-input,
+    :host ::ng-deep .member-list-table .p-datatable-header .member-list-search-input {
+        width: 100%;
+    }
+
+    .member-cards-grid {
+        grid-template-columns: 1fr;
+    }
 }

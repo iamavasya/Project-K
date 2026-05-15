@@ -43,6 +43,10 @@ describe('AuthService', () => {
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
+      const expectedHydratedState: AuthState = {
+        ...mockAuthState,
+        accessToken: null
+      };
 
       localStorage.setItem('authState', JSON.stringify(mockAuthState));
 
@@ -55,7 +59,7 @@ describe('AuthService', () => {
       const newService = TestBed.inject(AuthService);
       
       newService.getAuthState().subscribe(state => {
-        expect(state).toEqual(mockAuthState);
+        expect(state).toEqual(expectedHydratedState);
       });
     });
 
@@ -159,7 +163,7 @@ describe('AuthService', () => {
       service.login(credentials).subscribe(state => {
         expect(state).toEqual(mockResponse);
         expect(service.getAuthStateValue()).toEqual(expectedState);
-        expect(localStorage.getItem('authState')).toBe(JSON.stringify(expectedState));
+        expect(localStorage.getItem('authState')).toBe(JSON.stringify({ ...expectedState, accessToken: null }));
         done();
       });
 
@@ -224,7 +228,7 @@ describe('AuthService', () => {
       service.verifyMfaLogin('mfa@example.com', '123456').subscribe(state => {
         expect(state).toEqual(expectedState);
         expect(service.getAuthStateValue()).toEqual(expectedState);
-        expect(localStorage.getItem('authState')).toBe(JSON.stringify(expectedState));
+        expect(localStorage.getItem('authState')).toBe(JSON.stringify({ ...expectedState, accessToken: null }));
         done();
       });
 
@@ -436,7 +440,7 @@ describe('AuthService', () => {
           const savedState = localStorage.getItem('authState');
           expect(savedState).toBeTruthy();
           const parsedState = JSON.parse(savedState!);
-          expect(parsedState.accessToken).toBe(newAccessToken);
+          expect(parsedState.accessToken).toBeNull();
           done();
         });
 
@@ -478,6 +482,61 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/refresh`);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should coalesce concurrent refresh token requests', (done) => {
+      const results: string[] = [];
+
+      service.refreshToken().subscribe(token => {
+        results.push(token);
+      });
+      service.refreshToken().subscribe(token => {
+        results.push(token);
+      });
+
+      const requests = httpMock.match(`${apiUrl}/auth/refresh`);
+      expect(requests.length).toBe(1);
+      requests[0].flush({ accessToken: 'shared-access-token' });
+
+      setTimeout(() => {
+        expect(results).toEqual(['shared-access-token', 'shared-access-token']);
+        done();
+      });
+    });
+  });
+
+  describe('ensureAccessToken', () => {
+    it('should refresh token when hydrated state has no access token', (done) => {
+      const storedState: AuthState = {
+        userKey: 'user-123',
+        memberKey: 'member-123',
+        email: 'admin@example.com',
+        role: 'Admin',
+        kurinKey: null,
+        accessToken: null
+      };
+      localStorage.setItem('authState', JSON.stringify(storedState));
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule],
+        providers: [AuthService]
+      });
+
+      const hydratedService = TestBed.inject(AuthService);
+      const hydratedHttpMock = TestBed.inject(HttpTestingController);
+
+      hydratedService.ensureAccessToken().subscribe(isAuthenticated => {
+        expect(isAuthenticated).toBeTrue();
+        expect(hydratedService.getAuthStateValue()?.accessToken).toBe('new-access-token');
+        hydratedHttpMock.verify();
+        done();
+      });
+
+      const req = hydratedHttpMock.expectOne(`${apiUrl}/auth/refresh`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush({ accessToken: 'new-access-token' });
     });
   });
 
@@ -666,6 +725,37 @@ describe('AuthService', () => {
     it('should not affect state if no auth state exists', () => {
       service.clearKurinKey();
       expect(service.getAuthStateValue()).toBeNull();
+    });
+  });
+
+  describe('updateRole', () => {
+    it('should update role in auth state and persisted storage', (done) => {
+      const mockAuthState: AuthState = {
+        userKey: 'user-123',
+        memberKey: 'test-member-key',
+        email: 'test@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
+        service.updateRole('Mentor');
+
+        expect(service.getAuthStateValue()?.role).toBe('Mentor');
+        expect(JSON.parse(localStorage.getItem('authState')!).role).toBe('Mentor');
+        done();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/auth/login`);
+      req.flush({
+        userKey: mockAuthState.userKey,
+        memberKey: mockAuthState.memberKey,
+        email: mockAuthState.email,
+        role: mockAuthState.role,
+        kurinKey: mockAuthState.kurinKey,
+        tokens: { accessToken: mockAuthState.accessToken }
+      });
     });
   });
 });

@@ -135,7 +135,7 @@ describe('LoginComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
   });
 
-  it('should navigate home when authenticated state has no destination keys', () => {
+  it('should navigate to login when authenticated state has no destination keys', () => {
     const state = createAuthState({ memberKey: null, kurinKey: null });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
@@ -146,7 +146,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
   it('should show message when login fails', () => {

@@ -1,20 +1,151 @@
 .kurin-header {
     display: flex;
     align-items: center;
-    margin: 5rem;
+    margin: 2rem auto 1rem;
+    width: min(100% - 2rem, 72rem);
 }
 
 .kurin-head-message {
     display: flex;
     margin-left: 2rem;
-    font-size: 2rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--p-text-color);
 }
 
 .group-panel {
-    margin: 5rem;
+    display: grid;
+    gap: 1rem;
+    margin: 0 auto 2rem;
+    width: min(100% - 2rem, 72rem);
+}
+
+.kurin-tile {
+    border: 1px solid var(--p-content-border-color);
+    background: var(--p-content-background);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+}
+
+.table-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.table-caption > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.table-caption > p-button {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.table-caption h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--p-text-color);
+}
+
+.table-caption p {
+    margin: 0.15rem 0 0;
+    color: var(--p-text-muted-color);
+    font-size: 0.85rem;
+}
+
+.group-name-cell {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.group-name-cell__title {
+    font-weight: 650;
+    color: var(--p-text-color);
+}
+
+.group-name-cell__meta {
+    color: var(--p-text-muted-color);
+    font-size: 0.8rem;
+}
+
+.table-empty-state {
+    margin-top: 1rem;
+}
+
+.group-actions {
+    text-align: right;
+    width: 12rem;
+}
+
+:host ::ng-deep .project-table .p-datatable-table {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .kurin-header {
+        margin-top: 1rem;
+    }
+
+    .kurin-head-message {
+        font-size: 1.25rem;
+        margin-left: 1rem;
+    }
+
+    .table-caption {
+        align-items: center;
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 640px) {
+    .kurin-tile {
+        padding: 0.75rem;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-wrapper {
+        overflow-x: visible;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-thead {
+        display: none;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.group-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--p-content-border-color);
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.group-row > td {
+        min-width: 0;
+        padding: 0 !important;
+        border: 0 !important;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.group-row > td::before {
+        content: none;
+    }
 
     .group-actions {
-        text-align: right;
-        width: 1rem;
+        flex-shrink: 0;
+        margin-left: auto;
+        width: auto;
+        text-align: left;
+    }
+
+    :host ::ng-deep .group-actions .p-splitbutton {
+        justify-self: start;
+        max-width: 100%;
+        width: fit-content;
     }
 }

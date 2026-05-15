@@ -120,7 +120,7 @@ export class LoginComponent {
       this.router.navigate(['/kurin']);
     }
     else {
-      this.router.navigate(['/']);
+      this.router.navigate(['/login']);
     }
   }
 

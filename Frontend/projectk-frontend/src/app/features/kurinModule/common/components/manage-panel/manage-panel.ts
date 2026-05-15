@@ -24,6 +24,7 @@ export interface ManagePanelConfig {
   title?: string;
   fields: ManagePanelField[];
   createFactory?: () => any;
+  displayName?: (entity: any) => string;
   mapOut?(raw: any): any;
 }
 
@@ -198,6 +199,14 @@ export class ManagePanel implements OnChanges {
 
   header(): string {
     return this.config?.title || (this.config?.entityType ?? '');
+  }
+
+  entityDisplayName(): string {
+    if (!this.entity) return '';
+    return this.config?.displayName?.(this.entity)
+      || this.entity.name
+      || this.entity.number?.toString()
+      || '';
   }
 
   isDeleteMode(): boolean {

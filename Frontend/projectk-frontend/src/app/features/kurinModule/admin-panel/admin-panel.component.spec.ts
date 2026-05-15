@@ -83,8 +83,8 @@ describe('AdminPanelComponent', () => {
     it('creates Update/Delete menu items', () => {
       component.prepareItemActions(mockKurins[0]);
       expect(component.actions.length).toBe(2);
-      expect(component.actions[0].label).toBe('Update');
-      expect(component.actions[1].label).toBe('Delete');
+      expect(component.actions[0].label).toBe('Редагувати');
+      expect(component.actions[1].label).toBe('Видалити');
     });
   });
 

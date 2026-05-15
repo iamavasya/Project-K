@@ -17,7 +17,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
         public Guid? EntityKey { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; }
+        public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; } = [];
 
         public UpsertLeadership(UpsertLeadershipRequest request)
         {
@@ -52,6 +52,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
         {
             LeadershipEntity? existing = null;
             bool isCreated = false;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
             {
                 existing = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey!.Value, cancellationToken);
@@ -60,8 +61,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
             if (existing != null)
             {
                 // Update existing Leadership
-                _mapper.Map(request, existing);
-
                 existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
                 switch (existing.Type)
                 {
@@ -74,12 +73,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                         existing.KurinKey = null;
                         break;
                 }
+                ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
                 _unitOfWork.Leaderships.Update(existing, cancellationToken);
             }
             else
             {
                 // Create new Leadership
                 existing = _mapper.Map<LeadershipEntity>(request);
+                if (request.LeadershipKey is Guid leadershipKey && leadershipKey != Guid.Empty)
+                {
+                    existing.LeadershipKey = leadershipKey;
+                }
+
+                existing.StartDate = today;
+                existing.EndDate = null;
                 existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
                 switch (existing.Type)
                 {
@@ -92,6 +99,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                         existing.KurinKey = null;
                         break;
                 }
+                existing.LeadershipHistories.Clear();
+                ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
                 _unitOfWork.Leaderships.Add(existing, cancellationToken);
                 isCreated = true;
             }
@@ -108,6 +117,62 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
             return isCreated
                 ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
                 : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
+        }
+
+        private static void ApplyLeadershipHistoryChanges(
+            LeadershipEntity leadership,
+            IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
+            DateOnly today)
+        {
+            var requestedAssignments = requestedHistories
+                .Where(history => history.EndDate == null)
+                .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
+                .Where(history => !string.IsNullOrWhiteSpace(history.Role))
+                .Select(history => new
+                {
+                    Role = Enum.Parse<LeadershipRole>(history.Role, ignoreCase: true),
+                    MemberKey = history.Member.MemberKey
+                })
+                .Distinct()
+                .ToList();
+
+            var activeHistories = leadership.LeadershipHistories
+                .Where(history => history.EndDate == null)
+                .ToList();
+
+            foreach (var activeHistory in activeHistories)
+            {
+                var isStillAssigned = requestedAssignments.Any(assignment =>
+                    assignment.Role == activeHistory.Role &&
+                    assignment.MemberKey == activeHistory.MemberKey);
+
+                if (!isStillAssigned)
+                {
+                    activeHistory.EndDate = today;
+                }
+            }
+
+            foreach (var assignment in requestedAssignments)
+            {
+                var alreadyActive = activeHistories.Any(history =>
+                    history.Role == assignment.Role &&
+                    history.MemberKey == assignment.MemberKey);
+
+                if (alreadyActive)
+                {
+                    continue;
+                }
+
+                leadership.LeadershipHistories.Add(new Common.Entities.KurinModule.LeadershipHistory
+                {
+                    Leadership = leadership,
+                    LeadershipKey = leadership.LeadershipKey,
+                    Role = assignment.Role,
+                    MemberKey = assignment.MemberKey,
+                    StartDate = today,
+                    EndDate = null
+                });
+            }
         }
     }
 }

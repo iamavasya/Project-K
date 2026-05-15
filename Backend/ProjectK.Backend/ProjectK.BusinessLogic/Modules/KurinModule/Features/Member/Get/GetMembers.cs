@@ -90,9 +90,31 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             }
 
             var response = _mapper.Map<IEnumerable<MemberResponse>>(members);
+            await EnrichUserRolesAsync(response, members, cancellationToken);
             await ScrubRestrictedDataAsync(response, members, cancellationToken);
 
             return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
+        }
+
+        private async Task EnrichUserRolesAsync(IEnumerable<MemberResponse> responses, IEnumerable<MemberEntity> entities, CancellationToken ct)
+        {
+            var kurinKey = entities.Select(member => member.KurinKey).FirstOrDefault(key => key != Guid.Empty);
+            if (kurinKey == Guid.Empty)
+            {
+                return;
+            }
+
+            var roleLookup = (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, ct))
+                .Where(member => member.UserKey.HasValue)
+                .ToDictionary(member => member.UserKey!.Value, member => member.UserRole);
+
+            foreach (var response in responses)
+            {
+                if (response.UserKey.HasValue && roleLookup.TryGetValue(response.UserKey.Value, out var role))
+                {
+                    response.UserRole = role;
+                }
+            }
         }
     }
 }

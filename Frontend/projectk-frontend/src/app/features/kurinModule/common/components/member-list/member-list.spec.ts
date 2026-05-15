@@ -191,6 +191,20 @@ describe('MemberList', () => {
         const role = LeadershipRole.Kurinnuy;
         expect(component.getRoleDisplayName(role)).toBeTruthy();
     });
+
+    it('getMemberRoleTags should include KV mentor status', () => {
+      const tags = component.getMemberRoleTags({
+        memberKey: 'm1',
+        firstName: 'John',
+        lastName: 'Doe',
+        middleName: 'M',
+        userRole: 'Mentor'
+      });
+
+      expect(tags).toEqual(jasmine.arrayContaining([
+        jasmine.objectContaining({ label: 'Впорядник', severity: 'success' })
+      ]));
+    });
   });
 
   describe('Group card mode', () => {

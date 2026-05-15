@@ -154,13 +154,13 @@ export const routes: Routes = [
   },
   {
     path: 'planning/create/:kurinKey',
-    canActivate: [authGuard, kurinAccessGuard('planning')],
+    canActivate: [authGuard, kurinAccessGuard('planning-create')],
     component: CreatePlanningComponent,
     data: { breadcrumb: 'New Planning', parent: '/kurin', entityType: 'kurin' }
   },
   {
     path: 'planning/:kurinKey',
-    canActivate: [authGuard, kurinAccessGuard('planning')],
+    canActivate: [authGuard, kurinAccessGuard('planning'), EntityGuard],
     component: PlanningListComponent,
     data: { breadcrumb: 'Planning', parent: '/kurin', entityType: 'kurin' }
   }

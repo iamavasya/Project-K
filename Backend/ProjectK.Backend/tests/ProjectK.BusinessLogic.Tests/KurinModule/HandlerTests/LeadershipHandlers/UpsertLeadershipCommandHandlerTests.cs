@@ -11,6 +11,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -229,6 +230,61 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             _leadershipRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
             _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldCloseOldActiveHistoryAndStartNewOne_WhenRoleMemberChanges()
+        {
+            var oldMemberKey = Guid.NewGuid();
+            var newMemberKey = Guid.NewGuid();
+            var existing = BuildLeadershipEntity();
+            existing.Type = LeadershipType.Kurin;
+            existing.KurinKey = Guid.NewGuid();
+            existing.LeadershipHistories.Add(new LeadershipHistory
+            {
+                LeadershipHistoryKey = Guid.NewGuid(),
+                LeadershipKey = existing.LeadershipKey,
+                Leadership = existing,
+                MemberKey = oldMemberKey,
+                Role = LeadershipRole.Kurinnuy,
+                StartDate = new DateOnly(2024, 1, 1),
+                EndDate = null
+            });
+
+            var requestDto = BuildRequest("kurin");
+            requestDto.EntityKey = existing.KurinKey;
+            requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+            {
+                new()
+                {
+                    Role = LeadershipRole.Kurinnuy.ToString(),
+                    Member = new MemberLookupDto
+                    {
+                        MemberKey = newMemberKey,
+                        FirstName = "New",
+                        LastName = "Member"
+                    }
+                }
+            };
+            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
+
+            _leadershipRepoMock
+                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+
+            SetupUpdateMapping(command, existing);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            Assert.Equal(ResultType.Success, result.Type);
+            Assert.Equal(today, existing.LeadershipHistories.Single(h => h.MemberKey == oldMemberKey).EndDate);
+
+            var newHistory = Assert.Single(existing.LeadershipHistories, h => h.MemberKey == newMemberKey);
+            Assert.Equal(LeadershipRole.Kurinnuy, newHistory.Role);
+            Assert.Equal(today, newHistory.StartDate);
+            Assert.Null(newHistory.EndDate);
         }
 
         [Fact]

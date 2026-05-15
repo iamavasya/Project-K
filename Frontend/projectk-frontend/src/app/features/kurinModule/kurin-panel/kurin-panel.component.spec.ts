@@ -11,6 +11,8 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { GroupDto } from '../common/models/groupDto';
 import { AuthState } from '../../authModule/models/auth-state.model';
+import { MemberService } from '../common/services/member-service/member.service';
+import { UserService } from '../../adminModule/services/user.service';
 
 describe('KurinPanelComponent', () => {
   let fixture: ComponentFixture<KurinPanelComponent>;
@@ -18,6 +20,8 @@ describe('KurinPanelComponent', () => {
 
   let groupService: jasmine.SpyObj<GroupService>;
   let kurinService: jasmine.SpyObj<KurinService>;
+  let memberService: jasmine.SpyObj<MemberService>;
+  let userService: jasmine.SpyObj<UserService>;
   let authService: jasmine.SpyObj<AuthService>;
   let authState$: BehaviorSubject<AuthState | null>;
 
@@ -39,16 +43,26 @@ describe('KurinPanelComponent', () => {
     authState$ = new BehaviorSubject<AuthState | null>(mockAuthState);
 
     groupService = jasmine.createSpyObj<GroupService>('GroupService', [
-      'getAllByKurinKey', 'create', 'update', 'delete'
+      'getAllByKurinKey', 'getMentorAssignments', 'assignMentor', 'revokeMentor', 'create', 'update', 'delete'
     ]);
     kurinService = jasmine.createSpyObj<KurinService>('KurinService', [
       'getByKey'
+    ]);
+    memberService = jasmine.createSpyObj<MemberService>('MemberService', [
+      'getAll', 'getKVMembers', 'getMentorCandidates'
+    ]);
+    userService = jasmine.createSpyObj<UserService>('UserService', [
+      'changeUserRole'
     ]);
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
       'getAuthState', 'getAuthStateValue'
     ]);
 
     groupService.getAllByKurinKey.and.returnValue(of(mockGroups));
+    groupService.getMentorAssignments.and.returnValue(of([]));
+    memberService.getKVMembers.and.returnValue(of([]));
+    memberService.getMentorCandidates.and.returnValue(of([]));
+    memberService.getAll.and.returnValue(of([]));
     kurinService.getByKey.and.returnValue(of({ kurinKey: 'k1', number: 10 }));
     authService.getAuthState.and.returnValue(authState$.asObservable());
     authService.getAuthStateValue.and.returnValue(mockAuthState);
@@ -59,6 +73,8 @@ describe('KurinPanelComponent', () => {
         { provide: ActivatedRoute, useValue: {} },
         { provide: GroupService, useValue: groupService },
         { provide: KurinService, useValue: kurinService },
+        { provide: MemberService, useValue: memberService },
+        { provide: UserService, useValue: userService },
         { provide: AuthService, useValue: authService },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -105,6 +121,18 @@ describe('KurinPanelComponent', () => {
     expect(component.kurinKey).toBe('k2');
   });
 
+  it('does not allow mentor to add kurin-level members', () => {
+    const mentorState = {
+      ...mockAuthState,
+      role: 'Mentor'
+    };
+    authService.getAuthStateValue.and.returnValue(mentorState);
+    authState$.next(mentorState);
+    fixture.detectChanges();
+
+    expect(component.canManageMembers).toBeFalse();
+  });
+
   it('manual refresh uses current kurinKey from component', () => {
     fixture.detectChanges();
     component.kurinKey = 'k2';
@@ -119,8 +147,8 @@ describe('KurinPanelComponent', () => {
     it('sets Update/Delete actions', () => {
       component.prepareItemActions(mockGroups[0]);
       expect(component.actions.length).toBe(2);
-      expect(component.actions[0].label).toBe('Update');
-      expect(component.actions[1].label).toBe('Delete');
+      expect(component.actions[0].label).toBe('Редагувати');
+      expect(component.actions[1].label).toBe('Видалити');
     });
   });
 
