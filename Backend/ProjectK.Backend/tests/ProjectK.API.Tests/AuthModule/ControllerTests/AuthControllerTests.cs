@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.AuthModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
@@ -90,6 +91,42 @@ namespace ProjectK.API.Tests.Controllers
             Assert.IsType<OkObjectResult>(result);
             var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
             Assert.Contains("refreshToken", setCookieHeader);
+            Assert.Contains("samesite=lax", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Login_ShouldSetSecureSameSiteNoneCookie_WhenRequestIsHttps()
+        {
+            // Arrange
+            _controller.Request.Scheme = "https";
+            var request = new LoginUserRequest { Email = "test@test.com", Password = "pass" };
+            var tokens = new JwtResponse
+            {
+                AccessToken = "AccessToken",
+                RefreshToken = new RefreshToken
+                {
+                    Token = "RefreshToken",
+                    Expires = DateTime.UtcNow.AddDays(7),
+                    Created = DateTime.UtcNow,
+                }
+            };
+
+            _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
+                .Returns(new LoginUserCommand(request.Email, request.Password));
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
+                .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
+            Assert.Contains("refreshToken", setCookieHeader);
+            Assert.Contains("samesite=none", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -123,6 +160,59 @@ namespace ProjectK.API.Tests.Controllers
 
             // Assert
             Assert.IsType<UnauthorizedResult>(result);
+        }
+
+        [Fact]
+        public async Task Refresh_ShouldDeleteCookieWithoutLogout_WhenRefreshTokenIsInvalid()
+        {
+            // Arrange
+            _controller.Request.Headers.Cookie = "refreshToken=invalid-token";
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RefreshTokenCommand>(), default))
+                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+
+            // Act
+            var result = await _controller.Refresh();
+
+            // Assert
+            Assert.IsType<UnauthorizedResult>(result);
+            Assert.Contains("refreshToken=", _controller.Response.Headers["Set-Cookie"].ToString());
+            _mediatorMock.Verify(m => m.Send(It.IsAny<LogoutUserCommand>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task Refresh_ShouldUseValidToken_WhenDuplicateRefreshTokenCookiesExist()
+        {
+            // Arrange
+            _controller.Request.Headers.Cookie = "refreshToken=stale-token; refreshToken=valid-token";
+            var refreshedJwt = new JwtResponse
+            {
+                AccessToken = "new-access-token",
+                RefreshToken = new RefreshToken
+                {
+                    Token = "new-refresh-token",
+                    Expires = DateTime.UtcNow.AddDays(7),
+                    Created = DateTime.UtcNow
+                }
+            };
+
+            _mediatorMock.Setup(m => m.Send(
+                    It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"),
+                    default))
+                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+            _mediatorMock.Setup(m => m.Send(
+                    It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"),
+                    default))
+                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Success, refreshedJwt));
+
+            // Act
+            var result = await _controller.Refresh();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(refreshedJwt, okResult.Value);
+            Assert.Contains("new-refresh-token", _controller.Response.Headers["Set-Cookie"].ToString());
+            _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"), default), Times.Once);
+            _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"), default), Times.Once);
         }
 
         [Fact]

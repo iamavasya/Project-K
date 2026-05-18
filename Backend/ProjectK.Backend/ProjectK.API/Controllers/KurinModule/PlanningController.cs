@@ -29,7 +29,7 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireManager")]
+    [Authorize(Policy = "RequireMentor")]
     [HttpGet("session/{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Read, "route:planningSessionKey")]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
@@ -39,7 +39,7 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireManager")]
+    [Authorize(Policy = "RequireMentor")]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)

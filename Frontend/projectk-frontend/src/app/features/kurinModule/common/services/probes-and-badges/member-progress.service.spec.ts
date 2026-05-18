@@ -6,11 +6,14 @@ import { BadgeProgressStatus } from '../../models/enums/badge-progress-status.en
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badgeProgressDto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probeProgressDto';
+import { ClientCacheService } from '../client-cache/client-cache.service';
+import { MEMBER_PROGRESS_CACHE_PREFIX } from '../client-cache/cache-policy';
 import { MemberProgressService } from './member-progress.service';
 
 describe('MemberProgressService', () => {
   let service: MemberProgressService;
   let httpMock: HttpTestingController;
+  let cache: ClientCacheService;
 
   const apiUrl = `${environment.apiUrl}/member`;
   const memberKey = '11111111-1111-1111-1111-111111111111';
@@ -58,10 +61,12 @@ describe('MemberProgressService', () => {
 
     service = TestBed.inject(MemberProgressService);
     httpMock = TestBed.inject(HttpTestingController);
+    cache = TestBed.inject(ClientCacheService);
   });
 
   afterEach(() => {
     httpMock.verify();
+    cache.clear();
   });
 
   it('should be created', () => {
@@ -78,6 +83,20 @@ describe('MemberProgressService', () => {
     req.flush([badgeProgress]);
   });
 
+  it('getBadgeProgresses should reuse cached response within TTL', () => {
+    service.getBadgeProgresses(memberKey).subscribe(response => {
+      expect(response).toEqual([badgeProgress]);
+    });
+
+    httpMock.expectOne(`${apiUrl}/${memberKey}/badges/progress`).flush([badgeProgress]);
+
+    service.getBadgeProgresses(memberKey).subscribe(response => {
+      expect(response).toEqual([badgeProgress]);
+    });
+
+    httpMock.expectNone(`${apiUrl}/${memberKey}/badges/progress`);
+  });
+
   it('submitBadgeProgress should call submit endpoint with payload', () => {
     const payload = { note: 'please review' };
 
@@ -89,6 +108,19 @@ describe('MemberProgressService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
     req.flush(badgeProgress);
+  });
+
+  it('submitBadgeProgress should invalidate member progress caches', () => {
+    spyOn(cache, 'invalidate').and.callThrough();
+    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+
+    service.submitBadgeProgress(memberKey, 'badge-1', { note: 'please review' }).subscribe();
+
+    httpMock.expectOne(`${apiUrl}/${memberKey}/badges/badge-1/submit`).flush(badgeProgress);
+
+    expect(cache.invalidate).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}badges:${memberKey}`);
+    expect(cache.invalidateByPrefix).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}badge-review-queue:`);
+    expect(cache.invalidateByPrefix).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}probe:${memberKey}:`);
   });
 
   it('reviewBadgeProgress should call review endpoint with payload', () => {
@@ -114,6 +146,20 @@ describe('MemberProgressService', () => {
     req.flush(probeProgress);
   });
 
+  it('getProbeProgress should reuse cached response within TTL', () => {
+    service.getProbeProgress(memberKey, 'probe-1').subscribe(response => {
+      expect(response.probeId).toBe('probe-1');
+    });
+
+    httpMock.expectOne(`${apiUrl}/${memberKey}/probes/probe-1/progress`).flush(probeProgress);
+
+    service.getProbeProgress(memberKey, 'probe-1').subscribe(response => {
+      expect(response.probeId).toBe('probe-1');
+    });
+
+    httpMock.expectNone(`${apiUrl}/${memberKey}/probes/probe-1/progress`);
+  });
+
   it('updateProbeProgressStatus should call update endpoint with payload', () => {
     const payload = { status: ProbeProgressStatus.Completed, note: 'done' };
 
@@ -125,5 +171,19 @@ describe('MemberProgressService', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(payload);
     req.flush({ ...probeProgress, status: ProbeProgressStatus.Completed, completedAtUtc: '2026-04-15T12:00:00Z' });
+  });
+
+  it('updateProbeProgressStatus should invalidate targeted probe progress cache', () => {
+    spyOn(cache, 'invalidate').and.callThrough();
+    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+
+    service.updateProbeProgressStatus(memberKey, 'probe-1', { status: ProbeProgressStatus.Completed, note: 'done' }).subscribe();
+
+    httpMock.expectOne(`${apiUrl}/${memberKey}/probes/probe-1/progress/status`)
+      .flush({ ...probeProgress, status: ProbeProgressStatus.Completed });
+
+    expect(cache.invalidate).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}badges:${memberKey}`);
+    expect(cache.invalidate).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}probe:${memberKey}:probe-1`);
+    expect(cache.invalidateByPrefix).toHaveBeenCalledWith(`${MEMBER_PROGRESS_CACHE_PREFIX}badge-review-queue:`);
   });
 });

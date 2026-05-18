@@ -68,6 +68,20 @@ describe('BadgesCatalogService', () => {
     req.flush(metadata);
   });
 
+  it('getMetadata should reuse cached metadata within TTL', () => {
+    service.getMetadata().subscribe(response => {
+      expect(response).toEqual(metadata);
+    });
+
+    httpMock.expectOne(`${apiUrl}/meta`).flush(metadata);
+
+    service.getMetadata().subscribe(response => {
+      expect(response).toEqual(metadata);
+    });
+
+    httpMock.expectNone(`${apiUrl}/meta`);
+  });
+
   it('getAll should request badges with default take', () => {
     service.getAll().subscribe(response => {
       expect(response).toEqual([badge]);
@@ -76,6 +90,21 @@ describe('BadgesCatalogService', () => {
     const req = httpMock.expectOne(request => request.url === apiUrl && request.params.get('take') === '200');
     expect(req.request.method).toBe('GET');
     req.flush([badge]);
+  });
+
+  it('getAll should reuse cached badges by safe take within TTL', () => {
+    service.getAll(200).subscribe(response => {
+      expect(response).toEqual([badge]);
+    });
+
+    httpMock.expectOne(request => request.url === apiUrl && request.params.get('take') === '200')
+      .flush([badge]);
+
+    service.getAll(200).subscribe(response => {
+      expect(response).toEqual([badge]);
+    });
+
+    httpMock.expectNone(request => request.url === apiUrl && request.params.get('take') === '200');
   });
 
   it('getAll should clamp take into supported range', () => {

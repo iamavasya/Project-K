@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -35,8 +37,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-            _handler = new GetGroupsHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetGroupsHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
         }
+
+        private static IBackendCache CreateCache() =>
+            new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
 
         [Fact]
         public async Task Handle_WhenGroupsExist_ShouldReturnSuccessWithMappedResponses()
@@ -146,6 +151,36 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Type.Should().Be(ResultType.Success);
             var directlyMapped = _mapper.Map<IEnumerable<GroupResponse>>(groups);
             result.Data.Should().BeEquivalentTo(directlyMapped);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCalledTwiceWithSameKurinKey_ShouldUseCache()
+        {
+            var kurinKey = Guid.NewGuid();
+            _groupRepositoryMock
+                .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Group>());
+
+            await _handler.Handle(new GetGroups(kurinKey), CancellationToken.None);
+            await _handler.Handle(new GetGroups(kurinKey), CancellationToken.None);
+
+            _groupRepositoryMock.Verify(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCalledWithDifferentKurinKeys_ShouldUseDifferentCacheKeys()
+        {
+            var firstKurinKey = Guid.NewGuid();
+            var secondKurinKey = Guid.NewGuid();
+
+            _groupRepositoryMock
+                .Setup(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Group>());
+
+            await _handler.Handle(new GetGroups(firstKurinKey), CancellationToken.None);
+            await _handler.Handle(new GetGroups(secondKurinKey), CancellationToken.None);
+
+            _groupRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
     }
 }

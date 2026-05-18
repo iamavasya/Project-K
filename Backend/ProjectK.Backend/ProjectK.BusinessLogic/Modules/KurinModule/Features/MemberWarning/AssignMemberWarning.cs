@@ -76,13 +76,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
                 return new ServiceResult<MemberWarningDto>(ResultType.Conflict);
             }
 
-            foreach (var warning in activeWarnings.Where(w => w.Level < request.Level))
-            {
-                warning.RevokedAtUtc = now;
-                warning.RevokedByUserKey = _currentUserContext.UserId;
-                warning.UpdatedDate = now;
-            }
-
             var expiresAtUtc = now.AddMonths(LevelDurationsInMonths[request.Level]);
 
             var warningEntity = new Common.Entities.KurinModule.MemberWarning

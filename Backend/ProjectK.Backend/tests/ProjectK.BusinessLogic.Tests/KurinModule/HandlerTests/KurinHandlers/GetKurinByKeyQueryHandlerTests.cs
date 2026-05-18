@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -40,8 +42,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object);
+            _userManagerMock.Setup(x => x.Users).Returns(new List<AppUser>().AsQueryable());
+
+            _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
         }
+
+        private static IBackendCache CreateCache() =>
+            new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
 
         [Fact]
         public async Task Handle_WhenKurinExists_ShouldReturnSuccessWithMappedResponse()
@@ -126,6 +133,21 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             var directlyMapped = _mapper.Map<KurinResponse>(kurin);
             result.Data.Should().BeEquivalentTo(directlyMapped);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCalledTwiceWithSameKurinKey_ShouldUseCache()
+        {
+            var kurinKey = Guid.NewGuid();
+            var kurin = new Kurin(456) { KurinKey = kurinKey };
+
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
+                .ReturnsAsync(kurin);
+
+            await _handler.Handle(new GetKurinByKey(kurinKey), default);
+            await _handler.Handle(new GetKurinByKey(kurinKey), default);
+
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(kurinKey, default), Times.Once);
         }
     }
 }

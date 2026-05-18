@@ -1,4 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { LeadershipDto, LeadershipHistoryDto } from '../../../models/requests/leadership/leadershipDto';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
 import { MemberDto } from '../../../models/memberDto';
@@ -10,7 +11,6 @@ import { map } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
 
-import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from "primeng/button";
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
@@ -43,8 +43,8 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
   imports: [
     ReactiveFormsModule,
     FormsModule,
+    DatePipe,
     TableModule,
-    DatePickerModule,
     ButtonModule,
     SelectModule,
     InputTextModule,
@@ -77,8 +77,6 @@ export class LeadershipComponent implements OnInit {
 
   constructor() {
     this.leadershipForm = this.fb.group({
-      startDate: [null, Validators.required],
-      endDate: [null],
       leadershipHistories: this.fb.array([])
     });
   }
@@ -129,7 +127,7 @@ export class LeadershipComponent implements OnInit {
         fullMembers.map(member => ({
           memberKey: member.memberKey,
           firstName: member.firstName,
-          middleName: member.middleName,
+          middleName: member.middleName ?? null,
           lastName: member.lastName
         }))
       )
@@ -140,11 +138,6 @@ export class LeadershipComponent implements OnInit {
   }
   
   patchForm(data: LeadershipDto): void {
-    this.leadershipForm.patchValue({
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null
-    });
-
     this.leadershipHistories.clear();
 
     const typeKey = this.leadershipType?.toLowerCase() || '';
@@ -165,7 +158,7 @@ export class LeadershipComponent implements OnInit {
       histories.sort((a, b) => {
         if (a.endDate && !b.endDate) return -1;
         if (!a.endDate && b.endDate) return 1;
-        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        return this.getDateTime(a.startDate) - this.getDateTime(b.startDate);
       });
 
       histories.forEach(h => {
@@ -196,7 +189,7 @@ export class LeadershipComponent implements OnInit {
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
       member: [{ value: data?.member || null, disabled: isArchived }, Validators.required], 
-      startDate: [data?.startDate ? new Date(data.startDate) : null, Validators.required],
+      startDate: [data?.startDate ? new Date(data.startDate) : null],
       endDate: [data?.endDate ? new Date(data.endDate) : null],
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
       leadershipKey: [data?.leadershipKey || this.leadershipKey || null]
@@ -262,21 +255,21 @@ export class LeadershipComponent implements OnInit {
       leadershipKey: this.leadershipKey,
       type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as 'kurin' | 'group' | 'kv', 
       entityKey: this.entityKey!,
-      startDate: toDateOnlyString(formOutput.startDate)!,
-      endDate: toDateOnlyString(formOutput.endDate),
+      startDate: toDateOnlyString(new Date())!,
+      endDate: null,
       
       // Відправляємо тільки заповнені рядки. Бекенд видалить ті, що ми прибрали.
       leadershipHistories: formOutput.leadershipHistories
-        .filter((h: LeadershipHistoryDto) => h.member !== null) 
+        .filter((h: LeadershipHistoryDto) => h.member !== null && !h.endDate) 
         .map((h: LeadershipHistoryDto) => ({
           ...h,
-          startDate: toDateOnlyString(h.startDate)!,
-          endDate: toDateOnlyString(h.endDate),
+          startDate: h.startDate ? toDateOnlyString(h.startDate) : toDateOnlyString(new Date())!,
+          endDate: null,
           member: {
             memberKey: h.member.memberKey,
             firstName: h.member.firstName,
             lastName: h.member.lastName,
-            middleName: h.member.middleName
+            middleName: h.member.middleName ?? null
           }
         }))
     };
@@ -316,5 +309,9 @@ export class LeadershipComponent implements OnInit {
 
   public getRoleDisplayName(role: LeadershipRole): string {
      return ROLE_DISPLAY_NAMES[role] || role;
+  }
+
+  private getDateTime(value?: string | null): number {
+    return value ? new Date(value).getTime() : 0;
   }
 }

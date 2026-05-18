@@ -12,6 +12,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { PermissionService } from '../../authModule/services/permission.service';
 
 describe('UpsertMemberComponent', () => {
   let fixture: ComponentFixture<UpsertMemberComponent>;
@@ -22,6 +23,7 @@ describe('UpsertMemberComponent', () => {
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
   let locationSpy: jasmine.SpyObj<Location>;
+  let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
 
   const groupKey = 'group123';
   const memberKey = 'memberABC';
@@ -52,11 +54,14 @@ describe('UpsertMemberComponent', () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
+    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin']);
 
     memberServiceSpy.getByKey.and.returnValue(of(loadedMember));
     memberServiceSpy.create.and.returnValue(of({ ...loadedMember, memberKey: 'created999' }));
     memberServiceSpy.update.and.returnValue(of(loadedMember));
     memberServiceSpy.delete.and.returnValue(of(void 0));
+    permissionServiceSpy.canManageWarnings.and.returnValue(false);
+    permissionServiceSpy.isAdmin.and.returnValue(false);
 
     confirmationServiceSpy.confirm.and.returnValue(confirmationServiceSpy);
 
@@ -69,6 +74,7 @@ describe('UpsertMemberComponent', () => {
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: Location, useValue: locationSpy },
+        { provide: PermissionService, useValue: permissionServiceSpy },
         { provide: HttpClient, useValue: {} },
         provideNoopAnimations()
       ]
@@ -125,7 +131,9 @@ describe('UpsertMemberComponent', () => {
       expect(component.memberKey).toBe(memberKey);
       expect(component.groupKey).toBe(groupKey);
       expect(memberServiceSpy.getByKey).toHaveBeenCalledWith(memberKey);
-      expect(component.member).toEqual(loadedMember);
+      expect(component.member.memberKey).toEqual(loadedMember.memberKey);
+      expect(component.member.firstName).toEqual(loadedMember.firstName);
+      expect(component.member.plastLevelHistories.length).toBeGreaterThan(0);
     });
 
     it('should switch to create mode when memberKey absent', () => {
@@ -163,6 +171,31 @@ describe('UpsertMemberComponent', () => {
       spyOnProperty(history, 'state', 'get').and.returnValue({});
       create();
       expect(component['cameFromMember']).toBeFalse();
+    });
+
+    it('should allow editing email when creating member', () => {
+      setRouteParams({ groupKey });
+      create();
+      expect(component.canEditEmail()).toBeTrue();
+    });
+
+    it('should allow editing email for unlinked member', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: null }));
+      create();
+      expect(component.canEditEmail()).toBeTrue();
+    });
+
+    it('should hide email editing for linked member when current user is not admin', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      create();
+      expect(component.canEditEmail()).toBeFalse();
+    });
+
+    it('should allow editing email for linked member when current user is admin', () => {
+      permissionServiceSpy.isAdmin.and.returnValue(true);
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      create();
+      expect(component.canEditEmail()).toBeTrue();
     });
   });
 
@@ -301,6 +334,18 @@ describe('UpsertMemberComponent', () => {
       const dtoArg = args[1];
       expect(dtoArg.firstName).toBe('Updated');
       expect(dtoArg.removeProfilePhoto).toBeTrue();
+    });
+
+    it('should keep current email in payload when linked non-admin cannot edit email', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      create();
+      expect(component.canEditEmail()).toBeFalse();
+
+      component.member.firstName = 'Updated';
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1] as UpsertMemberDto;
+      expect(dto.email).toBe(loadedMember.email);
     });
 
     it('should convert Date to yyyy-MM-dd format', () => {

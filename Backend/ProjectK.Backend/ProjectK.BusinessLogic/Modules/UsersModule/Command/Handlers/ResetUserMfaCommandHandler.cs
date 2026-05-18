@@ -14,12 +14,18 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ResetUserMfaCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
-        public ResetUserMfaCommandHandler(UserManager<AppUser> userManager, ICurrentUserContext currentUserContext, ILogger<ResetUserMfaCommandHandler> logger)
+        public ResetUserMfaCommandHandler(
+            UserManager<AppUser> userManager,
+            ICurrentUserContext currentUserContext,
+            ILogger<ResetUserMfaCommandHandler> logger,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<bool>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
@@ -71,7 +77,11 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
             if (updateResult.Succeeded)
             {
-                _logger.LogInformation("Audit: User {AdminId} successfully reset MFA for user {TargetUserId}.", _currentUserContext.UserId, targetUser.Id);
+                _activityLogger.LogAudit(
+                    action: "Admin.UserMfaReset",
+                    actorUserId: _currentUserContext.UserId,
+                    targetUserId: targetUser.Id,
+                    reason: "Privileged user reset MFA for another account.");
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 

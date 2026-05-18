@@ -49,12 +49,15 @@ export class PermissionService {
   }
 
   canSetupLeadership(role?: string | null): boolean {
-    const r = this.getRole(role);
-    return r !== '' && r !== 'user';
+    return this.isAdmin(role) || this.isManager(role);
   }
 
   canReviewSkills(role?: string | null): boolean {
     return this.isReviewer(role);
+  }
+
+  canManagePlanning(role?: string | null): boolean {
+    return this.isAdmin(role) || this.isManager(role);
   }
 
   getRoleSeverity(role?: string | null): string {

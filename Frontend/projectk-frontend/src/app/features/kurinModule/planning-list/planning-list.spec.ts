@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { MemberService } from '../common/services/member-service/member.service';
 import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PermissionService } from '../../authModule/services/permission.service';
 
 import { PlanningListComponent } from './planning-list';
 
@@ -19,12 +20,15 @@ describe('PlanningList', () => {
     memberServiceSpy.getAll.and.returnValue(of([]));
 
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const permissionServiceSpy = jasmine.createSpyObj('PermissionService', ['canManagePlanning']);
+    permissionServiceSpy.canManagePlanning.and.returnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [PlanningListComponent],
       providers: [
         { provide: PlanningService, useValue: planningServiceSpy },
         { provide: MemberService, useValue: memberServiceSpy },
+        { provide: PermissionService, useValue: permissionServiceSpy },
         { provide: Router, useValue: routerSpy },
         {
           provide: ActivatedRoute,

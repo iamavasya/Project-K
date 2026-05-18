@@ -58,7 +58,9 @@
 
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Дата народження:</span>
-                            <span class="member-summary-value"> {{ member.dateOfBirth || 'Не вказано' }}</span>
+                            <span class="member-summary-value">
+                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'yyyy-MM-dd') : 'Не вказано' }}
+                            </span>
                         </p>
 
                         @if (member.school) {

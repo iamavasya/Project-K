@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -13,15 +14,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly ILoginResponseFactory _loginResponseFactory;
+        private readonly IActivityLogger _activityLogger;
 
         public LoginUserCommandHandler(
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            ILoginResponseFactory loginResponseFactory)
+            ILoginResponseFactory loginResponseFactory,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _loginResponseFactory = loginResponseFactory;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
@@ -29,6 +33,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
+                _activityLogger.TrackFailedLogin(request.Email);
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
 
@@ -36,6 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
             if (!result.Succeeded)
             {
+                _activityLogger.TrackFailedLogin(request.Email);
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
 

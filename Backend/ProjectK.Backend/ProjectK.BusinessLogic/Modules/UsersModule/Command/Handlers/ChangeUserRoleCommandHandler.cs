@@ -17,17 +17,20 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ChangeUserRoleCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
         private readonly ProjectK.Common.Interfaces.IUnitOfWork _unitOfWork;
 
         public ChangeUserRoleCommandHandler(
             UserManager<AppUser> userManager,
             ICurrentUserContext currentUserContext,
             ILogger<ChangeUserRoleCommandHandler> logger,
+            IActivityLogger activityLogger,
             ProjectK.Common.Interfaces.IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
+            _activityLogger = activityLogger;
             _unitOfWork = unitOfWork;
         }
 
@@ -44,6 +47,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToString());
             var isManager = _currentUserContext.IsInRole(UserRole.Manager.ToString());
             var currentUserKurinKey = _currentUserContext.KurinKey;
+            var currentUserId = _currentUserContext.UserId;
 
             // Policy check
             if (!isAdmin)
@@ -97,9 +101,39 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to assign new role.");
             }
 
+            if (!isAdmin
+                && isManager
+                && request.NewRole == UserRole.Manager
+                && currentUserId.HasValue
+                && currentUserId.Value != targetUser.Id)
+            {
+                var currentUser = await _userManager.FindByIdAsync(currentUserId.Value.ToString());
+                if (currentUser != null)
+                {
+                    var managerRoles = await _userManager.GetRolesAsync(currentUser);
+                    if (managerRoles.Any())
+                    {
+                        var removeManagerResult = await _userManager.RemoveFromRolesAsync(currentUser, managerRoles);
+                        if (!removeManagerResult.Succeeded)
+                        {
+                            return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to complete manager role transfer.");
+                        }
+                    }
+
+                    var addMentorResult = await _userManager.AddToRoleAsync(currentUser, UserRole.Mentor.ToString());
+                    if (!addMentorResult.Succeeded)
+                    {
+                        return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to assign previous manager to Mentor role.");
+                    }
+                }
+            }
+
             // Log Side Effects (Audit / Cleanup)
-            _logger.LogInformation("AUDIT: User {UserId} changed role of user {TargetUserId} to {NewRole}.",
-                _currentUserContext.UserId, targetUser.Id, request.NewRole);
+            _activityLogger.LogAudit(
+                action: "Admin.UserRoleChanged",
+                actorUserId: _currentUserContext.UserId,
+                targetUserId: targetUser.Id,
+                reason: $"Role changed from {string.Join(',', currentRoles)} to {request.NewRole}.");
 
             if (isDowngradeToUser || isDowngradeToMentor)
             {

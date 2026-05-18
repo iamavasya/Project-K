@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -35,10 +36,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public UpsertGroupHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IBackendCache _cache;
+        public UpsertGroupHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<ServiceResult<GroupResponse>> Handle(UpsertGroup request, CancellationToken cancellationToken)
@@ -74,6 +77,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
             }
 
             var response = _mapper.Map<GroupResponse>(existing);
+            _cache.Invalidate(BackendCachePolicies.GroupReads);
 
             return isCreated
                 ? new ServiceResult<GroupResponse>(

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -34,8 +36,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-            _handler = new GetGroupByKeyHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetGroupByKeyHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
         }
+
+        private static IBackendCache CreateCache() =>
+            new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
 
         [Fact]
         public async Task Handle_WhenGroupExists_ShouldReturnSuccessWithMappedResponse()
@@ -132,6 +137,26 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Type.Should().Be(ResultType.Success);
             var directlyMapped = _mapper.Map<GroupResponse>(group);
             result.Data.Should().BeEquivalentTo(directlyMapped);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCalledTwiceWithSameGroupKey_ShouldUseCache()
+        {
+            var kurin = new Kurin(99) { KurinKey = Guid.NewGuid() };
+            var group = new Group("Bravo", kurin.KurinKey)
+            {
+                GroupKey = Guid.NewGuid(),
+                Kurin = kurin
+            };
+
+            _groupRepositoryMock
+                .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
+            await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
+
+            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

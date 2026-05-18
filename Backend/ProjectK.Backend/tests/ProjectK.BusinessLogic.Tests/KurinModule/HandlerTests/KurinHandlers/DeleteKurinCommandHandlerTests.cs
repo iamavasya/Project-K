@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -16,17 +17,19 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly DeleteKurinHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteKurinHandlerTests()
         {
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _memberRepositoryMock = new Mock<IMemberRepository>();
+            _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Members).Returns(_memberRepositoryMock.Object);
 
-            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object);
+            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }
 
         [Fact]

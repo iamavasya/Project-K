@@ -163,12 +163,13 @@ describe('LeadershipComponent', () => {
       component.leadershipType = 'kurin';
     });
 
-    it('should patch form values and create history rows', () => {
+    it('should create history rows without form-level cadence dates', () => {
       const data = { ...mockLeadership };
       component.patchForm(data);
 
-      expect(component.leadershipForm.get('startDate')?.value).toEqual(new Date('2023-01-01'));
+      expect(component.leadershipForm.get('startDate')).toBeNull();
       expect(component.leadershipHistories.length).toBeGreaterThan(0);
+      expect(component.leadershipHistories.at(0).get('startDate')?.value).toEqual(new Date('2023-01-01'));
     });
 
     it('should sort histories: archived first, then by date', () => {
@@ -281,9 +282,6 @@ describe('LeadershipComponent', () => {
     beforeEach(() => {
       component.leadershipType = 'kurin';
       component.entityKey = 'k1';
-      component.leadershipForm.patchValue({
-        startDate: new Date('2023-01-01')
-      });
     });
 
     it('should not save if form is invalid', () => {

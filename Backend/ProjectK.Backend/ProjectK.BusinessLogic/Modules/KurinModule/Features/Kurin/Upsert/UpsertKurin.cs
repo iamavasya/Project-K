@@ -2,6 +2,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -34,10 +35,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public UpsertKurinHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IBackendCache _cache;
+        public UpsertKurinHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
 
         }
         public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurin request, CancellationToken cancellationToken)
@@ -75,6 +78,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
             }
 
             var kurinResponse = _mapper.Map<KurinResponse>(existing);
+            _cache.Invalidate(BackendCachePolicies.KurinReads);
+            _cache.Invalidate(BackendCachePolicies.GroupReads);
 
             return isCreated
                 ? new ServiceResult<KurinResponse>(

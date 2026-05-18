@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -22,9 +23,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
     public class DeleteGroupHandler : IRequestHandler<DeleteGroup, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public DeleteGroupHandler(IUnitOfWork unitOfWork)
+        private readonly IBackendCache _cache;
+        public DeleteGroupHandler(IUnitOfWork unitOfWork, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
+            _cache = cache;
         }
         public async Task<ServiceResult<object>> Handle(DeleteGroup request, CancellationToken cancellationToken)
         {
@@ -60,6 +63,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
                     ResultType.InternalServerError,
                     "Failed to delete Group due to internal error.");
             }
+            _cache.Invalidate(BackendCachePolicies.GroupReads);
+
             return new ServiceResult<object>(ResultType.Success);
         }
     }

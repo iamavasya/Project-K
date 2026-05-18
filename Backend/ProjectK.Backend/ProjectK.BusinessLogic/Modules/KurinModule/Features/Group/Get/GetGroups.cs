@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -25,18 +26,27 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IBackendCache _cache;
 
-        public GetGroupsHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetGroupsHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<ServiceResult<IEnumerable<GroupResponse>>> Handle(GetGroups request, CancellationToken cancellationToken)
         {
-            var groups = await _unitOfWork.Groups.GetAllAsync(request.KurinKey, cancellationToken);
-            var response = _mapper.Map<IEnumerable<GroupResponse>>(groups);
-            return new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, response);
+            return await _cache.GetOrCreateAsync(
+                BackendCachePolicies.GroupReads,
+                $"list:kurin:{request.KurinKey}",
+                async token =>
+                {
+                    var groups = await _unitOfWork.Groups.GetAllAsync(request.KurinKey, token);
+                    var response = _mapper.Map<IEnumerable<GroupResponse>>(groups).ToList();
+                    return new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, response);
+                },
+                cancellationToken);
         }
     }
 }

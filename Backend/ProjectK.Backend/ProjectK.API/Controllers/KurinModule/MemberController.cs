@@ -178,7 +178,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = "RequireMentor")]
         [HttpGet("members/kv/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)

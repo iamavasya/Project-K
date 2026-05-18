@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Entities.AuthModule;
@@ -22,7 +21,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
         private readonly IMediator _mediator;
         private readonly IEmailService _emailService;
         private readonly EmailSettings _emailSettings;
-        private readonly ILogger<UpdateAccountProfileCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
         public UpdateAccountProfileCommandHandler(
             UserManager<AppUser> userManager,
@@ -30,14 +29,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             IMediator mediator,
             IEmailService emailService,
             IOptions<EmailSettings> emailSettings,
-            ILogger<UpdateAccountProfileCommandHandler> logger)
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _mediator = mediator;
             _emailService = emailService;
             _emailSettings = emailSettings.Value;
-            _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<AccountSettingsDto>> Handle(UpdateAccountProfileCommand request, CancellationToken cancellationToken)
@@ -101,7 +100,12 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             var confirmationUrl = BuildEmailChangeConfirmationUrl(email, token);
             var body = BuildEmailChangeConfirmationBody(currentEmail, email, confirmationUrl);
 
-            _logger.LogInformation("Audit: User {UserId} requested an email change from {CurrentEmail} to {NewEmail}.", user.Id, currentEmail, email);
+            _activityLogger.LogAudit(
+                action: "Account.EmailChangeRequested",
+                actorUserId: user.Id,
+                email: currentEmail,
+                newEmail: email,
+                reason: "Email change requested.");
 
             await _emailService.SendEmailAsync(
                 email,

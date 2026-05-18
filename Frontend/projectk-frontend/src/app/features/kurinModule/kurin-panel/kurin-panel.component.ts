@@ -17,10 +17,12 @@ import { PermissionService } from '../../authModule/services/permission.service'
 import { MemberList } from '../common/components/member-list/member-list';
 import { KurinDto } from '../common/models/kurinDto';
 import { OnboardingService, ZbtStats } from '../../authModule/services/onboarding.service';
+import { KvPanelComponent } from '../common/components/kv-panel/kv-panel';
+import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
 
 @Component({
   selector: 'app-kurin-panel',
-  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent, MemberList, TagModule, TooltipModule],
+  imports: [TableModule, ButtonModule, SplitButton, ManagePanel, MessageModule, KurinNumberComponent, MemberList, TagModule, TooltipModule, KvPanelComponent, LeadershipPanelComponent],
   templateUrl: './kurin-panel.component.html',
   styleUrls: ['./kurin-panel.component.css']
 })
@@ -37,8 +39,6 @@ export class KurinPanelComponent implements OnInit {
   groups: GroupDto[] = [];
   actions: MenuItem[] = [];
 
-  tableHeaders: string[] = ['GroupKey', 'GroupName', 'KurinNumber'];
-
   kurinKey = '';
   kurinNumber: number | null = null;
   kurinData: KurinDto | null = null;
@@ -49,11 +49,11 @@ export class KurinPanelComponent implements OnInit {
 
   groupPanelConfig: ManagePanelConfig = {
     entityType: 'group',
-    title: 'Group',
+    title: 'Гурток',
     fields: [
       {
         name: 'groupKey',
-        label: 'Group Key',
+        label: 'Системний ключ',
         type: 'text',
         required: true,
         hiddenOn: ['create', 'delete'],
@@ -61,7 +61,7 @@ export class KurinPanelComponent implements OnInit {
       },
       {
         name: 'kurinKey',
-        label: 'Kurin Key',
+        label: 'Курінь',
         type: 'text',
         required: true,
         hiddenOn: ['create', 'delete', 'update'],
@@ -69,12 +69,14 @@ export class KurinPanelComponent implements OnInit {
       },
       {
         name: 'name',
-        label: 'Name',
+        label: 'Назва гуртка',
         type: 'text',
+        placeholder: 'Наприклад: Сіроманці',
         required: true,
         hiddenOn: ['delete']
       }
     ],
+    displayName: (entity: GroupDto) => entity.name,
     createFactory: () => ({ groupKey: '', name: '', kurinKey: this.kurinKey })
   };
 
@@ -87,7 +89,7 @@ export class KurinPanelComponent implements OnInit {
       if (state?.kurinKey) {
         this.kurinKey = state.kurinKey;
         this.canManageGroups = this.permissionService.canManageGroups();
-        this.canManageMembers = this.permissionService.canManageMembers();
+        this.canManageMembers = this.permissionService.canManageGroups();
         this.refreshData();
       }
     });
@@ -113,6 +115,12 @@ export class KurinPanelComponent implements OnInit {
         console.error('Error fetching kurin:', error);
       }
     });
+
+    if (!this.permissionService.isAdmin()) {
+      this.zbtStats = null;
+      return;
+    }
+
     this.onboardingService.getOnboardingStats(this.kurinKey).subscribe({
       next: (stats) => {
         this.zbtStats = stats;
@@ -126,11 +134,13 @@ export class KurinPanelComponent implements OnInit {
   prepareItemActions(item: GroupDto): void {
     this.actions = [
       {
-        label: 'Update',
+        label: 'Редагувати',
+        icon: 'pi pi-pencil',
         command: () => { this.onGroupActionClick(item, 'update') }
       },
       {
-        label: 'Delete',
+        label: 'Видалити',
+        icon: 'pi pi-trash',
         command: () => { this.onGroupActionClick(item, 'delete') }
       }
     ];

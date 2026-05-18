@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -35,8 +37,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new GetKurinsHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new GetKurinsHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
         }
+
+        private static IBackendCache CreateCache() =>
+            new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
 
         [Fact]
         public async Task Handle_WhenKurinsExist_ShouldReturnSuccessWithMappedResponses()
@@ -137,6 +142,23 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             // Compare with direct mapping
             var directlyMapped = _mapper.Map<IEnumerable<KurinResponse>>(kurins);
             result.Data.Should().BeEquivalentTo(directlyMapped);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCalledTwice_ShouldUseCache()
+        {
+            var kurins = new List<Kurin>
+            {
+                new Kurin(1) { KurinKey = Guid.NewGuid() }
+            };
+
+            _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(kurins);
+
+            await _handler.Handle(new GetKurins(), CancellationToken.None);
+            await _handler.Handle(new GetKurins(), CancellationToken.None);
+
+            _kurinRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

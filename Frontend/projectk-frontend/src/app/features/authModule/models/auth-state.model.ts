@@ -4,5 +4,5 @@ export interface AuthState {
   email: string;
   role: string;
   kurinKey: string | null;
-  accessToken: string;
+  accessToken: string | null;
 }

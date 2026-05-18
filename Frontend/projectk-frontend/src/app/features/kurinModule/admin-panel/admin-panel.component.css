@@ -1,8 +1,103 @@
 .admin-panel {
-    margin: 5rem;
+    margin: 2rem auto;
+    width: min(100% - 2rem, 72rem);
 }
 
 .admin-kurin-actions {
     text-align: right;
-    width: 1rem;
+    width: 12rem;
+}
+
+.table-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.table-caption > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.table-caption > p-button {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.table-caption h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.table-caption p {
+    margin: 0.15rem 0 0;
+    color: var(--p-text-muted-color);
+    font-size: 0.85rem;
+}
+
+.kurin-number-cell {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.kurin-number-cell span {
+    font-weight: 700;
+}
+
+.kurin-number-cell small {
+    color: var(--p-text-muted-color);
+}
+
+:host ::ng-deep .project-table .p-datatable-table {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .admin-panel {
+        margin-top: 1rem;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-wrapper {
+        overflow-x: visible;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-thead {
+        display: none;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.admin-kurin-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--p-content-border-color);
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.admin-kurin-row > td {
+        min-width: 0;
+        padding: 0 !important;
+        border: 0 !important;
+    }
+
+    :host ::ng-deep .project-table .p-datatable-tbody > tr.admin-kurin-row > td::before {
+        content: none;
+    }
+
+    .admin-kurin-actions {
+        flex-shrink: 0;
+        margin-left: auto;
+        width: auto;
+        text-align: left;
+    }
+
+    :host ::ng-deep .admin-kurin-actions .p-splitbutton {
+        justify-self: start;
+        max-width: 100%;
+        width: fit-content;
+    }
 }

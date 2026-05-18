@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badgeProgressDto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probeProgressDto';
@@ -8,16 +8,23 @@ import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/re
 import { SubmitBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/submitBadgeProgressRequestDto';
 import { UpdateProbePointSignatureRequestDto } from '../../models/probes-and-badges/requests/updateProbePointSignatureRequestDto';
 import { UpdateProbeProgressStatusRequestDto } from '../../models/probes-and-badges/requests/updateProbeProgressStatusRequestDto';
+import { ClientCacheService } from '../client-cache/client-cache.service';
+import { ENTITY_CACHE_TTL_MS, MEMBER_PROGRESS_CACHE_PREFIX } from '../client-cache/cache-policy';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MemberProgressService {
   private readonly http = inject(HttpClient);
+  private readonly cache = inject(ClientCacheService);
   private readonly apiUrl = `${environment.apiUrl}/member`;
 
   getBadgeProgresses(memberKey: string): Observable<BadgeProgressDto[]> {
-    return this.http.get<BadgeProgressDto[]>(`${this.apiUrl}/${memberKey}/badges/progress`);
+    return this.cache.get(
+      `${MEMBER_PROGRESS_CACHE_PREFIX}badges:${memberKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<BadgeProgressDto[]>(`${this.apiUrl}/${memberKey}/badges/progress`)
+    );
   }
 
   submitBadgeProgress(
@@ -28,6 +35,8 @@ export class MemberProgressService {
     return this.http.post<BadgeProgressDto>(
       `${this.apiUrl}/${memberKey}/badges/${badgeId}/submit`,
       request
+    ).pipe(
+      tap(() => this.invalidateMemberProgress(memberKey))
     );
   }
 
@@ -39,15 +48,25 @@ export class MemberProgressService {
     return this.http.post<BadgeProgressDto>(
       `${this.apiUrl}/${memberKey}/badges/${badgeId}/review`,
       request
+    ).pipe(
+      tap(() => this.invalidateMemberProgress(memberKey))
     );
   }
 
   getBadgeReviewQueue(kurinKey: string): Observable<BadgeProgressDto[]> {
-    return this.http.get<BadgeProgressDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/badges/review`);
+    return this.cache.get(
+      `${MEMBER_PROGRESS_CACHE_PREFIX}badge-review-queue:${kurinKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<BadgeProgressDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/badges/review`)
+    );
   }
 
   getProbeProgress(memberKey: string, probeId: string): Observable<ProbeProgressDto> {
-    return this.http.get<ProbeProgressDto>(`${this.apiUrl}/${memberKey}/probes/${probeId}/progress`);
+    return this.cache.get(
+      `${MEMBER_PROGRESS_CACHE_PREFIX}probe:${memberKey}:${probeId}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<ProbeProgressDto>(`${this.apiUrl}/${memberKey}/probes/${probeId}/progress`)
+    );
   }
 
   updateProbeProgressStatus(
@@ -58,6 +77,8 @@ export class MemberProgressService {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/progress/status`,
       request
+    ).pipe(
+      tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
   }
 
@@ -70,6 +91,8 @@ export class MemberProgressService {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/sign`,
       request
+    ).pipe(
+      tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
   }
 
@@ -82,6 +105,19 @@ export class MemberProgressService {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/unsign`,
       request
+    ).pipe(
+      tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
+  }
+
+  private invalidateMemberProgress(memberKey: string, probeId?: string): void {
+    this.cache.invalidate(`${MEMBER_PROGRESS_CACHE_PREFIX}badges:${memberKey}`);
+    this.cache.invalidateByPrefix(`${MEMBER_PROGRESS_CACHE_PREFIX}badge-review-queue:`);
+
+    if (probeId) {
+      this.cache.invalidate(`${MEMBER_PROGRESS_CACHE_PREFIX}probe:${memberKey}:${probeId}`);
+    } else {
+      this.cache.invalidateByPrefix(`${MEMBER_PROGRESS_CACHE_PREFIX}probe:${memberKey}:`);
+    }
   }
 }

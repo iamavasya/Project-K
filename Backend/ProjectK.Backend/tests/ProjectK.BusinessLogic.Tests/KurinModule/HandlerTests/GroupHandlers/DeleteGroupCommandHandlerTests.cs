@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -17,17 +18,19 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly DeleteGroupHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteGroupHandlerTests()
         {
             _groupRepositoryMock = new Mock<IGroupRepository>();
             _memberRepositoryMock = new Mock<IMemberRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
 
-            _handler = new DeleteGroupHandler(_unitOfWorkMock.Object);
+            _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }
 
         [Fact]

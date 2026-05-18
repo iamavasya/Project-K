@@ -1,7 +1,7 @@
 <div class="mt-4">
   @if (type === 'leadership') {
     <div class="card">
-      <p-table #dt [value]="leadershipHistories" stripedRows [rowHover]="true" [globalFilterFields]="['member.lastName', 'member.firstName', 'roleNameUA']">
+      <p-table #dt [value]="leadershipHistories" styleClass="member-list-table member-list-table--leadership" stripedRows [rowHover]="true" [globalFilterFields]="['member.lastName', 'member.firstName', 'roleNameUA']">
         <ng-template #caption>
           <div class="flex items-center gap-2">
             @if (leadershipType === 'kurin') { <h3 class="text-xl font-bold">Провід куреня</h3> }
@@ -51,8 +51,8 @@
         </ng-template>
         
         <ng-template pTemplate="body" let-history>
-          <tr class="cursor-pointer" (click)="onMemberSelect(history.member)">
-            <td>
+          <tr class="cursor-pointer leadership-row" (click)="onMemberSelect(history.member)">
+            <td data-mobile-label="Роль">
               <p-tag 
                 [value]="getRoleDisplayName(history.role)" 
                 [severity]="getRoleSeverity(history)"
@@ -60,11 +60,11 @@
               </p-tag>
             </td>
             
-            <td>
+            <td data-mobile-label="Учасник">
               <span class="font-medium">{{ history.member.lastName }} {{ history.member.firstName }}</span>
             </td>
 
-            <td class="text-sm text-gray-600">
+            <td class="text-sm text-gray-600" data-mobile-label="Період">
               {{ history.startDate | date:'dd.MM.yy' }} 
               @if (history.endDate) {
                  - {{ history.endDate | date:'dd.MM.yy' }}
@@ -97,11 +97,11 @@
 
     @if (type === 'group' && showGroupCardView) {
       <div class="member-view-shell">
-        <div class="mb-4 flex flex-wrap items-center gap-3">
-          <h3 class="text-xl font-bold">Учасники гуртка</h3>
+        <div class="member-list-heading mb-4 flex flex-wrap items-center gap-3">
+          <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3>
 
-          <div class="ml-auto flex flex-wrap items-center gap-3">
-            <p-iconfield iconPosition="left">
+          <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+            <p-iconfield iconPosition="left" class="member-list-search">
               <p-inputicon>
                 <i class="pi pi-search"></i>
               </p-inputicon>
@@ -110,12 +110,12 @@
                 type="text"
                 [(ngModel)]="memberSearchQuery"
                 placeholder="Пошук..."
-                class="p-inputtext-sm w-44 sm:w-64"
+                class="member-list-search-input p-inputtext-sm"
               />
             </p-iconfield>
 
             <div class="member-card-toggle flex items-center gap-2">
-              <span class="text-sm">Card style view</span>
+              <span class="text-sm">Картками</span>
               <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
             </div>
           </div>
@@ -135,7 +135,8 @@
       </div>
     } @else {
       <p-table #memberTable 
-               dataKey="memberKey" 
+               dataKey="memberKey"
+               styleClass="member-list-table member-list-table--members"
                [value]="membersLookup" 
                stripedRows 
                [globalFilterFields]="['lastName', 'firstName']" 
@@ -144,21 +145,21 @@
                (onRowSelect)="onMemberSelect($any($event).data)">
         
         <ng-template #caption>
-          <div class="flex flex-wrap items-center gap-3">
-              @if (type === 'kurin') { <h3 class="text-xl font-bold">Всі учасники куреня</h3> }
-              @else { <h3 class="text-xl font-bold">Учасники гуртка</h3> }
+          <div class="member-list-heading flex flex-wrap items-center gap-3">
+              @if (type === 'kurin') { <h3 class="member-list-title text-xl font-bold">Всі учасники куреня</h3> }
+              @else { <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3> }
 
-              <div class="ml-auto flex flex-wrap items-center gap-3">
-                <p-iconfield iconPosition="left">
+              <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+                <p-iconfield iconPosition="left" class="member-list-search">
                     <p-inputicon>
                         <i class="pi pi-search"></i>
                     </p-inputicon>
-                    <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." />
+                    <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." class="member-list-search-input p-inputtext-sm" />
                 </p-iconfield>
 
                 @if (type === 'group') {
                   <div class="member-card-toggle flex items-center gap-2">
-                    <span class="text-sm">Card style view</span>
+                    <span class="text-sm">Картками</span>
                     <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
                   </div>
                 }
@@ -175,9 +176,19 @@
         </ng-template>
 
         <ng-template #body let-member>
-          <tr [pSelectableRow]="member">
-            <td>{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</td>
-            <td><span class="text-gray-400">Учасник</span></td>
+          <tr [pSelectableRow]="member" class="member-row">
+            <td data-mobile-label="Учасник">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</td>
+            <td data-mobile-label="Статус">
+              @if (getMemberRoleTags(member).length) {
+                <div class="member-role-tags">
+                  @for (tag of getMemberRoleTags(member); track tag.label) {
+                    <p-tag [value]="tag.label" [severity]="tag.severity" [rounded]="true" />
+                  }
+                </div>
+              } @else {
+                <span class="text-gray-400">Учасник</span>
+              }
+            </td>
           </tr>
         </ng-template>
       </p-table>

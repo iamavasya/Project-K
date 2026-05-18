@@ -1,26 +1,39 @@
-﻿<div class="group-header">
-    <app-group-chevron></app-group-chevron>
-    <span class="group-head-message"> Main page of {{ group?.name }}</span>
-</div>
+<div class="group-shell">
+    <section class="group-hero group-tile">
+        <div class="group-hero__icon">
+            <app-group-chevron></app-group-chevron>
+        </div>
 
-<div class="group-panel">
-    <div class="mb-4">
+        <div class="group-hero__copy">
+            <span class="group-hero__eyebrow">Гурток</span>
+            <h1>{{ group?.name || 'Гурток' }}</h1>
+            @if (group?.kurinNumber) {
+                <p>{{ group?.kurinNumber }} курінь</p>
+            }
+        </div>
+
+        <div class="group-actions">
+            @if (canManageMembers) {
+                <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
+            }
+            @if (canManageMentors) {
+                <p-button label="Виховники" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
+            }
+        </div>
+    </section>
+
+    <section class="group-tile">
+        <app-leadership-panel [leadershipType]="'group'" [typeKey]="groupKey"></app-leadership-panel>
+    </section>
+
+    <section class="group-tile">
         <app-member-list [type]="'group'" [typeKey]="groupKey"></app-member-list>
-    </div>
-
-    <div class="group-actions">
-        @if (canManageMembers) {
-            <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" iconPos="right" />
-        }
-        @if (canManageMentors) {
-            <p-button label="Налаштувати виховників" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
-        }
-    </div>
+    </section>
 </div>
 
-<p-dialog [(visible)]="mentorDialogVisible" [modal]="true" [closable]="true" [style]="{ width: '34rem' }" header="Налаштування виховників групи">
+<p-dialog [(visible)]="mentorDialogVisible" [modal]="true" [closable]="true" [style]="{ width: 'min(92vw, 34rem)' }" header="Налаштування виховників гуртка">
     <div class="mentor-dialog-body">
-        <p class="mentor-dialog-hint">Оберіть виховників із КВ, які матимуть доступ до цієї групи.</p>
+        <p class="mentor-dialog-hint">Оберіть виховників із КВ, які матимуть доступ до цього гуртка.</p>
         <p-multiselect
             [options]="mentorOptions"
             [(ngModel)]="selectedMentorUserKeys"
@@ -35,7 +48,7 @@
     </div>
     <ng-template pTemplate="footer">
         <div class="mentor-dialog-actions">
-            <p-button label="Скасувати" severity="secondary" (onClick)="mentorDialogVisible = false" />
+            <p-button label="Скасувати" severity="secondary" [outlined]="true" (onClick)="mentorDialogVisible = false" />
             <p-button label="Зберегти" [loading]="mentorSaveInProgress" (onClick)="saveMentorAssignments()" />
         </div>
     </ng-template>
