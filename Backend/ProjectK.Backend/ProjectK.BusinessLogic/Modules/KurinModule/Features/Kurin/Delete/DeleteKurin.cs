@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -24,9 +25,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
     public class DeleteKurinHandler : IRequestHandler<DeleteKurin, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public DeleteKurinHandler(IUnitOfWork unitOfWork)
+        private readonly IBackendCache _cache;
+        public DeleteKurinHandler(IUnitOfWork unitOfWork, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
+            _cache = cache;
         }
         public async Task<ServiceResult<object>> Handle(DeleteKurin request, CancellationToken cancellationToken)
         {
@@ -66,6 +69,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
                     ResultType.InternalServerError,
                     "Failed to delete Kurin due to internal error.");
             }
+
+            _cache.Invalidate(BackendCachePolicies.KurinReads);
+            _cache.Invalidate(BackendCachePolicies.GroupReads);
 
             return new ServiceResult<object>(ResultType.Success);
         }

@@ -6,6 +6,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.API.Helpers;
 using ProjectK.API.Services;
 using ProjectK.Infrastructure.Repositories;
@@ -62,6 +63,7 @@ namespace ProjectK.API
                 new ResourceAccessServiceInstrumentationDecorator(
                     sp.GetRequiredService<ResourceAccessService>(),
                     sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
+            services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();

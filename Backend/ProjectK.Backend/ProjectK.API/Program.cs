@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using ProjectK.API.Helpers;
 using ProjectK.API.MappingProfiles;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -15,7 +16,6 @@ using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Common.Extensions;
 using System.Text;
 using System.Threading.RateLimiting;
-using ProjectK.API.Helpers;
 using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
@@ -25,6 +25,7 @@ using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
 using Serilog;
 using Serilog.Enrichers.Sensitive;
+using Microsoft.OpenApi;
 
 namespace ProjectK.API
 {
@@ -158,11 +159,13 @@ namespace ProjectK.API
                     }
 
                     return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? httpContext.Request.Headers.Host.ToString(),
                         factory: partition => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = 100,
+                            PermitLimit = 300,
                             QueueLimit = 0,
                             Window = TimeSpan.FromMinutes(1)
                         });
@@ -236,7 +239,20 @@ namespace ProjectK.API
                     opt.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 });
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+                });
+            });
 
             builder.Services.AddWolfPackOptimization();
 

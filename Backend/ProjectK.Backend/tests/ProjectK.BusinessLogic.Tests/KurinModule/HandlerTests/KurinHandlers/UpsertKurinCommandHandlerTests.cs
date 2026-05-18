@@ -5,6 +5,7 @@ using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -21,6 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IBackendCache> _cacheMock;
         private readonly UpsertKurinHandler _handler;
 
         public UpsertKurinHandlerTests()
@@ -31,10 +33,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new UpsertKurinHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new UpsertKurinHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
         }
 
         [Fact]
@@ -67,6 +70,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Once);
             _kurinRepositoryMock.Verify(r => r.Update(It.IsAny<Kurin>(), default), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+            _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.KurinReads), Times.Once);
+            _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
         }
 
         [Fact]

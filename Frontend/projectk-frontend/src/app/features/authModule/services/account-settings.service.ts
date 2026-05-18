@@ -1,7 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { ClientCacheService } from '../../kurinModule/common/services/client-cache/client-cache.service';
+import { MEMBER_CACHE_PREFIX } from '../../kurinModule/common/services/client-cache/cache-policy';
 
 export interface AccountSettings {
   userKey: string;
@@ -45,17 +47,22 @@ export interface DisableMfaRequest {
 export class AccountSettingsService {
   private readonly apiUrl = environment.apiUrl;
   private readonly http = inject(HttpClient);
+  private readonly cache = inject(ClientCacheService);
 
   getSettings(): Observable<AccountSettings> {
     return this.http.get<AccountSettings>(`${this.apiUrl}/user/me`, { withCredentials: true });
   }
 
   updateProfile(request: UpdateAccountProfileRequest): Observable<AccountSettings> {
-    return this.http.put<AccountSettings>(`${this.apiUrl}/user/me`, request, { withCredentials: true });
+    return this.http.put<AccountSettings>(`${this.apiUrl}/user/me`, request, { withCredentials: true }).pipe(
+      tap(() => this.invalidateLinkedMemberCache())
+    );
   }
 
   confirmEmailChange(request: ConfirmAccountEmailChangeRequest): Observable<AccountSettings> {
-    return this.http.post<AccountSettings>(`${this.apiUrl}/user/me/email/confirm`, request, { withCredentials: true });
+    return this.http.post<AccountSettings>(`${this.apiUrl}/user/me/email/confirm`, request, { withCredentials: true }).pipe(
+      tap(() => this.invalidateLinkedMemberCache())
+    );
   }
 
   changePassword(request: ChangePasswordRequest): Observable<boolean> {
@@ -68,5 +75,9 @@ export class AccountSettingsService {
 
   disableMfa(request: DisableMfaRequest): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/user/me/mfa/disable`, request, { withCredentials: true });
+  }
+
+  private invalidateLinkedMemberCache(): void {
+    this.cache.invalidateByPrefix(MEMBER_CACHE_PREFIX);
   }
 }

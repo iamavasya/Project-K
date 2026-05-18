@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -32,30 +33,39 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IBackendCache _cache;
 
-        public GetKurinByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager)
+        public GetKurinByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
+            _cache = cache;
         }
 
         public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKey request, CancellationToken cancellationToken)
         {
-            var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
+            return await _cache.GetOrCreateAsync(
+                BackendCachePolicies.KurinReads,
+                $"by-key:{request.KurinKey}",
+                async token =>
+                {
+                    var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
 
-            if (kurin is null)
-            {
-                return new ServiceResult<KurinResponse>(ResultType.NotFound);
-            }
+                    if (kurin is null)
+                    {
+                        return new ServiceResult<KurinResponse>(ResultType.NotFound);
+                    }
 
-            var activeBetaUsersCount = _userManager.Users
-                .Count(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active);
+                    var activeBetaUsersCount = _userManager.Users
+                        .Count(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active);
 
-            var kurinResponse = _mapper.Map<KurinResponse>(kurin);
-            kurinResponse.CurrentUserCount = activeBetaUsersCount;
+                    var kurinResponse = _mapper.Map<KurinResponse>(kurin);
+                    kurinResponse.CurrentUserCount = activeBetaUsersCount;
 
-            return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
+                    return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
+                },
+                cancellationToken);
         }
     }
 }
