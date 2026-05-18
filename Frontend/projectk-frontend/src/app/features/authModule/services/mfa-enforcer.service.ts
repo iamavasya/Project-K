@@ -16,7 +16,7 @@ export class MfaEnforcerService {
     if (!environment.production) {
       return;
     }
-    merge(this.authService.getAuthState(), interval(30000).pipe(startWith(0), switchMap(() => of(this.authService.getAuthStateValue())))).pipe(
+    this.authService.getAuthState().pipe(
       switchMap(state => {
         if (!state?.accessToken) {
           return of(null);
