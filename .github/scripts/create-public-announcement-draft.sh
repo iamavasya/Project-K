@@ -16,6 +16,7 @@ CODENAME="${ANNOUNCEMENT_CODENAME:-}"
 
 curl --fail --silent --show-error \
   --request POST \
+  --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 GitHubActions/1.0" \
   --header "X-ProjectK-Service-Token: ${PROJECTK_SERVICE_TOKEN}" \
   --header "Content-Type: application/json" \
   --data "$(jq -n \
