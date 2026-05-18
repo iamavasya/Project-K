@@ -100,9 +100,12 @@ export class MemberList implements OnInit {
       next: (members) => {
         this.membersLookup = members.map(m => ({
           memberKey: m.memberKey,
+          userKey: m.userKey,
+          userRole: m.userRole,
           firstName: m.firstName,
           lastName: m.lastName,
           middleName: m.middleName,
+          leadershipHistories: m.leadershipHistories ?? [],
           profilePhotoUrl: m.profilePhotoUrl,
           latestPlastLevel: m.latestPlastLevel ?? null,
           latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
@@ -219,6 +222,55 @@ export class MemberList implements OnInit {
 
   getRoleDisplayName(role: string): string {
     return ROLE_DISPLAY_NAMES[role as LeadershipRole] || role;
+  }
+
+  getMemberRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null }[] {
+    return [
+      ...this.getKvRoleTags(member),
+      ...(member.leadershipHistories ?? [])
+      .filter(history => !history.endDate)
+      .sort((a, b) => this.getLeadershipSortWeight(a) - this.getLeadershipSortWeight(b))
+      .map(history => ({
+        label: this.getMemberRoleLabel(history),
+        severity: this.getRoleSeverity(history)
+      }))
+    ];
+  }
+
+  private getKvRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'danger' }[] {
+    const role = (member.userRole ?? '').toLowerCase();
+    if (role === 'manager') {
+      return [{ label: "Зв'язковий", severity: 'danger' }];
+    }
+
+    if (role === 'mentor') {
+      return [{ label: 'Впорядник', severity: 'success' }];
+    }
+
+    return [];
+  }
+
+  private getLeadershipSortWeight(history: LeadershipHistoryDto): number {
+    const type = (history.leadershipType ?? '').toLowerCase();
+    if (type === 'kurin') {
+      return 0;
+    }
+
+    if (type === 'group') {
+      return 1;
+    }
+
+    return 2;
+  }
+
+  private getMemberRoleLabel(history: LeadershipHistoryDto): string {
+    const roleName = this.getRoleDisplayName(history.role);
+    const type = (history.leadershipType ?? '').toLowerCase();
+    if (type === 'group' && history.groupName) {
+      return `${roleName}: ${history.groupName}`;
+    }
+
+    return roleName;
   }
 
   getRoleSeverity(history: LeadershipHistoryDto): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null {

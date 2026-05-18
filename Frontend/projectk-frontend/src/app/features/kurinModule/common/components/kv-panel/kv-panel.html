@@ -1,0 +1,184 @@
+<div class="kv-panel">
+  <p-table [value]="mentorRows" styleClass="kv-table project-table" [loading]="isLoading">
+    <ng-template #caption>
+      <div class="kv-caption">
+        <div>
+          <h3>КВ</h3>
+          <p>Зв'язковий та впорядники гуртків</p>
+        </div>
+
+        <div class="kv-caption__actions">
+          @if (manager) {
+            <span class="kv-manager">
+              <span class="kv-manager__label">Зв'язковий</span>
+              <strong>{{ getMemberName(manager) }}</strong>
+            </span>
+          }
+
+          <div class="kv-archive-toggle">
+            <span>Архів</span>
+            <p-toggleswitch [(ngModel)]="showArchived" />
+          </div>
+
+          @if (canManageKv) {
+            <p-button
+              label="Додати впорядника"
+              icon="pi pi-plus"
+              severity="info"
+              (onClick)="openAssignmentDialog()" />
+            <p-button
+              icon="pi pi-refresh"
+              [text]="true"
+              [rounded]="true"
+              pTooltip="Передати роль зв'язкового"
+              tooltipPosition="bottom"
+              (onClick)="openTransferDialog()" />
+          }
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th scope="col">Учасник</th>
+        <th scope="col">Статус</th>
+        <th scope="col">Гуртки</th>
+        @if (canManageKv) {
+          <th scope="col" class="kv-actions">Дії</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-row>
+      <tr class="kv-row">
+        <td data-mobile-label="Учасник">
+          <span class="kv-member-name">{{ getMemberName(row.mentor) }}</span>
+        </td>
+        <td data-mobile-label="Статус">
+          <p-tag [value]="getStatusLabel(row.mentor)" [severity]="getStatusSeverity(row.mentor)" [rounded]="true" />
+        </td>
+        <td data-mobile-label="Гуртки">
+          @if (row.groups.length) {
+            <div class="kv-group-tags">
+              @for (group of row.groups; track group.groupKey) {
+                <p-tag [value]="group.name" severity="info" [rounded]="true" />
+              }
+            </div>
+          } @else {
+            <span class="kv-muted">Без призначених гуртків</span>
+          }
+        </td>
+        @if (canManageKv) {
+          <td class="kv-actions" data-mobile-label="Дії">
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Налаштувати гуртки"
+              tooltipPosition="left"
+              (onClick)="openAssignmentDialog(row)" />
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="canManageKv ? 4 : 3" class="kv-empty">
+          КВ ще не має активних впорядників.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (showArchived) {
+    <div class="kv-archive">
+      <h4>Архів впорядників</h4>
+      @if (archivedAssignments.length) {
+        <div class="kv-archive-list">
+          @for (assignment of archivedAssignments; track assignment.mentorAssignmentKey) {
+            <div class="kv-archive-row">
+              <span>{{ getAssignmentMemberName(assignment) }}</span>
+              <p-tag [value]="assignment.groupName" severity="secondary" [rounded]="true" />
+              <span class="kv-muted">
+                {{ assignment.assignedAtUtc | date:'dd.MM.yy' }} - {{ assignment.revokedAtUtc | date:'dd.MM.yy' }}
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="kv-muted">Архів призначень порожній.</p>
+      }
+    </div>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="assignmentDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: 'min(92vw, 38rem)' }"
+  header="Налаштування впорядника">
+  <div class="kv-dialog-body">
+    <label for="mentorSelect">Впорядник</label>
+    <p-select
+      inputId="mentorSelect"
+      [options]="mentorOptions"
+      [(ngModel)]="selectedMentorUserKey"
+      optionLabel="label"
+      optionValue="value"
+      [filter]="true"
+      filterBy="label"
+      placeholder="Оберіть учасника"
+      [style]="{ width: '100%' }" />
+
+    <label for="groupSelect">Гуртки</label>
+    <p-multiselect
+      inputId="groupSelect"
+      [options]="groupOptions"
+      [(ngModel)]="selectedGroupKeys"
+      optionLabel="label"
+      optionValue="value"
+      [filter]="true"
+      filterBy="label"
+      display="chip"
+      placeholder="Оберіть гуртки"
+      [style]="{ width: '100%' }" />
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="kv-dialog-actions">
+      <p-button label="Скасувати" severity="secondary" [outlined]="true" (onClick)="assignmentDialogVisible = false" />
+      <p-button label="Зберегти" [loading]="assignmentSaveInProgress" [disabled]="!selectedMentorUserKey" (onClick)="saveAssignments()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="transferDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: 'min(92vw, 34rem)' }"
+  header="Передати роль зв'язкового">
+  <div class="kv-dialog-body">
+    <label for="managerSelect">Новий зв'язковий</label>
+    <p-select
+      inputId="managerSelect"
+      [options]="managerTransferOptions"
+      [(ngModel)]="selectedManagerUserKey"
+      optionLabel="label"
+      optionValue="value"
+      [filter]="true"
+      filterBy="label"
+      placeholder="Оберіть учасника"
+      [style]="{ width: '100%' }" />
+    <p class="kv-muted">Після передачі поточний зв'язковий буде переведений у роль впорядника.</p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="kv-dialog-actions">
+      <p-button label="Скасувати" severity="secondary" [outlined]="true" (onClick)="transferDialogVisible = false" />
+      <p-button label="Передати" severity="warn" [loading]="transferInProgress" [disabled]="!selectedManagerUserKey" (onClick)="transferManagerRole()" />
+    </div>
+  </ng-template>
+</p-dialog>

@@ -12,10 +12,8 @@
       <p>
         Ви впевнені, що хочете видалити
         <strong>{{ config.entityType | titlecase }}</strong>
-        @if (entity) {
-          @if (entity.kurinKey) {
-            ({{ entity.kurinKey }})
-          }
+        @if (entityDisplayName()) {
+          <strong>"{{ entityDisplayName() }}"</strong>
         }
         ?
       </p>

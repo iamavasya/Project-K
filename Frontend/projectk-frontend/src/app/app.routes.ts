@@ -23,6 +23,8 @@ import { leadershipAccessGuard } from './features/authModule/guards/leadership-a
 import { WaitlistRegistrationComponent } from './features/authModule/onboarding/waitlist-registration/waitlist-registration';
 import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
 import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
+import { AccountSettingsComponent } from './features/authModule/account-settings/account-settings.component';
+import { PublicAnnouncementsComponent } from './features/adminModule/components/public-announcements/public-announcements';
 
 export const routes: Routes = [
   {
@@ -47,6 +49,12 @@ export const routes: Routes = [
     data: { breadcrumb: 'Logout' }
   },
   {
+    path: 'settings/account',
+    canActivate: [authGuard],
+    component: AccountSettingsComponent,
+    data: { breadcrumb: 'Account Settings' }
+  },
+  {
     path: 'forbidden',
     component: ForbiddenComponent,
     data: { breadcrumb: 'Forbidden' }
@@ -62,6 +70,12 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
     component: WaitlistManagementComponent,
     data: { breadcrumb: 'Waitlist', parent: '/panel' }
+  },
+  {
+    path: 'announcements',
+    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    component: PublicAnnouncementsComponent,
+    data: { breadcrumb: 'Announcements', parent: '/panel' }
   },
   {
     path: 'panel',
@@ -147,13 +161,13 @@ export const routes: Routes = [
   },
   {
     path: 'planning/create/:kurinKey',
-    canActivate: [authGuard, kurinAccessGuard('planning')],
+    canActivate: [authGuard, kurinAccessGuard('planning-create')],
     component: CreatePlanningComponent,
     data: { breadcrumb: 'New Planning', parent: '/kurin', entityType: 'kurin' }
   },
   {
     path: 'planning/:kurinKey',
-    canActivate: [authGuard, kurinAccessGuard('planning')],
+    canActivate: [authGuard, kurinAccessGuard('planning'), EntityGuard],
     component: PlanningListComponent,
     data: { breadcrumb: 'Planning', parent: '/kurin', entityType: 'kurin' }
   }

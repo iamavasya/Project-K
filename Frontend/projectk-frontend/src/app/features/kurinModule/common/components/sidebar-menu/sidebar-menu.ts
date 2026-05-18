@@ -130,6 +130,16 @@ export class SidebarMenu implements OnChanges {
       );
     }
 
+    items.push({
+      label: 'Налаштування акаунта',
+      icon: 'pi pi-cog',
+      routerLink: ['/settings/account'],
+      command: () => {
+        this.close();
+        this.router.navigate(['/settings/account']);
+      }
+    });
+
     return items;
   }
 

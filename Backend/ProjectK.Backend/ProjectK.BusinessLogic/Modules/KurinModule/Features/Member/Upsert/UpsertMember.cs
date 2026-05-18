@@ -69,6 +69,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                    _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue());
         }
 
+        private bool IsAdmin()
+        {
+            return _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
+        }
+
+        private bool IsCurrentUserOwner(MemberEntity member)
+        {
+            return member.UserKey.HasValue &&
+                   _currentUserContext.UserId.HasValue &&
+                   member.UserKey.Value == _currentUserContext.UserId.Value;
+        }
+
         public async Task<ServiceResult<MemberResponse>> Handle(UpsertMember request, CancellationToken cancellationToken)
         {
             var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
@@ -128,8 +140,34 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             }
             else
             {
+                var preserveLinkedUserEmail = false;
+                string? linkedUserEmail = null;
+
+                if (existing.UserKey.HasValue)
+                {
+                    var isCurrentUserOwner = IsCurrentUserOwner(existing);
+                    var emailChanged = !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase);
+                    var phoneChanged = !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.OrdinalIgnoreCase);
+
+                    if ((emailChanged || phoneChanged) && !CanEditRestrictedFields() && !isCurrentUserOwner)
+                    {
+                        return ServiceResult<MemberResponse>.Failure(
+                            ResultType.BadRequest, 
+                            "ContactInfoLinked", 
+                            "Cannot change email or phone number for a member linked to an active user account. The user must update this via their account settings.");
+                    }
+
+                    preserveLinkedUserEmail = emailChanged && !IsAdmin();
+                    linkedUserEmail = preserveLinkedUserEmail ? existing.Email : null;
+                }
+
                 oldBlobName = existing.ProfilePhotoBlobName;
                 _mapper.Map(request, existing);
+
+                if (preserveLinkedUserEmail)
+                {
+                    existing.Email = linkedUserEmail!;
+                }
 
                 existing.GroupKey = group?.GroupKey;
                 existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;

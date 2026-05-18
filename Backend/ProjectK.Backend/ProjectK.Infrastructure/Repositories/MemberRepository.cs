@@ -36,6 +36,9 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
+                                         .Include(m => m.LeadershipHistories)
+                                            .ThenInclude(h => h.Leadership)
+                                                .ThenInclude(l => l.Group)
                                          .Include(m => m.MemberWarnings)
                                          .Include(m => m.MemberAwards)
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
@@ -46,6 +49,9 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.GroupKey == groupKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.LeadershipHistories)
+                                            .ThenInclude(h => h.Leadership)
+                                                .ThenInclude(l => l.Group)
                                          .Include(m => m.MemberWarnings)
                                          .Include(m => m.MemberAwards)
                                          .AsNoTracking()
@@ -57,6 +63,9 @@ namespace ProjectK.Infrastructure.Repositories
             return await _context.Members.Where(m => m.KurinKey == kurinKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
+                                         .Include(m => m.LeadershipHistories)
+                                            .ThenInclude(h => h.Leadership)
+                                                .ThenInclude(l => l.Group)
                                          .Include(m => m.MemberWarnings)
                                          .Include(m => m.MemberAwards)
                                          .AsNoTracking()
@@ -67,13 +76,18 @@ namespace ProjectK.Infrastructure.Repositories
         {
             return await _context.Members
                 .Where(m => m.KurinKey == kurinKey && m.UserKey != null)
+                .GroupJoin(_context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
+                .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
+                .GroupJoin(_context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })
+                .SelectMany(x => x.roles.DefaultIfEmpty(), (x, role) => new { x.member, role })
                 .Select(m => new ProjectK.Common.Models.Dtos.MemberLookupDto
                 {
-                    MemberKey = m.MemberKey,
-                    UserKey = m.UserKey,
-                    FirstName = m.FirstName,
-                    MiddleName = m.MiddleName,
-                    LastName = m.LastName
+                    MemberKey = m.member.MemberKey,
+                    UserKey = m.member.UserKey,
+                    FirstName = m.member.FirstName,
+                    MiddleName = m.member.MiddleName,
+                    LastName = m.member.LastName,
+                    UserRole = m.role != null ? m.role.Name : null
                 })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -87,6 +101,12 @@ namespace ProjectK.Infrastructure.Repositories
                 .Include(m => m.MemberWarnings)
                 .Include(m => m.MemberAwards)
                 .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
+        }
+
+        public async Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.Members
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }
 

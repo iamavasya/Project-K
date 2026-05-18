@@ -13,6 +13,8 @@ namespace ProjectK.Common.Models.Dtos
         public Guid MemberKey { get; set; }
         public Guid LeadershipKey { get; set; }
         public LeadershipRole Role { get; set; }
+        public LeadershipType? LeadershipType { get; set; }
+        public string? GroupName { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
     }

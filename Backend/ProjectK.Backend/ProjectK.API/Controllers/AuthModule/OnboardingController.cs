@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding;
 using ProjectK.Common.Extensions;
@@ -84,6 +85,7 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("password-reset/request")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetCommand command)
         {
@@ -92,6 +94,7 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("password-reset/reset")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
         {

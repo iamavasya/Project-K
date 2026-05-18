@@ -7,6 +7,7 @@ using ProjectK.Common.Models.Enums;
 using System.Security.Claims;
 using ProjectK.Common.Extensions;
 using ProjectK.API.Services;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 namespace ProjectK.API.Middleware;
 
@@ -21,7 +22,7 @@ public sealed class SecurityHardeningMiddleware
         _options = options;
     }
 
-    public async Task InvokeAsync(HttpContext context, GeoIPService geoIPService)
+    public async Task InvokeAsync(HttpContext context, GeoIPService geoIPService, IActivityLogger activityLogger)
     {
         var remoteIp = context.Connection.RemoteIpAddress?.ToString();
         
@@ -37,6 +38,7 @@ public sealed class SecurityHardeningMiddleware
             var countryCode = await geoIPService.GetCountryCodeAsync(remoteIp);
             if (countryCode != null && _options.Value.BlockedCountries.Contains(countryCode, StringComparer.OrdinalIgnoreCase))
             {
+                activityLogger.ReportGeoBlocked(remoteIp, countryCode);
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await context.Response.WriteAsync("Access from your region is restricted.");
                 return;

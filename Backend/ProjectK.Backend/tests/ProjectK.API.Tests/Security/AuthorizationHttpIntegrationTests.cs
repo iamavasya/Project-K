@@ -35,8 +35,9 @@ public class AuthorizationHttpIntegrationTests
 
     [Theory]
     [InlineData(UserRole.User, "/api/user/users")]
-    [InlineData(UserRole.Mentor, "/api/planning/{0}")]
+    [InlineData(UserRole.User, "/api/planning/{0}")]
     [InlineData(UserRole.User, "/api/member/members/kv/{0}")]
+    [InlineData(UserRole.User, "/api/group/groups/{0}/mentor-assignments")]
     public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(UserRole role, string routeTemplate)
     {
         await using var host = await SecurityTestHost.StartAsync(role);

@@ -1,0 +1,83 @@
+<div class="leadership-panel">
+  <p-table [value]="visibleHistories" styleClass="leadership-table project-table" [loading]="isLoading">
+    <ng-template #caption>
+      <div class="leadership-caption">
+        <div>
+          <h3>{{ title }}</h3>
+        </div>
+
+        <div class="leadership-caption__actions">
+          @if (showArchived) {
+            <p-iconfield iconPosition="left" class="leadership-search">
+              <p-inputicon>
+                <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="searchTerm"
+                placeholder="Пошук..."
+                class="leadership-search__input p-inputtext-sm" />
+            </p-iconfield>
+          }
+
+          <div class="leadership-archive-toggle">
+            <span>Архів</span>
+            <p-toggleswitch [(ngModel)]="showArchived" />
+          </div>
+
+          @if (canSetupLeadership) {
+            <p-button
+              icon="pi pi-cog"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Налаштувати провід"
+              tooltipPosition="left"
+              (onClick)="onSettingsSelect()" />
+          }
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th scope="col">Роль</th>
+        <th scope="col">Учасник</th>
+        @if (showArchived) {
+          <th scope="col">Період</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-history>
+      <tr class="leadership-row" (click)="onMemberSelect(history.member)">
+        <td data-mobile-label="Роль">
+          <p-tag [value]="getRoleDisplayName(history.role)" [severity]="getRoleSeverity(history)" [rounded]="true" />
+        </td>
+        <td data-mobile-label="Учасник">
+          <span class="leadership-member-name">{{ getMemberName(history.member) }}</span>
+        </td>
+        @if (showArchived) {
+          <td data-mobile-label="Період">
+            <span class="leadership-period">
+              {{ history.startDate | date:'dd.MM.yy' }}
+              @if (history.endDate) {
+                - {{ history.endDate | date:'dd.MM.yy' }}
+              } @else {
+                <strong>дотепер</strong>
+              }
+            </span>
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="showArchived ? 3 : 2" class="leadership-empty">
+          Провід ще не призначено.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

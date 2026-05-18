@@ -60,6 +60,24 @@ describe('GroupService', () => {
     req.flush([mockGroup]);
   });
 
+  it('getAllByKurinKey reuses cached response within TTL', () => {
+    service.getAllByKurinKey('k1').subscribe(res => {
+      expect(res).toEqual([mockGroup]);
+    });
+
+    httpMock.expectOne(r =>
+      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+    ).flush([mockGroup]);
+
+    service.getAllByKurinKey('k1').subscribe(res => {
+      expect(res).toEqual([mockGroup]);
+    });
+
+    httpMock.expectNone(r =>
+      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+    );
+  });
+
   it('create sends POST with body', () => {
     const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
 
@@ -71,6 +89,25 @@ describe('GroupService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(dto);
     req.flush(mockGroup);
+  });
+
+  it('create invalidates cached group list', () => {
+    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
+
+    service.getAllByKurinKey('k1').subscribe();
+    httpMock.expectOne(r =>
+      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+    ).flush([mockGroup]);
+
+    service.create(dto).subscribe();
+    httpMock.expectOne(baseUrl).flush(mockGroup);
+
+    service.getAllByKurinKey('k1').subscribe();
+    const req = httpMock.expectOne(r =>
+      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([mockGroup]);
   });
 
   it('update sends PUT with body to /group/:key', () => {

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using ProjectK.API.Helpers;
 using ProjectK.API.MappingProfiles;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -15,7 +17,6 @@ using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Common.Extensions;
 using System.Text;
 using System.Threading.RateLimiting;
-using ProjectK.API.Helpers;
 using System.Security.Claims;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.Optimization.Extensions;
@@ -23,6 +24,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.ProbeAndBadges.DependencyInjection;
 using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
+using Serilog;
+using Serilog.Enrichers.Sensitive;
+using Serilog.Filters.Expressions;
+using Microsoft.OpenApi;
+using ProjectK.API.Services.TelegramDevAlerts;
+using ProjectK.Common.Models.Settings;
+using ProjectK.API.Services.Authorization;
 
 namespace ProjectK.API
 {
@@ -31,8 +39,34 @@ namespace ProjectK.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
-            AnsiConsole.Clear();
+
+            builder.Host.UseSerilog((context, services, configuration) =>
+            {
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithSensitiveDataMasking(_ => { });
+
+                var devAlerts = context.Configuration
+                    .GetSection("Telegram:DevAlerts")
+                    .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
+
+                if (devAlerts.Enabled)
+                {
+                    configuration.WriteTo.Logger(lc => lc
+                        .Filter.ByIncludingOnly("EventType = 'Security.Suspicious' or @Level >= 'Error'")
+                        .WriteTo.TelegramDevAlerts(
+                            devAlerts,
+                            context.HostingEnvironment.EnvironmentName,
+                            context.Configuration["ReleaseInfo:Version"] ?? "unknown",
+                            context.Configuration["ReleaseInfo:Codename"]
+                                ?? context.Configuration["ReleaseInfo:CodeName"]
+                                ?? "unknown"));
+                }
+            });
+
+            TryClearConsole();
             PrintTitle(builder.Configuration);
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
@@ -71,10 +105,16 @@ namespace ProjectK.API
                 };
             });
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
+
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
                     policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+
+                options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
+                    policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
 
                 options.AddPolicy("RequireManager",
                     policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
@@ -150,11 +190,13 @@ namespace ProjectK.API
                     }
 
                     return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? httpContext.Request.Headers.Host.ToString(),
                         factory: partition => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = 100,
+                            PermitLimit = 300,
                             QueueLimit = 0,
                             Window = TimeSpan.FromMinutes(1)
                         });
@@ -182,8 +224,39 @@ namespace ProjectK.API
                         });
                 });
 
+                // Account security endpoints have a lower per-user/IP budget because they perform
+                // sensitive verification or token-producing operations.
+                options.AddPolicy("AccountSecurityLimit", httpContext =>
+                {
+                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    if (!string.IsNullOrEmpty(bypassKey) &&
+                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) &&
+                        providedKey == bypassKey)
+                    {
+                        return RateLimitPartition.GetNoLimiter("Bypass");
+                    }
+
+                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                        ?? "anonymous";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: partitionKey,
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 10,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(5)
+                        });
+                });
+
                 options.OnRejected = async (context, token) =>
                 {
+                    var endpoint = context.HttpContext.GetEndpoint();
+                    var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                    var activityLogger = context.HttpContext.RequestServices.GetService<IActivityLogger>();
+                    activityLogger?.ReportRateLimitRejection(policyName);
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
                 };
             });
@@ -201,7 +274,20 @@ namespace ProjectK.API
                     opt.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 });
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+                });
+            });
 
             builder.Services.AddWolfPackOptimization();
 
@@ -216,6 +302,8 @@ namespace ProjectK.API
             builder.Services.AddProjectDependencies(builder.Configuration);
 
             var app = builder.Build();
+
+            ValidateTelegramConfiguration(app);
 
             await RunStartupTasksAsync(app);
 
@@ -234,6 +322,8 @@ namespace ProjectK.API
             app.UseRateLimiter();
             
             app.UseMiddleware<ProjectK.API.Middleware.SecurityHardeningMiddleware>();
+            app.UseMiddleware<ProjectK.API.Middleware.SecurityActivityMiddleware>();
+            app.UseMiddleware<ProjectK.API.Middleware.PrivilegedMfaEnforcementMiddleware>();
 
             app.UseAuthorization();
 
@@ -269,6 +359,31 @@ namespace ProjectK.API
             AnsiConsole.WriteLine();
 
             Thread.Sleep(2000);
+        }
+
+        private static void ValidateTelegramConfiguration(WebApplication app)
+        {
+            var devAlerts = app.Configuration
+                .GetSection("Telegram:DevAlerts")
+                .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
+
+            if (devAlerts.Enabled && (string.IsNullOrWhiteSpace(devAlerts.BotToken) || string.IsNullOrWhiteSpace(devAlerts.ChatId)))
+            {
+                app.Logger.LogWarning(
+                    "Telegram dev alerts are enabled but BotToken or ChatId is missing. Alerts will not be delivered.");
+            }
+        }
+
+        private static void TryClearConsole()
+        {
+            try
+            {
+                AnsiConsole.Clear();
+            }
+            catch (IOException)
+            {
+                // Some CI/service hosts expose stdout without an interactive console buffer.
+            }
         }
 
         private static async Task RunStartupTasksAsync(WebApplication app)

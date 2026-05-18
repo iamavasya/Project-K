@@ -1,0 +1,173 @@
+.kv-panel {
+    width: 100%;
+}
+
+.kv-caption {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.kv-caption h3 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+.kv-caption p {
+    margin: 0.15rem 0 0;
+    color: var(--p-text-muted-color);
+    font-size: 0.875rem;
+}
+
+.kv-caption__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.kv-manager {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    color: var(--p-text-color);
+    font-size: 0.9rem;
+    line-height: 1.2rem;
+}
+
+.kv-manager__label,
+.kv-muted {
+    color: var(--p-text-muted-color);
+    font-size: 0.8125rem;
+}
+
+.kv-member-name {
+    font-weight: 650;
+}
+
+.kv-group-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.kv-archive-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--p-text-muted-color);
+    font-size: 0.875rem;
+}
+
+.kv-archive {
+    margin-top: 1rem;
+    border-top: 1px solid var(--p-content-border-color);
+    padding-top: 1rem;
+}
+
+.kv-archive h4 {
+    margin: 0 0 0.75rem;
+    color: var(--p-text-color);
+    font-size: 1rem;
+    line-height: 1.4rem;
+}
+
+.kv-archive-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.kv-archive-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    color: var(--p-text-color);
+    font-size: 0.9rem;
+}
+
+.kv-actions {
+    text-align: right;
+    width: 5.5rem;
+}
+
+.kv-empty {
+    padding: 1rem;
+    text-align: center;
+    color: var(--p-text-muted-color);
+}
+
+.kv-dialog-body {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.kv-dialog-body label {
+    color: var(--p-text-color);
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.kv-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+:host ::ng-deep .kv-table .p-datatable-table {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .kv-caption {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .kv-caption__actions {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin-left: 0;
+    }
+
+    .kv-archive-row {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+    }
+
+    :host ::ng-deep .kv-table .p-datatable-wrapper {
+        overflow-x: visible;
+    }
+
+    :host ::ng-deep .kv-table .p-datatable-thead {
+        display: none;
+    }
+
+    :host ::ng-deep .kv-table .p-datatable-tbody > tr.kv-row {
+        display: grid;
+        gap: 0.45rem;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--p-content-border-color);
+    }
+
+    :host ::ng-deep .kv-table .p-datatable-tbody > tr.kv-row > td {
+        display: grid;
+        grid-template-columns: 5.25rem minmax(0, 1fr);
+        gap: 0.6rem;
+        align-items: center;
+        min-width: 0;
+        padding: 0.1rem 0 !important;
+        border: 0 !important;
+        overflow-wrap: anywhere;
+    }
+
+    :host ::ng-deep .kv-table .p-datatable-tbody > tr.kv-row > td::before {
+        content: attr(data-mobile-label);
+        color: var(--p-text-muted-color);
+        font-size: 0.75rem;
+        font-weight: 650;
+    }
+}

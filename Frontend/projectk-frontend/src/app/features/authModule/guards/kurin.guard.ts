@@ -23,6 +23,10 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
             router.navigate(['/kurin']);
             return false;
         }
+        if (resource == 'planning-create' && !permissionService.canManagePlanning()) {
+            router.navigate(['/forbidden']);
+            return false;
+        }
         return true;
     }
 };

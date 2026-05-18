@@ -53,8 +53,12 @@ export class UsersListComponent implements OnInit {
           }
         });
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load users' })
+      error: () => this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити користувачів' })
     });
+  }
+
+  getKurinGroupLabel(kurinNumber: number | null): string {
+    return kurinNumber === null ? 'Без куреня' : `${kurinNumber} курінь`;
   }
 
   toggleGroup(kurinNumber: number | null) {
@@ -64,17 +68,17 @@ export class UsersListComponent implements OnInit {
 
   deleteUser(user: UserDto) {
     this.confirmationService.confirm({
-      message: `Are you sure you want to delete user ${user.firstName} ${user.lastName}? This action cannot be undone.`,
-      header: 'Confirm Deletion',
+      message: `Видалити користувача ${user.firstName} ${user.lastName}? Цю дію неможливо скасувати.`,
+      header: 'Підтвердження видалення',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.userService.deleteUser(user.userId).subscribe({
           next: () => {
             this.users = this.users.filter(u => u.userId !== user.userId);
-            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'User deleted successfully' });
+            this.messageService.add({ severity: 'success', summary: 'Готово', detail: 'Користувача видалено' });
           },
           error: (err) => {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to delete user' });
+            this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося видалити користувача' });
           }
         });
       }
@@ -90,7 +94,7 @@ export class UsersListComponent implements OnInit {
     const newRoleValue = this.roles.find(r => r.label === user.role)?.value;
     
     if (newRoleValue === undefined) {
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Invalid role selected.' });
+      this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Обрано некоректну роль.' });
       this.users[this.users.findIndex(u => u.userId === user.userId)] = this.clonedUsers[user.userId];
       delete this.clonedUsers[user.userId];
       return;
@@ -99,10 +103,10 @@ export class UsersListComponent implements OnInit {
     this.userService.changeUserRole(user.userId, newRoleValue).subscribe({
       next: () => {
         delete this.clonedUsers[user.userId];
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Role updated successfully' });
+        this.messageService.add({ severity: 'success', summary: 'Готово', detail: 'Роль оновлено' });
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to update role' });
+        this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося оновити роль' });
         this.users[this.users.findIndex(u => u.userId === user.userId)] = this.clonedUsers[user.userId];
         delete this.clonedUsers[user.userId];
       }

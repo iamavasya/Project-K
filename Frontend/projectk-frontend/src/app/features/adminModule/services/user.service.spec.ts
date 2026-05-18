@@ -4,10 +4,13 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { UserService } from './user.service';
 import { UserDto } from '../models/userDto';
 import { environment } from '../../../../environments/environment';
+import { ClientCacheService } from '../../kurinModule/common/services/client-cache/client-cache.service';
+import { GROUP_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../../kurinModule/common/services/client-cache/cache-policy';
 
 describe('UserService', () => {
   let service: UserService;
   let httpMock: HttpTestingController;
+  let cache: ClientCacheService;
   const apiUrl = environment.apiUrl;
 
   beforeEach(() => {
@@ -21,10 +24,12 @@ describe('UserService', () => {
 
     service = TestBed.inject(UserService);
     httpMock = TestBed.inject(HttpTestingController);
+    cache = TestBed.inject(ClientCacheService);
   });
 
   afterEach(() => {
     httpMock.verify();
+    cache.clear();
   });
 
   it('should be created', () => {
@@ -261,6 +266,34 @@ describe('UserService', () => {
       expect(requests.length).toBe(2);
       requests[0].flush(mockUsers);
       requests[1].flush(mockUsers);
+    });
+  });
+
+  describe('mutations', () => {
+    it('changeUserRole should invalidate role-sensitive caches', () => {
+      spyOn(cache, 'invalidateByPrefix').and.callThrough();
+
+      service.changeUserRole('user-1', 1).subscribe();
+
+      const req = httpMock.expectOne(`${apiUrl}/user/user-1/role`);
+      expect(req.request.method).toBe('POST');
+      req.flush(true);
+
+      expect(cache.invalidateByPrefix).toHaveBeenCalledWith(MEMBER_CACHE_PREFIX);
+      expect(cache.invalidateByPrefix).toHaveBeenCalledWith(GROUP_CACHE_PREFIX);
+    });
+
+    it('deleteUser should invalidate role-sensitive caches', () => {
+      spyOn(cache, 'invalidateByPrefix').and.callThrough();
+
+      service.deleteUser('user-1').subscribe();
+
+      const req = httpMock.expectOne(`${apiUrl}/user/user-1`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(true);
+
+      expect(cache.invalidateByPrefix).toHaveBeenCalledWith(MEMBER_CACHE_PREFIX);
+      expect(cache.invalidateByPrefix).toHaveBeenCalledWith(GROUP_CACHE_PREFIX);
     });
   });
 });

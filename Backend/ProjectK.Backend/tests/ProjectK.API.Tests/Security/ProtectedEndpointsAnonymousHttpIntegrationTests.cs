@@ -60,6 +60,7 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         yield return Row("POST", "/api/group", "{}");
         yield return Row("PUT", $"/api/group/{g}", "{}");
         yield return Row("DELETE", $"/api/group/{g}");
+        yield return Row("GET", $"/api/group/groups/{g}/mentor-assignments");
 
         // Kurin module
         yield return Row("GET", $"/api/kurin/{g}");

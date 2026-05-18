@@ -261,6 +261,136 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         }
 
         [Fact]
+        public async Task Handle_Update_LinkedMember_ByMentor_ShouldUpdateMemberWithoutEmailConflict_AndPreserveEmail()
+        {
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.UserKey = Guid.NewGuid();
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "NewName",
+                MiddleName = "M2",
+                LastName = "Surname",
+                Email = "different@example.com",
+                PhoneNumber = "222",
+                DateOfBirth = new DateOnly(1995, 5, 5)
+            };
+
+            _currentUserContextMock.Setup(x => x.IsInRole(UserRole.Mentor.ToString())).Returns(true);
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.FirstName.Should().Be("NewName");
+            existing.Email.Should().Be("old@example.com");
+            existing.PhoneNumber.Should().Be("222");
+            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_Update_LinkedMember_ByAdmin_ShouldAllowManualEmailChange()
+        {
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.UserKey = Guid.NewGuid();
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "NewName",
+                MiddleName = "M2",
+                LastName = "Surname",
+                Email = "admin.changed@example.com",
+                PhoneNumber = "222",
+                DateOfBirth = new DateOnly(1995, 5, 5)
+            };
+
+            _currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(true);
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.Email.Should().Be("admin.changed@example.com");
+            existing.PhoneNumber.Should().Be("222");
+            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_Update_LinkedMember_ByOwner_ShouldUpdateMemberWithoutEmailConflict_AndPreserveEmail()
+        {
+            var group = MakeGroup();
+            var ownerUserKey = Guid.NewGuid();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.UserKey = ownerUserKey;
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "SelfUpdated",
+                MiddleName = "M2",
+                LastName = "Surname",
+                Email = "different@example.com",
+                PhoneNumber = "222",
+                DateOfBirth = new DateOnly(1995, 5, 5)
+            };
+
+            _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.FirstName.Should().Be("SelfUpdated");
+            existing.Email.Should().Be("old@example.com");
+            existing.PhoneNumber.Should().Be("222");
+            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_Update_LinkedMember_ByRegularUserForAnotherMember_WhenContactInfoChanges_ShouldReturnBadRequest()
+        {
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.UserKey = Guid.NewGuid();
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "NewName",
+                MiddleName = "M2",
+                LastName = "Surname",
+                Email = "different@example.com",
+                PhoneNumber = "222",
+                DateOfBirth = new DateOnly(1995, 5, 5)
+            };
+
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.BadRequest);
+            existing.Email.Should().Be("old@example.com");
+            existing.PhoneNumber.Should().Be("111");
+            _memberRepoMock.Verify(r => r.Update(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task Handle_SaveChangesFailed_ShouldReturnInternalServerError()
         {
             var group = MakeGroup();

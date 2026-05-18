@@ -31,11 +31,22 @@ export class EntityGuard implements CanActivate {
             }),
             catchError((error: unknown) => {
                 if (error instanceof HttpErrorResponse && error.status === 403) {
-                    this.router.navigate(['/forbidden']);
-                    return of(false);
+                    const errorBody = error.error;
+                    const message = errorBody
+                        ? (typeof errorBody === 'string'
+                            ? errorBody
+                            : (errorBody.message || errorBody.Message || errorBody.detail || errorBody.title))
+                        : null;
+
+                    const isMfaError = typeof message === 'string' && message.toLowerCase().includes('mfa is required');
+
+                    if (!isMfaError) {
+                        this.router.navigate(['/forbidden']);
+                        return of(false);
+                    }
                 }
 
-                // Do not hard-block navigation on transport/transient errors.
+                // Do not hard-block navigation on transport/transient or MFA errors.
                 return of(true);
             })
         );

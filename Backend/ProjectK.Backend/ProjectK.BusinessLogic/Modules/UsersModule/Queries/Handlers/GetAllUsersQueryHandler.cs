@@ -40,6 +40,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers
                     KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
                     Email = user.Email!,
                     Role = role.FirstOrDefault()!,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
                     FirstName = user.FirstName!,
                     LastName = user.LastName!
                 };

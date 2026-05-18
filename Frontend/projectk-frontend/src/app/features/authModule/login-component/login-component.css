@@ -1,0 +1,116 @@
+.login-page {
+  align-items: center;
+  background: var(--p-surface-ground);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-panel {
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  box-shadow: var(--p-card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 28rem;
+  padding: 2rem;
+  width: 100%;
+}
+
+.login-heading {
+  display: grid;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.login-heading h1 {
+  color: var(--p-text-color);
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.login-heading p,
+.join-link {
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.login-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.field {
+  display: block;
+  width: 100%;
+}
+
+.field input {
+  width: 100%;
+}
+
+:host ::ng-deep .password-field,
+:host ::ng-deep .password-input {
+  width: 100%;
+}
+
+.otp-field {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.otp-field label {
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+}
+
+:host ::ng-deep .otp-inputs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+:host ::ng-deep .otp-inputs input {
+  height: 2.75rem;
+  width: 2.5rem;
+}
+
+.login-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.join-link {
+  text-align: center;
+}
+
+.join-link a {
+  color: var(--p-primary-color);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.join-link a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .login-panel {
+    padding: 1.25rem;
+  }
+
+  :host ::ng-deep .otp-inputs {
+    gap: 0.35rem;
+  }
+
+  :host ::ng-deep .otp-inputs input {
+    height: 2.5rem;
+    width: 2.15rem;
+  }
+}

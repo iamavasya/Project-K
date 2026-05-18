@@ -13,6 +13,8 @@ export interface LeadershipHistoryDto {
     leadershipHistoryKey: string;
     leadershipKey: string;
     role: string;
+    leadershipType?: 'Kurin' | 'Group' | 'KV' | 'kurin' | 'group' | 'kv' | null;
+    groupName?: string | null;
     startDate: string;
     endDate: string | null;
     member: MemberLookupDto;

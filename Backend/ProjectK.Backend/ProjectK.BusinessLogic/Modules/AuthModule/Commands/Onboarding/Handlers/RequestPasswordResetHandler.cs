@@ -13,11 +13,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IEmailService _emailService;
+        private readonly IActivityLogger _activityLogger;
 
-        public RequestPasswordResetHandler(UserManager<AppUser> userManager, IEmailService emailService)
+        public RequestPasswordResetHandler(
+            UserManager<AppUser> userManager,
+            IEmailService emailService,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _emailService = emailService;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<bool>> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
@@ -29,6 +34,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
             if (user != null && user.OnboardingStatus == OnboardingStatus.Active)
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                _activityLogger.LogAudit(
+                    action: "Account.PasswordResetRequested",
+                    actorUserId: user.Id,
+                    targetUserId: user.Id,
+                    email: user.Email,
+                    reason: "Password reset email requested.");
                 await _emailService.SendPasswordResetEmailAsync(user.Email!, token, cancellationToken);
             }
 

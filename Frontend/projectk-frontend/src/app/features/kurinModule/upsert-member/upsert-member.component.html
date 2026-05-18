@@ -42,19 +42,21 @@
                                 autocomplete="off" />
                             <label for="lastName">Last Name</label>
                         </p-floatlabel>
-                        <p-floatlabel variant="on">
-                            <input
-                                pInputText
-                                id="email"
-                                name="email"
-                                [(ngModel)]="member.email"
-                                required
-                                email
-                                #emailCtrl="ngModel"
-                                [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
-                                autocomplete="off" />
-                            <label for="email">Email</label>
-                        </p-floatlabel>
+                        @if (canEditEmail()) {
+                            <p-floatlabel variant="on">
+                                <input
+                                    pInputText
+                                    id="email"
+                                    name="email"
+                                    [(ngModel)]="member.email"
+                                    required
+                                    email
+                                    #emailCtrl="ngModel"
+                                    [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
+                                    autocomplete="off" />
+                                <label for="email">Email</label>
+                            </p-floatlabel>
+                        }
                         <p-floatlabel variant="on">
                             <p-inputMask
                                 mask="999-999-9999"

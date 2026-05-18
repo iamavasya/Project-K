@@ -25,15 +25,11 @@ public class GetKurinKvMembersHandler : IRequestHandler<GetKurinKvMembers, Servi
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetKurinKvMembers request, CancellationToken cancellationToken)
     {
-        var leaderships = await _uow.Leaderships.GetAllByTypeAsync(Common.Models.Enums.LeadershipType.KV, request.kurinKey, cancellationToken);
-
-        var members = leaderships
-            .SelectMany(l => l.LeadershipHistories)
-            .Select(h => h.Member)
-            .Where(m => m != null)
-            .DistinctBy(m => m.MemberKey);
-
-        var memberLookupDto = _mapper.Map<IEnumerable<MemberLookupDto>>(members);
+        var memberLookupDto = (await _uow.Members.GetMentorCandidatesLookupAsync(request.kurinKey, cancellationToken))
+            .Where(m => string.Equals(m.UserRole, Common.Models.Enums.UserRole.Manager.ToString(), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(m.UserRole, Common.Models.Enums.UserRole.Mentor.ToString(), StringComparison.OrdinalIgnoreCase))
+            .DistinctBy(m => m.MemberKey)
+            .ToList();
 
         return new ServiceResult<IEnumerable<MemberLookupDto>>(Common.Models.Enums.ResultType.Success, memberLookupDto);
     }

@@ -47,6 +47,25 @@ describe('KurinService', () => {
     expect(result).toEqual(mockKurins);
   });
 
+  it('getKurins should reuse cached response within TTL', () => {
+    const mockKurins = [
+      { kurinKey: 'k1', number: 1 },
+      { kurinKey: 'k2', number: 2 }
+    ] as KurinDto[];
+
+    service.getKurins().subscribe(res => {
+      expect(res).toEqual(mockKurins);
+    });
+
+    httpMock.expectOne(`${baseUrl}/kurins`).flush(mockKurins);
+
+    service.getKurins().subscribe(res => {
+      expect(res).toEqual(mockKurins);
+    });
+
+    httpMock.expectNone(`${baseUrl}/kurins`);
+  });
+
   it('createKurin should POST to /kurin with kurin.number and return created entity', () => {
     const input = { kurinKey: 'k1', number: 3 } as KurinDto;
     const created = { kurinKey: 'k1', number: 3 } as KurinDto;
@@ -79,6 +98,22 @@ describe('KurinService', () => {
     req.flush(updated);
 
     expect(result).toEqual(updated);
+  });
+
+  it('updateKurin should invalidate kurin list cache', () => {
+    const input = { kurinKey: 'k1', number: 5 } as KurinDto;
+    const mockKurins = [{ kurinKey: 'k1', number: 1 }] as KurinDto[];
+
+    service.getKurins().subscribe();
+    httpMock.expectOne(`${baseUrl}/kurins`).flush(mockKurins);
+
+    service.updateKurin(input).subscribe();
+    httpMock.expectOne(`${baseUrl}/${input.kurinKey}`).flush(input);
+
+    service.getKurins().subscribe();
+    const req = httpMock.expectOne(`${baseUrl}/kurins`);
+    expect(req.request.method).toBe('GET');
+    req.flush([input]);
   });
 
   it('deleteKurin should call DELETE /kurin/:kurinKey', () => {

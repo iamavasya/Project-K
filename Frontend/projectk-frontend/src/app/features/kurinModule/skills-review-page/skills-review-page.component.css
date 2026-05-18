@@ -80,11 +80,6 @@
   font-weight: 600;
 }
 
-.review-member__key {
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
 .review-badge {
   display: flex;
   align-items: center;
@@ -110,6 +105,11 @@
   color: #64748b;
 }
 
+:host ::ng-deep .skills-review-table .p-datatable-table {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
 @media (max-width: 768px) {
   .skills-review-page__header {
     flex-direction: column;
@@ -118,5 +118,49 @@
   .skills-review-page__header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .skills-review-table .p-datatable-wrapper {
+    overflow-x: visible;
+  }
+
+  :host ::ng-deep .skills-review-table .p-datatable-thead {
+    display: none;
+  }
+
+  :host ::ng-deep .skills-review-table .p-datatable-tbody > tr.skills-review-row {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  :host ::ng-deep .skills-review-table .p-datatable-tbody > tr.skills-review-row > td {
+    display: grid;
+    grid-template-columns: 5.25rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.1rem 0 !important;
+    border: 0 !important;
+    overflow-wrap: anywhere;
+  }
+
+  :host ::ng-deep .skills-review-table .p-datatable-tbody > tr.skills-review-row > td::before {
+    content: attr(data-mobile-label);
+    color: var(--p-text-muted-color);
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+
+  .skills-review-page__actions-col {
+    width: 100%;
+  }
+
+  .skills-review-page__row-actions {
+    display: flex;
+    flex-wrap: wrap;
   }
 }

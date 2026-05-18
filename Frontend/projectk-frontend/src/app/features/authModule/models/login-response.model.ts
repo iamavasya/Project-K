@@ -4,7 +4,8 @@ export interface LoginResponse {
     email: string;
     role: string;
     kurinKey: string;
+    requiresMfa: boolean;
     tokens: {
         accessToken: string;
-    };
+    } | null;
 }

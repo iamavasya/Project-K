@@ -5,6 +5,7 @@ import { MemberService } from './member.service';
 import { environment } from '../../../../../../environments/environment';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberDto } from '../../models/memberDto';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 
 describe('MemberService', () => {
   let service: MemberService;
@@ -77,6 +78,43 @@ describe('MemberService', () => {
 
     const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
     expect(req).toBeTruthy();
+    expect(req.request.method).toBe('GET');
+    req.flush([sampleMember]);
+  });
+
+  it('getAll should reuse cached group members within TTL', () => {
+    const groupKey = 'g1';
+    let firstResponse: MemberDto[] | undefined;
+    let secondResponse: MemberDto[] | undefined;
+
+    service.getAll(groupKey).subscribe(res => firstResponse = res);
+    service.getAll(groupKey).subscribe(res => secondResponse = res);
+
+    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    expect(req.request.method).toBe('GET');
+    req.flush([sampleMember]);
+
+    expect(firstResponse).toEqual([sampleMember]);
+    expect(secondResponse).toEqual([sampleMember]);
+
+    service.getAll(groupKey).subscribe(res => {
+      expect(res).toEqual([sampleMember]);
+    });
+
+    httpMock.expectNone(`${apiUrl}/groups/${groupKey}/members`);
+  });
+
+  it('update should invalidate member list cache', () => {
+    const groupKey = 'g1';
+
+    service.getAll(groupKey).subscribe();
+    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+
+    service.update(sampleMember.memberKey, sampleUpsert, null).subscribe();
+    httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}`).flush(sampleMember);
+
+    service.getAll(groupKey).subscribe();
+    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
   });
@@ -267,6 +305,24 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(`${apiUrl}/members/mentor-candidates/k-1`);
     expect(req.request.method).toBe('GET');
     req.flush([{ memberKey: 'm1', userKey: 'u1', firstName: 'Mentor', middleName: 'M', lastName: 'One' }]);
+  });
+
+  it('getMentorCandidates should reuse cached response within TTL', () => {
+    const candidates: MemberLookupDto[] = [
+      { memberKey: 'm1', userKey: 'u1', firstName: 'Mentor', middleName: 'M', lastName: 'One' }
+    ];
+
+    service.getMentorCandidates('k-1').subscribe(res => {
+      expect(res).toEqual(candidates);
+    });
+
+    httpMock.expectOne(`${apiUrl}/members/mentor-candidates/k-1`).flush(candidates);
+
+    service.getMentorCandidates('k-1').subscribe(res => {
+      expect(res).toEqual(candidates);
+    });
+
+    httpMock.expectNone(`${apiUrl}/members/mentor-candidates/k-1`);
   });
 });
 

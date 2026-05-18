@@ -8,6 +8,7 @@ export interface MemberDto {
     groupKey: string;
     kurinKey: string;
     userKey?: string | null;
+    userRole?: string | null;
     firstName: string;
     middleName: string;
     lastName: string;

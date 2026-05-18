@@ -93,10 +93,10 @@ public class MemberWarningHandlerTests
     }
 
     [Fact]
-    public async Task Assign_Level2_ShouldRevokeLevel1AndCreateLevel2()
+    public async Task Assign_Level2_ShouldKeepLevel1ActiveAndCreateLevel2()
     {
         var memberKey = Guid.NewGuid();
-        var userKey = _currentUserContextMock.Object.UserId!.Value;
+        var level1AuthorKey = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
         _memberRepositoryMock
@@ -110,7 +110,7 @@ public class MemberWarningHandlerTests
             Level = MemberWarningLevel.Level1,
             IssuedAtUtc = now.AddDays(-10),
             ExpiresAtUtc = now.AddDays(10),
-            IssuedByUserKey = Guid.NewGuid()
+            IssuedByUserKey = level1AuthorKey
         };
 
         _memberWarningRepositoryMock
@@ -125,8 +125,9 @@ public class MemberWarningHandlerTests
         var result = await _assignHandler.Handle(new AssignMemberWarning(memberKey, MemberWarningLevel.Level2), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
-        activeWarning.RevokedAtUtc.Should().NotBeNull();
-        activeWarning.RevokedByUserKey.Should().Be(userKey);
+        activeWarning.RevokedAtUtc.Should().BeNull();
+        activeWarning.RevokedByUserKey.Should().BeNull();
+        activeWarning.IssuedByUserKey.Should().Be(level1AuthorKey);
         created.Should().NotBeNull();
         created!.Level.Should().Be(MemberWarningLevel.Level2);
         created.MemberKey.Should().Be(memberKey);

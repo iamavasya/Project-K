@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MemberDto } from '../common/models/memberDto';
@@ -44,6 +45,7 @@ import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../com
 @Component({
   selector: 'app-member-card',
   imports: [
+    DatePipe,
     SkeletonModule,
     ButtonModule,
     TagModule,

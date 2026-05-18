@@ -5,7 +5,9 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.API.Helpers;
 using ProjectK.API.Services;
 using ProjectK.Infrastructure.Repositories;
@@ -15,6 +17,7 @@ using ProjectK.Infrastructure.UnitOfWork;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.Services.EmailService;
+using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using Resend;
 
 namespace ProjectK.API
@@ -27,6 +30,8 @@ namespace ProjectK.API
 
             // Options
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
+            services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
+            services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
 
             // Background Services
             services.AddHostedService<AuditCleanupBackgroundService>();
@@ -35,7 +40,26 @@ namespace ProjectK.API
             // Services
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IMfaService, ProjectK.Infrastructure.Services.MfaService>();
+            services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+            services.AddSingleton<IActivityLogger, ActivityLogger>();
+            services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();
+            services.Configure<PublicAnnouncementImageStoreOptions>(configuration.GetSection("PublicAnnouncements:ImageStore"));
+            services.PostConfigure<PublicAnnouncementImageStoreOptions>(options =>
+            {
+                if (string.IsNullOrWhiteSpace(options.Path))
+                {
+                    options.Path = configuration["PublicAnnouncements:ImageStorePath"];
+                }
+            });
+            services.AddSingleton<IPublicAnnouncementImageStore, LocalPublicAnnouncementImageStore>();
+            services.AddScoped<NullPublicAnnouncementPublisher>();
+            services.AddHttpClient<TelegramPublicAnnouncementPublisher>();
+            services.AddScoped<IPublicAnnouncementPublisher>(sp =>
+                configuration.GetValue<bool>("Telegram:PublicChannel:Enabled")
+                    ? sp.GetRequiredService<TelegramPublicAnnouncementPublisher>()
+                    : sp.GetRequiredService<NullPublicAnnouncementPublisher>());
 
             // Email Service Registration
             var emailProvider = configuration["Email:Provider"] ?? "Mock";
@@ -60,6 +84,7 @@ namespace ProjectK.API
                 new ResourceAccessServiceInstrumentationDecorator(
                     sp.GetRequiredService<ResourceAccessService>(),
                     sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
+            services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
             // Repositories
             services.AddScoped<IKurinRepository, KurinRepository>();

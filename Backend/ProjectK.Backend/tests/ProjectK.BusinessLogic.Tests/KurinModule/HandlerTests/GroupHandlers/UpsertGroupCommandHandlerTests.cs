@@ -5,6 +5,7 @@ using Moq;
 using ProjectK.API.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -22,6 +23,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IBackendCache> _cacheMock;
         private readonly UpsertGroupHandler _handler;
 
         public UpsertGroupHandlerTests()
@@ -33,11 +35,12 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             _groupRepositoryMock = new Mock<IGroupRepository>();
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _handler = new UpsertGroupHandler(_unitOfWorkMock.Object, _mapper);
+            _handler = new UpsertGroupHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
         }
 
         [Fact]
@@ -78,6 +81,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Type.Should().Be(ResultType.Created);
             result.Data.Should().NotBeNull();
             result.Data!.Name.Should().Be(name);
+            _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
             result.Data.KurinKey.Should().Be(kurin.KurinKey);
             result.Data.GroupKey.Should().Be(savedGroup.GroupKey);
 

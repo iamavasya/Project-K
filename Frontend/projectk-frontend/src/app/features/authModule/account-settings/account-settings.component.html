@@ -1,0 +1,257 @@
+<main class="account-settings-page">
+  <section class="settings-shell">
+    <header class="settings-header">
+      <div>
+        <h1>Налаштування акаунта</h1>
+        <p>Контактні дані, пароль і двофакторна автентифікація.</p>
+      </div>
+      @if (settings) {
+        <p-tag [value]="settings.role"></p-tag>
+      }
+    </header>
+
+    @if (loading || confirmingEmail) {
+      <div class="settings-loading">
+        {{ confirmingEmail ? 'Підтвердження email...' : 'Завантаження...' }}
+      </div>
+    }
+
+    @if (!loading && settings) {
+      <section class="settings-section">
+        <div class="section-copy">
+          <h2>Контакти</h2>
+          @if (settings.memberKey) {
+            <p>
+              Телефон оновлюється одразу і синхронізується з пов'язаною карткою учасника. Email зміниться тільки після підтвердження з нової адреси.
+            </p>
+          } @else {
+            <p>
+              Ці дані належать тільки акаунту, бо пов'язаної картки учасника немає.
+            </p>
+          }
+        </div>
+
+        <form class="settings-form" (ngSubmit)="saveProfile()">
+          <div class="field">
+            <label for="profile-email">Email</label>
+            <input pInputText id="profile-email" type="email" name="email" [(ngModel)]="profileForm.email" required />
+          </div>
+
+          @if (pendingEmail) {
+            <div class="pending-email">
+              Очікує підтвердження: <strong>{{ pendingEmail }}</strong>
+            </div>
+          }
+
+          <div class="field">
+            <label for="profile-phone">Телефон</label>
+            <input pInputText id="profile-phone" name="phoneNumber" [(ngModel)]="profileForm.phoneNumber" />
+          </div>
+
+          @if (isEmailChanged) {
+            <div class="field">
+              <label for="profile-current-password">Current password</label>
+              <p-password
+                inputId="profile-current-password"
+                name="profileCurrentPassword"
+                [(ngModel)]="profileForm.currentPassword"
+                [feedback]="false"
+                [toggleMask]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                required
+              />
+            </div>
+          }
+
+          <p-button
+            label="Зберегти контакти"
+            icon="pi pi-save"
+            type="submit"
+            [loading]="savingProfile"
+            [disabled]="!canSaveProfile"
+          />
+        </form>
+      </section>
+
+      <p-divider></p-divider>
+
+      <section class="settings-section">
+        <div class="section-copy">
+          <h2>Пароль</h2>
+          <p>Змініть пароль для входу. Поточна сесія поки лишається активною.</p>
+        </div>
+
+        <form class="settings-form" (ngSubmit)="changePassword()">
+          <div class="field">
+            <label for="password-current">Поточний пароль</label>
+            <p-password
+              inputId="password-current"
+              name="currentPassword"
+              [(ngModel)]="passwordForm.currentPassword"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="password-new">Новий пароль</label>
+            <p-password
+              inputId="password-new"
+              name="newPassword"
+              [(ngModel)]="passwordForm.newPassword"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="password-confirm">Повторіть новий пароль</label>
+            <p-password
+              inputId="password-confirm"
+              name="confirmPassword"
+              [(ngModel)]="passwordForm.confirmPassword"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              required
+            />
+          </div>
+
+          <p-button
+            label="Змінити пароль"
+            icon="pi pi-key"
+            type="submit"
+            [loading]="changingPassword"
+            [disabled]="!canChangePassword"
+          />
+        </form>
+      </section>
+
+      <p-divider></p-divider>
+
+      <section class="settings-section">
+        <div class="section-copy">
+          <h2>MFA</h2>
+          @if (settings.twoFactorEnabled) {
+            <p>
+              Можна скинути поточний authenticator key і налаштувати MFA заново.
+            </p>
+          } @else {
+            @if (isPrivileged) {
+              <p>
+                Для вашої ролі MFA є обов'язковим. Налаштуйте authenticator, щоб акаунт лишався захищеним.
+              </p>
+            } @else {
+              <p>
+                Ви можете увімкнути MFA для додаткового захисту акаунта.
+              </p>
+            }
+          }
+        </div>
+
+        <div class="mfa-panel">
+          <div class="mfa-status">
+            <span>Статус</span>
+            <p-tag
+              [severity]="settings.twoFactorEnabled ? 'success' : 'warn'"
+              [value]="settings.twoFactorEnabled ? 'Увімкнено' : 'Вимкнено'"
+            />
+          </div>
+
+          <div class="mfa-actions">
+            @if (settings.twoFactorEnabled) {
+              <div class="mfa-password">
+                <label for="mfa-reset-password">Current password</label>
+                <p-password
+                  inputId="mfa-reset-password"
+                  name="mfaResetPassword"
+                  [(ngModel)]="mfaResetPassword"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  required
+                />
+              </div>
+            }
+
+            @if (settings.twoFactorEnabled && isPrivileged) {
+              <p-button
+                label="Скинути MFA"
+                icon="pi pi-refresh"
+                severity="danger"
+                [loading]="resettingMfa"
+                [disabled]="!canResetMfa"
+                (onClick)="resetMfa()"
+              />
+            }
+
+            @if (settings.twoFactorEnabled && !isPrivileged) {
+              <p-button
+                label="Вимкнути MFA"
+                icon="pi pi-shield"
+                severity="danger"
+                [loading]="resettingMfa"
+                [disabled]="!canDisableMfa"
+                (onClick)="disableMfa()"
+              />
+            }
+
+            @if (!settings.twoFactorEnabled) {
+              <p-button
+                label="Налаштувати MFA"
+                icon="pi pi-shield"
+                [severity]="isPrivileged ? 'danger' : 'primary'"
+                (onClick)="setupMfa(isPrivileged)"
+              />
+            }
+          </div>
+
+          @if (settings.twoFactorEnabled) {
+            <div class="recovery-panel">
+              <div class="mfa-password">
+                <label for="mfa-recovery-password">Current password</label>
+                <p-password
+                  inputId="mfa-recovery-password"
+                  name="recoveryCodesPassword"
+                  [(ngModel)]="recoveryCodesPassword"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  required
+                />
+              </div>
+
+              <p-button
+                label="Rotate recovery codes"
+                icon="pi pi-refresh"
+                severity="secondary"
+                [loading]="rotatingRecoveryCodes"
+                [disabled]="!canRotateRecoveryCodes"
+                (onClick)="rotateRecoveryCodes()"
+              />
+
+              @if (recoveryCodes.length > 0) {
+                <div class="recovery-grid">
+                  @for (code of recoveryCodes; track $index) {
+                    <code>{{ code }}</code>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </section>
+</main>
+
+<app-mfa-setup-dialog #mfaSetupDialog (enabled)="onMfaEnabled()"></app-mfa-setup-dialog>

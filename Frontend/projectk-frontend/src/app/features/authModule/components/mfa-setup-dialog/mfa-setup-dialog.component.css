@@ -1,0 +1,141 @@
+:host ::ng-deep .mfa-dialog .p-dialog-content {
+  padding-top: 0;
+}
+
+.mfa-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.mfa-copy h2 {
+  color: var(--p-text-color);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+}
+
+.mfa-copy p {
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.mfa-loading {
+  align-items: center;
+  color: var(--p-text-muted-color);
+  display: flex;
+  justify-content: center;
+  min-height: 16rem;
+}
+
+.mfa-qr {
+  align-items: center;
+  align-self: center;
+  background: #fff;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  display: flex;
+  height: 15rem;
+  justify-content: center;
+  padding: 1rem;
+  width: 15rem;
+}
+
+.mfa-qr img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.mfa-key {
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+}
+
+.mfa-key span,
+.mfa-code label {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+.mfa-key code {
+  color: var(--p-text-color);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.mfa-code {
+  display: grid;
+  gap: 0.75rem;
+}
+
+:host ::ng-deep .mfa-otp {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+:host ::ng-deep .mfa-otp input {
+  height: 2.75rem;
+  width: 2.5rem;
+}
+
+.mfa-actions {
+  display: flex;
+}
+
+.mfa-recovery {
+  display: grid;
+  gap: 1rem;
+}
+
+.mfa-recovery h2 {
+  color: var(--p-text-color);
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.mfa-recovery p {
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.recovery-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.recovery-grid code {
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  color: var(--p-text-color);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 0.6rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .mfa-qr {
+    height: 12.5rem;
+    width: 12.5rem;
+  }
+
+  :host ::ng-deep .mfa-otp {
+    gap: 0.35rem;
+  }
+
+  :host ::ng-deep .mfa-otp input {
+    height: 2.5rem;
+    width: 2.15rem;
+  }
+}

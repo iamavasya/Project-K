@@ -68,6 +68,20 @@ jobs:
         run: npm test -- --watch=false --browsers=ChromeHeadless
         working-directory: Frontend/projectk-frontend
 
+      - name: Notify dev Telegram on frontend failure
+        if: failure()
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_DEV_ALERTS_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEV_ALERTS_CHAT_ID }}
+          TELEGRAM_TEXT: |
+            [ProjectK] Frontend workflow failed
+            Workflow: ${{ github.workflow }}
+            Ref: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/send-telegram-message.sh
+
   build_and_deploy:
     needs: lint_and_test
     if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -107,6 +121,21 @@ jobs:
           app_location: "Frontend/projectk-frontend" 
           api_location: ""
           output_location: "dist/projectk-frontend/browser"
+          app_build_command: "npm run build -- --configuration ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}"
+
+      - name: Notify dev Telegram on frontend deploy failure
+        if: failure()
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_DEV_ALERTS_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEV_ALERTS_CHAT_ID }}
+          TELEGRAM_TEXT: |
+            [ProjectK] Frontend deploy failed
+            Environment: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
+            Ref: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/send-telegram-message.sh
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

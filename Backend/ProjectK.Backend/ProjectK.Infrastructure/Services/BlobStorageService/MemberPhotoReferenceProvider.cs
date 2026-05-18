@@ -10,11 +10,15 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
 
         public async Task<IReadOnlyCollection<string>> GetAllReferencedBlobNamesAsync(CancellationToken cancellationToken)
         {
-            return await _db.Members
+            var memberPhotoBlobNames = await _db.Members
+                .AsNoTracking()
                 .Where(m => m.ProfilePhotoBlobName != null && m.ProfilePhotoBlobName != "")
                 .Select(m => m.ProfilePhotoBlobName!)
-                .Distinct()
                 .ToListAsync(cancellationToken);
+
+            return memberPhotoBlobNames
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
         }
     }
 }
