@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -310,7 +309,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 _mediatorMock.Object,
                 _emailServiceMock.Object,
                 Options.Create(new EmailSettings { BaseUrl = "http://localhost:4200/" }),
-                new Mock<ILogger<UpdateAccountProfileCommandHandler>>().Object);
+                new Mock<IActivityLogger>().Object);
         }
 
         private ConfirmAccountEmailChangeCommandHandler CreateConfirmHandler()
@@ -318,7 +317,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             return new ConfirmAccountEmailChangeCommandHandler(
                 _userManagerMock.Object,
                 _unitOfWorkMock.Object,
-                _mediatorMock.Object, new Mock<ILogger<ConfirmAccountEmailChangeCommandHandler>>().Object);
+                _mediatorMock.Object,
+                new Mock<IActivityLogger>().Object);
         }
     }
 }

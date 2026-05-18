@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -14,15 +15,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly ILoginResponseFactory _loginResponseFactory;
         private readonly ILogger<VerifyMfaLoginCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
         public VerifyMfaLoginCommandHandler(
             UserManager<AppUser> userManager,
             ILoginResponseFactory loginResponseFactory,
-            ILogger<VerifyMfaLoginCommandHandler> logger)
+            ILogger<VerifyMfaLoginCommandHandler> logger,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _loginResponseFactory = loginResponseFactory;
             _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<LoginUserResponse>> Handle(VerifyMfaLoginCommand request, CancellationToken cancellationToken)
@@ -30,6 +34,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
+                _activityLogger.TrackFailedMfa(request.Email);
                 return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid verification code or recovery code.");
             }
 
@@ -44,6 +49,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
                 var recoveryCodeResult = await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, request.Code.Trim());
                 if (!recoveryCodeResult.Succeeded)
                 {
+                    _activityLogger.TrackFailedMfa(request.Email);
                     return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid verification code or recovery code.");
                 }
 

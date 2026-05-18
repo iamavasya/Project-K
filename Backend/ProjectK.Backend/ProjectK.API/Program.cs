@@ -39,7 +39,7 @@ namespace ProjectK.API
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
-                .Enrich.WithSensitiveDataMasking());
+                .Enrich.WithSensitiveDataMasking(_ => { }));
 
             AnsiConsole.Clear();
             PrintTitle(builder.Configuration);
@@ -222,6 +222,10 @@ namespace ProjectK.API
 
                 options.OnRejected = async (context, token) =>
                 {
+                    var endpoint = context.HttpContext.GetEndpoint();
+                    var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                    var activityLogger = context.HttpContext.RequestServices.GetService<IActivityLogger>();
+                    activityLogger?.ReportRateLimitRejection(policyName);
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
                 };
             });
@@ -285,6 +289,7 @@ namespace ProjectK.API
             app.UseRateLimiter();
             
             app.UseMiddleware<ProjectK.API.Middleware.SecurityHardeningMiddleware>();
+            app.UseMiddleware<ProjectK.API.Middleware.SecurityActivityMiddleware>();
             app.UseMiddleware<ProjectK.API.Middleware.PrivilegedMfaEnforcementMiddleware>();
 
             app.UseAuthorization();

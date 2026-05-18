@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -17,18 +17,18 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMediator _mediator;
-        private readonly ILogger<ConfirmAccountEmailChangeCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
         public ConfirmAccountEmailChangeCommandHandler(
             UserManager<AppUser> userManager,
             IUnitOfWork unitOfWork,
             IMediator mediator,
-            ILogger<ConfirmAccountEmailChangeCommandHandler> logger)
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _mediator = mediator;
-            _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<AccountSettingsDto>> Handle(ConfirmAccountEmailChangeCommand request, CancellationToken cancellationToken)
@@ -67,7 +67,11 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "UpdateFailed", "Failed to update profile.");
             }
 
-            _logger.LogInformation("Audit: User {UserId} successfully confirmed email change to {NewEmail}.", user.Id, email);
+            _activityLogger.LogAudit(
+                action: "Account.EmailChangeConfirmed",
+                actorUserId: user.Id,
+                newEmail: email,
+                reason: "Email change confirmed.");
 
             var member = await _unitOfWork.Members.GetTrackedByUserKeyAsync(user.Id, cancellationToken);
             if (member != null)

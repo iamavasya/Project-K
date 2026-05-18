@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -12,11 +13,16 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<ChangeOwnPasswordCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
-        public ChangeOwnPasswordCommandHandler(UserManager<AppUser> userManager, ILogger<ChangeOwnPasswordCommandHandler> logger)
+        public ChangeOwnPasswordCommandHandler(
+            UserManager<AppUser> userManager,
+            ILogger<ChangeOwnPasswordCommandHandler> logger,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<bool>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
@@ -38,7 +44,11 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
             if (updateResult.Succeeded)
             {
-                _logger.LogInformation("Audit: User {UserId} successfully changed their password.", user.Id);
+                _activityLogger.LogAudit(
+                    action: "Account.PasswordChanged",
+                    actorUserId: user.Id,
+                    targetUserId: user.Id,
+                    reason: "User changed their own password.");
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 

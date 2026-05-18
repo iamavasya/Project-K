@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa
@@ -44,7 +45,11 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa
             loginResponseFactoryMock.Setup(x => x.CreateAsync(user, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(response);
 
-            var handler = new VerifyMfaLoginCommandHandler(_userManagerMock.Object, loginResponseFactoryMock.Object, new Mock<ILogger<VerifyMfaLoginCommandHandler>>().Object);
+            var handler = new VerifyMfaLoginCommandHandler(
+                _userManagerMock.Object,
+                loginResponseFactoryMock.Object,
+                new Mock<ILogger<VerifyMfaLoginCommandHandler>>().Object,
+                new Mock<IActivityLogger>().Object);
 
             // Act
             var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "recovery-code", true), CancellationToken.None);
@@ -73,7 +78,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa
 
             var handler = new GenerateMfaRecoveryCodesCommandHandler(
                 _userManagerMock.Object,
-                new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object);
+                new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object,
+                new Mock<IActivityLogger>().Object);
 
             // Act
             var result = await handler.Handle(
@@ -105,7 +111,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa
 
             var handler = new GenerateMfaRecoveryCodesCommandHandler(
                 _userManagerMock.Object,
-                new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object);
+                new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object,
+                new Mock<IActivityLogger>().Object);
 
             // Act
             var result = await handler.Handle(

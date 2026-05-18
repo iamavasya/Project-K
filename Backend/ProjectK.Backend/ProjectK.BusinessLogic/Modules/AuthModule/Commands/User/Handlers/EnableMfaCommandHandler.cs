@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -13,11 +14,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<EnableMfaCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
-        public EnableMfaCommandHandler(UserManager<AppUser> userManager, ILogger<EnableMfaCommandHandler> logger)
+        public EnableMfaCommandHandler(
+            UserManager<AppUser> userManager,
+            ILogger<EnableMfaCommandHandler> logger,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<MfaEnableResponseDto>> Handle(EnableMfaCommand request, CancellationToken cancellationToken)
@@ -51,7 +57,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
                 return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "MfaSetupFailed", "Failed to enable MFA.");
             }
 
-            _logger.LogInformation("Audit: User {UserId} successfully enabled MFA.", user.Id);
+            _activityLogger.LogAudit(
+                action: "Account.MfaEnabled",
+                actorUserId: user.Id,
+                targetUserId: user.Id,
+                reason: "User enabled MFA.");
 
             var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
 

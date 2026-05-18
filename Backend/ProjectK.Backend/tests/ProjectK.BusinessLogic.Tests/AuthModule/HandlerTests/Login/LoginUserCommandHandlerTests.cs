@@ -20,6 +20,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IActivityLogger> _activityLoggerMock;
         private readonly LoginResponseFactory _loginResponseFactory;
         private readonly LoginUserCommandHandler _handler;
 
@@ -35,6 +36,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 _userManagerMock.Object, contextAccessorMock.Object, userPrincipalFactoryMock.Object, null, null, null, null);
 
             _jwtServiceMock = new Mock<IJwtService>();
+            _activityLoggerMock = new Mock<IActivityLogger>();
             
             var memberRepoMock = new Mock<IMemberRepository>();
             memberRepoMock.Setup(r => r.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -43,7 +45,11 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _uowMock.Setup(u => u.Members).Returns(memberRepoMock.Object);
 
             _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object);
-            _handler = new LoginUserCommandHandler(_userManagerMock.Object, _signInManagerMock.Object, _loginResponseFactory);
+            _handler = new LoginUserCommandHandler(
+                _userManagerMock.Object,
+                _signInManagerMock.Object,
+                _loginResponseFactory,
+                _activityLoggerMock.Object);
         }
 
         [Fact]

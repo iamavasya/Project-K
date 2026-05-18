@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -13,11 +14,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<GenerateMfaRecoveryCodesCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
 
-        public GenerateMfaRecoveryCodesCommandHandler(UserManager<AppUser> userManager, ILogger<GenerateMfaRecoveryCodesCommandHandler> logger)
+        public GenerateMfaRecoveryCodesCommandHandler(
+            UserManager<AppUser> userManager,
+            ILogger<GenerateMfaRecoveryCodesCommandHandler> logger,
+            IActivityLogger activityLogger)
         {
             _userManager = userManager;
             _logger = logger;
+            _activityLogger = activityLogger;
         }
 
         public async Task<ServiceResult<MfaRecoveryCodesResponseDto>> Handle(
@@ -43,7 +49,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
             var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
 
-            _logger.LogInformation("Audit: User {UserId} successfully rotated/generated their MFA recovery codes.", user.Id);
+            _activityLogger.LogAudit(
+                action: "Account.MfaRecoveryCodesRotated",
+                actorUserId: user.Id,
+                targetUserId: user.Id,
+                reason: "User rotated/generated MFA recovery codes.");
 
             return new ServiceResult<MfaRecoveryCodesResponseDto>(
                 ResultType.Success,

@@ -21,6 +21,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly Mock<ILogger<ChangeUserRoleCommandHandler>> _loggerMock;
+        private readonly Mock<IActivityLogger> _activityLoggerMock;
         private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWorkMock;
         private readonly ChangeUserRoleCommandHandler _handler;
 
@@ -30,12 +31,14 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _loggerMock = new Mock<ILogger<ChangeUserRoleCommandHandler>>();
+            _activityLoggerMock = new Mock<IActivityLogger>();
             _unitOfWorkMock = new Mock<ProjectK.Common.Interfaces.IUnitOfWork>();
 
             _handler = new ChangeUserRoleCommandHandler(
                 _userManagerMock.Object,
                 _currentUserContextMock.Object,
                 _loggerMock.Object,
+                _activityLoggerMock.Object,
                 _unitOfWorkMock.Object);
         }
 

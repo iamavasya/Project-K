@@ -17,17 +17,20 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
         private readonly UserManager<AppUser> _userManager;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ChangeUserRoleCommandHandler> _logger;
+        private readonly IActivityLogger _activityLogger;
         private readonly ProjectK.Common.Interfaces.IUnitOfWork _unitOfWork;
 
         public ChangeUserRoleCommandHandler(
             UserManager<AppUser> userManager,
             ICurrentUserContext currentUserContext,
             ILogger<ChangeUserRoleCommandHandler> logger,
+            IActivityLogger activityLogger,
             ProjectK.Common.Interfaces.IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
+            _activityLogger = activityLogger;
             _unitOfWork = unitOfWork;
         }
 
@@ -126,8 +129,11 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             }
 
             // Log Side Effects (Audit / Cleanup)
-            _logger.LogInformation("AUDIT: User {UserId} changed role of user {TargetUserId} to {NewRole}.",
-                _currentUserContext.UserId, targetUser.Id, request.NewRole);
+            _activityLogger.LogAudit(
+                action: "Admin.UserRoleChanged",
+                actorUserId: _currentUserContext.UserId,
+                targetUserId: targetUser.Id,
+                reason: $"Role changed from {string.Join(',', currentRoles)} to {request.NewRole}.");
 
             if (isDowngradeToUser || isDowngradeToMentor)
             {

@@ -15,10 +15,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     public class SensitiveChangeRefreshTokenInvalidationTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IActivityLogger> _activityLoggerMock;
 
         public SensitiveChangeRefreshTokenInvalidationTests()
         {
             _userManagerMock = CreateUserManagerMock();
+            _activityLoggerMock = new Mock<IActivityLogger>();
         }
 
         [Fact]
@@ -26,7 +28,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new ChangeOwnPasswordCommandHandler(_userManagerMock.Object, new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object);
+            var handler = new ChangeOwnPasswordCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old-password", "new-password"))
@@ -49,7 +54,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new ChangeOwnPasswordCommandHandler(_userManagerMock.Object, new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object);
+            var handler = new ChangeOwnPasswordCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "wrong-password", "new-password"))
@@ -71,7 +79,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new ResetOwnMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object);
+            var handler = new ResetOwnMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -98,7 +109,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new ResetOwnMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object);
+            var handler = new ResetOwnMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "wrong-password"))
@@ -122,7 +136,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new EnableMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<EnableMfaCommandHandler>>().Object);
+            var handler = new EnableMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<EnableMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
             var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -151,7 +168,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
-            var handler = new EnableMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<EnableMfaCommandHandler>>().Object);
+            var handler = new EnableMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<EnableMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
             var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -176,7 +196,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Arrange
             var user = CreateUserWithRefreshToken();
             user.TwoFactorEnabled = true;
-            var handler = new DisableOwnMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object);
+            var handler = new DisableOwnMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -207,7 +230,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Arrange
             var user = CreateUserWithRefreshToken();
             user.TwoFactorEnabled = true;
-            var handler = new DisableOwnMfaCommandHandler(_userManagerMock.Object, new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object);
+            var handler = new DisableOwnMfaCommandHandler(
+                _userManagerMock.Object,
+                new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -239,7 +265,11 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
             currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
-            var handler = new ResetUserMfaCommandHandler(_userManagerMock.Object, currentUserContextMock.Object, new Mock<ILogger<ResetUserMfaCommandHandler>>().Object);
+            var handler = new ResetUserMfaCommandHandler(
+                _userManagerMock.Object,
+                currentUserContextMock.Object,
+                new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
@@ -273,7 +303,11 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
             currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
-            var handler = new ResetUserMfaCommandHandler(_userManagerMock.Object, currentUserContextMock.Object, new Mock<ILogger<ResetUserMfaCommandHandler>>().Object);
+            var handler = new ResetUserMfaCommandHandler(
+                _userManagerMock.Object,
+                currentUserContextMock.Object,
+                new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))

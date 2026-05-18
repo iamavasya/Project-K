@@ -11,6 +11,8 @@ public sealed class MemoryBackendCache : IBackendCache
     private readonly IMemoryCache _cache;
     private readonly ILogger<MemoryBackendCache> _logger;
     private readonly ConcurrentDictionary<string, byte> _knownKeys = new();
+    private readonly ConcurrentDictionary<string, long> _prefixGenerations = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _keyLocks = new();
 
     public MemoryBackendCache(IMemoryCache cache, ILogger<MemoryBackendCache> logger)
     {
@@ -35,15 +37,46 @@ public sealed class MemoryBackendCache : IBackendCache
             return cachedValue!;
         }
 
-        _logger.LogDebug(
-            "Cache Miss: PolicyPrefix={PolicyPrefix}, Scope={Scope}, NormalizedKey={NormalizedKey}",
-            policy.Prefix, policy.Scope, cacheKey);
+        var keyLock = _keyLocks.GetOrAdd(cacheKey, _ => new SemaphoreSlim(1, 1));
+        await keyLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_cache.TryGetValue(cacheKey, out cachedValue))
+            {
+                _logger.LogDebug(
+                    "Cache Hit: PolicyPrefix={PolicyPrefix}, Scope={Scope}, NormalizedKey={NormalizedKey}",
+                    policy.Prefix, policy.Scope, cacheKey);
+                return cachedValue!;
+            }
 
-        var value = await factory(cancellationToken);
-        _cache.Set(cacheKey, value, policy.Ttl);
-        _knownKeys.TryAdd(cacheKey, 0);
+            _logger.LogDebug(
+                "Cache Miss: PolicyPrefix={PolicyPrefix}, Scope={Scope}, NormalizedKey={NormalizedKey}",
+                policy.Prefix, policy.Scope, cacheKey);
 
-        return value;
+            var value = await factory(cancellationToken);
+            _cache.Set(
+                cacheKey,
+                value,
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = policy.Ttl,
+                    Size = 1
+                }.RegisterPostEvictionCallback(static (evictedKey, _, _, state) =>
+                {
+                    if (evictedKey is string cacheKeyValue && state is MemoryBackendCache cache)
+                    {
+                        cache.ForgetKey(cacheKeyValue);
+                    }
+                }, this));
+
+            _knownKeys.TryAdd(cacheKey, 0);
+
+            return value;
+        }
+        finally
+        {
+            keyLock.Release();
+        }
     }
 
     public void Invalidate(CachePolicy policy)
@@ -54,29 +87,40 @@ public sealed class MemoryBackendCache : IBackendCache
     public void InvalidateByPrefix(string prefix)
     {
         var normalizedPrefix = NormalizePart(prefix);
+        _prefixGenerations.AddOrUpdate(normalizedPrefix, 1, (_, current) => current + 1);
         var cachePrefix = $"{KeyVersion}:{normalizedPrefix}:";
         var invalidatedCount = 0;
 
         foreach (var key in _knownKeys.Keys.Where(key => key.StartsWith(cachePrefix, StringComparison.Ordinal)))
         {
             _cache.Remove(key);
-            _knownKeys.TryRemove(key, out _);
+            ForgetKey(key);
             invalidatedCount++;
         }
 
         _logger.LogDebug(
-            "Cache Invalidate: Prefix={Prefix}, NormalizedPrefix={NormalizedPrefix}, InvalidatedCount={InvalidatedCount}",
-            prefix, normalizedPrefix, invalidatedCount);
+            "Cache Invalidate: Prefix={Prefix}, NormalizedPrefix={NormalizedPrefix}, Generation={Generation}, InvalidatedCount={InvalidatedCount}",
+            prefix, normalizedPrefix, _prefixGenerations[normalizedPrefix], invalidatedCount);
     }
 
-    private static string BuildCacheKey(CachePolicy policy, string key, CacheScopeContext? scopeContext)
+    private string BuildCacheKey(CachePolicy policy, string key, CacheScopeContext? scopeContext)
     {
+        var normalizedPrefix = NormalizePart(policy.Prefix);
+        var generation = _prefixGenerations.GetOrAdd(normalizedPrefix, 0);
+
         return string.Join(
             ':',
             KeyVersion,
-            NormalizePart(policy.Prefix),
+            normalizedPrefix,
+            $"g{generation}",
             ResolveScopeKey(policy, scopeContext),
             NormalizePart(key));
+    }
+
+    private void ForgetKey(string cacheKey)
+    {
+        _knownKeys.TryRemove(cacheKey, out _);
+        _keyLocks.TryRemove(cacheKey, out _);
     }
 
     private static string ResolveScopeKey(CachePolicy policy, CacheScopeContext? scopeContext)

@@ -28,6 +28,7 @@ namespace ProjectK.API
 
             // Options
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
+            services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
 
             // Background Services
             services.AddHostedService<AuditCleanupBackgroundService>();
@@ -39,6 +40,7 @@ namespace ProjectK.API
             services.AddScoped<IMfaService, ProjectK.Infrastructure.Services.MfaService>();
             services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+            services.AddSingleton<IActivityLogger, ActivityLogger>();
 
             // Email Service Registration
             var emailProvider = configuration["Email:Provider"] ?? "Mock";
