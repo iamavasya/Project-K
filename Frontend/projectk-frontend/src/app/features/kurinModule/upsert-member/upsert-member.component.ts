@@ -138,20 +138,19 @@ export class UpsertMemberComponent implements OnInit {
   private loadData(): void {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
-        this.member = member;
-        this.memberWarnings = member.warnings ?? [];
-        if (this.member.dateOfBirth) {
-          this.member.dateOfBirth = new Date(this.member.dateOfBirth);
-        }
-        if (!this.member.plastLevelHistories) {
-          this.member.plastLevelHistories = [];
-        } else {
-          this.member.plastLevelHistories.forEach(h => {
-            if (h.dateAchieved) {
-              h.dateAchieved = new Date(h.dateAchieved);
-            }
-          });
-        }
+        const plastLevelHistories = (member.plastLevelHistories ?? []).map(history => ({
+          ...history,
+          dateAchieved: history.dateAchieved ? new Date(history.dateAchieved) : null
+        }));
+
+        const memberForEdit: MemberDto = {
+          ...member,
+          dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth) : null,
+          plastLevelHistories
+        };
+
+        this.member = memberForEdit;
+        this.memberWarnings = memberForEdit.warnings ?? [];
         this.ensurePlastLevelMap();
         this.setupAccordionAndToggles();
       },
