@@ -24,6 +24,7 @@ import { WaitlistRegistrationComponent } from './features/authModule/onboarding/
 import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
 import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
 import { AccountSettingsComponent } from './features/authModule/account-settings/account-settings.component';
+import { PublicAnnouncementsComponent } from './features/adminModule/components/public-announcements/public-announcements';
 
 export const routes: Routes = [
   {
@@ -69,6 +70,12 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
     component: WaitlistManagementComponent,
     data: { breadcrumb: 'Waitlist', parent: '/panel' }
+  },
+  {
+    path: 'announcements',
+    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    component: PublicAnnouncementsComponent,
+    data: { breadcrumb: 'Announcements', parent: '/panel' }
   },
   {
     path: 'panel',

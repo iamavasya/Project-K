@@ -1,37 +1,38 @@
 <div class="admin-panel">
     <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Адміністрування</h2>
+        <h2 class="text-2xl font-bold">Administration</h2>
         <div class="flex gap-2">
-            <p-button label="Черга заявок" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']"></p-button>
-            <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']"></p-button>
+            <p-button label="Announcements" icon="pi pi-megaphone" severity="secondary" [routerLink]="['/announcements']"></p-button>
+            <p-button label="Waitlist" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']"></p-button>
+            <p-button label="Users" icon="pi pi-users" severity="secondary" [routerLink]="['/users']"></p-button>
         </div>
     </div>
     <p-table [value]="data" styleClass="project-table">
         <ng-template #caption>
             <div class="table-caption">
                 <div>
-                    <h3>Курені</h3>
-                    <p>{{ data.length }} у системі</p>
+                    <h3>Kurins</h3>
+                    <p>{{ data.length }} in system</p>
                 </div>
-                <p-button (onClick)="onActionClick(null, 'create')" label="Створити" severity="info" icon="pi pi-plus" />
+                <p-button (onClick)="onActionClick(null, 'create')" label="Create" severity="info" icon="pi pi-plus" />
             </div>
         </ng-template>
         <ng-template #header>
             <tr>
-                <th scope="col">Курінь</th>
-                <th scope="col" class="admin-kurin-actions">Дії</th>
+                <th scope="col">Kurin</th>
+                <th scope="col" class="admin-kurin-actions">Actions</th>
             </tr>
         </ng-template>
         <ng-template #body let-item>
             <tr class="admin-kurin-row">
-                <td data-mobile-label="Курінь">
+                <td data-mobile-label="Kurin">
                     <div class="kurin-number-cell">
                         <span>{{ item.number }}</span>
-                        <small>Номер куреня</small>
+                        <small>Kurin number</small>
                     </div>
                 </td>
-                <td class="admin-kurin-actions" data-mobile-label="Дії">
-                    <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
+                <td class="admin-kurin-actions" data-mobile-label="Actions">
+                    <p-splitButton label="Open" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
 
                     </p-splitButton>
                 </td>
@@ -40,7 +41,7 @@
     </p-table>
     @if (data.length === 0) {
         <div style="margin-top: 1rem;">
-            <p-message icon="pi pi-question-circle" severity="info">Наразі немає доступних куренів. Створіть один!</p-message>
+            <p-message icon="pi pi-question-circle" severity="info">No kurins are available yet.</p-message>
         </div>
     }
 </div>

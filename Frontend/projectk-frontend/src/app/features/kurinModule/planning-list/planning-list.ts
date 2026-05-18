@@ -18,11 +18,12 @@ import { PermissionService } from '../../authModule/services/permission.service'
     <div class="card p-6">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Планування Таборів</h1>
-        <p-button
-          *ngIf="canManagePlanning"
-          label="Створити нове"
-          icon="pi pi-plus"
-          (click)="createNew()" />
+        @if (canManagePlanning) {
+          <p-button
+            label="Створити нове"
+            icon="pi pi-plus"
+            (click)="createNew()" />
+        }
         </div>
     
         <p-table [value]="sessions()" styleClass="planning-table">
@@ -48,7 +49,9 @@ import { PermissionService } from '../../authModule/services/permission.service'
                 <td data-mobile-label="Дії">
                   <div class="flex gap-2">
                     <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
-                    <p-button *ngIf="canManagePlanning" icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
+                    @if (canManagePlanning) {
+                      <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
+                    }
                   </div>
                 </td>
               </tr>

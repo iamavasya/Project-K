@@ -76,7 +76,7 @@ describe('AdminPanelComponent', () => {
     expect(component.data.length).toBe(0);
     const msg = fixture.nativeElement.querySelector('p-message');
     expect(msg).toBeTruthy();
-    expect(msg.textContent).toContain('Наразі немає доступних куренів');
+    expect(msg.textContent).toContain('No kurins are available yet.');
   });
 
   describe('prepareItemActions', () => {

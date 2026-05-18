@@ -1,0 +1,291 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<section class="announcements-page">
+  <header class="page-header">
+    <div>
+      <h2>Public announcements</h2>
+      <p>Draft, preview, approve, and publish Telegram channel updates.</p>
+    </div>
+    <p-button label="New draft" icon="pi pi-plus" severity="info" (onClick)="newDraft()"></p-button>
+  </header>
+
+  <div class="toolbar-row">
+    @if (cleanupStatus) {
+      <div class="cleanup-status">
+        <span>Images {{ cleanupStatus.referencedLocalImages }}/{{ cleanupStatus.totalLocalImages }}</span>
+        @if (cleanupStatus.eligibleForDeletion > 0) {
+          <p-tag severity="warn" [value]="cleanupStatus.eligibleForDeletion + ' cleanup ready'"></p-tag>
+        } @else {
+          <p-tag severity="success" value="clean"></p-tag>
+        }
+        @if (cleanupStatus.dryRun) {
+          <p-tag severity="info" value="dry run"></p-tag>
+        }
+      </div>
+    }
+    <p-button icon="pi pi-database" severity="secondary" text [loading]="loadingCleanupStatus" (onClick)="loadCleanupStatus()" pTooltip="Refresh cleanup status"></p-button>
+    <p-select
+      [options]="statusOptions"
+      [(ngModel)]="selectedStatus"
+      optionLabel="label"
+      optionValue="value"
+      (onChange)="loadDrafts()"
+      placeholder="Status"
+      appendTo="body">
+    </p-select>
+    <p-button icon="pi pi-refresh" severity="secondary" text (onClick)="loadDrafts()" pTooltip="Refresh"></p-button>
+  </div>
+
+  <p-table [value]="drafts" [loading]="loading" styleClass="project-table" [responsiveLayout]="'scroll'">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Announcement</th>
+        <th>Status</th>
+        <th>Source</th>
+        <th>Updated</th>
+        <th class="actions-column">Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-draft>
+      <tr>
+        <td>
+          <div class="title-cell">
+            <strong>{{ draft.title }}</strong>
+            <span>{{ draft.environment || 'no environment' }} · {{ draft.version || 'no version' }}</span>
+            <div class="metadata-row">
+              @if (draft.telegramMessageId) {
+                <p-tag severity="success" [value]="'Telegram #' + draft.telegramMessageId"></p-tag>
+              }
+              @if (draft.imageBlobKey) {
+                <p-tag severity="info" value="uploaded image"></p-tag>
+              }
+              @if (draft.imagePlacement === 'ImageLast') {
+                <p-tag severity="secondary" [value]="getPlacementLabel(draft.imagePlacement)"></p-tag>
+              }
+            </div>
+            @if (draft.lastPublishError) {
+              <small class="error-text">{{ draft.lastPublishError }}</small>
+            }
+          </div>
+        </td>
+        <td>
+          <p-tag [severity]="getStatusSeverity(draft.status)" [value]="draft.status"></p-tag>
+        </td>
+        <td>
+          <div class="source-cell">
+            <strong>{{ draft.sourceType }}</strong>
+            @if (draft.sourceId) {
+              <span>{{ draft.sourceId }}</span>
+            }
+          </div>
+        </td>
+        <td>{{ (draft.updatedAtUtc || draft.createdAtUtc) | date:'short' }}</td>
+        <td class="actions-column">
+          <div class="action-buttons">
+            <p-button icon="pi pi-pencil" severity="secondary" text rounded (onClick)="editDraft(draft)" pTooltip="Edit"></p-button>
+            @if (canSubmit(draft)) {
+              <p-button icon="pi pi-send" severity="info" text rounded (onClick)="submit(draft)" pTooltip="Submit"></p-button>
+            }
+            @if (canApprove(draft)) {
+              <p-button icon="pi pi-check" severity="success" text rounded (onClick)="approve(draft)" pTooltip="Approve"></p-button>
+            }
+            @if (draft.status === 'Approved') {
+              <p-button icon="pi pi-megaphone" severity="success" text rounded [disabled]="!canPublish(draft)" (onClick)="publish(draft)" [pTooltip]="getPublishTooltip(draft)"></p-button>
+            }
+            @if (canReject(draft)) {
+              <p-button icon="pi pi-times" severity="warn" text rounded (onClick)="reject(draft)" pTooltip="Reject"></p-button>
+            }
+            <p-button icon="pi pi-trash" severity="danger" text rounded (onClick)="delete(draft)" pTooltip="Delete"></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" class="empty-row">No announcement drafts found.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>
+
+<p-dialog
+  [(visible)]="editorVisible"
+  [modal]="true"
+  [style]="{ width: 'min(96vw, 980px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="Announcement draft">
+  <div class="editor-grid">
+    <form class="editor-form" (ngSubmit)="saveDraft()">
+      <div class="field">
+        <label for="draft-title">Title</label>
+        <input pInputText id="draft-title" name="title" [(ngModel)]="form.title" maxlength="200" />
+      </div>
+
+      <div class="field">
+        <label for="draft-body" class="field-label-row">
+          Body
+          <p-tag
+            [severity]="exceedsTelegramMessageLimit() ? 'danger' : 'secondary'"
+            [value]="getMessageLimitLabel()">
+          </p-tag>
+        </label>
+        <textarea pTextarea id="draft-body" name="body" [(ngModel)]="form.body" rows="10" maxlength="4096"></textarea>
+      </div>
+
+      @if (exceedsTelegramMessageLimit()) {
+        <div class="error-panel">
+          <strong>Telegram limit</strong>
+          <span>Rendered text exceeds Telegram's 4096 character message limit and cannot be published.</span>
+        </div>
+      }
+
+      <div class="field-grid">
+        <div class="field">
+          <label for="draft-parse-mode">Parse mode</label>
+          <p-select
+            [options]="parseModeOptions"
+            [(ngModel)]="form.parseMode"
+            name="parseMode"
+            optionLabel="label"
+            optionValue="value"
+            inputId="draft-parse-mode"
+            appendTo="body">
+          </p-select>
+        </div>
+
+        <div class="field">
+          <label for="draft-source-type">Source</label>
+          <p-select
+            [options]="sourceTypeOptions"
+            [(ngModel)]="form.sourceType"
+            name="sourceType"
+            optionLabel="label"
+            optionValue="value"
+            inputId="draft-source-type"
+            appendTo="body">
+          </p-select>
+        </div>
+
+        <div class="field">
+          <label for="draft-environment">Environment</label>
+          <input pInputText id="draft-environment" name="environment" [(ngModel)]="form.environment" />
+        </div>
+
+        <div class="field">
+          <label for="draft-version">Version</label>
+          <input pInputText id="draft-version" name="version" [(ngModel)]="form.version" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="draft-image-url" class="field-label-row">
+          Image URL
+          @if (hasUploadedImage()) {
+            <p-tag severity="info" value="uploaded image"></p-tag>
+          }
+        </label>
+        <input pInputText id="draft-image-url" name="imageUrl" [(ngModel)]="form.imageUrl" placeholder="https://..." />
+      </div>
+
+      <div class="field">
+        <label for="draft-image-placement">Image placement</label>
+        <p-select
+          [options]="imagePlacementOptions"
+          [(ngModel)]="form.imagePlacement"
+          name="imagePlacement"
+          optionLabel="label"
+          optionValue="value"
+          inputId="draft-image-placement"
+          appendTo="body">
+        </p-select>
+      </div>
+
+      @if (selectedPlacementUsesCaptionAboveMedia()) {
+        <div class="info-panel">
+          <strong>Telegram layout</strong>
+          <span>Image below text sends one photo message with caption above media. Long captions fall back to text first, photo second.</span>
+        </div>
+      }
+
+      @if (exceedsTelegramCaptionLimit()) {
+        <div class="warning-panel">
+          <strong>Caption fallback {{ getCaptionLimitLabel() }}</strong>
+          <span>This post is too long for a Telegram photo caption. Publishing will send text first and photo second.</span>
+        </div>
+      }
+
+      @if (hasUploadedImage()) {
+        <div class="uploaded-image-meta">
+          <span>Blob key</span>
+          <code>{{ form.imageBlobKey }}</code>
+        </div>
+      }
+
+      <div class="upload-row">
+        <input #imageUpload type="file" accept="image/*" class="hidden-file-input" (change)="uploadImage($event)" />
+        <p-button type="button" label="Upload image" icon="pi pi-upload" severity="secondary" [loading]="uploadingImage" (onClick)="imageUpload.click()"></p-button>
+        @if (form.imageUrl) {
+          <p-button type="button" label="Remove image" icon="pi pi-times" severity="danger" text (onClick)="removeImage()"></p-button>
+        }
+      </div>
+
+      <div class="field">
+        <label for="draft-source-url">Source URL</label>
+        <input pInputText id="draft-source-url" name="sourceUrl" [(ngModel)]="form.sourceUrl" placeholder="https://github.com/..." />
+      </div>
+
+      <div class="dialog-actions">
+        <p-button type="button" label="Save" icon="pi pi-save" [loading]="saving" (onClick)="saveDraft()"></p-button>
+        <p-button type="button" label="Preview" icon="pi pi-eye" severity="secondary" [disabled]="!selectedDraft" (onClick)="loadPreview()"></p-button>
+      </div>
+    </form>
+
+    <aside class="preview-panel">
+      <div class="preview-header">
+        <strong>Telegram preview</strong>
+        @if (preview?.willSendAsPhoto) {
+          <p-tag severity="info" value="photo"></p-tag>
+        }
+        @if (form.imageUrl) {
+          <p-tag severity="secondary" [value]="getPlacementLabel(form.imagePlacement)"></p-tag>
+        }
+        @if (selectedDraft?.telegramMessageId) {
+          <p-tag severity="success" [value]="'Telegram #' + selectedDraft?.telegramMessageId"></p-tag>
+        }
+      </div>
+
+      @if (selectedDraft?.lastPublishError) {
+        <div class="error-panel">
+          <strong>Last publish error</strong>
+          <span>{{ selectedDraft?.lastPublishError }}</span>
+        </div>
+      }
+
+      @if (form.imageUrl && form.imagePlacement !== 'ImageLast') {
+        <img class="preview-image" [src]="form.imageUrl" alt="" />
+      }
+
+      <pre>{{ preview?.renderedText || 'Save the draft to render an exact preview.' }}</pre>
+
+      @if (form.imageUrl && form.imagePlacement === 'ImageLast') {
+        <img class="preview-image" [src]="form.imageUrl" alt="" />
+      }
+
+      @if (preview?.requiresSeparateTextMessage) {
+        <p-tag severity="warn" value="photo + separate text"></p-tag>
+      }
+
+      @if (preview?.warnings?.length) {
+        <ul class="warning-list">
+          @for (warning of preview?.warnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+      }
+    </aside>
+  </div>
+</p-dialog>

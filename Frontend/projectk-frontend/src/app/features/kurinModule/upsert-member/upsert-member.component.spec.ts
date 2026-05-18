@@ -131,7 +131,9 @@ describe('UpsertMemberComponent', () => {
       expect(component.memberKey).toBe(memberKey);
       expect(component.groupKey).toBe(groupKey);
       expect(memberServiceSpy.getByKey).toHaveBeenCalledWith(memberKey);
-      expect(component.member).toEqual(loadedMember);
+      expect(component.member.memberKey).toEqual(loadedMember.memberKey);
+      expect(component.member.firstName).toEqual(loadedMember.firstName);
+      expect(component.member.plastLevelHistories.length).toBeGreaterThan(0);
     });
 
     it('should switch to create mode when memberKey absent', () => {

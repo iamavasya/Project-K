@@ -59,6 +59,20 @@ jobs:
     - name: Test
       run: dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal
 
+    - name: Notify dev Telegram on backend failure
+      if: failure()
+      shell: bash
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_DEV_ALERTS_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEV_ALERTS_CHAT_ID }}
+        TELEGRAM_TEXT: |
+          [ProjectK] Backend workflow failed
+          Workflow: ${{ github.workflow }}
+          Ref: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: bash .github/scripts/send-telegram-message.sh
+
     - name: Publish Artifact
       run: dotnet publish Backend/ProjectK.Backend/ProjectK.API/ProjectK.API.csproj -c Release -o ./publish
       
@@ -76,6 +90,8 @@ jobs:
       name: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
     
     steps:
+    - uses: actions/checkout@v4
+
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
@@ -87,3 +103,31 @@ jobs:
         app-name: ${{ vars.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: .
+
+    - name: Create public release announcement draft
+      if: github.event_name == 'release'
+      shell: bash
+      env:
+        PROJECTK_API_BASE_URL: ${{ vars.PROJECTK_API_BASE_URL }}
+        PROJECTK_SERVICE_TOKEN: ${{ secrets.PROJECTK_SERVICE_TOKEN }}
+        ANNOUNCEMENT_TITLE: ${{ github.event.release.name }}
+        ANNOUNCEMENT_BODY: ${{ github.event.release.body }}
+        ANNOUNCEMENT_SOURCE_ID: ${{ github.event.release.tag_name }}
+        ANNOUNCEMENT_SOURCE_URL: ${{ github.event.release.html_url }}
+        ANNOUNCEMENT_ENVIRONMENT: production
+        ANNOUNCEMENT_VERSION: ${{ github.event.release.tag_name }}
+      run: bash .github/scripts/create-public-announcement-draft.sh
+
+    - name: Notify dev Telegram on backend deploy failure
+      if: failure()
+      shell: bash
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_DEV_ALERTS_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEV_ALERTS_CHAT_ID }}
+        TELEGRAM_TEXT: |
+          [ProjectK] Backend deploy failed
+          Environment: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
+          Ref: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: bash .github/scripts/send-telegram-message.sh

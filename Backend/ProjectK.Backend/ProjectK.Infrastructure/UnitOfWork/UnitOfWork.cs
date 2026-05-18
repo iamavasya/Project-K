@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
@@ -30,6 +31,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IMemberAwardRepository MemberAwards { get; }
         public IWaitlistRepository WaitlistEntries { get; }
         public IInvitationRepository Invitations { get; }
+        public IPublicAnnouncementRepository PublicAnnouncements { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -48,6 +50,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             MemberAwards = new MemberAwardRepository(_context);
             WaitlistEntries = new WaitlistRepository(_context);
             Invitations = new InvitationRepository(_context);
+            PublicAnnouncements = new PublicAnnouncementRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

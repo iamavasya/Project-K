@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,11 @@ using ProjectK.ProbeAndBadges.Abstractions;
 using Spectre.Console;
 using Serilog;
 using Serilog.Enrichers.Sensitive;
+using Serilog.Filters.Expressions;
 using Microsoft.OpenApi;
+using ProjectK.API.Services.TelegramDevAlerts;
+using ProjectK.Common.Models.Settings;
+using ProjectK.API.Services.Authorization;
 
 namespace ProjectK.API
 {
@@ -35,13 +40,33 @@ namespace ProjectK.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Host.UseSerilog((context, services, configuration) => configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .Enrich.FromLogContext()
-                .Enrich.WithSensitiveDataMasking(_ => { }));
+            builder.Host.UseSerilog((context, services, configuration) =>
+            {
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithSensitiveDataMasking(_ => { });
 
-            AnsiConsole.Clear();
+                var devAlerts = context.Configuration
+                    .GetSection("Telegram:DevAlerts")
+                    .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
+
+                if (devAlerts.Enabled)
+                {
+                    configuration.WriteTo.Logger(lc => lc
+                        .Filter.ByIncludingOnly("EventType = 'Security.Suspicious' or @Level >= 'Error'")
+                        .WriteTo.TelegramDevAlerts(
+                            devAlerts,
+                            context.HostingEnvironment.EnvironmentName,
+                            context.Configuration["ReleaseInfo:Version"] ?? "unknown",
+                            context.Configuration["ReleaseInfo:Codename"]
+                                ?? context.Configuration["ReleaseInfo:CodeName"]
+                                ?? "unknown"));
+                }
+            });
+
+            TryClearConsole();
             PrintTitle(builder.Configuration);
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
@@ -80,10 +105,16 @@ namespace ProjectK.API
                 };
             });
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
+
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
                     policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+
+                options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
+                    policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
 
                 options.AddPolicy("RequireManager",
                     policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
@@ -272,6 +303,8 @@ namespace ProjectK.API
 
             var app = builder.Build();
 
+            ValidateTelegramConfiguration(app);
+
             await RunStartupTasksAsync(app);
 
             if (app.Environment.IsDevelopment())
@@ -326,6 +359,31 @@ namespace ProjectK.API
             AnsiConsole.WriteLine();
 
             Thread.Sleep(2000);
+        }
+
+        private static void ValidateTelegramConfiguration(WebApplication app)
+        {
+            var devAlerts = app.Configuration
+                .GetSection("Telegram:DevAlerts")
+                .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
+
+            if (devAlerts.Enabled && (string.IsNullOrWhiteSpace(devAlerts.BotToken) || string.IsNullOrWhiteSpace(devAlerts.ChatId)))
+            {
+                app.Logger.LogWarning(
+                    "Telegram dev alerts are enabled but BotToken or ChatId is missing. Alerts will not be delivered.");
+            }
+        }
+
+        private static void TryClearConsole()
+        {
+            try
+            {
+                AnsiConsole.Clear();
+            }
+            catch (IOException)
+            {
+                // Some CI/service hosts expose stdout without an interactive console buffer.
+            }
         }
 
         private static async Task RunStartupTasksAsync(WebApplication app)

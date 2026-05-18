@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -36,6 +37,7 @@ namespace ProjectK.Infrastructure.DbContexts
         // Auth module DbSet
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
         public DbSet<Invitation> Invitations { get; set; }
+        public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -297,6 +299,51 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasForeignKey(e => e.TargetUserKey)
                     .OnDelete(DeleteBehavior.SetNull);
                 entity.HasIndex(e => e.Token).IsUnique();
+            });
+
+            builder.Entity<PublicAnnouncementDraft>(entity =>
+            {
+                entity.HasKey(e => e.PublicAnnouncementDraftKey);
+                entity.Property(e => e.Status)
+                    .HasConversion<int>();
+                entity.Property(e => e.SourceType)
+                    .HasConversion<int>();
+                entity.Property(e => e.ParseMode)
+                    .HasConversion<int>();
+                entity.Property(e => e.ImagePlacement)
+                    .HasConversion<int>();
+                entity.Property(e => e.Title)
+                    .HasMaxLength(200)
+                    .IsRequired();
+                entity.Property(e => e.Body)
+                    .HasMaxLength(4096)
+                    .IsRequired();
+                entity.Property(e => e.RenderedText)
+                    .HasMaxLength(4096);
+                entity.Property(e => e.SourceId)
+                    .HasMaxLength(200);
+                entity.Property(e => e.SourceUrl)
+                    .HasMaxLength(1000);
+                entity.Property(e => e.Environment)
+                    .HasMaxLength(100);
+                entity.Property(e => e.Version)
+                    .HasMaxLength(100);
+                entity.Property(e => e.Codename)
+                    .HasMaxLength(200);
+                entity.Property(e => e.ImageBlobKey)
+                    .HasMaxLength(500);
+                entity.Property(e => e.ImageUrl)
+                    .HasMaxLength(1000);
+                entity.Property(e => e.ImageAltText)
+                    .HasMaxLength(500);
+                entity.Property(e => e.TemplateKey)
+                    .HasMaxLength(100);
+                entity.Property(e => e.TelegramMessageId)
+                    .HasMaxLength(100);
+                entity.Property(e => e.LastPublishError)
+                    .HasMaxLength(1000);
+                entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
+                entity.HasIndex(e => new { e.SourceType, e.SourceId });
             });
         }
     }

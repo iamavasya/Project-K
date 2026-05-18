@@ -18,11 +18,13 @@
       </p>
     </div>
 
-    <div *ngIf="loadingSetup" class="mfa-loading">
-      Завантаження...
-    </div>
+    @if (loadingSetup) {
+      <div class="mfa-loading">
+        Завантаження...
+      </div>
+    }
 
-    <ng-container *ngIf="!loadingSetup && setup && recoveryCodes.length === 0">
+    @if (!loadingSetup && setup && recoveryCodes.length === 0) {
       <div class="mfa-qr">
         <img [src]="setup.qrCodeBase64" alt="QR-код для налаштування MFA" />
       </div>
@@ -55,13 +57,16 @@
           styleClass="w-full"
         />
       </div>
-    </ng-container>
+    }
 
-    <div *ngIf="recoveryCodes.length > 0" class="mfa-recovery">
+    @if (recoveryCodes.length > 0) {
+      <div class="mfa-recovery">
       <h2>Recovery codes</h2>
       <p>Save these codes now. Each code can be used once if you lose access to your authenticator.</p>
       <div class="recovery-grid">
-        <code *ngFor="let code of recoveryCodes">{{ code }}</code>
+        @for (code of recoveryCodes; track $index) {
+          <code>{{ code }}</code>
+        }
       </div>
       <p-button
         label="I saved these codes"
@@ -70,5 +75,6 @@
         styleClass="w-full"
       />
     </div>
+    }
   </div>
 </p-dialog>

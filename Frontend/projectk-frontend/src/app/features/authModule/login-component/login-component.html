@@ -8,7 +8,7 @@
     </div>
 
     <form (ngSubmit)="onSubmit()" class="login-form">
-      <ng-container *ngIf="!showOtpInput">
+      @if (!showOtpInput) {
         <p-floatlabel variant="on" class="field">
           <input
             pInputText
@@ -35,35 +35,37 @@
           />
           <label for="password">Пароль</label>
         </p-floatlabel>
-      </ng-container>
+      } @else {
+        @if (!useRecoveryCode) {
+          <div class="otp-field">
+            <label for="otp">Код підтвердження</label>
+            <p-inputotp
+              inputId="otp"
+              name="otp"
+              [ngModel]="otpValue"
+              (ngModelChange)="onOtpChange($event)"
+              [length]="6"
+              [integerOnly]="true"
+              styleClass="otp-inputs"
+            />
+          </div>
+        }
 
-      <ng-container *ngIf="showOtpInput">
-        <div *ngIf="!useRecoveryCode" class="otp-field">
-          <label for="otp">Код підтвердження</label>
-          <p-inputotp
-            inputId="otp"
-            name="otp"
-            [ngModel]="otpValue"
-            (ngModelChange)="onOtpChange($event)"
-            [length]="6"
-            [integerOnly]="true"
-            styleClass="otp-inputs"
-          />
-        </div>
-
-        <p-floatlabel *ngIf="useRecoveryCode" variant="on" class="field">
-          <input
-            pInputText
-            id="recoveryCode"
-            [ngModel]="otpValue"
-            (ngModelChange)="onRecoveryCodeChange($event)"
-            name="recoveryCode"
-            autocomplete="one-time-code"
-            required
-          />
-          <label for="recoveryCode">Recovery code</label>
-        </p-floatlabel>
-      </ng-container>
+        @if (useRecoveryCode) {
+          <p-floatlabel variant="on" class="field">
+            <input
+              pInputText
+              id="recoveryCode"
+              [ngModel]="otpValue"
+              (ngModelChange)="onRecoveryCodeChange($event)"
+              name="recoveryCode"
+              autocomplete="one-time-code"
+              required
+            />
+            <label for="recoveryCode">Recovery code</label>
+          </p-floatlabel>
+        }
+      }
 
       <div class="login-actions">
         <p-button
@@ -74,30 +76,32 @@
           styleClass="w-full"
         />
 
-        <p-button
-          *ngIf="showOtpInput"
-          [label]="useRecoveryCode ? 'Use authenticator code' : 'Use recovery code'"
-          type="button"
-          variant="text"
-          (onClick)="toggleRecoveryCode()"
-          styleClass="w-full"
-        />
+        @if (showOtpInput) {
+          <p-button
+            [label]="useRecoveryCode ? 'Use authenticator code' : 'Use recovery code'"
+            type="button"
+            variant="text"
+            (onClick)="toggleRecoveryCode()"
+            styleClass="w-full"
+          />
 
-        <p-button
-          *ngIf="showOtpInput"
-          label="Назад"
-          icon="pi pi-arrow-left"
-          type="button"
-          variant="text"
-          (onClick)="backToPassword()"
-          styleClass="w-full"
-        />
+          <p-button
+            label="Назад"
+            icon="pi pi-arrow-left"
+            type="button"
+            variant="text"
+            (onClick)="backToPassword()"
+            styleClass="w-full"
+          />
+        }
       </div>
     </form>
 
-    <p *ngIf="!showOtpInput" class="join-link">
-      Немає облікового запису?
-      <a routerLink="/join">Подати заявку</a>
-    </p>
+    @if (!showOtpInput) {
+      <p class="join-link">
+        Немає облікового запису?
+        <a routerLink="/join">Подати заявку</a>
+      </p>
+    }
   </section>
 </main>
