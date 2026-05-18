@@ -214,6 +214,10 @@ export class UpsertMemberComponent implements OnInit {
     return this.permissionService.canManageWarnings();
   }
 
+  canEditEmail(): boolean {
+    return this.isCreate || !this.member.userKey || this.permissionService.isAdmin();
+  }
+
   private isWarningActive(warning: MemberWarningDto, now: Date): boolean {
     if (warning.revokedAtUtc) {
       return false;
