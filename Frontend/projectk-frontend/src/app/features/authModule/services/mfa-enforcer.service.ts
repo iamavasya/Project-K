@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { AuthService } from './authService/auth.service';
 import { PermissionService } from './permission.service';
-import { catchError, interval, merge, of, startWith, switchMap } from 'rxjs';
+import { catchError, of, switchMap } from 'rxjs';
 import { MfaSetupDialogComponent } from '../components/mfa-setup-dialog/mfa-setup-dialog.component';
 import { environment } from '../../../../environments/environment';
 
