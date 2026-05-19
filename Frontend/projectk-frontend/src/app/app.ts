@@ -22,4 +22,8 @@ export class App implements AfterViewInit {
   ngAfterViewInit(): void {
     this.mfaEnforcer.checkAndEnforce(this.mfaDialog);
   }
+
+  onMfaEnabled(): void {
+    this.mfaEnforcer.markMfaEnabledForCurrentSession();
+  }
 }
