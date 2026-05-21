@@ -11,6 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { MfaSetupDialogComponent } from '../components/mfa-setup-dialog/mfa-setup-dialog.component';
 import { AccountSettings, AccountSettingsService } from '../services/account-settings.service';
 import { AuthService } from '../services/authService/auth.service';
+import { MfaEnforcerService } from '../services/mfa-enforcer.service';
 import { PermissionService } from '../services/permission.service';
 
 @Component({
@@ -32,6 +33,7 @@ import { PermissionService } from '../services/permission.service';
 export class AccountSettingsComponent implements OnInit {
   private readonly accountService = inject(AccountSettingsService);
   private readonly authService = inject(AuthService);
+  private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly messageService = inject(MessageService);
   private readonly permissionService = inject(PermissionService);
   private readonly route = inject(ActivatedRoute);
@@ -250,6 +252,7 @@ export class AccountSettingsComponent implements OnInit {
     if (this.settings) {
       this.settings = { ...this.settings, twoFactorEnabled: true };
     }
+    this.mfaEnforcer.markMfaEnabledForCurrentSession();
   }
 
   rotateRecoveryCodes(): void {

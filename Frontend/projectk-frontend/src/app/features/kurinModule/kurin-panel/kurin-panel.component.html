@@ -73,13 +73,15 @@
         }
     </section>
 
-    <section class="kurin-tile">
-        <app-kv-panel [kurinKey]="kurinKey"></app-kv-panel>
-    </section>
+    <div class="kurin-side-tiles">
+        <section class="kurin-tile">
+            <app-kv-panel [kurinKey]="kurinKey"></app-kv-panel>
+        </section>
 
-    <section class="kurin-tile">
-        <app-leadership-panel [leadershipType]="'kurin'" [typeKey]="kurinKey"></app-leadership-panel>
-    </section>
+        <section class="kurin-tile">
+            <app-leadership-panel [leadershipType]="'kurin'" [typeKey]="kurinKey"></app-leadership-panel>
+        </section>
+    </div>
 
     <section class="kurin-tile">
         <app-member-list [type]="'kurin'" [typeKey]="kurinKey"></app-member-list>

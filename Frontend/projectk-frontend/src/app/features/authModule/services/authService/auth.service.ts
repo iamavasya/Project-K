@@ -6,6 +6,7 @@ import { LoginRequest } from "../../models/login-request.model";
 import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
 import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
+import { clearMfaSessionState } from "../mfa-session-state";
 
 export interface MfaSetupResponse {
   sharedKey: string;
@@ -58,6 +59,7 @@ export class AuthService {
     ).pipe(
       tap(response => {
         if (!response.requiresMfa && response.tokens) {
+          clearMfaSessionState();
           const state: AuthState = {
             userKey: response.userKey,
             memberKey: response.memberKey,
@@ -91,6 +93,7 @@ export class AuthService {
         };
       }),
       tap(state => {
+        clearMfaSessionState();
         this.authState$.next(state);
         this.persistAuthState(state);
       })
@@ -130,6 +133,7 @@ export class AuthService {
   clearLocalState(): void {
     this.authState$.next(null);
     localStorage.removeItem('authState');
+    clearMfaSessionState();
   }
 
   logout() {

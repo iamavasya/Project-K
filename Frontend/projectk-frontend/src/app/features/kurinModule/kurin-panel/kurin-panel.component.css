@@ -28,6 +28,12 @@
     box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
 }
 
+.kurin-side-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
 .table-caption {
     display: flex;
     align-items: center;
@@ -102,6 +108,10 @@
     .table-caption {
         align-items: center;
         flex-direction: row;
+    }
+
+    .kurin-side-tiles {
+        grid-template-columns: 1fr;
     }
 }
 

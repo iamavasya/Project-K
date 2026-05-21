@@ -65,7 +65,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), "RequireMentor");
         yield return Row<Action<MemberController, Guid, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Update), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), "RequireMentor");
-        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetKurinKvMembers), "RequireMentor");
+        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetKurinKvMembers), "RequireUser");
 
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetByKey), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Exists), "RequireUser");
@@ -73,7 +73,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), "RequireMentor");
         yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), "RequireMentor");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), "RequireManager");
-        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireMentor");
+        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");
+        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireUser");
 
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
