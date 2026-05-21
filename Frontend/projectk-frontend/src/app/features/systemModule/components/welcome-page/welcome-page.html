@@ -1,50 +1,81 @@
 <main class="welcome-page">
-  <section class="welcome-hero" aria-labelledby="welcome-title">
-    <div class="brand-mark" aria-hidden="true">
-      <span>К</span>
+  <section class="first-front-block">
+    <div class="hero-copy">
+      <h1>Весь курінь під рукою</h1>
+      <h3>Керуй, точкуй, свисти <span>алярми.</span></h3>
+
+      <div class="hero-actions" aria-label="Основні дії">
+        <p-button
+          label="Увійти"
+          routerLink="/login"
+          styleClass="welcome-button"
+          size="small"
+        />
+        <p-button
+          label="Request to whitelist"
+          routerLink="/join"
+          styleClass="welcome-button"
+          severity="secondary"
+          size="small"
+        />
+      </div>
+
+      <div class="made-by-banner">
+        <span class="pi pi-sparkles" aria-hidden="true"></span>
+        <span>Made by Plastuny for Plastuny</span>
+      </div>
     </div>
 
-    <div class="welcome-copy">
-      <p class="eyebrow">Project K</p>
-      <h1 id="welcome-title">Пластова система для куренів</h1>
-      <p class="lead">
-        Єдиний простір для обліку учасників, гуртків, проводу, відзначень та підготовки до проб.
-      </p>
-    </div>
-
-    <div class="welcome-actions" aria-label="Основні дії">
-      <p-button
-        label="Увійти"
-        icon="pi pi-sign-in"
-        routerLink="/login"
-        styleClass="welcome-action welcome-action-primary"
-      />
-      <p-button
-        label="Приєднатися до списку очікування"
-        icon="pi pi-user-plus"
-        routerLink="/join"
-        severity="secondary"
-        outlined
-        styleClass="welcome-action"
-      />
+    <div class="hero-image">
+      <img src="assets/images/scouts-main.png" alt="scouts" />
     </div>
   </section>
 
-  <section class="welcome-strip" aria-label="Можливості системи">
-    <article>
-      <span class="pi pi-users"></span>
-      <strong>Учасники</strong>
-      <p>Картки, рівні, нагороди та застереження в одному місці.</p>
-    </article>
-    <article>
-      <span class="pi pi-sitemap"></span>
-      <strong>Гуртки</strong>
-      <p>Структура куреня, провід і виховники без зайвих таблиць.</p>
-    </article>
-    <article>
-      <span class="pi pi-check-circle"></span>
-      <strong>Проби</strong>
-      <p>Прогрес, підписи й перегляд вмінь для щоденної роботи.</p>
-    </article>
+  <div class="welcome-divider">
+    <p-divider />
+  </div>
+
+  <section class="product-preview" aria-label="A screenshot of Project K">
+    <img
+      src="assets/images/software-screens/image.png"
+      alt="A screenshot of Project K"
+    />
+  </section>
+
+  <section class="feature-section">
+    <div class="feature-copy">
+      <h2>Менеджити куренем <span>легко.</span></h2>
+      <p>
+        Project K надає зручні інструменти для роботи куреня. Слідкуйте за учасниками,
+        сортуйте документи та керуйте ефективно.
+      </p>
+    </div>
+
+    <div class="feature-grid" aria-label="Можливості Project K">
+      <article class="feature-card">
+        <span class="feature-icon pi pi-user" aria-hidden="true"></span>
+        <h3>Реєстр куреня</h3>
+        <p>
+          Ведення реєстру ще ніколи не було простішим. Видно юнаків,
+          впорядників та інструкторів.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-icon pi pi-file" aria-hidden="true"></span>
+        <h3>Документація</h3>
+        <p>
+          Статути, накази, звіти чи хроніка. Все зручно лежить в одному місці.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-icon pi pi-calendar" aria-hidden="true"></span>
+        <h3>Календарі</h3>
+        <p>
+          Нехай ваші заходи будуть розписані в календарі, а хочете - будуть і юнаки.
+        </p>
+      </article>
+    </div>
   </section>
 </main>

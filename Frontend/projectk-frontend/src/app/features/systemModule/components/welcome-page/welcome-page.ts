@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 
 @Component({
   selector: 'app-welcome-page',
-  imports: [RouterLink, ButtonModule],
+  imports: [RouterLink, ButtonModule, DividerModule],
   templateUrl: './welcome-page.html',
   styleUrl: './welcome-page.css'
 })
