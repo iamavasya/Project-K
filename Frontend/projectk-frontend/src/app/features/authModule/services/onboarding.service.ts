@@ -9,6 +9,8 @@ export interface WaitlistRegistration {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
+  stanytsia: string;
+  regionOrCountry: string;
   isKurinLeaderCandidate: boolean;
   claimedKurinNameOrNumber?: string;
 }

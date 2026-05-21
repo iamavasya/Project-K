@@ -22,6 +22,29 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
 
         public async Task<ServiceResult<Guid>> Handle(SubmitWaitlistRegistrationCommand request, CancellationToken cancellationToken)
         {
+            var stanytsia = request.Stanytsia?.Trim();
+            var regionOrCountry = request.RegionOrCountry?.Trim();
+
+            if (string.IsNullOrWhiteSpace(stanytsia))
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "StanytsiaRequired", "Stanytsia is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(regionOrCountry))
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryRequired", "Region or country is required.");
+            }
+
+            if (stanytsia.Length > 120)
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "StanytsiaTooLong", "Stanytsia must be 120 characters or fewer.");
+            }
+
+            if (regionOrCountry.Length > 120)
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region or country must be 120 characters or fewer.");
+            }
+
             // Check for existing waitlist entry with same email
             var existingEntry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
             if (existingEntry != null)
@@ -44,6 +67,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 DateOfBirth = request.DateOfBirth,
+                Stanytsia = stanytsia,
+                RegionOrCountry = regionOrCountry,
                 IsKurinLeaderCandidate = request.IsKurinLeaderCandidate,
                 ClaimedKurinNameOrNumber = request.ClaimedKurinNameOrNumber,
                 VerificationStatus = WaitlistVerificationStatus.Submitted,

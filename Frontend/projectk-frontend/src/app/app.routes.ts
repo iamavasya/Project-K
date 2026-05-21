@@ -25,8 +25,19 @@ import { AccountActivationComponent } from './features/authModule/onboarding/acc
 import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
 import { AccountSettingsComponent } from './features/authModule/account-settings/account-settings.component';
 import { PublicAnnouncementsComponent } from './features/adminModule/components/public-announcements/public-announcements';
+import { WelcomePageComponent } from './features/systemModule/components/welcome-page/welcome-page';
 
 export const routes: Routes = [
+  {
+    path: '',
+    component: WelcomePageComponent,
+    data: { breadcrumb: 'Welcome' }
+  },
+  {
+    path: 'welcome',
+    component: WelcomePageComponent,
+    data: { breadcrumb: 'Welcome' }
+  },
   {
     path: 'join',
     component: WaitlistRegistrationComponent,

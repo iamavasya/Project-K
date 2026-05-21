@@ -1,0 +1,50 @@
+<main class="welcome-page">
+  <section class="welcome-hero" aria-labelledby="welcome-title">
+    <div class="brand-mark" aria-hidden="true">
+      <span>К</span>
+    </div>
+
+    <div class="welcome-copy">
+      <p class="eyebrow">Project K</p>
+      <h1 id="welcome-title">Пластова система для куренів</h1>
+      <p class="lead">
+        Єдиний простір для обліку учасників, гуртків, проводу, відзначень та підготовки до проб.
+      </p>
+    </div>
+
+    <div class="welcome-actions" aria-label="Основні дії">
+      <p-button
+        label="Увійти"
+        icon="pi pi-sign-in"
+        routerLink="/login"
+        styleClass="welcome-action welcome-action-primary"
+      />
+      <p-button
+        label="Приєднатися до списку очікування"
+        icon="pi pi-user-plus"
+        routerLink="/join"
+        severity="secondary"
+        outlined
+        styleClass="welcome-action"
+      />
+    </div>
+  </section>
+
+  <section class="welcome-strip" aria-label="Можливості системи">
+    <article>
+      <span class="pi pi-users"></span>
+      <strong>Учасники</strong>
+      <p>Картки, рівні, нагороди та застереження в одному місці.</p>
+    </article>
+    <article>
+      <span class="pi pi-sitemap"></span>
+      <strong>Гуртки</strong>
+      <p>Структура куреня, провід і виховники без зайвих таблиць.</p>
+    </article>
+    <article>
+      <span class="pi pi-check-circle"></span>
+      <strong>Проби</strong>
+      <p>Прогрес, підписи й перегляд вмінь для щоденної роботи.</p>
+    </article>
+  </section>
+</main>

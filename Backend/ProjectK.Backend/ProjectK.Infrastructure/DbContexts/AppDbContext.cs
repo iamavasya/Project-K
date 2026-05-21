@@ -282,6 +282,10 @@ namespace ProjectK.Infrastructure.DbContexts
             builder.Entity<WaitlistEntry>(entity =>
             {
                 entity.HasKey(e => e.WaitlistEntryKey);
+                entity.Property(e => e.Stanytsia)
+                    .HasMaxLength(120);
+                entity.Property(e => e.RegionOrCountry)
+                    .HasMaxLength(120);
                 entity.Property(e => e.VerificationStatus)
                     .HasConversion<string>();
                 entity.HasIndex(e => e.Email).IsUnique();

@@ -23,6 +23,12 @@ namespace ProjectK.Common.Entities.AuthModule
 
         public DateTime DateOfBirth { get; set; }
 
+        [MaxLength(120)]
+        public string? Stanytsia { get; set; }
+
+        [MaxLength(120)]
+        public string? RegionOrCountry { get; set; }
+
         public bool IsKurinLeaderCandidate { get; set; }
 
         [MaxLength(200)]

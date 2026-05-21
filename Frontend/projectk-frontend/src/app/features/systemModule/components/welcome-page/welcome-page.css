@@ -1,0 +1,149 @@
+.welcome-page {
+  background:
+    linear-gradient(135deg, rgba(22, 78, 99, 0.9), rgba(24, 24, 27, 0.92)),
+    var(--p-surface-ground);
+  color: #ffffff;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 2rem;
+}
+
+.welcome-hero {
+  display: grid;
+  gap: 2rem;
+  max-width: 58rem;
+  text-align: center;
+  width: min(100%, 58rem);
+}
+
+.brand-mark {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #ffffff;
+  border: 8px solid #111827;
+  border-radius: 50%;
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.32);
+  color: #111827;
+  display: inline-flex;
+  font-size: 3.5rem;
+  font-weight: 800;
+  justify-self: center;
+  width: 8.5rem;
+}
+
+.brand-mark span {
+  display: block;
+  line-height: 1;
+  margin: 0 auto;
+}
+
+.welcome-copy {
+  display: grid;
+  gap: 1rem;
+}
+
+.eyebrow {
+  color: #fde68a;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.welcome-copy h1 {
+  font-size: 5rem;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.lead {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.15rem;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 43rem;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  justify-content: center;
+}
+
+:host ::ng-deep .welcome-action {
+  min-height: 3rem;
+}
+
+:host ::ng-deep .welcome-action-primary {
+  background: #fbbf24;
+  border-color: #fbbf24;
+  color: #111827;
+}
+
+.welcome-strip {
+  align-self: end;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 3rem;
+  max-width: 64rem;
+  overflow: hidden;
+  width: min(100%, 64rem);
+}
+
+.welcome-strip article {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: grid;
+  gap: 0.4rem;
+  padding: 1.1rem;
+  text-align: left;
+}
+
+.welcome-strip span {
+  color: #fde68a;
+  font-size: 1.2rem;
+}
+
+.welcome-strip strong {
+  font-size: 1rem;
+}
+
+.welcome-strip p {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .welcome-page {
+    padding: 1rem;
+  }
+
+  .welcome-hero {
+    gap: 1.5rem;
+  }
+
+  .welcome-copy h1 {
+    font-size: 2.6rem;
+  }
+
+  .brand-mark {
+    border-width: 6px;
+    font-size: 2.5rem;
+    width: 6.5rem;
+  }
+
+  .welcome-actions {
+    display: grid;
+  }
+
+  .welcome-strip {
+    grid-template-columns: 1fr;
+    margin-top: 2rem;
+  }
+}

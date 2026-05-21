@@ -85,6 +85,8 @@ import {
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>Stanytsia</th>
+            <th>Region / Country</th>
             <th>Kurin Candidate</th>
             <th>Status</th>
             <th>Requested At</th>
@@ -95,6 +97,8 @@ import {
           <tr>
             <td>{{ entry.firstName }} {{ entry.lastName }}</td>
             <td>{{ entry.email }}</td>
+            <td>{{ entry.stanytsia || '-' }}</td>
+            <td>{{ entry.regionOrCountry || '-' }}</td>
             <td>
               @if (entry.isKurinLeaderCandidate) {
                 <p-tag severity="info" [value]="'Kurin ' + entry.claimedKurinNameOrNumber"></p-tag>
@@ -124,7 +128,7 @@ import {
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td colspan="6" class="text-center p-4 text-gray-500">No waitlist entries found.</td>
+                <td colspan="8" class="text-center p-4 text-gray-500">No waitlist entries found.</td>
             </tr>
         </ng-template>
       </p-table>
