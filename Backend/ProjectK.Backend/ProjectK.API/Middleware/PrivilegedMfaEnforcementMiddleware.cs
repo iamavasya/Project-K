@@ -15,9 +15,9 @@ namespace ProjectK.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager)
+        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment)
         {
-            if (!RequiresMfaEnforcement(context))
+            if (environment.IsDevelopment() || !RequiresMfaEnforcement(context))
             {
                 await _next(context);
                 return;
