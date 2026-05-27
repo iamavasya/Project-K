@@ -8,6 +8,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Concurrent;
@@ -33,7 +34,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
         public string? PublicBaseUrl { get; init; }
         public bool AutoCreateContainer { get; init; } = true;
         public bool PublicAccess { get; init; } = true;
-        public string? BlobPrefix { get; init; }
         public string UsageMetadataKey { get; init; } = "inUse";
     }
 
@@ -68,26 +68,35 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
         }
 
         public async Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
+            => await UploadPhotoAsync(photoBytes, fileName, BlobUploadContext.MemberPhoto, cancellationToken).ConfigureAwait(false);
+
+        public async Task<PhotoUploadResult> UploadPhotoAsync(
+            byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
         {
             if (photoBytes is null || photoBytes.Length == 0)
                 throw new ArgumentException("Порожній вміст файлу.", nameof(photoBytes));
             if (string.IsNullOrWhiteSpace(fileName))
                 throw new ArgumentException("Порожня назва файлу.", nameof(fileName));
+            if (uploadContext is null)
+                throw new ArgumentNullException(nameof(uploadContext));
 
             await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
 
-            var (processedBytes, finalExtension) = await CompressImageAsync(photoBytes, fileName, cancellationToken).ConfigureAwait(false);
+            var upload = await PrepareUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false);
 
-            var blobName = BuildBlobName(finalExtension);
+            var blobName = BuildBlobName(uploadContext, upload.FinalExtension);
             var blobClient = _container.GetBlobClient(blobName);
 
             var headers = new BlobHttpHeaders
             {
-                ContentType = ResolveContentType(fileName, finalExtension) ?? "image/jpeg",
+                ContentType = upload.ContentType,
                 CacheControl = "public, max-age=31536000"
             };
 
-            await using var ms = new MemoryStream(processedBytes);
+            await using var ms = new MemoryStream(upload.ProcessedBytes);
             await blobClient.UploadAsync(ms, new BlobUploadOptions { HttpHeaders = headers }, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -95,7 +104,33 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             return new PhotoUploadResult(blobName, url);
         }
 
+        internal async Task<PreparedBlobUpload> PrepareUploadAsync(
+            byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
+        {
+            return uploadContext.ProcessingMode switch
+            {
+                BlobUploadProcessingMode.CompressToJpeg => await PrepareJpegUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
+                BlobUploadProcessingMode.EncodeAsPng => await PreparePngUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
+                _ => throw new ArgumentOutOfRangeException(nameof(uploadContext), uploadContext.ProcessingMode, "Unsupported blob upload processing mode.")
+            };
+        }
+
         internal async Task<(byte[] ProcessedBytes, string FinalExtension)> CompressImageAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
+        {
+            var upload = await PrepareJpegUploadAsync(photoBytes, fileName, BlobUploadContext.MemberPhoto, cancellationToken)
+                .ConfigureAwait(false);
+
+            return (upload.ProcessedBytes, upload.FinalExtension);
+        }
+
+        private async Task<PreparedBlobUpload> PrepareJpegUploadAsync(
+            byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
         {
             var originalSize = photoBytes.Length;
             string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
@@ -125,7 +160,7 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
                 _logger?.LogInformation("Image {FileName} compressed: {OriginalSize} bytes -> {CompressedSize} bytes (Saved {SavedBytes} bytes)", 
                     fileName, originalSize, processedBytes.Length, originalSize - processedBytes.Length);
 
-                return (processedBytes, ".jpg"); // Force extension to jpg since we encoded as jpeg
+                return new PreparedBlobUpload(processedBytes, ".jpg", uploadContext.ContentType); // Force extension to jpg since we encoded as jpeg
             }
             catch (Exception ex)
             {
@@ -133,7 +168,39 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
                 // If it's not a valid image (e.g. corrupted), we fallback to original bytes
                 // The API shouldn't accept non-images, but this is a fallback.
                 finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
-                return (photoBytes, finalExtension);
+                return new PreparedBlobUpload(photoBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
+            }
+        }
+
+        private async Task<PreparedBlobUpload> PreparePngUploadAsync(
+            byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
+        {
+            var originalSize = photoBytes.Length;
+            string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            try
+            {
+                using var image = Image.Load(photoBytes);
+                using var msPng = new MemoryStream();
+                await image.SaveAsync(msPng, new PngEncoder(), cancellationToken).ConfigureAwait(false);
+
+                var processedBytes = msPng.ToArray();
+                _logger?.LogInformation(
+                    "Image {FileName} encoded as PNG: {OriginalSize} bytes -> {ProcessedSize} bytes",
+                    fileName,
+                    originalSize,
+                    processedBytes.Length);
+
+                return new PreparedBlobUpload(processedBytes, ".png", uploadContext.ContentType);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to encode image {FileName} as PNG. Proceeding with original bytes.", fileName);
+                finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
+                return new PreparedBlobUpload(photoBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
             }
         }
 
@@ -178,16 +245,20 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             var referencedSet = new HashSet<string>(referenced, StringComparer.Ordinal);
 
             var allBlobs = new List<BlobItem>();
-            await foreach (var item in _container.GetBlobsAsync(
-                               traits: BlobTraits.None,
-                               states: BlobStates.None,
-                               prefix: _options.BlobPrefix,
-                               cancellationToken))
+            foreach (var prefix in GetCleanupPrefixes())
             {
-                allBlobs.Add(item);
+                await foreach (var item in _container.GetBlobsAsync(
+                                   traits: BlobTraits.None,
+                                   states: BlobStates.None,
+                                   prefix: prefix,
+                                   cancellationToken))
+                {
+                    allBlobs.Add(item);
+                }
             }
 
             var orphans = allBlobs
+                .DistinctBy(item => item.Name)
                 .Where(item => !referencedSet.Contains(item.Name))
                 .Select(item => BuildPublicUrl(_container.GetBlobClient(item.Name)))
                 .ToList();
@@ -247,14 +318,14 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             }
         }
 
-        private string BuildBlobName(string extension)
+        internal string BuildBlobName(BlobUploadContext uploadContext, string extension)
+            => BuildBlobName(uploadContext, extension, DateTime.UtcNow);
+
+        internal string BuildBlobName(BlobUploadContext uploadContext, string extension, DateTime utcNow)
         {
-            // Photos/<prefix>/yyyy/MM/dd/<guid>.ext
-            var now = DateTime.UtcNow;
-            var datePath = $"{now:yyyy/MM/dd}";
-            var prefix = string.IsNullOrWhiteSpace(_options.BlobPrefix)
-                ? $"photos/{datePath}"
-                : $"{_options.BlobPrefix.TrimEnd('/')}/{datePath}";
+            var folder = NormalizeFolder(uploadContext.Folder);
+            var datePath = $"{utcNow:yyyy'/'MM'/'dd}";
+            var prefix = $"{folder}/{datePath}";
             return $"{prefix}/{Guid.NewGuid():N}{extension}";
         }
 
@@ -288,5 +359,22 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
                 return extCt;
             return null;
         }
+
+        private static string NormalizeFolder(string folder)
+        {
+            if (string.IsNullOrWhiteSpace(folder))
+                throw new ArgumentException("Blob upload folder is required.", nameof(folder));
+
+            var normalized = folder.Trim().Trim('/');
+            if (normalized.Length == 0 || normalized.Contains('\\') || normalized.Contains("..", StringComparison.Ordinal))
+                throw new ArgumentException("Blob upload folder is invalid.", nameof(folder));
+
+            return normalized;
+        }
+
+        private IEnumerable<string> GetCleanupPrefixes()
+            => BlobUploadFolders.ScenarioFolders;
     }
+
+    internal sealed record PreparedBlobUpload(byte[] ProcessedBytes, string FinalExtension, string ContentType);
 }

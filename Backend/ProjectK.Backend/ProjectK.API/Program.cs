@@ -155,10 +155,20 @@ namespace ProjectK.API
                 ConnectionString = builder.Configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
                 ContainerName = builder.Configuration["BlobStorage:ContainerName"] ?? "photos",
                 PublicAccess = !bool.TryParse(builder.Configuration["BlobStorage:PublicAccess"], out var pa) || pa,
-                BlobPrefix = builder.Configuration["BlobStorage:BlobPrefix"],
                 PublicBaseUrl = builder.Configuration["BlobStorage:PublicBaseUrl"]
             };
-            builder.Services.AddScoped<IPhotoReferenceProvider, MemberPhotoReferenceProvider>();
+            builder.Services.AddScoped<MemberPhotoReferenceProvider>();
+            builder.Services.AddScoped<PublicAnnouncementImageReferenceProvider>();
+            builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
+            {
+                var providers = new IPhotoReferenceProvider[]
+                {
+                    sp.GetRequiredService<MemberPhotoReferenceProvider>(),
+                    sp.GetRequiredService<PublicAnnouncementImageReferenceProvider>()
+                };
+
+                return new CompositePhotoReferenceProvider(providers);
+            });
 
             builder.Services.AddSingleton(blobOptions);
 
