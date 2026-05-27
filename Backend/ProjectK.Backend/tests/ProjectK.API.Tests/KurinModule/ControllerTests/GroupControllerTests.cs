@@ -99,10 +99,12 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new { groupKey = groupKey }); // note: handler currently sets KurinKey by mistake
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(
+                    It.Is<UpsertGroup>(command => command.Description == "Group description"),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey };
+            var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey, Description = "Group description" };
 
             var result = await _controller.Create(createRequest);
 
@@ -137,10 +139,12 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(
+                    It.Is<UpsertGroup>(command => command.Description == "Updated description"),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var updateRequest = new UpdateGroupRequest { Name = "Updated" };
+            var updateRequest = new UpdateGroupRequest { Name = "Updated", Description = "Updated description" };
 
             var result = await _controller.Update(groupKey, updateRequest);
 

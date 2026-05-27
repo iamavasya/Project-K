@@ -17,6 +17,7 @@ describe('GroupService', () => {
   const mockGroup: GroupDto = {
     groupKey: 'g1',
     name: 'Alpha',
+    description: 'Group description',
     kurinKey: 'k1',
     kurinNumber: 10
   };
@@ -79,7 +80,7 @@ describe('GroupService', () => {
   });
 
   it('create sends POST with body', () => {
-    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
+    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1', description: 'Group description' };
 
     service.create(dto).subscribe(res => {
       expect(res).toEqual(mockGroup);
@@ -92,7 +93,7 @@ describe('GroupService', () => {
   });
 
   it('create invalidates cached group list', () => {
-    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
+    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1', description: 'Group description' };
 
     service.getAllByKurinKey('k1').subscribe();
     httpMock.expectOne(r =>
@@ -111,16 +112,16 @@ describe('GroupService', () => {
   });
 
   it('update sends PUT with body to /group/:key', () => {
-    const updateDto: UpdateGroupDto = { name: 'Alpha Updated' };
+    const updateDto: UpdateGroupDto = { name: 'Alpha Updated', description: 'Updated description' };
 
     service.update('g1', updateDto).subscribe(res => {
-      expect(res).toEqual({ ...mockGroup, name: 'Alpha Updated' });
+      expect(res).toEqual({ ...mockGroup, name: 'Alpha Updated', description: 'Updated description' });
     });
 
     const req = httpMock.expectOne(`${baseUrl}/g1`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(updateDto);
-    req.flush({ ...mockGroup, name: 'Alpha Updated' });
+    req.flush({ ...mockGroup, name: 'Alpha Updated', description: 'Updated description' });
   });
 
   it('delete sends DELETE to /group/:key', () => {

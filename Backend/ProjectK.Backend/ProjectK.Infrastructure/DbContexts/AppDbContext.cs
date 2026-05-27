@@ -65,6 +65,8 @@ namespace ProjectK.Infrastructure.DbContexts
             builder.Entity<Group>(entity =>
             {
                 entity.HasKey(e => e.GroupKey);
+                entity.Property(e => e.Description)
+                    .HasMaxLength(1000);
                 entity.HasOne(e => e.Kurin)
                       .WithMany(k => k.Groups)
                       .HasForeignKey(e => e.KurinKey)

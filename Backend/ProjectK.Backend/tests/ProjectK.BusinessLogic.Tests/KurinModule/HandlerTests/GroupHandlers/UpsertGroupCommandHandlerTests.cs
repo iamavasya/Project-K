@@ -49,9 +49,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             // Arrange
             var kurin = new Kurin(5) { KurinKey = Guid.NewGuid() };
             var name = "Alpha";
+            var description = "  First patrol group  ";
             Group savedGroup = null!;
 
-            var command = new UpsertGroup(name, kurin.KurinKey);
+            var command = new UpsertGroup(name, kurin.KurinKey, description);
 
             _groupRepositoryMock
                 .Setup(r => r.GetByKeyAsync(Guid.Empty, It.IsAny<CancellationToken>()))
@@ -81,6 +82,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Type.Should().Be(ResultType.Created);
             result.Data.Should().NotBeNull();
             result.Data!.Name.Should().Be(name);
+            result.Data.Description.Should().Be("First patrol group");
             _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
             result.Data.KurinKey.Should().Be(kurin.KurinKey);
             result.Data.GroupKey.Should().Be(savedGroup.GroupKey);
@@ -123,7 +125,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             var existing = new Group("OldName", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin };
             var newName = "NewName";
 
-            var command = new UpsertGroup(groupKey, newName);
+            var command = new UpsertGroup(groupKey, newName, "  Updated group description  ");
 
             _groupRepositoryMock
                 .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -146,10 +148,28 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Data.Should().NotBeNull();
             result.Data!.GroupKey.Should().Be(groupKey);
             result.Data.Name.Should().Be(newName);
+            result.Data.Description.Should().Be("Updated group description");
             existing.Name.Should().Be(newName);
+            existing.Description.Should().Be("Updated group description");
 
             _groupRepositoryMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
             _groupRepositoryMock.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WhenDescriptionIsTooLong_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var command = new UpsertGroup("Alpha", Guid.NewGuid(), new string('a', 1001));
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Type.Should().Be(ResultType.BadRequest);
+            result.ErrorCode.Should().Be("DescriptionTooLong");
+            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

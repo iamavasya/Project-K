@@ -51,7 +51,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             var group = new Group("Alpha", kurin.KurinKey)
             {
                 GroupKey = groupKey,
-                Kurin = kurin
+                Kurin = kurin,
+                Description = "Group description"
             };
             var query = new GetGroupByKey(groupKey);
 
@@ -68,6 +69,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             result.Data.GroupKey.Should().Be(groupKey);
             result.Data.KurinKey.Should().Be(kurin.KurinKey);
             result.Data.Name.Should().Be("Alpha");
+            result.Data.Description.Should().Be("Group description");
             result.Data.KurinNumber.Should().Be(kurin.Number);
 
             _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);

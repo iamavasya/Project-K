@@ -52,9 +52,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             var groups = new List<Group>
             {
-                new Group("Alpha", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin },
-                new Group("Bravo", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin },
-                new Group("Charlie", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin }
+                new Group("Alpha", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin, Description = "A desc" },
+                new Group("Bravo", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin, Description = "B desc" },
+                new Group("Charlie", kurinKey) { GroupKey = Guid.NewGuid(), Kurin = kurin, Description = "C desc" }
             };
 
             _groupRepositoryMock
@@ -77,6 +77,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                     gr.GroupKey == g.GroupKey &&
                     gr.KurinKey == g.KurinKey &&
                     gr.Name == g.Name &&
+                    gr.Description == g.Description &&
                     gr.KurinNumber == kurin.Number);
             }
 

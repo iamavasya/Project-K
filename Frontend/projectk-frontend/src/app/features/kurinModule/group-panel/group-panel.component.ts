@@ -11,16 +11,17 @@ import { MemberList } from '../common/components/member-list/member-list';
 import { MemberLookupDto } from '../common/models/requests/member/memberLookupDto';
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { forkJoin, of } from 'rxjs';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
+import { TextareaModule } from 'primeng/textarea';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, GroupChevron, MemberList, DialogModule, MultiSelectModule, FormsModule, LeadershipPanelComponent],
+  imports: [TableModule, ButtonModule, GroupChevron, MemberList, DialogModule, MultiSelectModule, FormsModule, ReactiveFormsModule, TextareaModule, LeadershipPanelComponent],
   templateUrl: './group-panel.component.html',
   styleUrl: './group-panel.component.css'
 })
@@ -33,6 +34,7 @@ export class GroupPanelComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly entityService = inject(EntityService);
   private readonly permissionService = inject(PermissionService);
+  private readonly fb = inject(FormBuilder);
   groupKey = '';
   group: GroupDto | null = null;
   members: MemberDto[] = [];
@@ -44,6 +46,13 @@ export class GroupPanelComponent implements OnInit {
   initialMentorUserKeys: string[] = [];
   mentorSaveInProgress = false;
   canCreateMembers = false;
+  canEditGroupProfile = false;
+  profileEditMode = false;
+  profileSaving = false;
+
+  profileForm: FormGroup = this.fb.group({
+    description: ['', Validators.maxLength(1000)]
+  });
 
 
   tableHeaders: string[] = [
@@ -87,6 +96,7 @@ export class GroupPanelComponent implements OnInit {
     this.groupService.getByKey(this.groupKey).subscribe({
       next: (group) => {
         this.group = group;
+        this.patchProfileForm(group);
         if (this.canManageMentors) {
           this.loadMentorManagementData();
         }
@@ -118,6 +128,48 @@ export class GroupPanelComponent implements OnInit {
 
     this.loadMentorManagementData();
     this.mentorDialogVisible = true;
+  }
+
+  startProfileEdit(): void {
+    if (!this.group || !this.canEditGroupProfile) {
+      return;
+    }
+
+    this.profileEditMode = true;
+    this.patchProfileForm(this.group);
+  }
+
+  cancelProfileEdit(): void {
+    this.profileEditMode = false;
+    if (this.group) {
+      this.patchProfileForm(this.group);
+    }
+  }
+
+  saveProfile(): void {
+    if (!this.group || this.profileForm.invalid) {
+      return;
+    }
+
+    const raw = this.profileForm.value;
+    const request = {
+      name: this.group.name,
+      description: this.normalizeText(raw.description)
+    };
+
+    this.profileSaving = true;
+    this.groupService.update(this.groupKey, request).subscribe({
+      next: (updated) => {
+        this.group = updated;
+        this.patchProfileForm(updated);
+        this.profileEditMode = false;
+        this.profileSaving = false;
+      },
+      error: (err) => {
+        console.error('Error updating group profile:', err);
+        this.profileSaving = false;
+      }
+    });
   }
 
   private loadMentorManagementData(): void {
@@ -182,6 +234,7 @@ export class GroupPanelComponent implements OnInit {
   private updateGroupAccess(): void {
     if (!this.groupKey) {
       this.canCreateMembers = false;
+      this.canEditGroupProfile = false;
       return;
     }
 
@@ -193,5 +246,26 @@ export class GroupPanelComponent implements OnInit {
         this.canCreateMembers = false;
       }
     });
+
+    this.entityService.checkEntityAccess('group', this.groupKey, 'Update').subscribe({
+      next: (canUpdate) => {
+        this.canEditGroupProfile = canUpdate;
+      },
+      error: () => {
+        this.canEditGroupProfile = false;
+      }
+    });
+  }
+
+  private patchProfileForm(group: GroupDto): void {
+    this.profileForm.patchValue({
+      description: group.description ?? ''
+    }, { emitEvent: false });
+    this.profileForm.markAsPristine();
+  }
+
+  private normalizeText(value: unknown): string | null {
+    const text = String(value ?? '').trim();
+    return text.length > 0 ? text : null;
   }
 }

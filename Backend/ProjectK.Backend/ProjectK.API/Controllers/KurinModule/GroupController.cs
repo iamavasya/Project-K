@@ -70,7 +70,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
         {
-            var command = new UpsertGroup(request.Name, request.KurinKey);
+            var command = new UpsertGroup(request.Name, request.KurinKey, request.Description);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -84,7 +84,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(Guid groupKey, [FromBody] UpdateGroupRequest request)
         {
-            var command = new UpsertGroup(groupKey, request.Name);
+            var command = new UpsertGroup(groupKey, request.Name, request.Description);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }

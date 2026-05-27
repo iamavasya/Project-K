@@ -9,6 +9,7 @@ import { GroupDto } from '../common/models/groupDto';
 import { LeadershipDto } from '../common/models/requests/leadership/leadershipDto';
 import { MemberDto } from '../common/models/memberDto';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { EntityService } from '../../authModule/services/entity.service';
 
 describe('GroupPanelComponent', () => {
   let fixture: ComponentFixture<GroupPanelComponent>;
@@ -18,6 +19,7 @@ describe('GroupPanelComponent', () => {
   let groupServiceSpy: jasmine.SpyObj<GroupService>;
   let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let entityServiceSpy: jasmine.SpyObj<EntityService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
@@ -25,6 +27,7 @@ describe('GroupPanelComponent', () => {
   const group: GroupDto = {
     groupKey,
     name: 'Test Group',
+    description: 'Test group description',
     kurinKey: 'kurin1',
     kurinNumber: 1
   };
@@ -38,9 +41,10 @@ describe('GroupPanelComponent', () => {
 
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj('MemberService', ['getAll', 'getMentorCandidates']);
-    groupServiceSpy = jasmine.createSpyObj('GroupService', ['getByKey', 'exists', 'getMentors', 'assignMentor', 'revokeMentor']);
+    groupServiceSpy = jasmine.createSpyObj('GroupService', ['getByKey', 'exists', 'getMentors', 'assignMentor', 'revokeMentor', 'update']);
     leadershipServiceSpy = jasmine.createSpyObj('LeadershipService', ['getLeadershipByTypeAndKey']);
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getAuthStateValue']);
+    entityServiceSpy = jasmine.createSpyObj('EntityService', ['checkEntityAccess']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     paramMapSubject = new BehaviorSubject(convertToParamMap({ groupKey }));
 
@@ -49,10 +53,12 @@ describe('GroupPanelComponent', () => {
     groupServiceSpy.getMentors.and.returnValue(of([]));
     groupServiceSpy.assignMentor.and.returnValue(of({}));
     groupServiceSpy.revokeMentor.and.returnValue(of({}));
+    groupServiceSpy.update.and.returnValue(of(group));
     memberServiceSpy.getAll.and.returnValue(of([]));
     memberServiceSpy.getMentorCandidates.and.returnValue(of([]));
     leadershipServiceSpy.getLeadershipByTypeAndKey.and.returnValue(of(leadership));
     authServiceSpy.getAuthStateValue.and.returnValue({ role: 'Manager' } as never);
+    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [GroupPanelComponent],
@@ -61,6 +67,7 @@ describe('GroupPanelComponent', () => {
         { provide: GroupService, useValue: groupServiceSpy },
         { provide: LeadershipService, useValue: leadershipServiceSpy },
         { provide: AuthService, useValue: authServiceSpy },
+        { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
       ]
@@ -78,6 +85,7 @@ describe('GroupPanelComponent', () => {
   it('should load group details on init', () => {
     expect(groupServiceSpy.getByKey).toHaveBeenCalledWith(groupKey);
     expect(component.group).toEqual(group);
+    expect(component.profileForm.get('description')?.value).toBe('Test group description');
   });
 
   it('should navigate to panel if group does not exist', () => {
@@ -103,6 +111,22 @@ describe('GroupPanelComponent', () => {
     expect(memberServiceSpy.getMentorCandidates).toHaveBeenCalledWith(group.kurinKey);
     expect(groupServiceSpy.getMentors).toHaveBeenCalledWith(groupKey);
     expect(component.mentorDialogVisible).toBeTrue();
+  });
+
+  it('saveProfile should update group description', () => {
+    const updated = { ...group, description: 'Updated description' };
+    groupServiceSpy.update.and.returnValue(of(updated));
+
+    component.startProfileEdit();
+    component.profileForm.patchValue({ description: '  Updated description  ' });
+    component.saveProfile();
+
+    expect(groupServiceSpy.update).toHaveBeenCalledWith(groupKey, {
+      name: 'Test Group',
+      description: 'Updated description'
+    });
+    expect(component.group).toEqual(updated);
+    expect(component.profileEditMode).toBeFalse();
   });
 
   it('saveMentorAssignments should call assign and revoke based on diff', () => {

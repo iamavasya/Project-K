@@ -18,17 +18,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
         public Guid GroupKey { get; set; }
         public string Name { get; set; }
         public Guid KurinKey { get; set; }
+        public string? Description { get; set; }
 
-        public UpsertGroup(Guid groupKey, string name)
+        public UpsertGroup(Guid groupKey, string name, string? description = null)
         {
             GroupKey = groupKey;
             Name = name;
+            Description = description;
         }
 
-        public UpsertGroup(string name, Guid kurinKey)
+        public UpsertGroup(string name, Guid kurinKey, string? description = null)
         {
             KurinKey = kurinKey;
             Name = name;
+            Description = description;
         }
     }
 
@@ -46,6 +49,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
 
         public async Task<ServiceResult<GroupResponse>> Handle(UpsertGroup request, CancellationToken cancellationToken)
         {
+            var description = NormalizeOptionalText(request.Description);
+            if (description?.Length > 1000)
+            {
+                return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, "DescriptionTooLong", "Description must be 1000 characters or fewer.");
+            }
+
             var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
             bool isCreated = false;
@@ -57,7 +66,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
                     return new ServiceResult<GroupResponse>(ResultType.NotFound);
                 }
                 // Create new Group
-                existing = new(request.Name, request.KurinKey);
+                existing = new(request.Name, request.KurinKey, description);
                 _unitOfWork.Groups.Create(existing, cancellationToken);
                 isCreated = true;
             }
@@ -65,6 +74,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
             {
                 // Update existing Group
                 _mapper.Map(request, existing);
+                existing.Description = description;
                 _unitOfWork.Groups.Update(existing, cancellationToken);
             }
 
@@ -86,6 +96,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert
                     CreatedAtActionName: "GetByKey",
                     CreatedAtRouteValues: new { groupKey = response.GroupKey })
                 : new ServiceResult<GroupResponse>(ResultType.Success, response);
+        }
+
+        private static string? NormalizeOptionalText(string? value)
+        {
+            var trimmed = value?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         }
     }
 }

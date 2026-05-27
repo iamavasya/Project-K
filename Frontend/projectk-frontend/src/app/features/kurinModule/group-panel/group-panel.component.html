@@ -10,9 +10,27 @@
             @if (group?.kurinNumber) {
                 <p>{{ group?.kurinNumber }} курінь</p>
             }
+            @if (!profileEditMode && group?.description) {
+                <p class="group-hero__description">{{ group?.description }}</p>
+            }
+            @if (profileEditMode) {
+                <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="group-profile-form">
+                    <label>
+                        <span>Опис</span>
+                        <textarea pTextarea formControlName="description" rows="4" maxlength="1000"></textarea>
+                    </label>
+                    <div class="group-profile-actions">
+                        <p-button label="Скасувати" type="button" severity="secondary" variant="text" (onClick)="cancelProfileEdit()" />
+                        <p-button label="Зберегти" type="submit" icon="pi pi-save" [loading]="profileSaving" [disabled]="profileForm.invalid || profileSaving" />
+                    </div>
+                </form>
+            }
         </div>
 
         <div class="group-actions">
+            @if (canEditGroupProfile && !profileEditMode) {
+                <p-button label="Редагувати" (onClick)="startProfileEdit()" severity="secondary" icon="pi pi-pencil" />
+            }
             @if (canManageMembers) {
                 <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
             }
