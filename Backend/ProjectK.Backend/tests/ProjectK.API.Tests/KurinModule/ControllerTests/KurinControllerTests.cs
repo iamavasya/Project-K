@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
@@ -109,7 +110,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
                 .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var result = await _controller.Upsert(key, 10);
+            var result = await _controller.Upsert(key, new UpdateKurinRequest { Number = 10 });
 
             Assert.IsType<BadRequestObjectResult>(result);
         }

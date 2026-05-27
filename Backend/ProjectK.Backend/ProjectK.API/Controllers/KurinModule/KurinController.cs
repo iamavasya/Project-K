@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.Requests;
 
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
@@ -79,10 +80,16 @@ namespace ProjectK.API.Controllers.KurinModule
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Upsert(Guid kurinKey, [FromBody] int kurinNumber)
+        public async Task<IActionResult> Upsert(Guid kurinKey, [FromBody] UpdateKurinRequest request)
         {
-            var request = new UpsertKurin(kurinKey, kurinNumber);
-            var response = await _mediator.Send(request);
+            var command = new UpsertKurin(
+                kurinKey,
+                request.Number,
+                request.Stanytsia,
+                request.RegionOrCountry,
+                request.NamedAfter,
+                request.Description);
+            var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
 

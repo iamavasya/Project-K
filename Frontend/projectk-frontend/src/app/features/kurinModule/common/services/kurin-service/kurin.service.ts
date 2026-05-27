@@ -48,7 +48,13 @@ export class KurinService {
   updateKurin(kurin: KurinDto): Observable<KurinDto> {
     return this.http.put<KurinDto>(
       `${this.apiUrl}/${kurin.kurinKey}`,
-      kurin.number,
+      {
+        number: kurin.number,
+        stanytsia: kurin.stanytsia,
+        regionOrCountry: kurin.regionOrCountry,
+        namedAfter: kurin.namedAfter,
+        description: kurin.description
+      },
       {
         headers: {
           'Content-Type': 'application/json'

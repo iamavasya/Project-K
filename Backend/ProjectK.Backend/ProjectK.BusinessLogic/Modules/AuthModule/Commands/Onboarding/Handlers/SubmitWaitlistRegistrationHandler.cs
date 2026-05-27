@@ -32,7 +32,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
 
             if (string.IsNullOrWhiteSpace(regionOrCountry))
             {
-                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryRequired", "Region or country is required.");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryRequired", "Region is required.");
             }
 
             if (stanytsia.Length > 120)
@@ -42,7 +42,24 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
 
             if (regionOrCountry.Length > 120)
             {
-                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region or country must be 120 characters or fewer.");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region must be 120 characters or fewer.");
+            }
+
+            if (!request.IsKurinLeaderCandidate)
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "KurinLeaderCandidateRequired", "Kurin leader confirmation is required.");
+            }
+
+            var claimedKurinNumber = request.ClaimedKurinNameOrNumber?.Trim();
+
+            if (string.IsNullOrWhiteSpace(claimedKurinNumber))
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "ClaimedKurinNumberRequired", "Kurin number is required.");
+            }
+
+            if (!claimedKurinNumber.All(char.IsDigit) || !int.TryParse(claimedKurinNumber, out _))
+            {
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "ClaimedKurinNumberInvalid", "Kurin number must contain only digits.");
             }
 
             // Check for existing waitlist entry with same email
@@ -70,7 +87,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 Stanytsia = stanytsia,
                 RegionOrCountry = regionOrCountry,
                 IsKurinLeaderCandidate = request.IsKurinLeaderCandidate,
-                ClaimedKurinNameOrNumber = request.ClaimedKurinNameOrNumber,
+                ClaimedKurinNameOrNumber = claimedKurinNumber,
                 VerificationStatus = WaitlistVerificationStatus.Submitted,
                 RequestedAtUtc = DateTime.UtcNow
             };

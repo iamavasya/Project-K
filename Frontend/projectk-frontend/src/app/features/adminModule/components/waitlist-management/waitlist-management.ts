@@ -85,8 +85,8 @@ import {
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Stanytsia</th>
-            <th>Region / Country</th>
+            <th>Станиця</th>
+            <th>Край</th>
             <th>Kurin Candidate</th>
             <th>Status</th>
             <th>Requested At</th>

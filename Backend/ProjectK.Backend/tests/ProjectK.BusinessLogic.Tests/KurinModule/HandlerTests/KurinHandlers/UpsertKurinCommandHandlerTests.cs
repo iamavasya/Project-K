@@ -82,7 +82,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             var oldNumber = 123;
             var newNumber = 456;
             var existingKurin = new Kurin(oldNumber) { KurinKey = kurinKey };
-            var command = new UpsertKurin(kurinKey, newNumber);
+            var command = new UpsertKurin(kurinKey, newNumber, "  Kyiv  ", "  Ukraine  ", "  Some Patron  ", "  Long form notes  ");
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(existingKurin);
@@ -99,10 +99,44 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             result.Data.KurinKey.Should().Be(kurinKey);
 
             existingKurin.Number.Should().Be(newNumber);
+            existingKurin.Stanytsia.Should().Be("Kyiv");
+            existingKurin.RegionOrCountry.Should().Be("Ukraine");
+            existingKurin.NamedAfter.Should().Be("Some Patron");
+            existingKurin.Description.Should().Be("Long form notes");
 
             _kurinRepositoryMock.Verify(r => r.Update(existingKurin, default), Times.Once);
             _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(121, null, null, "StanytsiaTooLong")]
+        [InlineData(null, 121, null, "RegionOrCountryTooLong")]
+        [InlineData(null, null, 201, "NamedAfterTooLong")]
+        [InlineData(null, null, 4001, "DescriptionTooLong")]
+        public async Task Handle_WhenProfileFieldsAreTooLong_ShouldReturnBadRequest(
+            int? stanytsiaLength,
+            int? regionLength,
+            int? namedAfterOrDescriptionLength,
+            string expectedErrorCode)
+        {
+            // Arrange
+            var command = new UpsertKurin(
+                Guid.NewGuid(),
+                123,
+                stanytsiaLength.HasValue ? new string('a', stanytsiaLength.Value) : null,
+                regionLength.HasValue ? new string('a', regionLength.Value) : null,
+                expectedErrorCode == "NamedAfterTooLong" ? new string('a', namedAfterOrDescriptionLength!.Value) : null,
+                expectedErrorCode == "DescriptionTooLong" ? new string('a', namedAfterOrDescriptionLength!.Value) : null);
+
+            // Act
+            var result = await _handler.Handle(command, default);
+
+            // Assert
+            result.Type.Should().Be(ResultType.BadRequest);
+            result.ErrorCode.Should().Be(expectedErrorCode);
+            _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

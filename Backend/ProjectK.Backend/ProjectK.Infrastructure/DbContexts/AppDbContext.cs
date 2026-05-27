@@ -52,6 +52,14 @@ namespace ProjectK.Infrastructure.DbContexts
             {
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
+                entity.Property(e => e.Stanytsia)
+                    .HasMaxLength(120);
+                entity.Property(e => e.RegionOrCountry)
+                    .HasMaxLength(120);
+                entity.Property(e => e.NamedAfter)
+                    .HasMaxLength(200);
+                entity.Property(e => e.Description)
+                    .HasMaxLength(4000);
             });
 
             builder.Entity<Group>(entity =>

@@ -80,7 +80,7 @@ import { RouterLink } from '@angular/router';
               <input pInputText id="stanytsia" formControlName="stanytsia" maxlength="120" autocomplete="address-level2" />
             </div>
             <div class="flex flex-col gap-2">
-              <label for="regionOrCountry">Край / країна</label>
+              <label for="regionOrCountry">Край</label>
               <input pInputText id="regionOrCountry" formControlName="regionOrCountry" maxlength="120" autocomplete="country-name" />
             </div>
           </div>
@@ -92,8 +92,15 @@ import { RouterLink } from '@angular/router';
 
           @if (form.get('isKurinLeaderCandidate')?.value) {
             <div class="flex flex-col gap-2">
-              <label for="kurin">Число або назва куреня</label>
-              <input pInputText id="kurin" formControlName="claimedKurinNameOrNumber" />
+              <label for="kurin">Число куреня</label>
+              <input
+                pInputText
+                id="kurin"
+                formControlName="claimedKurinNameOrNumber"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                (input)="onKurinNumberInput($event)"
+              />
             </div>
           }
 
@@ -141,9 +148,19 @@ export class WaitlistRegistrationComponent {
       dateOfBirth: [null, Validators.required],
       stanytsia: ['', [Validators.required, Validators.maxLength(120)]],
       regionOrCountry: ['', [Validators.required, Validators.maxLength(120)]],
-      isKurinLeaderCandidate: [false],
-      claimedKurinNameOrNumber: ['']
+      isKurinLeaderCandidate: [false, Validators.requiredTrue],
+      claimedKurinNameOrNumber: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]]
     });
+  }
+
+  onKurinNumberInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '');
+
+    if (input.value !== digitsOnly) {
+      input.value = digitsOnly;
+      this.form.get('claimedKurinNameOrNumber')?.setValue(digitsOnly, { emitEvent: false });
+    }
   }
 
   onSubmit() {
