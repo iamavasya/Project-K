@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -19,6 +20,14 @@ namespace ProjectK.API.Controllers.KurinModule
     [ApiController]
     public class GroupController : ControllerBase
     {
+        private const long MaxSilhouetteFileSizeBytes = 5 * 1024 * 1024;
+        private static readonly ISet<string> AllowedSilhouetteContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+        };
+
         private readonly IMediator _mediator;
 
         public GroupController(IMediator mediator)
@@ -86,6 +95,53 @@ namespace ProjectK.API.Controllers.KurinModule
         {
             var command = new UpsertGroup(groupKey, request.Name, request.Description);
             var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpPost("{groupKey:guid}/silhouette")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
+        [RequestSizeLimit(MaxSilhouetteFileSizeBytes)]
+        [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] IFormFile? file, CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { error = "MissingImage", message = "Image file is required." });
+            }
+
+            if (file.Length > MaxSilhouetteFileSizeBytes)
+            {
+                return BadRequest(new { error = "ImageTooLarge", message = "Image file must be 5 MB or smaller." });
+            }
+
+            if (!AllowedSilhouetteContentTypes.Contains(file.ContentType))
+            {
+                return BadRequest(new { error = "UnsupportedImageType", message = "Allowed image types are PNG, JPEG and WebP." });
+            }
+
+            var bytes = await file.ToByteArrayAsync(cancellationToken);
+            if (bytes == null || bytes.Length == 0)
+            {
+                return BadRequest(new { error = "MissingImage", message = "Image file is required." });
+            }
+
+            var command = new UploadGroupSilhouette(groupKey, bytes, file.FileName);
+            var response = await _mediator.Send(command, cancellationToken);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpDelete("{groupKey:guid}/silhouette")]
+        [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
+        [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteSilhouette(Guid groupKey, CancellationToken cancellationToken)
+        {
+            var command = new DeleteGroupSilhouette(groupKey);
+            var response = await _mediator.Send(command, cancellationToken);
             return response.ToActionResult(this);
         }
 

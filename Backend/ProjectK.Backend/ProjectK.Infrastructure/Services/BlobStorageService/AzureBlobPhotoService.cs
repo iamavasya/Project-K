@@ -179,7 +179,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             CancellationToken cancellationToken)
         {
             var originalSize = photoBytes.Length;
-            string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
 
             try
             {
@@ -198,9 +197,8 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Failed to encode image {FileName} as PNG. Proceeding with original bytes.", fileName);
-                finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
-                return new PreparedBlobUpload(photoBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
+                _logger?.LogWarning(ex, "Failed to encode image {FileName} as PNG.", fileName);
+                throw new InvalidOperationException("Uploaded file is not a valid image.", ex);
             }
         }
 

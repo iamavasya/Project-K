@@ -18,6 +18,7 @@ describe('GroupService', () => {
     groupKey: 'g1',
     name: 'Alpha',
     description: 'Group description',
+    silhouetteUrl: 'group-silhouettes/2026/05/27/test.png',
     kurinKey: 'k1',
     kurinNumber: 10
   };
@@ -132,6 +133,30 @@ describe('GroupService', () => {
     const req = httpMock.expectOne(`${baseUrl}/g1`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+  });
+
+  it('uploadSilhouette sends multipart POST to /group/:key/silhouette', () => {
+    const file = new File(['image'], 'silhouette.png', { type: 'image/png' });
+
+    service.uploadSilhouette('g1', file).subscribe(res => {
+      expect(res).toEqual(mockGroup);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/silhouette`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBeTrue();
+    expect((req.request.body as FormData).get('file')).toBe(file);
+    req.flush(mockGroup);
+  });
+
+  it('deleteSilhouette sends DELETE to /group/:key/silhouette', () => {
+    service.deleteSilhouette('g1').subscribe(res => {
+      expect(res).toEqual({ ...mockGroup, silhouetteUrl: null });
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/silhouette`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ ...mockGroup, silhouetteUrl: null });
   });
 
   it('getMentors sends GET to /group/:key/mentors', () => {

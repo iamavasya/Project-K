@@ -3,5 +3,6 @@ export interface GroupDto {
   kurinKey: string;
   name: string;
   description?: string | null;
+  silhouetteUrl?: string | null;
   kurinNumber: number;
 }

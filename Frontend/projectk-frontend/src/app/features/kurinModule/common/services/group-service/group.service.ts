@@ -55,6 +55,21 @@ export class GroupService {
     );
   }
 
+  uploadSilhouette(groupKey: string, file: File | Blob): Observable<GroupDto> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<GroupDto>(`${this.apiUrl}/${groupKey}/silhouette`, formData).pipe(
+      this.invalidateAfterGroupMutation()
+    );
+  }
+
+  deleteSilhouette(groupKey: string): Observable<GroupDto> {
+    return this.http.delete<GroupDto>(`${this.apiUrl}/${groupKey}/silhouette`).pipe(
+      this.invalidateAfterGroupMutation()
+    );
+  }
+
   delete(groupKey: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${groupKey}`).pipe(
       this.invalidateAfterGroupMutation()

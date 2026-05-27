@@ -158,12 +158,14 @@ namespace ProjectK.API
                 PublicBaseUrl = builder.Configuration["BlobStorage:PublicBaseUrl"]
             };
             builder.Services.AddScoped<MemberPhotoReferenceProvider>();
+            builder.Services.AddScoped<GroupSilhouetteReferenceProvider>();
             builder.Services.AddScoped<PublicAnnouncementImageReferenceProvider>();
             builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
             {
                 var providers = new IPhotoReferenceProvider[]
                 {
                     sp.GetRequiredService<MemberPhotoReferenceProvider>(),
+                    sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
                     sp.GetRequiredService<PublicAnnouncementImageReferenceProvider>()
                 };
 

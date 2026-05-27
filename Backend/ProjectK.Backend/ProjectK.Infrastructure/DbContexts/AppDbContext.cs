@@ -67,6 +67,8 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasKey(e => e.GroupKey);
                 entity.Property(e => e.Description)
                     .HasMaxLength(1000);
+                entity.Property(e => e.SilhouetteBlobName)
+                    .HasMaxLength(500);
                 entity.HasOne(e => e.Kurin)
                       .WithMany(k => k.Groups)
                       .HasForeignKey(e => e.KurinKey)

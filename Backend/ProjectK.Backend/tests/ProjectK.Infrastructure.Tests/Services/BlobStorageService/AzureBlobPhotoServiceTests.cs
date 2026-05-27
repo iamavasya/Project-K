@@ -173,22 +173,17 @@ namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService
         }
 
         [Fact]
-        public async Task PrepareUploadAsync_ShouldFallbackToOriginalBytes_WhenPngEncodingFails()
+        public async Task PrepareUploadAsync_ShouldRejectInvalidGroupSilhouetteImage()
         {
             // Arrange
             byte[] invalidImageBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
 
-            // Act
-            var result = await _service.PrepareUploadAsync(
-                invalidImageBytes,
-                "broken.webp",
-                BlobUploadContext.GroupSilhouette,
-                CancellationToken.None);
-
-            // Assert
-            Assert.Equal(".webp", result.FinalExtension);
-            Assert.Equal(invalidImageBytes, result.ProcessedBytes);
-            Assert.Equal("image/webp", result.ContentType);
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _service.PrepareUploadAsync(
+                    invalidImageBytes,
+                    "broken.webp",
+                    BlobUploadContext.GroupSilhouette,
+                    CancellationToken.None));
         }
     }
 }
