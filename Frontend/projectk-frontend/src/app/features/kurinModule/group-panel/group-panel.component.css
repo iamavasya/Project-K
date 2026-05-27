@@ -14,6 +14,11 @@
 }
 
 .group-hero {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.group-hero__main {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -41,18 +46,43 @@
 }
 
 .group-hero__description {
-    max-width: 48rem;
-    color: var(--p-text-color) !important;
+    display: grid;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--p-content-border-color);
+}
+
+.group-hero__description-label {
+    color: var(--p-text-muted-color);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.group-hero__description-text {
+    margin: 0;
+    color: var(--p-text-color);
     line-height: 1.5;
     overflow-wrap: anywhere;
     white-space: pre-line;
 }
 
+.group-hero__description-text--collapsed {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+.group-hero__description p-button {
+    justify-self: start;
+}
+
 .group-profile-form {
     display: grid;
     gap: 0.75rem;
-    margin-top: 0.75rem;
-    max-width: 48rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--p-content-border-color);
 }
 
 .group-profile-form label {
@@ -115,7 +145,7 @@
         margin-top: 1rem;
     }
 
-    .group-hero {
+    .group-hero__main {
         align-items: flex-start;
         flex-direction: column;
     }

@@ -129,6 +129,20 @@ describe('GroupPanelComponent', () => {
     expect(component.profileEditMode).toBeFalse();
   });
 
+  it('should collapse long description until toggled', () => {
+    component.group = {
+      ...group,
+      description: 'A'.repeat(component.descriptionCollapseLimit + 1)
+    };
+
+    expect(component.isDescriptionLong).toBeTrue();
+    expect(component.descriptionExpanded).toBeFalse();
+
+    component.toggleDescription();
+
+    expect(component.descriptionExpanded).toBeTrue();
+  });
+
   it('saveMentorAssignments should call assign and revoke based on diff', () => {
     component.initialMentorUserKeys = ['u1', 'u2'];
     component.selectedMentorUserKeys = ['u2', 'u3'];

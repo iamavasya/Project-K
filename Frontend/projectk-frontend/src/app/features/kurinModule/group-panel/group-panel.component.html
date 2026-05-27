@@ -1,43 +1,63 @@
 <div class="group-shell">
     <section class="group-hero group-tile">
-        <div class="group-hero__icon">
-            <app-group-chevron></app-group-chevron>
+        <div class="group-hero__main">
+            <div class="group-hero__icon">
+                <app-group-chevron></app-group-chevron>
+            </div>
+
+            <div class="group-hero__copy">
+                <span class="group-hero__eyebrow">Гурток</span>
+                <h1>{{ group?.name || 'Гурток' }}</h1>
+                @if (group?.kurinNumber) {
+                    <p>{{ group?.kurinNumber }} курінь</p>
+                }
+            </div>
+
+            <div class="group-actions">
+                @if (canEditGroupProfile && !profileEditMode) {
+                    <p-button label="Редагувати" (onClick)="startProfileEdit()" severity="secondary" icon="pi pi-pencil" />
+                }
+                @if (canManageMembers) {
+                    <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
+                }
+                @if (canManageMentors) {
+                    <p-button label="Виховники" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
+                }
+            </div>
         </div>
 
-        <div class="group-hero__copy">
-            <span class="group-hero__eyebrow">Гурток</span>
-            <h1>{{ group?.name || 'Гурток' }}</h1>
-            @if (group?.kurinNumber) {
-                <p>{{ group?.kurinNumber }} курінь</p>
-            }
-            @if (!profileEditMode && group?.description) {
-                <p class="group-hero__description">{{ group?.description }}</p>
-            }
-            @if (profileEditMode) {
-                <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="group-profile-form">
-                    <label>
-                        <span>Опис</span>
-                        <textarea pTextarea formControlName="description" rows="4" maxlength="1000"></textarea>
-                    </label>
-                    <div class="group-profile-actions">
-                        <p-button label="Скасувати" type="button" severity="secondary" variant="text" (onClick)="cancelProfileEdit()" />
-                        <p-button label="Зберегти" type="submit" icon="pi pi-save" [loading]="profileSaving" [disabled]="profileForm.invalid || profileSaving" />
-                    </div>
-                </form>
-            }
-        </div>
+        @if (!profileEditMode && descriptionText) {
+            <div class="group-hero__description">
+                <div class="group-hero__description-label">Опис</div>
+                <p
+                    class="group-hero__description-text"
+                    [class.group-hero__description-text--collapsed]="isDescriptionLong && !descriptionExpanded">
+                    {{ descriptionText }}
+                </p>
+                @if (isDescriptionLong) {
+                    <p-button
+                        type="button"
+                        severity="secondary"
+                        variant="text"
+                        [label]="descriptionExpanded ? 'Згорнути' : 'Розгорнути'"
+                        [icon]="descriptionExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                        (onClick)="toggleDescription()" />
+                }
+            </div>
+        }
 
-        <div class="group-actions">
-            @if (canEditGroupProfile && !profileEditMode) {
-                <p-button label="Редагувати" (onClick)="startProfileEdit()" severity="secondary" icon="pi pi-pencil" />
-            }
-            @if (canManageMembers) {
-                <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
-            }
-            @if (canManageMentors) {
-                <p-button label="Виховники" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
-            }
-        </div>
+        @if (profileEditMode) {
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="group-profile-form">
+                <label>
+                    <span>Опис</span>
+                    <textarea pTextarea formControlName="description" rows="4" maxlength="1000"></textarea>
+                </label>
+                <div class="group-profile-actions">
+                    <p-button label="Скасувати" type="button" severity="secondary" variant="text" (onClick)="cancelProfileEdit()" />
+                    <p-button label="Зберегти" type="submit" icon="pi pi-save" [loading]="profileSaving" [disabled]="profileForm.invalid || profileSaving" />
+                </div>
+            </form>
+        }
     </section>
 
     <section class="group-tile">

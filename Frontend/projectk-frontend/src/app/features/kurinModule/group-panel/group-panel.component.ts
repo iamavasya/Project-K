@@ -49,6 +49,9 @@ export class GroupPanelComponent implements OnInit {
   canEditGroupProfile = false;
   profileEditMode = false;
   profileSaving = false;
+  descriptionExpanded = false;
+
+  readonly descriptionCollapseLimit = 220;
 
   profileForm: FormGroup = this.fb.group({
     description: ['', Validators.maxLength(1000)]
@@ -76,6 +79,14 @@ export class GroupPanelComponent implements OnInit {
     return this.canCreateMembers;
   }
 
+  get descriptionText(): string {
+    return this.group?.description?.trim() ?? '';
+  }
+
+  get isDescriptionLong(): boolean {
+    return this.descriptionText.length > this.descriptionCollapseLimit;
+  }
+
   get mentorOptions(): { label: string; value: string; }[] {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey)
@@ -96,6 +107,7 @@ export class GroupPanelComponent implements OnInit {
     this.groupService.getByKey(this.groupKey).subscribe({
       next: (group) => {
         this.group = group;
+        this.descriptionExpanded = false;
         this.patchProfileForm(group);
         if (this.canManageMentors) {
           this.loadMentorManagementData();
@@ -146,6 +158,10 @@ export class GroupPanelComponent implements OnInit {
     }
   }
 
+  toggleDescription(): void {
+    this.descriptionExpanded = !this.descriptionExpanded;
+  }
+
   saveProfile(): void {
     if (!this.group || this.profileForm.invalid) {
       return;
@@ -161,6 +177,7 @@ export class GroupPanelComponent implements OnInit {
     this.groupService.update(this.groupKey, request).subscribe({
       next: (updated) => {
         this.group = updated;
+        this.descriptionExpanded = false;
         this.patchProfileForm(updated);
         this.profileEditMode = false;
         this.profileSaving = false;
