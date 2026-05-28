@@ -13,7 +13,9 @@ test.describe('Public onboarding', () => {
     await page.locator('#email').fill(`e2e.applicant.${Date.now()}@example.com`);
     await page.locator('#stanytsia').fill('E2E Stanytsia');
     await page.locator('#regionOrCountry').fill('E2E Region');
-    await page.locator('#phone input').pressSequentially('501112233', { delay: 30 });
+    const phoneInput = page.locator('#phone input, input#phone');
+    await phoneInput.click();
+    await phoneInput.pressSequentially('0501112233', { delay: 30 });
     const dateOfBirth = page.locator('#dob input');
     await dateOfBirth.click();
     await dateOfBirth.fill('01.01.2000');

@@ -40,7 +40,9 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#email').fill(managerEmail);
       await page.locator('#stanytsia').fill('Flow Stanytsia');
       await page.locator('#regionOrCountry').fill('Flow Region');
-      await page.locator('#phone input').pressSequentially('501112233', { delay: 10 });
+      const phoneInput = page.locator('#phone input, input#phone');
+      await phoneInput.click();
+      await phoneInput.pressSequentially('0501112233', { delay: 10 });
 
       const dateOfBirth = page.locator('#dob input');
       await dateOfBirth.click();
