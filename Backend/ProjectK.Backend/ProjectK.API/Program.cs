@@ -36,6 +36,8 @@ namespace ProjectK.API
 {
     public static class Program
     {
+        private const string UnknownValue = "unknown";
+
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -59,10 +61,10 @@ namespace ProjectK.API
                         .WriteTo.TelegramDevAlerts(
                             devAlerts,
                             context.HostingEnvironment.EnvironmentName,
-                            context.Configuration["ReleaseInfo:Version"] ?? "unknown",
+                            context.Configuration["ReleaseInfo:Version"] ?? UnknownValue,
                             context.Configuration["ReleaseInfo:Codename"]
                                 ?? context.Configuration["ReleaseInfo:CodeName"]
-                                ?? "unknown"));
+                                ?? UnknownValue));
                 }
             });
 
@@ -186,92 +188,7 @@ namespace ProjectK.API
             builder.Services.AddHostedService<OrphanPhotoCleanupService>();
             // --- end Blob storage DI ---
 
-            builder.Services.AddRateLimiter(options =>
-            {
-                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-                // Global limit
-                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                {
-                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
-                    if (!string.IsNullOrEmpty(bypassKey) && 
-                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) && 
-                        providedKey == bypassKey)
-                    {
-                        return RateLimitPartition.GetNoLimiter("Bypass");
-                    }
-
-                    return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                            ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                            ?? httpContext.Request.Headers.Host.ToString(),
-                        factory: partition => new FixedWindowRateLimiterOptions
-                        {
-                            AutoReplenishment = true,
-                            PermitLimit = 300,
-                            QueueLimit = 0,
-                            Window = TimeSpan.FromMinutes(1)
-                        });
-                });
-
-                // Strict limit for Auth (Login/Register)
-                options.AddPolicy("StrictAuthLimit", httpContext =>
-                {
-                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
-                    if (!string.IsNullOrEmpty(bypassKey) && 
-                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) && 
-                        providedKey == bypassKey)
-                    {
-                        return RateLimitPartition.GetNoLimiter("Bypass");
-                    }
-
-                    return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-                        factory: partition => new FixedWindowRateLimiterOptions
-                        {
-                            AutoReplenishment = true,
-                            PermitLimit = 5,
-                            QueueLimit = 0,
-                            Window = TimeSpan.FromMinutes(5)
-                        });
-                });
-
-                // Account security endpoints have a lower per-user/IP budget because they perform
-                // sensitive verification or token-producing operations.
-                options.AddPolicy("AccountSecurityLimit", httpContext =>
-                {
-                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
-                    if (!string.IsNullOrEmpty(bypassKey) &&
-                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) &&
-                        providedKey == bypassKey)
-                    {
-                        return RateLimitPartition.GetNoLimiter("Bypass");
-                    }
-
-                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                        ?? "anonymous";
-
-                    return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: partitionKey,
-                        factory: partition => new FixedWindowRateLimiterOptions
-                        {
-                            AutoReplenishment = true,
-                            PermitLimit = 10,
-                            QueueLimit = 0,
-                            Window = TimeSpan.FromMinutes(5)
-                        });
-                });
-
-                options.OnRejected = async (context, token) =>
-                {
-                    var endpoint = context.HttpContext.GetEndpoint();
-                    var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
-                    var activityLogger = context.HttpContext.RequestServices.GetService<IActivityLogger>();
-                    activityLogger?.ReportRateLimitRejection(policyName);
-                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
-                };
-            });
+            ConfigureRateLimiting(builder.Services, builder.Configuration);
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient();
@@ -355,8 +272,8 @@ namespace ProjectK.API
             app.MapGet("/health", (IConfiguration config) => Results.Ok(new
             {
                 status = "ready",
-                version = config["ReleaseInfo:Version"] ?? "unknown",
-                codeName = config["ReleaseInfo:CodeName"] ?? "unknown",
+                version = config["ReleaseInfo:Version"] ?? UnknownValue,
+                codeName = config["ReleaseInfo:CodeName"] ?? UnknownValue,
                 utc = DateTimeOffset.UtcNow
             }));
 
@@ -431,6 +348,99 @@ namespace ProjectK.API
 
                     AnsiConsole.MarkupLine("[green]✔ Startup successful![/]");
                     await Task.Delay(2000);
+        }
+
+        private static void ConfigureRateLimiting(IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                {
+                    var bypassPartition = TryGetBypassPartition(httpContext, configuration);
+                    if (bypassPartition is not null)
+                    {
+                        return bypassPartition.Value;
+                    }
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 300,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1)
+                        });
+                });
+
+                options.AddPolicy<string>("StrictAuthLimit", httpContext =>
+                {
+                    var bypassPartition = TryGetBypassPartition(httpContext, configuration);
+                    if (bypassPartition is not null)
+                    {
+                        return bypassPartition.Value;
+                    }
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 5,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(5)
+                        });
+                });
+
+                options.AddPolicy<string>("AccountSecurityLimit", httpContext =>
+                {
+                    var bypassPartition = TryGetBypassPartition(httpContext, configuration);
+                    if (bypassPartition is not null)
+                    {
+                        return bypassPartition.Value;
+                    }
+
+                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                        ?? "anonymous";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: partitionKey,
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 10,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(5)
+                        });
+                });
+
+                options.OnRejected = async (context, token) =>
+                {
+                    var endpoint = context.HttpContext.GetEndpoint();
+                    var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                    var activityLogger = context.HttpContext.RequestServices.GetService<IActivityLogger>();
+                    activityLogger?.ReportRateLimitRejection(policyName);
+                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
+                };
+            });
+        }
+
+        private static RateLimitPartition<string>? TryGetBypassPartition(HttpContext httpContext, IConfiguration configuration)
+        {
+            var bypassKey = configuration["RateLimitBypassKey"];
+            if (!string.IsNullOrEmpty(bypassKey) &&
+                httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) &&
+                providedKey == bypassKey)
+            {
+                return RateLimitPartition.GetNoLimiter("Bypass");
+            }
+
+            return null;
         }
     }
 }

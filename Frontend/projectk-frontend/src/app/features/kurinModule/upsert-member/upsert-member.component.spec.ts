@@ -1,17 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { UpsertMemberComponent } from './upsert-member.component';
 import { ActivatedRoute, Router, convertToParamMap, ParamMap, Navigation } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ConfirmationService } from 'primeng/api';
 import { MemberDto } from '../common/models/memberDto';
-import { UpsertMemberDto } from '../common/models/requests/member/upsertMemberDto';
 import { FileSelectEvent } from 'primeng/fileupload';
 import { ImageCroppedEvent } from 'ngx-image-cropper';
 import { HttpClient } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { PermissionService } from '../../authModule/services/permission.service';
 
 describe('UpsertMemberComponent', () => {
@@ -20,6 +19,7 @@ describe('UpsertMemberComponent', () => {
 
   let routeParamMap$: BehaviorSubject<ParamMap>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let currentNavigationSignal: WritableSignal<Navigation | null>;
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
   let locationSpy: jasmine.SpyObj<Location>;
@@ -49,8 +49,9 @@ describe('UpsertMemberComponent', () => {
 
   beforeEach(async () => {
     routeParamMap$ = new BehaviorSubject(convertToParamMap({ groupKey, memberKey }));
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'getCurrentNavigation']);
-    routerSpy.getCurrentNavigation.and.returnValue(null);
+    currentNavigationSignal = signal<Navigation | null>(null);
+    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
@@ -76,8 +77,7 @@ describe('UpsertMemberComponent', () => {
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: Location, useValue: locationSpy },
         { provide: PermissionService, useValue: permissionServiceSpy },
-        { provide: HttpClient, useValue: {} },
-        provideNoopAnimations()
+        { provide: HttpClient, useValue: {} }
       ]
     }).compileComponents();
   });
@@ -151,24 +151,24 @@ describe('UpsertMemberComponent', () => {
       expect(component.groupKey).toBe(groupKey);
     });
 
-    it('should detect navigation from member page via getCurrentNavigation', () => {
+    it('should detect navigation from member page via currentNavigation', () => {
       const mockNavigation: Partial<Navigation> = {
         extras: { state: { fromMember: true } }
       };
-      routerSpy.getCurrentNavigation.and.returnValue(mockNavigation as Navigation);
+      currentNavigationSignal.set(mockNavigation as Navigation);
       create();
       expect(component['cameFromMember']).toBeTrue();
     });
 
     it('should detect navigation from member page via history.state', () => {
-      routerSpy.getCurrentNavigation.and.returnValue(null);
+      currentNavigationSignal.set(null);
       spyOnProperty(history, 'state', 'get').and.returnValue({ fromMember: true });
       create();
       expect(component['cameFromMember']).toBeTrue();
     });
 
     it('should not set cameFromMember when state is missing', () => {
-      routerSpy.getCurrentNavigation.and.returnValue(null);
+      currentNavigationSignal.set(null);
       spyOnProperty(history, 'state', 'get').and.returnValue({});
       create();
       expect(component['cameFromMember']).toBeFalse();
@@ -219,7 +219,7 @@ describe('UpsertMemberComponent', () => {
       component.submit();
 
       expect(memberServiceSpy.create).toHaveBeenCalledTimes(1);
-      const [dtoArg, fileArg] = memberServiceSpy.create.calls.mostRecent().args as [UpsertMemberDto, Blob | null];
+      const [dtoArg, fileArg] = memberServiceSpy.create.calls.mostRecent().args;
       
       // Use objectContaining to allow for other default properties
       expect(dtoArg).toEqual(jasmine.objectContaining({
@@ -261,7 +261,7 @@ describe('UpsertMemberComponent', () => {
       // Use noon to avoid timezone shifts
       component.member.dateOfBirth = new Date(2011, 0, 2, 12, 0, 0);
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
       expect(dto.dateOfBirth).toBe('2011-01-02');
     });
 
@@ -269,7 +269,7 @@ describe('UpsertMemberComponent', () => {
       create();
       component.member.dateOfBirth = null;
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
       expect(dto.dateOfBirth).toBeNull();
     });
     it('should handle string dateOfBirth in yyyy-MM-dd format', () => {
@@ -277,7 +277,7 @@ describe('UpsertMemberComponent', () => {
       // Pass string to match test description
       component.member.dateOfBirth = new Date('2020-05-15');
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
       expect(dto.dateOfBirth).toBe('2020-05-15');
     });
 
@@ -302,7 +302,7 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0];
       expect(dtoArg.groupKey).toBeUndefined();
       expect(dtoArg.kurinKey).toBe('kurin-123');
     });
@@ -317,7 +317,7 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0] as UpsertMemberDto;
+      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0];
       expect(dtoArg.createUserAccount).toBeTrue();
     });
   });
@@ -330,9 +330,8 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const args = memberServiceSpy.update.calls.mostRecent().args as [string, UpsertMemberDto, Blob | null];
-      expect(args[0]).toBe(memberKey);
-      const dtoArg = args[1];
+      const [updatedMemberKey, dtoArg] = memberServiceSpy.update.calls.mostRecent().args;
+      expect(updatedMemberKey).toBe(memberKey);
       expect(dtoArg.firstName).toBe('Updated');
       expect(dtoArg.removeProfilePhoto).toBeTrue();
     });
@@ -345,7 +344,7 @@ describe('UpsertMemberComponent', () => {
       component.member.firstName = 'Updated';
       component.submit();
 
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1] as UpsertMemberDto;
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
       expect(dto.email).toBe(loadedMember.email);
     });
 
@@ -354,7 +353,7 @@ describe('UpsertMemberComponent', () => {
       // Use noon to avoid timezone shifts
       component.member.dateOfBirth = new Date(1995, 11, 24, 12, 0, 0);
       component.submit();
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1] as UpsertMemberDto;
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
       expect(dto.dateOfBirth).toBe('1995-12-24');
     });
 
@@ -362,7 +361,7 @@ describe('UpsertMemberComponent', () => {
       const mockNavigation: Partial<Navigation> = {
         extras: { state: { fromMember: true } }
       };
-      routerSpy.getCurrentNavigation.and.returnValue(mockNavigation as Navigation);
+      currentNavigationSignal.set(mockNavigation as Navigation);
       create();
 
       component.submit();
@@ -386,8 +385,8 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const args = memberServiceSpy.update.calls.mostRecent().args as [string, UpsertMemberDto, Blob | null];
-      expect(args[2]).toBe(file);
+      const [, , fileArg] = memberServiceSpy.update.calls.mostRecent().args;
+      expect(fileArg).toBe(file);
     });
 
     it('should log and handle update error', () => {
@@ -758,8 +757,7 @@ describe('UpsertMemberComponent', () => {
       component.member.firstName = 'Updated';
       component.submit();
 
-      const args = memberServiceSpy.update.calls.mostRecent().args as [string, UpsertMemberDto, Blob | null];
-      const dto = args[1];
+      const [, dto] = memberServiceSpy.update.calls.mostRecent().args;
       expect(dto.removeProfilePhoto).toBeTrue();
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey], { replaceUrl: true });
     });

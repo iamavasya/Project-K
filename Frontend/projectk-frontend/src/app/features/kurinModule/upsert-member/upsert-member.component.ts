@@ -130,7 +130,8 @@ export class UpsertMemberComponent implements OnInit {
       this.setupAccordionAndToggles();
       this.isCreate = true;
     }
-    const navState = (this.router.getCurrentNavigation()?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
+    const currentNavigation = this.router.currentNavigation();
+    const navState = (currentNavigation?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
     this.cameFromMember = navState?.fromMember === true;
     this.canManageWarnings = this.resolveCanManageWarnings();
   }
