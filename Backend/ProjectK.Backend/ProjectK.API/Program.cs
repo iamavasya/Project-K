@@ -31,6 +31,8 @@ using Microsoft.OpenApi;
 using ProjectK.API.Services.TelegramDevAlerts;
 using ProjectK.Common.Models.Settings;
 using ProjectK.API.Services.Authorization;
+using ProjectK.API.Services.Reports;
+using QuestPDF.Infrastructure;
 
 namespace ProjectK.API
 {
@@ -41,6 +43,7 @@ namespace ProjectK.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            ConfigureQuestPdfLicense(builder.Configuration);
 
             builder.Host.UseSerilog((context, services, configuration) =>
             {
@@ -193,6 +196,9 @@ namespace ProjectK.API
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<ProjectK.API.Services.GeoIPService>();
+            builder.Services.AddScoped<KurinReportDataService>();
+            builder.Services.AddScoped<KurinReportMediaService>();
+            builder.Services.AddSingleton<KurinReportPdfRenderer>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly)
@@ -273,7 +279,7 @@ namespace ProjectK.API
             {
                 status = "ready",
                 version = config["ReleaseInfo:Version"] ?? UnknownValue,
-                codeName = config["ReleaseInfo:CodeName"] ?? UnknownValue,
+                codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? UnknownValue,
                 utc = DateTimeOffset.UtcNow
             }));
 
@@ -285,9 +291,9 @@ namespace ProjectK.API
         private static void PrintTitle(IConfiguration config)
         {
             var version = config["ReleaseInfo:Version"] ?? "v0.0.0";
-            var codeName = config["ReleaseInfo:CodeName"] ?? "Unknown";
+            var codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? "Unknown";
 
-            AnsiConsole.Write(new FigletText("Project K").Color(Color.Green));
+            AnsiConsole.Write(new FigletText("Project K").Color(Spectre.Console.Color.Green));
             
             AnsiConsole.Write(new Rule($"[yellow]{version} \"{codeName}\"[/]") 
             { 
@@ -297,6 +303,16 @@ namespace ProjectK.API
             AnsiConsole.WriteLine();
 
             Thread.Sleep(2000);
+        }
+
+        private static void ConfigureQuestPdfLicense(IConfiguration configuration)
+        {
+            QuestPDF.Settings.License = Enum.TryParse<LicenseType>(
+                configuration["QuestPdf:License"],
+                ignoreCase: true,
+                out var license)
+                    ? license
+                    : LicenseType.Community;
         }
 
         private static void ValidateTelegramConfiguration(WebApplication app)

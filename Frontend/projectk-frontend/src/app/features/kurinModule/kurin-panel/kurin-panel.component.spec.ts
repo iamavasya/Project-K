@@ -46,7 +46,7 @@ describe('KurinPanelComponent', () => {
       'getAllByKurinKey', 'getMentorAssignments', 'assignMentor', 'revokeMentor', 'create', 'update', 'delete'
     ]);
     kurinService = jasmine.createSpyObj<KurinService>('KurinService', [
-      'getByKey'
+      'getByKey', 'downloadReportPdf'
     ]);
     memberService = jasmine.createSpyObj<MemberService>('MemberService', [
       'getAll', 'getKVMembers', 'getMentorCandidates'
@@ -149,6 +149,34 @@ describe('KurinPanelComponent', () => {
       expect(component.actions.length).toBe(2);
       expect(component.actions[0].label).toBe('Редагувати');
       expect(component.actions[1].label).toBe('Видалити');
+    });
+  });
+
+  describe('kurinEditMenuItems', () => {
+    it('exposes kurin profile and report export actions', () => {
+      component.kurinKey = 'k1';
+      component.canEditKurinProfile = true;
+      component.canManageGroups = true;
+
+      expect(component.kurinEditMenuItems.map(item => item.label)).toEqual([
+        'Редагування даних куреня',
+        'Експорт звіту куреня'
+      ]);
+    });
+
+    it('keeps same reference until menu state changes', () => {
+      component.kurinKey = 'k1';
+      component.canEditKurinProfile = true;
+      component.canManageGroups = true;
+
+      const first = component.kurinEditMenuItems;
+      const second = component.kurinEditMenuItems;
+
+      expect(second).toBe(first);
+
+      component.reportDownloading = true;
+
+      expect(component.kurinEditMenuItems).not.toBe(first);
     });
   });
 

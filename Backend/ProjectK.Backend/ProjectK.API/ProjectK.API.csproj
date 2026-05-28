@@ -10,6 +10,7 @@
     <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="AutoMapper.Collection" Version="13.0.0" />
     <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="13.0.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
@@ -22,6 +23,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="QuestPDF" Version="2026.5.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Sensitive" Version="2.1.0" />
     <PackageReference Include="Serilog.Filters.Expressions" Version="2.1.0" />

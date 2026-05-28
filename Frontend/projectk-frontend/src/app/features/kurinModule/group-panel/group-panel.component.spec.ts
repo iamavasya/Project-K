@@ -170,6 +170,22 @@ describe('GroupPanelComponent', () => {
     ]);
   });
 
+  it('groupEditMenuItems should keep same reference until menu state changes', () => {
+    component.group = group;
+    component.canEditGroupProfile = true;
+    component.canCreateMembers = true;
+    permissionServiceSpy.canManageMentors.and.returnValue(true);
+
+    const first = component.groupEditMenuItems;
+    const second = component.groupEditMenuItems;
+
+    expect(second).toBe(first);
+
+    component.group = { ...group, silhouetteUrl: 'group-silhouettes/2026/05/27/test.png' };
+
+    expect(component.groupEditMenuItems).not.toBe(first);
+  });
+
   it('onSilhouetteSelected should open editor for valid image', () => {
     const file = new File(['image'], 'silhouette.png', { type: 'image/png' });
     const input = document.createElement('input');

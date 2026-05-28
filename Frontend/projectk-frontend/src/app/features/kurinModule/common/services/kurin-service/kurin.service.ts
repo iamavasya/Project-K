@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../../environments/environment';
 import { KurinDto } from '../../models/kurinDto';
 import { Observable } from 'rxjs/internal/Observable';
@@ -29,6 +29,13 @@ export class KurinService {
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<KurinDto[]>(`${this.apiUrl}/kurins`)
     );
+  }
+
+  downloadReportPdf(kurinKey: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiUrl}/${kurinKey}/report/pdf`, {
+      observe: 'response',
+      responseType: 'blob'
+    });
   }
 
   createKurin(kurin: KurinDto): Observable<KurinDto> {

@@ -83,6 +83,24 @@ describe('KurinService', () => {
     expect(result).toEqual(created);
   });
 
+  it('downloadReportPdf should request report as blob', () => {
+    const kurinKey = 'k1';
+    let result: Blob | null | undefined;
+
+    service.downloadReportPdf(kurinKey).subscribe(response => {
+      result = response.body;
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/${kurinKey}/report/pdf`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+
+    const blob = new Blob(['%PDF'], { type: 'application/pdf' });
+    req.flush(blob);
+
+    expect(result).toBe(blob);
+  });
+
   it('updateKurin should PUT to /kurin/:kurinKey with profile payload and return updated entity', () => {
     const input = {
       kurinKey: 'k1',

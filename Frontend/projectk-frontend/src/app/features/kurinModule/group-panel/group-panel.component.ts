@@ -20,6 +20,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
+import { MenuItemsCache } from '../common/functions/menuItemsCache';
 
 @Component({
   selector: 'app-group-panel',
@@ -81,8 +82,7 @@ export class GroupPanelComponent implements OnInit {
   readonly descriptionCollapseLimit = 220;
   readonly silhouetteMaxBytes = 5 * 1024 * 1024;
   private readonly allowedSilhouetteTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
-  private groupEditMenuItemsCache: MenuItem[] = [];
-  private groupEditMenuStateKey = '';
+  private readonly groupEditMenuCache = new MenuItemsCache();
 
   profileForm: FormGroup = this.fb.group({
     description: ['', Validators.maxLength(1000)]
@@ -122,20 +122,15 @@ export class GroupPanelComponent implements OnInit {
   }
 
   get groupEditMenuItems(): MenuItem[] {
-    const stateKey = [
-      this.canEditGroupProfile,
-      this.canManageMembers,
-      this.canManageMentors,
-      !!this.group?.silhouetteUrl,
-      this.silhouetteSaving
-    ].join('|');
-
-    if (stateKey !== this.groupEditMenuStateKey) {
-      this.groupEditMenuStateKey = stateKey;
-      this.groupEditMenuItemsCache = this.buildGroupEditMenuItems();
-    }
-
-    return this.groupEditMenuItemsCache;
+    return this.groupEditMenuCache.get(
+      [
+        this.canEditGroupProfile,
+        this.canManageMembers,
+        this.canManageMentors,
+        !!this.group?.silhouetteUrl,
+        this.silhouetteSaving
+      ],
+      () => this.buildGroupEditMenuItems());
   }
 
   private buildGroupEditMenuItems(): MenuItem[] {

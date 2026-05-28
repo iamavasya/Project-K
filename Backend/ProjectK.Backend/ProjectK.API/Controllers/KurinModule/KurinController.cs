@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Helpers;
+using ProjectK.API.Services.Reports;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
@@ -22,10 +23,17 @@ namespace ProjectK.API.Controllers.KurinModule
     public class KurinController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly KurinReportDataService _kurinReportDataService;
+        private readonly KurinReportPdfRenderer _kurinReportPdfRenderer;
 
-        public KurinController(IMediator mediator)
+        public KurinController(
+            IMediator mediator,
+            KurinReportDataService kurinReportDataService,
+            KurinReportPdfRenderer kurinReportPdfRenderer)
         {
             _mediator = mediator;
+            _kurinReportDataService = kurinReportDataService;
+            _kurinReportPdfRenderer = kurinReportPdfRenderer;
         }
 
         [Authorize(Policy = "RequireMentor")]
@@ -48,6 +56,25 @@ namespace ProjectK.API.Controllers.KurinModule
             var request = new GetKurinByKey(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireManager")]
+        [HttpGet("{kurinKey:guid}/report/pdf")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/pdf")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ExportReportPdf(Guid kurinKey, CancellationToken cancellationToken)
+        {
+            var report = await _kurinReportDataService.BuildAsync(kurinKey, cancellationToken);
+            if (report is null)
+            {
+                return NotFound();
+            }
+
+            var bytes = _kurinReportPdfRenderer.Render(report);
+            var fileName = $"kurin-{report.Kurin.Number}-report-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pdf";
+
+            return File(bytes, "application/pdf", fileName);
         }
 
         [Authorize(Policy = "RequireAdmin")]

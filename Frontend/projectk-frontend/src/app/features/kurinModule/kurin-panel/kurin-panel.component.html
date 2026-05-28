@@ -22,14 +22,16 @@
                     }
                 </div>
 
-                @if (canEditKurinProfile && !profileEditMode) {
+                @if (hasKurinEditActions && !profileEditMode) {
+                    <p-menu #kurinEditMenu [model]="kurinEditMenuItems" [popup]="true" appendTo="body" />
                     <p-button
                         class="edit-profile-action"
                         styleClass="edit-profile-button"
                         label="Редагувати"
                         icon="pi pi-pencil"
                         severity="secondary"
-                        (onClick)="startProfileEdit()" />
+                        [loading]="reportDownloading"
+                        (onClick)="kurinEditMenu.toggle($event)" />
                 }
             </div>
 

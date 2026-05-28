@@ -25,7 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
         public KurinControllerTests()
         {
             _mediatorMock = new Mock<IMediator>();
-            _controller = new KurinController(_mediatorMock.Object);
+            _controller = new KurinController(_mediatorMock.Object, null!, null!);
         }
 
         [Fact]

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpResponse } from '@angular/common/http';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -10,6 +11,7 @@ import { GroupDto } from '../common/models/groupDto';
 import { SplitButton } from 'primeng/splitbutton';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { MenuItem } from 'primeng/api';
+import { MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -22,6 +24,7 @@ import { KurinDto } from '../common/models/kurinDto';
 import { OnboardingService, ZbtStats } from '../../authModule/services/onboarding.service';
 import { KvPanelComponent } from '../common/components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
+import { MenuItemsCache } from '../common/functions/menuItemsCache';
 
 @Component({
   selector: 'app-kurin-panel',
@@ -32,6 +35,7 @@ import { LeadershipPanelComponent } from '../common/components/leadership/leader
     InputTextModule,
     TextareaModule,
     SplitButton,
+    MenuModule,
     ManagePanel,
     MessageModule,
     KurinNumberComponent,
@@ -67,9 +71,11 @@ export class KurinPanelComponent implements OnInit {
   canEditKurinProfile = false;
   profileEditMode = false;
   profileSaving = false;
+  reportDownloading = false;
   descriptionExpanded = false;
 
   readonly descriptionCollapseLimit = 360;
+  private readonly kurinEditMenuCache = new MenuItemsCache();
 
   profileForm: FormGroup = this.fb.group({
     stanytsia: ['', Validators.maxLength(120)],
@@ -121,6 +127,44 @@ export class KurinPanelComponent implements OnInit {
 
   get isDescriptionLong(): boolean {
     return this.descriptionText.length > this.descriptionCollapseLimit;
+  }
+
+  get hasKurinEditActions(): boolean {
+    return this.canEditKurinProfile || this.canManageGroups;
+  }
+
+  get kurinEditMenuItems(): MenuItem[] {
+    return this.kurinEditMenuCache.get(
+      [
+        this.canEditKurinProfile,
+        this.canManageGroups,
+        this.reportDownloading,
+        this.kurinKey
+      ],
+      () => this.buildKurinEditMenuItems());
+  }
+
+  private buildKurinEditMenuItems(): MenuItem[] {
+    const items: MenuItem[] = [];
+
+    if (this.canEditKurinProfile) {
+      items.push({
+        label: 'Редагування даних куреня',
+        icon: 'pi pi-pencil',
+        command: () => this.startProfileEdit()
+      });
+    }
+
+    if (this.canManageGroups) {
+      items.push({
+        label: 'Експорт звіту куреня',
+        icon: 'pi pi-file-pdf',
+        disabled: this.reportDownloading || !this.kurinKey,
+        command: () => this.downloadReportPdf()
+      });
+    }
+
+    return items;
   }
 
   ngOnInit() {
@@ -211,6 +255,26 @@ export class KurinPanelComponent implements OnInit {
     this.router.navigate(['/kurin', this.kurinKey, 'member', 'upsert']);
   }
 
+  downloadReportPdf(): void {
+    if (!this.kurinKey || this.reportDownloading) return;
+
+    this.reportDownloading = true;
+    this.kurinService.downloadReportPdf(this.kurinKey).subscribe({
+      next: (response) => {
+        if (response.body) {
+          this.saveBlob(response.body, this.resolveReportFileName(response));
+        }
+      },
+      error: (error) => {
+        console.error('Error downloading kurin report:', error);
+        this.reportDownloading = false;
+      },
+      complete: () => {
+        this.reportDownloading = false;
+      }
+    });
+  }
+
   startProfileEdit(): void {
     if (!this.kurinData || !this.canEditKurinProfile) return;
     this.profileEditMode = true;
@@ -270,5 +334,26 @@ export class KurinPanelComponent implements OnInit {
   private normalizeText(value: unknown): string | null {
     const text = String(value ?? '').trim();
     return text.length > 0 ? text : null;
+  }
+
+  private resolveReportFileName(response: HttpResponse<Blob>): string {
+    const disposition = response.headers.get('content-disposition');
+    const match = disposition?.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+    if (match?.[1]) {
+      return decodeURIComponent(match[1].replace(/"$/g, ''));
+    }
+
+    return `kurin-${this.kurinNumber ?? this.kurinKey}-report.pdf`;
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
   }
 }
