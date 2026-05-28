@@ -111,7 +111,7 @@ export class LoginComponent {
   private navigateToPanel(): void {
     const state = this.authService.getAuthStateValue();
     const isAdmin = this.permissionService.isAdmin(state?.role);
-    
+
     if (isAdmin) {
       this.router.navigate(['/panel']);
     } else if (state?.memberKey) {

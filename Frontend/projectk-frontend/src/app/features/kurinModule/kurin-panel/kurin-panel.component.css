@@ -1,31 +1,154 @@
-.kurin-header {
-    display: flex;
-    align-items: center;
-    margin: 2rem auto 1rem;
+.kurin-header,
+.group-panel {
+    margin-inline: auto;
     width: min(100% - 2rem, 72rem);
 }
 
-.kurin-head-message {
+.kurin-header {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.kurin-header-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 1.25rem;
+}
+
+.kurin-number-slot {
     display: flex;
-    margin-left: 2rem;
-    font-size: 1.75rem;
-    font-weight: 700;
+    align-items: flex-start;
+}
+
+.kurin-identity {
+    min-width: 0;
+}
+
+.kurin-identity__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.kurin-title-block {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.kurin-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.65rem;
+    margin: 0;
     color: var(--p-text-color);
+    font-size: 1.8rem;
+    font-weight: 750;
+    line-height: 1.18;
+}
+
+.kurin-title__patron {
+    color: var(--p-text-muted-color);
+    font-size: 1.05rem;
+    font-weight: 650;
 }
 
 .group-panel {
     display: grid;
     gap: 1rem;
-    margin: 0 auto 2rem;
-    width: min(100% - 2rem, 72rem);
+    margin-bottom: 2rem;
 }
 
 .kurin-tile {
     border: 1px solid var(--p-content-border-color);
     background: var(--p-content-background);
-    border-radius: 0.5rem;
+    border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+}
+
+.identity-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 1rem 0 0;
+}
+
+.identity-grid dt,
+.profile-form span,
+.kurin-description__label {
+    color: var(--p-text-muted-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.identity-grid dd {
+    margin: 0.25rem 0 0;
+    color: var(--p-text-color);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.kurin-description {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--p-content-border-color);
+}
+
+.kurin-description__text {
+    margin: 0;
+    color: var(--p-text-color);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.kurin-description__text--collapsed {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+}
+
+.kurin-description p-button {
+    justify-self: start;
+}
+
+.profile-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-form label {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.profile-form input,
+.profile-form textarea {
+    width: 100%;
+}
+
+.profile-form textarea {
+    resize: vertical;
+}
+
+.profile-form__description {
+    grid-column: 1 / -1;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    grid-column: 1 / -1;
 }
 
 .kurin-side-tiles {
@@ -100,24 +223,79 @@
         margin-top: 1rem;
     }
 
-    .kurin-head-message {
-        font-size: 1.25rem;
-        margin-left: 1rem;
+    .kurin-header-main {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+
+    .kurin-number-slot {
+        justify-content: flex-start;
+    }
+
+    :host ::ng-deep .kurin-number-slot .kurin-number-square {
+        width: 6.5rem;
+        height: 6.5rem;
+        border-width: 0.35rem;
+    }
+
+    :host ::ng-deep .kurin-number-slot .kurin-number {
+        font-size: 4.6rem;
+    }
+
+    :host ::ng-deep .kurin-number-slot .kurin-number-short {
+        font-size: 3.65rem;
+    }
+
+    .kurin-title {
+        font-size: 1.35rem;
+    }
+
+    .kurin-title__patron {
+        font-size: 0.95rem;
+    }
+
+    .kurin-identity__top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .kurin-title-block,
+    .identity-grid {
+        width: 100%;
+    }
+
+    .edit-profile-action {
+        width: 100%;
+    }
+
+    :host ::ng-deep .edit-profile-button {
+        width: 100%;
+        justify-content: center;
     }
 
     .table-caption {
-        align-items: center;
-        flex-direction: row;
+        align-items: flex-start;
+        flex-direction: column;
     }
 
+    .profile-form,
     .kurin-side-tiles {
         grid-template-columns: 1fr;
+    }
+
+    .table-caption > p-button {
+        margin-left: 0;
     }
 }
 
 @media (max-width: 640px) {
     .kurin-tile {
         padding: 0.75rem;
+    }
+
+    .kurin-header-main {
+        gap: 0.6rem;
     }
 
     :host ::ng-deep .project-table .p-datatable-wrapper {

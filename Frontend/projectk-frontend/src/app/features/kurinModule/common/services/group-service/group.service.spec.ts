@@ -17,6 +17,8 @@ describe('GroupService', () => {
   const mockGroup: GroupDto = {
     groupKey: 'g1',
     name: 'Alpha',
+    description: 'Group description',
+    silhouetteUrl: 'group-silhouettes/2026/05/27/test.png',
     kurinKey: 'k1',
     kurinNumber: 10
   };
@@ -79,7 +81,7 @@ describe('GroupService', () => {
   });
 
   it('create sends POST with body', () => {
-    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
+    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1', description: 'Group description' };
 
     service.create(dto).subscribe(res => {
       expect(res).toEqual(mockGroup);
@@ -92,7 +94,7 @@ describe('GroupService', () => {
   });
 
   it('create invalidates cached group list', () => {
-    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1' };
+    const dto: CreateGroupDto = { name: 'Alpha', kurinKey: 'k1', description: 'Group description' };
 
     service.getAllByKurinKey('k1').subscribe();
     httpMock.expectOne(r =>
@@ -111,16 +113,16 @@ describe('GroupService', () => {
   });
 
   it('update sends PUT with body to /group/:key', () => {
-    const updateDto: UpdateGroupDto = { name: 'Alpha Updated' };
+    const updateDto: UpdateGroupDto = { name: 'Alpha Updated', description: 'Updated description' };
 
     service.update('g1', updateDto).subscribe(res => {
-      expect(res).toEqual({ ...mockGroup, name: 'Alpha Updated' });
+      expect(res).toEqual({ ...mockGroup, name: 'Alpha Updated', description: 'Updated description' });
     });
 
     const req = httpMock.expectOne(`${baseUrl}/g1`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(updateDto);
-    req.flush({ ...mockGroup, name: 'Alpha Updated' });
+    req.flush({ ...mockGroup, name: 'Alpha Updated', description: 'Updated description' });
   });
 
   it('delete sends DELETE to /group/:key', () => {
@@ -131,6 +133,30 @@ describe('GroupService', () => {
     const req = httpMock.expectOne(`${baseUrl}/g1`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+  });
+
+  it('uploadSilhouette sends multipart POST to /group/:key/silhouette', () => {
+    const file = new File(['image'], 'silhouette.png', { type: 'image/png' });
+
+    service.uploadSilhouette('g1', file).subscribe(res => {
+      expect(res).toEqual(mockGroup);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/silhouette`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBeTrue();
+    expect((req.request.body as FormData).get('file')).toBe(file);
+    req.flush(mockGroup);
+  });
+
+  it('deleteSilhouette sends DELETE to /group/:key/silhouette', () => {
+    service.deleteSilhouette('g1').subscribe(res => {
+      expect(res).toEqual({ ...mockGroup, silhouetteUrl: null });
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/g1/silhouette`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ ...mockGroup, silhouetteUrl: null });
   });
 
   it('getMentors sends GET to /group/:key/mentors', () => {

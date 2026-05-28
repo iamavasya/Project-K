@@ -32,7 +32,8 @@ namespace ProjectK.API.MappingProfiles
 
             // Group Mapping
             CreateMap<Group, GroupResponse>()
-                .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number));
+                .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number))
+                .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
             CreateMap<UpsertGroup, Group>()
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())

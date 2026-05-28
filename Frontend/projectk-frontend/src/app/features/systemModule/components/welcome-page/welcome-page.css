@@ -1,0 +1,213 @@
+.welcome-page {
+  align-items: center;
+  background: var(--p-surface-ground);
+  color: var(--p-text-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 3rem;
+}
+
+.first-front-block {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  max-width: 80rem;
+  width: 100%;
+}
+
+.hero-copy {
+  max-width: 38rem;
+  width: 100%;
+}
+
+.hero-copy h1,
+.feature-copy h2 {
+  font-size: clamp(2.6rem, 5vw, 4.25rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.03;
+  margin: 0;
+}
+
+.hero-copy h3 {
+  color: var(--p-text-muted-color);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.25rem 0 0;
+}
+
+.hero-copy span,
+.feature-copy span {
+  color: var(--p-primary-color);
+}
+
+.hero-actions {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+:host ::ng-deep .welcome-button {
+  width: 100%;
+}
+
+.made-by-banner {
+  align-items: center;
+  border: 1px solid var(--p-surface-border);
+  border-radius: 0.5rem;
+  color: var(--p-text-muted-color);
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.made-by-banner .pi {
+  color: var(--p-primary-color);
+}
+
+.hero-image {
+  align-items: center;
+  display: inline-flex;
+  max-width: 38rem;
+  width: 100%;
+}
+
+.hero-image img {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.welcome-divider {
+  margin-top: 1.25rem;
+  max-width: 80rem;
+  width: 100%;
+}
+
+.product-preview {
+  margin-top: 1.25rem;
+  max-width: 80rem;
+  width: 100%;
+}
+
+.product-preview img {
+  border: 1px solid var(--p-surface-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 1.25rem 3.25rem rgba(15, 23, 42, 0.18);
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.feature-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  max-width: 80rem;
+  width: 100%;
+}
+
+.feature-copy {
+  max-width: 38rem;
+}
+
+.feature-copy p {
+  color: var(--p-text-muted-color);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0.6rem 0 0;
+}
+
+.feature-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.feature-card {
+  border: 1px solid var(--p-surface-border);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.65rem;
+  min-height: 12rem;
+  padding: 1.2rem;
+}
+
+.feature-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  border-radius: 0.5rem;
+  color: var(--p-primary-color);
+  display: inline-flex;
+  font-size: 1.25rem;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.feature-card h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.feature-card p {
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .hero-actions {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  :host ::ng-deep .welcome-button {
+    width: auto;
+  }
+}
+
+@media (min-width: 960px) {
+  .first-front-block,
+  .feature-section {
+    flex-direction: row;
+  }
+
+  .first-front-block {
+    gap: 3.5rem;
+  }
+
+  .hero-copy,
+  .feature-copy,
+  .feature-grid {
+    flex: 1 1 0;
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .welcome-page {
+    padding: 1.5rem;
+  }
+
+  .feature-card {
+    min-height: auto;
+  }
+}

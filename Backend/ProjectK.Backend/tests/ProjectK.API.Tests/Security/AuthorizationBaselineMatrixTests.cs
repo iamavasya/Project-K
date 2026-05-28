@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
@@ -72,6 +73,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAll), "RequireUser");
         yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), "RequireMentor");
         yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), "RequireMentor");
+        yield return Row<Action<GroupController, Guid, IFormFile, CancellationToken>>(nameof(GroupController.UploadSilhouette), "RequireMentor");
+        yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), "RequireMentor");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), "RequireManager");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireUser");
@@ -79,7 +82,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
         yield return Row<Action<KurinController, int>>(nameof(KurinController.Create), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, int>>(nameof(KurinController.Upsert), "RequireManager");
+        yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireManager");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireManager");
 
         yield return Row<Action<LeadershipController, string, Guid, CancellationToken>>(nameof(LeadershipController.GetLeadershipByType), "RequireUser");

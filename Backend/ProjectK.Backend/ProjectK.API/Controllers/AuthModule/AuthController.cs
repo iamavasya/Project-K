@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -86,7 +86,7 @@ namespace ProjectK.API.Controllers.AuthModule
             [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
             [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService)
         {
-            var expectedKey = config["LoadTestApiKey"];
+            var expectedKey = config["RateLimitBypassKey"];
             if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
             {
                 return Unauthorized(new { message = "Invalid or disabled load test API key." });

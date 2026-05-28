@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.IO;
@@ -104,6 +106,84 @@ namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService
             using var processedImage = Image.Load(result.ProcessedBytes);
             Assert.Equal(100, processedImage.Width);
             Assert.Equal(100, processedImage.Height);
+        }
+
+        [Fact]
+        public async Task PrepareUploadAsync_ShouldKeepMemberPhotosAsJpeg()
+        {
+            // Arrange
+            using var rawImage = new Image<Rgba32>(120, 80);
+            using var msOriginal = new MemoryStream();
+            await rawImage.SaveAsPngAsync(msOriginal, new PngEncoder());
+            var originalBytes = msOriginal.ToArray();
+
+            // Act
+            var result = await _service.PrepareUploadAsync(
+                originalBytes,
+                "avatar.png",
+                BlobUploadContext.MemberPhoto,
+                CancellationToken.None);
+
+            // Assert
+            Assert.Equal(".jpg", result.FinalExtension);
+            Assert.Equal("image/jpeg", result.ContentType);
+            using var processedImage = Image.Load(result.ProcessedBytes);
+            Assert.Equal(120, processedImage.Width);
+            Assert.Equal(80, processedImage.Height);
+        }
+
+        [Fact]
+        public async Task PrepareUploadAsync_ShouldEncodeGroupSilhouetteAsPng()
+        {
+            // Arrange
+            using var rawImage = new Image<Rgba32>(64, 64);
+            rawImage[0, 0] = new Rgba32(255, 0, 0, 0);
+            using var msOriginal = new MemoryStream();
+            await rawImage.SaveAsJpegAsync(msOriginal, new JpegEncoder { Quality = 90 });
+            var originalBytes = msOriginal.ToArray();
+
+            // Act
+            var result = await _service.PrepareUploadAsync(
+                originalBytes,
+                "silhouette.jpg",
+                BlobUploadContext.GroupSilhouette,
+                CancellationToken.None);
+
+            // Assert
+            Assert.Equal(".png", result.FinalExtension);
+            Assert.Equal("image/png", result.ContentType);
+            using var processedImage = Image.Load(result.ProcessedBytes);
+            Assert.Equal(64, processedImage.Width);
+            Assert.Equal(64, processedImage.Height);
+        }
+
+        [Fact]
+        public void BuildBlobName_ShouldUseScenarioFolderAndDate()
+        {
+            // Arrange
+            var utcNow = new DateTime(2026, 5, 27, 10, 30, 0, DateTimeKind.Utc);
+
+            // Act
+            var memberBlobName = _service.BuildBlobName(BlobUploadContext.MemberPhoto, ".jpg", utcNow);
+            var silhouetteBlobName = _service.BuildBlobName(BlobUploadContext.GroupSilhouette, ".png", utcNow);
+
+            // Assert
+            Assert.Matches(@"^member-photos/2026/05/27/[a-f0-9]{32}\.jpg$", memberBlobName);
+            Assert.Matches(@"^group-silhouettes/2026/05/27/[a-f0-9]{32}\.png$", silhouetteBlobName);
+        }
+
+        [Fact]
+        public async Task PrepareUploadAsync_ShouldRejectInvalidGroupSilhouetteImage()
+        {
+            // Arrange
+            byte[] invalidImageBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _service.PrepareUploadAsync(
+                    invalidImageBytes,
+                    "broken.webp",
+                    BlobUploadContext.GroupSilhouette,
+                    CancellationToken.None));
         }
     }
 }

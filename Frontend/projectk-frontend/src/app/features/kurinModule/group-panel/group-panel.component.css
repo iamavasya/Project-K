@@ -8,12 +8,17 @@
 .group-tile {
     border: 1px solid var(--p-content-border-color);
     background: var(--p-content-background);
-    border-radius: 0.5rem;
+    border-radius: 1rem;
     padding: 1rem;
     box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
 }
 
 .group-hero {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.group-hero__main {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -21,6 +26,24 @@
 
 .group-hero__icon {
     flex: 0 0 auto;
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 10rem;
+    height: 10rem;
+}
+
+:host ::ng-deep .group-hero__icon .group-chevron {
+    box-sizing: border-box;
+}
+
+.group-hero__silhouette {
+    display: block;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    object-fit: contain;
+    background: transparent;
 }
 
 .group-hero__copy {
@@ -40,6 +63,68 @@
     color: var(--p-text-muted-color);
 }
 
+.group-hero__description {
+    display: grid;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--p-content-border-color);
+}
+
+.group-hero__description-label {
+    color: var(--p-text-muted-color);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.group-hero__description-text {
+    margin: 0;
+    color: var(--p-text-color);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.group-hero__description-text--collapsed {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+.group-hero__description p-button {
+    justify-self: start;
+}
+
+.group-profile-form {
+    display: grid;
+    gap: 0.75rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--p-content-border-color);
+}
+
+.group-profile-form label {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.group-profile-form span {
+    color: var(--p-text-muted-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.group-profile-form textarea {
+    width: 100%;
+    resize: vertical;
+}
+
+.group-profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
 .group-hero__eyebrow {
     color: var(--p-text-muted-color);
     font-size: 0.8rem;
@@ -54,6 +139,21 @@
     flex-wrap: wrap;
     margin-left: auto;
     justify-content: flex-end;
+}
+
+.group-silhouette-input {
+    display: none;
+}
+
+:host ::ng-deep .group-edit-menu__danger .p-menu-item-label,
+:host ::ng-deep .group-edit-menu__danger .p-menu-item-icon {
+    color: var(--p-red-500);
+}
+
+.group-hero__error {
+    margin: 0;
+    color: var(--p-red-500);
+    font-size: 0.9rem;
 }
 
 .mentor-dialog-body {
@@ -73,12 +173,85 @@
     gap: 0.5rem;
 }
 
+.silhouette-editor {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1fr) minmax(16rem, 22rem);
+    gap: 1rem;
+    align-items: start;
+}
+
+.silhouette-editor__cropper {
+    min-width: 0;
+}
+
+.silhouette-editor__side {
+    display: grid;
+    gap: 1rem;
+}
+
+.silhouette-preview {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    width: 100%;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 0.75rem;
+    background: var(--p-surface-50);
+    overflow: hidden;
+}
+
+.silhouette-preview img {
+    width: min(100%, 18rem);
+    height: min(100%, 18rem);
+    object-fit: contain;
+}
+
+.silhouette-controls {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.silhouette-control {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--p-text-color);
+    font-weight: 600;
+}
+
+.silhouette-control input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+}
+
+.silhouette-control--range {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+}
+
+.silhouette-control--range input {
+    width: 100%;
+}
+
+.silhouette-control--range output {
+    min-width: 2ch;
+    text-align: right;
+    color: var(--p-text-muted-color);
+}
+
+.silhouette-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
     .group-shell {
         margin-top: 1rem;
     }
 
-    .group-hero {
+    .group-hero__main {
         align-items: flex-start;
         flex-direction: column;
     }
@@ -89,7 +262,38 @@
         width: 100%;
     }
 
+    .group-actions p-button,
+    :host ::ng-deep .group-actions .p-button {
+        width: 100%;
+    }
+
+    :host ::ng-deep .group-actions .p-button {
+        justify-content: center;
+    }
+
     .group-hero__copy h1 {
         font-size: 1.3rem;
+    }
+
+    .group-profile-actions {
+        flex-direction: column-reverse;
+    }
+
+    .group-profile-actions p-button,
+    :host ::ng-deep .group-profile-actions .p-button {
+        width: 100%;
+    }
+
+    .silhouette-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .silhouette-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .silhouette-dialog-actions p-button,
+    :host ::ng-deep .silhouette-dialog-actions .p-button {
+        width: 100%;
     }
 }

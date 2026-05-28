@@ -25,8 +25,19 @@ import { AccountActivationComponent } from './features/authModule/onboarding/acc
 import { WaitlistManagementComponent } from './features/adminModule/components/waitlist-management/waitlist-management';
 import { AccountSettingsComponent } from './features/authModule/account-settings/account-settings.component';
 import { PublicAnnouncementsComponent } from './features/adminModule/components/public-announcements/public-announcements';
+import { WelcomePageComponent } from './features/systemModule/components/welcome-page/welcome-page';
 
 export const routes: Routes = [
+  {
+    path: '',
+    component: WelcomePageComponent,
+    data: { breadcrumb: 'Welcome' }
+  },
+  {
+    path: 'welcome',
+    component: WelcomePageComponent,
+    data: { breadcrumb: 'Welcome' }
+  },
   {
     path: 'join',
     component: WaitlistRegistrationComponent,
@@ -99,19 +110,19 @@ export const routes: Routes = [
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey', entityType: 'member' }
+    data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey', entityType: 'member', entityAction: 'Update' }
   },
   { 
     path: 'group/:groupKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
+    data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group', entityAction: 'Create' }
   },
   {
     path: 'kurin/:kurinKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'New Kurin Member', parent: '/kurin', entityType: 'kurin' }
+    data: { breadcrumb: 'New Kurin Member', parent: '/kurin', entityType: 'kurin', entityAction: 'Create' }
   },
   { 
     path: 'member/:memberKey/probe/:probeId',
@@ -139,7 +150,8 @@ export const routes: Routes = [
       breadcrumb: 'Create Leadership',
       parent: '/kurin',
       entityTypeParam: 'type',
-      entityKeyParam: 'entityKey'
+      entityKeyParam: 'entityKey',
+      entityAction: 'Create'
     }
   },
   {

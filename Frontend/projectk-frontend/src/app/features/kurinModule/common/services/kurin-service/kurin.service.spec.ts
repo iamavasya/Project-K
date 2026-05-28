@@ -83,16 +83,29 @@ describe('KurinService', () => {
     expect(result).toEqual(created);
   });
 
-  it('updateKurin should PUT to /kurin/:kurinKey with kurin.number and return updated entity', () => {
-    const input = { kurinKey: 'k1', number: 5 } as KurinDto;
-    const updated = { kurinKey: 'k1', number: 5 } as KurinDto;
+  it('updateKurin should PUT to /kurin/:kurinKey with profile payload and return updated entity', () => {
+    const input = {
+      kurinKey: 'k1',
+      number: 5,
+      stanytsia: 'Kyiv',
+      regionOrCountry: 'Ukraine',
+      namedAfter: 'Some Patron',
+      description: 'Some longer notes'
+    } as KurinDto;
+    const updated = { ...input } as KurinDto;
 
     let result: KurinDto | undefined;
     service.updateKurin(input).subscribe(res => (result = res));
 
     const req = httpMock.expectOne(`${baseUrl}/${input.kurinKey}`);
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toBe(input.number);
+    expect(req.request.body).toEqual({
+      number: 5,
+      stanytsia: 'Kyiv',
+      regionOrCountry: 'Ukraine',
+      namedAfter: 'Some Patron',
+      description: 'Some longer notes'
+    });
     expect(req.request.headers.get('Content-Type')).toBe('application/json');
 
     req.flush(updated);

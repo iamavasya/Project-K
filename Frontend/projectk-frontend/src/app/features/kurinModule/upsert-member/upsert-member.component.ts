@@ -130,7 +130,8 @@ export class UpsertMemberComponent implements OnInit {
       this.setupAccordionAndToggles();
       this.isCreate = true;
     }
-    const navState = (this.router.getCurrentNavigation()?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
+    const currentNavigation = this.router.currentNavigation();
+    const navState = (currentNavigation?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
     this.cameFromMember = navState?.fromMember === true;
     this.canManageWarnings = this.resolveCanManageWarnings();
   }
@@ -215,6 +216,10 @@ export class UpsertMemberComponent implements OnInit {
 
   canEditEmail(): boolean {
     return this.isCreate || !this.member.userKey || this.permissionService.isAdmin();
+  }
+
+  canDeleteMember(): boolean {
+    return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.isManager());
   }
 
   private isWarningActive(warning: MemberWarningDto, now: Date): boolean {

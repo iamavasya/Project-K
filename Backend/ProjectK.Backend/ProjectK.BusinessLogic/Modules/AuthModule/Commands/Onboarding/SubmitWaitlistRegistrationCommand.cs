@@ -10,6 +10,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding
         string Email,
         string PhoneNumber,
         DateTime DateOfBirth,
+        string? Stanytsia,
+        string? RegionOrCountry,
         bool IsKurinLeaderCandidate,
         string? ClaimedKurinNameOrNumber) : IRequest<ServiceResult<Guid>>;
 }

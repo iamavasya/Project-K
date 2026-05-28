@@ -239,8 +239,9 @@
       </div>
 
       <div class="dialog-actions">
-        <p-button type="button" label="Save" icon="pi pi-save" [loading]="saving" (onClick)="saveDraft()"></p-button>
+        <p-button type="button" label="Close" icon="pi pi-times" severity="secondary" text (onClick)="editorVisible = false"></p-button>
         <p-button type="button" label="Preview" icon="pi pi-eye" severity="secondary" [disabled]="!selectedDraft" (onClick)="loadPreview()"></p-button>
+        <p-button type="button" label="Save" icon="pi pi-save" [loading]="saving" (onClick)="saveDraft()"></p-button>
       </div>
     </form>
 

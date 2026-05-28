@@ -42,6 +42,8 @@ public class OnboardingBaselineHttpIntegrationTests
             email = "ihor.kovalenko@example.com",
             phoneNumber = "+38 (099) 111-22-33",
             dateOfBirth = "1995-05-15",
+            stanytsia = "Kyiv",
+            regionOrCountry = "Ukraine",
             isKurinLeaderCandidate = true,
             claimedKurinNameOrNumber = "97"
         });
@@ -113,6 +115,8 @@ public class OnboardingBaselineHttpIntegrationTests
             email = "full@example.com",
             phoneNumber = "+38 (099) 999-99-99",
             dateOfBirth = "1990-01-01",
+            stanytsia = "Lviv",
+            regionOrCountry = "Ukraine",
             isKurinLeaderCandidate = true,
             claimedKurinNameOrNumber = "LimitExceededKurin"
         });
@@ -122,7 +126,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
         // This is a bit tricky for a baseline test without actual implementation, 
         // but it highlights the requirement.
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private sealed class OnboardingBaselineTestHost : IAsyncDisposable

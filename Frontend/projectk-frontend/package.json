@@ -8,6 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "tailscale": "ng serve --configuration tailscale --host 0.0.0.0",
     "test": "ng test --watch=false --browsers=ChromeHeadless",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed",
+    "e2e:install": "playwright install",
     "test-c": "ng test --code-coverage",
     "lint": "ng lint"
   },
@@ -51,6 +55,7 @@
     "@angular/cli": "^21.2.6",
     "@angular/compiler-cli": "^21.2.7",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "@types/jasmine": "~6.0.0",
     "angular-eslint": "^21.3.1",
     "eslint": "^10.2.1",

@@ -1,19 +1,99 @@
-<div class="kurin-header">
-    <app-kurin-number [number]="kurinNumber"></app-kurin-number>
-    <div class="flex flex-col">
-        @if (kurinNumber) {
-            <span class="kurin-head-message">{{ kurinNumber }} курінь</span>
-        }
-        @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
-            <div class="mt-1 ml-8">
-                <p-tag [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'" 
-                       [value]="'СBT Active users: ' + (zbtStats?.currentActiveUsers || 0) + ' / ' + (zbtStats?.betaCap || 15)"
-                       pTooltip="Ліміт активних користувачів для закритого бета тестування."
-                       tooltipPosition="bottom"></p-tag>
+<section class="kurin-tile kurin-header">
+    <div class="kurin-header-main">
+        <div class="kurin-number-slot">
+            <app-kurin-number [number]="kurinNumber"></app-kurin-number>
+        </div>
+
+        <div class="kurin-identity">
+            <div class="kurin-identity__top">
+                <div class="kurin-title-block">
+                    <h1 class="kurin-title">
+                        <span>{{ kurinNumber || '-' }} курінь</span>
+                        @if (kurinData?.namedAfter) {
+                            <span class="kurin-title__patron">ім. {{ kurinData?.namedAfter }}</span>
+                        }
+                    </h1>
+                    @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
+                        <p-tag
+                            [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'"
+                            [value]="'CBT active users: ' + (zbtStats?.currentActiveUsers || 0) + ' / ' + (zbtStats?.betaCap || 15)"
+                            pTooltip="Ліміт активних користувачів для закритого бета тестування."
+                            tooltipPosition="bottom"></p-tag>
+                    }
+                </div>
+
+                @if (canEditKurinProfile && !profileEditMode) {
+                    <p-button
+                        class="edit-profile-action"
+                        styleClass="edit-profile-button"
+                        label="Редагувати"
+                        icon="pi pi-pencil"
+                        severity="secondary"
+                        (onClick)="startProfileEdit()" />
+                }
+            </div>
+
+            @if (!profileEditMode) {
+                <dl class="identity-grid">
+                    <div>
+                        <dt>Станиця</dt>
+                        <dd>{{ kurinData?.stanytsia || '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Край</dt>
+                        <dd>{{ kurinData?.regionOrCountry || '-' }}</dd>
+                    </div>
+                </dl>
+            }
+        </div>
+    </div>
+
+    @if (!profileEditMode) {
+        @if (descriptionText) {
+            <div class="kurin-description">
+                <div class="kurin-description__label">Опис</div>
+                <p
+                    class="kurin-description__text"
+                    [class.kurin-description__text--collapsed]="isDescriptionLong && !descriptionExpanded">
+                    {{ descriptionText }}
+                </p>
+                @if (isDescriptionLong) {
+                    <p-button
+                        type="button"
+                        severity="secondary"
+                        variant="text"
+                        [label]="descriptionExpanded ? 'Згорнути' : 'Розгорнути'"
+                        [icon]="descriptionExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                        (onClick)="toggleDescription()" />
+                }
             </div>
         }
-    </div>
-</div>
+    } @else {
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+            <label>
+                <span>Імені / в честь кого</span>
+                <input pInputText formControlName="namedAfter" maxlength="200" />
+            </label>
+            <label>
+                <span>Станиця</span>
+                <input pInputText formControlName="stanytsia" maxlength="120" />
+            </label>
+            <label>
+                <span>Край</span>
+                <input pInputText formControlName="regionOrCountry" maxlength="120" />
+            </label>
+            <label class="profile-form__description">
+                <span>Опис</span>
+                <textarea pTextarea formControlName="description" rows="5" maxlength="4000"></textarea>
+            </label>
+            <div class="profile-actions">
+                <p-button label="Скасувати" type="button" severity="secondary" variant="text" (onClick)="cancelProfileEdit()" />
+                <p-button label="Зберегти" type="submit" icon="pi pi-save" [loading]="profileSaving" [disabled]="profileForm.invalid || profileSaving" />
+            </div>
+        </form>
+    }
+</section>
+
 <div class="group-panel">
     <section class="kurin-tile">
         <p-table [value]="groups" styleClass="project-table">
@@ -92,6 +172,7 @@
         }
     </section>
 </div>
+
 <app-manage-panel
   [(visible)]="groupPanelVisible"
   [parameter]="groupPanelParameter"

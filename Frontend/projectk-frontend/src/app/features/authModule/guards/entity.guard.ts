@@ -14,13 +14,14 @@ export class EntityGuard implements CanActivate {
     canActivate(route: ActivatedRouteSnapshot): Observable<boolean> {
         const entityType = this.resolveEntityType(route);
         const entityKey = this.resolveEntityKey(route, entityType);
+        const action = this.resolveEntityAction(route);
 
         // EntityGuard is a UX pre-check only; backend remains the source of truth.
         if (!entityType || !entityKey) {
             return of(true);
         }
 
-        return this.entityService.checkEntityAccess(entityType, entityKey).pipe(
+        return this.entityService.checkEntityAccess(entityType, entityKey, action).pipe(
             map(access => {
                 if (access) {
                     return true;
@@ -77,5 +78,10 @@ export class EntityGuard implements CanActivate {
         }
 
         return route.paramMap.get(`${entityType}Key`);
+    }
+
+    private resolveEntityAction(route: ActivatedRouteSnapshot): string | undefined {
+        const action = route.data['entityAction'];
+        return typeof action === 'string' && action.length > 0 ? action : undefined;
     }
 }

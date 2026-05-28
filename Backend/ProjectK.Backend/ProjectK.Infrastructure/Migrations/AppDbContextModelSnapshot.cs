@@ -337,6 +337,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("RegionOrCountry")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
                     b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -345,6 +349,10 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<Guid?>("ReviewedByUserKey")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Stanytsia")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -408,12 +416,12 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("ImagePlacement")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("ImagePlacement")
-                        .HasColumnType("int");
 
                     b.Property<string>("LastPublishError")
                         .HasMaxLength(1000)
@@ -490,12 +498,20 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SilhouetteBlobName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -516,11 +532,27 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<bool>("IsZbtKurin")
                         .HasColumnType("bit");
 
+                    b.Property<string>("NamedAfter")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<int>("Number")
                         .HasColumnType("int");
+
+                    b.Property<string>("RegionOrCountry")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Stanytsia")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");

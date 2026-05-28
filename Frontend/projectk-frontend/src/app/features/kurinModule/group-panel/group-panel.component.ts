@@ -1,38 +1,56 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
 import { ButtonModule } from 'primeng/button';
 import { GroupService } from '../common/services/group-service/group.service';
-import { GroupChevron } from "../common/components/group-chevron/group-chevron";
+import { GroupChevron } from '../common/components/group-chevron/group-chevron';
 import { GroupDto } from '../common/models/groupDto';
 import { MemberList } from '../common/components/member-list/member-list';
 import { MemberLookupDto } from '../common/models/requests/member/memberLookupDto';
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../authModule/services/authService/auth.service';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
+import { TextareaModule } from 'primeng/textarea';
+import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
+import { MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-group-panel',
-  imports: [TableModule, ButtonModule, GroupChevron, MemberList, DialogModule, MultiSelectModule, FormsModule, LeadershipPanelComponent],
+  imports: [
+    TableModule,
+    ButtonModule,
+    GroupChevron,
+    MemberList,
+    DialogModule,
+    MultiSelectModule,
+    FormsModule,
+    ReactiveFormsModule,
+    TextareaModule,
+    LeadershipPanelComponent,
+    ImageCropperComponent,
+    MenuModule
+  ],
   templateUrl: './group-panel.component.html',
   styleUrl: './group-panel.component.css'
 })
 export class GroupPanelComponent implements OnInit {
+  @ViewChild('silhouetteInput') private silhouetteInput?: ElementRef<HTMLInputElement>;
 
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly router: Router = inject(Router);
   private readonly memberService = inject(MemberService);
   private readonly groupService = inject(GroupService);
-  private readonly authService = inject(AuthService);
   private readonly entityService = inject(EntityService);
   private readonly permissionService = inject(PermissionService);
+  private readonly fb = inject(FormBuilder);
+
   groupKey = '';
   group: GroupDto | null = null;
   members: MemberDto[] = [];
@@ -44,12 +62,36 @@ export class GroupPanelComponent implements OnInit {
   initialMentorUserKeys: string[] = [];
   mentorSaveInProgress = false;
   canCreateMembers = false;
+  canEditGroupProfile = false;
+  profileEditMode = false;
+  profileSaving = false;
+  descriptionExpanded = false;
+  silhouetteSaving = false;
+  silhouetteDialogVisible = false;
+  silhouetteProcessing = false;
+  silhouetteError: string | null = null;
+  silhouetteImageFile?: File;
+  silhouetteCroppedBlob: Blob | null = null;
+  silhouetteProcessedBlob: Blob | null = null;
+  silhouettePreviewUrl: string | null = null;
+  silhouetteUseGrayscale = true;
+  silhouetteUseOutline = true;
+  silhouetteOutlineWidth = 8;
 
+  readonly descriptionCollapseLimit = 220;
+  readonly silhouetteMaxBytes = 5 * 1024 * 1024;
+  private readonly allowedSilhouetteTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
+  private groupEditMenuItemsCache: MenuItem[] = [];
+  private groupEditMenuStateKey = '';
+
+  profileForm: FormGroup = this.fb.group({
+    description: ['', Validators.maxLength(1000)]
+  });
 
   tableHeaders: string[] = [
     'MemberKey',
     'FirstName',
-    'LastName',
+    'LastName'
   ];
 
   ngOnInit(): void {
@@ -65,6 +107,84 @@ export class GroupPanelComponent implements OnInit {
 
   get canManageMembers(): boolean {
     return this.canCreateMembers;
+  }
+
+  get descriptionText(): string {
+    return this.group?.description?.trim() ?? '';
+  }
+
+  get isDescriptionLong(): boolean {
+    return this.descriptionText.length > this.descriptionCollapseLimit;
+  }
+
+  get hasGroupEditActions(): boolean {
+    return this.canEditGroupProfile || this.canManageMembers || this.canManageMentors;
+  }
+
+  get groupEditMenuItems(): MenuItem[] {
+    const stateKey = [
+      this.canEditGroupProfile,
+      this.canManageMembers,
+      this.canManageMentors,
+      !!this.group?.silhouetteUrl,
+      this.silhouetteSaving
+    ].join('|');
+
+    if (stateKey !== this.groupEditMenuStateKey) {
+      this.groupEditMenuStateKey = stateKey;
+      this.groupEditMenuItemsCache = this.buildGroupEditMenuItems();
+    }
+
+    return this.groupEditMenuItemsCache;
+  }
+
+  private buildGroupEditMenuItems(): MenuItem[] {
+    const items: MenuItem[] = [];
+
+    if (this.canEditGroupProfile) {
+      items.push({
+        label: 'Редагувати профіль',
+        icon: 'pi pi-pencil',
+        command: () => this.startProfileEdit()
+      });
+    }
+
+    if (this.canManageMembers) {
+      items.push({
+        label: 'Додати учасника',
+        icon: 'pi pi-plus',
+        command: () => this.onMemberCreate()
+      });
+    }
+
+    if (this.canManageMentors) {
+      items.push({
+        label: 'Виховники',
+        icon: 'pi pi-users',
+        command: () => this.openMentorDialog()
+      });
+    }
+
+    if (this.canEditGroupProfile) {
+      items.push({
+        label: this.group?.silhouetteUrl ? 'Замінити сильветку' : 'Завантажити сильветку',
+        icon: 'pi pi-upload',
+        disabled: this.silhouetteSaving,
+        command: () => this.openSilhouettePicker()
+      });
+    }
+
+    if (this.canEditGroupProfile && this.group?.silhouetteUrl) {
+      items.push({
+        label: 'Видалити сильветку',
+        icon: 'pi pi-trash',
+        styleClass: 'group-edit-menu__danger',
+        disabled: this.silhouetteSaving,
+        command: () => this.deleteSilhouette()
+      });
+    }
+
+    return items;
   }
 
   get mentorOptions(): { label: string; value: string; }[] {
@@ -87,6 +207,8 @@ export class GroupPanelComponent implements OnInit {
     this.groupService.getByKey(this.groupKey).subscribe({
       next: (group) => {
         this.group = group;
+        this.descriptionExpanded = false;
+        this.patchProfileForm(group);
         if (this.canManageMentors) {
           this.loadMentorManagementData();
         }
@@ -103,11 +225,11 @@ export class GroupPanelComponent implements OnInit {
     });
   }
 
-  onMemberSelect() {
+  onMemberSelect(): void {
     this.router.navigate(['/member', this.selectedMember?.memberKey]);
   }
 
-  onMemberCreate() {
+  onMemberCreate(): void {
     this.router.navigate(['/group', this.groupKey, 'member', 'upsert']);
   }
 
@@ -118,6 +240,170 @@ export class GroupPanelComponent implements OnInit {
 
     this.loadMentorManagementData();
     this.mentorDialogVisible = true;
+  }
+
+  startProfileEdit(): void {
+    if (!this.group || !this.canEditGroupProfile) {
+      return;
+    }
+
+    this.profileEditMode = true;
+    this.patchProfileForm(this.group);
+  }
+
+  cancelProfileEdit(): void {
+    this.profileEditMode = false;
+    if (this.group) {
+      this.patchProfileForm(this.group);
+    }
+  }
+
+  toggleDescription(): void {
+    this.descriptionExpanded = !this.descriptionExpanded;
+  }
+
+  onSilhouetteSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+
+    if (!file || !this.canEditGroupProfile) {
+      return;
+    }
+
+    if (!this.allowedSilhouetteTypes.has(file.type)) {
+      this.silhouetteError = 'Підтримуються лише PNG, JPEG або WebP.';
+      return;
+    }
+
+    if (file.size > this.silhouetteMaxBytes) {
+      this.silhouetteError = 'Файл має бути не більший за 5 МБ.';
+      return;
+    }
+
+    this.resetSilhouetteEditor();
+    this.silhouetteImageFile = file;
+    this.silhouetteError = null;
+    this.silhouetteDialogVisible = true;
+  }
+
+  onSilhouetteCropped(event: ImageCroppedEvent): void {
+    if (!event.blob) {
+      return;
+    }
+
+    this.silhouetteCroppedBlob = event.blob;
+    this.renderSilhouettePreview(event.blob);
+  }
+
+  onSilhouetteOptionsChange(): void {
+    if (this.silhouetteCroppedBlob) {
+      this.renderSilhouettePreview(this.silhouetteCroppedBlob);
+    }
+  }
+
+  uploadProcessedSilhouette(): void {
+    const blob = this.silhouetteProcessedBlob ?? this.silhouetteCroppedBlob;
+    if (!blob) {
+      this.silhouetteError = 'Оберіть область зображення перед завантаженням.';
+      return;
+    }
+
+    const fileName = this.buildSilhouetteFileName(this.silhouetteImageFile?.name ?? 'silhouette.png');
+    const file = new File([blob], fileName, { type: 'image/png' });
+    this.uploadSilhouetteFile(file);
+  }
+
+  uploadOriginalSilhouette(): void {
+    if (!this.silhouetteImageFile) {
+      return;
+    }
+
+    this.uploadSilhouetteFile(this.silhouetteImageFile);
+  }
+
+  cancelSilhouetteEditor(): void {
+    if (this.silhouetteSaving) {
+      return;
+    }
+
+    this.silhouetteDialogVisible = false;
+    this.resetSilhouetteEditor();
+  }
+
+  openSilhouettePicker(): void {
+    if (this.silhouetteSaving) {
+      return;
+    }
+
+    this.silhouetteInput?.nativeElement.click();
+  }
+
+  deleteSilhouette(): void {
+    if (!this.group?.silhouetteUrl || !this.canEditGroupProfile || this.silhouetteSaving) {
+      return;
+    }
+
+    this.silhouetteSaving = true;
+    this.silhouetteError = null;
+    this.groupService.deleteSilhouette(this.groupKey).subscribe({
+      next: (updated) => {
+        this.group = updated;
+        this.patchProfileForm(updated);
+        this.silhouetteSaving = false;
+      },
+      error: (err) => {
+        console.error('Error deleting group silhouette:', err);
+        this.silhouetteError = 'Не вдалося видалити сильветку.';
+        this.silhouetteSaving = false;
+      }
+    });
+  }
+
+  saveProfile(): void {
+    if (!this.group || this.profileForm.invalid) {
+      return;
+    }
+
+    const raw = this.profileForm.value;
+    const request = {
+      name: this.group.name,
+      description: this.normalizeText(raw.description)
+    };
+
+    this.profileSaving = true;
+    this.groupService.update(this.groupKey, request).subscribe({
+      next: (updated) => {
+        this.group = updated;
+        this.descriptionExpanded = false;
+        this.patchProfileForm(updated);
+        this.profileEditMode = false;
+        this.profileSaving = false;
+      },
+      error: (err) => {
+        console.error('Error updating group profile:', err);
+        this.profileSaving = false;
+      }
+    });
+  }
+
+  private uploadSilhouetteFile(file: File | Blob): void {
+    this.silhouetteSaving = true;
+    this.silhouetteError = null;
+    this.groupService.uploadSilhouette(this.groupKey, file).subscribe({
+      next: (updated) => {
+        this.group = updated;
+        this.patchProfileForm(updated);
+        this.silhouetteSaving = false;
+        this.silhouetteDialogVisible = false;
+        this.resetSilhouetteEditor();
+      },
+      error: (err) => {
+        console.error('Error uploading group silhouette:', err);
+        this.silhouetteError = 'Не вдалося завантажити сильветку.';
+        this.silhouetteSaving = false;
+      }
+    });
   }
 
   private loadMentorManagementData(): void {
@@ -182,6 +468,7 @@ export class GroupPanelComponent implements OnInit {
   private updateGroupAccess(): void {
     if (!this.groupKey) {
       this.canCreateMembers = false;
+      this.canEditGroupProfile = false;
       return;
     }
 
@@ -193,5 +480,123 @@ export class GroupPanelComponent implements OnInit {
         this.canCreateMembers = false;
       }
     });
+
+    this.entityService.checkEntityAccess('group', this.groupKey, 'Update').subscribe({
+      next: (canUpdate) => {
+        this.canEditGroupProfile = canUpdate;
+      },
+      error: () => {
+        this.canEditGroupProfile = false;
+      }
+    });
+  }
+
+  private patchProfileForm(group: GroupDto): void {
+    this.profileForm.patchValue({
+      description: group.description ?? ''
+    }, { emitEvent: false });
+    this.profileForm.markAsPristine();
+  }
+
+  private normalizeText(value: unknown): string | null {
+    const text = String(value ?? '').trim();
+    return text.length > 0 ? text : null;
+  }
+
+  private renderSilhouettePreview(blob: Blob): void {
+    this.silhouetteProcessing = true;
+    this.buildProcessedSilhouette(blob)
+      .then((processed) => {
+        this.silhouetteProcessedBlob = processed;
+        this.setSilhouettePreviewUrl(URL.createObjectURL(processed));
+      })
+      .catch((err) => {
+        console.error('Error processing group silhouette:', err);
+        this.silhouetteProcessedBlob = null;
+        this.silhouetteError = 'Не вдалося обробити зображення.';
+      })
+      .finally(() => {
+        this.silhouetteProcessing = false;
+      });
+  }
+
+  private buildProcessedSilhouette(source: Blob): Promise<Blob> {
+    const sourceUrl = URL.createObjectURL(source);
+    const image = new Image();
+
+    return new Promise((resolve, reject) => {
+      image.onload = () => {
+        URL.revokeObjectURL(sourceUrl);
+
+        const imageSize = 512;
+        const outlineWidth = this.silhouetteUseOutline ? Math.max(0, Math.min(32, this.silhouetteOutlineWidth)) : 0;
+        const canvasSize = imageSize + outlineWidth * 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context is unavailable.'));
+          return;
+        }
+
+        const center = canvasSize / 2;
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(center, center, imageSize / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.filter = this.silhouetteUseGrayscale ? 'grayscale(1)' : 'none';
+        ctx.drawImage(image, outlineWidth, outlineWidth, imageSize, imageSize);
+        ctx.restore();
+
+        if (outlineWidth > 0) {
+          ctx.beginPath();
+          ctx.arc(center, center, imageSize / 2 + outlineWidth / 2, 0, Math.PI * 2);
+          ctx.lineWidth = outlineWidth;
+          ctx.strokeStyle = '#111827';
+          ctx.stroke();
+        }
+
+        canvas.toBlob((result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error('Canvas export failed.'));
+          }
+        }, 'image/png');
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(sourceUrl);
+        reject(new Error('Image load failed.'));
+      };
+
+      image.src = sourceUrl;
+    });
+  }
+
+  private resetSilhouetteEditor(): void {
+    this.silhouetteImageFile = undefined;
+    this.silhouetteCroppedBlob = null;
+    this.silhouetteProcessedBlob = null;
+    this.silhouetteUseGrayscale = true;
+    this.silhouetteUseOutline = true;
+    this.silhouetteOutlineWidth = 8;
+    this.setSilhouettePreviewUrl(null);
+  }
+
+  private setSilhouettePreviewUrl(url: string | null): void {
+    if (this.silhouettePreviewUrl) {
+      URL.revokeObjectURL(this.silhouettePreviewUrl);
+    }
+
+    this.silhouettePreviewUrl = url;
+  }
+
+  private buildSilhouetteFileName(fileName: string): string {
+    const baseName = fileName.replace(/\.[^.]+$/, '') || 'silhouette';
+    return `${baseName}.png`;
   }
 }

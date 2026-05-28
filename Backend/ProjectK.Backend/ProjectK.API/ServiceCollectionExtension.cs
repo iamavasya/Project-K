@@ -16,6 +16,7 @@ using ProjectK.Infrastructure.UnitOfWork;
 
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using Resend;
@@ -53,7 +54,8 @@ namespace ProjectK.API
                     options.Path = configuration["PublicAnnouncements:ImageStorePath"];
                 }
             });
-            services.AddSingleton<IPublicAnnouncementImageStore, LocalPublicAnnouncementImageStore>();
+            services.AddSingleton<LocalPublicAnnouncementImageStore>();
+            services.AddScoped<IPublicAnnouncementImageStore, AzureBlobPublicAnnouncementImageStore>();
             services.AddScoped<NullPublicAnnouncementPublisher>();
             services.AddHttpClient<TelegramPublicAnnouncementPublisher>();
             services.AddScoped<IPublicAnnouncementPublisher>(sp =>

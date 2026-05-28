@@ -20,10 +20,19 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
     {
         public Guid KurinKey { get; set; }
         public int Number { get; set; }
-        public UpsertKurin(Guid kurinKey, int number)
+        public string? Stanytsia { get; set; }
+        public string? RegionOrCountry { get; set; }
+        public string? NamedAfter { get; set; }
+        public string? Description { get; set; }
+
+        public UpsertKurin(Guid kurinKey, int number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null)
         {
             KurinKey = kurinKey;
             Number = number;
+            Stanytsia = stanytsia;
+            RegionOrCountry = regionOrCountry;
+            NamedAfter = namedAfter;
+            Description = description;
         }
         public UpsertKurin(int number)
         {
@@ -45,6 +54,31 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
         }
         public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurin request, CancellationToken cancellationToken)
         {
+            var stanytsia = NormalizeOptionalText(request.Stanytsia);
+            var regionOrCountry = NormalizeOptionalText(request.RegionOrCountry);
+            var namedAfter = NormalizeOptionalText(request.NamedAfter);
+            var description = NormalizeOptionalText(request.Description);
+
+            if (stanytsia?.Length > 120)
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "StanytsiaTooLong", "Stanytsia must be 120 characters or fewer.");
+            }
+
+            if (regionOrCountry?.Length > 120)
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region must be 120 characters or fewer.");
+            }
+
+            if (namedAfter?.Length > 200)
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "NamedAfterTooLong", "Named after must be 200 characters or fewer.");
+            }
+
+            if (description?.Length > 4000)
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "DescriptionTooLong", "Description must be 4000 characters or fewer.");
+            }
+
             var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
 
             bool isCreated = false;
@@ -66,6 +100,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
             {
                 // Update existing Kurin
                 _mapper.Map(request, existing);
+                existing.Stanytsia = stanytsia;
+                existing.RegionOrCountry = regionOrCountry;
+                existing.NamedAfter = namedAfter;
+                existing.Description = description;
                 _unitOfWork.Kurins.Update(existing, cancellationToken);
             }
 
@@ -88,6 +126,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
                     CreatedAtActionName: "GetByKey",
                     CreatedAtRouteValues: new { kurinKey = kurinResponse.KurinKey })
                 : new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
+        }
+
+        private static string? NormalizeOptionalText(string? value)
+        {
+            var trimmed = value?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         }
     }
 }

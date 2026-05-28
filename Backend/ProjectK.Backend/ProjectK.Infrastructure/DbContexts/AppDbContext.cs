@@ -52,11 +52,23 @@ namespace ProjectK.Infrastructure.DbContexts
             {
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
+                entity.Property(e => e.Stanytsia)
+                    .HasMaxLength(120);
+                entity.Property(e => e.RegionOrCountry)
+                    .HasMaxLength(120);
+                entity.Property(e => e.NamedAfter)
+                    .HasMaxLength(200);
+                entity.Property(e => e.Description)
+                    .HasMaxLength(4000);
             });
 
             builder.Entity<Group>(entity =>
             {
                 entity.HasKey(e => e.GroupKey);
+                entity.Property(e => e.Description)
+                    .HasMaxLength(1000);
+                entity.Property(e => e.SilhouetteBlobName)
+                    .HasMaxLength(500);
                 entity.HasOne(e => e.Kurin)
                       .WithMany(k => k.Groups)
                       .HasForeignKey(e => e.KurinKey)
@@ -282,6 +294,10 @@ namespace ProjectK.Infrastructure.DbContexts
             builder.Entity<WaitlistEntry>(entity =>
             {
                 entity.HasKey(e => e.WaitlistEntryKey);
+                entity.Property(e => e.Stanytsia)
+                    .HasMaxLength(120);
+                entity.Property(e => e.RegionOrCountry)
+                    .HasMaxLength(120);
                 entity.Property(e => e.VerificationStatus)
                     .HasConversion<string>();
                 entity.HasIndex(e => e.Email).IsUnique();

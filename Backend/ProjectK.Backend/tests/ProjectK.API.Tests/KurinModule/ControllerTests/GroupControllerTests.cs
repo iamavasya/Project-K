@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
@@ -14,6 +15,7 @@ using Xunit;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Models.Dtos;
 
@@ -99,10 +101,12 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
                 new { groupKey = groupKey }); // note: handler currently sets KurinKey by mistake
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(
+                    It.Is<UpsertGroup>(command => command.Description == "Group description"),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey };
+            var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey, Description = "Group description" };
 
             var result = await _controller.Create(createRequest);
 
@@ -137,10 +141,12 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
 
             _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.Send(
+                    It.Is<UpsertGroup>(command => command.Description == "Updated description"),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
 
-            var updateRequest = new UpdateGroupRequest { Name = "Updated" };
+            var updateRequest = new UpdateGroupRequest { Name = "Updated", Description = "Updated description" };
 
             var result = await _controller.Update(groupKey, updateRequest);
 
@@ -164,6 +170,68 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var result = await _controller.Update(groupKey, updateRequest);
 
             Assert.IsType<NotFoundObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task UploadSilhouette_ShouldSendCommandAndReturnOk_WhenFileIsValid()
+        {
+            var groupKey = Guid.NewGuid();
+            var response = new GroupResponse
+            {
+                GroupKey = groupKey,
+                Name = "Alpha",
+                KurinKey = Guid.NewGuid(),
+                KurinNumber = 3,
+                SilhouetteUrl = "group-silhouettes/2026/05/27/test.png"
+            };
+            var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
+
+            _mediatorMock
+                .Setup(m => m.Send(
+                    It.Is<UploadGroupSilhouette>(command =>
+                        command.GroupKey == groupKey &&
+                        command.BlobFileName == "silhouette.png" &&
+                        command.BlobContent.Length == 4),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var file = CreateFormFile("silhouette.png", "image/png", [1, 2, 3, 4]);
+
+            var result = await _controller.UploadSilhouette(groupKey, file, CancellationToken.None);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<GroupResponse>(ok.Value);
+            Assert.Equal(response.SilhouetteUrl, data.SilhouetteUrl);
+        }
+
+        [Fact]
+        public async Task UploadSilhouette_ShouldReturnBadRequest_WhenFileTypeIsUnsupported()
+        {
+            var groupKey = Guid.NewGuid();
+            var file = CreateFormFile("silhouette.gif", "image/gif", [1, 2, 3, 4]);
+
+            var result = await _controller.UploadSilhouette(groupKey, file, CancellationToken.None);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            _mediatorMock.Verify(m => m.Send(It.IsAny<UploadGroupSilhouette>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteSilhouette_ShouldSendCommandAndReturnOk()
+        {
+            var groupKey = Guid.NewGuid();
+            var response = new GroupResponse { GroupKey = groupKey, Name = "Alpha", KurinKey = Guid.NewGuid(), KurinNumber = 3 };
+            var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
+
+            _mediatorMock
+                .Setup(m => m.Send(
+                    It.Is<DeleteGroupSilhouette>(command => command.GroupKey == groupKey),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.DeleteSilhouette(groupKey, CancellationToken.None);
+
+            Assert.IsType<OkObjectResult>(result);
         }
 
         [Fact]
@@ -233,6 +301,16 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
             Assert.Single(data);
             Assert.Equal("Mentor", data[0].LastName);
+        }
+
+        private static IFormFile CreateFormFile(string fileName, string contentType, byte[] bytes)
+        {
+            var stream = new MemoryStream(bytes);
+            return new FormFile(stream, 0, bytes.Length, "file", fileName)
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = contentType
+            };
         }
     }
 }

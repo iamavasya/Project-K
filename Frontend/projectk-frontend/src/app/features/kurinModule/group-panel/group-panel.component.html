@@ -1,25 +1,77 @@
 <div class="group-shell">
     <section class="group-hero group-tile">
-        <div class="group-hero__icon">
-            <app-group-chevron></app-group-chevron>
+        <div class="group-hero__main">
+            <div class="group-hero__icon">
+                @if (group?.silhouetteUrl) {
+                    <img class="group-hero__silhouette" [src]="group?.silhouetteUrl" [alt]="group?.name || 'Сильветка гуртка'" />
+                } @else {
+                    <app-group-chevron></app-group-chevron>
+                }
+            </div>
+
+            <div class="group-hero__copy">
+                <span class="group-hero__eyebrow">Гурток</span>
+                <h1>{{ group?.name || 'Гурток' }}</h1>
+                @if (group?.kurinNumber) {
+                    <p>{{ group?.kurinNumber }} курінь</p>
+                }
+            </div>
+
+            <div class="group-actions">
+                <input
+                    #silhouetteInput
+                    type="file"
+                    class="group-silhouette-input"
+                    accept="image/png,image/jpeg,image/webp"
+                    (change)="onSilhouetteSelected($event)" />
+                @if (hasGroupEditActions && !profileEditMode) {
+                    <p-menu #groupEditMenu [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
+                    <p-button
+                        label="Редагувати"
+                        type="button"
+                        severity="secondary"
+                        icon="pi pi-pencil"
+                        (onClick)="groupEditMenu.toggle($event)" />
+                }
+            </div>
         </div>
 
-        <div class="group-hero__copy">
-            <span class="group-hero__eyebrow">Гурток</span>
-            <h1>{{ group?.name || 'Гурток' }}</h1>
-            @if (group?.kurinNumber) {
-                <p>{{ group?.kurinNumber }} курінь</p>
-            }
-        </div>
+        @if (silhouetteError) {
+            <p class="group-hero__error">{{ silhouetteError }}</p>
+        }
 
-        <div class="group-actions">
-            @if (canManageMembers) {
-                <p-button label="Додати учасника" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
-            }
-            @if (canManageMentors) {
-                <p-button label="Виховники" (onClick)="openMentorDialog()" severity="secondary" icon="pi pi-users" />
-            }
-        </div>
+        @if (!profileEditMode && descriptionText) {
+            <div class="group-hero__description">
+                <div class="group-hero__description-label">Опис</div>
+                <p
+                    class="group-hero__description-text"
+                    [class.group-hero__description-text--collapsed]="isDescriptionLong && !descriptionExpanded">
+                    {{ descriptionText }}
+                </p>
+                @if (isDescriptionLong) {
+                    <p-button
+                        type="button"
+                        severity="secondary"
+                        variant="text"
+                        [label]="descriptionExpanded ? 'Згорнути' : 'Розгорнути'"
+                        [icon]="descriptionExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                        (onClick)="toggleDescription()" />
+                }
+            </div>
+        }
+
+        @if (profileEditMode) {
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="group-profile-form">
+                <label>
+                    <span>Опис</span>
+                    <textarea pTextarea formControlName="description" rows="4" maxlength="1000"></textarea>
+                </label>
+                <div class="group-profile-actions">
+                    <p-button label="Скасувати" type="button" severity="secondary" variant="text" (onClick)="cancelProfileEdit()" />
+                    <p-button label="Зберегти" type="submit" icon="pi pi-save" [loading]="profileSaving" [disabled]="profileForm.invalid || profileSaving" />
+                </div>
+            </form>
+        }
     </section>
 
     <section class="group-tile">
@@ -30,6 +82,65 @@
         <app-member-list [type]="'group'" [typeKey]="groupKey"></app-member-list>
     </section>
 </div>
+
+<p-dialog
+    [(visible)]="silhouetteDialogVisible"
+    [modal]="true"
+    [closable]="!silhouetteSaving"
+    [style]="{ width: 'min(96vw, 58rem)' }"
+    header="Сильветка гуртка"
+    (onHide)="cancelSilhouetteEditor()">
+    <div class="silhouette-editor">
+        <div class="silhouette-editor__cropper">
+            <image-cropper
+                [imageFile]="silhouetteImageFile"
+                [maintainAspectRatio]="true"
+                [aspectRatio]="1 / 1"
+                format="png"
+                (imageCropped)="onSilhouetteCropped($event)">
+            </image-cropper>
+        </div>
+
+        <div class="silhouette-editor__side">
+            <div class="silhouette-preview">
+                @if (silhouettePreviewUrl) {
+                    <img [src]="silhouettePreviewUrl" alt="Попередній перегляд сильветки" />
+                }
+            </div>
+
+            <div class="silhouette-controls">
+                <label class="silhouette-control">
+                    <input type="checkbox" [(ngModel)]="silhouetteUseGrayscale" (ngModelChange)="onSilhouetteOptionsChange()" />
+                    <span>Чорно-біле</span>
+                </label>
+                <label class="silhouette-control">
+                    <input type="checkbox" [(ngModel)]="silhouetteUseOutline" (ngModelChange)="onSilhouetteOptionsChange()" />
+                    <span>Обводка</span>
+                </label>
+                <label class="silhouette-control silhouette-control--range">
+                    <span>Товщина</span>
+                    <input
+                        type="range"
+                        min="0"
+                        max="32"
+                        step="1"
+                        [(ngModel)]="silhouetteOutlineWidth"
+                        [disabled]="!silhouetteUseOutline"
+                        (ngModelChange)="onSilhouetteOptionsChange()" />
+                    <output>{{ silhouetteOutlineWidth }}</output>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="silhouette-dialog-actions">
+            <p-button label="Без обробки" type="button" severity="secondary" variant="text" [disabled]="silhouetteSaving" (onClick)="uploadOriginalSilhouette()" />
+            <p-button label="Скасувати" type="button" severity="secondary" [outlined]="true" [disabled]="silhouetteSaving" (onClick)="cancelSilhouetteEditor()" />
+            <p-button label="Завантажити" type="button" icon="pi pi-upload" [loading]="silhouetteSaving || silhouetteProcessing" [disabled]="silhouetteSaving || silhouetteProcessing" (onClick)="uploadProcessedSilhouette()" />
+        </div>
+    </ng-template>
+</p-dialog>
 
 <p-dialog [(visible)]="mentorDialogVisible" [modal]="true" [closable]="true" [style]="{ width: 'min(92vw, 34rem)' }" header="Налаштування виховників гуртка">
     <div class="mentor-dialog-body">

@@ -1,8 +1,11 @@
 using MediatR;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ProjectK.API.Services.Authorization;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Queries;
 using ProjectK.Common.Extensions;
@@ -10,10 +13,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
-using ProjectK.Infrastructure.Services.PublicAnnouncements;
-using ProjectK.API.Services.Authorization;
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 
@@ -49,17 +52,25 @@ public class PublicAnnouncementsController : ControllerBase
     [HttpGet("cleanup-status")]
     public async Task<IActionResult> GetCleanupStatus(
         [FromServices] AppDbContext db,
-        [FromServices] IOptions<PublicAnnouncementImageStoreOptions> imageStoreOptions,
+        [FromServices] BlobStorageOptions blobOptions,
         [FromServices] IOptions<OrphanCleanupOptions> cleanupOptions,
         CancellationToken cancellationToken)
     {
-        var rootPath = imageStoreOptions.Value.GetResolvedPath();
-        var files = Directory.Exists(rootPath)
-            ? Directory
-                .EnumerateFiles(rootPath, "*.jpg", SearchOption.TopDirectoryOnly)
-                .Select(path => new FileInfo(path))
-                .ToList()
-            : [];
+        var blobServiceClient = new BlobServiceClient(blobOptions.ConnectionString);
+        var container = blobServiceClient.GetBlobContainerClient(blobOptions.ContainerName);
+        var blobs = new List<BlobItem>();
+
+        if (await container.ExistsAsync(cancellationToken))
+        {
+            await foreach (var blob in container.GetBlobsAsync(
+                               traits: BlobTraits.None,
+                               states: BlobStates.None,
+                               prefix: BlobUploadFolders.PublicAnnouncements,
+                               cancellationToken: cancellationToken))
+            {
+                blobs.Add(blob);
+            }
+        }
 
         var referencedKeys = await db.PublicAnnouncementDrafts
             .AsNoTracking()
@@ -69,17 +80,17 @@ public class PublicAnnouncementsController : ControllerBase
             .ToListAsync(cancellationToken);
 
         var referencedSet = new HashSet<string>(referencedKeys, StringComparer.Ordinal);
-        var graceThreshold = DateTime.UtcNow - cleanupOptions.Value.GracePeriod;
-        var orphanFiles = files
-            .Where(file => !referencedSet.Contains(file.Name))
+        var graceThreshold = DateTimeOffset.UtcNow - cleanupOptions.Value.GracePeriod;
+        var orphanBlobs = blobs
+            .Where(blob => !referencedSet.Contains(blob.Name))
             .ToList();
 
         var status = new PublicAnnouncementCleanupStatusDto(
-            rootPath,
-            files.Count,
+            $"blob://{blobOptions.ContainerName}/{BlobUploadFolders.PublicAnnouncements}",
+            blobs.Count,
             referencedSet.Count,
-            orphanFiles.Count,
-            orphanFiles.Count(file => file.LastWriteTimeUtc < graceThreshold),
+            orphanBlobs.Count,
+            orphanBlobs.Count(blob => blob.Properties.LastModified is { } lastModified && lastModified < graceThreshold),
             cleanupOptions.Value.GracePeriod,
             cleanupOptions.Value.DryRun,
             DateTime.UtcNow);
@@ -155,7 +166,7 @@ public class PublicAnnouncementsController : ControllerBase
         }
     }
 
-    [HttpGet("image/{imageKey}")]
+    [HttpGet("image/{*imageKey}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetImage(
         string imageKey,
@@ -172,7 +183,7 @@ public class PublicAnnouncementsController : ControllerBase
     }
 
     [Authorize(Policy = "RequireAdmin")]
-    [HttpDelete("image/{imageKey}")]
+    [HttpDelete("image/{*imageKey}")]
     public async Task<IActionResult> DeleteImage(
         string imageKey,
         [FromServices] IPublicAnnouncementImageStore imageStore,

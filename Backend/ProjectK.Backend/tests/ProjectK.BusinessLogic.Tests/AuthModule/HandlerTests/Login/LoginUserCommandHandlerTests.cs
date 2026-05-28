@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
@@ -20,8 +21,10 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly ILoginResponseFactory _loginResponseFactory;
         private readonly Mock<IActivityLogger> _activityLoggerMock;
-        private readonly LoginResponseFactory _loginResponseFactory;
+        private readonly Mock<IConfiguration> _configurationMock;
+
         private readonly LoginUserCommandHandler _handler;
 
         public LoginUserCommandHandlerTests()
@@ -37,7 +40,11 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
 
             _jwtServiceMock = new Mock<IJwtService>();
             _activityLoggerMock = new Mock<IActivityLogger>();
-            
+            _configurationMock = new Mock<IConfiguration>();
+            var sectionMock = new Mock<IConfigurationSection>();
+            sectionMock.Setup(s => s.Value).Returns((string?)null);
+            _configurationMock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(sectionMock.Object);
+
             var memberRepoMock = new Mock<IMemberRepository>();
             memberRepoMock.Setup(r => r.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Member?)null);
@@ -49,7 +56,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 _userManagerMock.Object,
                 _signInManagerMock.Object,
                 _loginResponseFactory,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _configurationMock.Object);
         }
 
         [Fact]

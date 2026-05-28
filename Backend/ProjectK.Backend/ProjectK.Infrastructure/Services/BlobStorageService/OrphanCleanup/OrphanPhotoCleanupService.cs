@@ -1,13 +1,11 @@
 ﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Services.PublicAnnouncements;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
 {
@@ -19,7 +17,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
         private readonly ILogger<OrphanPhotoCleanupService> _logger;
         private readonly BlobStorageOptions _blobOptions;
         private readonly OrphanCleanupOptions _options;
-        private readonly PublicAnnouncementImageStoreOptions _announcementImageOptions;
         private readonly SemaphoreSlim _runLock = new(1, 1);
         private readonly Random _rnd = new();
 
@@ -27,14 +24,12 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
             IServiceScopeFactory scopeFactory,
             ILogger<OrphanPhotoCleanupService> logger,
             BlobStorageOptions blobOptions,
-            IOptions<OrphanCleanupOptions> cleanupOptions,
-            IOptions<PublicAnnouncementImageStoreOptions> announcementImageOptions)
+            IOptions<OrphanCleanupOptions> cleanupOptions)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
             _blobOptions = blobOptions;
             _options = cleanupOptions.Value;
-            _announcementImageOptions = announcementImageOptions.Value;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -97,9 +92,9 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
                 _logger.LogInformation("Starting orphan photo check...");
 
                 using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var referenceProvider = scope.ServiceProvider.GetRequiredService<IPhotoReferenceProvider>();
 
-                var referencedBlobNames = await GetReferencedBlobNamesAsync(db, ct);
+                var referencedBlobNames = await GetReferencedBlobNamesAsync(referenceProvider, ct);
                 var container = await GetBlobContainerAsync(ct);
 
                 if (container != null)
@@ -110,8 +105,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
                     await ProcessOrphanBlobsAsync(container, orphans, ct);
                 }
 
-                await ProcessOrphanAnnouncementImagesAsync(db, ct);
-
                 var elapsed = DateTime.UtcNow - start;
                 _logger.LogInformation("Cleanup finished. Duration {Elapsed} sec.", elapsed.TotalSeconds);
             }
@@ -121,13 +114,10 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
             }
         }
 
-        private static async Task<HashSet<string>> GetReferencedBlobNamesAsync(AppDbContext db, CancellationToken ct)
+        private static async Task<HashSet<string>> GetReferencedBlobNamesAsync(IPhotoReferenceProvider referenceProvider, CancellationToken ct)
         {
-            var referencedBlobNames = await db.Members
-                .Where(m => m.ProfilePhotoBlobName != null && m.ProfilePhotoBlobName != "")
-                .Select(m => m.ProfilePhotoBlobName!)
-                .Distinct()
-                .ToListAsync(ct);
+            var referencedBlobNames = await referenceProvider.GetAllReferencedBlobNamesAsync(ct)
+                .ConfigureAwait(false);
 
             return new HashSet<string>(referencedBlobNames, StringComparer.Ordinal);
         }
@@ -150,16 +140,21 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
         {
             var allBlobs = new List<BlobItem>();
 
-            await foreach (var pageBlob in container.GetBlobsAsync(
-                                traits: BlobTraits.None,
-                                states: BlobStates.None,
-                                prefix: _blobOptions.BlobPrefix,
-                                cancellationToken: ct))
+            foreach (var prefix in GetCleanupPrefixes())
             {
-                allBlobs.Add(pageBlob);
+                await foreach (var pageBlob in container.GetBlobsAsync(
+                                    traits: BlobTraits.None,
+                                    states: BlobStates.None,
+                                    prefix: prefix,
+                                    cancellationToken: ct))
+                {
+                    allBlobs.Add(pageBlob);
+                }
             }
 
-            return allBlobs;
+            return allBlobs
+                .DistinctBy(blob => blob.Name)
+                .ToList();
         }
 
         private List<string> GetOrphanBlobs(List<BlobItem> allBlobs, HashSet<string> referencedSet)
@@ -240,74 +235,7 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
             return deleted;
         }
 
-        private async Task ProcessOrphanAnnouncementImagesAsync(AppDbContext db, CancellationToken ct)
-        {
-            var rootPath = _announcementImageOptions.GetResolvedPath();
-            if (!Directory.Exists(rootPath))
-            {
-                _logger.LogDebug("Announcement image cleanup skipped. Directory does not exist: {Path}", rootPath);
-                return;
-            }
-
-            var referencedImageKeys = await db.PublicAnnouncementDrafts
-                .AsNoTracking()
-                .Where(a => a.ImageBlobKey != null && a.ImageBlobKey != "")
-                .Select(a => a.ImageBlobKey!)
-                .Distinct()
-                .ToListAsync(ct);
-
-            var referencedSet = new HashSet<string>(referencedImageKeys, StringComparer.Ordinal);
-            var graceThreshold = DateTime.UtcNow - _options.GracePeriod;
-            var candidates = Directory
-                .EnumerateFiles(rootPath, "*.jpg", SearchOption.TopDirectoryOnly)
-                .Select(path => new FileInfo(path))
-                .Where(file => !referencedSet.Contains(file.Name))
-                .Where(file => file.LastWriteTimeUtc < graceThreshold)
-                .Take(_options.MaxDeletesPerRun)
-                .ToList();
-
-            if (candidates.Count == 0)
-            {
-                _logger.LogInformation(
-                    "No orphan public announcement images found for deletion. Referenced={Referenced}",
-                    referencedSet.Count);
-                return;
-            }
-
-            _logger.LogInformation(
-                "Found {Count} orphan public announcement images for deletion in {Path}. DryRun={DryRun}",
-                candidates.Count,
-                rootPath,
-                _options.DryRun);
-
-            if (_options.DryRun)
-            {
-                foreach (var file in candidates)
-                {
-                    _logger.LogInformation("DryRun: orphan announcement image (not deleting) {File}", file.Name);
-                }
-
-                return;
-            }
-
-            var deleted = 0;
-            foreach (var file in candidates)
-            {
-                try
-                {
-                    file.Delete();
-                    deleted++;
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    _logger.LogWarning(ex, "Error deleting orphan announcement image {File}", file.Name);
-                }
-            }
-
-            _logger.LogInformation(
-                "Deleted {Deleted} of {Candidates} orphan public announcement images.",
-                deleted,
-                candidates.Count);
-        }
+        private IEnumerable<string> GetCleanupPrefixes()
+            => BlobUploadFolders.ScenarioFolders;
     }
 }
