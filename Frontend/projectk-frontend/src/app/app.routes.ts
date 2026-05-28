@@ -110,19 +110,19 @@ export const routes: Routes = [
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey', entityType: 'member' }
+    data: { breadcrumb: 'Edit Member', parent: '/group/:groupKey', entityType: 'member', entityAction: 'Update' }
   },
   { 
     path: 'group/:groupKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group' }
+    data: { breadcrumb: 'New Member', parent: '/group/:groupKey', entityType: 'group', entityAction: 'Create' }
   },
   {
     path: 'kurin/:kurinKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: UpsertMemberComponent,
-    data: { breadcrumb: 'New Kurin Member', parent: '/kurin', entityType: 'kurin' }
+    data: { breadcrumb: 'New Kurin Member', parent: '/kurin', entityType: 'kurin', entityAction: 'Create' }
   },
   { 
     path: 'member/:memberKey/probe/:probeId',
@@ -150,7 +150,8 @@ export const routes: Routes = [
       breadcrumb: 'Create Leadership',
       parent: '/kurin',
       entityTypeParam: 'type',
-      entityKeyParam: 'entityKey'
+      entityKeyParam: 'entityKey',
+      entityAction: 'Create'
     }
   },
   {

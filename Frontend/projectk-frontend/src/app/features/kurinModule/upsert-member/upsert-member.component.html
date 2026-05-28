@@ -215,7 +215,7 @@
     <div>
         <div class="upsert-member-actions">
             <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)"></p-button>
-            @if (!isCreate) {
+            @if (canDeleteMember()) {
                 <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
             }
         </div>

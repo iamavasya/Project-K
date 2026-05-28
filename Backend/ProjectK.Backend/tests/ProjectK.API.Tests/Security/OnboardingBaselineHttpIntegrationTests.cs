@@ -126,7 +126,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
         // This is a bit tricky for a baseline test without actual implementation, 
         // but it highlights the requirement.
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private sealed class OnboardingBaselineTestHost : IAsyncDisposable

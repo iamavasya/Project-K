@@ -47,7 +47,7 @@ namespace ProjectK.LoadTests
                 
                 if (!string.IsNullOrEmpty(apiKey))
                 {
-                    request = request.WithHeader("X-LoadTest-Bypass", apiKey);
+                    request = request.WithHeader("X-RateLimit-Bypass", apiKey);
                 }
 
                 try

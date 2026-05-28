@@ -15,9 +15,9 @@ namespace ProjectK.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment)
+        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration)
         {
-            if (environment.IsDevelopment() || !RequiresMfaEnforcement(context))
+            if (environment.IsDevelopment() || configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false) || !RequiresMfaEnforcement(context))
             {
                 await _next(context);
                 return;

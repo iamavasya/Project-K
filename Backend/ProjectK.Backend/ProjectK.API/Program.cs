@@ -193,9 +193,9 @@ namespace ProjectK.API
                 // Global limit
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
                 {
-                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
                     if (!string.IsNullOrEmpty(bypassKey) && 
-                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) && 
+                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) && 
                         providedKey == bypassKey)
                     {
                         return RateLimitPartition.GetNoLimiter("Bypass");
@@ -217,9 +217,9 @@ namespace ProjectK.API
                 // Strict limit for Auth (Login/Register)
                 options.AddPolicy("StrictAuthLimit", httpContext =>
                 {
-                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
                     if (!string.IsNullOrEmpty(bypassKey) && 
-                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) && 
+                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) && 
                         providedKey == bypassKey)
                     {
                         return RateLimitPartition.GetNoLimiter("Bypass");
@@ -240,9 +240,9 @@ namespace ProjectK.API
                 // sensitive verification or token-producing operations.
                 options.AddPolicy("AccountSecurityLimit", httpContext =>
                 {
-                    var bypassKey = builder.Configuration["LoadTestApiKey"];
+                    var bypassKey = builder.Configuration["RateLimitBypassKey"];
                     if (!string.IsNullOrEmpty(bypassKey) &&
-                        httpContext.Request.Headers.TryGetValue("X-LoadTest-Bypass", out var providedKey) &&
+                        httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) &&
                         providedKey == bypassKey)
                     {
                         return RateLimitPartition.GetNoLimiter("Bypass");
