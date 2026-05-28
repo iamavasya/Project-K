@@ -54,7 +54,7 @@ describe('UpsertMemberComponent', () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
-    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin']);
+    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'isManager']);
 
     memberServiceSpy.getByKey.and.returnValue(of(loadedMember));
     memberServiceSpy.create.and.returnValue(of({ ...loadedMember, memberKey: 'created999' }));
@@ -62,6 +62,7 @@ describe('UpsertMemberComponent', () => {
     memberServiceSpy.delete.and.returnValue(of(void 0));
     permissionServiceSpy.canManageWarnings.and.returnValue(false);
     permissionServiceSpy.isAdmin.and.returnValue(false);
+    permissionServiceSpy.isManager.and.returnValue(false);
 
     confirmationServiceSpy.confirm.and.returnValue(confirmationServiceSpy);
 
