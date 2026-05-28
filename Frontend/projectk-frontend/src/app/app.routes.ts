@@ -5,6 +5,7 @@ import { GroupPanelComponent } from './features/kurinModule/group-panel/group-pa
 import { MemberCardComponent } from './features/kurinModule/member-card/member-card.component';
 import { UpsertMemberComponent } from './features/kurinModule/upsert-member/upsert-member.component';
 import { authGuard } from './features/authModule/guards/auth.guard';
+import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { LoginComponent } from './features/authModule/login-component/login-component';
 import { LogoutComponent } from './features/authModule/logout-component/logout-component';
@@ -30,26 +31,31 @@ import { WelcomePageComponent } from './features/systemModule/components/welcome
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [publicAuthRedirectGuard],
     component: WelcomePageComponent,
     data: { breadcrumb: 'Welcome' }
   },
   {
     path: 'welcome',
+    canActivate: [publicAuthRedirectGuard],
     component: WelcomePageComponent,
     data: { breadcrumb: 'Welcome' }
   },
   {
     path: 'join',
+    canActivate: [publicAuthRedirectGuard],
     component: WaitlistRegistrationComponent,
     data: { breadcrumb: 'Join Waitlist' }
   },
   {
     path: 'activate/:token',
+    canActivate: [publicAuthRedirectGuard],
     component: AccountActivationComponent,
     data: { breadcrumb: 'Activate Account' }
   },
   {
     path: 'login',
+    canActivate: [publicAuthRedirectGuard],
     component: LoginComponent,
     data: { breadcrumb: 'Login' }
   },
@@ -72,25 +78,25 @@ export const routes: Routes = [
   },
   {
     path: 'users',
-    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
     component: UsersListComponent,
     data: { breadcrumb: 'Users', parent: '/panel' }
   },
   {
     path: 'waitlist',
-    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
     component: WaitlistManagementComponent,
     data: { breadcrumb: 'Waitlist', parent: '/panel' }
   },
   {
     path: 'announcements',
-    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
     component: PublicAnnouncementsComponent,
     data: { breadcrumb: 'Announcements', parent: '/panel' }
   },
   {
     path: 'panel',
-    canActivate: [authGuard, roleGuard('Admin'), kurinAccessGuard('panel')], 
+    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')], 
     component: AdminPanelComponent,
     data: { breadcrumb: 'Panel' }
   },

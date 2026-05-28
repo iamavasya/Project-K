@@ -7,19 +7,16 @@ import { LoginComponent } from './login-component';
 import { AuthState } from '../models/auth-state.model';
 import { LoginResponse } from '../models/login-response.model';
 import { AuthService } from '../services/authService/auth.service';
-import { PermissionService } from '../services/permission.service';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authService: jasmine.SpyObj<AuthService>;
-  let permissionService: jasmine.SpyObj<PermissionService>;
   let router: jasmine.SpyObj<Router>;
   let messageService: jasmine.SpyObj<MessageService>;
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj('AuthService', ['login', 'verifyMfaLogin', 'getAuthStateValue']);
-    permissionService = jasmine.createSpyObj('PermissionService', ['isAdmin']);
     router = jasmine.createSpyObj('Router', ['navigate']);
     messageService = jasmine.createSpyObj('MessageService', ['add']);
 
@@ -28,7 +25,6 @@ describe('LoginComponent', () => {
       providers: [
         provideHttpClient(),
         { provide: AuthService, useValue: authService },
-        { provide: PermissionService, useValue: permissionService },
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: {} },
         { provide: MessageService, useValue: messageService }
@@ -48,7 +44,6 @@ describe('LoginComponent', () => {
     const state = createAuthState();
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(false);
 
     component.email = 'test@example.com';
     component.password = 'password123';
@@ -81,7 +76,6 @@ describe('LoginComponent', () => {
     const state = createAuthState({ memberKey: 'member-123' });
     authService.verifyMfaLogin.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(false);
 
     component.email = 'mfa@example.com';
     component.showOtpInput = true;
@@ -90,14 +84,26 @@ describe('LoginComponent', () => {
     component.onSubmit();
 
     expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456');
-    expect(router.navigate).toHaveBeenCalledWith(['/member', 'member-123']);
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
   });
 
-  it('should navigate to admin panel for admin role', () => {
+  it('should navigate to active kurin for admin role with selected kurin', () => {
     const state = createAuthState({ role: 'Admin', memberKey: 'member-123', kurinKey: 'kurin-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(true);
+
+    component.email = 'admin@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to admin panel for admin role without selected kurin', () => {
+    const state = createAuthState({ role: 'Admin', memberKey: 'member-123', kurinKey: null });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
 
     component.email = 'admin@example.com';
     component.password = 'password123';
@@ -107,11 +113,23 @@ describe('LoginComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/panel']);
   });
 
-  it('should navigate to member page when member key is present', () => {
+  it('should navigate to kurin page when kurin key is present', () => {
     const state = createAuthState({ memberKey: 'member-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(false);
+
+    component.email = 'manager@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to member page when member key is the only available destination', () => {
+    const state = createAuthState({ memberKey: 'member-123', kurinKey: null });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
 
     component.email = 'manager@example.com';
     component.password = 'password123';
@@ -125,7 +143,6 @@ describe('LoginComponent', () => {
     const state = createAuthState({ memberKey: null, kurinKey: 'kurin-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(false);
 
     component.email = 'manager@example.com';
     component.password = 'password123';
@@ -139,7 +156,6 @@ describe('LoginComponent', () => {
     const state = createAuthState({ memberKey: null, kurinKey: null });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
-    permissionService.isAdmin.and.returnValue(false);
 
     component.email = 'user@example.com';
     component.password = 'password123';

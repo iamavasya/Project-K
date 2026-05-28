@@ -12,20 +12,16 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
         const kurinKey = authService.getAuthStateValue()?.kurinKey;
 
         if (resource == 'kurin' && !kurinKey && permissionService.isAdmin()) {
-            router.navigate(['/panel']);
-            return false;
+            return router.createUrlTree(['/panel']);
         }
         if (resource == 'panel' && kurinKey) {
-            router.navigate(['/kurin']);
-            return false;
+            return router.createUrlTree(['/kurin']);
         }
         if (resource == 'planning' && kurinKey && permissionService.getRole() === 'user') {
-            router.navigate(['/kurin']);
-            return false;
+            return router.createUrlTree(['/kurin']);
         }
         if (resource == 'planning-create' && !permissionService.canManagePlanning()) {
-            router.navigate(['/forbidden']);
-            return false;
+            return router.createUrlTree(['/forbidden']);
         }
         return true;
     }

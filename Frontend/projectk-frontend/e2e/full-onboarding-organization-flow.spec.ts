@@ -42,7 +42,7 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#regionOrCountry').fill('Flow Region');
       const phoneInput = page.locator('#phone input, input#phone');
       await phoneInput.click();
-      await phoneInput.pressSequentially('0501112233', { delay: 10 });
+      await phoneInput.pressSequentially('+380501112233', { delay: 10 });
 
       const dateOfBirth = page.locator('#dob input');
       await dateOfBirth.click();

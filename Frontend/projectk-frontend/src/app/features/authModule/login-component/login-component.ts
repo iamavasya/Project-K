@@ -5,12 +5,12 @@ import { FloatLabel } from 'primeng/floatlabel';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../services/authService/auth.service';
-import { PermissionService } from '../services/permission.service';
 import { LoginRequest } from '../models/login-request.model';
 import { Router, RouterLink } from '@angular/router';
 import { InputOtpModule } from 'primeng/inputotp';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
+import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 
 @Component({
   selector: 'app-login-component',
@@ -20,7 +20,6 @@ import { MessageService } from 'primeng/api';
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
-  private readonly permissionService = inject(PermissionService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
 
@@ -109,19 +108,7 @@ export class LoginComponent {
   }
 
   private navigateToPanel(): void {
-    const state = this.authService.getAuthStateValue();
-    const isAdmin = this.permissionService.isAdmin(state?.role);
-
-    if (isAdmin) {
-      this.router.navigate(['/panel']);
-    } else if (state?.memberKey) {
-      this.router.navigate(['/member', state.memberKey]);
-    } else if (state?.kurinKey) {
-      this.router.navigate(['/kurin']);
-    }
-    else {
-      this.router.navigate(['/login']);
-    }
+    this.router.navigate(authenticatedHomeRoute(this.authService.getAuthStateValue()));
   }
 
   private showError(detail: string): void {

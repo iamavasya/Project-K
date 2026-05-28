@@ -15,7 +15,7 @@ test.describe('Public onboarding', () => {
     await page.locator('#regionOrCountry').fill('E2E Region');
     const phoneInput = page.locator('#phone input, input#phone');
     await phoneInput.click();
-    await phoneInput.pressSequentially('0501112233', { delay: 30 });
+    await phoneInput.pressSequentially('+380501112233', { delay: 30 });
     const dateOfBirth = page.locator('#dob input');
     await dateOfBirth.click();
     await dateOfBirth.fill('01.01.2000');
