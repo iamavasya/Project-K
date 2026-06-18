@@ -6,6 +6,7 @@ import { environment } from '../../../../../../environments/environment';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberDto } from '../../models/memberDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
 describe('MemberService', () => {
   let service: MemberService;
@@ -294,6 +295,59 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(`${apiUrl}/${memberKey}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+  });
+
+  it('verifyProfile should PUT note and invalidate member cache', () => {
+    const groupKey = 'g1';
+    const verifiedMember: MemberDto = {
+      ...sampleMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent,
+      profileVerificationNote: 'Checked'
+    };
+
+    service.getAll(groupKey).subscribe();
+    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+
+    service.verifyProfile(sampleMember.memberKey, 'Checked').subscribe(res => {
+      expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
+      expect(res.profileVerificationNote).toBe('Checked');
+    });
+
+    const verifyReq = httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}/profile-verification`);
+    expect(verifyReq.request.method).toBe('PUT');
+    expect(verifyReq.request.body).toEqual({ note: 'Checked' });
+    verifyReq.flush(verifiedMember);
+
+    service.getAll(groupKey).subscribe();
+    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    expect(listReq.request.method).toBe('GET');
+    listReq.flush([verifiedMember]);
+  });
+
+  it('resetProfileVerification should DELETE and invalidate member cache', () => {
+    const groupKey = 'g1';
+    const resetMember: MemberDto = {
+      ...sampleMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.Unverified,
+      profileVerificationNote: null
+    };
+
+    service.getAll(groupKey).subscribe();
+    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+
+    service.resetProfileVerification(sampleMember.memberKey).subscribe(res => {
+      expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
+      expect(res.profileVerificationNote).toBeNull();
+    });
+
+    const resetReq = httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}/profile-verification`);
+    expect(resetReq.request.method).toBe('DELETE');
+    resetReq.flush(resetMember);
+
+    service.getAll(groupKey).subscribe();
+    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    expect(listReq.request.method).toBe('GET');
+    listReq.flush([resetMember]);
   });
 
   it('getMentorCandidates should call mentor-candidates endpoint', () => {

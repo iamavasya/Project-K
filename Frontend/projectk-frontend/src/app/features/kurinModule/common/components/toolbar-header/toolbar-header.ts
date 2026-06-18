@@ -8,11 +8,13 @@ import { PermissionService } from '../../../../authModule/services/permission.se
 import { AsyncPipe } from '@angular/common';
 import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
 import { Router } from '@angular/router';
+import { NotificationBell } from '../../../../notifications/components/notification-bell/notification-bell';
 
 @Component({
   selector: 'app-toolbar-header',
-  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu],
+  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu, NotificationBell],
   templateUrl: './toolbar-header.html',
+  styleUrl: './toolbar-header.css',
 })
 export class ToolbarHeader {
   private readonly authService = inject(AuthService);

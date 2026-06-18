@@ -24,8 +24,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
         public string? RegionOrCountry { get; set; }
         public string? NamedAfter { get; set; }
         public string? Description { get; set; }
+        public bool ProfileVerificationEnabled { get; set; }
 
-        public UpsertKurin(Guid kurinKey, int number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null)
+        public UpsertKurin(Guid kurinKey, int number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null, bool profileVerificationEnabled = false)
         {
             KurinKey = kurinKey;
             Number = number;
@@ -33,6 +34,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
             RegionOrCountry = regionOrCountry;
             NamedAfter = namedAfter;
             Description = description;
+            ProfileVerificationEnabled = profileVerificationEnabled;
         }
         public UpsertKurin(int number)
         {
@@ -104,6 +106,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert
                 existing.RegionOrCountry = regionOrCountry;
                 existing.NamedAfter = namedAfter;
                 existing.Description = description;
+                existing.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
                 _unitOfWork.Kurins.Update(existing, cancellationToken);
             }
 

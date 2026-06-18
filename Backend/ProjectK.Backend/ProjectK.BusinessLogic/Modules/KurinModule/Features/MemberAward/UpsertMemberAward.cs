@@ -9,6 +9,7 @@ using ProjectK.Common.Models.Records;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
 {
@@ -25,12 +26,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly INotificationService _notificationService;
+        private readonly IReviewNotificationRecipientResolver _recipientResolver;
         private readonly IMapper _mapper;
 
-        public UpsertMemberAwardHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper)
+        public UpsertMemberAwardHandler(
+            IUnitOfWork unitOfWork,
+            ICurrentUserContext currentUserContext,
+            INotificationService notificationService,
+            IReviewNotificationRecipientResolver recipientResolver,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
+            _notificationService = notificationService;
+            _recipientResolver = recipientResolver;
             _mapper = mapper;
         }
 
@@ -84,8 +94,46 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            await NotifyReviewersAsync(member, existingAward, cancellationToken);
+
             var response = _mapper.Map<MemberAwardDto>(existingAward);
             return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
+        }
+
+        private async Task NotifyReviewersAsync(
+            MemberEntity member,
+            ProjectK.Common.Entities.KurinModule.MemberAward award,
+            CancellationToken cancellationToken)
+        {
+            var recipientUserKeys = await _recipientResolver.ResolveAsync(
+                member.KurinKey,
+                member.GroupKey,
+                _currentUserContext.UserId,
+                cancellationToken);
+
+            if (recipientUserKeys.Count == 0)
+            {
+                return;
+            }
+
+            var memberName = $"{member.FirstName} {member.LastName}".Trim();
+            var requests = recipientUserKeys.Select(userKey => new NotificationRequest
+            {
+                RecipientUserKey = userKey,
+                Type = AppNotificationType.MemberAwardSubmitted,
+                Severity = AppNotificationSeverity.Info,
+                Title = "Відзначення подано на розгляд",
+                Body = string.IsNullOrWhiteSpace(memberName)
+                    ? "Надійшло відзначення на розгляд."
+                    : $"Надійшло відзначення від {memberName} на розгляд.",
+                EntityType = "MemberAward",
+                EntityKey = award.MemberAwardKey,
+                Route = $"/member/{member.MemberKey}",
+                ActorUserKey = _currentUserContext.UserId,
+                DeduplicationKey = $"award-submitted:{award.MemberAwardKey}"
+            });
+
+            await _notificationService.NotifyManyAsync(requests, cancellationToken);
         }
     }
 }

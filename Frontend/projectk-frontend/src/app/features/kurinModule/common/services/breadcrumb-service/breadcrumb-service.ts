@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Route, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
+import { PermissionService } from '../../../../authModule/services/permission.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ export class BreadcrumbService {
   private paramCache: Record<string, string> = {};
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly permissionService = inject(PermissionService);
 
   constructor() {
     if (this.router && this.router.events) {
@@ -37,6 +39,10 @@ export class BreadcrumbService {
   }
 
   private updateParamCache(): void {
+    // Route parameters are navigation-scoped. Dynamic values such as a member's
+    // groupKey may be injected again after the destination entity is loaded.
+    this.paramCache = {};
+
     // Extract parameters from URL segments
     const urlSegments = this.router.url.split('/').filter(s => s);
     const routes = this.router.config;
@@ -119,10 +125,29 @@ export class BreadcrumbService {
       breadcrumbs.unshift(currentItem);
       
       // Process parent if exists
-      if (route.snapshot.data['parent']) {
-        this.processParent(route.snapshot.data['parent'], breadcrumbs);
+      const parentPath = this.resolveParentPath(
+        route.snapshot.data['parent'],
+        route.snapshot.data['parentFallback']
+      );
+      if (parentPath) {
+        this.processParent(parentPath, breadcrumbs);
       }
     }
+  }
+
+  private resolveParentPath(parent: unknown, fallback: unknown): string | null {
+    if (typeof parent !== 'string' || parent.length === 0) {
+      return null;
+    }
+
+    const resolvedParent = this.resolveParameters(parent);
+    if (!resolvedParent.includes(':')) {
+      return parent;
+    }
+
+    return typeof fallback === 'string' && fallback.length > 0
+      ? fallback
+      : parent;
   }
   
   private processParent(parentPath: string, breadcrumbs: MenuItem[]): void {
@@ -144,10 +169,21 @@ export class BreadcrumbService {
       breadcrumbs.unshift(parentItem);
       
       // Process grandparent if exists
-      if (route.data['parent']) {
+      if (route.data['parent'] && this.isParentAllowed(route.data['parentRoles'])) {
         this.processParent(route.data['parent'], breadcrumbs);
       }
     }
+  }
+
+  private isParentAllowed(parentRoles: unknown): boolean {
+    if (!Array.isArray(parentRoles) || parentRoles.length === 0) {
+      return true;
+    }
+
+    const currentRole = this.permissionService.getRole();
+    return parentRoles.some(role =>
+      typeof role === 'string' && role.trim().toLowerCase() === currentRole
+    );
   }
   
   private resolveParameters(path: string): string {

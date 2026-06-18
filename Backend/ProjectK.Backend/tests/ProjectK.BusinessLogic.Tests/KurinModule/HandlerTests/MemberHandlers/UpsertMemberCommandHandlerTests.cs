@@ -12,6 +12,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -31,6 +32,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+        private readonly Mock<INotificationService> _notificationServiceMock;
         private readonly UpsertMemberHandler _handler;
 
         public UpsertMemberHandlerTests()
@@ -60,6 +62,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _emailServiceMock = new Mock<IEmailService>();
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+            _notificationServiceMock = new Mock<INotificationService>();
 
             var userStoreMock = new Mock<IUserStore<AppUser>>();
             _userManagerMock = new Mock<UserManager<AppUser>>(
@@ -88,7 +91,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 _photoServiceMock.Object,
                 _userManagerMock.Object,
                 _emailServiceMock.Object,
-                _currentUserContextMock.Object);
+                _currentUserContextMock.Object,
+                _notificationServiceMock.Object);
         }
 
         private static Group MakeGroup(Guid? kurinKey = null)
@@ -137,6 +141,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             result.Type.Should().Be(ResultType.Created);
             result.Data.Should().NotBeNull();
             result.Data!.FirstName.Should().Be("Ivan");
+            result.Data.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
             _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -258,6 +263,124 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             result.Type.Should().Be(ResultType.Success);
             _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
             _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_Update_VerifiedCurrentMember_WhenProfileFieldChanges_ShouldMarkVerifiedStale()
+        {
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+            existing.ProfileVerifiedAtUtc = DateTime.UtcNow.AddDays(-1);
+            existing.ProfileVerifiedByUserKey = Guid.NewGuid();
+
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "Changed",
+                MiddleName = existing.MiddleName ?? string.Empty,
+                LastName = existing.LastName,
+                Email = existing.Email,
+                PhoneNumber = existing.PhoneNumber,
+                DateOfBirth = existing.DateOfBirth,
+                Address = existing.Address,
+                School = existing.School
+            };
+
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+            existing.ProfileVerifiedAtUtc.Should().NotBeNull();
+            existing.ProfileVerifiedByUserKey.Should().NotBeNull();
+            result.Data!.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+        }
+
+        [Fact]
+        public async Task Handle_Update_LinkedVerifiedCurrentMember_WhenProfileFieldChanges_ShouldNotifyMemberOwner()
+        {
+            var actorUserKey = Guid.NewGuid();
+            var memberUserKey = Guid.NewGuid();
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.UserKey = memberUserKey;
+            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+            existing.ProfileVerifiedAtUtc = DateTime.UtcNow.AddDays(-1);
+            existing.ProfileVerifiedByUserKey = Guid.NewGuid();
+
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = "Changed",
+                MiddleName = existing.MiddleName ?? string.Empty,
+                LastName = existing.LastName,
+                Email = existing.Email,
+                PhoneNumber = existing.PhoneNumber,
+                DateOfBirth = existing.DateOfBirth,
+                Address = existing.Address,
+                School = existing.School
+            };
+
+            _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            _notificationServiceMock.Verify(x => x.NotifyAsync(
+                It.Is<NotificationRequest>(request =>
+                    request.RecipientUserKey == memberUserKey
+                    && request.Type == AppNotificationType.MemberProfileChangedAfterVerification
+                    && request.Severity == AppNotificationSeverity.Warn
+                    && request.EntityKey == existing.MemberKey
+                    && request.Route == $"/member/{existing.MemberKey}"
+                    && request.ActorUserKey == actorUserKey
+                    && request.DeduplicationKey == $"member-profile-stale:{existing.MemberKey}"),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_Update_VerifiedCurrentMember_WhenProfileDoesNotChange_ShouldKeepVerifiedCurrent()
+        {
+            var group = MakeGroup();
+            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+
+            var cmd = new UpsertMember
+            {
+                MemberKey = existing.MemberKey,
+                GroupKey = group.GroupKey,
+                FirstName = existing.FirstName,
+                MiddleName = existing.MiddleName ?? string.Empty,
+                LastName = existing.LastName,
+                Email = existing.Email,
+                PhoneNumber = existing.PhoneNumber,
+                DateOfBirth = existing.DateOfBirth,
+                Address = existing.Address,
+                School = existing.School
+            };
+
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(group);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
+            result.Data!.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
         }
 
         [Fact]

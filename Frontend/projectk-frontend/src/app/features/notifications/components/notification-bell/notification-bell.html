@@ -1,0 +1,54 @@
+<div class="notification-bell">
+  <p-button
+    icon="pi pi-bell"
+    [text]="true"
+    severity="secondary"
+    ariaLabel="Сповіщення"
+    (onClick)="toggle()"
+  ></p-button>
+
+  @if (unreadCount > 0) {
+    <span class="notification-count">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+  }
+
+  @if (isOpen) {
+    <div class="notification-panel">
+      <div class="notification-panel__header">
+        <span class="notification-panel__title">Сповіщення</span>
+        <p-button
+          icon="pi pi-check"
+          [text]="true"
+          size="small"
+          severity="secondary"
+          ariaLabel="Позначити всі як прочитані"
+          [disabled]="unreadCount === 0"
+          (onClick)="markAllAsRead()"
+        ></p-button>
+      </div>
+
+      <div class="notification-panel__body">
+        @if (isLoading) {
+          <div class="notification-empty">Завантаження…</div>
+        } @else if (notifications.length === 0) {
+          <div class="notification-empty">Сповіщень немає</div>
+        } @else {
+          @for (notification of notifications; track notification.notificationKey) {
+            <button
+              type="button"
+              class="notification-row"
+              [ngClass]="[severityClass(notification.severity), notification.isRead ? 'notification-row--read' : 'notification-row--unread']"
+              (click)="openNotification(notification)"
+            >
+              <span class="notification-row__status"></span>
+              <span class="notification-row__content">
+                <span class="notification-row__title">{{ notification.title }}</span>
+                <span class="notification-row__body">{{ notification.body }}</span>
+                <span class="notification-row__date">{{ notification.createdAtUtc | date:'dd.MM.yy, HH:mm' }}</span>
+              </span>
+            </button>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -401,3 +401,6 @@ FodyWeavers.xsd
 Backend/ProjectK.Backend/ProjectK.API/appsettings.Development.json
 todo/*
 Backend/ProjectK.Backend/tests/ProjectK.LoadTests/reports
+AGENTS.md
+.codex/
+graphify-out/

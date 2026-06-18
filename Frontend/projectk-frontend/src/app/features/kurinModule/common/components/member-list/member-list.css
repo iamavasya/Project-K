@@ -43,6 +43,14 @@
     gap: 0.35rem;
 }
 
+.member-name-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+
 .member-empty-state {
     border: 1px dashed var(--p-content-border-color);
     color: var(--p-text-muted-color);

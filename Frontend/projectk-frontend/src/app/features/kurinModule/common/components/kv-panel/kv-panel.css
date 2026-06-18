@@ -15,12 +15,6 @@
     line-height: 1.75rem;
 }
 
-.kv-caption p {
-    margin: 0.15rem 0 0;
-    color: var(--p-text-muted-color);
-    font-size: 0.875rem;
-}
-
 .kv-caption__actions {
     display: flex;
     align-items: center;
@@ -28,16 +22,6 @@
     margin-left: auto;
 }
 
-.kv-manager {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    color: var(--p-text-color);
-    font-size: 0.9rem;
-    line-height: 1.2rem;
-}
-
-.kv-manager__label,
 .kv-muted {
     color: var(--p-text-muted-color);
     font-size: 0.8125rem;
@@ -45,6 +29,15 @@
 
 .kv-member-name {
     font-weight: 650;
+}
+
+.kv-row {
+    cursor: pointer;
+}
+
+:host ::ng-deep .kv-table .p-datatable-tbody > tr.kv-row:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: -2px;
 }
 
 .kv-group-tags {
@@ -86,6 +79,15 @@
     align-items: center;
     color: var(--p-text-color);
     font-size: 0.9rem;
+}
+
+.kv-archive-row--clickable {
+    cursor: pointer;
+}
+
+.kv-archive-row--clickable:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
 }
 
 .kv-actions {

@@ -1,0 +1,128 @@
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.notification-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 1000;
+  width: min(22rem, calc(100vw - 1rem));
+  overflow: hidden;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--p-content-background, #fff);
+  box-shadow: 0 18px 45px rgb(15 23 42 / 18%);
+}
+
+.notification-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+}
+
+.notification-panel__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.notification-panel__body {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.notification-empty {
+  padding: 1.25rem;
+  color: var(--p-text-muted-color, #64748b);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.notification-row {
+  display: grid;
+  grid-template-columns: 0.45rem 1fr;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-row:hover {
+  background: var(--p-highlight-background, #f8fafc);
+}
+
+.notification-row--read {
+  opacity: 0.72;
+}
+
+.notification-row__status {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: #64748b;
+}
+
+.notification-row--success .notification-row__status {
+  background: #16a34a;
+}
+
+.notification-row--warn .notification-row__status {
+  background: #d97706;
+}
+
+.notification-row--error .notification-row__status {
+  background: #dc2626;
+}
+
+.notification-row--read .notification-row__status {
+  background: #cbd5e1;
+}
+
+.notification-row__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.notification-row__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.notification-row__body {
+  color: var(--p-text-muted-color, #64748b);
+  font-size: 0.82rem;
+  line-height: 1.25rem;
+}
+
+.notification-row__date {
+  color: var(--p-text-muted-color, #64748b);
+  font-size: 0.75rem;
+}

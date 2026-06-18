@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -162,6 +163,45 @@ namespace ProjectK.API.Controllers.KurinModule
                 BlobContentType = request.Blob?.ContentType
             };
             var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpPut("{memberKey:guid}/profile-verification")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> VerifyProfile(
+            Guid memberKey,
+            [FromBody] VerifyMemberProfileRequest? request,
+            CancellationToken cancellationToken)
+        {
+            var response = await _mediator.Send(
+                new VerifyMemberProfile(memberKey, request?.Note),
+                cancellationToken);
+
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireMentor")]
+        [HttpDelete("{memberKey:guid}/profile-verification")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ResetProfileVerification(
+            Guid memberKey,
+            CancellationToken cancellationToken)
+        {
+            var response = await _mediator.Send(
+                new ResetMemberProfileVerification(memberKey),
+                cancellationToken);
+
             return response.ToActionResult(this);
         }
 

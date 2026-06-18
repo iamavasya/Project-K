@@ -60,6 +60,10 @@ export class PermissionService {
     return this.isAdmin(role) || this.isManager(role);
   }
 
+  canManageKurinSettings(role?: string | null): boolean {
+    return this.isAdmin(role) || this.isManager(role);
+  }
+
   getRoleSeverity(role?: string | null): string {
     const normalized = this.getRole(role);
     switch (normalized) {

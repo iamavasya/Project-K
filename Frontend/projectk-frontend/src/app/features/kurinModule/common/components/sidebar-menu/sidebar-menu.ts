@@ -49,6 +49,7 @@ export class SidebarMenu implements OnChanges {
     const isAdmin = this.permissionService.isAdmin(role);
     const canReviewSkills = this.permissionService.canReviewSkills(role);
     const canManageMembers = this.permissionService.canManageMembers(role);
+    const canManageKurinSettings = this.permissionService.canManageKurinSettings(role);
     const disabled = !kurinKey;
 
     const items: MenuItem[] = [];
@@ -105,7 +106,17 @@ export class SidebarMenu implements OnChanges {
         });
       }
 
-      items.push({ label: 'Налаштування', disabled: true });
+      if (canManageKurinSettings) {
+        items.push({
+          label: 'Налаштування куреня',
+          icon: 'pi pi-cog',
+          routerLink: ['/kurin', kurinKey, 'settings'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin', kurinKey, 'settings']);
+          }
+        });
+      }
     }
 
     if (isAdmin && !kurinKey) {

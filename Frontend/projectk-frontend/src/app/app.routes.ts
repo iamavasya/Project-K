@@ -20,6 +20,7 @@ import { CreatePlanningComponent } from './features/kurinModule/create-planning/
 import { MemberProbePageComponent } from './features/kurinModule/member-probe-page/member-probe-page.component';
 import { SkillsReviewPageComponent } from './features/kurinModule/skills-review-page/skills-review-page.component';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
+import { KurinSettingsComponent } from './features/kurinModule/kurin-settings/kurin-settings.component';
 
 import { WaitlistRegistrationComponent } from './features/authModule/onboarding/waitlist-registration/waitlist-registration';
 import { AccountActivationComponent } from './features/authModule/onboarding/account-activation/account-activation';
@@ -104,7 +105,7 @@ export const routes: Routes = [
     path: 'kurin',
     canActivate: [authGuard, kurinAccessGuard('kurin')],
     component: KurinPanelComponent,
-    data: { breadcrumb: 'Kurin', parent: '/panel' },
+    data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] },
   },
   { 
     path: 'group/:groupKey',
@@ -140,7 +141,12 @@ export const routes: Routes = [
     path: 'member/:memberKey', 
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: MemberCardComponent,
-    data: { breadcrumb: 'Member Card', parent: '/group/:groupKey', entityType: 'member' }
+    data: {
+      breadcrumb: 'Member Card',
+      parent: '/group/:groupKey',
+      parentFallback: '/kurin',
+      entityType: 'member'
+    }
   },
   {
     path: 'toolbar',
@@ -176,6 +182,12 @@ export const routes: Routes = [
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     component: SkillsReviewPageComponent,
     data: { breadcrumb: 'Skills Review', parent: '/kurin', entityType: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/settings',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), roleGuard('Admin', 'Manager'), EntityGuard],
+    component: KurinSettingsComponent,
+    data: { breadcrumb: 'Kurin Settings', parent: '/kurin', entityType: 'kurin', entityAction: 'Update' }
   },
   {
     path: 'planning/create/:kurinKey',

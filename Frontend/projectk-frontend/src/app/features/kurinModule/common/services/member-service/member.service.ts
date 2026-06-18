@@ -63,6 +63,20 @@ export class MemberService {
     );
   }
 
+  verifyProfile(memberKey: string, note?: string | null): Observable<MemberDto> {
+    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { note: note ?? null }).pipe(
+      tap(() => this.invalidateMemberCache()),
+      map(member => mapMemberForView(member))
+    );
+  }
+
+  resetProfileVerification(memberKey: string): Observable<MemberDto> {
+    return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`).pipe(
+      tap(() => this.invalidateMemberCache()),
+      map(member => mapMemberForView(member))
+    );
+  }
+
   create(request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
     if (!request.groupKey && !request.kurinKey) {
       return throwError(() => new Error('Either groupKey or kurinKey must be provided for create.'));

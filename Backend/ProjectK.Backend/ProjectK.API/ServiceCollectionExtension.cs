@@ -5,7 +5,9 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.API.Helpers;
@@ -46,6 +48,8 @@ namespace ProjectK.API
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             services.AddSingleton<IActivityLogger, ActivityLogger>();
             services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
             services.Configure<PublicAnnouncementImageStoreOptions>(configuration.GetSection("PublicAnnouncements:ImageStore"));
             services.PostConfigure<PublicAnnouncementImageStoreOptions>(options =>
             {
@@ -82,6 +86,7 @@ namespace ProjectK.API
             }
 
             services.AddScoped<ResourceAccessService>();
+            services.AddScoped<MemberProfileVerificationService>();
             services.AddScoped<IResourceAccessService>(sp =>
                 new ResourceAccessServiceInstrumentationDecorator(
                     sp.GetRequiredService<ResourceAccessService>(),
@@ -96,6 +101,7 @@ namespace ProjectK.API
             services.AddScoped<IMemberWarningRepository, MemberWarningRepository>();
             services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
             services.AddScoped<IProbeProgressRepository, ProbeProgressRepository>();
+            services.AddScoped<IAppNotificationRepository, AppNotificationRepository>();
 
             // Probes and badges read-only catalog services.
             services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();

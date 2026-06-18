@@ -30,5 +30,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public ICollection<MemberWarningDto> Warnings { get; set; } = [];
         public ICollection<MemberAwardDto> Awards { get; set; } = [];
         public string? ProfilePhotoUrl { get; set; }
+        public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
+        public DateTime? ProfileVerifiedAtUtc { get; set; }
+        public Guid? ProfileVerifiedByUserKey { get; set; }
+        public string? ProfileVerificationNote { get; set; }
     }
 }

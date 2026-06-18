@@ -45,6 +45,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private readonly UserManager<AppUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly INotificationService _notificationService;
 
         public UpsertMemberHandler(
             IUnitOfWork unitOfWork,
@@ -52,7 +53,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             IPhotoService photoService,
             UserManager<AppUser> userManager,
             IEmailService emailService,
-            ICurrentUserContext currentUserContext)
+            ICurrentUserContext currentUserContext,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -60,6 +62,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             _userManager = userManager;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
+            _notificationService = notificationService;
         }
 
         private bool CanEditRestrictedFields()
@@ -100,6 +103,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
             bool isCreated = false;
             string? oldBlobName = null;
+            var wasProfileVerifiedCurrent = existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
 
             if (request.CreateUserAccount)
             {
@@ -142,6 +146,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             {
                 var preserveLinkedUserEmail = false;
                 string? linkedUserEmail = null;
+                var shouldMarkProfileStale = existing.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent
+                    && HasSignificantProfileChange(request, existing, group);
 
                 if (existing.UserKey.HasValue)
                 {
@@ -171,6 +177,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
                 existing.GroupKey = group?.GroupKey;
                 existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
+
+                if (shouldMarkProfileStale)
+                {
+                    existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
+                }
                 
                 if (CanEditRestrictedFields())
                 {
@@ -187,11 +198,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             {
                 var upload = await _photoService.UploadPhotoAsync(request.BlobContent, request.BlobFileName, cancellationToken);
                 existing.ProfilePhotoBlobName = upload.BlobName;
+                MarkVerifiedProfileStaleAfterPhotoChange(existing, oldBlobName);
             }
 
             if (request.RemoveProfilePhoto && oldBlobName != null)
             {
                 existing.ProfilePhotoBlobName = null;
+                MarkVerifiedProfileStaleAfterPhotoChange(existing, oldBlobName);
                 await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
             }
 
@@ -210,6 +223,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             if (!isCreated && oldBlobName != null && oldBlobName != existing.ProfilePhotoBlobName)
             {
                 await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
+            }
+
+            if (!isCreated
+                && wasProfileVerifiedCurrent
+                && existing.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedStale)
+            {
+                await NotifyProfileChangedAfterVerificationAsync(existing, cancellationToken);
             }
 
             var response = _mapper.Map<MemberResponse>(existing);
@@ -332,6 +352,88 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                     }
                 }
             }
+        }
+
+        private bool HasSignificantProfileChange(UpsertMember request, MemberEntity existing, GroupEntity? targetGroup)
+        {
+            var targetGroupKey = targetGroup?.GroupKey;
+            var targetKurinKey = targetGroup?.KurinKey ?? request.KurinKey;
+
+            return !string.Equals(existing.FirstName, request.FirstName, StringComparison.Ordinal)
+                   || !string.Equals(existing.MiddleName ?? string.Empty, request.MiddleName ?? string.Empty, StringComparison.Ordinal)
+                   || !string.Equals(existing.LastName, request.LastName, StringComparison.Ordinal)
+                   || !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase)
+                   || !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.Ordinal)
+                   || existing.DateOfBirth != request.DateOfBirth
+                   || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
+                   || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
+                   || existing.GroupKey != targetGroupKey
+                   || existing.KurinKey != targetKurinKey
+                   || (CanEditRestrictedFields() && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
+        }
+
+        private static bool HasPlastLevelHistoryChange(
+            ICollection<PlastLevelHistoryDto> requested,
+            ICollection<PlastLevelHistory> existing)
+        {
+            if (requested.Count != existing.Count)
+            {
+                return true;
+            }
+
+            var existingByKey = existing.ToDictionary(history => history.PlastLevelHistoryKey);
+            foreach (var dto in requested)
+            {
+                if (!dto.PlastLevelHistoryKey.HasValue || dto.PlastLevelHistoryKey == Guid.Empty)
+                {
+                    return true;
+                }
+
+                if (!existingByKey.TryGetValue(dto.PlastLevelHistoryKey.Value, out var entity))
+                {
+                    return true;
+                }
+
+                if (entity.PlastLevel != dto.PlastLevel || entity.DateAchieved != dto.DateAchieved)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void MarkVerifiedProfileStaleAfterPhotoChange(MemberEntity member, string? previousBlobName)
+        {
+            if (member.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent
+                && !string.Equals(previousBlobName, member.ProfilePhotoBlobName, StringComparison.Ordinal))
+            {
+                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
+            }
+        }
+
+        private async Task NotifyProfileChangedAfterVerificationAsync(MemberEntity member, CancellationToken cancellationToken)
+        {
+            if (!member.UserKey.HasValue)
+            {
+                return;
+            }
+
+            await _notificationService.NotifyAsync(
+                new NotificationRequest
+                {
+                    RecipientUserKey = member.UserKey.Value,
+                    Type = AppNotificationType.MemberProfileChangedAfterVerification,
+                    Severity = AppNotificationSeverity.Warn,
+                    Title = "Профіль потребує повторної перевірки",
+                    Body = "Після підтвердження профільні дані змінилися. Потрібно перевірити їх повторно.",
+                    EntityType = "Member",
+                    EntityKey = member.MemberKey,
+                    Route = $"/member/{member.MemberKey}",
+                    ActorUserKey = _currentUserContext.UserId,
+                    DeduplicationKey = $"member-profile-stale:{member.MemberKey}"
+                },
+                cancellationToken);
         }
     }
 }

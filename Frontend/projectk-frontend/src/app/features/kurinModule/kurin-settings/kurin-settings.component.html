@@ -1,0 +1,49 @@
+<section class="settings-page">
+  <header class="settings-header">
+    <div>
+      <p class="settings-eyebrow">Налаштування куреня</p>
+      <h1>{{ kurin?.number || '-' }} курінь</h1>
+    </div>
+    <p-button
+      label="Назад"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      variant="text"
+      (onClick)="cancel()" />
+  </header>
+
+  @if (errorMessage) {
+    <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
+  }
+
+  <section class="settings-section" aria-labelledby="profile-verification-title">
+    <div class="setting-row">
+      <div class="setting-copy">
+        <h2 id="profile-verification-title">Верифікація профілів</h2>
+        <p>
+          Дозволяє менторам і проводу позначати профільні дані мемберів як перевірені.
+          Коли функцію вимкнено, галочки і дії верифікації не показуються.
+        </p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="profileVerificationEnabled"
+        [disabled]="loading || saving"
+        inputId="profileVerificationEnabled" />
+    </div>
+  </section>
+
+  <footer class="settings-actions">
+    <p-button
+      label="Скасувати"
+      severity="secondary"
+      variant="text"
+      [disabled]="saving"
+      (onClick)="cancel()" />
+    <p-button
+      label="Зберегти"
+      icon="pi pi-save"
+      [loading]="saving"
+      [disabled]="loading || saving || !kurin"
+      (onClick)="save()" />
+  </footer>
+</section>

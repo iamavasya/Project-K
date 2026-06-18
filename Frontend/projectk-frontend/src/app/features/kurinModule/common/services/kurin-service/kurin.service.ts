@@ -60,7 +60,8 @@ export class KurinService {
         stanytsia: kurin.stanytsia,
         regionOrCountry: kurin.regionOrCountry,
         namedAfter: kurin.namedAfter,
-        description: kurin.description
+        description: kurin.description,
+        profileVerificationEnabled: kurin.profileVerificationEnabled ?? false
       },
       {
         headers: {

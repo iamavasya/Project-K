@@ -172,7 +172,7 @@ describe('LeadershipComponent', () => {
       expect(component.leadershipHistories.at(0).get('startDate')?.value).toEqual(new Date('2023-01-01'));
     });
 
-    it('should sort histories: archived first, then by date', () => {
+    it('should sort histories with active rows before archived rows', () => {
       const h1 = { ...mockLeadership.leadershipHistories[0], endDate: '2023-02-01', startDate: '2023-01-01' }; // Archived
       const h2 = { ...mockLeadership.leadershipHistories[0], endDate: null, startDate: '2023-03-01' }; // Active
       
@@ -187,8 +187,21 @@ describe('LeadershipComponent', () => {
         .map(c => c.getRawValue())
         .filter(v => v.role === LeadershipRole.Kurinnuy);
       
-      expect(rows[0].endDate).toBeTruthy(); // h1
-      expect(rows[1].endDate).toBeFalsy(); // h2
+      expect(rows[0].endDate).toBeFalsy(); // h2
+      expect(rows[1].endDate).toBeTruthy(); // h1
+    });
+
+    it('should build default rows in fixed leadership role order', () => {
+      component.buildFormRowsFromDefaults('kurin');
+
+      const roles = component.leadershipHistories.controls.map(control => control.getRawValue().role);
+
+      expect(roles.slice(0, 4)).toEqual([
+        LeadershipRole.Kurinnuy,
+        LeadershipRole.Suddya,
+        LeadershipRole.Pysar,
+        LeadershipRole.Skarbnyk
+      ]);
     });
 
     it('should add empty row if no active member exists for role', () => {

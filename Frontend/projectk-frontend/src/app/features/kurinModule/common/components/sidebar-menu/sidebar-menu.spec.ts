@@ -171,6 +171,75 @@ describe('SidebarMenu', () => {
       });
     });
 
+    it('should show kurin settings item for manager role', (done) => {
+      const mockState: AuthState = {
+        userKey: 'user-123',
+        memberKey: 'test-member-key',
+        email: 'manager@example.com',
+        role: 'Manager',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.state$ = of(mockState);
+      component.ngOnChanges({
+        state$: new SimpleChange(null, component.state$, true)
+      });
+
+      component.items$.subscribe(items => {
+        const settingsItem = items.find(item => item.label === 'Налаштування куреня');
+        expect(settingsItem).toBeDefined();
+        expect(settingsItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
+        done();
+      });
+    });
+
+    it('should show kurin settings item for admin role with selected kurin', (done) => {
+      const mockState: AuthState = {
+        userKey: 'user-123',
+        memberKey: 'test-member-key',
+        email: 'admin@example.com',
+        role: 'Admin',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.state$ = of(mockState);
+      component.ngOnChanges({
+        state$: new SimpleChange(null, component.state$, true)
+      });
+
+      component.items$.subscribe(items => {
+        const settingsItem = items.find(item => item.label === 'РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РєСѓСЂРµРЅСЏ');
+        const settingsLinkItem = items.find(item => JSON.stringify(item.routerLink) === JSON.stringify(['/kurin', 'kurin-456', 'settings']));
+        expect(settingsLinkItem).toBeDefined();
+        expect(settingsLinkItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
+        done();
+      });
+    });
+
+    it('should hide kurin settings item for non-manager role', (done) => {
+      const mockState: AuthState = {
+        userKey: 'user-999',
+        memberKey: 'test-member-key',
+        email: 'mentor@example.com',
+        role: 'Mentor',
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+
+      component.state$ = of(mockState);
+      component.ngOnChanges({
+        state$: new SimpleChange(null, component.state$, true)
+      });
+
+      component.items$.subscribe(items => {
+        const settingsItem = items.find(item => item.label === 'Налаштування куреня');
+        expect(settingsItem).toBeUndefined();
+        done();
+      });
+    });
+
     it('should build menu items without kurinKey (Admin view)', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',

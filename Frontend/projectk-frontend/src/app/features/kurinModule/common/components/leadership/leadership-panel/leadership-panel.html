@@ -1,5 +1,10 @@
 <div class="leadership-panel">
-  <p-table [value]="visibleHistories" styleClass="leadership-table project-table" [loading]="isLoading">
+  <p-table
+    [value]="visibleHistories"
+    styleClass="leadership-table project-table"
+    [loading]="isLoading"
+    [scrollable]="showArchived"
+    [scrollHeight]="showArchived ? archiveScrollHeight : undefined">
     <ng-template #caption>
       <div class="leadership-caption">
         <div>

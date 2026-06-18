@@ -5,6 +5,7 @@ using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos;
@@ -301,6 +302,84 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
             Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task VerifyProfile_ShouldSendCommandWithNote_WhenSuccess()
+        {
+            var memberKey = Guid.NewGuid();
+            var request = new VerifyMemberProfileRequest { Note = "Checked by phone." };
+            var serviceResult = new ServiceResult<MemberResponse>(
+                ResultType.Success,
+                new MemberResponse
+                {
+                    MemberKey = memberKey,
+                    ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent,
+                    ProfileVerificationNote = request.Note
+                });
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.VerifyProfile(memberKey, request, CancellationToken.None);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<MemberResponse>(ok.Value);
+            Assert.Equal(MemberProfileVerificationStatus.VerifiedCurrent, data.ProfileVerificationStatus);
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == request.Note),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task VerifyProfile_ShouldSendCommandWithNullNote_WhenRequestIsNull()
+        {
+            var memberKey = Guid.NewGuid();
+            var serviceResult = new ServiceResult<MemberResponse>(
+                ResultType.Success,
+                new MemberResponse { MemberKey = memberKey });
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            await _controller.VerifyProfile(memberKey, null, CancellationToken.None);
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == null),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetProfileVerification_ShouldSendCommand_WhenSuccess()
+        {
+            var memberKey = Guid.NewGuid();
+            var serviceResult = new ServiceResult<MemberResponse>(
+                ResultType.Success,
+                new MemberResponse
+                {
+                    MemberKey = memberKey,
+                    ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified
+                });
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ResetMemberProfileVerification>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.ResetProfileVerification(memberKey, CancellationToken.None);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var data = Assert.IsType<MemberResponse>(ok.Value);
+            Assert.Equal(MemberProfileVerificationStatus.Unverified, data.ProfileVerificationStatus);
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<ResetMemberProfileVerification>(c => c.MemberKey == memberKey),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]

@@ -12,6 +12,9 @@ import { HttpClient } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
 import { PermissionService } from '../../authModule/services/permission.service';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { MemberProfileVerificationStatus } from '../common/models/enums/member-profile-verification-status.enum';
+import { AuthService } from '../../authModule/services/authService/auth.service';
 
 describe('UpsertMemberComponent', () => {
   let fixture: ComponentFixture<UpsertMemberComponent>;
@@ -21,9 +24,11 @@ describe('UpsertMemberComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
   let currentNavigationSignal: WritableSignal<Navigation | null>;
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
+  let kurinServiceSpy: jasmine.SpyObj<KurinService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
   let locationSpy: jasmine.SpyObj<Location>;
   let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
 
   const groupKey = 'group123';
   const memberKey = 'memberABC';
@@ -52,18 +57,42 @@ describe('UpsertMemberComponent', () => {
     currentNavigationSignal = signal<Navigation | null>(null);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
-    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'isManager']);
+    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'isManager', 'isReviewer']);
+    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
 
     memberServiceSpy.getByKey.and.returnValue(of(loadedMember));
     memberServiceSpy.create.and.returnValue(of({ ...loadedMember, memberKey: 'created999' }));
     memberServiceSpy.update.and.returnValue(of(loadedMember));
     memberServiceSpy.delete.and.returnValue(of(void 0));
+    memberServiceSpy.verifyProfile.and.returnValue(of({
+      ...loadedMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
+    }));
+    memberServiceSpy.resetProfileVerification.and.returnValue(of({
+      ...loadedMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.Unverified
+    }));
+    kurinServiceSpy.getByKey.and.returnValue(of({
+      kurinKey: loadedMember.kurinKey,
+      number: 1,
+      profileVerificationEnabled: true
+    }));
     permissionServiceSpy.canManageWarnings.and.returnValue(false);
     permissionServiceSpy.isAdmin.and.returnValue(false);
     permissionServiceSpy.isManager.and.returnValue(false);
+    permissionServiceSpy.isReviewer.and.returnValue(false);
+    authServiceSpy.getAuthStateValue.and.returnValue({
+      userKey: 'current-user',
+      memberKey: 'current-member',
+      email: 'current@example.com',
+      role: 'Manager',
+      kurinKey: loadedMember.kurinKey,
+      accessToken: 'token'
+    });
 
     confirmationServiceSpy.confirm.and.returnValue(confirmationServiceSpy);
 
@@ -74,9 +103,11 @@ describe('UpsertMemberComponent', () => {
         { provide: ActivatedRoute, useValue: { paramMap: routeParamMap$.asObservable() } },
         { provide: Router, useValue: routerSpy },
         { provide: MemberService, useValue: memberServiceSpy },
+        { provide: KurinService, useValue: kurinServiceSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: Location, useValue: locationSpy },
         { provide: PermissionService, useValue: permissionServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy },
         { provide: HttpClient, useValue: {} }
       ]
     }).compileComponents();
@@ -197,6 +228,39 @@ describe('UpsertMemberComponent', () => {
       memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
       create();
       expect(component.canEditEmail()).toBeTrue();
+    });
+
+    it('should verify profile from upsert member action', () => {
+      permissionServiceSpy.isReviewer.and.returnValue(true);
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        profileVerificationStatus: MemberProfileVerificationStatus.Unverified
+      }));
+      create();
+
+      component.onProfileVerificationAction();
+
+      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
+      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
+    });
+
+    it('should reset profile verification from upsert member action when profile is current', () => {
+      permissionServiceSpy.isReviewer.and.returnValue(true);
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
+      }));
+      create();
+      spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
+        options.accept?.();
+        return component.confirmationService;
+      });
+
+      component.onProfileVerificationAction();
+
+      expect(component.confirmationService.confirm).toHaveBeenCalled();
+      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
+      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
     });
   });
 

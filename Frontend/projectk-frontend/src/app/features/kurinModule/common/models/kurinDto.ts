@@ -10,4 +10,5 @@ export interface KurinDto {
   isZbtEnabled?: boolean;
   zbtUserCap?: number;
   currentUserCount?: number;
+  profileVerificationEnabled?: boolean;
 }

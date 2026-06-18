@@ -6,10 +6,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { MemberWarningDto } from '../../models/memberWarningDto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
+import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 
 @Component({
   selector: 'app-mini-member-card',
-  imports: [CommonModule, ButtonModule, TagModule, TooltipModule],
+  imports: [CommonModule, ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent],
   templateUrl: './mini-member-card.html',
   styleUrl: './mini-member-card.css'
 })
@@ -52,6 +53,7 @@ export class MiniMemberCardComponent {
 
     return this.getWarningLevelWeight(level) <= this.getWarningLevelWeight(activeLevel);
   }
+
 
   private getWarningLevelWeight(level: MemberWarningLevel): number {
     switch (level) {

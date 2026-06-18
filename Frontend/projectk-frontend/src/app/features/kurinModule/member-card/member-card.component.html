@@ -15,9 +15,14 @@
 
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-4">
-                        <h1 class="member-name text-xl font-semibold leading-tight md:text-2xl">
+                        <h1 class="member-name text-xl font-semibold leading-tight md:text-2xl max-h-1">
                             {{ member.firstName }} {{ member.lastName }}
                         </h1>
+
+                        <app-profile-verification-badge
+                            [enabled]="profileVerificationEnabled"
+                            [status]="member.profileVerificationStatus">
+                        </app-profile-verification-badge>
 
                         @if (hasActiveWarnings) {
                         <div
@@ -39,6 +44,7 @@
                             severity="info"
                             styleClass="rounded-full !text-xs"
                         ></p-tag>
+
                     </div>
 
                     <p class="member-middle-name mt-1 text-sm">
@@ -76,12 +82,20 @@
                             <span class="member-summary-value"> {{ member.address }}</span>
                         </p>
                         }
+
+                        @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
+                        <p class="member-summary-line text-sm sm:col-span-2">
+                            <span class="member-summary-label">Верифіковано:</span>
+                            <span class="member-summary-value"> {{ profileVerifiedAtDisplay }}</span>
+                        </p>
+                        }
                     </div>
+
                 </div>
 
                 @if (canEditMember) {
                 <div class="member-actions md:justify-self-end">
-                    <p-button
+<p-button
                         (onClick)="onEditMember()"
                         label="Редагувати"
                         icon="pi pi-pencil"
@@ -216,8 +230,7 @@
             <app-bento-tile-skeleton class="lg:col-span-3" variant="list"></app-bento-tile-skeleton>
         </div>
     </div>
-
-    <p-dialog
+<p-dialog
         header="Усі вмілості"
         [(visible)]="isAllSkillsDialogVisible"
         [modal]="true"

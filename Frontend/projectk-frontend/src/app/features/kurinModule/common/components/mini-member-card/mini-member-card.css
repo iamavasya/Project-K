@@ -23,7 +23,11 @@
 
 .mini-member-card__name {
     color: var(--p-text-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
+
 
 .mini-member-card__meta {
     color: var(--p-text-muted-color);

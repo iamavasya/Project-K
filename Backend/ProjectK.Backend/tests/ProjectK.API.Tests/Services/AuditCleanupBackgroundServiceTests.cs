@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using System;
 using System.Linq;
@@ -54,6 +56,10 @@ namespace ProjectK.API.Tests.Services
 
             var oldDateOnboarding = DateTime.UtcNow.AddDays(-31);
             var newDateOnboarding = DateTime.UtcNow.AddDays(-29);
+            var oldReadNotificationDate = DateTime.UtcNow.AddDays(-8);
+            var newReadNotificationDate = DateTime.UtcNow.AddDays(-6);
+            var oldUnreadNotificationDate = DateTime.UtcNow.AddDays(-31);
+            var newUnreadNotificationDate = DateTime.UtcNow.AddDays(-29);
 
             using (var context = new AppDbContext(_options))
             {
@@ -101,6 +107,13 @@ namespace ProjectK.API.Tests.Services
                     new Invitation { InvitationKey = Guid.NewGuid(), Token = "new", ExpiresAtUtc = newDateOnboarding }
                 );
 
+                context.AppNotifications.AddRange(
+                    CreateNotification("old-read", oldReadNotificationDate, oldReadNotificationDate),
+                    CreateNotification("new-read", oldReadNotificationDate, newReadNotificationDate),
+                    CreateNotification("old-unread", oldUnreadNotificationDate, null),
+                    CreateNotification("new-unread", newUnreadNotificationDate, null)
+                );
+
                 await context.SaveChangesAsync();
             }
 
@@ -117,7 +130,27 @@ namespace ProjectK.API.Tests.Services
                 Assert.Equal(1, await context.ProbeProgressAuditEvents.CountAsync());
                 Assert.Equal(1, await context.WaitlistEntries.CountAsync());
                 Assert.Equal(1, await context.Invitations.CountAsync());
+
+                var remainingNotifications = await context.AppNotifications.ToListAsync();
+                Assert.Equal(2, remainingNotifications.Count);
+                Assert.Contains(remainingNotifications, n => n.Title == "new-read");
+                Assert.Contains(remainingNotifications, n => n.Title == "new-unread");
             }
+        }
+
+        private static AppNotification CreateNotification(string title, DateTime createdAtUtc, DateTime? readAtUtc)
+        {
+            return new AppNotification
+            {
+                NotificationKey = Guid.NewGuid(),
+                RecipientUserKey = Guid.NewGuid(),
+                Type = AppNotificationType.MemberProfileVerified,
+                Severity = AppNotificationSeverity.Info,
+                Title = title,
+                Body = title,
+                CreatedAtUtc = createdAtUtc,
+                ReadAtUtc = readAtUtc
+            };
         }
     }
 }

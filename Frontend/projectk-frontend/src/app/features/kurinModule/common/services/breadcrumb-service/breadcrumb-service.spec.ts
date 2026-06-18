@@ -3,12 +3,14 @@ import { BreadcrumbService } from './breadcrumb-service';
 import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Route, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { MenuItem } from 'primeng/api';
+import { PermissionService } from '../../../../authModule/services/permission.service';
 
 describe('BreadcrumbService', () => {
   let service: BreadcrumbService;
   let routerEventsSubject: Subject<NavigationEnd>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
+  let permissionService: jasmine.SpyObj<PermissionService>;
 
   const createActivatedRouteSnapshot = (data: Record<string, unknown>, params: Record<string, string>): ActivatedRouteSnapshot => {
     return {
@@ -57,6 +59,14 @@ describe('BreadcrumbService', () => {
     if (routerEventsSubject) {
       routerEventsSubject.complete();
     }
+  });
+
+  beforeEach(() => {
+    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['getRole']);
+    permissionService.getRole.and.returnValue('admin');
+    TestBed.configureTestingModule({
+      providers: [{ provide: PermissionService, useValue: permissionService }]
+    });
   });
 
   it('should be created', () => {
@@ -312,6 +322,42 @@ describe('BreadcrumbService', () => {
     routerEventsSubject.next(new NavigationEnd(1, '/level1/level2/level3', '/level1/level2/level3'));
   });
 
+  it('should omit an admin-only breadcrumb parent for a manager', (done) => {
+    permissionService.getRole.and.returnValue('manager');
+    mockRouter = createMockRouter('/group/group-42', [
+      { path: 'panel', data: { breadcrumb: 'Panel' } },
+      { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group', parent: '/kurin' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Group', parent: '/kurin' },
+      { groupKey: 'group-42' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.map(item => item.label)).toEqual(['Kurin', 'Group']);
+        expect(breadcrumbs.map(item => item.routerLink)).toEqual(['/kurin', '/group/group-42']);
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/group/group-42', '/group/group-42'));
+  });
+
   it('should handle child routes in activated route tree', (done) => {
     mockRouter = createMockRouter('/parent/child/555', [
       { path: 'parent/child/:childId', data: { breadcrumb: 'Child Page' } }
@@ -427,6 +473,95 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/member/789', '/member/789'));
+  });
+
+  it('should fall back to kurin for a member without groupKey', (done) => {
+    permissionService.getRole.and.returnValue('manager');
+    mockRouter = createMockRouter('/member/mentor-1', [
+      { path: 'kurin', data: { breadcrumb: 'Kurin' } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
+      {
+        path: 'member/:memberKey',
+        data: {
+          breadcrumb: 'Member Card',
+          parent: '/group/:groupKey',
+          parentFallback: '/kurin'
+        }
+      }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      {
+        breadcrumb: 'Member Card',
+        parent: '/group/:groupKey',
+        parentFallback: '/kurin'
+      },
+      { memberKey: 'mentor-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.map(item => item.label)).toEqual(['Kurin', 'Member Card']);
+        expect(breadcrumbs.map(item => item.routerLink)).toEqual(['/kurin', '/member/mentor-1']);
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/mentor-1', '/member/mentor-1'));
+  });
+
+  it('should not reuse a previous member groupKey for a groupless mentor', () => {
+    permissionService.getRole.and.returnValue('manager');
+    mockRouter = createMockRouter('/member/mentor-1', [
+      { path: 'kurin', data: { breadcrumb: 'Kurin' } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
+      {
+        path: 'member/:memberKey',
+        data: {
+          breadcrumb: 'Member Card',
+          parent: '/group/:groupKey',
+          parentFallback: '/kurin'
+        }
+      }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      {
+        breadcrumb: 'Member Card',
+        parent: '/group/:groupKey',
+        parentFallback: '/kurin'
+      },
+      { memberKey: 'mentor-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    service.setParam('groupKey', 'previous-group');
+    routerEventsSubject.next(new NavigationEnd(1, '/member/mentor-1', '/member/mentor-1'));
+
+    expect(latest.map(item => item.routerLink)).toEqual(['/kurin', '/member/mentor-1']);
   });
 
   it('should handle complex nested route structure with multiple children', (done) => {

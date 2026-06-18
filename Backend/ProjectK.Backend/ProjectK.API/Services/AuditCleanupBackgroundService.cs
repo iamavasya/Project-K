@@ -13,6 +13,9 @@ namespace ProjectK.API.Services
 {
     public class AuditCleanupBackgroundService : BackgroundService
     {
+        private const int ReadNotificationRetentionDays = 7;
+        private const int UnreadNotificationRetentionDays = 30;
+
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AuditCleanupBackgroundService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
@@ -52,6 +55,8 @@ namespace ProjectK.API.Services
             var now = DateTime.UtcNow;
             var progressRetentionDate = now.AddDays(-180);
             var onboardingRetentionDate = now.AddDays(-30);
+            var readNotificationRetentionDate = now.AddDays(-ReadNotificationRetentionDays);
+            var unreadNotificationRetentionDate = now.AddDays(-UnreadNotificationRetentionDays);
 
             _logger.LogInformation("Starting database cleanup for records older than retention policies.");
 
@@ -91,6 +96,22 @@ namespace ProjectK.API.Services
 
             if (deletedInvitations > 0)
                 _logger.LogInformation("Cleaned up {Count} old Invitations.", deletedInvitations);
+
+            // 5. Cleanup read notifications (> 7 days after read)
+            var deletedReadNotifications = await dbContext.AppNotifications
+                .Where(n => n.ReadAtUtc.HasValue && n.ReadAtUtc < readNotificationRetentionDate)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (deletedReadNotifications > 0)
+                _logger.LogInformation("Cleaned up {Count} old read AppNotifications.", deletedReadNotifications);
+
+            // 6. Cleanup unread notifications (> 30 days after creation)
+            var deletedUnreadNotifications = await dbContext.AppNotifications
+                .Where(n => !n.ReadAtUtc.HasValue && n.CreatedAtUtc < unreadNotificationRetentionDate)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (deletedUnreadNotifications > 0)
+                _logger.LogInformation("Cleaned up {Count} old unread AppNotifications.", deletedUnreadNotifications);
         }
     }
 }

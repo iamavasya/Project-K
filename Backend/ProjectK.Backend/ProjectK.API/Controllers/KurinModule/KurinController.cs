@@ -115,7 +115,8 @@ namespace ProjectK.API.Controllers.KurinModule
                 request.Stanytsia,
                 request.RegionOrCountry,
                 request.NamedAfter,
-                request.Description);
+                request.Description,
+                request.ProfileVerificationEnabled);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }

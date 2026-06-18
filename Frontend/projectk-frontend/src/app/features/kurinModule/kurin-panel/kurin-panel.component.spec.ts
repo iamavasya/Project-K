@@ -1,5 +1,5 @@
 ﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
@@ -23,6 +23,7 @@ describe('KurinPanelComponent', () => {
   let memberService: jasmine.SpyObj<MemberService>;
   let userService: jasmine.SpyObj<UserService>;
   let authService: jasmine.SpyObj<AuthService>;
+  let router: jasmine.SpyObj<Router>;
   let authState$: BehaviorSubject<AuthState | null>;
 
   const mockAuthState: AuthState = {
@@ -57,6 +58,7 @@ describe('KurinPanelComponent', () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
       'getAuthState', 'getAuthStateValue'
     ]);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
     groupService.getAllByKurinKey.and.returnValue(of(mockGroups));
     groupService.getMentorAssignments.and.returnValue(of([]));
@@ -76,6 +78,7 @@ describe('KurinPanelComponent', () => {
         { provide: MemberService, useValue: memberService },
         { provide: UserService, useValue: userService },
         { provide: AuthService, useValue: authService },
+        { provide: Router, useValue: router },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations()
@@ -177,6 +180,18 @@ describe('KurinPanelComponent', () => {
       component.reportDownloading = true;
 
       expect(component.kurinEditMenuItems).not.toBe(first);
+    });
+
+    it('exposes kurin settings action for managers', () => {
+      component.kurinKey = 'k1';
+      component.canManageKurinSettings = true;
+
+      const settingsItem = component.kurinEditMenuItems.find(item => item.label === 'Налаштування куреня');
+
+      expect(settingsItem).toBeTruthy();
+      settingsItem?.command?.({ originalEvent: new Event('click'), item: settingsItem });
+
+      expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'k1', 'settings']);
     });
   });
 

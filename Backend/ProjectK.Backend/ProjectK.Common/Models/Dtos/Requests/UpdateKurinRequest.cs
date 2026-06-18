@@ -17,5 +17,7 @@ namespace ProjectK.Common.Models.Dtos.Requests
 
         [MaxLength(4000)]
         public string? Description { get; set; }
+
+        public bool ProfileVerificationEnabled { get; set; }
     }
 }

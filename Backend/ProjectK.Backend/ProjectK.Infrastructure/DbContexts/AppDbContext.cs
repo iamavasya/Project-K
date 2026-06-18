@@ -38,6 +38,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
         public DbSet<Invitation> Invitations { get; set; }
         public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
+        public DbSet<AppNotification> AppNotifications { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -360,6 +361,33 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasMaxLength(1000);
                 entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
                 entity.HasIndex(e => new { e.SourceType, e.SourceId });
+            });
+
+            builder.Entity<AppNotification>(entity =>
+            {
+                entity.HasKey(e => e.NotificationKey);
+                entity.Property(e => e.Type)
+                    .HasConversion<int>();
+                entity.Property(e => e.Severity)
+                    .HasConversion<int>();
+                entity.Property(e => e.Title)
+                    .HasMaxLength(200)
+                    .IsRequired();
+                entity.Property(e => e.Body)
+                    .HasMaxLength(1000)
+                    .IsRequired();
+                entity.Property(e => e.EntityType)
+                    .HasMaxLength(100);
+                entity.Property(e => e.Route)
+                    .HasMaxLength(1000);
+                entity.Property(e => e.PayloadJson)
+                    .HasMaxLength(2000);
+                entity.Property(e => e.DeduplicationKey)
+                    .HasMaxLength(300);
+                entity.HasIndex(e => new { e.RecipientUserKey, e.CreatedAtUtc });
+                entity.HasIndex(e => new { e.RecipientUserKey, e.ReadAtUtc });
+                entity.HasIndex(e => new { e.RecipientUserKey, e.DeduplicationKey })
+                    .HasFilter("[DeduplicationKey] IS NOT NULL AND [ReadAtUtc] IS NULL");
             });
         }
     }

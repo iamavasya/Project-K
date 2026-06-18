@@ -377,6 +377,80 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("WaitlistEntries");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
+                {
+                    b.Property<Guid>("NotificationKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeduplicationKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid?>("EntityKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PayloadJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RecipientUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Route")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("NotificationKey");
+
+                    b.HasIndex("RecipientUserKey", "CreatedAtUtc");
+
+                    b.HasIndex("RecipientUserKey", "DeduplicationKey")
+                        .HasFilter("[DeduplicationKey] IS NOT NULL AND [ReadAtUtc] IS NULL");
+
+                    b.HasIndex("RecipientUserKey", "ReadAtUtc");
+
+                    b.ToTable("AppNotifications");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.PublicAnnouncementDraft", b =>
                 {
                     b.Property<Guid>("PublicAnnouncementDraftKey")
@@ -546,6 +620,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ProfileVerificationEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("RegionOrCountry")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
@@ -680,6 +757,18 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<string>("ProfilePhotoBlobName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileVerificationNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProfileVerificationStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProfileVerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ProfileVerifiedByUserKey")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("School")
                         .HasColumnType("nvarchar(max)");

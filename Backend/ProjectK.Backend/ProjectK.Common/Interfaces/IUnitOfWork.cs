@@ -27,6 +27,7 @@ namespace ProjectK.Common.Interfaces
         IWaitlistRepository WaitlistEntries { get; }
         IInvitationRepository Invitations { get; }
         IPublicAnnouncementRepository PublicAnnouncements { get; }
+        IAppNotificationRepository AppNotifications { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();

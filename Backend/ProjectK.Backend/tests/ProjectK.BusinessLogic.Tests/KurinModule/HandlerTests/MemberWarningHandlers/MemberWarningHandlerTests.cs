@@ -5,6 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHandlers;
@@ -15,6 +16,7 @@ public class MemberWarningHandlerTests
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
 
     private readonly AssignMemberWarningHandler _assignHandler;
@@ -26,6 +28,7 @@ public class MemberWarningHandlerTests
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _notificationServiceMock = new Mock<INotificationService>();
         _mapperMock = new Mock<AutoMapper.IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
@@ -34,7 +37,11 @@ public class MemberWarningHandlerTests
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
 
-        _assignHandler = new AssignMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
+        _assignHandler = new AssignMemberWarningHandler(
+            _unitOfWorkMock.Object,
+            _currentUserContextMock.Object,
+            _notificationServiceMock.Object,
+            _mapperMock.Object);
         _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
     }
 
@@ -133,6 +140,43 @@ public class MemberWarningHandlerTests
         created.MemberKey.Should().Be(memberKey);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Assign_LinkedMember_ShouldNotifyMemberOwner()
+    {
+        var memberKey = Guid.NewGuid();
+        var memberUserKey = Guid.NewGuid();
+        var actorUserKey = Guid.NewGuid();
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid(), UserKey = memberUserKey });
+        _memberWarningRepositoryMock
+            .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        MemberWarning? created = null;
+        _memberWarningRepositoryMock
+            .Setup(x => x.Create(It.IsAny<MemberWarning>(), It.IsAny<CancellationToken>()))
+            .Callback<MemberWarning, CancellationToken>((warning, _) => created = warning);
+
+        var result = await _assignHandler.Handle(new AssignMemberWarning(memberKey, MemberWarningLevel.Level1), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        created.Should().NotBeNull();
+        _notificationServiceMock.Verify(x => x.NotifyAsync(
+            It.Is<NotificationRequest>(request =>
+                request.RecipientUserKey == memberUserKey
+                && request.Type == AppNotificationType.MemberWarningAssigned
+                && request.Severity == AppNotificationSeverity.Warn
+                && request.EntityKey == created!.MemberWarningKey
+                && request.Route == $"/member/{memberKey}"
+                && request.ActorUserKey == actorUserKey
+                && request.DeduplicationKey == $"member-warning:{created.MemberWarningKey}"),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

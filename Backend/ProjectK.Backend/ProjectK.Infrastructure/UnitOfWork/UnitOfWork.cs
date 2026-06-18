@@ -32,6 +32,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IWaitlistRepository WaitlistEntries { get; }
         public IInvitationRepository Invitations { get; }
         public IPublicAnnouncementRepository PublicAnnouncements { get; }
+        public IAppNotificationRepository AppNotifications { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -51,6 +52,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             WaitlistEntries = new WaitlistRepository(_context);
             Invitations = new InvitationRepository(_context);
             PublicAnnouncements = new PublicAnnouncementRepository(_context);
+            AppNotifications = new AppNotificationRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

@@ -73,6 +73,15 @@
     min-width: 0 !important;
 }
 
+:host ::ng-deep .leadership-table.p-datatable-scrollable .p-datatable-table-container {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+:host ::ng-deep .leadership-table .p-datatable-tbody > tr.leadership-row > td {
+    height: 3.5rem;
+}
+
 @media (max-width: 640px) {
     .leadership-caption {
         align-items: stretch;
@@ -94,7 +103,7 @@
         overflow-x: visible;
     }
 
-    :host ::ng-deep .leadership-table .p-datatable-thead {
+    :host ::ng-deep .leadership-table:not(.p-datatable-scrollable) .p-datatable-thead {
         display: none;
     }
 
