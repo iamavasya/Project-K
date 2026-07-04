@@ -32,6 +32,7 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MemberProfileVerificationStatus } from '../common/models/enums/member-profile-verification-status.enum';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
+import { parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 @Component({
   selector: 'app-upsert-member',
@@ -387,8 +388,8 @@ export class UpsertMemberComponent implements OnInit {
       return false;
     }
 
-    const expiresAt = Date.parse(warning.expiresAtUtc);
-    return !Number.isNaN(expiresAt) && expiresAt > now.getTime();
+    const expiresAt = parseUtcDateTime(warning.expiresAtUtc)?.getTime() ?? 0;
+    return expiresAt > now.getTime();
   }
 
   getActiveWarning(level: MemberWarningLevel): MemberWarningDto | null {

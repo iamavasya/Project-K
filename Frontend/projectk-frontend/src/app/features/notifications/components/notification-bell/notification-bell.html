@@ -43,7 +43,7 @@
               <span class="notification-row__content">
                 <span class="notification-row__title">{{ notification.title }}</span>
                 <span class="notification-row__body">{{ notification.body }}</span>
-                <span class="notification-row__date">{{ notification.createdAtUtc | date:'dd.MM.yy, HH:mm' }}</span>
+                <span class="notification-row__date">{{ notification.createdAtUtc | localUtcDate:'dd.MM.yy, HH:mm' }}</span>
               </span>
             </button>
           }

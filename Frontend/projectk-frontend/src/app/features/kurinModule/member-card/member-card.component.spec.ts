@@ -243,6 +243,21 @@ describe('MemberCardComponent', () => {
     expect(component.member).toEqual(member);
   });
 
+  it('should display profile verification timestamp without timezone as local time from UTC', () => {
+    memberServiceSpy.getByKey.and.returnValue(of({
+      ...member,
+      profileVerifiedAtUtc: '2026-07-04T20:53:00'
+    }));
+    createComponent();
+    fixture.detectChanges();
+
+    const expected = new Date('2026-07-04T20:53:00Z').toLocaleString('uk-UA', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+    expect(component.profileVerifiedAtDisplay).toBe(expected);
+  });
+
   it('should navigate to panel on load error when member not preset', () => {
     memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Not found')));
     createComponent();

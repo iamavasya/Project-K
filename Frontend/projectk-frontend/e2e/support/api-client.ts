@@ -40,6 +40,11 @@ interface InvitationResponse {
   email: string;
 }
 
+interface WaitlistEntryResponse {
+  waitlistEntryKey: string;
+  email: string;
+}
+
 interface KurinResponse {
   kurinKey: string;
   number: number;
@@ -95,6 +100,37 @@ export async function getLatestInvitationByEmail(request: APIRequestContext, ema
 
   expect(response.ok(), `Failed to load E2E invitation for ${email}: ${response.status()} ${await response.text()}`).toBe(true);
   return await response.json() as InvitationResponse;
+}
+
+export async function approveWaitlistEntryByEmail(request: APIRequestContext, admin: E2eUser, email: string): Promise<void> {
+  const login = await loginViaApi(request, admin);
+  expect(login.tokens?.accessToken, `API login for ${admin.email} did not return an access token.`).toBeTruthy();
+
+  const waitlistResponse = await request.get(`${e2eApiUrl}/auth/onboarding/waitlist`, {
+    headers: {
+      Authorization: `Bearer ${login.tokens!.accessToken}`
+    }
+  });
+
+  expect(
+    waitlistResponse.ok(),
+    `Failed to load waitlist entries: ${waitlistResponse.status()} ${await waitlistResponse.text()}`
+  ).toBe(true);
+
+  const entries = await waitlistResponse.json() as WaitlistEntryResponse[];
+  const entry = entries.find(item => item.email.toLowerCase() === email.toLowerCase());
+  expect(entry, `Waitlist entry for ${email} was not found.`).toBeTruthy();
+
+  const approveResponse = await request.post(`${e2eApiUrl}/auth/onboarding/waitlist/${entry!.waitlistEntryKey}/approve`, {
+    headers: {
+      Authorization: `Bearer ${login.tokens!.accessToken}`
+    }
+  });
+
+  expect(
+    approveResponse.ok(),
+    `Failed to approve waitlist entry for ${email}: ${approveResponse.status()} ${await approveResponse.text()}`
+  ).toBe(true);
 }
 
 export async function activateAccount(request: APIRequestContext, token: string, password: string): Promise<void> {

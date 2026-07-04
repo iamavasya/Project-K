@@ -7,6 +7,7 @@ import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { MemberWarningDto } from '../../models/memberWarningDto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
+import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
 
 @Component({
   selector: 'app-mini-member-card',
@@ -88,8 +89,7 @@ export class MiniMemberCardComponent {
       return 0;
     }
 
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return parseUtcDateTime(value)?.getTime() ?? 0;
   }
 
   private getWarningLevelLabel(level: MemberWarningLevel): string {

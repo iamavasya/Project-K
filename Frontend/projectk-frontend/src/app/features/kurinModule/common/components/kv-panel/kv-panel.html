@@ -112,7 +112,7 @@
               <span>{{ getAssignmentMemberName(assignment) }}</span>
               <p-tag [value]="assignment.groupName" severity="secondary" [rounded]="true" />
               <span class="kv-muted">
-                {{ assignment.assignedAtUtc | date:'dd.MM.yy' }} - {{ assignment.revokedAtUtc | date:'dd.MM.yy' }}
+                {{ assignment.assignedAtUtc | localUtcDate:'dd.MM.yy' }} - {{ assignment.revokedAtUtc | localUtcDate:'dd.MM.yy' }}
               </span>
             </div>
           }

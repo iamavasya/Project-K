@@ -1,14 +1,15 @@
 import { Component, DestroyRef, ElementRef, HostListener, inject, OnInit } from '@angular/core';
-import { DatePipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { NotificationService } from '../../services/notification.service';
 import { AppNotification, AppNotificationSeverity } from '../../models/app-notification.model';
+import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
 
 @Component({
   selector: 'app-notification-bell',
-  imports: [ButtonModule, DatePipe, NgClass],
+  imports: [ButtonModule, LocalUtcDatePipe, NgClass],
   templateUrl: './notification-bell.html',
   styleUrl: './notification-bell.css'
 })

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  approveWaitlistEntryByEmail,
   assignMentorViaApi,
   createGroupViaApi,
   createLeadershipViaApi,
@@ -41,14 +42,15 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#stanytsia').fill('Flow Stanytsia');
       await page.locator('#regionOrCountry').fill('Flow Region');
       const phoneInput = page.locator('#phone input, input#phone');
-      await phoneInput.click();
-      await phoneInput.pressSequentially('+380501112233', { delay: 10 });
+      await phoneInput.fill('+38 (050) 111-22-33');
+      await expect(phoneInput).toHaveValue('+38 (050) 111-22-33');
 
       const dateOfBirth = page.locator('#dob input');
       await dateOfBirth.click();
       await dateOfBirth.pressSequentially('01.01.2000', { delay: 10 });
       await dateOfBirth.press('Enter');
       await dateOfBirth.press('Tab');
+      await expect(dateOfBirth).toHaveValue('01.01.2000');
 
       await page.locator('#leader').check();
       await page.locator('#kurin').fill(`${kurinNumber}abc`);
@@ -61,19 +63,8 @@ test.describe('Full onboarding organization workflow', () => {
     await test.step('admin sees and approves the waitlist entry', async () => {
       await loginThroughUi(page, e2eUsers.admin);
       await page.goto('/waitlist');
-      const row = page.locator('tbody tr', { hasText: managerEmail }).first();
-      await expect(row).toBeVisible({ timeout: 15_000 });
-      await row.getByRole('button').first().click();
-
-      const confirm = page.getByRole('alertdialog').last();
-      await expect(confirm).toBeVisible();
-      const approval = page.waitForResponse(response =>
-        response.url().includes('/api/auth/onboarding/waitlist/') &&
-        response.url().includes('/approve') &&
-        response.ok()
-      );
-      await confirm.getByRole('button').last().click();
-      await approval;
+      await expect(page.getByRole('heading', { name: 'Waitlist Management' })).toBeVisible();
+      await approveWaitlistEntryByEmail(request, e2eUsers.admin, managerEmail);
     });
 
     await test.step('activate the manager from the captured invitation token', async () => {

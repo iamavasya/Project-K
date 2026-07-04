@@ -18,6 +18,8 @@ import { MemberService } from '../../services/member-service/member.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { UserService } from '../../../../adminModule/services/user.service';
+import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
+import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pipe';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -37,7 +39,8 @@ interface MentorAssignmentRow {
     TableModule,
     TagModule,
     ToggleSwitchModule,
-    TooltipModule
+    TooltipModule,
+    LocalUtcDatePipe
   ],
   templateUrl: './kv-panel.html',
   styleUrl: './kv-panel.css'
@@ -279,7 +282,10 @@ export class KvPanelComponent implements OnChanges {
   get archivedAssignments(): MentorAssignmentDto[] {
     return this.mentorAssignments
       .filter(assignment => !!assignment.revokedAtUtc)
-      .sort((a, b) => new Date(b.revokedAtUtc as string).getTime() - new Date(a.revokedAtUtc as string).getTime());
+      .sort((a, b) =>
+        (parseUtcDateTime(b.revokedAtUtc)?.getTime() ?? 0)
+        - (parseUtcDateTime(a.revokedAtUtc)?.getTime() ?? 0)
+      );
   }
 
   getAssignmentMemberName(assignment: MentorAssignmentDto): string {

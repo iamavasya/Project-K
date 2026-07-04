@@ -19,6 +19,7 @@ import {
   isWaitlistApproved,
   isWaitlistInitial
 } from '../../common/functions/waitlist-status.function';
+import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
 
 @Component({
   selector: 'app-waitlist-management',
@@ -34,7 +35,8 @@ import {
     ConfirmDialogModule, 
     DialogModule, 
     TextareaModule, 
-    FormsModule
+    FormsModule,
+    LocalUtcDatePipe
   ],
   providers: [MessageService, ConfirmationService],
   template: `
@@ -109,7 +111,7 @@ import {
             <td>
               <p-tag [severity]="getStatusSeverity(entry.verificationStatus)" [value]="getStatusLabel(entry.verificationStatus)"></p-tag>
             </td>
-            <td>{{ entry.requestedAtUtc | date:'short' }}</td>
+            <td>{{ entry.requestedAtUtc | localUtcDate:'short' }}</td>
             <td>
               <div class="flex gap-2">
                 @if (isInitial(entry.verificationStatus)) {

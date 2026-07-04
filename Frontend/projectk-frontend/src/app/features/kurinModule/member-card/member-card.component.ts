@@ -43,6 +43,7 @@ import { PermissionService } from '../../authModule/services/permission.service'
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../common/functions/progress-status-labels.function';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
+import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 @Component({
   selector: 'app-member-card',
@@ -158,15 +159,7 @@ export class MemberCardComponent implements OnInit {
   }
 
   get profileVerifiedAtDisplay(): string | null {
-    const value = this.member?.profileVerifiedAtUtc;
-    if (!value) {
-      return null;
-    }
-
-    const date = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(date.getTime())
-      ? String(value)
-      : date.toLocaleString('uk-UA', { dateStyle: 'medium', timeStyle: 'short' });
+    return formatUtcDateTime(this.member?.profileVerifiedAtUtc);
   }
 
   private updateMemberAccess(memberKey: string | null): void {
@@ -300,8 +293,7 @@ export class MemberCardComponent implements OnInit {
       return 0;
     }
 
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return parseUtcDateTime(value)?.getTime() ?? 0;
   }
 
   private getWarningLevelLabel(level: MemberWarningLevel): string {
@@ -647,12 +639,7 @@ export class MemberCardComponent implements OnInit {
   }
 
   private formatDate(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    return date.toLocaleDateString('uk-UA');
+    return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
   }
 
   onEditMember() {
