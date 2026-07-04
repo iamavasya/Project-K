@@ -21,7 +21,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { toDateOnlyString } from '../common/functions/toDateOnlyString.function';
+import { parseDateOnlyString, toDateOnlyString } from '../common/functions/toDateOnlyString.function';
 import { MemberWarningService } from '../common/services/member-warning-service/member-warning.service';
 import { MemberWarningDto } from '../common/models/memberWarningDto';
 import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
@@ -151,12 +151,12 @@ export class UpsertMemberComponent implements OnInit {
       next: (member) => {
         const plastLevelHistories = (member.plastLevelHistories ?? []).map(history => ({
           ...history,
-          dateAchieved: history.dateAchieved ? new Date(history.dateAchieved) : null
+          dateAchieved: parseDateOnlyString(history.dateAchieved)
         }));
 
         const memberForEdit: MemberDto = {
           ...member,
-          dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth) : null,
+          dateOfBirth: parseDateOnlyString(member.dateOfBirth),
           plastLevelHistories
         };
 
@@ -303,10 +303,10 @@ export class UpsertMemberComponent implements OnInit {
         next: (member) => {
           this.member = {
             ...member,
-            dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth) : null,
+            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
             plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
               ...history,
-              dateAchieved: history.dateAchieved ? new Date(history.dateAchieved) : null
+              dateAchieved: parseDateOnlyString(history.dateAchieved)
             }))
           };
           this.memberWarnings = this.member.warnings ?? [];
@@ -339,10 +339,10 @@ export class UpsertMemberComponent implements OnInit {
         next: (member) => {
           this.member = {
             ...member,
-            dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth) : null,
+            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
             plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
               ...history,
-              dateAchieved: history.dateAchieved ? new Date(history.dateAchieved) : null
+              dateAchieved: parseDateOnlyString(history.dateAchieved)
             }))
           };
           this.memberWarnings = this.member.warnings ?? [];

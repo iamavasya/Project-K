@@ -172,10 +172,10 @@ describe('MemberService', () => {
     req.flush(sampleMember);
   });
 
-  it('create should handle Date objects by converting to ISO string', () => {
+  it('create should handle Date objects by converting date-only fields to yyyy-MM-dd', () => {
     const dateUpsert: UpsertMemberDto = {
       ...sampleUpsert,
-      dateOfBirth: new Date('2000-05-10').toISOString()
+      dateOfBirth: new Date(2000, 4, 10) as unknown as string
     };
     
     service.create(dateUpsert, null).subscribe();
@@ -183,7 +183,7 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(apiUrl);
     const body = req.request.body as FormData;
     
-    expect(body.get('dateOfBirth')).toEqual('2000-05-10T00:00:00.000Z');
+    expect(body.get('dateOfBirth')).toEqual('2000-05-10');
     req.flush(sampleMember);
   });
 

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { AuthService } from '../services/authService/auth.service';
 import { roleGuard } from './role.guard';
@@ -23,6 +23,13 @@ describe('roleGuard', () => {
     });
   });
 
+  function runGuard(resultRoles: Parameters<typeof roleGuard>): Observable<boolean | UrlTree> {
+    return roleGuard(...resultRoles)(
+      {} as ActivatedRouteSnapshot,
+      {} as RouterStateSnapshot
+    ) as Observable<boolean | UrlTree>;
+  }
+
   it('allows any configured role', (done) => {
     authService.getAuthState.and.returnValue(of({
       userKey: 'user-1',
@@ -34,7 +41,7 @@ describe('roleGuard', () => {
     }));
 
     TestBed.runInInjectionContext(() => {
-      const result$ = roleGuard('Admin', 'Manager')({} as any, {} as any) as Observable<boolean | UrlTree>;
+      const result$ = runGuard(['Admin', 'Manager']);
 
       result$.subscribe(result => {
         expect(result).toBeTrue();
@@ -54,7 +61,7 @@ describe('roleGuard', () => {
     }));
 
     TestBed.runInInjectionContext(() => {
-      const result$ = roleGuard('Admin', 'Manager')({} as any, {} as any) as Observable<boolean | UrlTree>;
+      const result$ = runGuard(['Admin', 'Manager']);
 
       result$.subscribe(result => {
         expect(result).toBe(forbiddenTree);

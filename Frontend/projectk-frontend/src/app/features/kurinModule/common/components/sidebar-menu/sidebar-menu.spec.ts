@@ -211,6 +211,7 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const settingsItem = items.find(item => item.label === 'РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РєСѓСЂРµРЅСЏ');
+        void settingsItem;
         const settingsLinkItem = items.find(item => JSON.stringify(item.routerLink) === JSON.stringify(['/kurin', 'kurin-456', 'settings']));
         expect(settingsLinkItem).toBeDefined();
         expect(settingsLinkItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);

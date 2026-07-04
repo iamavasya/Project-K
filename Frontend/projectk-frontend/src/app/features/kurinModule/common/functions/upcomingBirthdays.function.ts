@@ -1,4 +1,5 @@
 import { MemberLookupDto } from '../models/requests/member/memberLookupDto';
+import { parseDateOnlyString } from './toDateOnlyString.function';
 
 export interface UpcomingBirthdayItem {
   member: MemberLookupDto;
@@ -15,7 +16,11 @@ function resolveNextBirthdayDate(dateOfBirth: string | Date | null | undefined, 
     return null;
   }
 
-  const parsedDate = dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth);
+  const parsedDate = parseDateOnlyString(dateOfBirth);
+  if (!parsedDate) {
+    return null;
+  }
+
   if (Number.isNaN(parsedDate.getTime())) {
     return null;
   }

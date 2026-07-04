@@ -11,6 +11,7 @@ import { MemberAwardLevel } from '../../../common/models/enums/member-award-leve
 import { BadgeProgressStatus } from '../../../common/models/enums/badge-progress-status.enum';
 import { UpsertMemberAwardRequest } from '../../../common/services/member-award-service/member-award.service';
 import { getBadgeProgressShortStatusLabel } from '../../../common/functions/progress-status-labels.function';
+import { parseDateOnlyString, toDateOnlyString } from '../../../common/functions/toDateOnlyString.function';
 
 @Component({
   selector: 'app-member-awards-dialog',
@@ -63,7 +64,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
       if (this.awardToEdit) {
         this.form.patchValue({
           level: this.awardToEdit.level,
-          dateAcquired: new Date(this.awardToEdit.dateAcquired),
+          dateAcquired: parseDateOnlyString(this.awardToEdit.dateAcquired),
           note: this.awardToEdit.note
         });
         this.form.get('level')?.disable();
@@ -85,7 +86,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
       const request: UpsertMemberAwardRequest = {
         memberAwardKey: this.awardToEdit?.memberAwardKey,
         level: formValue.level,
-        dateAcquired: formValue.dateAcquired.toISOString(),
+        dateAcquired: toDateOnlyString(formValue.dateAcquired)!,
         note: formValue.note
       };
       this.save.emit(request);
