@@ -21,17 +21,22 @@ import { AccordionModule } from 'primeng/accordion';
 import { PlastLevelHistoryDto } from '../common/models/plastLevelHistoryDto';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { toDateOnlyString } from '../common/functions/toDateOnlyString.function';
+import { parseDateOnlyString, toDateOnlyString } from '../common/functions/toDateOnlyString.function';
 import { MemberWarningService } from '../common/services/member-warning-service/member-warning.service';
 import { MemberWarningDto } from '../common/models/memberWarningDto';
 import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../authModule/services/permission.service';
-import { concatMap, from, Observable, of, toArray } from 'rxjs';
+import { concatMap, finalize, from, Observable, of, toArray } from 'rxjs';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { MemberProfileVerificationStatus } from '../common/models/enums/member-profile-verification-status.enum';
+import { TooltipModule } from 'primeng/tooltip';
+import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
+import { parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.component.html',
   styleUrl: './upsert-member.component.css'
@@ -65,6 +70,7 @@ export class UpsertMemberComponent implements OnInit {
   location = inject(Location);
   memberService = inject(MemberService);
   memberWarningService = inject(MemberWarningService);
+  kurinService = inject(KurinService);
   authService = inject(AuthService);
   permissionService = inject(PermissionService);
   confirmationService = inject(ConfirmationService);
@@ -73,6 +79,10 @@ export class UpsertMemberComponent implements OnInit {
 
   isCreate = false;
   canManageWarnings = false;
+  profileVerificationEnabled = false;
+  profileVerificationSubmitting = false;
+  profileVerificationMessage: string | null = null;
+  profileVerificationMessageSeverity: 'success' | 'warn' | 'error' = 'success';
 
   plastLevelMap: Record<PlastLevel, PlastLevelHistoryDto> = {} as Record<PlastLevel, PlastLevelHistoryDto>;
   readonly PlastLevel = PlastLevel;
@@ -99,6 +109,7 @@ export class UpsertMemberComponent implements OnInit {
   warningsToCancel = new Set<string>(); // memberWarningKeys
 
   readonly MemberWarningLevel = MemberWarningLevel;
+  readonly MemberProfileVerificationStatus = MemberProfileVerificationStatus;
   readonly warningLevels = [
     { level: MemberWarningLevel.Level1, label: 'Перша пересторога (3 місяці)' },
     { level: MemberWarningLevel.Level2, label: 'Друга пересторога (6 місяців)' },
@@ -141,12 +152,12 @@ export class UpsertMemberComponent implements OnInit {
       next: (member) => {
         const plastLevelHistories = (member.plastLevelHistories ?? []).map(history => ({
           ...history,
-          dateAchieved: history.dateAchieved ? new Date(history.dateAchieved) : null
+          dateAchieved: parseDateOnlyString(history.dateAchieved)
         }));
 
         const memberForEdit: MemberDto = {
           ...member,
-          dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth) : null,
+          dateOfBirth: parseDateOnlyString(member.dateOfBirth),
           plastLevelHistories
         };
 
@@ -154,6 +165,7 @@ export class UpsertMemberComponent implements OnInit {
         this.memberWarnings = memberForEdit.warnings ?? [];
         this.ensurePlastLevelMap();
         this.setupAccordionAndToggles();
+        this.loadProfileVerificationToggle(memberForEdit.kurinKey);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -214,6 +226,155 @@ export class UpsertMemberComponent implements OnInit {
     return this.permissionService.canManageWarnings();
   }
 
+  get isCurrentUserMember(): boolean {
+    const authState = this.authService.getAuthStateValue?.();
+    return !!this.member
+      && ((!!authState?.memberKey && authState.memberKey === this.member.memberKey)
+        || (!!authState?.userKey && authState.userKey === this.member.userKey));
+  }
+
+  get canManageProfileVerification(): boolean {
+    return !this.isCreate
+      && this.profileVerificationEnabled
+      && !this.isCurrentUserMember
+      && this.permissionService.isReviewer();
+  }
+
+
+  get profileVerificationActionIcon(): string {
+    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
+      ? 'pi pi-times'
+      : 'pi pi-verified';
+  }
+
+  get profileVerificationActionTooltip(): string {
+    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
+      ? 'Зняти верифікацію профілю'
+      : 'Верифікувати профіль';
+  }
+
+  get profileVerificationActionSeverity(): 'success' | 'secondary' {
+    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
+      ? 'secondary'
+      : 'success';
+  }
+
+  onProfileVerificationAction(): void {
+    if (!this.canManageProfileVerification || this.profileVerificationSubmitting || !this.memberKey) {
+      return;
+    }
+
+    if (this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent) {
+      this.confirmationService.confirm({
+        header: 'Зняти верифікацію профілю',
+        message: 'Зняти верифікацію з профілю цього учасника?',
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Скасувати',
+        rejectButtonProps: {
+          label: 'Скасувати',
+          severity: 'secondary',
+          outlined: true
+        },
+        acceptButtonProps: {
+          label: 'Зняти',
+          severity: 'danger'
+        },
+        accept: () => this.executeResetProfileVerification()
+      });
+      return;
+    }
+
+    this.executeVerifyProfile();
+  }
+
+  private executeVerifyProfile(): void {
+    if (!this.memberKey) {
+      return;
+    }
+
+    this.profileVerificationSubmitting = true;
+    this.profileVerificationMessage = null;
+
+    this.memberService
+      .verifyProfile(this.memberKey, null)
+      .pipe(finalize(() => {
+        this.profileVerificationSubmitting = false;
+      }))
+      .subscribe({
+        next: (member) => {
+          this.member = {
+            ...member,
+            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
+            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
+              ...history,
+              dateAchieved: parseDateOnlyString(history.dateAchieved)
+            }))
+          };
+          this.memberWarnings = this.member.warnings ?? [];
+          this.profileVerificationMessageSeverity = 'success';
+          this.profileVerificationMessage = 'Профіль верифіковано.';
+        },
+        error: (error) => {
+          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
+          this.profileVerificationMessage = error?.status === 400
+            ? 'Верифікацію профілів вимкнено для цього куреня.'
+            : 'Не вдалося верифікувати профіль. Спробуй ще раз.';
+        }
+      });
+  }
+
+  private executeResetProfileVerification(): void {
+    if (!this.memberKey) {
+      return;
+    }
+
+    this.profileVerificationSubmitting = true;
+    this.profileVerificationMessage = null;
+
+    this.memberService
+      .resetProfileVerification(this.memberKey)
+      .pipe(finalize(() => {
+        this.profileVerificationSubmitting = false;
+      }))
+      .subscribe({
+        next: (member) => {
+          this.member = {
+            ...member,
+            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
+            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
+              ...history,
+              dateAchieved: parseDateOnlyString(history.dateAchieved)
+            }))
+          };
+          this.memberWarnings = this.member.warnings ?? [];
+          this.profileVerificationMessageSeverity = 'success';
+          this.profileVerificationMessage = 'Верифікацію профілю знято.';
+        },
+        error: (error) => {
+          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
+          this.profileVerificationMessage = error?.status === 400
+            ? 'Верифікацію профілів вимкнено для цього куреня.'
+            : 'Не вдалося зняти верифікацію. Спробуй ще раз.';
+        }
+      });
+  }
+
+  private loadProfileVerificationToggle(kurinKey: string | null | undefined): void {
+    this.profileVerificationEnabled = false;
+    if (!kurinKey) {
+      return;
+    }
+
+    this.kurinService.getByKey(kurinKey).subscribe({
+      next: (kurin) => {
+        this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+      },
+      error: () => {
+        this.profileVerificationEnabled = false;
+      }
+    });
+  }
+
   canEditEmail(): boolean {
     return this.isCreate || !this.member.userKey || this.permissionService.isAdmin();
   }
@@ -227,8 +388,8 @@ export class UpsertMemberComponent implements OnInit {
       return false;
     }
 
-    const expiresAt = Date.parse(warning.expiresAtUtc);
-    return !Number.isNaN(expiresAt) && expiresAt > now.getTime();
+    const expiresAt = parseUtcDateTime(warning.expiresAtUtc)?.getTime() ?? 0;
+    return expiresAt > now.getTime();
   }
 
   getActiveWarning(level: MemberWarningLevel): MemberWarningDto | null {

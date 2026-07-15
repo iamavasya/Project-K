@@ -82,7 +82,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             var oldNumber = 123;
             var newNumber = 456;
             var existingKurin = new Kurin(oldNumber) { KurinKey = kurinKey };
-            var command = new UpsertKurin(kurinKey, newNumber, "  Kyiv  ", "  Ukraine  ", "  Some Patron  ", "  Long form notes  ");
+            var command = new UpsertKurin(kurinKey, newNumber, "  Kyiv  ", "  Ukraine  ", "  Some Patron  ", "  Long form notes  ", profileVerificationEnabled: true);
 
             _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
                 .ReturnsAsync(existingKurin);
@@ -103,6 +103,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             existingKurin.RegionOrCountry.Should().Be("Ukraine");
             existingKurin.NamedAfter.Should().Be("Some Patron");
             existingKurin.Description.Should().Be("Long form notes");
+            existingKurin.ProfileVerificationEnabled.Should().BeTrue();
+            result.Data.ProfileVerificationEnabled.Should().BeTrue();
 
             _kurinRepositoryMock.Verify(r => r.Update(existingKurin, default), Times.Once);
             _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Never);

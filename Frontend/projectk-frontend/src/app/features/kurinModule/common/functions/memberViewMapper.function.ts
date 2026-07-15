@@ -1,6 +1,7 @@
 import { MemberDto } from '../models/memberDto';
 import { PlastLevel } from '../models/enums/plast-level.enum';
 import { PlastLevelHistoryDto } from '../models/plastLevelHistoryDto';
+import { parseDateOnlyString } from './toDateOnlyString.function';
 
 const PLAST_LEVEL_DISPLAY_MAP: Record<PlastLevel, string> = {
   [PlastLevel.Entry]: 'пл. прих.',
@@ -64,13 +65,21 @@ export function localizeLatestPlastLevel(member: Pick<MemberDto, 'latestPlastLev
 
 export function mapMemberForView(member: MemberDto): MemberDto {
   const latestPlastLevelDisplay = localizeLatestPlastLevel(member);
+  const normalizedMember = {
+    ...member,
+    dateOfBirth: parseDateOnlyString(member.dateOfBirth),
+    plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
+      ...history,
+      dateAchieved: parseDateOnlyString(history.dateAchieved)
+    }))
+  };
 
   if (!latestPlastLevelDisplay) {
-    return member;
+    return normalizedMember;
   }
 
   return {
-    ...member,
+    ...normalizedMember,
     latestPlastLevelDisplay
   };
 }

@@ -16,6 +16,7 @@ import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
+import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
 
 @Component({
   selector: 'app-leadership-panel',
@@ -35,6 +36,8 @@ import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto
   styleUrl: './leadership-panel.css'
 })
 export class LeadershipPanelComponent implements OnChanges {
+  readonly archiveScrollHeight = '27.5rem';
+
   @Input() leadershipType: 'kurin' | 'group' = 'group';
   @Input() typeKey = '';
 
@@ -75,11 +78,7 @@ export class LeadershipPanelComponent implements OnChanges {
         const role = this.getRoleDisplayName(history.role).toLowerCase();
         return name.includes(search) || role.includes(search);
       })
-      .sort((a, b) => {
-        if (!a.endDate && b.endDate) return -1;
-        if (a.endDate && !b.endDate) return 1;
-        return this.getDateTime(b.startDate) - this.getDateTime(a.startDate);
-      });
+      .sort(compareLeadershipHistoriesByDefault);
   }
 
   loadLeadership(): void {
@@ -137,9 +136,5 @@ export class LeadershipPanelComponent implements OnChanges {
       default:
         return 'info';
     }
-  }
-
-  private getDateTime(value?: string | null): number {
-    return value ? new Date(value).getTime() : 0;
   }
 }

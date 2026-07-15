@@ -108,7 +108,8 @@ describe('KurinService', () => {
       stanytsia: 'Kyiv',
       regionOrCountry: 'Ukraine',
       namedAfter: 'Some Patron',
-      description: 'Some longer notes'
+      description: 'Some longer notes',
+      profileVerificationEnabled: true
     } as KurinDto;
     const updated = { ...input } as KurinDto;
 
@@ -122,7 +123,8 @@ describe('KurinService', () => {
       stanytsia: 'Kyiv',
       regionOrCountry: 'Ukraine',
       namedAfter: 'Some Patron',
-      description: 'Some longer notes'
+      description: 'Some longer notes',
+      profileVerificationEnabled: true
     });
     expect(req.request.headers.get('Content-Type')).toBe('application/json');
 

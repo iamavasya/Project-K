@@ -18,6 +18,7 @@ namespace ProjectK.Common.Entities.KurinModule
         public string? Description { get; set; }
         public int ZbtUserCap { get; set; } = 15;
         public bool IsZbtKurin { get; set; }
+        public bool ProfileVerificationEnabled { get; set; }
         public ICollection<Group> Groups { get; set; } = new List<Group>();
         public ICollection<Member> Members { get; set; } = new List<Member>();
         public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();

@@ -27,6 +27,10 @@ namespace ProjectK.Common.Entities.KurinModule
         public string? Address { get; set; }
         public string? School { get; set; }
         public string? ProfilePhotoBlobName { get; set; }
+        public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; } = MemberProfileVerificationStatus.Unverified;
+        public DateTime? ProfileVerifiedAtUtc { get; set; }
+        public Guid? ProfileVerifiedByUserKey { get; set; }
+        public string? ProfileVerificationNote { get; set; }
         public Kurin Kurin { get; set; }
         public Group? Group { get; set; }
         public PlastLevel? LatestPlastLevel { get; set; }

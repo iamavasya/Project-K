@@ -20,6 +20,7 @@ import { MemberProbeDetailPointRowView } from '../common/models/probes-and-badge
 import { buildMemberProbeDetailPointRows } from '../common/functions/memberProbeDetailsViewMapper.function';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { normalizeProbeProgressStatus } from '../common/functions/memberProbeRowsViewMapper.function';
+import { formatUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -352,12 +353,7 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   private formatDate(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    return date.toLocaleDateString('uk-UA');
+    return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
   }
 
   private applyProbeProgress(progress: ProbeProgressDto | null): void {

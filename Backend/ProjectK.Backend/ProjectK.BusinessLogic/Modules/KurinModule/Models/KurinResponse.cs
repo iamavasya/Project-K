@@ -18,5 +18,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         public bool IsZbtEnabled { get; set; }
         public int ZbtUserCap { get; set; }
         public int CurrentUserCount { get; set; }
+        public bool ProfileVerificationEnabled { get; set; }
     }
 }

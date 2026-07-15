@@ -81,7 +81,7 @@
             }
           </div>
         </td>
-        <td>{{ (draft.updatedAtUtc || draft.createdAtUtc) | date:'short' }}</td>
+        <td>{{ (draft.updatedAtUtc || draft.createdAtUtc) | localUtcDate:'short' }}</td>
         <td class="actions-column">
           <div class="action-buttons">
             <p-button icon="pi pi-pencil" severity="secondary" text rounded (onClick)="editDraft(draft)" pTooltip="Edit"></p-button>

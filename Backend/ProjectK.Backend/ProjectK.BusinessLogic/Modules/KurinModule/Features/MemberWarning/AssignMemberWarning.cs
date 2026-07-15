@@ -38,12 +38,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
 
-        public AssignMemberWarningHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper)
+        public AssignMemberWarningHandler(
+            IUnitOfWork unitOfWork,
+            ICurrentUserContext currentUserContext,
+            INotificationService notificationService,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
+            _notificationService = notificationService;
             _mapper = mapper;
         }
 
@@ -96,6 +102,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
                 return new ServiceResult<MemberWarningDto>(ResultType.InternalServerError);
             }
 
+            await NotifyMemberOwnerAsync(member, warningEntity, cancellationToken);
+
             var response = _mapper.Map<MemberWarningDto>(warningEntity);
             return new ServiceResult<MemberWarningDto>(ResultType.Created, response);
         }
@@ -110,5 +118,41 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
                 _ => false
             };
         }
+
+        private async Task NotifyMemberOwnerAsync(
+            Common.Entities.KurinModule.Member member,
+            Common.Entities.KurinModule.MemberWarning warning,
+            CancellationToken cancellationToken)
+        {
+            if (!member.UserKey.HasValue)
+            {
+                return;
+            }
+
+            await _notificationService.NotifyAsync(
+                new NotificationRequest
+                {
+                    RecipientUserKey = member.UserKey.Value,
+                    Type = AppNotificationType.MemberWarningAssigned,
+                    Severity = AppNotificationSeverity.Warn,
+                    Title = "Пересторогу призначено",
+                    Body = $"До вашого профілю додано {GetWarningLevelName(warning.Level)}.",
+                    EntityType = "MemberWarning",
+                    EntityKey = warning.MemberWarningKey,
+                    Route = $"/member/{member.MemberKey}",
+                    ActorUserKey = _currentUserContext.UserId,
+                    DeduplicationKey = $"member-warning:{warning.MemberWarningKey}"
+                },
+                cancellationToken);
+        }
+
+        private static string GetWarningLevelName(MemberWarningLevel level) =>
+            level switch
+            {
+                MemberWarningLevel.Level1 => "першу пересторогу",
+                MemberWarningLevel.Level2 => "другу пересторогу",
+                MemberWarningLevel.Level3 => "третю пересторогу",
+                _ => "пересторогу"
+            };
     }
 }

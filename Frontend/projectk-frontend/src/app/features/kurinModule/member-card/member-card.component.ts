@@ -41,6 +41,9 @@ import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../common/functions/progress-status-labels.function';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
+import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 @Component({
   selector: 'app-member-card',
@@ -58,7 +61,8 @@ import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../com
     TooltipModule,
     SkillMiniCardComponent,
     BentoTileSkeletonComponent,
-    MemberAwardsTileComponent
+    MemberAwardsTileComponent,
+    ProfileVerificationBadgeComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
@@ -75,6 +79,7 @@ export class MemberCardComponent implements OnInit {
   authService = inject(AuthService);
   entityService = inject(EntityService);
   permissionService = inject(PermissionService);
+  kurinService = inject(KurinService);
   confirmationService = inject(ConfirmationService);
   breadcrumbService = inject(BreadcrumbService);
   memberAwardService = inject(MemberAwardService);
@@ -103,6 +108,7 @@ export class MemberCardComponent implements OnInit {
   inlineModerationMessage: string | null = null;
   inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
   canManageMemberActions = false;
+  profileVerificationEnabled = false;
 
   readonly addSkillPageSize = 12;
   readonly warningLevels = [
@@ -129,6 +135,7 @@ export class MemberCardComponent implements OnInit {
           this.breadcrumbService.setParam('groupKey', member.groupKey);
         }
         this.updateMemberAccess(member.memberKey ?? this.memberKey);
+        this.loadProfileVerificationToggle(member);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -151,6 +158,10 @@ export class MemberCardComponent implements OnInit {
     return this.canManageMemberActions;
   }
 
+  get profileVerifiedAtDisplay(): string | null {
+    return formatUtcDateTime(this.member?.profileVerifiedAtUtc);
+  }
+
   private updateMemberAccess(memberKey: string | null): void {
     if (!memberKey) {
       this.canManageMemberActions = false;
@@ -163,6 +174,22 @@ export class MemberCardComponent implements OnInit {
       },
       error: () => {
         this.canManageMemberActions = false;
+      }
+    });
+  }
+
+  private loadProfileVerificationToggle(member: MemberDto): void {
+    this.profileVerificationEnabled = false;
+    if (!member.kurinKey) {
+      return;
+    }
+
+    this.kurinService.getByKey(member.kurinKey).subscribe({
+      next: (kurin) => {
+        this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+      },
+      error: () => {
+        this.profileVerificationEnabled = false;
       }
     });
   }
@@ -266,8 +293,7 @@ export class MemberCardComponent implements OnInit {
       return 0;
     }
 
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return parseUtcDateTime(value)?.getTime() ?? 0;
   }
 
   private getWarningLevelLabel(level: MemberWarningLevel): string {
@@ -613,12 +639,7 @@ export class MemberCardComponent implements OnInit {
   }
 
   private formatDate(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    return date.toLocaleDateString('uk-UA');
+    return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
   }
 
   onEditMember() {

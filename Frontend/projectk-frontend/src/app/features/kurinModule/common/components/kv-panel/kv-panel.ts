@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -17,10 +18,13 @@ import { MemberService } from '../../services/member-service/member.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { UserService } from '../../../../adminModule/services/user.service';
+import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
+import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pipe';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
   groups: GroupDto[];
+  isManager?: boolean;
 }
 
 @Component({
@@ -35,7 +39,8 @@ interface MentorAssignmentRow {
     TableModule,
     TagModule,
     ToggleSwitchModule,
-    TooltipModule
+    TooltipModule,
+    LocalUtcDatePipe
   ],
   templateUrl: './kv-panel.html',
   styleUrl: './kv-panel.css'
@@ -48,6 +53,7 @@ export class KvPanelComponent implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   private readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
 
   groups: GroupDto[] = [];
   kvMembers: MemberLookupDto[] = [];
@@ -99,6 +105,14 @@ export class KvPanelComponent implements OnChanges {
       }));
   }
 
+  get kvRows(): MentorAssignmentRow[] {
+    const managerRow = this.manager
+      ? [{ mentor: this.manager, groups: this.groups, isManager: true }]
+      : [];
+
+    return [...managerRow, ...this.mentorRows];
+  }
+
   loadData(): void {
     this.isLoading = true;
 
@@ -125,7 +139,7 @@ export class KvPanelComponent implements OnChanges {
   }
 
   openAssignmentDialog(row?: MentorAssignmentRow): void {
-    if (!this.canManageKv) {
+    if (!this.canManageKv || row?.isManager) {
       return;
     }
 
@@ -224,6 +238,12 @@ export class KvPanelComponent implements OnChanges {
     return 'info';
   }
 
+  onMemberSelect(member: MemberLookupDto): void {
+    if (member?.memberKey) {
+      this.router.navigate(['/member', member.memberKey]);
+    }
+  }
+
   private buildMentorRows(groups: GroupDto[], assignments: MentorAssignmentDto[]): void {
     const groupMap = new Map(groups.map(group => [group.groupKey, group]));
     const rowMap = new Map<string, MentorAssignmentRow>();
@@ -262,7 +282,10 @@ export class KvPanelComponent implements OnChanges {
   get archivedAssignments(): MentorAssignmentDto[] {
     return this.mentorAssignments
       .filter(assignment => !!assignment.revokedAtUtc)
-      .sort((a, b) => new Date(b.revokedAtUtc as string).getTime() - new Date(a.revokedAtUtc as string).getTime());
+      .sort((a, b) =>
+        (parseUtcDateTime(b.revokedAtUtc)?.getTime() ?? 0)
+        - (parseUtcDateTime(a.revokedAtUtc)?.getTime() ?? 0)
+      );
   }
 
   getAssignmentMemberName(assignment: MentorAssignmentDto): string {

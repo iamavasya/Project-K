@@ -2,6 +2,7 @@ import { PlastLevelHistoryDto } from "./plastLevelHistoryDto";
 import { LeadershipHistoryDto } from "./requests/leadership/leadershipDto";
 import { MemberWarningDto } from "./memberWarningDto";
 import { MemberAwardDto } from "./memberAwardDto";
+import { MemberProfileVerificationStatus } from "./enums/member-profile-verification-status.enum";
 
 export interface MemberDto {
     memberKey: string;
@@ -24,4 +25,8 @@ export interface MemberDto {
     warnings?: MemberWarningDto[];
     awards?: MemberAwardDto[];
     profilePhotoUrl: string | null;
+    profileVerificationStatus?: MemberProfileVerificationStatus;
+    profileVerifiedAtUtc?: string | Date | null;
+    profileVerifiedByUserKey?: string | null;
+    profileVerificationNote?: string | null;
 }

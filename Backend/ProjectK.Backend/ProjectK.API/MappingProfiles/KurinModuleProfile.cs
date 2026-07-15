@@ -9,6 +9,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Dtos;
@@ -28,7 +29,7 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Members.Count));
             CreateMap<UpsertKurin, Kurin>()
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
+                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Group Mapping
             CreateMap<Group, GroupResponse>()
@@ -37,14 +38,14 @@ namespace ProjectK.API.MappingProfiles
             CreateMap<UpsertGroup, Group>()
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now));
+                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping
             CreateMap<UpsertMember, Member>()
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UserKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore());
 
             CreateMap<Member, MemberResponse>()
@@ -65,6 +66,9 @@ namespace ProjectK.API.MappingProfiles
 
             // Member Warning Mapping
             CreateMap<MemberWarning, MemberWarningDto>();
+
+            // Notifications Mapping
+            CreateMap<AppNotification, AppNotificationDto>();
 
             // Member Award Mapping
             CreateMap<MemberAward, MemberAwardDto>()

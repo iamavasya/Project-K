@@ -8,6 +8,7 @@ import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { mapMemberForView } from '../../functions/memberViewMapper.function';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { ENTITY_CACHE_TTL_MS, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { toDateOnlyString } from '../../functions/toDateOnlyString.function';
 
 @Injectable({
   providedIn: 'root'
@@ -63,6 +64,20 @@ export class MemberService {
     );
   }
 
+  verifyProfile(memberKey: string, note?: string | null): Observable<MemberDto> {
+    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { note: note ?? null }).pipe(
+      tap(() => this.invalidateMemberCache()),
+      map(member => mapMemberForView(member))
+    );
+  }
+
+  resetProfileVerification(memberKey: string): Observable<MemberDto> {
+    return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`).pipe(
+      tap(() => this.invalidateMemberCache()),
+      map(member => mapMemberForView(member))
+    );
+  }
+
   create(request: UpsertMemberDto, file: Blob | null): Observable<MemberDto> {
     if (!request.groupKey && !request.kurinKey) {
       return throwError(() => new Error('Either groupKey or kurinKey must be provided for create.'));
@@ -112,14 +127,16 @@ export class MemberService {
                 Object.entries(historyItem).forEach(([itemKey, itemValue]) => {
                     if (itemValue !== null && itemValue !== undefined) {
                         const formattedKey = `${key}[${index}].${itemKey}`;
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        formData.append(formattedKey, (itemValue as any).toString());
+                        const formattedValue = itemValue instanceof Date
+                          ? toDateOnlyString(itemValue)
+                          : String(itemValue);
+                        formData.append(formattedKey, formattedValue ?? '');
                     }
                 });
             });
         }
           else if (value instanceof Date) {
-              formData.append(key, value.toISOString());
+              formData.append(key, toDateOnlyString(value) ?? '');
           }
           else {
               formData.append(key, value.toString());

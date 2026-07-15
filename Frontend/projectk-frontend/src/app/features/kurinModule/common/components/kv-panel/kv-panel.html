@@ -1,20 +1,12 @@
 <div class="kv-panel">
-  <p-table [value]="mentorRows" styleClass="kv-table project-table" [loading]="isLoading">
+  <p-table [value]="kvRows" styleClass="kv-table project-table" [loading]="isLoading">
     <ng-template #caption>
       <div class="kv-caption">
         <div>
           <h3>КВ</h3>
-          <p>Зв'язковий та впорядники гуртків</p>
         </div>
 
         <div class="kv-caption__actions">
-          @if (manager) {
-            <span class="kv-manager">
-              <span class="kv-manager__label">Зв'язковий</span>
-              <strong>{{ getMemberName(manager) }}</strong>
-            </span>
-          }
-
           <div class="kv-archive-toggle">
             <span>Архів</span>
             <p-toggleswitch [(ngModel)]="showArchived" />
@@ -22,9 +14,13 @@
 
           @if (canManageKv) {
             <p-button
-              label="Додати впорядника"
               icon="pi pi-plus"
               severity="info"
+              size="small"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Додати впорядника"
+              tooltipPosition="bottom"
               (onClick)="openAssignmentDialog()" />
             <p-button
               icon="pi pi-refresh"
@@ -50,7 +46,12 @@
     </ng-template>
 
     <ng-template #body let-row>
-      <tr class="kv-row">
+      <tr
+        class="kv-row"
+        tabindex="0"
+        (click)="onMemberSelect(row.mentor)"
+        (keydown.enter)="onMemberSelect(row.mentor)"
+        (keydown.space)="onMemberSelect(row.mentor); $event.preventDefault()">
         <td data-mobile-label="Учасник">
           <span class="kv-member-name">{{ getMemberName(row.mentor) }}</span>
         </td>
@@ -58,7 +59,9 @@
           <p-tag [value]="getStatusLabel(row.mentor)" [severity]="getStatusSeverity(row.mentor)" [rounded]="true" />
         </td>
         <td data-mobile-label="Гуртки">
-          @if (row.groups.length) {
+          @if (row.isManager) {
+            <span class="kv-muted">Усі гуртки</span>
+          } @else if (row.groups.length) {
             <div class="kv-group-tags">
               @for (group of row.groups; track group.groupKey) {
                 <p-tag [value]="group.name" severity="info" [rounded]="true" />
@@ -70,13 +73,15 @@
         </td>
         @if (canManageKv) {
           <td class="kv-actions" data-mobile-label="Дії">
-            <p-button
-              icon="pi pi-pencil"
-              [rounded]="true"
-              [text]="true"
-              pTooltip="Налаштувати гуртки"
-              tooltipPosition="left"
-              (onClick)="openAssignmentDialog(row)" />
+            @if (!row.isManager) {
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                pTooltip="Налаштувати гуртки"
+                tooltipPosition="left"
+                (onClick)="$event.stopPropagation(); openAssignmentDialog(row)" />
+            }
           </td>
         }
       </tr>
@@ -85,7 +90,7 @@
     <ng-template pTemplate="emptymessage">
       <tr>
         <td [attr.colspan]="canManageKv ? 4 : 3" class="kv-empty">
-          КВ ще не має активних впорядників.
+          КВ ще не має активних учасників.
         </td>
       </tr>
     </ng-template>
@@ -97,11 +102,17 @@
       @if (archivedAssignments.length) {
         <div class="kv-archive-list">
           @for (assignment of archivedAssignments; track assignment.mentorAssignmentKey) {
-            <div class="kv-archive-row">
+            <div
+              class="kv-archive-row"
+              [class.kv-archive-row--clickable]="assignment.member"
+              [attr.tabindex]="assignment.member ? 0 : null"
+              (click)="assignment.member && onMemberSelect(assignment.member)"
+              (keydown.enter)="assignment.member && onMemberSelect(assignment.member)"
+              (keydown.space)="assignment.member && onMemberSelect(assignment.member); $event.preventDefault()">
               <span>{{ getAssignmentMemberName(assignment) }}</span>
               <p-tag [value]="assignment.groupName" severity="secondary" [rounded]="true" />
               <span class="kv-muted">
-                {{ assignment.assignedAtUtc | date:'dd.MM.yy' }} - {{ assignment.revokedAtUtc | date:'dd.MM.yy' }}
+                {{ assignment.assignedAtUtc | localUtcDate:'dd.MM.yy' }} - {{ assignment.revokedAtUtc | localUtcDate:'dd.MM.yy' }}
               </span>
             </div>
           }

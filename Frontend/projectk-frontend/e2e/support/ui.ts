@@ -85,7 +85,16 @@ export async function fillMemberRequiredFields(page: Page, data: {
 }
 
 export async function openWarningPanel(page: Page): Promise<void> {
-  await page.locator('form').getByRole('button').nth(2).click();
+  const warningPanel = page.locator('p-accordion-panel').filter({
+    has: page.locator('#warning-Level1')
+  });
+  const warningSection = warningPanel.locator('.warning-section');
+
+  if (!(await warningSection.isVisible())) {
+    await warningPanel.getByRole('button').first().click();
+  }
+
+  await expect(warningSection).toBeVisible();
 }
 
 export async function acceptBrowserConfirm(page: Page): Promise<void> {

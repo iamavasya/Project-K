@@ -81,6 +81,35 @@ public class ResourceAccessServiceTests
     }
 
     [Fact]
+    public async Task Manager_ShouldBeAllowedToUpdateOwnKurin()
+    {
+        var kurinKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        fixture.Kurins
+            .Setup(repo => repo.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(1) { KurinKey = kurinKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Update, kurinKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task Manager_ShouldBeAllowedToReadGroupInOwnKurin()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        fixture.Groups
+            .Setup(repo => repo.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Group("Test", kurinKey) { GroupKey = groupKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
     public async Task Mentor_ShouldBeDeniedForGroupDeleteAction()
     {
         var fixture = CreateFixture(true, Guid.NewGuid(), Guid.NewGuid(), UserRole.Mentor);

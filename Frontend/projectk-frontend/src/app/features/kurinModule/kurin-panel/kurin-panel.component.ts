@@ -69,6 +69,7 @@ export class KurinPanelComponent implements OnInit {
   canManageGroups = false;
   canManageMembers = false;
   canEditKurinProfile = false;
+  canManageKurinSettings = false;
   profileEditMode = false;
   profileSaving = false;
   reportDownloading = false;
@@ -130,7 +131,7 @@ export class KurinPanelComponent implements OnInit {
   }
 
   get hasKurinEditActions(): boolean {
-    return this.canEditKurinProfile || this.canManageGroups;
+    return this.canEditKurinProfile || this.canManageGroups || this.canManageKurinSettings;
   }
 
   get kurinEditMenuItems(): MenuItem[] {
@@ -138,6 +139,7 @@ export class KurinPanelComponent implements OnInit {
       [
         this.canEditKurinProfile,
         this.canManageGroups,
+        this.canManageKurinSettings,
         this.reportDownloading,
         this.kurinKey
       ],
@@ -164,6 +166,15 @@ export class KurinPanelComponent implements OnInit {
       });
     }
 
+    if (this.canManageKurinSettings) {
+      items.push({
+        label: 'Налаштування куреня',
+        icon: 'pi pi-cog',
+        disabled: !this.kurinKey,
+        command: () => this.openKurinSettings()
+      });
+    }
+
     return items;
   }
 
@@ -174,6 +185,7 @@ export class KurinPanelComponent implements OnInit {
         this.canManageGroups = this.permissionService.canManageGroups();
         this.canManageMembers = this.permissionService.canManageGroups();
         this.canEditKurinProfile = this.permissionService.canManageGroups();
+        this.canManageKurinSettings = this.permissionService.canManageKurinSettings();
         this.refreshData();
       }
     });
@@ -253,6 +265,11 @@ export class KurinPanelComponent implements OnInit {
 
   onMemberCreate(): void {
     this.router.navigate(['/kurin', this.kurinKey, 'member', 'upsert']);
+  }
+
+  openKurinSettings(): void {
+    if (!this.kurinKey || !this.canManageKurinSettings) return;
+    this.router.navigate(['/kurin', this.kurinKey, 'settings']);
   }
 
   downloadReportPdf(): void {

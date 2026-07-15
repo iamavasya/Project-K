@@ -6,6 +6,7 @@ import { environment } from '../../../../../../environments/environment';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberDto } from '../../models/memberDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
 describe('MemberService', () => {
   let service: MemberService;
@@ -171,10 +172,10 @@ describe('MemberService', () => {
     req.flush(sampleMember);
   });
 
-  it('create should handle Date objects by converting to ISO string', () => {
+  it('create should handle Date objects by converting date-only fields to yyyy-MM-dd', () => {
     const dateUpsert: UpsertMemberDto = {
       ...sampleUpsert,
-      dateOfBirth: new Date('2000-05-10').toISOString()
+      dateOfBirth: new Date(2000, 4, 10) as unknown as string
     };
     
     service.create(dateUpsert, null).subscribe();
@@ -182,7 +183,7 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(apiUrl);
     const body = req.request.body as FormData;
     
-    expect(body.get('dateOfBirth')).toEqual('2000-05-10T00:00:00.000Z');
+    expect(body.get('dateOfBirth')).toEqual('2000-05-10');
     req.flush(sampleMember);
   });
 
@@ -294,6 +295,59 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(`${apiUrl}/${memberKey}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+  });
+
+  it('verifyProfile should PUT note and invalidate member cache', () => {
+    const groupKey = 'g1';
+    const verifiedMember: MemberDto = {
+      ...sampleMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent,
+      profileVerificationNote: 'Checked'
+    };
+
+    service.getAll(groupKey).subscribe();
+    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+
+    service.verifyProfile(sampleMember.memberKey, 'Checked').subscribe(res => {
+      expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
+      expect(res.profileVerificationNote).toBe('Checked');
+    });
+
+    const verifyReq = httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}/profile-verification`);
+    expect(verifyReq.request.method).toBe('PUT');
+    expect(verifyReq.request.body).toEqual({ note: 'Checked' });
+    verifyReq.flush(verifiedMember);
+
+    service.getAll(groupKey).subscribe();
+    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    expect(listReq.request.method).toBe('GET');
+    listReq.flush([verifiedMember]);
+  });
+
+  it('resetProfileVerification should DELETE and invalidate member cache', () => {
+    const groupKey = 'g1';
+    const resetMember: MemberDto = {
+      ...sampleMember,
+      profileVerificationStatus: MemberProfileVerificationStatus.Unverified,
+      profileVerificationNote: null
+    };
+
+    service.getAll(groupKey).subscribe();
+    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+
+    service.resetProfileVerification(sampleMember.memberKey).subscribe(res => {
+      expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
+      expect(res.profileVerificationNote).toBeNull();
+    });
+
+    const resetReq = httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}/profile-verification`);
+    expect(resetReq.request.method).toBe('DELETE');
+    resetReq.flush(resetMember);
+
+    service.getAll(groupKey).subscribe();
+    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    expect(listReq.request.method).toBe('GET');
+    listReq.flush([resetMember]);
   });
 
   it('getMentorCandidates should call mentor-candidates endpoint', () => {

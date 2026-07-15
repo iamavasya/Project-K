@@ -4,6 +4,7 @@ import { BadgeProgressDto } from '../models/probes-and-badges/badgeProgressDto';
 import { MemberSkillItemView } from '../models/probes-and-badges/memberSkillItemView';
 import { MemberSkillsSummaryView } from '../models/probes-and-badges/memberSkillsSummaryView';
 import { environment } from '../../../../../environments/environment';
+import { parseUtcDateTime } from '../../../../shared/functions/utcDateTime.function';
 
 const BADGES_IMAGES_BASE_PATH = '/badges_images';
 const API_ORIGIN = resolveApiOrigin(environment.apiUrl);
@@ -27,8 +28,7 @@ function toUnixTime(value: string | null): number {
     return 0;
   }
 
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
+  return parseUtcDateTime(value)?.getTime() ?? 0;
 }
 
 export function resolveBadgeImageUrl(imagePath: string | null | undefined): string | null {

@@ -169,15 +169,22 @@
 
         <ng-template #header>
           <tr>
-            <th id="fullName" pSortableColumn="lastName">
-              Прізвище та Ім'я <p-sortIcon field="lastName" />
+            <th id="fullName" pSortableColumn="fullNameSort">
+              Прізвище та Ім'я <p-sortIcon field="fullNameSort" />
             </th>
-            <th id="statusRole">Статус</th> </tr>
+            <th id="statusRole" pSortableColumn="roleSortWeight">
+              Статус <p-sortIcon field="roleSortWeight" />
+            </th> </tr>
         </ng-template>
 
         <ng-template #body let-member>
           <tr [pSelectableRow]="member" class="member-row">
-            <td data-mobile-label="Учасник">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</td>
+            <td data-mobile-label="Учасник">
+              <span class="member-name-cell">
+                <span>{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</span>
+                <app-profile-verification-badge [status]="member.profileVerificationStatus"></app-profile-verification-badge>
+              </span>
+            </td>
             <td data-mobile-label="Статус">
               @if (getMemberRoleTags(member).length) {
                 <div class="member-role-tags">

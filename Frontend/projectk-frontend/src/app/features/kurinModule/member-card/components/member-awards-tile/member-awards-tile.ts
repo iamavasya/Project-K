@@ -10,6 +10,7 @@ import { MemberAwardsDialogComponent } from '../member-awards-dialog/member-awar
 import { UpsertMemberAwardRequest } from '../../../common/services/member-award-service/member-award.service';
 import { BadgeImageBlobService } from '../../../common/services/probes-and-badges/badge-image-blob.service';
 import { environment } from '../../../../../../environments/environment';
+import { dateOnlyTime } from '../../../common/functions/toDateOnlyString.function';
 
 interface AwardGroup {
   level: MemberAwardLevel;
@@ -61,7 +62,7 @@ export class MemberAwardsTileComponent {
       const existing = map.get(award.level);
       if (existing) {
         existing.count++;
-        if (new Date(award.dateAcquired) > new Date(existing.latest.dateAcquired)) {
+        if (dateOnlyTime(award.dateAcquired) > dateOnlyTime(existing.latest.dateAcquired)) {
           existing.latest = award;
         }
       } else {

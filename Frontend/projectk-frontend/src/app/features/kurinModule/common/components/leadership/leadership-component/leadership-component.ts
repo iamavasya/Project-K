@@ -23,15 +23,20 @@ import { InputIconModule } from 'primeng/inputicon';
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
 import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
+import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
 
 const COMMON_ROLES: LeadershipRole[] = [
-  LeadershipRole.Suddya, LeadershipRole.Skarbnyk, LeadershipRole.Pysar,
-  LeadershipRole.Gospodar, LeadershipRole.Hronikar, LeadershipRole.Horunjiy
+  LeadershipRole.Suddya,
+  LeadershipRole.Pysar,
+  LeadershipRole.Skarbnyk,
+  LeadershipRole.Horunjiy,
+  LeadershipRole.Gospodar,
+  LeadershipRole.Hronikar
 ];
 const MULTI_MEMBER_ROLES = new Set<LeadershipRole>([LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor]);
 
 export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
-  kv: [ LeadershipRole.Zvyazkovyi, LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor ],
+  kv: [ LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.Zvyazkovyi ],
   kurin: [ LeadershipRole.Kurinnuy, ...COMMON_ROLES ],
   group: [ LeadershipRole.Hurtkoviy, ...COMMON_ROLES ]
 };
@@ -154,12 +159,7 @@ export class LeadershipComponent implements OnInit {
     rolesForType.forEach(role => {
       const histories = rolesFromData.get(role) || [];
       
-      // Сортуємо: Архівні зверху, активні знизу
-      histories.sort((a, b) => {
-        if (a.endDate && !b.endDate) return -1;
-        if (!a.endDate && b.endDate) return 1;
-        return this.getDateTime(a.startDate) - this.getDateTime(b.startDate);
-      });
+      histories.sort(compareLeadershipHistoriesByDefault);
 
       histories.forEach(h => {
         this.leadershipHistories.push(this.createHistoryRow(role, h));
@@ -311,7 +311,4 @@ export class LeadershipComponent implements OnInit {
      return ROLE_DISPLAY_NAMES[role] || role;
   }
 
-  private getDateTime(value?: string | null): number {
-    return value ? new Date(value).getTime() : 0;
-  }
 }

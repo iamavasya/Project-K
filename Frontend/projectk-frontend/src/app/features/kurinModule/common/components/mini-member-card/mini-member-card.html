@@ -22,9 +22,13 @@
     <div class="mt-3 space-y-2">
         <div class="flex items-start justify-between gap-2">
             <div class="mini-member-card__header flex flex-col gap-2">
-                <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
-                    {{ member.firstName }} {{ member.lastName }}
-                </h4>
+                <div class="flex items-center flex-row gap-2">
+                    <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
+                        {{ member.firstName }} {{ member.lastName }}
+                    </h4>
+
+                    <app-profile-verification-badge [status]="member.profileVerificationStatus"></app-profile-verification-badge>
+                </div>
 
                 @if (hasActiveWarnings) {
                 <div

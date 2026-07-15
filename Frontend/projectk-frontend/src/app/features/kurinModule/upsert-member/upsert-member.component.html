@@ -4,6 +4,39 @@
         <p-accordion-panel value="0">
             <p-accordion-header>General Info</p-accordion-header>
             <p-accordion-content>
+                @if (!isCreate) {
+                    <div class="upsert-profile-header">
+                        <div class="upsert-profile-name">
+                            <span>{{ member.firstName }} {{ member.lastName }}</span>
+                            <app-profile-verification-badge
+                                [enabled]="profileVerificationEnabled"
+                                [status]="member.profileVerificationStatus">
+                            </app-profile-verification-badge>
+                        </div>
+
+                        @if (canManageProfileVerification) {
+                            <p-button
+                                type="button"
+                                [icon]="profileVerificationActionIcon"
+                                [rounded]="true"
+                                [text]="true"
+                                [severity]="profileVerificationActionSeverity"
+                                [loading]="profileVerificationSubmitting"
+                                [pTooltip]="profileVerificationActionTooltip"
+                                tooltipPosition="top"
+                                [showDelay]="2000"
+                                (onClick)="onProfileVerificationAction()"
+                                styleClass="upsert-profile-verification-action">
+                            </p-button>
+                        }
+                    </div>
+
+                    @if (profileVerificationMessage) {
+                        <p class="upsert-profile-verification-message" [class.upsert-profile-verification-message--success]="profileVerificationMessageSeverity === 'success'" [class.upsert-profile-verification-message--warn]="profileVerificationMessageSeverity === 'warn'" [class.upsert-profile-verification-message--error]="profileVerificationMessageSeverity === 'error'">
+                            {{ profileVerificationMessage }}
+                        </p>
+                    }
+                }
                 <div class="flex flex-column md:flex-row gap-4 m-5">
                     <div class="flex flex-col gap-2">
                         <p-floatlabel variant="on">

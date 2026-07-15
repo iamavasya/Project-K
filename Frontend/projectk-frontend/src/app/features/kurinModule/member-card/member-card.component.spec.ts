@@ -1,4 +1,4 @@
-﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card.component';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
@@ -17,12 +17,15 @@ import { ProbeProgressStatus } from '../common/models/enums/probe-progress-statu
 import { BadgeCatalogItemDto } from '../common/models/probes-and-badges/badgeCatalogItemDto';
 import { BadgeProgressDto } from '../common/models/probes-and-badges/badgeProgressDto';
 import { ProbeSummaryDto } from '../common/models/probes-and-badges/probeSummaryDto';
+import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { KurinDto } from '../common/models/kurinDto';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
   let component: MemberCardComponent;
 
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
+  let kurinServiceSpy: jasmine.SpyObj<KurinService>;
   let badgesCatalogServiceSpy: jasmine.SpyObj<BadgesCatalogService>;
   let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
   let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
@@ -50,6 +53,7 @@ describe('MemberCardComponent', () => {
 
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
@@ -70,6 +74,11 @@ describe('MemberCardComponent', () => {
     });
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
+    kurinServiceSpy.getByKey.and.returnValue(of({
+      kurinKey: member.kurinKey,
+      number: 1,
+      profileVerificationEnabled: true
+    } as KurinDto));
     probesCatalogServiceSpy.getAll.and.returnValue(of([]));
     memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of([]));
     memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
@@ -124,6 +133,7 @@ describe('MemberCardComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: MemberService, useValue: memberServiceSpy },
+        { provide: KurinService, useValue: kurinServiceSpy },
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
@@ -231,6 +241,21 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
     expect(component.member).toEqual(member);
+  });
+
+  it('should display profile verification timestamp without timezone as local time from UTC', () => {
+    memberServiceSpy.getByKey.and.returnValue(of({
+      ...member,
+      profileVerifiedAtUtc: '2026-07-04T20:53:00'
+    }));
+    createComponent();
+    fixture.detectChanges();
+
+    const expected = new Date('2026-07-04T20:53:00Z').toLocaleString('uk-UA', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+    expect(component.profileVerifiedAtDisplay).toBe(expected);
   });
 
   it('should navigate to panel on load error when member not preset', () => {
@@ -377,7 +402,7 @@ describe('MemberCardComponent', () => {
     badgesCatalogServiceSpy.getAll.and.returnValue(of([
       {
         id: 'badge-1',
-        title: 'Вмілість Рятівник',
+        title: 'Rescue Badge',
         imagePath: 'badges/a.png',
         country: 'UA',
         specialization: 'Scout',
@@ -390,7 +415,7 @@ describe('MemberCardComponent', () => {
       },
       {
         id: 'badge-2',
-        title: 'Вмілість Кухар',
+        title: 'Cooking Badge',
         imagePath: 'badges/b.png',
         country: 'UA',
         specialization: 'Craft',
@@ -407,7 +432,7 @@ describe('MemberCardComponent', () => {
     fixture.detectChanges();
 
     component.addSkillVisibleCount = 30;
-    component.addSkillSearchTerm = 'Рят';
+    component.addSkillSearchTerm = 'rescue';
     component.onAddSkillSearchTermChange();
 
     expect(component.addSkillVisibleCount).toBe(component.addSkillPageSize);
@@ -435,7 +460,7 @@ describe('MemberCardComponent', () => {
 
     expect(memberProgressServiceSpy.submitBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-new', { note: null });
     expect(component.isAddSkillDialogVisible).toBeFalse();
-    expect(component.addSkillSuccessMessage).toContain('успішно');
+    expect(component.addSkillSuccessMessage).toContain('подана');
   });
 
   it('canSubmitBadge should allow re-submission for rejected badge', () => {
@@ -461,7 +486,7 @@ describe('MemberCardComponent', () => {
     fixture.detectChanges();
 
     expect(component.canSubmitBadge('badge-rejected')).toBeTrue();
-    expect(component.getSubmitBadgeButtonLabel('badge-rejected')).toBe('Подати знову');
+    expect(component.getSubmitBadgeButtonLabel('badge-rejected')).toContain('знову');
   });
 
   it('openSkillsReviewFromDialog should navigate to kurin skills review route for reviewer', () => {

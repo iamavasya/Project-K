@@ -10,3 +10,21 @@ export function toDateOnlyString(d: Date | string | null | undefined): string | 
     const day = d.getDate().toString().padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
+
+export function parseDateOnlyString(value: Date | string | null | undefined): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+
+    const dateOnly = toDateOnlyString(value);
+    if (!dateOnly) return null;
+
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    if (!year || !month || !day) return null;
+
+    return new Date(year, month - 1, day);
+  }
+
+export function dateOnlyTime(value: Date | string | null | undefined): number {
+    const parsed = parseDateOnlyString(value);
+    return parsed?.getTime() ?? 0;
+  }

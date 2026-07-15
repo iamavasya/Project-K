@@ -19,6 +19,8 @@ import { FormsModule } from '@angular/forms';
 import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
 import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcoming-birthdays-tile';
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
+import { compareLeadershipHistoriesByDefault, getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
+import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
@@ -37,7 +39,8 @@ import { PermissionService } from '../../../../authModule/services/permission.se
     ToggleSwitchModule,
     FormsModule,
     MiniMemberCardComponent,
-    UpcomingBirthdaysTileComponent
+    UpcomingBirthdaysTileComponent,
+    ProfileVerificationBadgeComponent
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
@@ -105,12 +108,18 @@ export class MemberList implements OnInit {
           firstName: m.firstName,
           lastName: m.lastName,
           middleName: m.middleName,
+          fullNameSort: this.getFullNameSortValue(m),
+          roleSortWeight: this.getMemberRoleSortWeight(m),
           leadershipHistories: m.leadershipHistories ?? [],
           profilePhotoUrl: m.profilePhotoUrl,
           latestPlastLevel: m.latestPlastLevel ?? null,
           latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
           phoneNumber: m.phoneNumber,
           dateOfBirth: m.dateOfBirth,
+          profileVerificationStatus: m.profileVerificationStatus,
+          profileVerifiedAtUtc: m.profileVerifiedAtUtc,
+          profileVerifiedByUserKey: m.profileVerifiedByUserKey,
+          profileVerificationNote: m.profileVerificationNote,
           warnings: m.warnings ?? []
         }));
         this.hasUpcomingBirthdays = buildUpcomingBirthdays(this.membersLookup, this.upcomingBirthdaysWindowDays).length > 0;
@@ -195,11 +204,7 @@ export class MemberList implements OnInit {
     if (!this.showArchived) {
       filtered = filtered.filter(h => !h.endDate);
     }
-    filtered.sort((a, b) => {
-      if (!a.endDate && b.endDate) return -1;
-      if (a.endDate && !b.endDate) return 1;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-    });
+    filtered.sort(compareLeadershipHistoriesByDefault);
     this.leadershipHistories = filtered.map(h => ({
       ...h,
       roleNameUA: this.getRoleDisplayName(h.role)
@@ -229,13 +234,14 @@ export class MemberList implements OnInit {
       ...this.getKvRoleTags(member),
       ...(member.leadershipHistories ?? [])
       .filter(history => !history.endDate)
-      .sort((a, b) => this.getLeadershipSortWeight(a) - this.getLeadershipSortWeight(b))
+      .sort(compareLeadershipHistoriesByDefault)
       .map(history => ({
         label: this.getMemberRoleLabel(history),
         severity: this.getRoleSeverity(history)
       }))
     ];
   }
+
 
   private getKvRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'danger' }[] {
     const role = (member.userRole ?? '').toLowerCase();
@@ -250,17 +256,33 @@ export class MemberList implements OnInit {
     return [];
   }
 
-  private getLeadershipSortWeight(history: LeadershipHistoryDto): number {
-    const type = (history.leadershipType ?? '').toLowerCase();
-    if (type === 'kurin') {
-      return 0;
+  private getFullNameSortValue(member: Pick<MemberLookupDto, 'lastName' | 'firstName' | 'middleName'>): string {
+    return `${member.lastName ?? ''} ${member.firstName ?? ''} ${member.middleName ?? ''}`.trim().toLowerCase();
+  }
+
+  private getMemberRoleSortWeight(member: Pick<MemberLookupDto, 'userRole' | 'leadershipHistories'>): number {
+    const kvRoleWeight = this.getKvRoleSortWeight(member.userRole);
+    const leadershipRoleWeight = (member.leadershipHistories ?? [])
+      .filter(history => !history.endDate)
+      .reduce(
+        (lowest, history) => Math.min(lowest, getLeadershipRoleSortWeight(history.role)),
+        Number.MAX_SAFE_INTEGER
+      );
+
+    return Math.min(kvRoleWeight, leadershipRoleWeight);
+  }
+
+  private getKvRoleSortWeight(role?: string | null): number {
+    const normalized = (role ?? '').toLowerCase();
+    if (normalized === 'manager') {
+      return getLeadershipRoleSortWeight(LeadershipRole.Zvyazkovyi);
     }
 
-    if (type === 'group') {
-      return 1;
+    if (normalized === 'mentor') {
+      return getLeadershipRoleSortWeight(LeadershipRole.Vykhovnyk);
     }
 
-    return 2;
+    return Number.MAX_SAFE_INTEGER;
   }
 
   private getMemberRoleLabel(history: LeadershipHistoryDto): string {

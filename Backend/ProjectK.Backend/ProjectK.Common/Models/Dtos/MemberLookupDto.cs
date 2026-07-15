@@ -14,5 +14,9 @@ namespace ProjectK.Common.Models.Dtos
         public string? MiddleName { get; set; }
         public string LastName { get; set; }
         public string? UserRole { get; set; }
+        public Enums.MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
+        public DateTime? ProfileVerifiedAtUtc { get; set; }
+        public Guid? ProfileVerifiedByUserKey { get; set; }
+        public string? ProfileVerificationNote { get; set; }
     }
 }

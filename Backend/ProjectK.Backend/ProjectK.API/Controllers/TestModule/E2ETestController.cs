@@ -42,6 +42,7 @@ public sealed class E2ETestController : ControllerBase
             return guard;
         }
 
+        await _dbContext.Database.EnsureDeletedAsync(cancellationToken);
         await _dbContext.Database.MigrateAsync(cancellationToken);
         await DataSeeder.SeedAsync(_services);
 

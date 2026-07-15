@@ -116,6 +116,31 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
         }
 
         [Fact]
+        public async Task Upsert_ShouldSendProfileVerificationEnabled()
+        {
+            var key = Guid.NewGuid();
+            UpsertKurin? sentCommand = null;
+            var serviceResult = new ServiceResult<KurinResponse>(
+                ResultType.Success,
+                new KurinResponse { KurinKey = key, Number = 10, ProfileVerificationEnabled = true });
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+                .Callback<IRequest<ServiceResult<KurinResponse>>, CancellationToken>((command, _) => sentCommand = (UpsertKurin)command)
+                .ReturnsAsync(serviceResult);
+
+            var result = await _controller.Upsert(key, new UpdateKurinRequest
+            {
+                Number = 10,
+                ProfileVerificationEnabled = true
+            });
+
+            Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(sentCommand);
+            Assert.True(sentCommand.ProfileVerificationEnabled);
+        }
+
+        [Fact]
         public async Task Delete_ShouldReturnOk_WhenSuccess()
         {
             var key = Guid.NewGuid();

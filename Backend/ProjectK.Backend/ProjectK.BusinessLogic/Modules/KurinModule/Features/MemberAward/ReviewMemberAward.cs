@@ -21,12 +21,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
 
-        public ReviewMemberAwardHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper)
+        public ReviewMemberAwardHandler(
+            IUnitOfWork unitOfWork,
+            ICurrentUserContext currentUserContext,
+            INotificationService notificationService,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
+            _notificationService = notificationService;
             _mapper = mapper;
         }
 
@@ -52,7 +58,39 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
             _unitOfWork.MemberAwards.Update(award);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            await NotifyMemberOwnerAsync(award, request.IsApproved, cancellationToken);
+
             return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(award));
+        }
+
+        private async Task NotifyMemberOwnerAsync(
+            Common.Entities.KurinModule.MemberAward award,
+            bool isApproved,
+            CancellationToken cancellationToken)
+        {
+            var member = await _unitOfWork.Members.GetByKeyAsync(award.MemberKey, cancellationToken);
+            if (member?.UserKey is null)
+            {
+                return;
+            }
+
+            await _notificationService.NotifyAsync(
+                new NotificationRequest
+                {
+                    RecipientUserKey = member.UserKey.Value,
+                    Type = AppNotificationType.MemberAwardReviewed,
+                    Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
+                    Title = isApproved ? "Відзначення затверджено" : "Відзначення не затверджено",
+                    Body = isApproved
+                        ? "Ваше відзначення затверджено."
+                        : "Ваше відзначення не затверджено. Перегляньте зауваження.",
+                    EntityType = "MemberAward",
+                    EntityKey = award.MemberAwardKey,
+                    Route = $"/member/{member.MemberKey}",
+                    ActorUserKey = _currentUserContext.UserId,
+                    DeduplicationKey = $"award-review:{award.MemberAwardKey}"
+                },
+                cancellationToken);
         }
     }
 }

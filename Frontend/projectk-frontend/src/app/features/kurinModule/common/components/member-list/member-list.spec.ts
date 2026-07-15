@@ -93,6 +93,8 @@ describe('MemberList', () => {
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith('g1');
       expect(component.membersLookup.length).toBe(1);
       expect(component.membersLookup[0].phoneNumber).toBeUndefined();
+      expect(component.membersLookup[0].fullNameSort).toBe('doe john m');
+      expect(component.membersLookup[0].roleSortWeight).toBe(Number.MAX_SAFE_INTEGER);
     });
 
     it('should load members for kurin type', () => {
@@ -101,6 +103,46 @@ describe('MemberList', () => {
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith(undefined, 'k1');
       expect(component.membersLookup.length).toBe(1);
+    });
+
+    it('should give a manager a higher status priority than a kurinnuy', () => {
+      memberServiceSpy.getAll.and.returnValue(of([
+        {
+          ...mockMembers[0],
+          memberKey: 'manager',
+          firstName: 'Manager',
+          lastName: 'Member',
+          userRole: 'Manager',
+          leadershipHistories: []
+        },
+        {
+          ...mockMembers[0],
+          memberKey: 'kurinnuy',
+          firstName: 'Kurinnuy',
+          lastName: 'Member',
+          leadershipHistories: [{
+            leadershipHistoryKey: 'lh-kurinnuy',
+            leadershipKey: 'l1',
+            role: LeadershipRole.Kurinnuy,
+            startDate: '2025-01-01',
+            endDate: null,
+            member: {
+              memberKey: 'kurinnuy',
+              firstName: 'Kurinnuy',
+              lastName: 'Member',
+              middleName: null
+            }
+          }]
+        }
+      ]));
+      component.type = 'kurin';
+      component.typeKey = 'k1';
+
+      component.ngOnInit();
+
+      const manager = component.membersLookup.find(member => member.memberKey === 'manager');
+      const kurinnuy = component.membersLookup.find(member => member.memberKey === 'kurinnuy');
+      expect(manager!.roleSortWeight).toBeLessThan(kurinnuy!.roleSortWeight!);
     });
 
     it('should load leadership for leadership type', () => {
@@ -139,6 +181,43 @@ describe('MemberList', () => {
       const rows = component.leadershipHistories;
       expect(rows[0].endDate).toBeFalsy(); // Active
       expect(rows[1].endDate).toBeTruthy(); // Archived
+    });
+
+    it('should sort active leadership rows by fixed role order before start date', () => {
+      component.allHistories = [
+        {
+          leadershipKey: 'l1',
+          leadershipHistoryKey: 'lh-pysar',
+          role: LeadershipRole.Pysar,
+          startDate: '2026-01-01',
+          endDate: null,
+          member: { memberKey: 'm3', firstName: 'Petro', lastName: 'Later', middleName: null }
+        },
+        {
+          leadershipKey: 'l1',
+          leadershipHistoryKey: 'lh-kurinnuy',
+          role: LeadershipRole.Kurinnuy,
+          startDate: '2020-01-01',
+          endDate: null,
+          member: { memberKey: 'm4', firstName: 'Ivan', lastName: 'Earlier', middleName: null }
+        },
+        {
+          leadershipKey: 'l1',
+          leadershipHistoryKey: 'lh-suddya',
+          role: LeadershipRole.Suddya,
+          startDate: '2025-01-01',
+          endDate: null,
+          member: { memberKey: 'm5', firstName: 'Stepan', lastName: 'Middle', middleName: null }
+        }
+      ];
+
+      component.refreshList();
+
+      expect(component.leadershipHistories.map(row => row.role)).toEqual([
+        LeadershipRole.Kurinnuy,
+        LeadershipRole.Suddya,
+        LeadershipRole.Pysar
+      ]);
     });
   });
 
@@ -206,7 +285,6 @@ describe('MemberList', () => {
       ]));
     });
   });
-
   describe('Group card mode', () => {
     beforeEach(() => {
       component.type = 'group';

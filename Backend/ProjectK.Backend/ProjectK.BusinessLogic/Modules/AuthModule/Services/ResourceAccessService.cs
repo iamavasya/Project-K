@@ -97,7 +97,7 @@ public class ResourceAccessService : IResourceAccessService
 
     private static ResourceAccessDecision EvaluateManagerActionPermission(ResourceType resourceType, ResourceAction action)
     {
-        if (resourceType == ResourceType.Kurin && action is ResourceAction.Update or ResourceAction.Delete or ResourceAction.Manage)
+        if (resourceType == ResourceType.Kurin && action is ResourceAction.Delete or ResourceAction.Manage)
         {
             return ResourceAccessDecision.Deny("Manager cannot perform irreversible kurin actions.");
         }

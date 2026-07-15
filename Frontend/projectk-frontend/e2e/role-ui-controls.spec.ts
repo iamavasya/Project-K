@@ -48,13 +48,13 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     const level3 = page.locator('#warning-Level3');
 
     await openWarningPanel(page);
-    await expect(level1).toBeVisible();
+    await expect(level1).toBeEnabled();
     await expect(level3).toBeDisabled();
 
     if (await level2.isDisabled()) {
-      await level1.check();
+      await level1.check({ force: true });
       await expect(level2).toBeEnabled();
-      await level2.check();
+      await level2.check({ force: true });
       await expect(level3).toBeEnabled();
     }
   });

@@ -19,6 +19,7 @@ import { MemberService } from '../common/services/member-service/member.service'
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
+import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 
 interface SkillsReviewItemView {
   reviewKey: string;
@@ -173,12 +174,7 @@ export class SkillsReviewPageComponent implements OnInit {
       return '—';
     }
 
-    const parsedDate = Date.parse(value);
-    if (Number.isNaN(parsedDate)) {
-      return value;
-    }
-
-    return new Date(parsedDate).toLocaleDateString('uk-UA');
+    return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
   }
 
   getBadgeImageUrl(imageUrl: string | null): string | null {
@@ -283,7 +279,6 @@ export class SkillsReviewPageComponent implements OnInit {
       return 0;
     }
 
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return parseUtcDateTime(value)?.getTime() ?? 0;
   }
 }
