@@ -1,4 +1,4 @@
-﻿name: Self-host Docker Bundle
+name: Self-host Docker Bundle
 
 on:
   release:
@@ -6,9 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version tag to package, for example 0.14.1-beta
+        description: Version tag to package, for example 0.14.2-beta
         required: false
-        default: 0.14.1-beta
+        default: 0.14.2-beta
+      codename:
+        description: Release codename to inject into the Docker images
+        required: false
+        default: SelfHostBuild
 
 permissions:
   contents: write
@@ -20,17 +24,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve version
+      - name: Resolve release info
         shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "release" ]; then
             RAW_TAG="${{ github.event.release.tag_name }}"
             VERSION="${RAW_TAG#v}"
+            RELEASE_NAME='${{ github.event.release.name }}'
+            CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
           else
             VERSION="${{ github.event.inputs.version }}"
+            VERSION="${VERSION#v}"
+            CODE_NAME="${{ github.event.inputs.codename }}"
           fi
+
           echo "PROJECTK_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "IMAGE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_INFO_VERSION=v$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_INFO_CODENAME=$CODE_NAME" >> "$GITHUB_ENV"
+
+      - name: Inject versioning into Docker build context
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["RELEASE_INFO_VERSION"]
+          codename = os.environ["RELEASE_INFO_CODENAME"]
+          roots = [
+              Path("Backend/ProjectK.Backend/ProjectK.API"),
+              Path("Frontend/projectk-frontend/src/environments"),
+          ]
+          patterns = ["appsettings*.json", "environment*.ts"]
+
+          for root, pattern in zip(roots, patterns):
+              for path in root.glob(pattern):
+                  text = path.read_text(encoding="utf-8-sig")
+                  text = text.replace("v0.0.0-dev", version)
+                  text = text.replace("LocalDevelopment", codename)
+                  path.write_text(text, encoding="utf-8")
+                  print(f"Injected release info into {path}")
+          PY
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -53,6 +90,12 @@ jobs:
           tags: |
             ghcr.io/iamavasya/projectk-api:${{ env.IMAGE_VERSION }}
             ghcr.io/iamavasya/projectk-api:beta
+          labels: |
+            org.opencontainers.image.title=Project-K API
+            org.opencontainers.image.description=Project-K self-host ASP.NET Core API
+            org.opencontainers.image.version=${{ env.RELEASE_INFO_VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Build and push web image
         uses: docker/build-push-action@v6
@@ -63,6 +106,12 @@ jobs:
           tags: |
             ghcr.io/iamavasya/projectk-web:${{ env.IMAGE_VERSION }}
             ghcr.io/iamavasya/projectk-web:beta
+          labels: |
+            org.opencontainers.image.title=Project-K Web
+            org.opencontainers.image.description=Project-K self-host Angular frontend
+            org.opencontainers.image.version=${{ env.RELEASE_INFO_VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Build self-host bundle
         shell: bash
@@ -100,4 +149,3 @@ jobs:
             "projectk-${PROJECTK_VERSION}-docker-selfhost.tar.gz" \
             SHA256SUMS.txt \
             --clobber
-

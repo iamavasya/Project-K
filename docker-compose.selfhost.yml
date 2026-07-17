@@ -1,6 +1,6 @@
-﻿services:
+services:
   projectk-web:
-    image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.1-beta}
+    image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.2-beta}
     build:
       context: .
       dockerfile: Frontend/projectk-frontend/Dockerfile
@@ -18,7 +18,7 @@
       retries: 10
 
   projectk-api:
-    image: ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:-0.14.1-beta}
+    image: ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:-0.14.2-beta}
     build:
       context: .
       dockerfile: Backend/Dockerfile
@@ -84,8 +84,6 @@
 
 volumes:
   projectk-sql-data:
+    name: projectk-sql-data
   projectk-azurite-data:
-
-
-
-
+    name: projectk-azurite-data

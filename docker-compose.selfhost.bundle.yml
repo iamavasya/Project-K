@@ -1,6 +1,6 @@
-﻿services:
+services:
   projectk-web:
-    image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.1-beta}
+    image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.2-beta}
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
     ports:
@@ -15,7 +15,7 @@
       retries: 10
 
   projectk-api:
-    image: ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:-0.14.1-beta}
+    image: ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:-0.14.2-beta}
     environment:
       ASPNETCORE_ENVIRONMENT: SelfHost
       ASPNETCORE_URLS: http://+:8080
@@ -76,4 +76,6 @@
 
 volumes:
   projectk-sql-data:
+    name: projectk-sql-data
   projectk-azurite-data:
+    name: projectk-azurite-data

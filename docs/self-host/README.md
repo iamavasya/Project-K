@@ -1,4 +1,4 @@
-﻿# Project-K self-host
+# Project-K self-host
 
 Project-K supports two self-host friendly startup paths:
 
@@ -103,12 +103,12 @@ The frontend image reads `PROJECTK_API_URL` at container startup and writes it i
 
 ## Volumes
 
-The compose file creates persistent named volumes:
+The compose file creates persistent named volumes with stable Docker names:
 
 - `projectk-sql-data` for SQL Server data;
 - `projectk-azurite-data` for uploaded blobs.
 
-Back up both before updates or server migration.
+Containers can be recreated during updates. These volumes keep the data. Do not run `docker compose down -v` unless you intentionally want to delete all Project-K self-host data. Back up both volumes before updates or server migration.
 
 ## Useful commands
 
@@ -124,5 +124,3 @@ docker compose up -d
 ## Building images locally
 
 The release bundle uses published container images and does not need .NET, Node.js, npm, or NuGet credentials. If you build images locally from the repository and private GitHub NuGet packages are required, set PROJECTK_NUGET_AUTH_TOKEN in your local environment or .env file.
-
-
