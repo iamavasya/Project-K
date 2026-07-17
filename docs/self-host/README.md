@@ -3,7 +3,7 @@
 Project-K supports two self-host friendly startup paths:
 
 - local try-out from a cloned repository;
-- Docker self-host from a GitHub Release bundle without git.
+- Docker self-host from published GHCR images through a GitHub Release bundle without git.
 
 Frontend and backend stay separate in both modes. The frontend is an Angular app. The backend is an ASP.NET Core API. Azurite provides local Azure Blob-compatible storage.
 
@@ -51,13 +51,20 @@ Logs are written under `.tmp/local-run/logs`.
 
 Use this when you want to run Project-K on a server or on a machine that has Docker but does not have git, .NET SDK, Node.js, or npm.
 
+Project-K self-host images are published to GitHub Container Registry:
+
+- `ghcr.io/iamavasya/projectk-api:<version>`
+- `ghcr.io/iamavasya/projectk-web:<version>`
+
+The easiest install path is the GitHub Release bundle. It contains `docker-compose.yml`, `.env.example`, and the self-host docs. It does not contain app binaries and does not build anything locally; Docker pulls the published images from GHCR.
+
 Download the `projectk-<version>-docker-selfhost.zip` or `.tar.gz` bundle from GitHub Releases.
 
 Windows:
 
 ```powershell
-Expand-Archive projectk-0.14.1-docker-selfhost.zip
-cd projectk-0.14.1-docker-selfhost
+Expand-Archive projectk-0.14.2-beta-docker-selfhost.zip
+cd projectk-0.14.2-beta-docker-selfhost
 copy .env.example .env
 notepad .env
 docker compose up -d
@@ -66,8 +73,8 @@ docker compose up -d
 Linux/macOS:
 
 ```bash
-tar -xzf projectk-0.14.1-docker-selfhost.tar.gz
-cd projectk-0.14.1-docker-selfhost
+tar -xzf projectk-0.14.2-beta-docker-selfhost.tar.gz
+cd projectk-0.14.2-beta-docker-selfhost
 cp .env.example .env
 nano .env
 docker compose up -d
@@ -90,9 +97,36 @@ Default Docker URLs:
 - Backend health: http://localhost:5205/health
 - Azurite blob endpoint: http://localhost:10000/devstoreaccount1
 
+## Install directly from GHCR images
+
+Use the release bundle when possible. It is the supported git-free installation path and keeps the compose file aligned with the release.
+
+If you already have your own deployment folder, create `.env` from `.env.selfhost.example`, copy `docker-compose.selfhost.bundle.yml` as `docker-compose.yml`, and run:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+For a quick image availability check:
+
+```bash
+docker pull ghcr.io/iamavasya/projectk-api:0.14.2-beta
+docker pull ghcr.io/iamavasya/projectk-web:0.14.2-beta
+```
+
+The `beta` tag is also published for the latest beta build:
+
+```bash
+docker pull ghcr.io/iamavasya/projectk-api:beta
+docker pull ghcr.io/iamavasya/projectk-web:beta
+```
+
+Prefer version tags such as `0.14.2-beta` for real self-host installations. Use `beta` only when you intentionally want to follow the latest beta image.
+
 ## Containers
 
-The release bundle compose file uses published container images only and does not build from source. It starts:
+The release bundle compose file uses published GHCR container images only and does not build from source. It starts:
 
 - `projectk-web`: nginx serving the Angular build;
 - `projectk-api`: ASP.NET Core API;
@@ -123,4 +157,4 @@ docker compose up -d
 
 ## Building images locally
 
-The release bundle uses published container images and does not need .NET, Node.js, npm, or NuGet credentials. If you build images locally from the repository and private GitHub NuGet packages are required, set PROJECTK_NUGET_AUTH_TOKEN in your local environment or .env file.
+The release bundle uses published GHCR container images and does not need .NET, Node.js, npm, or NuGet credentials. If you build images locally from the repository and private GitHub NuGet packages are required, set PROJECTK_NUGET_AUTH_TOKEN in your local environment or .env file.

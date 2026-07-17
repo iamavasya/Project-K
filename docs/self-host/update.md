@@ -31,7 +31,7 @@ Edit `.env` and set the target version:
 PROJECTK_VERSION=0.14.2-beta
 ```
 
-Pull the new images and restart:
+Pull the new GHCR images and restart:
 
 ```bash
 docker compose pull
@@ -39,6 +39,17 @@ docker compose up -d
 ```
 
 The API applies EF Core migrations on startup.
+
+## GHCR image tags
+
+The compose file pulls these images by `PROJECTK_VERSION`:
+
+```text
+ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION}
+ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION}
+```
+
+Use explicit version tags, for example `0.14.2-beta`, for normal installs. The `beta` tag tracks the latest beta image and may move when a new beta is published.
 
 ## Update from a new release bundle
 
