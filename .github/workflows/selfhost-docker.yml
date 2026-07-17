@@ -1,0 +1,103 @@
+﻿name: Self-host Docker Bundle
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version tag to package, for example 0.14.1-beta
+        required: false
+        default: 0.14.1-beta
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  docker-and-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RAW_TAG="${{ github.event.release.tag_name }}"
+            VERSION="${RAW_TAG#v}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "PROJECTK_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "IMAGE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Backend/Dockerfile
+          push: true
+          build-args: |
+            NUGET_AUTH_TOKEN=${{ secrets.NUGET_AUTH_TOKEN }}
+          tags: |
+            ghcr.io/iamavasya/projectk-api:${{ env.IMAGE_VERSION }}
+            ghcr.io/iamavasya/projectk-api:beta
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Frontend/projectk-frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/iamavasya/projectk-web:${{ env.IMAGE_VERSION }}
+            ghcr.io/iamavasya/projectk-web:beta
+
+      - name: Build self-host bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="projectk-${PROJECTK_VERSION}-docker-selfhost"
+          mkdir -p "$bundle"
+          cp docker-compose.selfhost.bundle.yml "$bundle/docker-compose.yml"
+          cp .env.selfhost.example "$bundle/.env.example"
+          cp docs/self-host/README.md "$bundle/README.md"
+          cp docs/self-host/backup-restore.md "$bundle/backup-restore.md"
+          cp docs/self-host/update.md "$bundle/update.md"
+          sed -i "s/^PROJECTK_VERSION=.*/PROJECTK_VERSION=${PROJECTK_VERSION}/" "$bundle/.env.example"
+          zip -r "$bundle.zip" "$bundle"
+          tar -czf "$bundle.tar.gz" "$bundle"
+          sha256sum "$bundle.zip" "$bundle.tar.gz" > SHA256SUMS.txt
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: projectk-selfhost-bundle
+          path: |
+            projectk-${{ env.PROJECTK_VERSION }}-docker-selfhost.zip
+            projectk-${{ env.PROJECTK_VERSION }}-docker-selfhost.tar.gz
+            SHA256SUMS.txt
+
+      - name: Attach bundle to release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "projectk-${PROJECTK_VERSION}-docker-selfhost.zip" \
+            "projectk-${PROJECTK_VERSION}-docker-selfhost.tar.gz" \
+            SHA256SUMS.txt \
+            --clobber
+
