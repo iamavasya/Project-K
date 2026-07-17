@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env sh
+#!/usr/bin/env sh
 set -eu
 
 : "${PROJECTK_API_URL:=http://localhost:5205/api}"
