@@ -41,7 +41,16 @@ export class SetupComponent {
         this.router.navigate(['/']);
       },
       error: (err) => {
-        this.error = err.error || 'Failed to initialize system. Please try again.';
+        let errorMessage = 'Failed to initialize system. Please try again.';
+        if (err.error && typeof err.error === 'object' && err.error.message) {
+            errorMessage = err.error.message;
+        } else if (err.error && typeof err.error === 'string') {
+            errorMessage = err.error;
+        } else if (err.message) {
+            errorMessage = err.message;
+        }
+        
+        this.error = errorMessage;
         this.isSubmitting = false;
       }
     });

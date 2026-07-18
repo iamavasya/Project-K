@@ -16,9 +16,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup.Handlers
     public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserResponse>>
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly LoginResponseFactory _loginResponseFactory;
+        private readonly ILoginResponseFactory _loginResponseFactory;
 
-        public InitializeSetupCommandHandler(UserManager<AppUser> userManager, LoginResponseFactory loginResponseFactory)
+        public InitializeSetupCommandHandler(UserManager<AppUser> userManager, ILoginResponseFactory loginResponseFactory)
         {
             _userManager = userManager;
             _loginResponseFactory = loginResponseFactory;
