@@ -31,7 +31,7 @@ services:
   projectk-azurite:
     image: mcr.microsoft.com/azure-storage/azurite:3.35.0
     container_name: projectk-azurite
-    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent --skipApiVersionCheck
     ports:
       - "${PROJECTK_AZURITE_BLOB_PORT:-10000}:10000"
       - "${PROJECTK_AZURITE_QUEUE_PORT:-10001}:10001"
@@ -47,8 +47,12 @@ services:
       retries: 10
 
 networks:
+  # External: the orchestrator (scripts/dev.*) owns and creates this network, and
+  # both the tools and app stacks attach to it. Declaring it managed here would make
+  # compose expect its own labels and clash with the script-created network.
   projectk-dev-net:
     name: projectk-dev-net
+    external: true
 
 volumes:
   projectk-sql-data:

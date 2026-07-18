@@ -54,6 +54,7 @@ services:
         NG_CONFIG: ${PROJECTK_NG_CONFIG:-development}
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
+      PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Development}
     ports:
       - "${PROJECTK_WEB_PORT:-4200}:80"
     depends_on:
