@@ -77,7 +77,7 @@ export class MfaEnforcerService {
         return;
       }
 
-      if (status.isMfaEnabled) {
+      if (status.isMfaEnabled || !status.isMfaRequired) {
         this.markMfaEnabledForCurrentSession();
         return;
       }

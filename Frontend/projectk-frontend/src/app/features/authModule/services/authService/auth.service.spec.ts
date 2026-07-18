@@ -313,14 +313,14 @@ describe('AuthService', () => {
 
     it('should request mfa status with credentials', (done) => {
       service.getMfaStatus().subscribe(response => {
-        expect(response).toEqual({ isMfaEnabled: true });
+        expect(response).toEqual({ isMfaEnabled: true, isMfaRequired: true });
         done();
       });
 
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/status`);
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBeTrue();
-      req.flush({ isMfaEnabled: true });
+      req.flush({ isMfaEnabled: true, isMfaRequired: true });
     });
 
     it('should handle login error', (done) => {

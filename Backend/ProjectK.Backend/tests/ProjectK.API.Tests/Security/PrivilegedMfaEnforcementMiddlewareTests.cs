@@ -1,14 +1,10 @@
-using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
@@ -31,7 +27,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -55,7 +51,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -76,7 +72,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -99,7 +95,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -122,7 +118,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -147,7 +143,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.False(nextCalled);
@@ -169,7 +165,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -177,9 +173,9 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldContinue_WhenDevelopmentPrivilegedUserUpdatesWithoutMfa()
+    public async Task InvokeAsync_ShouldContinue_WhenPolicyDoesNotRequireMfa()
     {
-        // Arrange
+        // Arrange (e.g. self-host with enforcement disabled, or Development)
         var userKey = Guid.NewGuid();
         var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
         context.Request.Method = HttpMethods.Put;
@@ -192,83 +188,11 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment(Environments.Development), CreateConfiguration(), CreateSystemSettings().Object);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: false).Object);
 
         // Assert
         Assert.True(nextCalled);
         userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_ShouldContinue_WhenSelfHostMfaEnforcementIsDisabledByDefault()
-    {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
-        context.Request.Method = HttpMethods.Put;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
-
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: false).Object);
-
-        // Assert
-        Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_ShouldReturnForbidden_WhenSelfHostMfaEnforcementIsEnabledAndUserHasNoMfa()
-    {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
-        context.Request.Method = HttpMethods.Put;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
-        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
-            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
-
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: true).Object);
-
-        // Assert
-        Assert.False(nextCalled);
-        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_ShouldContinue_WhenSelfHostMfaEnforcementIsEnabledAndUserHasMfa()
-    {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Admin);
-        context.Request.Method = HttpMethods.Put;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
-        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
-            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
-
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: true).Object);
-
-        // Assert
-        Assert.True(nextCalled);
     }
 
     private static DefaultHttpContext CreateContext(string path, Guid userKey, UserRole role)
@@ -292,27 +216,11 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         return new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
     }
 
-    private static IConfiguration CreateConfiguration()
+    private static Mock<IMfaEnforcementPolicy> CreatePolicy(bool required)
     {
-        var mock = new Mock<IConfiguration>();
-        var sectionMock = new Mock<IConfigurationSection>();
-        sectionMock.Setup(s => s.Value).Returns((string?)null);
-        mock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(sectionMock.Object);
-        return mock.Object;
-    }
-
-    private static Mock<ISystemSettingsService> CreateSystemSettings(bool enforcePrivilegedMfa = false)
-    {
-        var mock = new Mock<ISystemSettingsService>();
-        mock.Setup(x => x.GetBoolAsync(SystemSettingKeys.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(enforcePrivilegedMfa);
+        var mock = new Mock<IMfaEnforcementPolicy>();
+        mock.Setup(x => x.IsPrivilegedMfaRequiredAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(required);
         return mock;
-    }
-
-    private static IHostEnvironment CreateEnvironment(string environmentName)
-    {
-        var environmentMock = new Mock<IHostEnvironment>();
-        environmentMock.SetupGet(x => x.EnvironmentName).Returns(environmentName);
-        return environmentMock.Object;
     }
 }

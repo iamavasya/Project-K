@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
+using ProjectK.API.Services;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -208,11 +209,13 @@ namespace ProjectK.API.Controllers.AuthModule
         [Authorize(Policy = "RequireUser")]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("mfa/status")]
-        public async Task<IActionResult> GetMfaStatus()
+        public async Task<IActionResult> GetMfaStatus([FromServices] IMfaEnforcementPolicy mfaEnforcementPolicy)
         {
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _mediator.Send(new GetUserQuery(Guid.Parse(userKeyClaim!)));
-            return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled });
+            var isPrivileged = User.IsInRole(UserRole.Admin.ToString()) || User.IsInRole(UserRole.Manager.ToString());
+            var isMfaRequired = isPrivileged && await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(HttpContext.RequestAborted);
+            return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled, isMfaRequired });
         }
 
         private void SetRefreshTokenCookie(string token, DateTime expires)

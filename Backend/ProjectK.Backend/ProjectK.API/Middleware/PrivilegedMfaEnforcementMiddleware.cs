@@ -1,9 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Middleware
@@ -17,31 +16,18 @@ namespace ProjectK.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration, ISystemSettingsService systemSettings)
+        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IMfaEnforcementPolicy mfaEnforcementPolicy)
         {
-            if (environment.IsDevelopment() || configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false))
-            {
-                await _next(context);
-                return;
-            }
-
             if (!RequiresMfaEnforcement(context))
             {
                 await _next(context);
                 return;
             }
 
-            if (environment.EnvironmentName == "SelfHost")
+            if (!await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
             {
-                var enforceMfa = await systemSettings.GetBoolAsync(
-                    SystemSettingKeys.EnforcePrivilegedMfa,
-                    defaultValue: false,
-                    context.RequestAborted);
-                if (!enforceMfa)
-                {
-                    await _next(context);
-                    return;
-                }
+                await _next(context);
+                return;
             }
 
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)

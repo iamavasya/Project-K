@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.KurinModule;
+using ProjectK.API.Services;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
@@ -47,7 +48,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");
         yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa), "RequireUser");
         yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes), "RequireUser");
-        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus), "RequireUser");
+        yield return Row<Action<AuthController, IMfaEnforcementPolicy>>(nameof(AuthController.GetMfaStatus), "RequireUser");
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAllUsers), "RequireAdmin");
         yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings), "RequireUser");

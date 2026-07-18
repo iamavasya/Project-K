@@ -16,6 +16,7 @@ export interface MfaSetupResponse {
 
 export interface MfaStatusResponse {
   isMfaEnabled: boolean;
+  isMfaRequired: boolean;
 }
 
 export interface MfaEnableResponse {
