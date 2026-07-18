@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
@@ -39,6 +39,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<Invitation> Invitations { get; set; }
         public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
         public DbSet<AppNotification> AppNotifications { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

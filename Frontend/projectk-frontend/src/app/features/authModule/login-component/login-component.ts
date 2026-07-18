@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
 import { FloatLabel } from 'primeng/floatlabel';
@@ -18,7 +18,7 @@ import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
   templateUrl: './login-component.html',
   styleUrl: './login-component.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
@@ -29,6 +29,19 @@ export class LoginComponent {
   otpValue = '';
   loading = false;
   useRecoveryCode = false;
+
+  ngOnInit() {
+    this.authService.getSetupStatus().subscribe({
+      next: (status) => {
+        if (!status.isInitialized) {
+          this.router.navigate(['/setup']);
+        }
+      },
+      error: () => {
+        // If the endpoint is not available or fails, just continue
+      }
+    });
+  }
 
   get canSubmit(): boolean {
     if (this.loading) {

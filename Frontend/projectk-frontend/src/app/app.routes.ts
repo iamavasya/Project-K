@@ -15,6 +15,12 @@ export const routes: Routes = [
     data: { breadcrumb: 'Welcome' }
   },
   {
+    path: 'setup',
+    loadComponent: () => import('./features/authModule/setup-component/setup.component')
+      .then(m => m.SetupComponent),
+    data: { breadcrumb: 'Setup' }
+  },
+  {
     path: 'welcome',
     canActivate: [publicAuthRedirectGuard],
     loadComponent: () => import('./features/systemModule/components/welcome-page/welcome-page')
@@ -82,6 +88,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/adminModule/components/public-announcements/public-announcements')
       .then(m => m.PublicAnnouncementsComponent),
     data: { breadcrumb: 'Announcements', parent: '/panel' }
+  },
+  {
+    path: 'system-settings',
+    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    loadComponent: () => import('./features/adminModule/components/system-settings/system-settings.component')
+      .then(m => m.SystemSettingsComponent),
+    data: { breadcrumb: 'System Settings', parent: '/panel' }
   },
   {
     path: 'panel',

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -6,6 +6,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IInvitationRepository Invitations { get; }
         public IPublicAnnouncementRepository PublicAnnouncements { get; }
         public IAppNotificationRepository AppNotifications { get; }
+        public ISystemSettingRepository SystemSettings { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -53,6 +55,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             Invitations = new InvitationRepository(_context);
             PublicAnnouncements = new PublicAnnouncementRepository(_context);
             AppNotifications = new AppNotificationRepository(_context);
+            SystemSettings = new SystemSettingRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)

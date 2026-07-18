@@ -3,6 +3,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Enums;
+using Microsoft.EntityFrameworkCore;
+using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.API.Middleware
 {
@@ -15,9 +17,22 @@ namespace ProjectK.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration)
+        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration, AppDbContext dbContext)
         {
-            if (environment.IsDevelopment() || configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false) || !RequiresMfaEnforcement(context))
+            if (environment.IsDevelopment() || configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false))
+            {
+                await _next(context);
+                return;
+            }
+
+            bool enforceMfa = true;
+            if (environment.EnvironmentName == "SelfHost")
+            {
+                var setting = await dbContext.SystemSettings.FirstOrDefaultAsync(s => s.Key == "Security__EnforcePrivilegedMFA");
+                enforceMfa = setting != null && setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!enforceMfa || !RequiresMfaEnforcement(context))
             {
                 await _next(context);
                 return;

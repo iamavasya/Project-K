@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -28,6 +28,7 @@ namespace ProjectK.Common.Interfaces
         IInvitationRepository Invitations { get; }
         IPublicAnnouncementRepository PublicAnnouncements { get; }
         IAppNotificationRepository AppNotifications { get; }
+        ISystemSettingRepository SystemSettings { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();
