@@ -27,7 +27,10 @@ param(
   [Parameter(Position = 2, ValueFromRemainingArguments = $true)][string[]]$Rest
 )
 
-$ErrorActionPreference = 'Stop'
+# 'Continue', not 'Stop': this is a native-command (docker) orchestrator. Under 'Stop',
+# a docker call writing to stderr (e.g. an expected "not found") becomes a terminating
+# error in Windows PowerShell 5.1. Failures are handled explicitly via $LASTEXITCODE + Die.
+$ErrorActionPreference = 'Continue'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $dockerDir = Join-Path $repoRoot 'docker'
@@ -44,13 +47,19 @@ function Die($msg) { Write-Error $msg; exit 1 }
 
 function Require-Docker {
   if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Die 'docker is not installed or not on PATH.' }
-  docker compose version *> $null
-  if (-not $?) { Die 'docker compose v2 is required.' }
+  # `docker compose version` succeeds cleanly when v2 is present; only inspect the exit code.
+  & docker compose version | Out-Null
+  if ($LASTEXITCODE -ne 0) { Die 'docker compose v2 is required.' }
 }
 
 function Ensure-Network {
-  docker network inspect $network *> $null
-  if (-not $?) { docker network create $network *> $null }
+  # Use `network ls` (exits 0 with empty output when absent) rather than `network inspect`
+  # (writes to stderr + non-zero exit when absent, which is fatal under -ErrorActionPreference Stop).
+  $existing = & docker network ls --filter "name=^$network$" --format '{{.Name}}'
+  if ($existing -notcontains $network) {
+    & docker network create $network | Out-Null
+    if ($LASTEXITCODE -ne 0) { Die "Failed to create docker network '$network'. Is Docker Desktop running?" }
+  }
 }
 
 function Resolve-EnvFile([string]$env) {
