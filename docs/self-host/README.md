@@ -101,7 +101,7 @@ Default Docker URLs:
 
 Use the release bundle when possible. It is the supported git-free installation path and keeps the compose file aligned with the release.
 
-If you already have your own deployment folder, create `.env` from `.env.selfhost.example`, copy `docker-compose.selfhost.bundle.yml` as `docker-compose.yml`, and run:
+If you already have your own deployment folder, create `.env` from `docker/selfhost/.env.example`, copy `docker/selfhost/compose.bundle.yml` as `docker-compose.yml`, and run:
 
 ```bash
 docker compose pull

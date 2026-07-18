@@ -119,8 +119,8 @@ jobs:
           set -euo pipefail
           bundle="projectk-${PROJECTK_VERSION}-docker-selfhost"
           mkdir -p "$bundle"
-          cp docker-compose.selfhost.bundle.yml "$bundle/docker-compose.yml"
-          cp .env.selfhost.example "$bundle/.env.example"
+          cp docker/selfhost/compose.bundle.yml "$bundle/docker-compose.yml"
+          cp docker/selfhost/.env.example "$bundle/.env.example"
           cp docs/self-host/README.md "$bundle/README.md"
           cp docs/self-host/backup-restore.md "$bundle/backup-restore.md"
           cp docs/self-host/update.md "$bundle/update.md"

@@ -3,6 +3,7 @@ services:
     image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.2-beta}
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
+      PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Self-Host}
     ports:
       - "${PROJECTK_WEB_PORT:-8080}:80"
     depends_on:
@@ -61,7 +62,7 @@ services:
 
   projectk-azurite:
     image: mcr.microsoft.com/azure-storage/azurite:3.35.0
-    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent --skipApiVersionCheck
     ports:
       - "${PROJECTK_AZURITE_BLOB_PORT:-10000}:10000"
       - "${PROJECTK_AZURITE_QUEUE_PORT:-10001}:10001"
