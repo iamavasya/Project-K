@@ -260,10 +260,14 @@ describe('SidebarMenu', () => {
         const kurinItem = items.find(item => item.label === 'Курінь');
         const panelItem = items.find(item => item.label === 'Admin Panel');
         const usersItem = items.find(item => item.label === 'Users Management');
+        const globalSettingsItem = items.find(item => item.label === 'Global Settings');
 
         expect(kurinItem).toBeUndefined();
         expect(panelItem).toBeDefined();
         expect(usersItem).toBeDefined();
+        expect(globalSettingsItem).toBeDefined();
+        expect(globalSettingsItem?.disabled).toBeFalsy();
+        expect(globalSettingsItem?.routerLink).toEqual(['/system-settings']);
         done();
       });
     });

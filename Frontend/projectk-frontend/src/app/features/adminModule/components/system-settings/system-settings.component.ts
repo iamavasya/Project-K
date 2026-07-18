@@ -1,7 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
 import { ToggleSwitchModule, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
+import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 
@@ -10,12 +12,14 @@ const ENFORCE_PRIVILEGED_MFA_KEY = 'Security__EnforcePrivilegedMFA';
 @Component({
   selector: 'app-system-settings',
   standalone: true,
-  imports: [ToggleSwitchModule, FormsModule],
-  templateUrl: './system-settings.component.html'
+  imports: [ToggleSwitchModule, ButtonModule, FormsModule],
+  templateUrl: './system-settings.component.html',
+  styleUrl: './system-settings.component.css'
 })
 export class SystemSettingsComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly messageService = inject(MessageService);
+  private readonly router = inject(Router);
   private readonly apiUrl = environment.apiUrl;
 
   enforcePrivilegedMfa = false;
@@ -23,6 +27,10 @@ export class SystemSettingsComponent implements OnInit {
 
   ngOnInit() {
     this.loadSettings();
+  }
+
+  back() {
+    this.router.navigate(['/panel']);
   }
 
   loadSettings() {

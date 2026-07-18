@@ -1,0 +1,57 @@
+# Shared development tooling: one SQL Server + one Azurite instance that every
+# environment app stack (dev/e2e/selfhost/tailscale/...) attaches to over the
+# shared `projectk-dev-net` network. Bring this up once:
+#
+#   ./scripts/dev.sh tools up
+#
+# Each environment uses its own database on the same server (see docker/env/*.env),
+# so the tooling stays shared while data stays isolated per environment.
+name: projectk-tools
+
+services:
+  projectk-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: projectk-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${PROJECTK_SQL_EDITION:-Developer}
+      MSSQL_SA_PASSWORD: ${PROJECTK_SQL_PASSWORD:-Change_this_SQL_password_123!}
+    ports:
+      - "${PROJECTK_SQL_PORT:-1433}:1433"
+    volumes:
+      - projectk-sql-data:/var/opt/mssql
+    networks:
+      - projectk-dev-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  projectk-azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    container_name: projectk-azurite
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent
+    ports:
+      - "${PROJECTK_AZURITE_BLOB_PORT:-10000}:10000"
+      - "${PROJECTK_AZURITE_QUEUE_PORT:-10001}:10001"
+      - "${PROJECTK_AZURITE_TABLE_PORT:-10002}:10002"
+    volumes:
+      - projectk-azurite-data:/data
+    networks:
+      - projectk-dev-net
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const net=require('net');const s=net.connect(10000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+networks:
+  projectk-dev-net:
+    name: projectk-dev-net
+
+volumes:
+  projectk-sql-data:
+    name: projectk-sql-data
+  projectk-azurite-data:
+    name: projectk-azurite-data

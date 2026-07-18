@@ -1,0 +1,73 @@
+# Parameterized application stack (API + Web) for a single environment.
+#
+# The .NET image is environment-agnostic: the environment is chosen at runtime
+# via ASPNETCORE_ENVIRONMENT, so one built image serves dev/e2e/selfhost/...
+# The Angular build configuration (NG_CONFIG) is baked at build time, while the
+# API URL stays runtime-injectable (PROJECTK_API_URL -> env.js).
+#
+# Do not run this file directly — use ./scripts/dev.sh which loads the matching
+# docker/env/<env>.env, sets COMPOSE_PROJECT_NAME=projectk-<env>, and ensures the
+# shared projectk-dev-net network + tooling are running first.
+#
+# Images are tagged locally (projectk-*:<env>-local) and are never pushed to a
+# registry. To consume a prebuilt image instead of building, set
+# PROJECTK_API_IMAGE / PROJECTK_WEB_IMAGE in the env file (e.g. a ghcr.io tag).
+
+services:
+  projectk-api:
+    image: ${PROJECTK_API_IMAGE:-projectk-api:${PROJECTK_ENV:-dev}-local}
+    build:
+      context: ..
+      dockerfile: Backend/Dockerfile
+      args:
+        NUGET_AUTH_TOKEN: ${PROJECTK_NUGET_AUTH_TOKEN:-${NUGET_AUTH_TOKEN:-}}
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${PROJECTK_ASPNETCORE_ENV}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: ${PROJECTK_DB_CONNECTION_STRING}
+      ConnectionStrings__BlobStorage: ${PROJECTK_BLOB_CONNECTION_STRING}
+      BlobStorage__PublicBaseUrl: ${PROJECTK_BLOB_PUBLIC_BASE_URL:-http://localhost:10000/devstoreaccount1/photos}
+      BlobStorage__ContainerName: ${PROJECTK_BLOB_CONTAINER:-photos}
+      EnvCorsOrigin: ${PROJECTK_CORS_ORIGIN:-http://localhost:4200}
+      Email__BaseUrl: ${PROJECTK_PUBLIC_URL:-http://localhost:4200}
+      Jwt__Key: ${PROJECTK_JWT_KEY:-local-development-jwt-key-change-me-please-32+}
+      Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}
+      Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
+      Telegram__DevAlerts__Enabled: "false"
+      Telegram__PublicChannel__Enabled: "false"
+    ports:
+      - "${PROJECTK_API_PORT:-5205}:8080"
+    networks:
+      - projectk-dev-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  projectk-web:
+    image: ${PROJECTK_WEB_IMAGE:-projectk-web:${PROJECTK_ENV:-dev}-local}
+    build:
+      context: ..
+      dockerfile: Frontend/projectk-frontend/Dockerfile
+      args:
+        NG_CONFIG: ${PROJECTK_NG_CONFIG:-development}
+    environment:
+      PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
+    ports:
+      - "${PROJECTK_WEB_PORT:-4200}:80"
+    depends_on:
+      projectk-api:
+        condition: service_healthy
+    networks:
+      - projectk-dev-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+networks:
+  projectk-dev-net:
+    name: projectk-dev-net
+    external: true

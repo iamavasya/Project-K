@@ -1,0 +1,53 @@
+# Hot-reload override for the `dev` (and `e2e`) environments.
+#
+# Applied on top of compose.app.yml by `./scripts/dev.sh watch <env>`. Instead of
+# baking a production image, it bind-mounts the source and runs `dotnet watch` /
+# `ng serve` so code changes reload live inside the containers.
+#
+# Do NOT pass --build with this override: it swaps the app images for the base
+# SDK/Node images and drives them via command. The base images are pulled, not built.
+
+services:
+  projectk-api:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /src/Backend/ProjectK.Backend
+    environment:
+      # Restore of private GitHub packages during `dotnet watch` needs the token
+      # (nuget.config expands %NUGET_AUTH_TOKEN%).
+      NUGET_AUTH_TOKEN: ${PROJECTK_NUGET_AUTH_TOKEN:-${NUGET_AUTH_TOKEN:-}}
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    volumes:
+      - ../Backend/ProjectK.Backend:/src/Backend/ProjectK.Backend
+      - projectk-nuget-cache:/root/.nuget/packages
+    command:
+      - dotnet
+      - watch
+      - run
+      - --project
+      - ProjectK.API/ProjectK.API.csproj
+      - --non-interactive
+      - --
+      - --urls
+      - http://+:8080
+
+  projectk-web:
+    image: node:22-alpine
+    working_dir: /src/Frontend/projectk-frontend
+    volumes:
+      - ../Frontend/projectk-frontend:/src/Frontend/projectk-frontend
+      - projectk-web-node-modules:/src/Frontend/projectk-frontend/node_modules
+    command:
+      - sh
+      - -c
+      - npm ci && npx ng serve --host 0.0.0.0 --port 80 --poll 2000 --configuration "${PROJECTK_NG_CONFIG:-development}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  projectk-nuget-cache:
+    name: projectk-nuget-cache
+  projectk-web-node-modules:
+    name: projectk-web-node-modules

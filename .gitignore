@@ -397,6 +397,13 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# Dev-container env files that carry real secrets (staging/prod are copied from
+# their .example and filled locally). Committed dev/e2e/selfhost/tailscale env
+# files only hold change-me local defaults.
+docker/env/staging.env
+docker/env/prod.env
+docker/env/*.local.env
+
 # Config files that may contain sensitive information
 Backend/ProjectK.Backend/ProjectK.API/appsettings.Development.json
 todo/*

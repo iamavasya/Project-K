@@ -137,7 +137,15 @@ export class SidebarMenu implements OnChanges {
             this.router.navigate(['/users']);
           } 
         },
-        { label: 'Global Settings', disabled: true }
+        {
+          label: 'Global Settings',
+          icon: 'pi pi-sliders-h',
+          routerLink: ['/system-settings'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/system-settings']);
+          }
+        }
       );
     }
 

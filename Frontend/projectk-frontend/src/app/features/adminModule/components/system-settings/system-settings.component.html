@@ -1,19 +1,33 @@
-<div class="system-settings-panel">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Системні налаштування</h2>
+<section class="settings-page">
+  <header class="settings-header">
+    <div>
+      <p class="settings-eyebrow">Глобальні налаштування</p>
+      <h1>Система</h1>
     </div>
+    <p-button
+      label="Назад"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      variant="text"
+      (onClick)="back()" />
+  </header>
 
-    <div class="card bg-white p-6 rounded-lg shadow-sm">
-        <h3 class="text-xl font-semibold mb-4">Безпека</h3>
+  <section class="settings-section" aria-labelledby="security-title">
+    <h2 id="security-title" class="settings-section-title">Безпека</h2>
 
-        <div class="flex items-center justify-between p-4 border rounded-md">
-            <div>
-                <h4 class="font-medium text-gray-900">Обов'язкова MFA для привілейованих ролей</h4>
-                <p class="text-sm text-gray-500">Вимагати двофакторну автентифікацію для адміністраторів і менеджерів. Якщо вимкнено — MFA необов'язкова.</p>
-            </div>
-            <div class="ml-4 flex items-center">
-                <p-toggleswitch [(ngModel)]="enforcePrivilegedMfa" (onChange)="onMfaToggle($event)" [disabled]="loading" inputId="enforcePrivilegedMfa"></p-toggleswitch>
-            </div>
-        </div>
+    <div class="setting-row">
+      <div class="setting-copy">
+        <h3>Обов'язкова MFA для привілейованих ролей</h3>
+        <p>
+          Вимагати двофакторну автентифікацію для адміністраторів і менеджерів.
+          Якщо вимкнено — MFA необов'язкова.
+        </p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="enforcePrivilegedMfa"
+        (onChange)="onMfaToggle($event)"
+        [disabled]="loading"
+        inputId="enforcePrivilegedMfa" />
     </div>
-</div>
+  </section>
+</section>
