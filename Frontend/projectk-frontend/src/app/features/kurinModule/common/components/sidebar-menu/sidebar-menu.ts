@@ -10,6 +10,7 @@ import { map, Observable, of } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from 'primeng/tag';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -27,7 +28,16 @@ export class SidebarMenu implements OnChanges {
   role$: Observable<string | null> = of(null);
 
   kurinKey: string | null = null;
-  
+
+  // e.g. v0.15.0-beta.pre-4 "Liberty Queen Ant" | Self-Host Environment
+  // The codename is hidden for local/dev placeholder builds.
+  readonly versionLabel: string = (() => {
+    const code = environment.codeName && !/development/i.test(environment.codeName)
+      ? ` "${environment.codeName}"`
+      : '';
+    return `${environment.version}${code} | ${environment.envName} Environment`;
+  })();
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
       this.items$ = this.state$.pipe(
