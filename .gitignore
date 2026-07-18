@@ -403,4 +403,5 @@ todo/*
 Backend/ProjectK.Backend/tests/ProjectK.LoadTests/reports
 AGENTS.md
 .codex/
+.agents/
 graphify-out/

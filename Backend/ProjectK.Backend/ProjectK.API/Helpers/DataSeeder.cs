@@ -28,15 +28,21 @@ namespace ProjectK.API.Helpers
                 }
             }
 
-            // 2. Seed System Admin (Required for initial setup)
-            await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
+            // 2. Seed System Admin (Skip for SelfHost, as it will be created via Setup)
+            if (env.EnvironmentName != "SelfHost")
+            {
+                await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
+            }
 
             // 3. Seed Load Test User (Required for load tests across all environments)
-            await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.User);
+            if (env.EnvironmentName != "SelfHost")
+            {
+                await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.User);
+            }
 
-            // --- STOP HERE FOR PRODUCTION ---
+            // --- STOP HERE FOR PRODUCTION AND SELFHOST ---
             // Only seed comprehensive test data in Development or other non-prod environments
-            if (env.IsProduction())
+            if (env.IsProduction() || env.EnvironmentName == "SelfHost")
             {
                 return;
             }

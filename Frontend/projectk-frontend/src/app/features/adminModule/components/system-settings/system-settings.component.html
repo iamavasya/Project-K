@@ -1,0 +1,19 @@
+<div class="system-settings-panel">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">System Settings</h2>
+    </div>
+
+    <div class="card bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="text-xl font-semibold mb-4">Security</h3>
+        
+        <div class="flex items-center justify-between p-4 border rounded-md">
+            <div>
+                <h4 class="font-medium text-gray-900">Enforce Privileged MFA</h4>
+                <p class="text-sm text-gray-500">Require MFA for Admin and Manager roles. If disabled, MFA is optional.</p>
+            </div>
+            <div class="ml-4 flex items-center">
+                <p-toggleswitch [(ngModel)]="enforcePrivilegedMfa" (onChange)="onMfaToggle($event)" [disabled]="loading"></p-toggleswitch>
+            </div>
+        </div>
+    </div>
+</div>

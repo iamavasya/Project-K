@@ -29,7 +29,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -53,7 +53,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -74,7 +74,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -97,7 +97,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -120,7 +120,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -145,7 +145,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.False(nextCalled);
@@ -167,7 +167,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);
@@ -190,7 +190,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment(Environments.Development), CreateConfiguration());
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment(Environments.Development), CreateConfiguration(), null!);
 
         // Assert
         Assert.True(nextCalled);

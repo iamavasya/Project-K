@@ -130,6 +130,37 @@ export class AuthService {
     );
   }
 
+  getSetupStatus(): Observable<{ isInitialized: boolean }> {
+    return this.http.get<{ isInitialized: boolean }>(
+      `${this.apiUrl}/auth/setup/status`,
+      { withCredentials: true }
+    );
+  }
+
+  initializeSetup(command: any): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/auth/setup/initialize`,
+      command,
+      { withCredentials: true }
+    ).pipe(
+      tap(response => {
+        if (!response.requiresMfa && response.tokens) {
+          clearMfaSessionState();
+          const state: AuthState = {
+            userKey: response.userKey,
+            memberKey: response.memberKey,
+            email: response.email,
+            role: response.role,
+            kurinKey: response.kurinKey,
+            accessToken: response.tokens.accessToken,
+          };
+          this.authState$.next(state);
+          this.persistAuthState(state);
+        }
+      })
+    );
+  }
+
   clearLocalState(): void {
     this.authState$.next(null);
     localStorage.removeItem('authState');
