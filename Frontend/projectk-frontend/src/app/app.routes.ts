@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
+import { setupGuard } from './features/authModule/guards/setup.guard';
 import { roleGuard } from './features/authModule/guards/role.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
@@ -16,6 +17,7 @@ export const routes: Routes = [
   },
   {
     path: 'setup',
+    canActivate: [setupGuard],
     loadComponent: () => import('./features/authModule/setup-component/setup.component')
       .then(m => m.SetupComponent),
     data: { breadcrumb: 'Setup' }

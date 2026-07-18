@@ -1,9 +1,7 @@
 using MediatR;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Enums;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,29 +9,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Settings.Handlers
 {
     public class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSettingCommand, ServiceResult<object>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISystemSettingsService _systemSettings;
 
-        public UpdateSystemSettingCommandHandler(IUnitOfWork unitOfWork)
+        public UpdateSystemSettingCommandHandler(ISystemSettingsService systemSettings)
         {
-            _unitOfWork = unitOfWork;
+            _systemSettings = systemSettings;
         }
 
         public async Task<ServiceResult<object>> Handle(UpdateSystemSettingCommand request, CancellationToken cancellationToken)
         {
-            var setting = await _unitOfWork.SystemSettings.GetByKeyAsync(request.Key, cancellationToken);
-            if (setting == null)
-            {
-                setting = new SystemSetting { Key = request.Key, Value = request.Value, UpdatedAtUtc = DateTime.UtcNow };
-                _unitOfWork.SystemSettings.Create(setting);
-            }
-            else
-            {
-                setting.Value = request.Value;
-                setting.UpdatedAtUtc = DateTime.UtcNow;
-                _unitOfWork.SystemSettings.Update(setting);
-            }
-            
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _systemSettings.SetValueAsync(request.Key, request.Value, cancellationToken);
             return new ServiceResult<object>(ResultType.Success, null);
         }
     }

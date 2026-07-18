@@ -6,7 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using ProjectK.API.Middleware;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
@@ -29,7 +31,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -53,7 +55,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -74,7 +76,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -97,7 +99,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -120,7 +122,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -145,7 +147,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
             .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.False(nextCalled);
@@ -167,7 +169,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("Staging"), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
@@ -190,11 +192,83 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         var userManagerMock = CreateUserManagerMock();
 
         // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment(Environments.Development), CreateConfiguration(), null!);
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment(Environments.Development), CreateConfiguration(), CreateSystemSettings().Object);
 
         // Assert
         Assert.True(nextCalled);
         userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldContinue_WhenSelfHostMfaEnforcementIsDisabledByDefault()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
+        context.Request.Method = HttpMethods.Put;
+        var nextCalled = false;
+        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var userManagerMock = CreateUserManagerMock();
+
+        // Act
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: false).Object);
+
+        // Assert
+        Assert.True(nextCalled);
+        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldReturnForbidden_WhenSelfHostMfaEnforcementIsEnabledAndUserHasNoMfa()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
+        context.Request.Method = HttpMethods.Put;
+        var nextCalled = false;
+        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var userManagerMock = CreateUserManagerMock();
+        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
+            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
+
+        // Act
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: true).Object);
+
+        // Assert
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldContinue_WhenSelfHostMfaEnforcementIsEnabledAndUserHasMfa()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        var context = CreateContext("/api/user/me", userKey, UserRole.Admin);
+        context.Request.Method = HttpMethods.Put;
+        var nextCalled = false;
+        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var userManagerMock = CreateUserManagerMock();
+        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
+            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
+
+        // Act
+        await middleware.InvokeAsync(context, userManagerMock.Object, CreateEnvironment("SelfHost"), CreateConfiguration(), CreateSystemSettings(enforcePrivilegedMfa: true).Object);
+
+        // Assert
+        Assert.True(nextCalled);
     }
 
     private static DefaultHttpContext CreateContext(string path, Guid userKey, UserRole role)
@@ -225,6 +299,14 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         sectionMock.Setup(s => s.Value).Returns((string?)null);
         mock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(sectionMock.Object);
         return mock.Object;
+    }
+
+    private static Mock<ISystemSettingsService> CreateSystemSettings(bool enforcePrivilegedMfa = false)
+    {
+        var mock = new Mock<ISystemSettingsService>();
+        mock.Setup(x => x.GetBoolAsync(SystemSettingKeys.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(enforcePrivilegedMfa);
+        return mock;
     }
 
     private static IHostEnvironment CreateEnvironment(string environmentName)

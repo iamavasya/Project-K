@@ -8,6 +8,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup
         string Email,
         string Password,
         string FirstName,
-        string LastName
+        string LastName,
+        bool EnforcePrivilegedMfa = false,
+        bool SeedDemoData = false
     ) : IRequest<ServiceResult<LoginUserResponse>>;
 }

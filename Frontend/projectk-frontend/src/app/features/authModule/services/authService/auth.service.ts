@@ -27,6 +27,19 @@ export interface MfaRecoveryCodesResponse {
   recoveryCodes: string[];
 }
 
+export interface SetupStatusResponse {
+  isInitialized: boolean;
+}
+
+export interface InitializeSetupRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  enforcePrivilegedMfa: boolean;
+  seedDemoData: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -130,14 +143,14 @@ export class AuthService {
     );
   }
 
-  getSetupStatus(): Observable<{ isInitialized: boolean }> {
-    return this.http.get<{ isInitialized: boolean }>(
+  getSetupStatus(): Observable<SetupStatusResponse> {
+    return this.http.get<SetupStatusResponse>(
       `${this.apiUrl}/auth/setup/status`,
       { withCredentials: true }
     );
   }
 
-  initializeSetup(command: any): Observable<LoginResponse> {
+  initializeSetup(command: InitializeSetupRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/setup/initialize`,
       command,

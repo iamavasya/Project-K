@@ -402,6 +402,8 @@ Backend/ProjectK.Backend/ProjectK.API/appsettings.Development.json
 todo/*
 Backend/ProjectK.Backend/tests/ProjectK.LoadTests/reports
 AGENTS.md
+CLAUDE.md
 .codex/
+.claude/
 .agents/
 graphify-out/

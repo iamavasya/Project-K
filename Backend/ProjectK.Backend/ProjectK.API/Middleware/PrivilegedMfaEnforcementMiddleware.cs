@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models;
 using ProjectK.Common.Models.Enums;
-using Microsoft.EntityFrameworkCore;
-using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.API.Middleware
 {
@@ -17,7 +17,7 @@ namespace ProjectK.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration, AppDbContext dbContext)
+        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IHostEnvironment environment, IConfiguration configuration, ISystemSettingsService systemSettings)
         {
             if (environment.IsDevelopment() || configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false))
             {
@@ -25,17 +25,23 @@ namespace ProjectK.API.Middleware
                 return;
             }
 
-            bool enforceMfa = true;
-            if (environment.EnvironmentName == "SelfHost")
-            {
-                var setting = await dbContext.SystemSettings.FirstOrDefaultAsync(s => s.Key == "Security__EnforcePrivilegedMFA");
-                enforceMfa = setting != null && setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (!enforceMfa || !RequiresMfaEnforcement(context))
+            if (!RequiresMfaEnforcement(context))
             {
                 await _next(context);
                 return;
+            }
+
+            if (environment.EnvironmentName == "SelfHost")
+            {
+                var enforceMfa = await systemSettings.GetBoolAsync(
+                    SystemSettingKeys.EnforcePrivilegedMfa,
+                    defaultValue: false,
+                    context.RequestAborted);
+                if (!enforceMfa)
+                {
+                    await _next(context);
+                    return;
+                }
             }
 
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)

@@ -45,6 +45,8 @@ namespace ProjectK.API
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IMfaService, ProjectK.Infrastructure.Services.MfaService>();
             services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+            services.AddScoped<ISystemSettingsService, SystemSettingsService>();
+            services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             services.AddSingleton<IActivityLogger, ActivityLogger>();
             services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();

@@ -1,58 +1,103 @@
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-  <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-      System Initial Setup
-    </h2>
-    <p class="mt-2 text-center text-sm text-gray-600">
-      Create the first system administrator account
-    </p>
-  </div>
-
-  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-      <form [formGroup]="setupForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <div *ngIf="error" class="rounded-md bg-red-50 p-4 mb-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-          <div class="mt-1">
-            <input id="email" type="email" formControlName="email" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div>
-          <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
-          <div class="mt-1">
-            <input id="firstName" type="text" formControlName="firstName" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div>
-          <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
-          <div class="mt-1">
-            <input id="lastName" type="text" formControlName="lastName" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-          <div class="mt-1">
-            <input id="password" type="password" formControlName="password" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div>
-          <button type="submit" [disabled]="setupForm.invalid || isSubmitting" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-            {{ isSubmitting ? 'Initializing...' : 'Initialize System' }}
-          </button>
-        </div>
-      </form>
+<main class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+  <section class="w-full max-w-lg" aria-labelledby="setup-title">
+    <div class="text-center mb-8">
+      <h1 id="setup-title" class="text-3xl font-bold mb-2">Первинне налаштування</h1>
+      <p class="text-gray-500">
+        Створіть обліковий запис адміністратора та задайте глобальні налаштування системи.
+      </p>
     </div>
-  </div>
-</div>
+
+    <form [formGroup]="setupForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+      @if (error) {
+        <p-message severity="error" [text]="error" styleClass="w-full" />
+      }
+
+      <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-5">
+        <h2 class="text-xl font-semibold">Адміністратор</h2>
+
+        <p-floatlabel variant="on">
+          <input
+            pInputText
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            class="w-full"
+          />
+          <label for="email">Email</label>
+        </p-floatlabel>
+
+        <div class="flex flex-col sm:flex-row gap-5">
+          <p-floatlabel variant="on" class="flex-1">
+            <input
+              pInputText
+              id="firstName"
+              formControlName="firstName"
+              autocomplete="given-name"
+              class="w-full"
+            />
+            <label for="firstName">Ім'я</label>
+          </p-floatlabel>
+
+          <p-floatlabel variant="on" class="flex-1">
+            <input
+              pInputText
+              id="lastName"
+              formControlName="lastName"
+              autocomplete="family-name"
+              class="w-full"
+            />
+            <label for="lastName">Прізвище</label>
+          </p-floatlabel>
+        </div>
+
+        <p-floatlabel variant="on">
+          <p-password
+            inputId="password"
+            formControlName="password"
+            [feedback]="true"
+            [toggleMask]="true"
+            autocomplete="new-password"
+            styleClass="w-full"
+            inputStyleClass="w-full"
+          />
+          <label for="password">Пароль</label>
+        </p-floatlabel>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-5">
+        <h2 class="text-xl font-semibold">Глобальні налаштування</h2>
+
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="font-medium">Обов'язкова MFA для привілейованих ролей</h3>
+            <p class="text-sm text-gray-500">
+              Вимагати двофакторну автентифікацію для адміністраторів і менеджерів.
+              Вимкнено за замовчуванням; можна змінити пізніше в системних налаштуваннях.
+            </p>
+          </div>
+          <p-toggleswitch formControlName="enforcePrivilegedMfa" inputId="enforcePrivilegedMfa" />
+        </div>
+
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="font-medium">Демонстраційні дані</h3>
+            <p class="text-sm text-gray-500">
+              Створити тестовий курінь, гуртки та користувачів для ознайомлення.
+              Доступно лише під час первинного налаштування.
+            </p>
+          </div>
+          <p-toggleswitch formControlName="seedDemoData" inputId="seedDemoData" />
+        </div>
+      </div>
+
+      <p-button
+        type="submit"
+        label="Ініціалізувати систему"
+        [loading]="isSubmitting"
+        [disabled]="setupForm.invalid || isSubmitting"
+        styleClass="w-full"
+      />
+    </form>
+  </section>
+</main>

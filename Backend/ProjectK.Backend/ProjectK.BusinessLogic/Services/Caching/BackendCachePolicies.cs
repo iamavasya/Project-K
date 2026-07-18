@@ -13,4 +13,9 @@ public static class BackendCachePolicies
         Prefix: "group",
         Ttl: EntityReadTtl,
         Scope: CacheScope.Shared);
+
+    public static readonly CachePolicy SystemSettingReads = new(
+        Prefix: "system-setting",
+        Ttl: TimeSpan.FromMinutes(5),
+        Scope: CacheScope.Shared);
 }
