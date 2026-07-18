@@ -12,8 +12,9 @@ a registry.
   which selects the matching `appsettings.<Env>.json`. Connection strings, CORS,
   and JWT come from environment variables.
 - **The Angular build config is baked per environment** (`NG_CONFIG` build arg:
-  `development` / `staging` / `tailscale` / `production`), but the API URL stays
-  runtime-injectable (`PROJECTK_API_URL` → `env.js`).
+  `development` / `staging` / `tailscale` / `production`), but a few values stay
+  runtime-injectable via `env.js`: the API URL (`PROJECTK_API_URL`) and the
+  environment name shown in the sidebar badge (`PROJECTK_ENVIRONMENT_NAME`).
 - **SQL Server + Azurite are shared tooling.** They run once
   (`compose.tools.yml`) on the shared `projectk-dev-net` network. Every
   environment's app stack attaches to it and uses its **own database** on the same
@@ -35,6 +36,10 @@ docker/
     compose.bundle.yml      prebuilt-image self-host stack (GHCR)
     .env.example            self-host deployment env template
 ```
+
+The orchestrator scripts live in `scripts/dev.sh` / `scripts/dev.ps1`, with thin
+`./dev.sh` / `./dev.ps1` wrappers at the repo root. See the
+[Command reference](#command-reference).
 
 ## NuGet token (never commit it)
 
@@ -106,18 +111,50 @@ bash equivalent — swap `./dev.ps1` for `./dev.sh`:
 ./dev.sh down dev
 ```
 
-## Commands
+## Command reference
 
-| Command | Description |
-|---------|-------------|
-| `tools up \| down \| logs \| ps` | Manage the shared SQL + Azurite |
-| `up <env> [--build\|--pull]`     | Start an environment's app stack |
-| `watch <env>`                    | Start with **hot-reload** (bind-mount + `dotnet watch` / `ng serve`) |
-| `build <env>`                    | Build the images only, no run |
-| `pull <env>`                     | Pull `PROJECTK_*_IMAGE` images |
-| `down <env> [-v]`                | Stop the app stack |
-| `logs <env> [service]`           | Tail logs |
-| `ps <env>`                       | List the stack's containers |
+Two equivalent entrypoints, usable from any directory in the repo:
+
+- **`./dev.ps1 <command>`** (PowerShell) / **`./dev.sh <command>`** (bash / Git Bash) —
+  thin repo-root wrappers. Recommended.
+- **`./scripts/dev.ps1 <command>`** / **`./scripts/dev.sh <command>`** — the underlying
+  scripts the wrappers forward to.
+
+`<env>` is one of: `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod`.
+
+### Shared tooling — run once per session
+
+| Command | What it does |
+|---------|--------------|
+| `tools up`   | Start SQL Server + Azurite on the shared `projectk-dev-net` network |
+| `tools down` | Stop the tooling (data volumes are kept; add `-v` to drop them) |
+| `tools logs` | Follow the tooling logs |
+| `tools ps`   | List the tooling containers |
+
+### Per-environment app stack — API + Web
+
+| Command | What it does |
+|---------|--------------|
+| `up <env>`              | Start the env's API + Web using existing images |
+| `up <env> --build`      | Build the images first, then start |
+| `up <env> --pull`       | Pull images (`--pull always`), then start |
+| `watch <env>`           | Start with **hot-reload** (bind-mount + `dotnet watch` / `ng serve`); runs in the foreground, Ctrl-C to stop |
+| `build <env>`           | Build the images only, do not start |
+| `pull <env>`            | Pull the `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` tags |
+| `down <env>`            | Stop the env's stack (DB data stays in the shared tooling) |
+| `down <env> -v`         | Stop and drop this env's own volumes |
+| `logs <env> [service]`  | Follow logs; optionally one service (`projectk-api` / `projectk-web`) |
+| `ps <env>`              | List the env's containers |
+| `--help`                | Print usage |
+
+Notes:
+
+- `up` and `watch` auto-start the shared tooling and the `projectk-dev-net` network
+  if they are not already running — you don't have to run `tools up` first.
+- Pass **only** the listed options; never combine `--build` with `watch` (hot-reload
+  uses base SDK/Node images driven by command, not the built images).
+- Each env runs as its own compose project (`projectk-<env>`) with unique host ports
+  (see the [matrix](#environment-matrix)), so several environments can run at once.
 
 ## Environment matrix
 
@@ -139,16 +176,16 @@ Ports are unique per environment, so multiple stacks can run at once.
 ## Two ways to run
 
 **Build locally.** Needs `NUGET_AUTH_TOKEN` in your shell (see
-[NuGet token](#nuget-token-never-commit-it)), then `./scripts/dev.ps1 up <env> --build`.
+[NuGet token](#nuget-token-never-commit-it)), then `./dev.ps1 up <env> --build`.
 
 **Consume a prebuilt image.** Set `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` in
 the env file to a specific tag (e.g. `ghcr.io/iamavasya/projectk-api:0.15.0-beta`),
-then `./scripts/dev.ps1 pull <env>` and `./scripts/dev.ps1 up <env>` — no local
-build or NuGet token needed.
+then `./dev.ps1 pull <env>` and `./dev.ps1 up <env>` — no local build or NuGet
+token needed.
 
 ## Hot-reload dev loop
 
-`./scripts/dev.sh watch dev` bind-mounts the source and runs `dotnet watch` +
+`./dev.ps1 watch dev` bind-mounts the source and runs `dotnet watch` +
 `ng serve` inside containers, so edits reload live. It runs in the foreground
 (Ctrl-C to stop). Do **not** pass `--build` with `watch`: it uses the base
 SDK/Node images driven by command, not the production images.
@@ -164,6 +201,6 @@ SDK/Node images driven by command, not the production images.
   [NuGet token](#nuget-token-never-commit-it), or use a prebuilt image.
 - **Web returns 502 right after start** — the API is still starting / migrating; the
   web container depends on the API healthcheck, give it a few seconds.
-- **Reset an environment's database** — `./scripts/dev.ps1 down <env> -v`, then `up`
-  again. To wipe the shared SQL/Azurite entirely: `./scripts/dev.ps1 tools down` then
+- **Reset an environment's database** — `./dev.ps1 down <env> -v`, then `up` again.
+  To wipe the shared SQL/Azurite entirely: `./dev.ps1 tools down` then
   `docker volume rm projectk-sql-data projectk-azurite-data`.
