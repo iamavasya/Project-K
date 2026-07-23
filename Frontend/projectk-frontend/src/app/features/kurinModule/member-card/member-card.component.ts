@@ -44,6 +44,8 @@ import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../com
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { TileBoardComponent } from '../../../shared/tile-board/tile-board.component';
+import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive';
 
 @Component({
   selector: 'app-member-card',
@@ -62,7 +64,9 @@ import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/u
     SkillMiniCardComponent,
     BentoTileSkeletonComponent,
     MemberAwardsTileComponent,
-    ProfileVerificationBadgeComponent
+    ProfileVerificationBadgeComponent,
+    TileBoardComponent,
+    TileDefDirective
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
