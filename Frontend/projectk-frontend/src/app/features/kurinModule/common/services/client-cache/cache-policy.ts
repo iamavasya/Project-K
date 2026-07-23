@@ -10,3 +10,4 @@ export const MEMBER_WARNING_CACHE_PREFIX = 'member-warning:';
 export const MEMBER_PROGRESS_CACHE_PREFIX = 'member-progress:';
 export const BADGES_CATALOG_CACHE_PREFIX = 'catalog:badges:';
 export const PROBES_CATALOG_CACHE_PREFIX = 'catalog:probes:';
+export const LAYOUT_CACHE_PREFIX = 'layout:';

@@ -7,6 +7,7 @@ import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
 import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 import { clearMfaSessionState } from "../mfa-session-state";
+import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
 
 export interface MfaSetupResponse {
   sharedKey: string;
@@ -179,6 +180,7 @@ export class AuthService {
     this.authState$.next(null);
     localStorage.removeItem('authState');
     clearMfaSessionState();
+    clearTileLayoutStorage();
   }
 
   logout() {
