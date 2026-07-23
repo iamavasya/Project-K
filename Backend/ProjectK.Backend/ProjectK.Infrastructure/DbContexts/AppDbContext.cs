@@ -40,6 +40,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
         public DbSet<AppNotification> AppNotifications { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<UserTileLayout> UserTileLayouts { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -389,6 +390,22 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasIndex(e => new { e.RecipientUserKey, e.ReadAtUtc });
                 entity.HasIndex(e => new { e.RecipientUserKey, e.DeduplicationKey })
                     .HasFilter("[DeduplicationKey] IS NOT NULL AND [ReadAtUtc] IS NULL");
+            });
+
+            builder.Entity<UserTileLayout>(entity =>
+            {
+                entity.HasKey(e => e.UserTileLayoutKey);
+                entity.Property(e => e.BoardKey)
+                    .HasMaxLength(64)
+                    .IsRequired();
+                entity.Property(e => e.TileOrderJson)
+                    .HasMaxLength(2000)
+                    .IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserKey)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.UserKey, e.BoardKey }).IsUnique();
             });
         }
     }

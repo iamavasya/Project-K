@@ -29,6 +29,7 @@ namespace ProjectK.Common.Interfaces
         IPublicAnnouncementRepository PublicAnnouncements { get; }
         IAppNotificationRepository AppNotifications { get; }
         ISystemSettingRepository SystemSettings { get; }
+        IUserTileLayoutRepository UserTileLayouts { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
         void DetectChanges();

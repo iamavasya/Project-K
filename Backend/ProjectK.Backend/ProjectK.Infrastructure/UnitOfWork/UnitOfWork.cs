@@ -35,6 +35,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IPublicAnnouncementRepository PublicAnnouncements { get; }
         public IAppNotificationRepository AppNotifications { get; }
         public ISystemSettingRepository SystemSettings { get; }
+        public IUserTileLayoutRepository UserTileLayouts { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -56,6 +57,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
             PublicAnnouncements = new PublicAnnouncementRepository(_context);
             AppNotifications = new AppNotificationRepository(_context);
             SystemSettings = new SystemSettingRepository(_context);
+            UserTileLayouts = new UserTileLayoutRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)
