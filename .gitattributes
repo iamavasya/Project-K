@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell scripts and container entrypoints/configs must stay LF even on Windows
+# checkouts. A CRLF shebang (e.g. "#!/usr/bin/env sh\r") makes Linux containers
+# look for a program named "sh\r", which fails at startup.
+*.sh text eol=lf
+docker/nginx/*.conf text eol=lf
