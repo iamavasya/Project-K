@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
+using System.Collections.Generic;
 using System.Security.Claims;
 
 namespace ProjectK.API.Controllers.UsersModule
@@ -87,6 +88,34 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             var userKey = GetCurrentUserKey();
             var response = await _mediator.Send(new DisableOwnMfaCommand(userKey, request.CurrentPassword));
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [HttpGet("me/layouts")]
+        public async Task<IActionResult> GetTileLayouts()
+        {
+            var userKey = GetCurrentUserKey();
+            var response = await _mediator.Send(new GetTileLayoutsQuery(userKey));
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [HttpPut("me/layouts/{boardKey}")]
+        public async Task<IActionResult> SaveTileLayout(string boardKey, [FromBody] SaveTileLayoutRequestDto request)
+        {
+            var userKey = GetCurrentUserKey();
+            var tileKeys = request.TileKeys ?? new List<string>();
+            var response = await _mediator.Send(new SaveTileLayoutCommand(userKey, boardKey, tileKeys, request.SchemaVersion));
+            return response.ToActionResult(this);
+        }
+
+        [Authorize(Policy = "RequireUser")]
+        [HttpDelete("me/layouts/{boardKey}")]
+        public async Task<IActionResult> ResetTileLayout(string boardKey)
+        {
+            var userKey = GetCurrentUserKey();
+            var response = await _mediator.Send(new ResetTileLayoutCommand(userKey, boardKey));
             return response.ToActionResult(this);
         }
 

@@ -1,0 +1,102 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.UsersModule.Layouts;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using System.Text.RegularExpressions;
+
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
+{
+    public partial class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutCommand, ServiceResult<TileLayoutDto>>
+    {
+        private const int MaxTileCount = 40;
+        private const int MaxTileKeyLength = 64;
+        private const int MaxOrderJsonLength = 2000;
+
+        private readonly IUnitOfWork _unitOfWork;
+
+        public SaveTileLayoutCommandHandler(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<ServiceResult<TileLayoutDto>> Handle(SaveTileLayoutCommand request, CancellationToken cancellationToken)
+        {
+            if (!TileBoardKeys.All.Contains(request.BoardKey))
+            {
+                return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, "UnknownBoard", "Unknown board key.");
+            }
+
+            var tileKeys = request.TileKeys ?? [];
+            var validationError = ValidateTileKeys(tileKeys);
+            if (validationError != null)
+            {
+                return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, "InvalidTileKeys", validationError);
+            }
+
+            var orderJson = TileOrderSerializer.Serialize(tileKeys);
+            if (orderJson.Length > MaxOrderJsonLength)
+            {
+                return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, "LayoutTooLarge", "Tile layout is too large.");
+            }
+
+            var schemaVersion = request.SchemaVersion <= 0 ? 1 : request.SchemaVersion;
+            var existing = await _unitOfWork.UserTileLayouts.GetByBoardAsync(request.UserKey, request.BoardKey, cancellationToken);
+
+            if (existing == null)
+            {
+                existing = new UserTileLayout
+                {
+                    UserTileLayoutKey = Guid.NewGuid(),
+                    UserKey = request.UserKey,
+                    BoardKey = request.BoardKey,
+                    TileOrderJson = orderJson,
+                    SchemaVersion = schemaVersion,
+                    UpdatedAtUtc = DateTime.UtcNow
+                };
+                _unitOfWork.UserTileLayouts.Create(existing, cancellationToken);
+            }
+            else
+            {
+                existing.TileOrderJson = orderJson;
+                existing.SchemaVersion = schemaVersion;
+                existing.UpdatedAtUtc = DateTime.UtcNow;
+                _unitOfWork.UserTileLayouts.Update(existing, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var dto = new TileLayoutDto(existing.BoardKey, tileKeys, existing.SchemaVersion, existing.UpdatedAtUtc);
+            return new ServiceResult<TileLayoutDto>(ResultType.Success, dto);
+        }
+
+        private static string? ValidateTileKeys(IReadOnlyList<string> tileKeys)
+        {
+            if (tileKeys.Count > MaxTileCount)
+            {
+                return $"A layout cannot contain more than {MaxTileCount} tiles.";
+            }
+
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var key in tileKeys)
+            {
+                if (string.IsNullOrWhiteSpace(key) || key.Length > MaxTileKeyLength || !TileKeyPattern().IsMatch(key))
+                {
+                    return "Tile keys must be non-empty, at most 64 lowercase alphanumeric/hyphen characters.";
+                }
+
+                if (!seen.Add(key))
+                {
+                    return "Tile keys must be unique.";
+                }
+            }
+
+            return null;
+        }
+
+        [GeneratedRegex("^[a-z0-9-]+$")]
+        private static partial Regex TileKeyPattern();
+    }
+}
