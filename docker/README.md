@@ -13,8 +13,10 @@ a registry.
   and JWT come from environment variables.
 - **The Angular build config is baked per environment** (`NG_CONFIG` build arg:
   `development` / `staging` / `tailscale` / `production`), but a few values stay
-  runtime-injectable via `env.js`: the API URL (`PROJECTK_API_URL`) and the
-  environment name shown in the sidebar badge (`PROJECTK_ENVIRONMENT_NAME`).
+  runtime-injectable via `env.js`: the API URL (`PROJECTK_API_URL`), the
+  environment name shown in the sidebar badge (`PROJECTK_ENVIRONMENT_NAME`), and
+  the product name in the browser tab (`PROJECTK_APP_NAME`, defaults to
+  `ProjectK` — set it to the release name once the beta code name is retired).
 - **SQL Server + Azurite are shared tooling.** They run once
   (`compose.tools.yml`) on the shared `projectk-dev-net` network. Every
   environment's app stack attaches to it and uses its **own database** on the same

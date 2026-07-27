@@ -4,6 +4,7 @@ services:
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Self-Host}
+      PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-ProjectK}
     ports:
       - "${PROJECTK_WEB_PORT:-8080}:80"
     depends_on:
