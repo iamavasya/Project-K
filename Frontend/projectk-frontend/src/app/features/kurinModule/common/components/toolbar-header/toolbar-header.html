@@ -10,7 +10,7 @@
         <ng-template #end>
             <div class="toolbar-actions">
                 @if (state.kurinKey && isAdmin(state.role)) {
-                    <p-button (onClick)="backToKurinPanel()" label="Back to Admin Panel" variant="text" severity="info" icon="pi pi-arrow-left" iconPos="left" />
+                    <p-button (onClick)="backToKurinPanel()" label="Back to Admin Panel" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
                 }
                 @if (state.accessToken) {
                     <app-notification-bell></app-notification-bell>

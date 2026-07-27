@@ -7,7 +7,7 @@
       <h2>Public announcements</h2>
       <p>Draft, preview, approve, and publish Telegram channel updates.</p>
     </div>
-    <p-button label="New draft" icon="pi pi-plus" severity="info" (onClick)="newDraft()"></p-button>
+    <p-button label="New draft" icon="pi pi-plus" (onClick)="newDraft()"></p-button>
   </header>
 
   <div class="toolbar-row">
@@ -86,7 +86,7 @@
           <div class="action-buttons">
             <p-button icon="pi pi-pencil" severity="secondary" text rounded (onClick)="editDraft(draft)" pTooltip="Edit"></p-button>
             @if (canSubmit(draft)) {
-              <p-button icon="pi pi-send" severity="info" text rounded (onClick)="submit(draft)" pTooltip="Submit"></p-button>
+              <p-button icon="pi pi-send" severity="secondary" text rounded (onClick)="submit(draft)" pTooltip="Submit"></p-button>
             }
             @if (canApprove(draft)) {
               <p-button icon="pi pi-check" severity="success" text rounded (onClick)="approve(draft)" pTooltip="Approve"></p-button>

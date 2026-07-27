@@ -121,7 +121,7 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
                             (onClick)="reject(entry)" pTooltip="Reject"></p-button>
                 }
                 @if (isApproved(entry.verificationStatus)) {
-                  <p-button icon="pi pi-refresh" severity="info" rounded text
+                  <p-button icon="pi pi-refresh" severity="secondary" rounded text
                             (onClick)="resend(entry)" pTooltip="Resend Invitation"></p-button>
                 }
               </div>
