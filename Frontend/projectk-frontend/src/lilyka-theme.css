@@ -155,7 +155,6 @@ a {
 
 a:hover {
   color: var(--p-primary-hover-color);
-  text-decoration: underline;
 }
 
 h1, h2, h3 {
