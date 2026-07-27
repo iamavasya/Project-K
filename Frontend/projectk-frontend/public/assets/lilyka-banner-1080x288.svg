@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 288" width="1080" height="288">
+  <rect width="1080" height="288" fill="#0E6E4E"></rect>
+  <g fill="none" stroke="#FBF8F1" stroke-width="4" opacity="0.16">
+    <path d="M0 216 C162 173 270 245 432 202 C594 158 702 230 864 187 C972 158 1026 187 1080 173"></path>
+    <path d="M0 252 C162 209 270 281 432 238 C594 194 702 266 864 223 C972 194 1026 223 1080 209"></path>
+    <circle cx="891" cy="69" r="54"></circle>
+  </g>
+  <g fill="none" stroke="#FBF8F1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(58 78) translate(0 0) scale(1.32)">
+    <path d="M50 92 V46"></path>
+    <path d="M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z"></path>
+    <path d="M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z"></path>
+    <path d="M50 46 C42 30 44 16 50 8 C56 16 58 30 50 46 Z" stroke="#F5C99B"></path>
+    <path d="M32 66 H68"></path>
+  </g>
+  <text x="230" y="140" font-family="Patrick Hand, Comic Sans MS, cursive" font-size="80" fill="#FBF8F1">Лілейка</text>
+  <text x="232" y="186" font-family="Karla, Helvetica, Arial, sans-serif" font-size="24" fill="#C6E2D5">Весь курінь під рукою — реєстр, планування, вмілості.</text>
+  <text x="232" y="228" font-family="Karla, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#8FBCA9" letter-spacing="2">PROJECTK</text>
+</svg>

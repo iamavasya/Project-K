@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "tailwindcss-primeui";
 
+@import "./lilyka-theme.css";
+
 /* After migration to Angular v21 and PrimeNG v21 there was a bug 
 where the datepicker panel would not display correctly in some divs
 and datepicker-panel has been truncated with width of parent divs (imo).

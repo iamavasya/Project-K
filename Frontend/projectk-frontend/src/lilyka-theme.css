@@ -1,0 +1,339 @@
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/assets/fonts/manrope-var-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/assets/fonts/manrope-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/assets/fonts/manrope-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/neucha-400-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/neucha-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --lil-green-50:  #EAF3EE;
+  --lil-green-100: #CFE5D9;
+  --lil-green-200: #A6D0BD;
+  --lil-green-300: #74B79C;
+  --lil-green-400: #3E9A78;
+  --lil-green-500: #14805B;
+  --lil-green-600: #0E6E4E;
+  --lil-green-700: #0B5A40;
+  --lil-green-800: #084733;
+  --lil-green-900: #063526;
+  --lil-green-950: #032117;
+
+  --lil-clay-50:  #FBE9DC;
+  --lil-clay-100: #F4D2B8;
+  --lil-clay-400: #E28F51;
+  --lil-clay-500: #D9762F;
+  --lil-clay-600: #C06322;
+  --lil-clay-700: #A8541B;
+
+  --lil-ink:      #101413;
+  --lil-ink-soft: #2E3633;
+  --lil-muted:    #6E7873;
+  --lil-faint:    #9AA39F;
+  --lil-line:     #E4E8E6;
+  --lil-surface:  #F7F9F8;
+  --lil-paper:    #FFFFFF;
+  --lil-cream:    #FBF8F1;
+
+  --lil-radius:    8px;
+  --lil-radius-lg: 12px;
+
+  --lil-font-ui:   Manrope, system-ui, -apple-system, sans-serif;
+  --lil-font-hand: Neucha, cursive;
+
+  --p-primary-color: var(--lil-green-600);
+  --p-primary-contrast-color: #FFFFFF;
+  --p-primary-hover-color: var(--lil-green-700);
+  --p-primary-active-color: var(--lil-green-800);
+  --p-primary-50:  var(--lil-green-50);
+  --p-primary-100: var(--lil-green-100);
+  --p-primary-200: var(--lil-green-200);
+  --p-primary-300: var(--lil-green-300);
+  --p-primary-400: var(--lil-green-400);
+  --p-primary-500: var(--lil-green-500);
+  --p-primary-600: var(--lil-green-600);
+  --p-primary-700: var(--lil-green-700);
+  --p-primary-800: var(--lil-green-800);
+  --p-primary-900: var(--lil-green-900);
+  --p-primary-950: var(--lil-green-950);
+
+  --p-surface-ground: var(--lil-surface);
+  --p-content-background: var(--lil-paper);
+  --p-content-border-color: var(--lil-line);
+  --p-surface-border: var(--lil-line);
+  --p-text-color: var(--lil-ink);
+  --p-text-muted-color: var(--lil-muted);
+  --p-border-radius-md: var(--lil-radius);
+  --p-border-radius-lg: var(--lil-radius-lg);
+
+  --p-warn-color: var(--lil-clay-700);
+  --p-warn-background: var(--lil-clay-50);
+  --p-info-color: var(--lil-green-700);
+  --p-info-background: var(--lil-green-50);
+}
+
+:root[data-theme="dark"] {
+  --lil-ink:      #E9EDEA;
+  --lil-ink-soft: #DDE2DF;
+  --lil-muted:    #9BA8A2;
+  --lil-faint:    #6C7570;
+  --lil-line:     #232A27;
+  --lil-surface:  #0D1110;
+  --lil-paper:    #161B19;
+
+  --lil-clay-50:  #2A1F16;
+  --lil-clay-100: #3D2D1F;
+  --lil-clay-500: #EE9A5A;
+  --lil-clay-700: #F3B784;
+
+  --p-primary-color: #34C48D;
+  --p-primary-contrast-color: #052018;
+  --p-primary-hover-color: #4FD49E;
+  --p-primary-active-color: #21A874;
+  --p-primary-50: #1D2E27;
+
+  --p-surface-ground: var(--lil-surface);
+  --p-content-background: var(--lil-paper);
+  --p-content-border-color: var(--lil-line);
+  --p-surface-border: var(--lil-line);
+  --p-text-color: var(--lil-ink);
+  --p-text-muted-color: var(--lil-muted);
+
+  --p-warn-color: var(--lil-clay-700);
+  --p-warn-background: var(--lil-clay-50);
+  --p-info-color: #9FE3C2;
+  --p-info-background: #1D2E27;
+}
+
+body {
+  background: var(--p-surface-ground);
+  color: var(--p-text-color);
+  font-family: var(--lil-font-ui);
+}
+
+a {
+  color: var(--p-primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--p-primary-hover-color);
+  text-decoration: underline;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+
+.lil-wordmark,
+.lil-empty__title {
+  font-family: var(--lil-font-hand);
+  font-weight: 400;
+}
+
+.lil-wordmark {
+  font-size: 1.9375rem;
+  line-height: 1;
+  margin: 0;
+}
+
+.lil-sidebar-brand {
+  align-items: center;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
+.lil-sidebar-brand svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.sidebar-content {
+  padding: 0.75rem 0.625rem;
+}
+
+:root .p-panelmenu.lil-menu .p-panelmenu-header-link,
+:root .p-panelmenu.lil-menu .p-panelmenu-item-link {
+  border-radius: var(--lil-radius);
+  color: var(--lil-ink-soft);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  gap: 0.75rem;
+  min-height: 42px;
+  padding: 0.6875rem 0.8125rem;
+  transition: background-color 120ms ease;
+}
+
+:root .p-panelmenu.lil-menu .p-panelmenu-header-link:hover,
+:root .p-panelmenu.lil-menu .p-panelmenu-item-link:hover {
+  background: var(--p-surface-ground);
+}
+
+:root .p-panelmenu.lil-menu .p-panelmenu-header-active > .p-panelmenu-header-link {
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
+  font-weight: 700;
+}
+
+.sidebar-version {
+  color: var(--lil-faint);
+  font-family: ui-monospace, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  margin-top: auto;
+  padding: 0 1.125rem 0.625rem;
+}
+
+.sidebar-footer {
+  align-items: center;
+  border-top: 1px solid var(--p-surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5625rem;
+  padding: 0.875rem 1.125rem;
+}
+
+.sidebar-footer .pi {
+  color: var(--lil-faint);
+  font-size: 0.9375rem;
+}
+
+.sidebar-footer__email {
+  color: var(--lil-ink-soft);
+  font-size: 0.8125rem;
+}
+
+.kurin-tile {
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg) !important;
+  box-shadow: none !important;
+  padding: 1.25rem;
+}
+
+:root .p-toolbar {
+  background: var(--p-content-background);
+  border: 0;
+  border-bottom: 1px solid var(--p-surface-border);
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 56px;
+}
+
+.project-table .p-datatable-thead > tr > th {
+  background: var(--p-surface-ground);
+  border-color: var(--p-surface-border);
+  color: var(--lil-faint);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.project-table .p-datatable-tbody > tr > td {
+  border-color: var(--p-surface-border);
+  padding-block: 0.875rem;
+}
+
+.project-table .p-datatable-tbody > tr:hover > td {
+  background: var(--p-surface-ground);
+}
+
+:root .p-tag {
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.1875rem 0.5625rem;
+}
+
+.lil-empty {
+  align-items: center;
+  border: 1px dashed color-mix(in srgb, var(--lil-muted) 40%, transparent);
+  border-radius: var(--lil-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.lil-empty__art {
+  color: var(--p-surface-border);
+  height: 66px;
+  width: 110px;
+}
+
+.lil-empty__art .lil-empty__accent {
+  stroke: var(--lil-clay-500);
+}
+
+.lil-empty__art .lil-empty__dash {
+  animation: lil-dash 1.6s linear infinite;
+  stroke-dasharray: 6 6;
+}
+
+.lil-empty__title {
+  color: var(--lil-ink-soft);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.lil-empty__body {
+  color: var(--lil-faint);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  max-width: 26rem;
+}
+
+@keyframes lil-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lil-empty__art .lil-empty__dash {
+    animation: none;
+  }
+}

@@ -4,7 +4,7 @@ import { TitleStrategy, provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
+import { LilykaPreset } from './lilyka-preset';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
@@ -30,9 +30,9 @@ export const appConfig: ApplicationConfig = {
           clear: 'Очистити'
         },
         theme: {
-          preset: Aura,
+          preset: LilykaPreset,
           options: {
-            darkModeSelector: false,
+            darkModeSelector: '[data-theme="dark"]',
           }
         }
     }),
