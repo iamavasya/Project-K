@@ -8,6 +8,7 @@ import { AuthState } from "../../models/auth-state.model";
 import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
+import { ClientCacheService } from "../../../kurinModule/common/services/client-cache/client-cache.service";
 
 export interface MfaSetupResponse {
   sharedKey: string;
@@ -49,6 +50,7 @@ export class AuthService {
   private readonly apiUrl = environment.apiUrl;
   private readonly authState$ = new BehaviorSubject<AuthState | null>(null);
   private readonly http = inject(HttpClient);
+  private readonly cache = inject(ClientCacheService);
   private refreshTokenRequest$: Observable<string> | null = null;
 
   constructor() {
@@ -181,6 +183,8 @@ export class AuthService {
     localStorage.removeItem('authState');
     clearMfaSessionState();
     clearTileLayoutStorage();
+    // Otherwise the next user on this tab is served the previous user's entities.
+    this.cache.clear();
   }
 
   logout() {
@@ -260,9 +264,15 @@ export class AuthService {
   setKurinKey(kurinKey: string | null): void {
     const state = this.authState$.value;
     if (state) {
+      const kurinChanged = state.kurinKey !== kurinKey;
       const newState = { ...state, kurinKey };
       this.authState$.next(newState);
       this.persistAuthState(newState);
+
+      // Entity cache keys carry no kurin scope, so the previous kurin would survive the switch.
+      if (kurinChanged) {
+        this.cache.clear();
+      }
     }
   }
 
