@@ -1,0 +1,131 @@
+import { Injectable, inject } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { Observable, catchError, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../authModule/services/authService/auth.service';
+import { KurinService } from '../../kurinModule/common/services/kurin-service/kurin.service';
+import { GroupService } from '../../kurinModule/common/services/group-service/group.service';
+import { MemberService } from '../../kurinModule/common/services/member-service/member.service';
+import {
+  TitleContextType,
+  composePageTitle,
+  formatGroupTitle,
+  formatKurinTitle,
+  formatMemberTitle
+} from './page-title.format';
+
+/**
+ * Owns `document.title`. The static half comes from the route (`title` in the route
+ * config, applied by ProjectKTitleStrategy); the dynamic half is the entity the page is
+ * about, resolved from route params through the cached entity services.
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class PageTitleService {
+  // Router is deliberately not injected here: it builds the TitleStrategy that owns this
+  // service, so depending on it would close a DI cycle (NG0200) and fail app bootstrap.
+  private readonly title = inject(Title);
+  private readonly authService = inject(AuthService);
+  private readonly kurinService = inject(KurinService);
+  private readonly groupService = inject(GroupService);
+  private readonly memberService = inject(MemberService);
+
+  private routeTitle: string | null = null;
+  private context: string | null = null;
+  /** Guards against a slow resolve from a previous page overwriting the current title. */
+  private navigationToken = 0;
+
+  /** Called by ProjectKTitleStrategy on every completed navigation. */
+  applyRouteState(routeTitle: string | null, state: RouterStateSnapshot): void {
+    // The previous page's entity must not leak into the new one, and bumping the token
+    // retires any resolve still in flight for it.
+    this.context = null;
+    this.navigationToken++;
+    this.routeTitle = routeTitle;
+    this.render();
+    this.resolveContext(state);
+  }
+
+  /**
+   * Publishes the dynamic half directly. Use after navigation has settled — when a page
+   * renames the entity it shows and the tab should follow without waiting for the entity
+   * cache to expire.
+   */
+  setContext(context: string | null): void {
+    this.context = context;
+    this.render();
+  }
+
+  private render(): void {
+    this.title.setTitle(composePageTitle(this.context ?? this.routeTitle, environment.appName));
+  }
+
+  private resolveContext(state: RouterStateSnapshot): void {
+    let route: ActivatedRouteSnapshot = state.root;
+    const params: Record<string, string> = {};
+    let contextType: TitleContextType | null = null;
+
+    while (route) {
+      Object.assign(params, route.params);
+      const routeContext = route.data['titleContext'];
+      if (routeContext === 'kurin' || routeContext === 'group' || routeContext === 'member') {
+        contextType = routeContext;
+      }
+      if (!route.firstChild) {
+        break;
+      }
+      route = route.firstChild;
+    }
+
+    if (!contextType) {
+      return;
+    }
+
+    const token = this.navigationToken;
+
+    switch (contextType) {
+      case 'kurin': {
+        // The /kurin panel has no route param; it always shows the signed-in user's kurin.
+        const kurinKey = params['kurinKey'] ?? this.authService.getAuthStateValue()?.kurinKey;
+        if (kurinKey) {
+          this.publish(token, this.kurinService.getByKey(kurinKey), kurin => formatKurinTitle(kurin.number));
+        }
+        break;
+      }
+      case 'group': {
+        const groupKey = params['groupKey'];
+        if (groupKey) {
+          this.publish(token, this.groupService.getByKey(groupKey), group => formatGroupTitle(group.name));
+        }
+        break;
+      }
+      case 'member': {
+        const memberKey = params['memberKey'];
+        if (memberKey) {
+          this.publish(token, this.memberService.getByKey(memberKey), member =>
+            formatMemberTitle(member.lastName, member.firstName)
+          );
+        }
+        break;
+      }
+    }
+  }
+
+  private publish<T>(
+    token: number,
+    source: Observable<T>,
+    format: (entity: T) => string | null
+  ): void {
+    source
+      .pipe(catchError(() => of(null)))
+      .subscribe(entity => {
+        // The route title stays in place when the entity cannot be loaded.
+        if (entity === null || token !== this.navigationToken) {
+          return;
+        }
+        this.setContext(format(entity));
+      });
+  }
+}
