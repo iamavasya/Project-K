@@ -32,15 +32,23 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("User is not authenticated.");
         }
 
-        if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()))
+        var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
+
+        // An unscoped admin is system-wide: that is the /panel view, where there is no kurin to
+        // check against. Once they step into a kurin the claim is re-issued and they are held to
+        // that scope like anyone else — otherwise browser history reaches other kurins' data.
+        if (isAdmin && _currentUserContext.KurinKey is null)
         {
-            return ResourceAccessDecision.Allow("Admin bypass.");
+            return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");
         }
 
-        var roleActionDecision = EvaluateRoleActionPermission(resourceType, action);
-        if (!roleActionDecision.IsAllowed)
+        if (!isAdmin)
         {
-            return roleActionDecision;
+            var roleActionDecision = EvaluateRoleActionPermission(resourceType, action);
+            if (!roleActionDecision.IsAllowed)
+            {
+                return roleActionDecision;
+            }
         }
 
         var currentKurinKey = _currentUserContext.KurinKey;
@@ -55,16 +63,20 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny(scopeResolution.Reason);
         }
 
-        var roleScopeDecision = await EvaluateRoleSpecificScopeRulesAsync(
-            resourceType,
-            action,
-            scopeResolution,
-            currentKurinKey.Value,
-            cancellationToken);
-
-        if (!roleScopeDecision.IsAllowed)
+        // A scoped admin keeps every action inside the kurin; only the scope check below applies.
+        if (!isAdmin)
         {
-            return roleScopeDecision;
+            var roleScopeDecision = await EvaluateRoleSpecificScopeRulesAsync(
+                resourceType,
+                action,
+                scopeResolution,
+                currentKurinKey.Value,
+                cancellationToken);
+
+            if (!roleScopeDecision.IsAllowed)
+            {
+                return roleScopeDecision;
+            }
         }
 
         if (scopeResolution.KurinKey != currentKurinKey.Value)

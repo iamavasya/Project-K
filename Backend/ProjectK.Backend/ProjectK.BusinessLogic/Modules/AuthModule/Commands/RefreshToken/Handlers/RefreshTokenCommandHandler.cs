@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
@@ -30,7 +31,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken.Handle
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
-            string? kurinKey = user.KurinKey == Guid.Empty ? null : user.KurinKey.ToString();
+            string? kurinKey = user.ResolveScopeKurinKeyString();
 
             var jwt = new JwtResponse
             {

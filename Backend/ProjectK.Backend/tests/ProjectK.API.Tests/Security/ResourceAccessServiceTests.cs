@@ -36,6 +36,40 @@ public class ResourceAccessServiceTests
     }
 
     [Fact]
+    public async Task ScopedAdmin_ShouldBeDeniedForDifferentKurinScope()
+    {
+        var scopedKurinKey = Guid.NewGuid();
+        var otherKurinKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
+        fixture.Members
+            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = otherKurinKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
+
+        Assert.False(decision.IsAllowed);
+        Assert.Contains("different kurin", decision.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ScopedAdmin_ShouldBeAllowedForSameKurinScope()
+    {
+        var scopedKurinKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
+        fixture.Members
+            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = scopedKurinKey });
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Manage, memberKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
     public async Task Manager_ShouldBeAllowedForSameKurinScope()
     {
         var kurinKey = Guid.NewGuid();

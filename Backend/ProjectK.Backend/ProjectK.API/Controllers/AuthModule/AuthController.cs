@@ -8,6 +8,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using Microsoft.AspNetCore.Identity.Data;
+using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -74,6 +75,32 @@ namespace ProjectK.API.Controllers.AuthModule
             {
                 SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
             }
+            return response.ToActionResult(this);
+        }
+
+        public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
+
+        /// <summary>
+        /// Steps an admin into one kurin (or back out with a null key) and returns fresh tokens.
+        /// The resource guard reads the kurinKey claim, so scope only changes once it is re-issued.
+        /// </summary>
+        [Authorize(Policy = "RequireAdmin")]
+        [HttpPost("kurin-scope")]
+        public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
+        {
+            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userKeyClaim, out var userKey))
+            {
+                return Unauthorized();
+            }
+
+            var command = new SetKurinScopeCommand(userKey, request.KurinKey);
+            var response = await _mediator.Send(command);
+            if (response.Type == ResultType.Success && response.Data?.Tokens != null)
+            {
+                SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            }
+
             return response.ToActionResult(this);
         }
 

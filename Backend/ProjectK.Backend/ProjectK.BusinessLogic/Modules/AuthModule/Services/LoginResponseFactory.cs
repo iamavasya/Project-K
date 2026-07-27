@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
@@ -30,9 +31,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
 
         public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
         {
-            var kurinKey = user.KurinKey is null || user.KurinKey == Guid.Empty
-                ? null
-                : user.KurinKey.ToString();
+            var kurinKey = user.ResolveScopeKurinKeyString();
 
             var roles = await _userManager.GetRolesAsync(user);
             var jwt = new JwtResponse
