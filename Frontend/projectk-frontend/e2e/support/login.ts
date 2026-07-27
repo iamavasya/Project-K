@@ -1,6 +1,15 @@
 import { expect, Page } from '@playwright/test';
 import { E2eUser } from './test-users';
 
+// Logging in is far slower than a normal assertion: ASP.NET Identity hashing is
+// deliberately expensive, and the first request against a freshly started API also pays
+// for EF query compilation. The global expect timeout (7.5s) does not cover that, so a
+// merely slow login used to surface as a flaky auth failure.
+const LOGIN_TIMEOUT_MS = 30_000;
+
+const storedAuthEmail = (page: Page): Promise<string | null> =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? 'null')?.email ?? null);
+
 export async function loginThroughUi(page: Page, user: E2eUser): Promise<void> {
   await page.goto('/login');
   await page.locator('#email').fill(user.email);
@@ -8,13 +17,17 @@ export async function loginThroughUi(page: Page, user: E2eUser): Promise<void> {
   await page.locator('button[type="submit"]').click();
 
   await expect.poll(
-    async () => page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? 'null')?.email ?? null),
-    { message: `Expected ${user.email} to be stored in authState after login.` }
+    async () => storedAuthEmail(page),
+    {
+      message: `Expected ${user.email} to be stored in authState after login.`,
+      timeout: LOGIN_TIMEOUT_MS
+    }
   ).toBe(user.email);
 }
 
 export async function expectAuthenticatedAs(page: Page, user: E2eUser): Promise<void> {
   await expect.poll(
-    async () => page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? 'null')?.email ?? null)
+    async () => storedAuthEmail(page),
+    { timeout: LOGIN_TIMEOUT_MS }
   ).toBe(user.email);
 }
