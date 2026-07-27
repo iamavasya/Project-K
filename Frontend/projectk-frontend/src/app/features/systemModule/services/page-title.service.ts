@@ -19,6 +19,8 @@ import {
   providedIn: 'root'
 })
 export class PageTitleService {
+  // Router is deliberately not injected here: it builds the TitleStrategy that owns this
+  // service, so depending on it would close a DI cycle (NG0200) and fail app bootstrap.
   private readonly title = inject(Title);
   private readonly authService = inject(AuthService);
   private readonly kurinService = inject(KurinService);

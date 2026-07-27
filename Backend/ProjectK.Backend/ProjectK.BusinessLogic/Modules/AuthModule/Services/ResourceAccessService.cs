@@ -34,6 +34,9 @@ public class ResourceAccessService : IResourceAccessService
 
         var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
 
+        // An unscoped admin is system-wide: that is the /panel view, where there is no kurin to
+        // check against. Once they step into a kurin the claim is re-issued and they are held to
+        // that scope like anyone else — otherwise browser history reaches other kurins' data.
         if (isAdmin && _currentUserContext.KurinKey is null)
         {
             return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");

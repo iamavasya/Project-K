@@ -183,6 +183,7 @@ export class AuthService {
     localStorage.removeItem('authState');
     clearMfaSessionState();
     clearTileLayoutStorage();
+    // Otherwise the next user on this tab is served the previous user's entities.
     this.cache.clear();
   }
 
@@ -296,6 +297,7 @@ export class AuthService {
       this.authState$.next(newState);
       this.persistAuthState(newState);
 
+      // Entity cache keys carry no kurin scope, so the previous kurin would survive the switch.
       if (kurinChanged) {
         this.cache.clear();
       }

@@ -12,6 +12,11 @@ namespace ProjectK.Common.Entities.AuthModule
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public Guid? KurinKey { get; set; }
+        /// <summary>
+        /// Kurin an admin has stepped into. Admins have no KurinKey of their own, so this is
+        /// what scopes their access; it must survive a token refresh, hence the column.
+        /// Null means unscoped, which for an admin means system-wide access.
+        /// </summary>
         public Guid? ActiveKurinKey { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
