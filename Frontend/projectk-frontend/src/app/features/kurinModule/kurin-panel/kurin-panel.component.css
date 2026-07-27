@@ -65,9 +65,9 @@
 .kurin-tile {
     border: 1px solid var(--p-content-border-color);
     background: var(--p-content-background);
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+    border-radius: var(--lil-radius-lg);
+    padding: 1.25rem;
+    box-shadow: none;
 }
 
 .identity-grid {
@@ -291,7 +291,7 @@
 
 @media (max-width: 640px) {
     .kurin-tile {
-        padding: 0.75rem;
+        padding: 1rem;
     }
 
     .kurin-header-main {

@@ -1,6 +1,6 @@
 .member-list-header {
-    display: flex;
     align-items: center;
+    display: flex;
 }
 
 .member-view-shell {
@@ -12,10 +12,12 @@
 }
 
 .member-list-title {
-    margin: 0;
     color: var(--p-text-color);
     font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     line-height: 1.75rem;
+    margin: 0;
 }
 
 .member-list-controls {
@@ -23,8 +25,8 @@
 }
 
 .member-list-search {
-    width: 16rem;
     max-width: 100%;
+    width: 16rem;
 }
 
 .member-list-search-input {
@@ -44,17 +46,17 @@
 }
 
 .member-name-cell {
-    display: inline-flex;
     align-items: center;
+    display: inline-flex;
     gap: 0.4rem;
     min-width: 0;
 }
 
-
 .member-empty-state {
+    background: transparent;
     border: 1px dashed var(--p-content-border-color);
-    color: var(--p-text-muted-color);
-    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-primary-100) 10%);
+    border-radius: var(--lil-radius-lg) !important;
+    color: var(--lil-faint);
 }
 
 :host ::ng-deep .member-list-table .p-datatable-table {
@@ -73,28 +75,28 @@
 
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row,
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row {
+        border-bottom: 1px solid var(--p-content-border-color);
         display: grid;
         gap: 0.45rem;
         padding: 0.8rem 0;
-        border-bottom: 1px solid var(--p-content-border-color);
     }
 
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td,
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row > td {
-        display: grid;
-        grid-template-columns: 5.25rem minmax(0, 1fr);
-        gap: 0.6rem;
         align-items: center;
-        min-width: 0;
-        padding: 0.1rem 0 !important;
         border: 0 !important;
+        display: grid;
+        gap: 0.6rem;
+        grid-template-columns: 5.25rem minmax(0, 1fr);
+        min-width: 0;
         overflow-wrap: anywhere;
+        padding: 0.1rem 0 !important;
     }
 
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td::before,
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row > td::before {
-        content: attr(data-mobile-label);
         color: var(--p-text-muted-color);
+        content: attr(data-mobile-label);
         font-size: 0.75rem;
         font-weight: 650;
     }

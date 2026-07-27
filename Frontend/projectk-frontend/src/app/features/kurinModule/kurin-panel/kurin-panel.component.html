@@ -109,7 +109,6 @@
                         <p-button
                             label="Створити"
                             (onClick)="onGroupActionClick(null, 'create')"
-                            severity="info"
                             icon="pi pi-plus" />
                     }
                 </div>
@@ -150,7 +149,18 @@
         </p-table>
         @if (groups.length === 0) {
             <div class="table-empty-state">
-                <p-message icon="pi pi-question-circle" severity="info">Наразі немає гуртків. Мабуть, варто додати?</p-message>
+                <div class="lil-empty">
+                    <svg class="lil-empty__art" viewBox="0 0 110 66" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path class="lil-empty__dash" d="M8 48 C28 26 48 56 68 32 C82 16 94 28 102 22" />
+                        <circle class="lil-empty__accent" cx="102" cy="22" r="4" />
+                    </svg>
+                    <div class="lil-empty__title">Гуртків поки немає</div>
+                    <div class="lil-empty__body">Курінь без гуртків — як мандрівка без стежки.</div>
+                    @if (canManageGroups) {
+                        <p-button label="Створити гурток" icon="pi pi-plus" (onClick)="onGroupActionClick(null, 'create')" />
+                    }
+                </div>
             </div>
         }
     </section>
@@ -169,7 +179,7 @@
         <app-member-list [type]="'kurin'" [typeKey]="kurinKey"></app-member-list>
         @if (canManageMembers) {
             <div class="mt-3">
-                <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" severity="info" icon="pi pi-plus" />
+                <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" icon="pi pi-plus" />
             </div>
         }
     </section>

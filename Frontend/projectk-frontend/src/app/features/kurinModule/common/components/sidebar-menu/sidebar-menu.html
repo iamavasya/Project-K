@@ -1,19 +1,26 @@
 <p-drawer [visible]="visible" (onHide)="close()" closable="true">
     <ng-template #headless>
-        <div class="sidebar-header m-4 text-2xl font-bold border-b border-gray-300 pb-2">
-            <h2>Project K</h2>
+        <div class="lil-sidebar-brand">
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M50 92 V46" />
+                <path d="M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z" />
+                <path d="M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z" />
+                <path d="M32 66 H68" />
+            </svg>
+            <h2 class="lil-wordmark">Лілейка</h2>
         </div>
+
         <div class="sidebar-content">
-            <p-panelmenu [model]="(items$ | async) ?? []" class="m-2">
-            </p-panelmenu>
+            <p-panelmenu [model]="(items$ | async) ?? []" styleClass="lil-menu"></p-panelmenu>
         </div>
-        <div class="sidebar-version mt-auto px-4 pb-3 text-xs text-gray-400">
-            {{ versionLabel }}
-        </div>
-        <div class="sidebar-footer p-4 border-t border-gray-300">
-            <span class="pi pi-user"></span>
-            <span class="ml-2">{{ (email$ | async) ?? 'Error' }}</span>
-            <p-tag class="ml-2" [severity]="$any(getSeverityOnRole(role$ | async))" [value]="(role$ | async) ?? 'Error'"></p-tag>
+
+        <div class="sidebar-version">{{ versionLabel }}</div>
+
+        <div class="sidebar-footer">
+            <span class="pi pi-user" aria-hidden="true"></span>
+            <span class="sidebar-footer__email">{{ (email$ | async) ?? 'Error' }}</span>
+            <p-tag [severity]="$any(getSeverityOnRole(role$ | async))" [value]="(role$ | async) ?? 'Error'"></p-tag>
         </div>
     </ng-template>
 </p-drawer>

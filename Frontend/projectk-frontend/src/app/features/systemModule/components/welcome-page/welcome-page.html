@@ -1,4 +1,21 @@
 <main class="welcome-page">
+  <header class="welcome-brand">
+    <a class="welcome-brand__lockup" routerLink="/">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M50 92 V46" />
+        <path d="M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z" />
+        <path d="M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z" />
+        <path d="M32 66 H68" />
+      </svg>
+      <span class="lil-wordmark">Лілейка</span>
+    </a>
+
+    <div class="welcome-brand__actions">
+      <p-button label="Увійти" routerLink="/login" size="small" />
+    </div>
+  </header>
+
   <section class="first-front-block">
     <div class="hero-copy">
       <h1>Весь курінь під рукою</h1>
@@ -35,10 +52,10 @@
     <p-divider />
   </div>
 
-  <section class="product-preview" aria-label="Скриншот Project K">
+  <section class="product-preview" aria-label="Скриншот Лілейки">
     <img
       src="assets/images/software-screens/image.png"
-      alt="Скриншот Project K"
+      alt="Скриншот Лілейки"
     />
   </section>
 
@@ -46,12 +63,11 @@
     <div class="feature-copy">
       <h2>Менеджити куренем <span>легко.</span></h2>
       <p>
-        Project K дає зручні інструменти для роботи куреня. Слідкуйте за учасниками,
-        впорядковуйте документи та керуйте ефективно.
+        Слідкуйте за учасниками, впорядковуйте документи та керуйте ефективно.
       </p>
     </div>
 
-    <div class="feature-grid" aria-label="Можливості Project K">
+    <div class="feature-grid" aria-label="Можливості Лілейки">
       <article class="feature-card">
         <span class="feature-icon pi pi-user" aria-hidden="true"></span>
         <h3>Реєстр куреня</h3>
@@ -80,4 +96,9 @@
       </article>
     </div>
   </section>
+
+  <footer class="welcome-footer">
+    <span>Лілейка — система управління куренем</span>
+    <span class="welcome-footer__tech">ProjectK · self-host</span>
+  </footer>
 </main>

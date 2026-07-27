@@ -1,7 +1,8 @@
 .member-tile {
-    border: 1px solid var(--p-content-border-color);
     background: var(--p-content-background);
-    box-shadow: 0 8px 26px -20px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius-lg) !important;
+    box-shadow: none;
 }
 
 .member-profile-tile {
@@ -9,13 +10,13 @@
 }
 
 .member-photo-frame {
+    background: var(--p-surface-ground);
     border: 1px solid var(--p-content-border-color);
-    border-radius: 0.8rem;
-    background: color-mix(in srgb, var(--p-content-background) 88%, var(--p-primary-100) 12%);
+    border-radius: 13px;
 }
 
 .member-photo {
-    border: 1px solid color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+    border: 1px solid var(--p-content-border-color);
 }
 
 .member-name,
@@ -24,11 +25,11 @@
 }
 
 .member-name {
-    display: inline-flex;
     align-items: center;
+    display: inline-flex;
     gap: 0.45rem;
+    letter-spacing: -0.02em;
 }
-
 
 .member-middle-name,
 .member-summary-label {
@@ -36,24 +37,24 @@
 }
 
 .member-summary-line {
-    line-height: 1.25rem;
+    line-height: 1.35rem;
 }
 
 .member-warning-indicator {
-    display: inline-flex;
     align-items: center;
+    background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
+    border: 1px solid color-mix(in srgb, var(--p-red-600) 30%, transparent);
+    border-radius: 9999px;
+    display: inline-flex;
     gap: 0.25rem;
     padding: 0.2rem 0.45rem;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--p-red-600) 35%, transparent);
-    background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
 }
 
 .member-warning-dot {
-    width: 0.45rem;
-    height: 0.45rem;
+    background: var(--p-content-border-color);
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--p-surface-400) 70%, var(--p-content-background) 30%);
+    height: 0.45rem;
+    width: 0.45rem;
 }
 
 .member-warning-dot--active {
@@ -61,16 +62,19 @@
 }
 
 .member-actions {
+    align-self: flex-start;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    align-self: flex-start;
 }
-
 
 .member-section-title,
 .dialog-skill-row {
     color: var(--p-text-color);
+}
+
+.member-section-title {
+    letter-spacing: -0.01em;
 }
 
 .member-section-subtitle,
@@ -81,41 +85,43 @@
 }
 
 .member-empty-state {
+    background: transparent;
     border: 1px dashed var(--p-content-border-color);
-    background: color-mix(in srgb, var(--p-content-background) 92%, var(--p-primary-100) 8%);
-    color: var(--p-text-muted-color);
+    border-radius: var(--lil-radius-lg) !important;
+    color: var(--lil-faint);
 }
 
 .probe-summary-row {
+    background: transparent;
     border: 1px solid var(--p-content-border-color);
-    background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
+    border-radius: var(--lil-radius) !important;
 }
 
 .probe-summary-row--completed {
-    border-color: color-mix(in srgb, var(--p-green-600) 28%, var(--p-content-border-color) 72%);
-    background: color-mix(in srgb, var(--p-content-background) 88%, var(--p-green-100) 12%);
+    background: color-mix(in srgb, var(--p-primary-50) 55%, var(--p-content-background) 45%);
+    border-color: color-mix(in srgb, var(--p-primary-color) 26%, var(--p-content-border-color) 74%);
 }
 
 .probe-summary-row--disabled {
     border-style: dashed;
-    opacity: 0.9;
+    opacity: 0.5;
 }
 
 .probe-state-icon {
-    width: 1rem;
-    height: 1rem;
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    border: 1px solid var(--p-content-border-color);
     border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--p-primary-color) 45%, transparent);
-    color: color-mix(in srgb, var(--p-primary-color) 75%, var(--p-text-color) 25%);
+    color: var(--lil-faint);
+    display: inline-flex;
+    height: 1.125rem;
+    justify-content: center;
+    width: 1.125rem;
 }
 
 .probe-state-icon--completed {
-    border-color: color-mix(in srgb, var(--p-green-600) 60%, transparent);
-    background: color-mix(in srgb, var(--p-green-500) 22%, white 78%);
-    color: color-mix(in srgb, var(--p-green-700) 88%, var(--p-text-color) 12%);
+    background: var(--p-primary-50);
+    border-color: color-mix(in srgb, var(--p-primary-color) 40%, transparent);
+    color: var(--p-primary-color);
 }
 
 .probe-row-meta {
@@ -123,22 +129,25 @@
 }
 
 .dialog-section-title {
-    color: color-mix(in srgb, var(--p-text-muted-color) 90%, var(--p-text-color) 10%);
+    color: var(--lil-faint);
+    letter-spacing: 0.18em;
 }
 
 .dialog-skill-row {
+    background: transparent;
     border: 1px solid var(--p-content-border-color);
-    background: color-mix(in srgb, var(--p-content-background) 94%, var(--p-primary-100) 6%);
+    border-radius: var(--lil-radius) !important;
 }
 
 .dialog-skill-row--pending {
+    background: var(--lil-clay-50);
+    border-color: var(--lil-clay-100);
     border-style: dashed;
-    background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-amber-100) 10%);
 }
 
 .dialog-skill-thumb {
-    border: 1px solid color-mix(in srgb, var(--p-primary-color) 28%, transparent);
-    background: color-mix(in srgb, var(--p-content-background) 84%, var(--p-primary-200) 16%);
+    background: var(--p-surface-ground);
+    border: 1px solid var(--p-content-border-color);
 }
 
 .add-skill-search-wrap {
@@ -146,12 +155,17 @@
 }
 
 .add-skill-row {
+    background: transparent;
     border: 1px solid var(--p-content-border-color);
-    background: color-mix(in srgb, var(--p-content-background) 95%, var(--p-surface-100) 5%);
+    border-radius: var(--lil-radius) !important;
+}
+
+.add-skill-row:hover {
+    background: var(--p-surface-ground);
 }
 
 .dialog-existing-status {
-    color: color-mix(in srgb, var(--p-amber-700) 84%, var(--p-text-color) 16%);
+    color: var(--lil-clay-700);
 }
 
 .dialog-success-text {
@@ -163,13 +177,13 @@
 }
 
 .dialog-warn-text {
-    color: color-mix(in srgb, var(--p-amber-700) 82%, var(--p-text-color) 18%);
+    color: var(--lil-clay-700);
 }
 
 .dialog-inline-action-btn {
-    width: 2rem;
     height: 2rem;
     min-width: 2rem;
+    width: 2rem;
 }
 
 .skills-preview-grid > *:nth-child(n + 3) {

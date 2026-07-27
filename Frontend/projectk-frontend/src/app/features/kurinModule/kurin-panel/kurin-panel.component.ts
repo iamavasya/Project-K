@@ -12,7 +12,6 @@ import { SplitButton } from 'primeng/splitbutton';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
-import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
@@ -37,7 +36,6 @@ import { MenuItemsCache } from '../common/functions/menuItemsCache';
     SplitButton,
     MenuModule,
     ManagePanel,
-    MessageModule,
     KurinNumberComponent,
     MemberList,
     TagModule,
