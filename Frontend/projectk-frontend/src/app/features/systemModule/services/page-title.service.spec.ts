@@ -175,8 +175,6 @@ describe('PageTitleService', () => {
 
 describe('ProjectKTitleStrategy wiring', () => {
   it('resolves through a real Router without closing a DI cycle', () => {
-    // PageTitleService is built by the TitleStrategy the Router owns, so injecting the
-    // Router into it would fail bootstrap with NG0200 — a stubbed Router hides that.
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),

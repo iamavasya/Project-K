@@ -10,10 +10,6 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope.Handlers
 {
-    /// <summary>
-    /// Moves an admin's access scope to one kurin and re-issues their tokens, so the kurinKey
-    /// claim the resource guard reads matches the kurin they are actually working in.
-    /// </summary>
     public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand, ServiceResult<LoginUserResponse>>
     {
         private readonly UserManager<AppUser> _userManager;
@@ -40,8 +36,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope.Handlers
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
 
-            // Only admins pick a scope. Everyone else is pinned to their own kurin, and letting
-            // them set this would hand them a claim for a kurin they do not belong to.
             var roles = await _userManager.GetRolesAsync(user);
             if (!roles.Contains(UserRole.Admin.ToClaimValue(), StringComparer.OrdinalIgnoreCase))
             {

@@ -8,12 +8,7 @@ namespace ProjectK.API.Services;
 
 public sealed class GeoIPService
 {
-    // The lookup sits in SecurityHardeningMiddleware, so every request pays for it.
-    // Cap it well below the 100s HttpClient default: a slow or throttled provider must
-    // never hold a request open.
     private static readonly TimeSpan LookupTimeout = TimeSpan.FromSeconds(3);
-    // ip-api.com allows 45 requests/min and answers with 429 beyond that. Without a
-    // negative entry every subsequent request retries and stalls again.
     private static readonly TimeSpan FailureCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan SuccessCacheDuration = TimeSpan.FromDays(1);
 
@@ -33,9 +28,6 @@ public sealed class GeoIPService
         if (string.IsNullOrEmpty(ip))
             return "LOCAL";
 
-        // Containers, LAN clients and reverse proxies present a non-routable source
-        // address. It can never be geolocated, so calling out is pure latency — and in
-        // Docker that is every single request.
         if (!IPAddress.TryParse(ip, out var address) || IsNonRoutable(address))
             return "LOCAL";
 
@@ -62,8 +54,6 @@ public sealed class GeoIPService
             _logger.LogError(ex, "Error fetching GeoIP data for {IP}", ip);
         }
 
-        // Unknown country is not blocked upstream, so caching the miss only trades a
-        // repeated outbound call for a few minutes of staleness.
         _cache.Set(ip, (string?)null, FailureCacheDuration);
         return null;
     }

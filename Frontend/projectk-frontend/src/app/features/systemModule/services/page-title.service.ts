@@ -15,17 +15,10 @@ import {
   formatMemberTitle
 } from './page-title.format';
 
-/**
- * Owns `document.title`. The static half comes from the route (`title` in the route
- * config, applied by ProjectKTitleStrategy); the dynamic half is the entity the page is
- * about, resolved from route params through the cached entity services.
- */
 @Injectable({
   providedIn: 'root'
 })
 export class PageTitleService {
-  // Router is deliberately not injected here: it builds the TitleStrategy that owns this
-  // service, so depending on it would close a DI cycle (NG0200) and fail app bootstrap.
   private readonly title = inject(Title);
   private readonly authService = inject(AuthService);
   private readonly kurinService = inject(KurinService);
@@ -34,13 +27,9 @@ export class PageTitleService {
 
   private routeTitle: string | null = null;
   private context: string | null = null;
-  /** Guards against a slow resolve from a previous page overwriting the current title. */
   private navigationToken = 0;
 
-  /** Called by ProjectKTitleStrategy on every completed navigation. */
   applyRouteState(routeTitle: string | null, state: RouterStateSnapshot): void {
-    // The previous page's entity must not leak into the new one, and bumping the token
-    // retires any resolve still in flight for it.
     this.context = null;
     this.navigationToken++;
     this.routeTitle = routeTitle;
@@ -48,11 +37,6 @@ export class PageTitleService {
     this.resolveContext(state);
   }
 
-  /**
-   * Publishes the dynamic half directly. Use after navigation has settled — when a page
-   * renames the entity it shows and the tab should follow without waiting for the entity
-   * cache to expire.
-   */
   setContext(context: string | null): void {
     this.context = context;
     this.render();
@@ -87,7 +71,6 @@ export class PageTitleService {
 
     switch (contextType) {
       case 'kurin': {
-        // The /kurin panel has no route param; it always shows the signed-in user's kurin.
         const kurinKey = params['kurinKey'] ?? this.authService.getAuthStateValue()?.kurinKey;
         if (kurinKey) {
           this.publish(token, this.kurinService.getByKey(kurinKey), kurin => formatKurinTitle(kurin.number));
@@ -121,7 +104,6 @@ export class PageTitleService {
     source
       .pipe(catchError(() => of(null)))
       .subscribe(entity => {
-        // The route title stays in place when the entity cannot be loaded.
         if (entity === null || token !== this.navigationToken) {
           return;
         }

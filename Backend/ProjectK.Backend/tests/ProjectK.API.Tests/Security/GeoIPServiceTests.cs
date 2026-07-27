@@ -21,8 +21,6 @@ public class GeoIPServiceTests
     [InlineData("not-an-ip")]
     public async Task GetCountryCodeAsync_ShouldSkipLookup_ForNonRoutableAddresses(string ip)
     {
-        // The lookup runs in middleware on every request, so a container or LAN client
-        // must never trigger an outbound call it can only ever fail.
         var handler = new CountingHandler(() => JsonResponse("{\"status\":\"success\",\"countryCode\":\"UA\"}"));
         var service = CreateService(handler);
 

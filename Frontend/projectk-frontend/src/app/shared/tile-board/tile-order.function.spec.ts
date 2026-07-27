@@ -28,7 +28,6 @@ describe('reconcileOrder', () => {
 
   it('applies a saved order', () => {
     const result = reconcileOrder(['probes', 'skills', 'awards', 'profile'], defs).map(d => d.key);
-    // profile is pinned, so it floats to the top regardless of saved position.
     expect(result).toEqual(['profile', 'probes', 'skills', 'awards']);
   });
 
@@ -39,10 +38,8 @@ describe('reconcileOrder', () => {
   });
 
   it('appends newly added tiles at their default slot', () => {
-    // Saved order was created before "awards" existed.
     const result = reconcileOrder(['profile', 'probes', 'skills'], defs).map(d => d.key);
     expect(result).toContain('awards');
-    // awards has defaultOrder 3, so it lands at the end here.
     expect(result[result.length - 1]).toBe('awards');
   });
 

@@ -183,7 +183,6 @@ export class AuthService {
     localStorage.removeItem('authState');
     clearMfaSessionState();
     clearTileLayoutStorage();
-    // Otherwise the next user on this tab is served the previous user's entities.
     this.cache.clear();
   }
 
@@ -261,11 +260,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Moves an admin's scope to one kurin, or back to system-wide with null. The backend
-   * re-issues the token, so the local kurinKey is never the only thing that changed —
-   * the resource guard reads the claim, not this state.
-   */
   setKurinScope(kurinKey: string | null): Observable<AuthState> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/kurin-scope`,
@@ -302,7 +296,6 @@ export class AuthService {
       this.authState$.next(newState);
       this.persistAuthState(newState);
 
-      // Entity cache keys carry no kurin scope, so the previous kurin would survive the switch.
       if (kurinChanged) {
         this.cache.clear();
       }

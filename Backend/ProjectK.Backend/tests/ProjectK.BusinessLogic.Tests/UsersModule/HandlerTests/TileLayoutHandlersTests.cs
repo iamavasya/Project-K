@@ -25,8 +25,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         }
 
-        // ---------- Save ----------
-
         [Fact]
         public async Task Save_ShouldCreate_WhenNoExistingLayout()
         {
@@ -148,8 +146,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(1, created!.SchemaVersion);
         }
 
-        // ---------- Get ----------
-
         [Fact]
         public async Task Get_ShouldReturnOnlyKnownBoards()
         {
@@ -190,8 +186,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Empty(result.Data!.Single().TileKeys);
         }
-
-        // ---------- Reset ----------
 
         [Fact]
         public async Task Reset_ShouldDelete_WhenLayoutExists()
@@ -234,8 +228,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             Assert.Equal(ResultType.BadRequest, result.Type);
         }
-
-        // ---------- Serializer ----------
 
         [Fact]
         public void Serializer_RoundTrips()

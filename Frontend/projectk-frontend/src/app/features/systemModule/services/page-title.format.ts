@@ -1,6 +1,5 @@
 export const TITLE_SEPARATOR = ' · ';
 
-/** Route data key that tells the title strategy which entity to resolve. */
 export type TitleContextType = 'kurin' | 'group' | 'member';
 
 export function formatKurinTitle(kurinNumber: number | null | undefined): string | null {

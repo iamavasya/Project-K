@@ -80,10 +80,6 @@ namespace ProjectK.API.Controllers.AuthModule
 
         public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
 
-        /// <summary>
-        /// Steps an admin into one kurin (or back out with a null key) and returns fresh tokens.
-        /// The resource guard reads the kurinKey claim, so scope only changes once it is re-issued.
-        /// </summary>
         [Authorize(Policy = "RequireAdmin")]
         [HttpPost("kurin-scope")]
         public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)

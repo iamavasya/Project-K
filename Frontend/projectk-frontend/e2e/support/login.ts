@@ -1,10 +1,6 @@
 import { expect, Page } from '@playwright/test';
 import { E2eUser } from './test-users';
 
-// Logging in is far slower than a normal assertion: ASP.NET Identity hashing is
-// deliberately expensive, and the first request against a freshly started API also pays
-// for EF query compilation. The global expect timeout (7.5s) does not cover that, so a
-// merely slow login used to surface as a flaky auth failure.
 const LOGIN_TIMEOUT_MS = 30_000;
 
 const storedAuthEmail = (page: Page): Promise<string | null> =>

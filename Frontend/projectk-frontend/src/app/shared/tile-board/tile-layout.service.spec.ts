@@ -62,7 +62,6 @@ describe('TileLayoutService', () => {
   });
 
   it('saveOrder PUTs the order and invalidates the cache', () => {
-    // Prime the cache first.
     service.getOrder('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
@@ -72,7 +71,6 @@ describe('TileLayoutService', () => {
     expect(put.request.body.tileKeys).toEqual(['probes', 'profile', 'skills']);
     put.flush({ boardKey: 'member-card', tileKeys: ['probes', 'profile', 'skills'], schemaVersion: 1, updatedAtUtc: '' });
 
-    // Cache was invalidated → a fresh getOrder hits the network again.
     service.getOrder('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
   });

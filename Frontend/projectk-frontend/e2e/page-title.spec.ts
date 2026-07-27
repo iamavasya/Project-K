@@ -3,16 +3,11 @@ import { expect, test } from '@playwright/test';
 import { getFirstSeededGroupMemberKey, getSeededGroupKey, getSeededKurinKey } from './support/api-client';
 import { describeRole } from './support/role-test';
 
-// The middle dot is the separator defined in page-title.format.ts.
 const APP_NAME = 'Лілейка';
 const PANEL_TITLE = new RegExp(`^Адміністрація · ${APP_NAME}$`);
-// Admin subpages carry their own name only — the "Адміністрація" prefix made titles
-// long enough to be truncated in the tab, hiding the part that distinguishes them.
 const USERS_TITLE = new RegExp(`^Користувачі · ${APP_NAME}$`);
 const KURIN_TITLE = new RegExp(`^к\\. ч\\. \\d+ · ${APP_NAME}$`);
 const GROUP_TITLE = new RegExp(`^г\\. .+ · ${APP_NAME}$`);
-// Last name then first name, so neither the fallback route title nor a blank entity
-// name is what ends up in the tab.
 const MEMBER_TITLE = new RegExp(`^\\S+ \\S+ · ${APP_NAME}$`);
 
 test.describe('Browser tab title', () => {
@@ -26,8 +21,6 @@ test.describe('Browser tab title', () => {
     });
   });
 
-  // Manager rather than admin: the seeded admin is not scoped to a kurin, so /kurin has
-  // no key to resolve a number from.
   describeRole('manager', 'Manager', ({ user }) => {
     test('kurin, group and member pages are titled after the entity', async ({ page, request }) => {
       const kurinKey = await getSeededKurinKey(request, user);

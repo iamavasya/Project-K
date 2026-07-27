@@ -14,8 +14,6 @@ services:
       projectk-api:
         condition: service_healthy
     healthcheck:
-      # 127.0.0.1, not localhost: nginx listens on IPv4 only, while localhost
-      # resolves to ::1 first inside the container and the probe is refused.
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 15s
       timeout: 5s
