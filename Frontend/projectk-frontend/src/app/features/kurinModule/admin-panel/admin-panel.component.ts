@@ -4,7 +4,7 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { KurinDto } from '../common/models/kurinDto';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 import { Router, RouterModule } from '@angular/router';
@@ -22,7 +22,8 @@ export class AdminPanelComponent implements OnInit {
   private readonly router: Router = inject(Router);
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
-  
+  private readonly messageService = inject(MessageService);
+
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
@@ -110,7 +111,13 @@ export class AdminPanelComponent implements OnInit {
   }
 
   onOpenClick(kurinKey: string): void {
-    this.authService.setKurinKey(kurinKey);
-    this.router.navigate(['/kurin']);
+    this.authService.setKurinScope(kurinKey).subscribe({
+      next: () => this.router.navigate(['/kurin']),
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Не вдалося відкрити курінь',
+        detail: 'Спробуй ще раз.'
+      })
+    });
   }
 }

@@ -261,6 +261,39 @@ export class AuthService {
     );
   }
 
+  /**
+   * Moves an admin's scope to one kurin, or back to system-wide with null. The backend
+   * re-issues the token, so the local kurinKey is never the only thing that changed —
+   * the resource guard reads the claim, not this state.
+   */
+  setKurinScope(kurinKey: string | null): Observable<AuthState> {
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/auth/kurin-scope`,
+      { kurinKey },
+      { withCredentials: true }
+    ).pipe(
+      map(response => {
+        if (!response.tokens) {
+          throw new Error('No tokens in kurin scope response');
+        }
+
+        return {
+          userKey: response.userKey,
+          memberKey: response.memberKey,
+          email: response.email,
+          role: response.role,
+          kurinKey: response.kurinKey ?? null,
+          accessToken: response.tokens.accessToken
+        } satisfies AuthState;
+      }),
+      tap(state => {
+        this.authState$.next(state);
+        this.persistAuthState(state);
+        this.cache.clear();
+      })
+    );
+  }
+
   setKurinKey(kurinKey: string | null): void {
     const state = this.authState$.value;
     if (state) {

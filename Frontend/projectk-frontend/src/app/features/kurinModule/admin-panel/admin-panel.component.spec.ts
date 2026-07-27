@@ -1,13 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AdminPanelComponent } from './admin-panel.component';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { KurinDto } from '../common/models/kurinDto';
+import { AuthState } from '../../authModule/models/auth-state.model';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { MessageService } from 'primeng/api';
 
 describe('AdminPanelComponent', () => {
   let component: AdminPanelComponent;
@@ -20,12 +22,21 @@ describe('AdminPanelComponent', () => {
     { kurinKey: '2', number: 102 }
   ];
 
+  const scopedState: AuthState = {
+    userKey: 'user-1',
+    memberKey: null,
+    email: 'admin@projectk.com',
+    role: 'Admin',
+    kurinKey: '1',
+    accessToken: 'scoped-token'
+  };
+
   beforeEach(async () => {
     const kurinServiceSpy = jasmine.createSpyObj('KurinService',
       ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
     const authServiceSpy = jasmine.createSpyObj('AuthService',
-      ['registerFirstManager', 'setKurinKey']);
-    
+      ['registerFirstManager', 'setKurinKey', 'setKurinScope']);
+
     await TestBed.configureTestingModule({
       imports: [AdminPanelComponent],
       providers: [
@@ -34,7 +45,8 @@ describe('AdminPanelComponent', () => {
         provideNoopAnimations(),
         provideRouter([]),
         { provide: KurinService, useValue: kurinServiceSpy },
-        { provide: AuthService, useValue: authServiceSpy }
+        { provide: AuthService, useValue: authServiceSpy },
+        MessageService
       ]
     }).compileComponents();
 
@@ -131,6 +143,29 @@ describe('AdminPanelComponent', () => {
       component.onManageAction({ action: 'delete', entity: toDelete, entityType: 'kurin' });
       expect(kurinService.deleteKurin).toHaveBeenCalledWith('1');
       expect(kurinService.getKurins).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('onOpenClick', () => {
+    it('scopes the admin into the kurin before navigating', () => {
+      const router = TestBed.inject(Router);
+      const navigate = spyOn(router, 'navigate');
+      authService.setKurinScope.and.returnValue(of(scopedState));
+
+      component.onOpenClick('1');
+
+      expect(authService.setKurinScope).toHaveBeenCalledWith('1');
+      expect(navigate).toHaveBeenCalledWith(['/kurin']);
+    });
+
+    it('stays on the panel when scoping fails', () => {
+      const router = TestBed.inject(Router);
+      const navigate = spyOn(router, 'navigate');
+      authService.setKurinScope.and.returnValue(throwError(() => new Error('nope')) as never);
+
+      component.onOpenClick('1');
+
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 

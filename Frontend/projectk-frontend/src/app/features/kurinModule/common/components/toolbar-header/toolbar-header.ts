@@ -33,7 +33,13 @@ export class ToolbarHeader {
   }
 
   backToKurinPanel() {
-    this.authService.clearKurinKey();
-    this.router.navigate(['/panel']);
+    this.authService.setKurinScope(null).subscribe({
+      // The scope is gone locally either way; the panel itself is reachable unscoped.
+      next: () => this.router.navigate(['/panel']),
+      error: () => {
+        this.authService.clearKurinKey();
+        this.router.navigate(['/panel']);
+      }
+    });
   }
 }
