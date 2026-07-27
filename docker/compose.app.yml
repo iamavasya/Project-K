@@ -55,7 +55,7 @@ services:
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Development}
-      PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-ProjectK}
+      PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-Лілейка}
     ports:
       - "${PROJECTK_WEB_PORT:-4200}:80"
     depends_on:

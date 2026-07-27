@@ -33,7 +33,7 @@ import { RouterLink } from '@angular/router';
     <main class="flex justify-center items-center min-h-screen bg-gray-100 p-4">
       <p-card
         header="Приєднатися до списку очікування"
-        subheader="Залиште заявку, щоб отримати доступ до Project K"
+        subheader="Залиште заявку, щоб отримати доступ до Лілейки"
         [style]="{ width: 'min(100%, 480px)' }"
       >
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">

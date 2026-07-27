@@ -4,7 +4,7 @@ import { getFirstSeededGroupMemberKey, getSeededGroupKey, getSeededKurinKey } fr
 import { describeRole } from './support/role-test';
 
 // The middle dot is the separator defined in page-title.format.ts.
-const APP_NAME = 'ProjectK';
+const APP_NAME = 'Лілейка';
 const PANEL_TITLE = new RegExp(`^Адміністрація · ${APP_NAME}$`);
 // Admin subpages carry their own name only — the "Адміністрація" prefix made titles
 // long enough to be truncated in the tab, hiding the part that distinguishes them.

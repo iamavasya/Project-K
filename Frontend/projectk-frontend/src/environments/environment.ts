@@ -6,6 +6,6 @@ export const environment = {
   version: 'v0.0.0-dev',
   codeName: 'LocalDevelopment',
   envName: runtimeConfig?.environmentName || 'Development',
-  appName: runtimeConfig?.appName || 'ProjectK',
+  appName: runtimeConfig?.appName || 'Лілейка',
   isF1TierBackend: false
 };

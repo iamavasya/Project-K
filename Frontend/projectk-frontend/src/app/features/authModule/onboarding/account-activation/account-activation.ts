@@ -130,7 +130,7 @@ export class AccountActivationComponent implements OnInit {
       next: () => {
         this.activated = true;
         this.submitting = false;
-        this.messageService.add({ severity: 'success', summary: 'Activated', detail: 'Welcome to ProjectK!' });
+        this.messageService.add({ severity: 'success', summary: 'Активовано', detail: 'Вітаємо в Лілейці!' });
         setTimeout(() => this.router.navigate(['/login']), 2000);
       },
       error: (err) => {

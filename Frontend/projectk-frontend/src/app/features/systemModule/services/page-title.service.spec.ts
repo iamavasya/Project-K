@@ -12,6 +12,9 @@ import { MemberService } from '../../kurinModule/common/services/member-service/
 import { KurinDto } from '../../kurinModule/common/models/kurinDto';
 import { GroupDto } from '../../kurinModule/common/models/groupDto';
 import { MemberDto } from '../../kurinModule/common/models/memberDto';
+import { environment } from '../../../../environments/environment';
+
+const APP_NAME = environment.appName;
 
 interface RouteLevel {
   params?: Record<string, string>;
@@ -67,13 +70,13 @@ describe('PageTitleService', () => {
   it('shows the app name alone for routes without a title', () => {
     service.applyRouteState(null, createState([{}]));
 
-    expect(currentTitle()).toBe('ProjectK');
+    expect(currentTitle()).toBe(APP_NAME);
   });
 
   it('appends the app name to a static route title', () => {
     service.applyRouteState('Користувачі', createState([{}]));
 
-    expect(currentTitle()).toBe('Користувачі · ProjectK');
+    expect(currentTitle()).toBe(`Користувачі · ${APP_NAME}`);
   });
 
   it('resolves the kurin number from the route param', () => {
@@ -85,7 +88,7 @@ describe('PageTitleService', () => {
     ]));
 
     expect(kurinService.getByKey).toHaveBeenCalledWith('k-1');
-    expect(currentTitle()).toBe('к. ч. 12 · ProjectK');
+    expect(currentTitle()).toBe(`к. ч. 12 · ${APP_NAME}`);
   });
 
   it('falls back to the signed-in kurin when the route carries no key', () => {
@@ -95,7 +98,7 @@ describe('PageTitleService', () => {
     service.applyRouteState('Курінь', createState([{}, { data: { titleContext: 'kurin' } }]));
 
     expect(kurinService.getByKey).toHaveBeenCalledWith('k-7');
-    expect(currentTitle()).toBe('к. ч. 7 · ProjectK');
+    expect(currentTitle()).toBe(`к. ч. 7 · ${APP_NAME}`);
   });
 
   it('resolves the group name', () => {
@@ -106,7 +109,7 @@ describe('PageTitleService', () => {
       { params: { groupKey: 'g-1' }, data: { titleContext: 'group' } }
     ]));
 
-    expect(currentTitle()).toBe('г. Соколи · ProjectK');
+    expect(currentTitle()).toBe(`г. Соколи · ${APP_NAME}`);
   });
 
   it('resolves the member as last name then first name', () => {
@@ -121,7 +124,7 @@ describe('PageTitleService', () => {
       { params: { memberKey: 'm-1' }, data: { titleContext: 'member' } }
     ]));
 
-    expect(currentTitle()).toBe('Муха Ростислав · ProjectK');
+    expect(currentTitle()).toBe(`Муха Ростислав · ${APP_NAME}`);
   });
 
   it('keeps the route title when the entity cannot be loaded', () => {
@@ -132,7 +135,7 @@ describe('PageTitleService', () => {
       { params: { memberKey: 'm-1' }, data: { titleContext: 'member' } }
     ]));
 
-    expect(currentTitle()).toBe('Картка учасника · ProjectK');
+    expect(currentTitle()).toBe(`Картка учасника · ${APP_NAME}`);
   });
 
   it('drops the previous entity when the next navigation lands', () => {
@@ -144,7 +147,7 @@ describe('PageTitleService', () => {
 
     service.applyRouteState('Адміністрація', createState([{}]));
 
-    expect(currentTitle()).toBe('Адміністрація · ProjectK');
+    expect(currentTitle()).toBe(`Адміністрація · ${APP_NAME}`);
   });
 
   it('ignores a resolve that lands after the user navigated away', () => {
@@ -159,14 +162,14 @@ describe('PageTitleService', () => {
     service.applyRouteState('Адміністрація', createState([{}]));
     slowGroup.next({ groupKey: 'g-1', name: 'Соколи' } as GroupDto);
 
-    expect(currentTitle()).toBe('Адміністрація · ProjectK');
+    expect(currentTitle()).toBe(`Адміністрація · ${APP_NAME}`);
   });
 
   it('lets a page publish its context directly', () => {
     service.applyRouteState('Гурток', createState([{}]));
     service.setContext('г. Беркути');
 
-    expect(currentTitle()).toBe('г. Беркути · ProjectK');
+    expect(currentTitle()).toBe(`г. Беркути · ${APP_NAME}`);
   });
 });
 
