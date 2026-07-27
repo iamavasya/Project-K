@@ -192,26 +192,19 @@ h1, h2, h3 {
   padding: 0.75rem 0.625rem;
 }
 
+/* Фон і колір пунктів живуть у navigation.item.* (lilyka-preset). PrimeNG фарбує
+   .p-panelmenu-*-content — обгортку над посиланням; якщо фарбувати ще й саме
+   посилання, на ховері видно два вкладені прямокутники різних відтінків. */
 :root .p-panelmenu.lil-menu .p-panelmenu-header-link,
 :root .p-panelmenu.lil-menu .p-panelmenu-item-link {
-  border-radius: var(--lil-radius);
-  color: var(--lil-ink-soft);
   font-size: 0.9375rem;
   font-weight: 600;
   gap: 0.75rem;
   min-height: 42px;
   padding: 0.6875rem 0.8125rem;
-  transition: background-color 120ms ease;
 }
 
-:root .p-panelmenu.lil-menu .p-panelmenu-header-link:hover,
-:root .p-panelmenu.lil-menu .p-panelmenu-item-link:hover {
-  background: var(--p-surface-ground);
-}
-
-:root .p-panelmenu.lil-menu .p-panelmenu-header-active > .p-panelmenu-header-link {
-  background: var(--p-primary-50);
-  color: var(--p-primary-color);
+:root .p-panelmenu.lil-menu .p-panelmenu-header-active .p-panelmenu-header-link {
   font-weight: 700;
 }
 

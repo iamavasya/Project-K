@@ -41,6 +41,20 @@ export const LilykaPreset = definePreset(Aura, {
           mutedColor: '{surface.600}',
           hoverMutedColor: '{surface.700}'
         },
+        navigation: {
+          item: {
+            color: '{surface.800}',
+            focusBackground: '{surface.50}',
+            focusColor: '{surface.900}',
+            activeBackground: '{primary.50}',
+            activeColor: '{primary.color}',
+            icon: {
+              color: '{surface.500}',
+              focusColor: '{surface.600}',
+              activeColor: '{primary.color}'
+            }
+          }
+        },
         surface: {
           0: '#ffffff',
           50: '#F7F9F8',
@@ -62,6 +76,20 @@ export const LilykaPreset = definePreset(Aura, {
           contrastColor: '#052018',
           hoverColor: '#4FD49E',
           activeColor: '#21A874'
+        },
+        navigation: {
+          item: {
+            color: '{surface.50}',
+            focusBackground: '#1D2320',
+            focusColor: '{surface.0}',
+            activeBackground: '#1D2E27',
+            activeColor: '{primary.color}',
+            icon: {
+              color: '{surface.400}',
+              focusColor: '{surface.200}',
+              activeColor: '{primary.color}'
+            }
+          }
         },
 
         surface: {
