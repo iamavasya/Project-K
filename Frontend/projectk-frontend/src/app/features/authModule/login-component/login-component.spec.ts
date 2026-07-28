@@ -16,7 +16,14 @@ describe('LoginComponent', () => {
   let messageService: jasmine.SpyObj<MessageService>;
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj('AuthService', ['login', 'verifyMfaLogin', 'getAuthStateValue']);
+    authService = jasmine.createSpyObj('AuthService', [
+      'login',
+      'verifyMfaLogin',
+      'getAuthStateValue',
+      'getSetupStatus'
+    ]);
+    // ngOnInit calls it on every fixture, so it has to emit before detectChanges.
+    authService.getSetupStatus.and.returnValue(of({ isInitialized: true }));
     router = jasmine.createSpyObj('Router', ['navigate']);
     messageService = jasmine.createSpyObj('MessageService', ['add']);
 
@@ -38,6 +45,22 @@ describe('LoginComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should send an uninitialized system to setup', () => {
+    authService.getSetupStatus.and.returnValue(of({ isInitialized: false }));
+
+    TestBed.createComponent(LoginComponent).detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/setup']);
+  });
+
+  it('should stay on login when the setup status cannot be read', () => {
+    authService.getSetupStatus.and.returnValue(throwError(() => new Error('offline')));
+
+    TestBed.createComponent(LoginComponent).detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('should submit credentials to auth service', () => {
