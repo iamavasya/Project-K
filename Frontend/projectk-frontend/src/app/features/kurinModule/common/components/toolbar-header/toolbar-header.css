@@ -1,5 +1,31 @@
+.toolbar-start {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+/* The breadcrumb rides inside the toolbar, so it drops its own panel chrome. */
+:host ::ng-deep .toolbar-breadcrumb .p-breadcrumb {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+:host ::ng-deep .toolbar-breadcrumb .p-breadcrumb-item-label {
+  font-size: 0.8125rem;
+}
+
+/* Below this the burger and the actions already fill the bar. */
+@media (max-width: 768px) {
+  .toolbar-breadcrumb {
+    display: none;
+  }
 }

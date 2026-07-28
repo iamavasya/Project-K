@@ -125,6 +125,7 @@ export class SidebarMenu implements OnChanges {
       items.push(
         {
           label: 'Курінь',
+          icon: 'pi pi-flag',
           routerLink: ['/kurin'],
           command: () => {
             this.close();
@@ -135,8 +136,9 @@ export class SidebarMenu implements OnChanges {
       );
 
       if (canManageMembers) {
-        items.push({ 
+        items.push({
           label: 'Планування',
+          icon: 'pi pi-calendar',
           routerLink: ['/planning', kurinKey],
           command: () => {
             this.close();
@@ -145,14 +147,13 @@ export class SidebarMenu implements OnChanges {
         });
       }
 
-      items.push(
-        { label: 'Гуртки', disabled: true },
-        { label: 'Всі учасники', disabled: true }
-      );
+      // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
+      // сторінки, разом із іконками pi-sitemap і pi-address-book.
 
       if (canReviewSkills) {
         items.push({
           label: 'Модерація вмілостей',
+          icon: 'pi pi-verified',
           routerLink: ['/kurin', kurinKey, 'review', 'skills'],
           command: () => {
             this.close();
@@ -208,7 +209,7 @@ export class SidebarMenu implements OnChanges {
 
     items.push({
       label: 'Налаштування акаунта',
-      icon: 'pi pi-cog',
+      icon: 'pi pi-shield',
       routerLink: ['/settings/account'],
       command: () => {
         this.close();

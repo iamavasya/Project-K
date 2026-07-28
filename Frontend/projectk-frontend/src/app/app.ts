@@ -2,7 +2,6 @@ import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/co
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BreadcrumbComponent } from './features/kurinModule/common/components/breadcrumb/breadcrumb';
 import { ToolbarHeader } from "./features/kurinModule/common/components/toolbar-header/toolbar-header";
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
 import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog.component';
@@ -11,7 +10,7 @@ import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BreadcrumbComponent, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
+  imports: [RouterOutlet, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

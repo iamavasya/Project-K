@@ -12,10 +12,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { NotificationBell } from '../../../../notifications/components/notification-bell/notification-bell';
 import { ThemeService } from '../../../../systemModule/services/theme.service';
+import { BreadcrumbComponent } from '../breadcrumb/breadcrumb';
 
 @Component({
   selector: 'app-toolbar-header',
-  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu, NotificationBell, TooltipModule],
+  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu, NotificationBell, TooltipModule, BreadcrumbComponent],
   templateUrl: './toolbar-header.html',
   styleUrl: './toolbar-header.css',
 })

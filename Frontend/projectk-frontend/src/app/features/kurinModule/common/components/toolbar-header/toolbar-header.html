@@ -2,8 +2,9 @@
     @if (state.accessToken) {
     <p-toolbar>
         <ng-template #start>
-            <div class="flex items-center gap-2">
+            <div class="toolbar-start">
                 <p-button icon="pi pi-bars" (onClick)="toggleSidebar()" text severity="secondary" />
+                <app-breadcrumb class="toolbar-breadcrumb" />
             </div>
         </ng-template>
 
@@ -16,9 +17,8 @@
                     [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
                     [attr.aria-label]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
                     [pTooltip]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
-                    tooltipPosition="bottom"
+                    tooltipPosition="bottom"
                     text
-                    rounded
                     severity="secondary"
                     (onClick)="themeService.toggle()" />
                 @if (state.accessToken) {
