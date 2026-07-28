@@ -31,26 +31,35 @@ export class EntityGuard implements CanActivate {
                 }
             }),
             catchError((error: unknown) => {
-                if (error instanceof HttpErrorResponse && error.status === 403) {
-                    const errorBody = error.error;
-                    const message = errorBody
-                        ? (typeof errorBody === 'string'
-                            ? errorBody
-                            : (errorBody.message || errorBody.Message || errorBody.detail || errorBody.title))
-                        : null;
-
-                    const isMfaError = typeof message === 'string' && message.toLowerCase().includes('mfa is required');
-
-                    if (!isMfaError) {
-                        this.router.navigate(['/forbidden']);
-                        return of(false);
-                    }
+                if (error instanceof HttpErrorResponse && this.isMfaChallenge(error)) {
+                    // MFA is resolved by its own dialog; blocking here would hide it.
+                    return of(true);
                 }
 
-                // Do not hard-block navigation on transport/transient or MFA errors.
-                return of(true);
+                // status 0 is the browser's "never reached the server" (offline, CORS,
+                // timeout). Anything else is an answer from the server, and an answer we
+                // cannot read as "allowed" must not open the page.
+                if (error instanceof HttpErrorResponse && error.status === 0) {
+                    return of(true);
+                }
+
+                this.router.navigate(['/forbidden']);
+                return of(false);
             })
         );
+    }
+
+    private isMfaChallenge(error: HttpErrorResponse): boolean {
+        if (error.status !== 403) {
+            return false;
+        }
+
+        const body = error.error;
+        const message = typeof body === 'string'
+            ? body
+            : (body?.message || body?.Message || body?.detail || body?.title);
+
+        return typeof message === 'string' && message.toLowerCase().includes('mfa is required');
     }
 
     private resolveEntityType(route: ActivatedRouteSnapshot): string | null {
