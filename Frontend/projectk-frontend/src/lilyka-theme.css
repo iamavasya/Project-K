@@ -71,6 +71,8 @@
   --lil-surface:  #F7F9F8;
   --lil-paper:    #FFFFFF;
   --lil-cream:    #FBF8F1;
+  /* Світла підкладка під захищену чорну графіку — не темніє в темній темі, §7. */
+  --lil-plate:    #F7F9F8;
 
   --lil-radius:    8px;
   --lil-radius-lg: 12px;

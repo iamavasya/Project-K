@@ -77,7 +77,9 @@
   margin: 1.25rem 0 0;
 }
 
-.hero-copy span {
+/* Тільки h3: .made-by-banner теж лежить у .hero-copy, і ширший селектор
+   фарбував терракотою ще й його текст — три плями замість однієї (BRANDBOOK §2). */
+.hero-copy h3 span {
   color: var(--lil-clay-500);
 }
 
@@ -111,12 +113,14 @@
 }
 
 .made-by-banner .pi {
-  color: var(--lil-clay-500);
+  color: var(--p-primary-color);
 }
 
+/* Підкладка світла в обох темах: графіка чорна лінійна, на темному тлі її не видно.
+   BRANDBOOK §7. */
 .hero-image {
   align-items: center;
-  background: var(--p-surface-ground);
+  background: var(--lil-plate);
   border-radius: 14px;
   display: inline-flex;
   max-width: 38rem;
@@ -274,6 +278,10 @@
     flex: 1.5 1 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+:host-context(:root[data-theme="dark"]) .hero-image {
+  border-radius: 16px;
 }
 
 @media (max-width: 640px) {
