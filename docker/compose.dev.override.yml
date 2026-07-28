@@ -26,6 +26,10 @@ services:
       - --project
       - ProjectK.API/ProjectK.API.csproj
       - --non-interactive
+      # Without this, launchSettings.json wins and pins the app to Development,
+      # silently overriding ASPNETCORE_ENVIRONMENT from compose — which turns the
+      # E2E-only endpoints off and leaves appsettings.<env>.json unloaded.
+      - --no-launch-profile
       - --
       - --urls
       - http://+:8080
