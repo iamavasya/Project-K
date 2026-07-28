@@ -55,6 +55,30 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         }
 
         [Fact]
+        public async Task Handle_ShouldClearActiveKurinScope()
+        {
+            var userKey = Guid.NewGuid().ToString();
+            var user = new AppUser
+            {
+                Id = Guid.Parse(userKey),
+                Email = "admin@projectk.com",
+                FirstName = "System",
+                LastName = "Admin",
+                RefreshToken = "existing-refresh-token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
+                ActiveKurinKey = Guid.NewGuid()
+            };
+
+            _userManagerMock.Setup(x => x.FindByIdAsync(userKey)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var result = await _handler.Handle(new LogoutUserCommand(userKey), CancellationToken.None);
+
+            Assert.Equal(ResultType.Success, result.Type);
+            Assert.Null(user.ActiveKurinKey);
+        }
+
+        [Fact]
         public async Task Handle_ShouldReturnUnauthorized_WhenUserKeyIsNull()
         {
             // Arrange

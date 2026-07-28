@@ -39,6 +39,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             }
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
+            // Otherwise the next sign-in lands the admin inside the kurin they last
+            // stepped into, and /panel bounces them straight back out of it.
+            user.ActiveKurinKey = null;
             await _userManager.UpdateAsync(user);
             return new(
                 ResultType.Success,
