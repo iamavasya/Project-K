@@ -37,7 +37,7 @@ describeRole('admin', 'Admin CRUD operations', () => {
     
     // Fill the dialog
     await page.getByLabel('Заголовок').fill(title);
-    await page.getByLabel('Текст').fill('This is a test announcement created by E2E test.');
+    await page.getByLabel('Текст допису').fill('This is a test announcement created by E2E test.');
     await page.getByRole('button', { name: 'Зберегти' }).click();
 
     // Wait for it to appear in the table
