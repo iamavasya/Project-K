@@ -365,7 +365,24 @@ providePrimeNG({
 })
 ```
 
-Окремі класи, які додає `lilyka-theme.css`: `.lil-wordmark` (логотип) · `.lil-sidebar-brand` (шапка сайдбара) · `.lil-empty`, `.lil-empty__art`, `.lil-empty__title`, `.lil-empty__body`, `.lil-empty__accent`, `.lil-empty__dash` (порожній стан). Плюс перевизначення `.kurin-tile`, `.p-toolbar`, `.project-table`, `.p-tag`, `.p-panelmenu.lil-menu`.
+Окремі класи, які додає `lilyka-theme.css`: `.lil-wordmark` (логотип) · `.lil-sidebar-brand` (шапка сайдбара) · `.lil-empty`, `.lil-empty__art`, `.lil-empty__title`, `.lil-empty__body`, `.lil-empty__accent`, `.lil-empty__dash` (порожній стан). Плюс перевизначення `.kurin-tile`, `.project-table`, а також `:root .p-toolbar`, `:root .p-tag`, `:root .p-panelmenu.lil-menu`.
+
+### Порожній стан у коді
+
+Розмітку `.lil-empty` руками не писати — є `app-empty-state` (`src/app/shared/empty-state/`):
+
+```html
+<app-empty-state art="list" title="Тут ще нікого немає"
+                 body="Додай першого юнака — і реєстр почне жити.">
+  <p-button label="Додати учасника" icon="pi pi-plus" (onClick)="create()" />
+</app-empty-state>
+```
+
+`art` — `trail` (типово), `list`, `calendar`. Дія проєктується через `ng-content`: якщо прав немає, просто не передавай нічого. Текст брати з каталогу §6.
+
+**Якщо та сама дія вже є в шапці списку — сховати її, поки список порожній.** Інакше на екрані дві однакові primary-кнопки, що суперечить §5.
+
+Кольори пунктів меню живуть у `navigation.item.*` у preset, а не в CSS: PrimeNG фарбує обгортку `.p-panelmenu-*-content`, тож правило на вкладене посилання дає два накладені прямокутники на ховері.
 
 ---
 
