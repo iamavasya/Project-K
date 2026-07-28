@@ -12,8 +12,8 @@
   height: 1.1rem;
   padding: 0 0.25rem;
   border-radius: 999px;
-  background: #dc2626;
-  color: #fff;
+  background: var(--p-red-600);
+  color: var(--p-surface-0);
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.1rem;
@@ -85,23 +85,23 @@
   height: 0.45rem;
   margin-top: 0.35rem;
   border-radius: 999px;
-  background: #64748b;
+  background: var(--p-text-muted-color);
 }
 
 .notification-row--success .notification-row__status {
-  background: #16a34a;
+  background: var(--p-green-600);
 }
 
 .notification-row--warn .notification-row__status {
-  background: #d97706;
+  background: var(--lil-clay-500);
 }
 
 .notification-row--error .notification-row__status {
-  background: #dc2626;
+  background: var(--p-red-600);
 }
 
 .notification-row--read .notification-row__status {
-  background: #cbd5e1;
+  background: var(--p-surface-300);
 }
 
 .notification-row__content {

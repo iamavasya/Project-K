@@ -15,7 +15,7 @@
     justify-content: center;
     flex: 0 0 auto;
     border-radius: 9999px;
-    color: #fff;
+    color: var(--p-primary-contrast-color);
     font-size: var(--profile-verification-badge-icon-size);
     line-height: 1;
     box-shadow: 0 0 0 2px var(--profile-verification-badge-ring-color);
@@ -23,7 +23,7 @@
 
 .profile-verification-badge--current {
     background: var(--p-primary-color);
-    border: 1px solid color-mix(in srgb, var(--p-primary-color) 86%, #fff 14%);
+    border: 1px solid color-mix(in srgb, var(--p-primary-color) 86%, var(--p-surface-0) 14%);
 }
 
 .profile-verification-badge--stale {

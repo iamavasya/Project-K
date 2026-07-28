@@ -55,5 +55,5 @@
 }
 
 .warning-hint {
-    color: #6b7280;
+    color: var(--p-text-muted-color);
 }

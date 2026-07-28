@@ -1,29 +1,30 @@
+/* Terracotta, not pink: BRANDBOOK §2 allows one warm accent and no third colour, and
+   §4 keeps shadows to modals. This tile is the one terracotta spot on the group page. */
 .birthdays-tile {
-    border: 1px solid color-mix(in srgb, #f472b6 36%, var(--p-content-border-color));
-    background: linear-gradient(140deg, #fff1f7 0%, #ffe7f2 56%, #ffe1ee 100%);
-    box-shadow: 0 12px 28px -20px color-mix(in srgb, #ec4899 40%, transparent);
+    border: 1px solid var(--lil-clay-100);
+    background: var(--lil-clay-50);
 }
 
 .birthday-icon-shell {
-    color: #db2777;
-    background: color-mix(in srgb, #f9a8d4 44%, white);
-    border: 1px solid color-mix(in srgb, #ec4899 38%, transparent);
+    color: var(--lil-clay-700);
+    background: var(--p-content-background);
+    border: 1px solid var(--lil-clay-100);
 }
 
 .birthdays-title {
-    color: color-mix(in srgb, #831843 88%, var(--p-text-color));
+    color: var(--lil-clay-700);
 }
 
 .birthday-row {
-    border: 1px solid color-mix(in srgb, #ec4899 20%, transparent);
-    background: color-mix(in srgb, white 74%, #fbcfe8 26%);
+    border: 1px solid var(--lil-clay-100);
+    background: var(--p-content-background);
 }
 
 .birthday-name {
-    color: color-mix(in srgb, #831843 75%, var(--p-text-color));
+    color: var(--p-text-color);
 }
 
 .birthday-date,
 .birthdays-note {
-    color: color-mix(in srgb, #9d174d 65%, var(--p-text-muted-color));
+    color: var(--p-text-muted-color);
 }

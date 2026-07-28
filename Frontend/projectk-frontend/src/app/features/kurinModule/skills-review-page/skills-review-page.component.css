@@ -18,7 +18,7 @@
 
 .skills-review-page__subtitle {
   margin: 0.25rem 0 0;
-  color: #475569;
+  color: var(--p-text-muted-color);
 }
 
 .skills-review-page__header-actions {
@@ -66,8 +66,8 @@
   place-items: center;
   font-weight: 700;
   font-size: 0.85rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
 }
 
 .review-member__name {
@@ -85,18 +85,18 @@
   height: 2rem;
   border-radius: 0.5rem;
   object-fit: cover;
-  background: #f8fafc;
+  background: var(--p-surface-ground);
 }
 
 .skills-review-dialog__text {
   margin: 0;
-  color: #1f2937;
+  color: var(--p-text-color);
 }
 
 .skills-review-dialog__note-label {
   display: inline-block;
   margin-bottom: 0.25rem;
-  color: #64748b;
+  color: var(--p-text-muted-color);
 }
 
 :host ::ng-deep .skills-review-table .p-datatable-table {

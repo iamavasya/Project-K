@@ -1,6 +1,8 @@
+/* Stands in until a group emblem is uploaded, so it is drawn as an empty state:
+   1px dashed on the line token (BRANDBOOK §4). Solid black vanished in the dark theme. */
 .group-chevron {
     width: 10rem;
     height: 10rem;
-    border: 0.5rem solid black;
+    border: 1px dashed var(--p-content-border-color);
     border-radius: 100%;
 }

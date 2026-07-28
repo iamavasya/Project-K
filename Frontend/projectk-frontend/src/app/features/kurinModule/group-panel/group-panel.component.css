@@ -43,7 +43,9 @@
     height: 10rem;
     border-radius: 999px;
     object-fit: contain;
-    background: transparent;
+    /* The outline is baked into the uploaded image in a dark ink, so the disc stays
+       light in both themes — same reasoning as the hero illustration, BRANDBOOK §7. */
+    background: var(--lil-plate);
 }
 
 .group-hero__copy {

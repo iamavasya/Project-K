@@ -33,7 +33,8 @@
 .mfa-qr {
   align-items: center;
   align-self: center;
-  background: #fff;
+  /* Light in both themes: the QR is dark-on-light and must stay scannable. */
+  background: var(--lil-plate);
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
   display: flex;
