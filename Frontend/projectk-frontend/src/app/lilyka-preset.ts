@@ -41,6 +41,10 @@ export const LilykaPreset = definePreset(Aura, {
           mutedColor: '{surface.600}',
           hoverMutedColor: '{surface.700}'
         },
+        // Aura types into {surface.700}; BRANDBOOK §2 wants ink for entered text.
+        formField: {
+          color: '{surface.900}'
+        },
         navigation: {
           item: {
             color: '{surface.800}',

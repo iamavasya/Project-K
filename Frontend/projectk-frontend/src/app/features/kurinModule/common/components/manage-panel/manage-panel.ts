@@ -3,6 +3,7 @@ import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryLis
 import { DialogModule } from 'primeng/dialog';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -30,7 +31,7 @@ export interface ManagePanelConfig {
 
 @Component({
   selector: 'app-manage-panel',
-  imports: [DialogModule, CommonModule, InputTextModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
+  imports: [DialogModule, CommonModule, InputTextModule, TextareaModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
   templateUrl: './manage-panel.html',
   styleUrl: './manage-panel.css'
 })

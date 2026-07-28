@@ -8,7 +8,7 @@
   [header]="header() | titlecase">
 
   @if (isDeleteMode()) {
-    <div style="padding: .5rem 0 1rem;">
+    <div class="delete-confirm">
       <p>
         Ви впевнені, що хочете видалити
         <strong>{{ config.entityType | titlecase }}</strong>
@@ -17,10 +17,10 @@
         }
         ?
       </p>
-      <p style="font-size: .8rem; opacity: .65;">Цю дію неможливо скасувати.</p>
+      <p class="delete-confirm__warning">Цю дію неможливо скасувати.</p>
     </div>
     <div class="actions">
-      <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
+      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
       <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()"></p-button>
     </div>
   } @else {
@@ -29,7 +29,7 @@
         @for (f of config.fields; track f) {
           @if (!isHidden(f)) {
             <div class="field">
-              <span>{{ f.label }} @if (f.required) {
+              <span class="field-label">{{ f.label }} @if (f.required) {
                 <span class="req">*</span>
               }</span>
               @switch (f.type) {
@@ -51,7 +51,7 @@
                 @case ('textarea') {
                   <textarea
                     #autoField
-                    pInputText
+                    pTextarea
                     rows="3"
                     [placeholder]="f.placeholder"
                   [formControlName]="f.name"></textarea>
@@ -66,12 +66,12 @@
           }
         }
         @if (visibleFields().length === 0) {
-          <div style="opacity:.6; font-size:.8rem;">
+          <div class="empty-fields-note">
             Немає полів для цієї дії.
           </div>
         }
         <div class="actions">
-          <p-button label="Скасувати" class="p-button-text" (onClick)="hide()"></p-button>
+          <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
           <p-button
             type="submit"
             [label]="actionLabel()"
