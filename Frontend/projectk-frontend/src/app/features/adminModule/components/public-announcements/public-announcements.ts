@@ -74,32 +74,32 @@ export class PublicAnnouncementsComponent implements OnInit {
   selectedStatus: PublicAnnouncementStatus | null = null;
 
   readonly statusOptions: Option<PublicAnnouncementStatus | null>[] = [
-    { label: 'All', value: null },
-    { label: 'Draft', value: 'Draft' },
-    { label: 'Pending', value: 'PendingApproval' },
-    { label: 'Approved', value: 'Approved' },
-    { label: 'Failed', value: 'Failed' },
-    { label: 'Published', value: 'Published' },
-    { label: 'Rejected', value: 'Rejected' }
+    { label: 'Усі', value: null },
+    { label: 'Чернетка', value: 'Draft' },
+    { label: 'На розгляді', value: 'PendingApproval' },
+    { label: 'Схвалено', value: 'Approved' },
+    { label: 'Помилка', value: 'Failed' },
+    { label: 'Опубліковано', value: 'Published' },
+    { label: 'Відхилено', value: 'Rejected' }
   ];
 
   readonly parseModeOptions: Option<PublicAnnouncementParseMode>[] = [
-    { label: 'Plain text', value: 'PlainText' },
+    { label: 'Звичайний текст', value: 'PlainText' },
     { label: 'HTML', value: 'Html' },
     { label: 'MarkdownV2', value: 'MarkdownV2' }
   ];
 
   readonly imagePlacementOptions: Option<PublicAnnouncementImagePlacement>[] = [
-    { label: 'Image above text', value: 'ImageFirst' },
-    { label: 'Image below text', value: 'ImageLast' }
+    { label: 'Зображення над текстом', value: 'ImageFirst' },
+    { label: 'Зображення під текстом', value: 'ImageLast' }
   ];
 
   readonly sourceTypeOptions: Option<PublicAnnouncementSourceType>[] = [
-    { label: 'Manual', value: 'Manual' },
+    { label: 'Вручну', value: 'Manual' },
     { label: 'Backend', value: 'Backend' },
-    { label: 'GitHub release', value: 'GitHubRelease' },
-    { label: 'GitHub workflow', value: 'GitHubWorkflow' },
-    { label: 'Health monitor', value: 'HealthMonitor' }
+    { label: 'Реліз GitHub', value: 'GitHubRelease' },
+    { label: 'Workflow GitHub', value: 'GitHubWorkflow' },
+    { label: 'Моніторинг стану', value: 'HealthMonitor' }
   ];
 
   form: PublicAnnouncementDraftRequest = this.createEmptyForm();
@@ -118,7 +118,7 @@ export class PublicAnnouncementsComponent implements OnInit {
       },
       error: error => {
         this.loading = false;
-        this.showHttpError('Load failed', error, 'Could not load announcements.');
+        this.showHttpError('Не вдалося завантажити', error, 'Оголошення не завантажились.');
       }
     });
   }
@@ -132,7 +132,7 @@ export class PublicAnnouncementsComponent implements OnInit {
       },
       error: error => {
         this.loadingCleanupStatus = false;
-        this.showHttpError('Cleanup status failed', error, 'Could not load cleanup status.');
+        this.showHttpError('Не вдалося завантажити', error, 'Стан прибирання не завантажився.');
       }
     });
   }
@@ -170,7 +170,7 @@ export class PublicAnnouncementsComponent implements OnInit {
 
   saveDraft(): void {
     if (!this.form.title.trim() || !this.form.body.trim()) {
-      this.messageService.add({ severity: 'warn', summary: 'Missing content', detail: 'Title and body are required.' });
+      this.messageService.add({ severity: 'warn', summary: 'Бракує вмісту', detail: 'Заголовок і текст обовʼязкові.' });
       return;
     }
 
@@ -185,14 +185,14 @@ export class PublicAnnouncementsComponent implements OnInit {
         this.selectedDraft = draft;
         this.saving = false;
         this.editorVisible = true;
-        this.messageService.add({ severity: 'success', summary: 'Saved', detail: 'Announcement draft saved.' });
+        this.messageService.add({ severity: 'success', summary: 'Збережено', detail: 'Чернетку збережено.' });
         this.loadPreview(draft.publicAnnouncementDraftKey);
         this.loadDrafts();
         this.loadCleanupStatus();
       },
       error: error => {
         this.saving = false;
-        this.showHttpError('Save failed', error, 'Could not save draft.');
+        this.showHttpError('Не вдалося зберегти', error, 'Чернетку не збережено.');
       }
     });
   }
@@ -205,7 +205,7 @@ export class PublicAnnouncementsComponent implements OnInit {
 
     this.announcementService.previewDraft(draftKey).subscribe({
       next: preview => this.preview = preview,
-      error: error => this.showHttpError('Preview failed', error, 'Could not render Telegram preview.')
+      error: error => this.showHttpError('Не вдалося показати', error, 'Перегляд у Telegram не сформувався.')
     });
   }
 
@@ -219,12 +219,12 @@ export class PublicAnnouncementsComponent implements OnInit {
     }
 
     if (!file.type.startsWith('image/')) {
-      this.messageService.add({ severity: 'warn', summary: 'Invalid file', detail: 'Only image files can be uploaded.' });
+      this.messageService.add({ severity: 'warn', summary: 'Непідтримуваний файл', detail: 'Завантажити можна лише зображення.' });
       return;
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      this.messageService.add({ severity: 'warn', summary: 'Image too large', detail: 'Image must be 8 MB or smaller.' });
+      this.messageService.add({ severity: 'warn', summary: 'Завелике зображення', detail: 'Розмір має бути до 8 МБ.' });
       return;
     }
 
@@ -234,12 +234,12 @@ export class PublicAnnouncementsComponent implements OnInit {
         this.uploadingImage = false;
         this.form.imageUrl = result.imageUrl;
         this.form.imageBlobKey = result.imageBlobKey;
-        this.messageService.add({ severity: 'success', summary: 'Uploaded', detail: 'Image URL attached to the draft.' });
+        this.messageService.add({ severity: 'success', summary: 'Завантажено', detail: 'Посилання на зображення додано до чернетки.' });
         this.loadCleanupStatus();
       },
       error: error => {
         this.uploadingImage = false;
-        this.showHttpError('Upload failed', error, 'Could not upload image.');
+        this.showHttpError('Не вдалося завантажити', error, 'Зображення не завантажилось.');
       }
     });
   }
@@ -252,29 +252,29 @@ export class PublicAnnouncementsComponent implements OnInit {
     if (imageKey) {
       this.announcementService.deleteImage(imageKey).subscribe({
         next: () => this.loadCleanupStatus(),
-        error: error => this.showHttpError('Image cleanup failed', error, 'Could not delete uploaded image.')
+        error: error => this.showHttpError('Не вдалося прибрати', error, 'Завантажене зображення не видалилось.')
       });
     }
   }
 
   submit(draft: PublicAnnouncementDraft): void {
-    this.runDraftAction('Submit for approval?', 'Submit', () => this.announcementService.submitDraft(draft.publicAnnouncementDraftKey));
+    this.runDraftAction('Подати на розгляд?', 'Подати', () => this.announcementService.submitDraft(draft.publicAnnouncementDraftKey));
   }
 
   approve(draft: PublicAnnouncementDraft): void {
-    this.runDraftAction('Approve this announcement?', 'Approve', () => this.announcementService.approveDraft(draft.publicAnnouncementDraftKey));
+    this.runDraftAction('Схвалити це оголошення?', 'Схвалити', () => this.announcementService.approveDraft(draft.publicAnnouncementDraftKey));
   }
 
   reject(draft: PublicAnnouncementDraft): void {
-    this.runDraftAction('Reject this announcement?', 'Reject', () => this.announcementService.rejectDraft(draft.publicAnnouncementDraftKey), 'warn');
+    this.runDraftAction('Відхилити це оголошення?', 'Відхилити', () => this.announcementService.rejectDraft(draft.publicAnnouncementDraftKey), 'warn');
   }
 
   publish(draft: PublicAnnouncementDraft): void {
-    this.runDraftAction('Publish this announcement to Telegram now?', 'Publish', () => this.announcementService.publishDraft(draft.publicAnnouncementDraftKey), 'success');
+    this.runDraftAction('Опублікувати оголошення в Telegram зараз?', 'Опублікувати', () => this.announcementService.publishDraft(draft.publicAnnouncementDraftKey), 'success');
   }
 
   delete(draft: PublicAnnouncementDraft): void {
-    this.runDraftAction('Delete this announcement draft?', 'Delete', () => this.announcementService.deleteDraft(draft.publicAnnouncementDraftKey), 'danger');
+    this.runDraftAction('Видалити цю чернетку?', 'Видалити', () => this.announcementService.deleteDraft(draft.publicAnnouncementDraftKey), 'danger');
   }
 
   canSubmit(draft: PublicAnnouncementDraft): boolean {
@@ -291,10 +291,10 @@ export class PublicAnnouncementsComponent implements OnInit {
 
   getPublishTooltip(draft: PublicAnnouncementDraft): string {
     if (draft.telegramMessageId) {
-      return 'Already has Telegram message id';
+      return 'Уже має id повідомлення в Telegram';
     }
 
-    return 'Publish';
+    return 'Опублікувати';
   }
 
   hasUploadedImage(): boolean {
@@ -383,7 +383,7 @@ export class PublicAnnouncementsComponent implements OnInit {
       accept: () => {
         action().subscribe({
           next: draft => {
-            this.messageService.add({ severity, summary: actionLabel, detail: `Announcement is ${draft.status}.` });
+            this.messageService.add({ severity, summary: actionLabel, detail: `Статус оголошення: ${draft.status}.` });
             this.loadDrafts();
             this.loadCleanupStatus();
             if (this.selectedDraft?.publicAnnouncementDraftKey === draft.publicAnnouncementDraftKey) {
@@ -393,7 +393,7 @@ export class PublicAnnouncementsComponent implements OnInit {
             }
           },
           error: error => {
-            this.showHttpError(`${actionLabel} failed`, error, 'Action failed.');
+            this.showHttpError(`Не вдалося: ${actionLabel.toLowerCase()}`, error, 'Дію не виконано.');
           }
         });
       }

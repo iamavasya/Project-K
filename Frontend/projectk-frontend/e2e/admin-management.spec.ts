@@ -8,7 +8,7 @@ describeRole('admin', 'Admin management surfaces', () => {
     await page.goto('/panel');
     await expect(page.getByRole('heading', { name: 'Адміністрація' })).toBeVisible();
 
-    await page.getByRole('button', { name: /Create/ }).click();
+    await page.getByRole('button', { name: /Створити/ }).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeDisabled();
     await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`, `e2e.manager.${Date.now()}@example.com`]);
@@ -58,8 +58,8 @@ describeRole('admin', 'Admin management surfaces', () => {
     const firstRow = page.locator('tbody tr').first();
     await expect(firstRow).toBeVisible();
     const rowText = await firstRow.textContent();
-    if (rowText?.includes('No waitlist entries found.')) {
-      await expect(firstRow).toContainText('No waitlist entries found.');
+    if (rowText?.includes('Заявок немає')) {
+      await expect(firstRow).toContainText('Заявок немає');
     } else {
       await expect(firstRow.locator('td').nth(5)).toBeVisible();
       await expect(firstRow.locator('td').last()).toBeVisible();

@@ -33,19 +33,19 @@ describeRole('admin', 'Admin CRUD operations', () => {
     const editedTitle = `E2E Test Announcement Edited ${suffix}`;
     
     // 1. Create new draft
-    await page.getByRole('button', { name: 'New draft' }).click();
+    await page.getByRole('button', { name: 'Нова чернетка' }).click();
     
     // Fill the dialog
-    await page.getByLabel('Title').fill(title);
-    await page.getByLabel('Body').fill('This is a test announcement created by E2E test.');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByLabel('Заголовок').fill(title);
+    await page.getByLabel('Текст').fill('This is a test announcement created by E2E test.');
+    await page.getByRole('button', { name: 'Зберегти' }).click();
 
     // Wait for it to appear in the table
     const row = page.locator('tr', { hasText: title }).first();
     await expect(row).toBeVisible();
 
     // Close the dialog using the Close button after the async save refresh has finished.
-    await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Закрити' }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // 2. Edit draft
@@ -55,20 +55,20 @@ describeRole('admin', 'Admin CRUD operations', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     
-    await dialog.getByLabel('Title').fill(editedTitle);
-    await dialog.getByRole('button', { name: 'Save' }).click();
+    await dialog.getByLabel('Заголовок').fill(editedTitle);
+    await dialog.getByRole('button', { name: 'Зберегти' }).click();
 
     const editedRow = page.locator('tr', { hasText: editedTitle }).first();
     await expect(editedRow).toBeVisible();
     
     // Close the dialog
-    await dialog.getByRole('button', { name: 'Close' }).click();
+    await dialog.getByRole('button', { name: 'Закрити' }).click();
     await expect(dialog).toBeHidden();
 
     // 3. Delete draft
     await editedRow.locator('.pi-trash').click();
     // Confirm deletion
-    const confirmButton = page.getByRole('alertdialog', { name: 'Delete' }).getByRole('button', { name: 'Yes' });
+    const confirmButton = page.getByRole('alertdialog', { name: 'Видалити' }).getByRole('button', { name: 'Так' });
     await expect(confirmButton).toBeVisible();
     await confirmButton.click();
     
