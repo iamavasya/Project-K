@@ -63,7 +63,7 @@ test.describe('Full onboarding organization workflow', () => {
     await test.step('admin sees and approves the waitlist entry', async () => {
       await loginThroughUi(page, e2eUsers.admin);
       await page.goto('/waitlist');
-      await expect(page.getByRole('heading', { name: 'Waitlist Management' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Заявки на приєднання' })).toBeVisible();
       await approveWaitlistEntryByEmail(request, e2eUsers.admin, managerEmail);
     });
 

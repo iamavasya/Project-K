@@ -4,47 +4,47 @@
 <section class="announcements-page">
   <header class="page-header">
     <div>
-      <h2>Public announcements</h2>
-      <p>Draft, preview, approve, and publish Telegram channel updates.</p>
+      <h2>Публічні оголошення</h2>
+      <p>Чернетка, перегляд, схвалення й публікація дописів у Telegram-каналі.</p>
     </div>
-    <p-button label="New draft" icon="pi pi-plus" (onClick)="newDraft()"></p-button>
+    <p-button label="Нова чернетка" icon="pi pi-plus" (onClick)="newDraft()"></p-button>
   </header>
 
   <div class="toolbar-row">
     @if (cleanupStatus) {
       <div class="cleanup-status">
-        <span>Images {{ cleanupStatus.referencedLocalImages }}/{{ cleanupStatus.totalLocalImages }}</span>
+        <span>Зображення {{ cleanupStatus.referencedLocalImages }}/{{ cleanupStatus.totalLocalImages }}</span>
         @if (cleanupStatus.eligibleForDeletion > 0) {
-          <p-tag severity="warn" [value]="cleanupStatus.eligibleForDeletion + ' cleanup ready'"></p-tag>
+          <p-tag severity="warn" [value]="cleanupStatus.eligibleForDeletion + ' до прибирання'"></p-tag>
         } @else {
-          <p-tag severity="success" value="clean"></p-tag>
+          <p-tag severity="success" value="чисто"></p-tag>
         }
         @if (cleanupStatus.dryRun) {
-          <p-tag severity="info" value="dry run"></p-tag>
+          <p-tag severity="info" value="пробний запуск"></p-tag>
         }
       </div>
     }
-    <p-button icon="pi pi-database" severity="secondary" text [loading]="loadingCleanupStatus" (onClick)="loadCleanupStatus()" pTooltip="Refresh cleanup status"></p-button>
+    <p-button icon="pi pi-database" severity="secondary" text [loading]="loadingCleanupStatus" (onClick)="loadCleanupStatus()" pTooltip="Оновити стан прибирання"></p-button>
     <p-select
       [options]="statusOptions"
       [(ngModel)]="selectedStatus"
       optionLabel="label"
       optionValue="value"
       (onChange)="loadDrafts()"
-      placeholder="Status"
+      placeholder="Статус"
       appendTo="body">
     </p-select>
-    <p-button icon="pi pi-refresh" severity="secondary" text (onClick)="loadDrafts()" pTooltip="Refresh"></p-button>
+    <p-button icon="pi pi-refresh" severity="secondary" text (onClick)="loadDrafts()" pTooltip="Оновити"></p-button>
   </div>
 
   <p-table [value]="drafts" [loading]="loading" styleClass="project-table" [responsiveLayout]="'scroll'">
     <ng-template pTemplate="header">
       <tr>
-        <th>Announcement</th>
-        <th>Status</th>
-        <th>Source</th>
-        <th>Updated</th>
-        <th class="actions-column">Actions</th>
+        <th>Оголошення</th>
+        <th>Статус</th>
+        <th>Джерело</th>
+        <th>Оновлено</th>
+        <th class="actions-column">Дії</th>
       </tr>
     </ng-template>
 
@@ -53,13 +53,13 @@
         <td>
           <div class="title-cell">
             <strong>{{ draft.title }}</strong>
-            <span>{{ draft.environment || 'no environment' }} · {{ draft.version || 'no version' }}</span>
+            <span>{{ draft.environment || 'без середовища' }} · {{ draft.version || 'без версії' }}</span>
             <div class="metadata-row">
               @if (draft.telegramMessageId) {
                 <p-tag severity="success" [value]="'Telegram #' + draft.telegramMessageId"></p-tag>
               }
               @if (draft.imageBlobKey) {
-                <p-tag severity="info" value="uploaded image"></p-tag>
+                <p-tag severity="info" value="завантажене зображення"></p-tag>
               }
               @if (draft.imagePlacement === 'ImageLast') {
                 <p-tag severity="secondary" [value]="getPlacementLabel(draft.imagePlacement)"></p-tag>
@@ -84,20 +84,20 @@
         <td>{{ (draft.updatedAtUtc || draft.createdAtUtc) | localUtcDate:'short' }}</td>
         <td class="actions-column">
           <div class="action-buttons">
-            <p-button icon="pi pi-pencil" severity="secondary" text rounded (onClick)="editDraft(draft)" pTooltip="Edit"></p-button>
+            <p-button icon="pi pi-pencil" severity="secondary" text rounded (onClick)="editDraft(draft)" pTooltip="Редагувати"></p-button>
             @if (canSubmit(draft)) {
-              <p-button icon="pi pi-send" severity="secondary" text rounded (onClick)="submit(draft)" pTooltip="Submit"></p-button>
+              <p-button icon="pi pi-send" severity="secondary" text rounded (onClick)="submit(draft)" pTooltip="Подати"></p-button>
             }
             @if (canApprove(draft)) {
-              <p-button icon="pi pi-check" severity="success" text rounded (onClick)="approve(draft)" pTooltip="Approve"></p-button>
+              <p-button icon="pi pi-check" severity="success" text rounded (onClick)="approve(draft)" pTooltip="Схвалити"></p-button>
             }
             @if (draft.status === 'Approved') {
               <p-button icon="pi pi-megaphone" severity="success" text rounded [disabled]="!canPublish(draft)" (onClick)="publish(draft)" [pTooltip]="getPublishTooltip(draft)"></p-button>
             }
             @if (canReject(draft)) {
-              <p-button icon="pi pi-times" severity="warn" text rounded (onClick)="reject(draft)" pTooltip="Reject"></p-button>
+              <p-button icon="pi pi-times" severity="warn" text rounded (onClick)="reject(draft)" pTooltip="Відхилити"></p-button>
             }
-            <p-button icon="pi pi-trash" severity="danger" text rounded (onClick)="delete(draft)" pTooltip="Delete"></p-button>
+            <p-button icon="pi pi-trash" severity="danger" text rounded (onClick)="delete(draft)" pTooltip="Видалити"></p-button>
           </div>
         </td>
       </tr>
@@ -105,7 +105,12 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="5" class="empty-row">No announcement drafts found.</td>
+        <td colspan="5" class="empty-row">
+          <app-empty-state
+            art="list"
+            title="Чернеток немає"
+            body="Створи першу — і вона зʼявиться тут." />
+        </td>
       </tr>
     </ng-template>
   </p-table>
@@ -117,17 +122,17 @@
   [style]="{ width: 'min(96vw, 980px)' }"
   [draggable]="false"
   [resizable]="false"
-  header="Announcement draft">
+  header="Чернетка оголошення">
   <div class="editor-grid">
     <form class="editor-form" (ngSubmit)="saveDraft()">
       <div class="field">
-        <label for="draft-title">Title</label>
+        <label for="draft-title">Заголовок</label>
         <input pInputText id="draft-title" name="title" [(ngModel)]="form.title" maxlength="200" />
       </div>
 
       <div class="field">
         <label for="draft-body" class="field-label-row">
-          Body
+          Текст
           <p-tag
             [severity]="exceedsTelegramMessageLimit() ? 'danger' : 'secondary'"
             [value]="getMessageLimitLabel()">
@@ -138,14 +143,14 @@
 
       @if (exceedsTelegramMessageLimit()) {
         <div class="error-panel">
-          <strong>Telegram limit</strong>
-          <span>Rendered text exceeds Telegram's 4096 character message limit and cannot be published.</span>
+          <strong>Ліміт Telegram</strong>
+          <span>Текст перевищує ліміт Telegram у 4096 символів — опублікувати не вийде.</span>
         </div>
       }
 
       <div class="field-grid">
         <div class="field">
-          <label for="draft-parse-mode">Parse mode</label>
+          <label for="draft-parse-mode">Режим розмітки</label>
           <p-select
             [options]="parseModeOptions"
             [(ngModel)]="form.parseMode"
@@ -158,7 +163,7 @@
         </div>
 
         <div class="field">
-          <label for="draft-source-type">Source</label>
+          <label for="draft-source-type">Джерело</label>
           <p-select
             [options]="sourceTypeOptions"
             [(ngModel)]="form.sourceType"
@@ -171,28 +176,28 @@
         </div>
 
         <div class="field">
-          <label for="draft-environment">Environment</label>
+          <label for="draft-environment">Середовище</label>
           <input pInputText id="draft-environment" name="environment" [(ngModel)]="form.environment" />
         </div>
 
         <div class="field">
-          <label for="draft-version">Version</label>
+          <label for="draft-version">Версія</label>
           <input pInputText id="draft-version" name="version" [(ngModel)]="form.version" />
         </div>
       </div>
 
       <div class="field">
         <label for="draft-image-url" class="field-label-row">
-          Image URL
+          Посилання на зображення
           @if (hasUploadedImage()) {
-            <p-tag severity="info" value="uploaded image"></p-tag>
+            <p-tag severity="info" value="завантажене зображення"></p-tag>
           }
         </label>
         <input pInputText id="draft-image-url" name="imageUrl" [(ngModel)]="form.imageUrl" placeholder="https://..." />
       </div>
 
       <div class="field">
-        <label for="draft-image-placement">Image placement</label>
+        <label for="draft-image-placement">Розташування зображення</label>
         <p-select
           [options]="imagePlacementOptions"
           [(ngModel)]="form.imagePlacement"
@@ -206,48 +211,48 @@
 
       @if (selectedPlacementUsesCaptionAboveMedia()) {
         <div class="info-panel">
-          <strong>Telegram layout</strong>
-          <span>Image below text sends one photo message with caption above media. Long captions fall back to text first, photo second.</span>
+          <strong>Розкладка Telegram</strong>
+          <span>Зображення під текстом надсилає одне фото з підписом над ним. Довгий підпис піде окремо: спершу текст, потім фото.</span>
         </div>
       }
 
       @if (exceedsTelegramCaptionLimit()) {
         <div class="warning-panel">
           <strong>Caption fallback {{ getCaptionLimitLabel() }}</strong>
-          <span>This post is too long for a Telegram photo caption. Publishing will send text first and photo second.</span>
+          <span>Допис задовгий для підпису до фото в Telegram. Піде двома повідомленнями: спершу текст, потім фото.</span>
         </div>
       }
 
       @if (hasUploadedImage()) {
         <div class="uploaded-image-meta">
-          <span>Blob key</span>
+          <span>Ключ файлу</span>
           <code>{{ form.imageBlobKey }}</code>
         </div>
       }
 
       <div class="upload-row">
         <input #imageUpload type="file" accept="image/*" class="hidden-file-input" (change)="uploadImage($event)" />
-        <p-button type="button" label="Upload image" icon="pi pi-upload" severity="secondary" [loading]="uploadingImage" (onClick)="imageUpload.click()"></p-button>
+        <p-button type="button" label="Завантажити зображення" icon="pi pi-upload" severity="secondary" [loading]="uploadingImage" (onClick)="imageUpload.click()"></p-button>
         @if (form.imageUrl) {
-          <p-button type="button" label="Remove image" icon="pi pi-times" severity="danger" text (onClick)="removeImage()"></p-button>
+          <p-button type="button" label="Прибрати зображення" icon="pi pi-times" severity="danger" text (onClick)="removeImage()"></p-button>
         }
       </div>
 
       <div class="field">
-        <label for="draft-source-url">Source URL</label>
+        <label for="draft-source-url">Посилання на джерело</label>
         <input pInputText id="draft-source-url" name="sourceUrl" [(ngModel)]="form.sourceUrl" placeholder="https://github.com/..." />
       </div>
 
       <div class="dialog-actions">
-        <p-button type="button" label="Close" icon="pi pi-times" severity="secondary" text (onClick)="editorVisible = false"></p-button>
-        <p-button type="button" label="Preview" icon="pi pi-eye" severity="secondary" [disabled]="!selectedDraft" (onClick)="loadPreview()"></p-button>
-        <p-button type="button" label="Save" icon="pi pi-save" [loading]="saving" (onClick)="saveDraft()"></p-button>
+        <p-button type="button" label="Закрити" icon="pi pi-times" severity="secondary" text (onClick)="editorVisible = false"></p-button>
+        <p-button type="button" label="Перегляд" icon="pi pi-eye" severity="secondary" [disabled]="!selectedDraft" (onClick)="loadPreview()"></p-button>
+        <p-button type="button" label="Зберегти" icon="pi pi-save" [loading]="saving" (onClick)="saveDraft()"></p-button>
       </div>
     </form>
 
     <aside class="preview-panel">
       <div class="preview-header">
-        <strong>Telegram preview</strong>
+        <strong>Перегляд у Telegram</strong>
         @if (preview?.willSendAsPhoto) {
           <p-tag severity="info" value="photo"></p-tag>
         }
@@ -261,7 +266,7 @@
 
       @if (selectedDraft?.lastPublishError) {
         <div class="error-panel">
-          <strong>Last publish error</strong>
+          <strong>Остання помилка публікації</strong>
           <span>{{ selectedDraft?.lastPublishError }}</span>
         </div>
       }

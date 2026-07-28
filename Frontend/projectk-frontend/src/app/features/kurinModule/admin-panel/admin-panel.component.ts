@@ -8,12 +8,12 @@ import { MenuItem, MessageService } from 'primeng/api';
 import { ManageAction, ManagePanel, ManagePanelConfig } from '../common/components/manage-panel/manage-panel';
 import { ButtonModule } from 'primeng/button';
 import { Router, RouterModule } from '@angular/router';
-import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-admin-panel',
-  imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, MessageModule, RouterModule],
+  imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, EmptyStateComponent, RouterModule],
   templateUrl: './admin-panel.component.html',
   styleUrls: ['./admin-panel.component.css']
 })

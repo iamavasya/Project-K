@@ -24,6 +24,7 @@ import {
 } from '../../models/public-announcement.model';
 import { PublicAnnouncementService } from '../../services/public-announcement.service';
 import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 
 interface Option<T> {
   label: string;
@@ -46,7 +47,8 @@ interface Option<T> {
     InputTextModule,
     SelectModule,
     TooltipModule,
-    LocalUtcDatePipe
+    LocalUtcDatePipe,
+    EmptyStateComponent
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './public-announcements.html',

@@ -12,11 +12,12 @@ import { ButtonModule } from 'primeng/button';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, CommonModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule],
+  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, CommonModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.html',
   styleUrl: './users-list.css'

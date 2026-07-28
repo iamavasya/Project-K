@@ -113,5 +113,16 @@
                 </tr>
             }
         </ng-template>
+
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="5" class="users-list-empty-cell">
+                    <app-empty-state
+                        art="list"
+                        title="Користувачів немає"
+                        body="Схвалені заявки зʼявляться тут як облікові записи." />
+                </td>
+            </tr>
+        </ng-template>
     </p-table>
 </div>

@@ -6,7 +6,7 @@ import { cancelManagePanel, chooseMenuItem, dialog, fillManagePanelFields, openR
 describeRole('admin', 'Admin management surfaces', () => {
   test('admin panel exposes kurin manage-panel create update and delete modes', async ({ page }) => {
     await page.goto('/panel');
-    await expect(page.getByRole('heading', { name: 'Administration' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Адміністрація' })).toBeVisible();
 
     await page.getByRole('button', { name: /Create/ }).click();
     await expect(dialog(page)).toBeVisible();
@@ -52,7 +52,7 @@ describeRole('admin', 'Admin management surfaces', () => {
 
   test('waitlist management renders queue table and conditional action area', async ({ page }) => {
     await page.goto('/waitlist');
-    await expect(page.getByRole('heading', { name: 'Waitlist Management' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Заявки на приєднання' })).toBeVisible();
     await expect(page.locator('.p-datatable')).toBeVisible();
 
     const firstRow = page.locator('tbody tr').first();

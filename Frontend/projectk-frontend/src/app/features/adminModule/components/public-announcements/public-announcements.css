@@ -88,9 +88,8 @@
 }
 
 .empty-row {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--p-text-muted-color);
+  border: 0 !important;
+  padding: 1.25rem 0 0 !important;
 }
 
 .editor-grid {

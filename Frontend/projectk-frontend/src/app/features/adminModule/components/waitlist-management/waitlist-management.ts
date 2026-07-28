@@ -20,6 +20,7 @@ import {
   isWaitlistInitial
 } from '../../common/functions/waitlist-status.function';
 import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-waitlist-management',
@@ -36,43 +37,44 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
     DialogModule, 
     TextareaModule, 
     FormsModule,
-    LocalUtcDatePipe
+    LocalUtcDatePipe,
+    EmptyStateComponent
   ],
   providers: [MessageService, ConfirmationService],
   template: `
     <p-toast></p-toast>
     <p-confirmDialog></p-confirmDialog>
 
-    <p-dialog [(visible)]="rejectionDialogVisible" header="Reject Applicant" [modal]="true" [style]="{width: '450px'}">
+    <p-dialog [(visible)]="rejectionDialogVisible" header="Відхилити заявку" [modal]="true" [style]="{width: '450px'}">
         <div class="flex flex-col gap-4">
-            <p>Are you sure you want to reject <strong>{{ selectedEntry?.firstName }} {{ selectedEntry?.lastName }}</strong>?</p>
+            <p>Відхилити заявку <strong>{{ selectedEntry?.firstName }} {{ selectedEntry?.lastName }}</strong>?</p>
             <div class="flex flex-col gap-2">
-                <label for="note">Rejection Note (optional)</label>
+                <label for="note">Причина відмови (не обовʼязково)</label>
                 <textarea id="note" pTextarea [(ngModel)]="rejectionNote" rows="3" class="w-full"></textarea>
             </div>
         </div>
         <ng-template pTemplate="footer">
-            <p-button label="Cancel" icon="pi pi-times" text (onClick)="rejectionDialogVisible = false"></p-button>
-            <p-button label="Reject" icon="pi pi-check" severity="danger" (onClick)="confirmReject()"></p-button>
+            <p-button label="Скасувати" icon="pi pi-times" text (onClick)="rejectionDialogVisible = false"></p-button>
+            <p-button label="Відхилити" icon="pi pi-check" severity="danger" (onClick)="confirmReject()"></p-button>
         </ng-template>
     </p-dialog>
 
     <div class="card p-4">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Waitlist Management</h2>
+        <h2 class="text-2xl font-bold">Заявки на приєднання</h2>
         
         @if (stats && stats.isClosedBeta) {
           <div class="flex flex-col items-end gap-1">
             <div class="flex items-center gap-3">
               <span class="text-sm font-semibold text-gray-600">
                 @if (stats.scope === 'Kurin') {
-                    ZBT CAP ({{ stats.kurinName }})
+                    Ліміт ЗБТ ({{ stats.kurinName }})
                 } @else {
-                    ZBT BETA CAP (Global)
+                    Ліміт ЗБТ (глобальний)
                 }
               </span>
-              <p-tag [severity]="stats.isCapReached ? 'danger' : 'info'" 
-                     [value]="stats.currentActiveUsers + ' / ' + stats.betaCap + ' users'"></p-tag>
+              <p-tag [severity]="stats.isCapReached ? 'danger' : 'info'"
+                     [value]="stats.currentActiveUsers + ' / ' + stats.betaCap"></p-tag>
             </div>
             <p-progressBar [value]="(stats.currentActiveUsers / stats.betaCap) * 100" 
                            [showValue]="false" 
@@ -85,14 +87,14 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
       <p-table [value]="entries" [responsiveLayout]="'scroll'" [loading]="loading" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
-            <th>Name</th>
+            <th>Імʼя</th>
             <th>Email</th>
             <th>Станиця</th>
             <th>Край</th>
-            <th>Kurin Candidate</th>
-            <th>Status</th>
-            <th>Requested At</th>
-            <th style="width: 120px">Actions</th>
+            <th>Претендує на курінь</th>
+            <th>Статус</th>
+            <th>Подано</th>
+            <th style="width: 120px">Дії</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-entry>
@@ -103,9 +105,9 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
             <td>{{ entry.regionOrCountry || '-' }}</td>
             <td>
               @if (entry.isKurinLeaderCandidate) {
-                <p-tag severity="info" [value]="'Kurin ' + entry.claimedKurinNameOrNumber"></p-tag>
+                <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber"></p-tag>
               } @else {
-                <span class="text-gray-400 text-sm italic">Standard Member</span>
+                <span class="text-gray-400 text-sm italic">Звичайний учасник</span>
               }
             </td>
             <td>
@@ -116,13 +118,13 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
               <div class="flex gap-2">
                 @if (isInitial(entry.verificationStatus)) {
                   <p-button icon="pi pi-check" severity="success" rounded text
-                            (onClick)="approve(entry)" pTooltip="Approve & Send Invitation"></p-button>
+                            (onClick)="approve(entry)" pTooltip="Схвалити й надіслати запрошення"></p-button>
                   <p-button icon="pi pi-times" severity="danger" rounded text
-                            (onClick)="reject(entry)" pTooltip="Reject"></p-button>
+                            (onClick)="reject(entry)" pTooltip="Відхилити"></p-button>
                 }
                 @if (isApproved(entry.verificationStatus)) {
                   <p-button icon="pi pi-refresh" severity="secondary" rounded text
-                            (onClick)="resend(entry)" pTooltip="Resend Invitation"></p-button>
+                            (onClick)="resend(entry)" pTooltip="Надіслати запрошення ще раз"></p-button>
                 }
               </div>
             </td>
@@ -130,12 +132,23 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td colspan="8" class="text-center p-4 text-gray-500">No waitlist entries found.</td>
+                <td colspan="8" class="waitlist-empty-cell">
+                    <app-empty-state
+                        art="list"
+                        title="Заявок немає"
+                        body="Нові заявки на приєднання зʼявляться тут." />
+                </td>
             </tr>
         </ng-template>
       </p-table>
     </div>
-  `
+  `,
+  styles: [`
+    .waitlist-empty-cell {
+      border: 0 !important;
+      padding: 1.25rem 0 0 !important;
+    }
+  `]
 })
 export class WaitlistManagementComponent implements OnInit {
   entries: WaitlistEntry[] = [];
@@ -164,7 +177,7 @@ export class WaitlistManagementComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load waitlist entries' });
+        this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити заявки' });
         this.loading = false;
       }
     });
@@ -182,16 +195,16 @@ export class WaitlistManagementComponent implements OnInit {
   approve(entry: WaitlistEntry) {
     if (this.stats?.isCapReached) {
         this.confirmationService.confirm({
-            message: `The Beta Cap (${this.stats.betaCap}) has been reached. Approving this user will exceed the target limit. Do you want to proceed anyway?`,
-            header: 'Beta Cap Reached',
+            message: `Ліміт бети (${this.stats.betaCap}) вичерпано. Схвалення цього користувача перевищить його. Продовжити?`,
+            header: 'Ліміт бети досягнуто',
             icon: 'pi pi-exclamation-triangle',
             acceptButtonStyleClass: 'p-button-danger',
             accept: () => this.executeApproval(entry)
         });
     } else {
         this.confirmationService.confirm({
-            message: `Approve invitation for ${entry.firstName} ${entry.lastName}? An email will be sent to ${entry.email}.`,
-            header: 'Confirm Approval',
+            message: `Схвалити заявку ${entry.firstName} ${entry.lastName}? На ${entry.email} піде лист із запрошенням.`,
+            header: 'Підтвердити схвалення',
             icon: 'pi pi-user-plus',
             accept: () => this.executeApproval(entry)
         });
@@ -201,12 +214,12 @@ export class WaitlistManagementComponent implements OnInit {
   private executeApproval(entry: WaitlistEntry) {
     this.onboardingService.approveWaitlistEntry(entry.waitlistEntryKey).subscribe({
         next: () => {
-          this.messageService.add({ severity: 'success', summary: 'Approved', detail: 'Invitation sent' });
+          this.messageService.add({ severity: 'success', summary: 'Схвалено', detail: 'Запрошення надіслано' });
           this.loadEntries();
           this.loadStats();
         },
         error: (err) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Approval failed' });
+          this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося схвалити' });
         }
       });
   }
@@ -222,29 +235,29 @@ export class WaitlistManagementComponent implements OnInit {
 
     this.onboardingService.rejectWaitlistEntry(this.selectedEntry.waitlistEntryKey, this.rejectionNote).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'info', summary: 'Rejected', detail: 'Applicant rejected' });
+        this.messageService.add({ severity: 'info', summary: 'Відхилено', detail: 'Заявку відхилено' });
         this.rejectionDialogVisible = false;
         this.loadEntries();
         this.loadStats();
       },
       error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Rejection failed' });
+        this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося відхилити' });
       }
     });
   }
 
   resend(entry: WaitlistEntry) {
     this.confirmationService.confirm({
-        message: `Resend invitation to ${entry.email}?`,
-        header: 'Confirm Resend',
+        message: `Надіслати запрошення на ${entry.email} ще раз?`,
+        header: 'Надіслати ще раз?',
         icon: 'pi pi-refresh',
         accept: () => {
             this.onboardingService.resendInvitation(entry.waitlistEntryKey).subscribe({
                 next: () => {
-                  this.messageService.add({ severity: 'success', summary: 'Sent', detail: 'Invitation resent' });
+                  this.messageService.add({ severity: 'success', summary: 'Надіслано', detail: 'Запрошення надіслано ще раз' });
                 },
                 error: () => {
-                  this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to resend' });
+                  this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося надіслати' });
                 }
               });
         }

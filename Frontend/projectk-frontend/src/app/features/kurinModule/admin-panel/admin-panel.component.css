@@ -101,3 +101,7 @@
         width: fit-content;
     }
 }
+
+.admin-panel__empty {
+    margin-top: 1rem;
+}
