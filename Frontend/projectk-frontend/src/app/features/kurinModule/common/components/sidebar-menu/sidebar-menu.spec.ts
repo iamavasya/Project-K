@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarMenu } from './sidebar-menu';
 import { provideHttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Event, Router } from '@angular/router';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { SimpleChange } from '@angular/core';
+import { MenuItem } from 'primeng/api';
 
 describe('SidebarMenu', () => {
   let component: SidebarMenu;
@@ -13,11 +14,18 @@ describe('SidebarMenu', () => {
   let mockRouter: jasmine.SpyObj<Router>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
   let authStateSubject: BehaviorSubject<AuthState | null>;
+  let routerEvents: Subject<Event>;
 
   beforeEach(async () => {
     authStateSubject = new BehaviorSubject<AuthState | null>(null);
-    
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    routerEvents = new Subject<Event>();
+
+    // The menu recomputes the current item on NavigationEnd, so the double needs a
+    // usable events stream and url alongside navigate().
+    mockRouter = jasmine.createSpyObj<Router>('Router', ['navigate'], {
+      events: routerEvents.asObservable(),
+      url: '/kurin'
+    });
     mockAuthService = jasmine.createSpyObj('AuthService', ['getAuthState']);
     mockAuthService.getAuthState.and.returnValue(authStateSubject.asObservable());
 
@@ -117,6 +125,54 @@ describe('SidebarMenu', () => {
     });
   });
 
+  describe('current route highlight', () => {
+    const managerState: AuthState = {
+      userKey: 'user-1',
+      memberKey: 'member-1',
+      email: 'manager@projectk.com',
+      role: 'Manager',
+      kurinKey: 'kurin-1',
+      accessToken: 'token'
+    };
+
+    function itemsAt(url: string): Promise<MenuItem[]> {
+      Object.defineProperty(mockRouter, 'url', { value: url, configurable: true });
+
+      component.state$ = of(managerState);
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$, true) });
+
+      return new Promise(resolve => component.items$.subscribe(resolve));
+    }
+
+    it('marks the item matching the current url', async () => {
+      const items = await itemsAt('/kurin');
+
+      const kurin = items.find(item => item.label === 'Курінь');
+      expect(kurin?.styleClass).toBe('lil-menu-item--current');
+    });
+
+    it('marks only one item, preferring the longest matching path', async () => {
+      const items = await itemsAt('/kurin/kurin-1/settings');
+
+      const marked = items.filter(item => item.styleClass === 'lil-menu-item--current');
+      expect(marked.length).toBe(1);
+      expect(marked[0].label).toBe('Налаштування куреня');
+    });
+
+    it('ignores query strings when matching', async () => {
+      const items = await itemsAt('/planning/kurin-1?tab=all');
+
+      const planning = items.find(item => item.label === 'Планування');
+      expect(planning?.styleClass).toBe('lil-menu-item--current');
+    });
+
+    it('marks nothing when the url belongs to no menu item', async () => {
+      const items = await itemsAt('/some/unrelated/page');
+
+      expect(items.every(item => item.styleClass === undefined)).toBeTrue();
+    });
+  });
+
   describe('buildItems', () => {
     it('should build menu items with kurinKey (Manager view)', (done) => {
       const mockState: AuthState = {
@@ -136,8 +192,8 @@ describe('SidebarMenu', () => {
       component.items$.subscribe(items => {
         const kurinItem = items.find(item => item.label === 'Курінь');
         const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
-        const panelItem = items.find(item => item.label === 'Admin Panel');
-        const usersItem = items.find(item => item.label === 'Users Management');
+        const panelItem = items.find(item => item.label === 'Адміністрація');
+        const usersItem = items.find(item => item.label === 'Користувачі');
 
         expect(kurinItem).toBeDefined();
         expect(kurinItem?.disabled).toBeFalse();
@@ -258,9 +314,9 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         const kurinItem = items.find(item => item.label === 'Курінь');
-        const panelItem = items.find(item => item.label === 'Admin Panel');
-        const usersItem = items.find(item => item.label === 'Users Management');
-        const globalSettingsItem = items.find(item => item.label === 'Global Settings');
+        const panelItem = items.find(item => item.label === 'Адміністрація');
+        const usersItem = items.find(item => item.label === 'Користувачі');
+        const globalSettingsItem = items.find(item => item.label === 'Системні налаштування');
 
         expect(kurinItem).toBeUndefined();
         expect(panelItem).toBeDefined();
@@ -328,7 +384,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const panelItem = items.find(item => item.label === 'Admin Panel');
+        const panelItem = items.find(item => item.label === 'Адміністрація');
         
         if (panelItem?.command) {
           panelItem.command({});
@@ -354,7 +410,7 @@ describe('SidebarMenu', () => {
       });
 
       component.items$.subscribe(items => {
-        const usersItem = items.find(item => item.label === 'Users Management');
+        const usersItem = items.find(item => item.label === 'Користувачі');
         
         if (usersItem?.command) {
           usersItem.command({});
@@ -507,7 +563,7 @@ describe('SidebarMenu', () => {
 
       component.items$.subscribe(items => {
         expect(items.find(item => item.label === 'Курінь')).toBeDefined();
-        expect(items.find(item => item.label === 'Admin Panel')).toBeUndefined();
+        expect(items.find(item => item.label === 'Адміністрація')).toBeUndefined();
 
         const adminState: AuthState = {
           ...managerState,
@@ -522,7 +578,7 @@ describe('SidebarMenu', () => {
 
         component.items$.subscribe(newItems => {
           expect(newItems.find(item => item.label === 'Курінь')).toBeUndefined();
-          expect(newItems.find(item => item.label === 'Admin Panel')).toBeDefined();
+          expect(newItems.find(item => item.label === 'Адміністрація')).toBeDefined();
           done();
         });
       });
@@ -536,7 +592,7 @@ describe('SidebarMenu', () => {
 
       const subscription = component.items$.subscribe(items => {
         if (authStateSubject.value === null) {
-          expect(items.find(item => item.label === 'Admin Panel')).toBeUndefined();
+          expect(items.find(item => item.label === 'Адміністрація')).toBeUndefined();
         } else {
           expect(items.find(item => item.label === 'Курінь')).toBeDefined();
         }

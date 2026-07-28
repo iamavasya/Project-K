@@ -206,8 +206,18 @@ h1, h2, h3 {
   padding: 0.6875rem 0.8125rem;
 }
 
-:root .p-panelmenu.lil-menu .p-panelmenu-header-active .p-panelmenu-header-link {
+:root .p-panelmenu.lil-menu .p-panelmenu-header-active .p-panelmenu-header-link,
+:root .p-panelmenu.lil-menu .lil-menu-item--current .p-panelmenu-header-link {
   font-weight: 700;
+}
+
+:root .p-panelmenu.lil-menu .lil-menu-item--current .p-panelmenu-header-content {
+  background: var(--p-navigation-item-active-background);
+  color: var(--p-navigation-item-active-color);
+}
+
+:root .p-panelmenu.lil-menu .lil-menu-item--current .p-panelmenu-header-icon {
+  color: var(--p-navigation-item-icon-active-color);
 }
 
 .sidebar-version {

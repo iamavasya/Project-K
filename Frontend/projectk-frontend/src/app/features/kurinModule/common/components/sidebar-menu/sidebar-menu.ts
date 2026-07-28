@@ -3,10 +3,10 @@ import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { MenuItem } from 'primeng/api';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { PermissionService } from '../../../../authModule/services/permission.service';
-import { map, Observable, of } from 'rxjs';
+import { combineLatest, defer, filter, map, Observable, of, startWith } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from 'primeng/tag';
@@ -38,10 +38,18 @@ export class SidebarMenu implements OnChanges {
     return `${environment.version}${code} | ${environment.envName} Environment`;
   })();
 
+  // defer, so the seed URL is read when something subscribes rather than when this field
+  // is initialised — the menu is built before the first navigation settles.
+  private readonly currentUrl$: Observable<string> = defer(() => this.router.events.pipe(
+    filter(event => event instanceof NavigationEnd),
+    map(() => this.router.url),
+    startWith(this.router.url)
+  ));
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
-      this.items$ = this.state$.pipe(
-        map(state => this.buildItems(state))
+      this.items$ = combineLatest([this.state$, this.currentUrl$]).pipe(
+        map(([state, url]) => this.markCurrent(this.buildItems(state), url))
       );
       this.email$ = this.state$.pipe(
         map(state => state?.email ?? null)
@@ -52,6 +60,43 @@ export class SidebarMenu implements OnChanges {
     }
   }
   
+  /**
+   * Flags the item whose routerLink best matches the current URL. PanelMenu only marks
+   * headers it expands, and every item here is a leaf, so the current page would never
+   * be highlighted without this. The longest match wins, otherwise "/kurin" would light
+   * up alongside "/kurin/<key>/settings".
+   */
+  private markCurrent(items: MenuItem[], url: string): MenuItem[] {
+    const path = url.split(/[?#]/)[0];
+    let best: MenuItem | null = null;
+    let bestLength = 0;
+
+    for (const item of items) {
+      const link = this.toPath(item.routerLink);
+      if (!link || item.disabled) {
+        continue;
+      }
+      if ((path === link || path.startsWith(`${link}/`)) && link.length > bestLength) {
+        best = item;
+        bestLength = link.length;
+      }
+    }
+
+    return items.map(item => item === best
+      ? { ...item, styleClass: 'lil-menu-item--current' }
+      : item);
+  }
+
+  private toPath(routerLink: unknown): string | null {
+    if (typeof routerLink === 'string') {
+      return routerLink;
+    }
+    if (!Array.isArray(routerLink) || routerLink.length === 0) {
+      return null;
+    }
+    return `/${routerLink.map(part => String(part)).join('/').replace(/^\/+/, '')}`;
+  }
+
   private buildItems(state: AuthState | null): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
@@ -132,23 +177,25 @@ export class SidebarMenu implements OnChanges {
     if (isAdmin && !kurinKey) {
       items.push(
         {
-          label: 'Admin Panel',
+          label: 'Адміністрація',
           icon: 'pi pi-lock',
+          routerLink: ['/panel'],
           command: () => {
             this.close();
             this.router.navigate(['/panel']);
           }
         },
-        { 
-          label: 'Users Management',
+        {
+          label: 'Користувачі',
           icon: 'pi pi-users',
+          routerLink: ['/users'],
           command: () => {
             this.close();
             this.router.navigate(['/users']);
-          } 
+          }
         },
         {
-          label: 'Global Settings',
+          label: 'Системні налаштування',
           icon: 'pi pi-sliders-h',
           routerLink: ['/system-settings'],
           command: () => {
