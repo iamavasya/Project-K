@@ -10,8 +10,18 @@
         <ng-template #end>
             <div class="toolbar-actions">
                 @if (state.kurinKey && isAdmin(state.role)) {
-                    <p-button (onClick)="backToKurinPanel()" label="Back to Admin Panel" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
+                    <p-button (onClick)="backToKurinPanel()" label="До адміністрації" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
                 }
+                <p-button
+                    [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+                    [attr.aria-label]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
+                    [pTooltip]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
+                    tooltipPosition="bottom"
+                    class="theme-toggle"
+                    text
+                    rounded
+                    severity="secondary"
+                    (onClick)="themeService.toggle()" />
                 @if (state.accessToken) {
                     <app-notification-bell></app-notification-bell>
                     <app-logout-component></app-logout-component>
