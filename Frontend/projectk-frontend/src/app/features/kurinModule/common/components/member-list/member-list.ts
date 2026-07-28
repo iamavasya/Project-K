@@ -21,6 +21,7 @@ import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcom
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 import { compareLeadershipHistoriesByDefault, getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
+import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
 
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
@@ -40,7 +41,8 @@ import { PermissionService } from '../../../../authModule/services/permission.se
     FormsModule,
     MiniMemberCardComponent,
     UpcomingBirthdaysTileComponent,
-    ProfileVerificationBadgeComponent
+    ProfileVerificationBadgeComponent,
+    EmptyStateComponent
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',

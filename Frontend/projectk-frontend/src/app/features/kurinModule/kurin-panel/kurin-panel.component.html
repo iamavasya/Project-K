@@ -105,7 +105,7 @@
                         <h2>Гуртки</h2>
                         <p>{{ groups.length }} активних</p>
                     </div>
-                    @if (canManageGroups) {
+                    @if (canManageGroups && groups.length > 0) {
                         <p-button
                             label="Створити"
                             (onClick)="onGroupActionClick(null, 'create')"

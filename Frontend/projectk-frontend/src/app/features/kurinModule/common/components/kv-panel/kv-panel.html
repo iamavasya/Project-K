@@ -90,7 +90,10 @@
     <ng-template pTemplate="emptymessage">
       <tr>
         <td [attr.colspan]="canManageKv ? 4 : 3" class="kv-empty">
-          КВ ще не має активних учасників.
+          <app-empty-state
+            art="list"
+            title="Коло виховників порожнє"
+            body="Призначені впорядники зʼявляться тут." />
         </td>
       </tr>
     </ng-template>

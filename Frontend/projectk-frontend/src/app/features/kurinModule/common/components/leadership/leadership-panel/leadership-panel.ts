@@ -17,6 +17,7 @@ import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
 import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
+import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-leadership-panel',
@@ -30,7 +31,8 @@ import { compareLeadershipHistoriesByDefault } from '../../../functions/leadersh
     TableModule,
     TagModule,
     ToggleSwitchModule,
-    TooltipModule
+    TooltipModule,
+    EmptyStateComponent
   ],
   templateUrl: './leadership-panel.html',
   styleUrl: './leadership-panel.css'

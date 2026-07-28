@@ -19,7 +19,7 @@ import { PermissionService } from '../../authModule/services/permission.service'
       <section class="kurin-tile">
         <div class="planning-header">
           <h1 class="planning-title">Планування таборів</h1>
-          @if (canManagePlanning) {
+          @if (canManagePlanning && sessions().length) {
             <p-button
               label="Створити нове"
               icon="pi pi-plus"
@@ -72,7 +72,7 @@ import { PermissionService } from '../../authModule/services/permission.service'
                   <div class="lil-empty__title">Календар ще спить</div>
                   <div class="lil-empty__body">Перша сходина в плані — і він прокинеться.</div>
                   @if (canManagePlanning) {
-                    <p-button label="Створити планування" icon="pi pi-plus" severity="secondary" (click)="createNew()" />
+                    <p-button label="Створити планування" icon="pi pi-plus" (click)="createNew()" />
                   }
                 </div>
               </td>

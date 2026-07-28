@@ -52,11 +52,9 @@
     min-width: 0;
 }
 
-.member-empty-state {
-    background: transparent;
-    border: 1px dashed var(--p-content-border-color);
-    border-radius: var(--lil-radius-lg) !important;
-    color: var(--lil-faint);
+.member-empty-cell {
+    border: 0 !important;
+    padding: 1.25rem 0 0 !important;
 }
 
 :host ::ng-deep .member-list-table .p-datatable-table {

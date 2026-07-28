@@ -20,6 +20,7 @@ import { BadgesCatalogService } from '../common/services/probes-and-badges/badge
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 interface SkillsReviewItemView {
   reviewKey: string;
@@ -43,7 +44,8 @@ interface SkillsReviewItemView {
     SkeletonModule,
     DialogModule,
     TextareaModule,
-    FormsModule
+    FormsModule,
+    EmptyStateComponent
   ],
   templateUrl: './skills-review-page.component.html',
   styleUrl: './skills-review-page.component.css'

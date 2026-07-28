@@ -77,12 +77,13 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="3" class="text-center p-4">
-              @if (canSetupLeadership) {
-                Провід ще не призначено. Натисніть на ⚙️ щоб додати.
-              } @else {
-                Провід ще не призначено.
-              }
+            <td colspan="3" class="member-empty-cell">
+              <app-empty-state
+                art="list"
+                title="Проводу ще немає"
+                [body]="canSetupLeadership
+                  ? 'Признач першу особу — і каденція почнеться.'
+                  : 'Призначення зʼявляться тут.'" />
             </td>
           </tr>
         </ng-template>
@@ -128,9 +129,9 @@
             }
           </div>
         } @else {
-          <div class="member-empty-state rounded-xl p-6 text-center text-sm">
-            Нічого не знайдено за поточним запитом.
-          </div>
+          <app-empty-state
+            title="Нічого не знайшлось"
+            body="Спробуй коротший запит — або перевір гурток." />
         }
       </div>
     } @else {
@@ -195,6 +196,17 @@
               } @else {
                 <span class="text-gray-400">Учасник</span>
               }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="member-empty-cell">
+              <app-empty-state
+                art="list"
+                title="Тут ще нікого немає"
+                body="Додай першого юнака — і реєстр почне жити." />
             </td>
           </tr>
         </ng-template>

@@ -98,7 +98,11 @@
 
       <ng-template #emptymessage>
         <tr>
-          <td colspan="5" class="skills-review-page__empty">Черга модерації порожня.</td>
+          <td colspan="5" class="skills-review-page__empty">
+            <app-empty-state
+              title="Все розглянуто"
+              body="Заявок на вмілості немає. Можна відпочити." />
+          </td>
         </tr>
       </ng-template>
     </p-table>

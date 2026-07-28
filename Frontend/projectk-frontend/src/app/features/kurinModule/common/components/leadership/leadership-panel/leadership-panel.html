@@ -80,7 +80,10 @@
     <ng-template pTemplate="emptymessage">
       <tr>
         <td [attr.colspan]="showArchived ? 3 : 2" class="leadership-empty">
-          Провід ще не призначено.
+          <app-empty-state
+            art="list"
+            title="Проводу ще немає"
+            body="Призначення зʼявляться тут." />
         </td>
       </tr>
     </ng-template>

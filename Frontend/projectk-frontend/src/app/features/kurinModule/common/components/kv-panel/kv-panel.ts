@@ -20,6 +20,7 @@ import { AuthService } from '../../../../authModule/services/authService/auth.se
 import { UserService } from '../../../../adminModule/services/user.service';
 import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
 import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pipe';
+import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -40,7 +41,8 @@ interface MentorAssignmentRow {
     TagModule,
     ToggleSwitchModule,
     TooltipModule,
-    LocalUtcDatePipe
+    LocalUtcDatePipe,
+    EmptyStateComponent
   ],
   templateUrl: './kv-panel.html',
   styleUrl: './kv-panel.css'
