@@ -9,11 +9,12 @@ import { MemberService } from '../common/services/member-service/member.service'
 import { PlanningSessionDto } from '../common/models/planningSessionDto';
 import { PlanningDetailComponent } from '../common/components/planning-detail/planning-detail';
 import { PermissionService } from '../../authModule/services/permission.service';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-planning-list',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent],
+  imports: [CommonModule, TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent],
   template: `
     <div class="planning-page">
       <section class="kurin-tile">
@@ -59,22 +60,15 @@ import { PermissionService } from '../../authModule/services/permission.service'
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="4" class="planning-empty-cell">
-                <div class="lil-empty">
-                  <svg class="lil-empty__art" viewBox="0 0 110 66" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                    <rect x="18" y="14" width="74" height="42" rx="4" />
-                    <path d="M18 27 H92" />
-                    <path class="lil-empty__accent" d="M34 41 H54" />
-                    <path d="M34 8 V16" />
-                    <path d="M76 8 V16" />
-                  </svg>
-                  <div class="lil-empty__title">Календар ще спить</div>
-                  <div class="lil-empty__body">Перша сходина в плані — і він прокинеться.</div>
+              <td colspan="4" class="lil-empty-cell">
+                <app-empty-state
+                  art="calendar"
+                  title="Календар ще спить"
+                  body="Перша сходина в плані — і він прокинеться.">
                   @if (canManagePlanning) {
                     <p-button label="Створити планування" icon="pi pi-plus" (click)="createNew()" />
                   }
-                </div>
+                </app-empty-state>
               </td>
             </tr>
           </ng-template>
@@ -125,11 +119,6 @@ import { PermissionService } from '../../authModule/services/permission.service'
       display: flex;
       gap: 0.125rem;
       justify-content: flex-end;
-    }
-
-    .planning-empty-cell {
-      border: 0 !important;
-      padding: 1.5rem 0 0 !important;
     }
 
     :host ::ng-deep .planning-table .p-datatable-table {

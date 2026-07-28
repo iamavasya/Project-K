@@ -102,13 +102,6 @@
   --p-surface-border: var(--lil-line);
   --p-text-color: var(--lil-ink);
   --p-text-muted-color: var(--lil-muted);
-  --p-border-radius-md: var(--lil-radius);
-  --p-border-radius-lg: var(--lil-radius-lg);
-
-  --p-warn-color: var(--lil-clay-700);
-  --p-warn-background: var(--lil-clay-50);
-  --p-info-color: var(--lil-green-700);
-  --p-info-background: var(--lil-green-50);
 }
 
 :root[data-theme="dark"] {
@@ -137,11 +130,6 @@
   --p-surface-border: var(--lil-line);
   --p-text-color: var(--lil-ink);
   --p-text-muted-color: var(--lil-muted);
-
-  --p-warn-color: var(--lil-clay-700);
-  --p-warn-background: var(--lil-clay-50);
-  --p-info-color: #9FE3C2;
-  --p-info-background: #1D2E27;
 }
 
 body {
@@ -300,6 +288,12 @@ h1, h2, h3 {
   gap: 0.875rem;
   padding: 1.5rem;
   text-align: center;
+}
+
+/* A table cell that hosts an empty state: no row border, breathing room above it. */
+.lil-empty-cell {
+  border: 0 !important;
+  padding: 1.25rem 0 0 !important;
 }
 
 .lil-empty__art {

@@ -62,14 +62,6 @@
     margin-bottom: 2rem;
 }
 
-.kurin-tile {
-    border: 1px solid var(--p-content-border-color);
-    background: var(--p-content-background);
-    border-radius: var(--lil-radius-lg);
-    padding: 1.25rem;
-    box-shadow: none;
-}
-
 .identity-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

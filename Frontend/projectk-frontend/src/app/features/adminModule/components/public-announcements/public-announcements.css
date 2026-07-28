@@ -87,11 +87,6 @@
   flex-wrap: wrap;
 }
 
-.empty-row {
-  border: 0 !important;
-  padding: 1.25rem 0 0 !important;
-}
-
 .editor-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);

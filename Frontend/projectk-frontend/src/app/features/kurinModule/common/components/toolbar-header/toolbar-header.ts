@@ -9,6 +9,7 @@ import { AsyncPipe } from '@angular/common';
 import { SidebarMenu } from "../sidebar-menu/sidebar-menu";
 import { Router } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
 import { NotificationBell } from '../../../../notifications/components/notification-bell/notification-bell';
 import { ThemeService } from '../../../../systemModule/services/theme.service';
 
@@ -22,6 +23,7 @@ export class ToolbarHeader {
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   protected readonly themeService = inject(ThemeService);
+  private readonly messageService = inject(MessageService);
   state$ = this.authService.getAuthState();
   private readonly router = inject(Router);
 
@@ -38,10 +40,13 @@ export class ToolbarHeader {
   backToKurinPanel() {
     this.authService.setKurinScope(null).subscribe({
       next: () => this.router.navigate(['/panel']),
-      error: () => {
-        this.authService.clearKurinKey();
-        this.router.navigate(['/panel']);
-      }
+      // Staying put is the honest outcome: only the server can widen the token's scope
+      // back, so clearing it locally would leave the claim pointing at the old kurin.
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Не вдалося вийти з куреня',
+        detail: 'Спробуй ще раз.'
+      })
     });
   }
 }

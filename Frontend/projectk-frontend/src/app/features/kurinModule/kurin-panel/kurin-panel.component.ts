@@ -24,6 +24,7 @@ import { OnboardingService, ZbtStats } from '../../authModule/services/onboardin
 import { KvPanelComponent } from '../common/components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
 import { MenuItemsCache } from '../common/functions/menuItemsCache';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-kurin-panel',
@@ -41,7 +42,8 @@ import { MenuItemsCache } from '../common/functions/menuItemsCache';
     TagModule,
     TooltipModule,
     KvPanelComponent,
-    LeadershipPanelComponent
+    LeadershipPanelComponent,
+    EmptyStateComponent
   ],
   templateUrl: './kurin-panel.component.html',
   styleUrls: ['./kurin-panel.component.css']

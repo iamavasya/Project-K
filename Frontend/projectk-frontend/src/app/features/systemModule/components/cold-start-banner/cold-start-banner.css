@@ -20,9 +20,6 @@
   z-index: 1;
 }
 
-.cold-start-banner__pulse {
-  display: none;
-}
 
 .cold-start-banner__spinner {
   animation: banner-spin 1s linear infinite;

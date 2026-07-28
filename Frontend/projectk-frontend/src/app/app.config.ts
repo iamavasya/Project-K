@@ -9,6 +9,7 @@ import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@a
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
 import { HealthBannerService } from './features/systemModule/services/health-banner.service';
+import { ThemeService } from './features/systemModule/services/theme.service';
 import { MessageService } from 'primeng/api';
 
 export const appConfig: ApplicationConfig = {
@@ -39,6 +40,9 @@ export const appConfig: ApplicationConfig = {
         }
     }),
     provideHttpClient(withInterceptorsFromDi()),
+    // Constructing ThemeService applies the stored preference. Without this it would only
+    // happen once the toolbar renders, so login and welcome would ignore a dark preference.
+    provideAppInitializer(() => void inject(ThemeService)),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }

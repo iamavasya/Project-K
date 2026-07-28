@@ -52,11 +52,6 @@
     min-width: 0;
 }
 
-.member-empty-cell {
-    border: 0 !important;
-    padding: 1.25rem 0 0 !important;
-}
-
 :host ::ng-deep .member-list-table .p-datatable-table {
     width: 100% !important;
     min-width: 0 !important;

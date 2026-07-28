@@ -95,12 +95,6 @@
     width: 5.5rem;
 }
 
-.kv-empty {
-    padding: 1rem;
-    text-align: center;
-    color: var(--p-text-muted-color);
-}
-
 .kv-dialog-body {
     display: grid;
     gap: 0.75rem;

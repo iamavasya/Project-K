@@ -114,7 +114,7 @@ export class TileBoardComponent {
     }
     const next = [...this.orderedTiles()];
     moveItemInArray(next, event.previousIndex, event.currentIndex);
-    this.commitOrder(this.floatPinned(next));
+    this.commitOrder(next);
   }
 
   moveTile(index: number, direction: -1 | 1): void {
@@ -125,7 +125,7 @@ export class TileBoardComponent {
     }
     const next = [...tiles];
     moveItemInArray(next, index, target);
-    this.commitOrder(this.floatPinned(next));
+    this.commitOrder(next);
   }
 
   reset(): void {
@@ -135,12 +135,6 @@ export class TileBoardComponent {
       .resetOrder(this.boardKey())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ error: () => undefined });
-  }
-
-  private floatPinned(tiles: TileDefinition[]): TileDefinition[] {
-    const pinned = tiles.filter(tile => tile.pinned).sort((a, b) => a.defaultOrder - b.defaultOrder);
-    const rest = tiles.filter(tile => !tile.pinned);
-    return [...pinned, ...rest];
   }
 
   private commitOrder(tiles: TileDefinition[]): void {

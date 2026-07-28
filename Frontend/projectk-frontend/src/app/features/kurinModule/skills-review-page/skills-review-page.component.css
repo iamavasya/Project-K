@@ -43,12 +43,6 @@
   flex-wrap: wrap;
 }
 
-.skills-review-page__empty {
-  text-align: center;
-  padding: 1.25rem;
-  color: #64748b;
-}
-
 .review-member {
   display: flex;
   align-items: center;

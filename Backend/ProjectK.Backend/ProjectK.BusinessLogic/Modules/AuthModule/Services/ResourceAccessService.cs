@@ -32,23 +32,18 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("User is not authenticated.");
         }
 
-        var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
-
         // An unscoped admin is system-wide: that is the /panel view, where there is no kurin to
         // check against. Once they step into a kurin the claim is re-issued and they are held to
         // that scope like anyone else — otherwise browser history reaches other kurins' data.
-        if (isAdmin && _currentUserContext.KurinKey is null)
+        if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) && _currentUserContext.KurinKey is null)
         {
             return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");
         }
 
-        if (!isAdmin)
+        var roleActionDecision = EvaluateRoleActionPermission(resourceType, action);
+        if (!roleActionDecision.IsAllowed)
         {
-            var roleActionDecision = EvaluateRoleActionPermission(resourceType, action);
-            if (!roleActionDecision.IsAllowed)
-            {
-                return roleActionDecision;
-            }
+            return roleActionDecision;
         }
 
         var currentKurinKey = _currentUserContext.KurinKey;
@@ -63,19 +58,16 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny(scopeResolution.Reason);
         }
 
-        if (!isAdmin)
-        {
-            var roleScopeDecision = await EvaluateRoleSpecificScopeRulesAsync(
-                resourceType,
-                action,
-                scopeResolution,
-                currentKurinKey.Value,
-                cancellationToken);
+        var roleScopeDecision = await EvaluateRoleSpecificScopeRulesAsync(
+            resourceType,
+            action,
+            scopeResolution,
+            currentKurinKey.Value,
+            cancellationToken);
 
-            if (!roleScopeDecision.IsAllowed)
-            {
-                return roleScopeDecision;
-            }
+        if (!roleScopeDecision.IsAllowed)
+        {
+            return roleScopeDecision;
         }
 
         if (scopeResolution.KurinKey != currentKurinKey.Value)
@@ -88,6 +80,13 @@ public class ResourceAccessService : IResourceAccessService
 
     private ResourceAccessDecision EvaluateRoleActionPermission(ResourceType resourceType, ResourceAction action)
     {
+        // A scoped admin may do anything inside the kurin they stepped into; the scope
+        // check further down is the only thing that still constrains them.
+        if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()))
+        {
+            return ResourceAccessDecision.Allow("Admin action is allowed; validating scope.");
+        }
+
         if (_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
         {
             return EvaluateManagerActionPermission(resourceType, action);

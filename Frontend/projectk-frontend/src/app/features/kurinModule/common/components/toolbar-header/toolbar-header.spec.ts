@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToolbarHeader } from './toolbar-header';
 import { provideHttpClient } from '@angular/common/http';
+import { MessageService } from 'primeng/api';
 
 describe('ToolbarHeader', () => {
   let component: ToolbarHeader;
@@ -10,7 +11,7 @@ describe('ToolbarHeader', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ToolbarHeader],
-      providers: [provideHttpClient()],
+      providers: [provideHttpClient(), MessageService],
     })
     .compileComponents();
 

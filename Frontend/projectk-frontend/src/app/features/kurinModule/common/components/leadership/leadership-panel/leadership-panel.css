@@ -62,12 +62,6 @@
     color: var(--p-green-600);
 }
 
-.leadership-empty {
-    padding: 1rem;
-    text-align: center;
-    color: var(--p-text-muted-color);
-}
-
 :host ::ng-deep .leadership-table .p-datatable-table {
     width: 100% !important;
     min-width: 0 !important;

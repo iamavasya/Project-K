@@ -11,3 +11,18 @@ export const MEMBER_PROGRESS_CACHE_PREFIX = 'member-progress:';
 export const BADGES_CATALOG_CACHE_PREFIX = 'catalog:badges:';
 export const PROBES_CATALOG_CACHE_PREFIX = 'catalog:probes:';
 export const LAYOUT_CACHE_PREFIX = 'layout:';
+
+/**
+ * Everything a kurin scope can colour. Catalogues are deliberately absent: they are
+ * global reference data and must survive a scope switch or a sign-out.
+ */
+export const KURIN_SCOPED_CACHE_PREFIXES = [
+  MEMBER_CACHE_PREFIX,
+  GROUP_CACHE_PREFIX,
+  KURIN_CACHE_PREFIX,
+  LEADERSHIP_CACHE_PREFIX,
+  PLANNING_CACHE_PREFIX,
+  MEMBER_WARNING_CACHE_PREFIX,
+  MEMBER_PROGRESS_CACHE_PREFIX,
+  LAYOUT_CACHE_PREFIX
+];

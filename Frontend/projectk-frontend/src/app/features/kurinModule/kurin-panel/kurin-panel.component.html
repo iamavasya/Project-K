@@ -149,18 +149,13 @@
         </p-table>
         @if (groups.length === 0) {
             <div class="table-empty-state">
-                <div class="lil-empty">
-                    <svg class="lil-empty__art" viewBox="0 0 110 66" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                        <path class="lil-empty__dash" d="M8 48 C28 26 48 56 68 32 C82 16 94 28 102 22" />
-                        <circle class="lil-empty__accent" cx="102" cy="22" r="4" />
-                    </svg>
-                    <div class="lil-empty__title">Гуртків поки немає</div>
-                    <div class="lil-empty__body">Курінь без гуртків — як мандрівка без стежки.</div>
+                <app-empty-state
+                    title="Гуртків поки немає"
+                    body="Курінь без гуртків — як мандрівка без стежки.">
                     @if (canManageGroups) {
                         <p-button label="Створити гурток" icon="pi pi-plus" (onClick)="onGroupActionClick(null, 'create')" />
                     }
-                </div>
+                </app-empty-state>
             </div>
         }
     </section>

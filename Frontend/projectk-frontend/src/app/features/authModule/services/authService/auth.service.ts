@@ -9,6 +9,7 @@ import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
 import { ClientCacheService } from "../../../kurinModule/common/services/client-cache/client-cache.service";
+import { KURIN_SCOPED_CACHE_PREFIXES } from "../../../kurinModule/common/services/client-cache/cache-policy";
 
 export interface MfaSetupResponse {
   sharedKey: string;
@@ -77,16 +78,7 @@ export class AuthService {
       tap(response => {
         if (!response.requiresMfa && response.tokens) {
           clearMfaSessionState();
-          const state: AuthState = {
-            userKey: response.userKey,
-            memberKey: response.memberKey,
-            email: response.email,
-            role: response.role,
-            kurinKey: response.kurinKey,
-            accessToken: response.tokens.accessToken,
-          };
-          this.authState$.next(state);
-          this.persistAuthState(state);
+          this.applyState(this.toAuthState(response));
         }
       })
     );
@@ -98,21 +90,10 @@ export class AuthService {
       { email, code, rememberMe: true },
       { withCredentials: true }
     ).pipe(
-      map(response => {
-        if (!response.tokens) throw new Error('No tokens in response');
-        return {
-          userKey: response.userKey,
-          memberKey: response.memberKey,
-          email: response.email,
-          role: response.role,
-          kurinKey: response.kurinKey,
-          accessToken: response.tokens.accessToken,
-        };
-      }),
+      map(response => this.toAuthState(response)),
       tap(state => {
         clearMfaSessionState();
-        this.authState$.next(state);
-        this.persistAuthState(state);
+        this.applyState(state);
       })
     );
   }
@@ -163,16 +144,7 @@ export class AuthService {
       tap(response => {
         if (!response.requiresMfa && response.tokens) {
           clearMfaSessionState();
-          const state: AuthState = {
-            userKey: response.userKey,
-            memberKey: response.memberKey,
-            email: response.email,
-            role: response.role,
-            kurinKey: response.kurinKey,
-            accessToken: response.tokens.accessToken,
-          };
-          this.authState$.next(state);
-          this.persistAuthState(state);
+          this.applyState(this.toAuthState(response));
         }
       })
     );
@@ -184,7 +156,7 @@ export class AuthService {
     clearMfaSessionState();
     clearTileLayoutStorage();
     // Otherwise the next user on this tab is served the previous user's entities.
-    this.cache.clear();
+    this.forgetKurinScopedEntities();
   }
 
   logout() {
@@ -267,24 +239,10 @@ export class AuthService {
       { kurinKey },
       { withCredentials: true }
     ).pipe(
-      map(response => {
-        if (!response.tokens) {
-          throw new Error('No tokens in kurin scope response');
-        }
-
-        return {
-          userKey: response.userKey,
-          memberKey: response.memberKey,
-          email: response.email,
-          role: response.role,
-          kurinKey: response.kurinKey ?? null,
-          accessToken: response.tokens.accessToken
-        } satisfies AuthState;
-      }),
+      map(response => this.toAuthState(response)),
       tap(state => {
-        this.authState$.next(state);
-        this.persistAuthState(state);
-        this.cache.clear();
+        this.applyState(state);
+        this.forgetKurinScopedEntities();
       })
     );
   }
@@ -299,7 +257,7 @@ export class AuthService {
 
       // Entity cache keys carry no kurin scope, so the previous kurin would survive the switch.
       if (kurinChanged) {
-        this.cache.clear();
+        this.forgetKurinScopedEntities();
       }
     }
   }
@@ -324,6 +282,36 @@ export class AuthService {
 
   clearKurinKey(): void {
     this.setKurinKey(null);
+  }
+
+  private toAuthState(response: LoginResponse): AuthState {
+    if (!response.tokens) {
+      throw new Error('No tokens in response');
+    }
+
+    return {
+      userKey: response.userKey,
+      memberKey: response.memberKey,
+      email: response.email,
+      role: response.role,
+      kurinKey: response.kurinKey ?? null,
+      accessToken: response.tokens.accessToken
+    };
+  }
+
+  private applyState(state: AuthState): void {
+    this.authState$.next(state);
+    this.persistAuthState(state);
+  }
+
+  /**
+   * Drops everything the current kurin scope could have coloured. Catalogues are global
+   * reference data on a 6-hour TTL, so a scope switch must not force them to reload.
+   */
+  private forgetKurinScopedEntities(): void {
+    for (const prefix of KURIN_SCOPED_CACHE_PREFIXES) {
+      this.cache.invalidateByPrefix(prefix);
+    }
   }
 
   private persistAuthState(state: AuthState): void {

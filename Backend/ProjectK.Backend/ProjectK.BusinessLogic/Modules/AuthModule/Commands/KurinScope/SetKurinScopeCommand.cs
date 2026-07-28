@@ -4,15 +4,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope
 {
-    public class SetKurinScopeCommand : IRequest<ServiceResult<LoginUserResponse>>
-    {
-        public Guid UserKey { get; }
-        public Guid? KurinKey { get; }
-
-        public SetKurinScopeCommand(Guid userKey, Guid? kurinKey)
-        {
-            UserKey = userKey;
-            KurinKey = kurinKey;
-        }
-    }
+    /// <param name="KurinKey">Kurin to step into, or null to return to system-wide scope.</param>
+    public record SetKurinScopeCommand(Guid UserKey, Guid? KurinKey)
+        : IRequest<ServiceResult<LoginUserResponse>>;
 }

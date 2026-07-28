@@ -132,7 +132,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td colspan="8" class="waitlist-empty-cell">
+                <td colspan="8" class="lil-empty-cell">
                     <app-empty-state
                         art="list"
                         title="Заявок немає"
