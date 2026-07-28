@@ -19,15 +19,20 @@ export class BreadcrumbService {
     if (this.router && this.router.events) {
       this.router.events.pipe(
         filter(event => event instanceof NavigationEnd)
-      ).subscribe(() => {
-        // Update param cache with parameters from the URL
-        this.updateParamCache();
-        
-        // Create breadcrumbs
-        const breadcrumbs = this.createBreadcrumbs();
-        this.breadcrumbsSubject.next(breadcrumbs);
-      });
+      ).subscribe(() => this.refresh());
     }
+
+    // The service is built on first injection, which is whenever the component holding
+    // the breadcrumb first renders. If that is after the initial navigation — the
+    // toolbar only appears once auth resolves — the NavigationEnd above never fires for
+    // the page the user actually landed on, and the trail would stay empty until they
+    // navigated somewhere else.
+    this.refresh();
+  }
+
+  private refresh(): void {
+    this.updateParamCache();
+    this.breadcrumbsSubject.next(this.createBreadcrumbs());
   }
 
   public setParam(key: string, value: string): void {
@@ -44,8 +49,8 @@ export class BreadcrumbService {
     this.paramCache = {};
 
     // Extract parameters from URL segments
-    const urlSegments = this.router.url.split('/').filter(s => s);
-    const routes = this.router.config;
+    const urlSegments = (this.router.url ?? '').split('/').filter(s => s);
+    const routes = this.router.config ?? [];
     
     // Try to match URL segments to route patterns to extract parameters
     for (const route of routes) {
@@ -80,16 +85,20 @@ export class BreadcrumbService {
   }
   
   private addParamsFromRoute(route: ActivatedRoute): void {
+    if (!route?.snapshot) {
+      return;
+    }
+
     // Add params from current route
     Object.assign(this.paramCache, route.snapshot.params);
-    
+
     // Process children
     if (route.firstChild) {
       this.addParamsFromRoute(route.firstChild);
     }
-    
+
     // Process siblings
-    route.children.forEach(child => {
+    (route.children ?? []).forEach(child => {
       this.addParamsFromRoute(child);
     });
   }
@@ -99,6 +108,9 @@ export class BreadcrumbService {
     
     // Get the current activated route
     let currentRoute: ActivatedRoute = this.activatedRoute;
+    if (!currentRoute) {
+      return breadcrumbs;
+    }
     while (currentRoute.firstChild) {
       currentRoute = currentRoute.firstChild;
     }
@@ -110,12 +122,12 @@ export class BreadcrumbService {
   }
   
   private processRoute(route: ActivatedRoute, breadcrumbs: MenuItem[]): void {
-    if (!route) return;
-    
+    if (!route?.snapshot?.data) return;
+
     // If this route has breadcrumb data
     if (route.snapshot.data['breadcrumb']) {
       // Create breadcrumb item for current route
-      const currentUrl = this.router.url;
+      const currentUrl = this.router.url ?? '';
       const currentItem: MenuItem = {
         label: route.snapshot.data['breadcrumb'],
         routerLink: currentUrl
@@ -213,7 +225,7 @@ export class BreadcrumbService {
       .replaceAll(/\//g, '\\/') // Escape slashes
       .replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+'); // Replace params with wildcard pattern
     
-    for (const route of this.router.config) {
+    for (const route of this.router.config ?? []) {
       if (!route.path) continue;
       
       // Direct match
