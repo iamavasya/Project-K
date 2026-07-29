@@ -7,6 +7,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Tests.Security;
@@ -43,9 +44,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = otherKurinKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(otherKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
 
@@ -60,9 +59,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = scopedKurinKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(scopedKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Manage, memberKey);
 
@@ -76,9 +73,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Delete, memberKey);
 
@@ -93,9 +88,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, userKurinKey, null, UserRole.Manager);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = resourceKurinKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(resourceKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -119,9 +112,7 @@ public class ResourceAccessServiceTests
     {
         var kurinKey = Guid.NewGuid();
         var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
-        fixture.Kurins
-            .Setup(repo => repo.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Kurin(1) { KurinKey = kurinKey });
+        fixture.Scope(ResourceType.Kurin, kurinKey, new ResourceScope(kurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Update, kurinKey);
 
@@ -134,9 +125,7 @@ public class ResourceAccessServiceTests
         var kurinKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
         var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
-        fixture.Groups
-            .Setup(repo => repo.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Group("Test", kurinKey) { GroupKey = groupKey });
+        fixture.Scope(ResourceType.Group, groupKey, new ResourceScope(kurinKey, groupKey, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey);
 
@@ -173,9 +162,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, null, new[] { UserRole.User }, userId);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, UserKey = userId });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, userId));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -190,9 +177,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, null, new[] { UserRole.User }, userId);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, UserKey = Guid.NewGuid() });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, Guid.NewGuid()));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -209,22 +194,8 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { UserRole.Mentor }, mentorUserId);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = mentorGroupKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, mentorGroupKey, null));
 
-        fixture.Members
-            .Setup(repo => repo.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-            [
-                new Member
-                {
-                    MemberKey = Guid.NewGuid(),
-                    KurinKey = kurinKey,
-                    GroupKey = mentorGroupKey,
-                    UserKey = mentorUserId
-                }
-            ]);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -241,22 +212,8 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { UserRole.Mentor }, mentorUserId);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = foreignGroupKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, foreignGroupKey, null));
 
-        fixture.Members
-            .Setup(repo => repo.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-            [
-                new Member
-                {
-                    MemberKey = Guid.NewGuid(),
-                    KurinKey = kurinKey,
-                    GroupKey = mentorGroupKey,
-                    UserKey = mentorUserId
-                }
-            ]);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -275,16 +232,9 @@ public class ResourceAccessServiceTests
 
         var fixture = CreateFixture(true, kurinKey, mentorPrimaryGroupKey, new[] { UserRole.Mentor }, mentorUserId);
 
-        fixture.MentorAssignments
-            .Setup(repo => repo.GetByMentorUserKeyAsync(mentorUserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<MentorAssignment>
-            {
-                new MentorAssignment { MentorUserKey = mentorUserId, GroupKey = assignedSecondaryGroupKey }
-            });
+        fixture.MentorGroups(assignedSecondaryGroupKey);
 
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = assignedSecondaryGroupKey });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, assignedSecondaryGroupKey, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
@@ -299,13 +249,7 @@ public class ResourceAccessServiceTests
         var groupKey = Guid.NewGuid();
 
         var fixture = CreateFixture(true, kurinKey, null, UserRole.User);
-        fixture.Leaderships
-            .Setup(repo => repo.GetByKeyAsync(leadershipKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Leadership { LeadershipKey = leadershipKey, GroupKey = groupKey });
-
-        fixture.Groups
-            .Setup(repo => repo.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Group("Test", kurinKey) { GroupKey = groupKey, KurinKey = kurinKey });
+        fixture.Scope(ResourceType.Leadership, leadershipKey, new ResourceScope(kurinKey, groupKey, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Leadership, ResourceAction.Read, leadershipKey);
 
@@ -317,9 +261,7 @@ public class ResourceAccessServiceTests
     {
         var memberKey = Guid.NewGuid();
         var fixture = CreateFixture(true, null, null, UserRole.Manager);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(Guid.NewGuid(), null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
 
@@ -332,9 +274,7 @@ public class ResourceAccessServiceTests
     {
         var memberKey = Guid.NewGuid();
         var fixture = CreateFixture(true, Guid.NewGuid(), null, UserRole.Manager);
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Member?)null);
+        fixture.Scope(ResourceType.Member, memberKey, null);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
 
@@ -351,13 +291,7 @@ public class ResourceAccessServiceTests
 
         var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
 
-        fixture.ProbeProgresses
-            .Setup(repo => repo.GetByKeyAsync(probeProgressKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProbeProgress { ProbeProgressKey = probeProgressKey, MemberKey = memberKey });
-
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+        fixture.Scope(ResourceType.ProbeProgress, probeProgressKey, new ResourceScope(kurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.ProbeProgress, ResourceAction.Read, probeProgressKey);
 
@@ -374,13 +308,7 @@ public class ResourceAccessServiceTests
 
         var fixture = CreateFixture(true, userKurinKey, null, UserRole.Manager);
 
-        fixture.BadgeProgresses
-            .Setup(repo => repo.GetByKeyAsync(badgeProgressKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BadgeProgress { BadgeProgressKey = badgeProgressKey, MemberKey = memberKey });
-
-        fixture.Members
-            .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = foreignKurinKey });
+        fixture.Scope(ResourceType.BadgeProgress, badgeProgressKey, new ResourceScope(foreignKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Read, badgeProgressKey);
 
@@ -415,56 +343,36 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var members = new Mock<IMemberRepository>();
-        var groups = new Mock<IGroupRepository>();
-        var kurins = new Mock<IKurinRepository>();
-        var leaderships = new Mock<ILeadershipRepository>();
-        var planningSessions = new Mock<IPlanningSessionRepository>();
-        var badgeProgresses = new Mock<IBadgeProgressRepository>();
-        var probeProgresses = new Mock<IProbeProgressRepository>();
-        var mentorAssignments = new Mock<IMentorAssignmentRepository>();
+        var scopeReader = new Mock<IResourceScopeReader>();
+        scopeReader
+            .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ResourceScope?)null);
 
-        mentorAssignments.Setup(m => m.GetByMentorUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<MentorAssignment>());
+        // A mentor covers the group they belong to unless a test says otherwise.
+        scopeReader
+            .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
 
-        var unitOfWork = new Mock<IUnitOfWork>();
-        unitOfWork.SetupGet(x => x.Members).Returns(members.Object);
-        unitOfWork.SetupGet(x => x.Groups).Returns(groups.Object);
-        unitOfWork.SetupGet(x => x.Kurins).Returns(kurins.Object);
-        unitOfWork.SetupGet(x => x.Leaderships).Returns(leaderships.Object);
-        unitOfWork.SetupGet(x => x.PlanningSessions).Returns(planningSessions.Object);
-        unitOfWork.SetupGet(x => x.BadgeProgresses).Returns(badgeProgresses.Object);
-        unitOfWork.SetupGet(x => x.ProbeProgresses).Returns(probeProgresses.Object);
-        unitOfWork.SetupGet(x => x.MentorAssignments).Returns(mentorAssignments.Object);
-
-        if (kurinKey.HasValue)
-        {
-            members
-                .Setup(repo => repo.GetAllByKurinKeyAsync(kurinKey.Value, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(
-                [
-                    new Member
-                    {
-                        MemberKey = Guid.NewGuid(),
-                        KurinKey = kurinKey.Value,
-                        GroupKey = groupKey,
-                        UserKey = userId
-                    }
-                ]);
-        }
-
-        var service = new ResourceAccessService(unitOfWork.Object, currentUserContext.Object);
-        return new ResourceAccessFixture(service, members, groups, kurins, leaderships, planningSessions, badgeProgresses, probeProgresses, mentorAssignments);
+        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object);
+        return new ResourceAccessFixture(service, scopeReader);
     }
 
     private sealed record ResourceAccessFixture(
         ResourceAccessService Service,
-        Mock<IMemberRepository> Members,
-        Mock<IGroupRepository> Groups,
-        Mock<IKurinRepository> Kurins,
-        Mock<ILeadershipRepository> Leaderships,
-        Mock<IPlanningSessionRepository> PlanningSessions,
-        Mock<IBadgeProgressRepository> BadgeProgresses,
-        Mock<IProbeProgressRepository> ProbeProgresses,
-        Mock<IMentorAssignmentRepository> MentorAssignments);
+        Mock<IResourceScopeReader> ScopeReader)
+    {
+        public void Scope(ResourceType resourceType, Guid resourceKey, ResourceScope? scope)
+        {
+            ScopeReader
+                .Setup(x => x.GetScopeAsync(resourceType, resourceKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(scope);
+        }
+
+        public void MentorGroups(params Guid[] groupKeys)
+        {
+            ScopeReader
+                .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(groupKeys);
+        }
+    }
 }

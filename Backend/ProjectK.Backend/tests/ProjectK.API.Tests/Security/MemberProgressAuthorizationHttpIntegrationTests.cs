@@ -240,37 +240,14 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 options.EnableResourceGuard = true;
             });
 
-            var memberRepository = new Mock<IMemberRepository>();
-            memberRepository
-                .Setup(repo => repo.GetByKeyAsync(targetMemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Member
-                {
-                    MemberKey = targetMemberKey,
-                    KurinKey = targetMemberKurinKey,
-                    GroupKey = targetMemberGroupKey,
-                    UserKey = Guid.NewGuid()
-                });
+            var scopeReader = new Mock<IResourceScopeReader>();
+            scopeReader
+                .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
-            memberRepository
-                .Setup(repo => repo.GetAllByKurinKeyAsync(userKurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(
-                [
-                    new Member
-                    {
-                        MemberKey = Guid.NewGuid(),
-                        KurinKey = userKurinKey,
-                        GroupKey = currentUserGroupKey,
-                        UserKey = userId
-                    }
-                ]);
-
-            var unitOfWork = new Mock<IUnitOfWork>();
-            unitOfWork.SetupGet(x => x.Members).Returns(memberRepository.Object);
-
-            var mentorAssignments = new Mock<IMentorAssignmentRepository>();
-            mentorAssignments.Setup(m => m.GetByMentorUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<MentorAssignment>());
-            unitOfWork.SetupGet(x => x.MentorAssignments).Returns(mentorAssignments.Object);
+            scopeReader
+                .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { currentUserGroupKey });
 
             var mediator = new Mock<IMediator>();
             mediator
@@ -322,7 +299,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                         Status = ProbeProgressStatus.Completed
                     }));
 
-            builder.Services.AddScoped(_ => unitOfWork.Object);
+            builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();

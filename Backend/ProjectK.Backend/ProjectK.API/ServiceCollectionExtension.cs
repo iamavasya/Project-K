@@ -88,6 +88,7 @@ namespace ProjectK.API
                 services.AddScoped<IEmailService, MockEmailService>();
             }
 
+            services.AddScoped<IResourceScopeReader, ProjectK.Infrastructure.Repositories.InfrastructureModule.ResourceScopeReader>();
             services.AddScoped<ResourceAccessService>();
             services.AddScoped<MemberProfileVerificationService>();
             services.AddScoped<IResourceAccessService>(sp =>

@@ -20,6 +20,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -106,15 +107,12 @@ public class ResourceAuthorizationHttpIntegrationTests
                 options.EnableResourceGuard = true;
             });
 
-            var membersRepository = new Mock<IMemberRepository>();
-            membersRepository
-                .Setup(repo => repo.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = memberKurinKey });
+            var scopeReader = new Mock<IResourceScopeReader>();
+            scopeReader
+                .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceScope(memberKurinKey, null, null));
 
-            var unitOfWork = new Mock<IUnitOfWork>();
-            unitOfWork.SetupGet(x => x.Members).Returns(membersRepository.Object);
-
-            builder.Services.AddScoped(_ => unitOfWork.Object);
+            builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
 

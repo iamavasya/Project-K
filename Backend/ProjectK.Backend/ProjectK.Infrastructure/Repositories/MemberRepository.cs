@@ -55,6 +55,7 @@ namespace ProjectK.Infrastructure.Repositories
                                                 .ThenInclude(l => l.Group)
                                          .Include(m => m.MemberWarnings)
                                          .Include(m => m.MemberAwards)
+                                         .AsSplitQuery()
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
@@ -70,6 +71,7 @@ namespace ProjectK.Infrastructure.Repositories
                                                 .ThenInclude(l => l.Group)
                                          .Include(m => m.MemberWarnings)
                                          .Include(m => m.MemberAwards)
+                                         .AsSplitQuery()
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
         }
