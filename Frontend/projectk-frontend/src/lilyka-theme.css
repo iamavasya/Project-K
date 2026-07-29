@@ -164,6 +164,14 @@ h1, h2, h3 {
   margin: 0;
 }
 
+/* Дровер PrimeNG малює рамку по внутрішньому краю. На білому контенті її не видно,
+   а на зеленому банері вона читається як стовпчик світлих пікселів. Відділяє тінь. */
+:root .p-drawer-left .p-drawer,
+:root .p-drawer-right .p-drawer {
+  border-inline-end-width: 0;
+  border-inline-start-width: 0;
+}
+
 .lil-sidebar-brand {
   align-items: center;
   background: var(--p-primary-color);
