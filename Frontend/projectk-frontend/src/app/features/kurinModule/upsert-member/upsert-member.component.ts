@@ -33,6 +33,7 @@ import { MemberProfileVerificationStatus } from '../common/models/enums/member-p
 import { TooltipModule } from 'primeng/tooltip';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
 
 @Component({
   selector: 'app-upsert-member',
@@ -130,8 +131,10 @@ export class UpsertMemberComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey') ?? '';
-      this.groupKey = params.get('groupKey') ?? '';
-      this.kurinKey = params.get('kurinKey') ?? '';
+      // Guid.Empty reaches the URL whenever a groupless member is linked to; taking it as
+      // a real key would send it back to the API as the member's group on save.
+      this.groupKey = this.usableParam(params.get('groupKey'));
+      this.kurinKey = this.usableParam(params.get('kurinKey'));
     });
     if (this.memberKey) {
       this.loadData();
@@ -169,9 +172,19 @@ export class UpsertMemberComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching member:', error);
-        this.router.navigate(['/group', this.groupKey], { replaceUrl: true });
+        this.router.navigate(this.scopeRoute(), { replaceUrl: true });
       }
     });
+  }
+
+  private usableParam(value: string | null): string {
+    return isUsableKey(value) ? value!.trim() : '';
+  }
+
+  // Where to land when the member page itself is gone: their group if we know it,
+  // otherwise the kurin.
+  private scopeRoute(): unknown[] {
+    return this.groupKey ? ['/group', this.groupKey] : ['/kurin'];
   }
 
   private setupAccordionAndToggles() {
@@ -587,7 +600,7 @@ export class UpsertMemberComponent implements OnInit {
           accept: () => {
             this.memberService.delete(this.memberKey).subscribe({
               next: () => {
-                this.router.navigate(['/group', this.groupKey]);
+                this.router.navigate(this.scopeRoute());
               },
               error: (error) => {
                 console.error('Error deleting member:', error);

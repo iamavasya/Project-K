@@ -123,7 +123,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/kurinModule/kurin-panel/kurin-panel.component')
       .then(m => m.KurinPanelComponent),
     title: 'Курінь',
-    data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin' },
+    data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
   },
   { 
     path: 'group/:groupKey',
@@ -131,7 +131,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/kurinModule/group-panel/group-panel.component')
       .then(m => m.GroupPanelComponent),
     title: 'Гурток',
-    data: { breadcrumb: 'Гурток', parent: '/kurin', entityType: 'group', titleContext: 'group' }
+    data: { breadcrumb: 'Гурток', parent: '/kurin', entityType: 'group', titleContext: 'group', breadcrumbEntity: 'group' }
   },
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
@@ -148,6 +148,22 @@ export const routes: Routes = [
       .then(m => m.UpsertMemberComponent),
     title: 'Новий учасник',
     data: { breadcrumb: 'Новий учасник', parent: '/group/:groupKey', entityType: 'group', entityAction: 'Create', titleContext: 'group' }
+  },
+  {
+    // Editing a member who belongs to no group: the group-scoped twin above cannot be
+    // used, its :groupKey would be Guid.Empty.
+    path: 'kurin/:kurinKey/member/upsert/:memberKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member.component')
+      .then(m => m.UpsertMemberComponent),
+    title: 'Редагування учасника',
+    data: {
+      breadcrumb: 'Редагування учасника',
+      parent: '/member/:memberKey',
+      entityType: 'member',
+      entityAction: 'Update',
+      titleContext: 'member'
+    }
   },
   {
     path: 'kurin/:kurinKey/member/upsert',
@@ -176,7 +192,8 @@ export const routes: Routes = [
       parent: '/group/:groupKey',
       parentFallback: '/kurin',
       entityType: 'member',
-      titleContext: 'member'
+      titleContext: 'member',
+      breadcrumbEntity: 'member'
     }
   },
   {

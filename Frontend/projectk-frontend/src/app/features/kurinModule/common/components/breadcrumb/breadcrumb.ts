@@ -1,5 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { MenuItem } from 'primeng/api';
+import { AsyncPipe } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-service';
 
@@ -7,19 +7,15 @@ import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-
 @Component({
   selector: 'app-breadcrumb',
   standalone: true,
-  imports: [BreadcrumbModule],
+  imports: [BreadcrumbModule, AsyncPipe],
   template: `
-    <p-breadcrumb [model]="items" [home]="home"></p-breadcrumb>
+    @if (home$ | async; as home) {
+      <p-breadcrumb [model]="(breadcrumbs$ | async) ?? []" [home]="home" [homeAriaLabel]="home.title ?? ''" />
+    }
   `
 })
-export class BreadcrumbComponent implements OnInit {
-  items: MenuItem[] = [];
-  home: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
+export class BreadcrumbComponent {
   private readonly breadcrumbService = inject(BreadcrumbService);
-
-  ngOnInit() {
-    this.breadcrumbService.breadcrumbs$.subscribe(breadcrumbs => {
-      this.items = breadcrumbs;
-    });
-  }
+  protected readonly breadcrumbs$ = this.breadcrumbService.breadcrumbs$;
+  protected readonly home$ = this.breadcrumbService.home$;
 }

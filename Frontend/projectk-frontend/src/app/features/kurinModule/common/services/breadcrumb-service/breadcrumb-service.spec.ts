@@ -1,9 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { BreadcrumbService } from './breadcrumb-service';
 import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Route, Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { MenuItem } from 'primeng/api';
+import { AuthState } from '../../../../authModule/models/auth-state.model';
+import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
+import { GroupDto } from '../../models/groupDto';
+import { KurinDto } from '../../models/kurinDto';
+import { MemberDto } from '../../models/memberDto';
+import { GroupService } from '../group-service/group.service';
+import { KurinService } from '../kurin-service/kurin.service';
+import { MemberService } from '../member-service/member.service';
 
 describe('BreadcrumbService', () => {
   let service: BreadcrumbService;
@@ -11,6 +19,20 @@ describe('BreadcrumbService', () => {
   let mockRouter: jasmine.SpyObj<Router>;
   let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
   let permissionService: jasmine.SpyObj<PermissionService>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let kurinService: jasmine.SpyObj<KurinService>;
+  let groupService: jasmine.SpyObj<GroupService>;
+  let memberService: jasmine.SpyObj<MemberService>;
+
+  const createAuthState = (overrides: Partial<AuthState> = {}): AuthState => ({
+    userKey: 'user-1',
+    memberKey: null,
+    email: 'user@example.com',
+    role: 'admin',
+    kurinKey: null,
+    accessToken: 'token',
+    ...overrides
+  });
 
   const createActivatedRouteSnapshot = (data: Record<string, unknown>, params: Record<string, string>): ActivatedRouteSnapshot => {
     return {
@@ -62,10 +84,25 @@ describe('BreadcrumbService', () => {
   });
 
   beforeEach(() => {
-    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['getRole']);
+    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['getRole', 'isAdmin']);
     permissionService.getRole.and.returnValue('admin');
+    permissionService.isAdmin.and.returnValue(false);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
+    authService.getAuthStateValue.and.returnValue(null);
+    kurinService = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
+    kurinService.getByKey.and.returnValue(of({ number: 12 } as unknown as KurinDto));
+    groupService = jasmine.createSpyObj<GroupService>('GroupService', ['getByKey']);
+    groupService.getByKey.and.returnValue(of({ name: 'Соколи' } as unknown as GroupDto));
+    memberService = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    memberService.getByKey.and.returnValue(of({ lastName: 'Шевченко', firstName: 'Тарас' } as unknown as MemberDto));
     TestBed.configureTestingModule({
-      providers: [{ provide: PermissionService, useValue: permissionService }]
+      providers: [
+        { provide: PermissionService, useValue: permissionService },
+        { provide: AuthService, useValue: authService },
+        { provide: KurinService, useValue: kurinService },
+        { provide: GroupService, useValue: groupService },
+        { provide: MemberService, useValue: memberService }
+      ]
     });
   });
 
@@ -450,29 +487,20 @@ describe('BreadcrumbService', () => {
 
     service = TestBed.inject(BreadcrumbService);
 
-    let emissionCount = 0;
-    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
-      emissionCount++;
-      if (emissionCount === 2) {
-        // Initial state, groupKey is not resolved
-        expect(breadcrumbs.length).toBe(2);
-        expect(breadcrumbs[0].label).toBe('Group Details');
-        expect(breadcrumbs[0].routerLink).toBe('/group/:groupKey'); // unresolved
-        
-        // Dynamically set missing parameter
-        service.setParam('groupKey', 'group-42');
-      } else if (emissionCount === 3) {
-        // State after setParam
-        expect(breadcrumbs.length).toBe(2);
-        expect(breadcrumbs[0].label).toBe('Group Details');
-        expect(breadcrumbs[0].routerLink).toBe('/group/group-42'); // resolved correctly
-        expect(breadcrumbs[1].label).toBe('Member Profile');
-        expect(breadcrumbs[1].routerLink).toBe('/member/789');
-        done();
-      }
-    });
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
 
     routerEventsSubject.next(new NavigationEnd(1, '/member/789', '/member/789'));
+
+    // The group link cannot be built yet, so it is left out rather than rendered dead.
+    expect(latest.map(item => item.routerLink)).toEqual(['/member/789']);
+
+    // Dynamically set missing parameter
+    service.setParam('groupKey', 'group-42');
+
+    expect(latest.map(item => item.label)).toEqual(['Group Details', 'Member Profile']);
+    expect(latest.map(item => item.routerLink)).toEqual(['/group/group-42', '/member/789']);
+    done();
   });
 
   it('should fall back to kurin for a member without groupKey', (done) => {
@@ -562,6 +590,353 @@ describe('BreadcrumbService', () => {
     routerEventsSubject.next(new NavigationEnd(1, '/member/mentor-1', '/member/mentor-1'));
 
     expect(latest.map(item => item.routerLink)).toEqual(['/kurin', '/member/mentor-1']);
+  });
+
+  it('should point home at the kurin and drop the crumbs above it in kurin scope', (done) => {
+    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    mockRouter = createMockRouter('/group/group-42', [
+      { path: 'panel', data: { breadcrumb: 'Panel' } },
+      { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group', parent: '/kurin' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Group', parent: '/kurin' },
+      { groupKey: 'group-42' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let home: MenuItem | null = null;
+    service.home$.subscribe(item => home = item);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.map(item => item.label)).toEqual(['Group']);
+        expect(home!.routerLink).toEqual(['/kurin']);
+        expect(home!.title).toBe('Курінь');
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/group/group-42', '/group/group-42'));
+  });
+
+  it('should point home at the admin panel outside kurin scope', (done) => {
+    permissionService.isAdmin.and.returnValue(true);
+    authService.getAuthStateValue.and.returnValue(createAuthState());
+    mockRouter = createMockRouter('/users', [
+      { path: 'panel', data: { breadcrumb: 'Panel' } },
+      { path: 'users', data: { breadcrumb: 'Users', parent: '/panel' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot({ breadcrumb: 'Users', parent: '/panel' }, {});
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let home: MenuItem | null = null;
+    service.home$.subscribe(item => home = item);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.map(item => item.label)).toEqual(['Users']);
+        expect(home!.routerLink).toEqual(['/panel']);
+        expect(home!.title).toBe('Адміністрація');
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/users', '/users'));
+  });
+
+  it('should emit an empty trail on the home page itself', (done) => {
+    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    mockRouter = createMockRouter('/kurin', [
+      { path: 'panel', data: { breadcrumb: 'Panel' } },
+      { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot({ breadcrumb: 'Kurin', parent: '/panel' }, {});
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.length).toBe(0);
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/kurin', '/kurin'));
+  });
+
+  it('should omit an admin-only parent of the page the user is standing on', (done) => {
+    permissionService.getRole.and.returnValue('manager');
+    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'manager', memberKey: 'member-7' }));
+    mockRouter = createMockRouter('/kurin', [
+      { path: 'panel', data: { breadcrumb: 'Panel' } },
+      { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] },
+      {}
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+
+    let emissionCount = 0;
+    service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
+      emissionCount++;
+      if (emissionCount === 2) {
+        expect(breadcrumbs.map(item => item.label)).toEqual(['Kurin']);
+        done();
+      }
+    });
+
+    routerEventsSubject.next(new NavigationEnd(1, '/kurin', '/kurin'));
+  });
+
+  it('should label entity crumbs with the same names the page title shows', () => {
+    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    mockRouter = createMockRouter('/member/member-1', [
+      { path: 'kurin', data: { breadcrumb: 'Kurin', breadcrumbEntity: 'kurin' } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Гурток', parent: '/kurin', breadcrumbEntity: 'group' } },
+      {
+        path: 'member/:memberKey',
+        data: {
+          breadcrumb: 'Картка учасника',
+          parent: '/group/:groupKey',
+          parentFallback: '/kurin',
+          breadcrumbEntity: 'member'
+        }
+      }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      {
+        breadcrumb: 'Картка учасника',
+        parent: '/group/:groupKey',
+        parentFallback: '/kurin',
+        breadcrumbEntity: 'member'
+      },
+      { memberKey: 'member-1', groupKey: 'group-42' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/member-1', '/member/member-1'));
+
+    expect(latest.map(item => item.label)).toEqual(['г. Соколи', 'Шевченко Тарас']);
+    expect(groupService.getByKey).toHaveBeenCalledWith('group-42');
+    expect(memberService.getByKey).toHaveBeenCalledWith('member-1');
+  });
+
+  it('should keep the static label when the entity lookup fails', () => {
+    memberService.getByKey.and.returnValue(throwError(() => new Error('404')));
+    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    mockRouter = createMockRouter('/member/member-1', [
+      { path: 'member/:memberKey', data: { breadcrumb: 'Картка учасника', breadcrumbEntity: 'member' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Картка учасника', breadcrumbEntity: 'member' },
+      { memberKey: 'member-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/member-1', '/member/member-1'));
+
+    expect(latest.map(item => item.label)).toEqual(['Картка учасника']);
+  });
+
+  it('should label a kurin crumb from the route parameter', () => {
+    permissionService.getRole.and.returnValue('manager');
+    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'manager', memberKey: 'member-7' }));
+    mockRouter = createMockRouter('/kurin/kurin-1/settings', [
+      { path: 'kurin', data: { breadcrumb: 'Курінь', breadcrumbEntity: 'kurin' } },
+      { path: 'kurin/:kurinKey/settings', data: { breadcrumb: 'Налаштування куреня', parent: '/kurin' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Налаштування куреня', parent: '/kurin' },
+      { kurinKey: 'kurin-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, '/kurin/kurin-1/settings', '/kurin/kurin-1/settings'));
+
+    expect(latest.map(item => item.label)).toEqual(['к. ч. 12', 'Налаштування куреня']);
+  });
+
+  it('should label the group crumb once its key arrives through setParam', () => {
+    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    mockRouter = createMockRouter('/member/member-1', [
+      { path: 'group/:groupKey', data: { breadcrumb: 'Гурток', breadcrumbEntity: 'group' } },
+      { path: 'member/:memberKey', data: { breadcrumb: 'Картка учасника', parent: '/group/:groupKey' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Картка учасника', parent: '/group/:groupKey' },
+      { memberKey: 'member-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/member-1', '/member/member-1'));
+    expect(latest.map(item => item.label)).toEqual(['Картка учасника']);
+
+    service.setParam('groupKey', 'group-42');
+
+    expect(latest.map(item => item.label)).toEqual(['г. Соколи', 'Картка учасника']);
+    expect(latest.map(item => item.routerLink)).toEqual(['/group/group-42', '/member/member-1']);
+  });
+
+  it('should ignore an empty guid pushed through setParam', () => {
+    permissionService.getRole.and.returnValue('mentor');
+    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'mentor', memberKey: 'mentor-1' }));
+    mockRouter = createMockRouter('/member/member-1', [
+      { path: 'kurin', data: { breadcrumb: 'Kurin' } },
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
+      {
+        path: 'member/:memberKey',
+        data: { breadcrumb: 'Member Card', parent: '/group/:groupKey', parentFallback: '/kurin' }
+      }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'Member Card', parent: '/group/:groupKey', parentFallback: '/kurin' },
+      { memberKey: 'member-1' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, '/member/member-1', '/member/member-1'));
+    service.setParam('groupKey', '00000000-0000-0000-0000-000000000000');
+
+    expect(latest.map(item => item.routerLink)).toEqual(['/kurin', '/member/member-1']);
+    expect(groupService.getByKey).not.toHaveBeenCalled();
+  });
+
+  it('should not build a parent crumb from an empty guid in the url', () => {
+    permissionService.getRole.and.returnValue('mentor');
+    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'mentor', memberKey: 'mentor-1' }));
+    const url = '/group/00000000-0000-0000-0000-000000000000/member/upsert';
+    mockRouter = createMockRouter(url, [
+      { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
+      { path: 'group/:groupKey/member/upsert', data: { breadcrumb: 'New Member', parent: '/group/:groupKey' } }
+    ]);
+    const snapshot = createActivatedRouteSnapshot(
+      { breadcrumb: 'New Member', parent: '/group/:groupKey' },
+      { groupKey: '00000000-0000-0000-0000-000000000000' }
+    );
+    mockActivatedRoute = createMockActivatedRoute(snapshot);
+
+    TestBed.configureTestingModule({
+      providers: [
+        BreadcrumbService,
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ]
+    });
+
+    service = TestBed.inject(BreadcrumbService);
+    let latest: MenuItem[] = [];
+    service.breadcrumbs$.subscribe(breadcrumbs => latest = breadcrumbs);
+
+    routerEventsSubject.next(new NavigationEnd(1, url, url));
+
+    expect(latest.map(item => item.label)).toEqual(['New Member']);
   });
 
   it('should handle complex nested route structure with multiple children', (done) => {

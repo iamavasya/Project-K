@@ -41,6 +41,7 @@ import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../common/functions/progress-status-labels.function';
+import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
@@ -135,7 +136,7 @@ export class MemberCardComponent implements OnInit {
     this.memberService.getByKey(this.memberKey).subscribe({
       next: (member) => {
         this.member = member;
-        if (member.groupKey) {
+        if (isUsableKey(member.groupKey)) {
           this.breadcrumbService.setParam('groupKey', member.groupKey);
         }
         this.updateMemberAccess(member.memberKey ?? this.memberKey);
@@ -143,7 +144,7 @@ export class MemberCardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching member:', error);
-        if (this.member?.groupKey) {
+        if (isUsableKey(this.member?.groupKey)) {
           this.router.navigate(['/group', this.member?.groupKey], { replaceUrl: true });
         }
         else this.router.navigate(['/panel'], { replaceUrl: true });
@@ -647,10 +648,27 @@ export class MemberCardComponent implements OnInit {
   }
 
   onEditMember() {
-    this.router.navigate(
-      ['/group', this.member?.groupKey, 'member', 'upsert', this.memberKey],
-      { state: { fromMember: true } }
-    );
+    const editRoute = this.resolveEditRoute();
+    if (!editRoute) {
+      console.error('Cannot edit member without a group or kurin scope:', this.memberKey);
+      return;
+    }
+
+    this.router.navigate(editRoute, { state: { fromMember: true } });
+  }
+
+  // A member with no group is edited in the kurin scope — the group route would carry
+  // Guid.Empty as its :groupKey and lead the user into a dead page.
+  private resolveEditRoute(): unknown[] | null {
+    if (isUsableKey(this.member?.groupKey)) {
+      return ['/group', this.member?.groupKey, 'member', 'upsert', this.memberKey];
+    }
+
+    if (isUsableKey(this.member?.kurinKey)) {
+      return ['/kurin', this.member?.kurinKey, 'member', 'upsert', this.memberKey];
+    }
+
+    return null;
   }
 
   onSaveAward(request: UpsertMemberAwardRequest): void {

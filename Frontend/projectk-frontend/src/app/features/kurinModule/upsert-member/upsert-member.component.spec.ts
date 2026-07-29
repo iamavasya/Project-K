@@ -182,6 +182,35 @@ describe('UpsertMemberComponent', () => {
       expect(component.groupKey).toBe(groupKey);
     });
 
+    it('should ignore an empty guid group key from the route', () => {
+      setRouteParams({ groupKey: '00000000-0000-0000-0000-000000000000', kurinKey: 'kurin-123', memberKey });
+      create();
+      expect(component.groupKey).toBe('');
+      expect(component.kurinKey).toBe('kurin-123');
+    });
+
+    it('should not send an empty guid group key when updating a groupless member', () => {
+      setRouteParams({ groupKey: '00000000-0000-0000-0000-000000000000', kurinKey: 'kurin-123', memberKey });
+      create();
+
+      component.submit();
+
+      const dtoArg = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dtoArg.groupKey).toBeUndefined();
+      expect(dtoArg.kurinKey).toBe('kurin-123');
+    });
+
+    it('should fall back to the kurin when the member cannot be loaded without a group', () => {
+      memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Not found')));
+      setRouteParams({ kurinKey: 'kurin-123', memberKey });
+      // Rendering is skipped on purpose: the form template needs a loaded member.
+      fixture = TestBed.createComponent(UpsertMemberComponent);
+      component = fixture.componentInstance;
+      component.ngOnInit();
+
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/kurin'], { replaceUrl: true });
+    });
+
     it('should detect navigation from member page via currentNavigation', () => {
       const mockNavigation: Partial<Navigation> = {
         extras: { state: { fromMember: true } }

@@ -1,7 +1,8 @@
+import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
 import { AuthState } from '../models/auth-state.model';
 
 export function authenticatedHomeRoute(state: AuthState | null | undefined): unknown[] {
-  if (state?.kurinKey) {
+  if (isUsableKey(state?.kurinKey)) {
     return ['/kurin'];
   }
 
@@ -9,8 +10,8 @@ export function authenticatedHomeRoute(state: AuthState | null | undefined): unk
     return ['/panel'];
   }
 
-  if (state?.memberKey) {
-    return ['/member', state.memberKey];
+  if (isUsableKey(state?.memberKey)) {
+    return ['/member', state?.memberKey];
   }
 
   return ['/login'];

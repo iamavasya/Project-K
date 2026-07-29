@@ -286,6 +286,38 @@ describe('MemberCardComponent', () => {
     );
   });
 
+  it('onEditMember should edit in the kurin scope when the member has no group', () => {
+    const grouplessMember = { ...member, groupKey: '00000000-0000-0000-0000-000000000000' };
+    memberServiceSpy.getByKey.and.returnValue(of(grouplessMember));
+    createComponent();
+    fixture.detectChanges();
+    component.onEditMember();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(
+      ['/kurin', member.kurinKey, 'member', 'upsert', memberKey],
+      { state: { fromMember: true } }
+    );
+  });
+
+  it('onEditMember should not navigate when the member has neither group nor kurin', () => {
+    const emptyGuid = '00000000-0000-0000-0000-000000000000';
+    memberServiceSpy.getByKey.and.returnValue(of({ ...member, groupKey: emptyGuid, kurinKey: emptyGuid }));
+    createComponent();
+    fixture.detectChanges();
+    routerSpy.navigate.calls.reset();
+    component.onEditMember();
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to panel on load error when the group key is an empty guid', () => {
+    memberServiceSpy.getByKey.and.returnValue(of(member));
+    createComponent();
+    fixture.detectChanges();
+    memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Network')));
+    component.member = { ...member, groupKey: '00000000-0000-0000-0000-000000000000' };
+    component.refreshData();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/panel'], { replaceUrl: true });
+  });
+
   it('refreshData should use latest paramMap value if it changes', () => {
     memberServiceSpy.getByKey.and.returnValues(
       of(member),
