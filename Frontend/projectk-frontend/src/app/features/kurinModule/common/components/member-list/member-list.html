@@ -138,10 +138,13 @@
       <p-table #memberTable 
                dataKey="memberKey"
                styleClass="member-list-table member-list-table--members"
-               [value]="membersLookup" 
-               stripedRows 
-               [globalFilterFields]="['lastName', 'firstName']" 
-               selectionMode="single" 
+               [value]="membersLookup"
+               stripedRows
+               [globalFilterFields]="['lastName', 'firstName']"
+               [paginator]="true"
+               [rows]="20"
+               [rowsPerPageOptions]="[20, 50, 100]"
+               selectionMode="single"
                [(selection)]="selectedMember" 
                (onRowSelect)="onMemberSelect($any($event).data)">
         
