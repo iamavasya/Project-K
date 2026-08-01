@@ -380,8 +380,18 @@ namespace ProjectK.API
                     using var scope = app.Services.CreateScope();
                     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                    ctx.Status("Summoning database goblins...");
-                    await dbContext.Database.MigrateAsync();
+                    if (ShouldRunMigrationsOnStartup(app.Environment))
+                    {
+                        ctx.Status("Summoning database goblins...");
+                        await dbContext.Database.MigrateAsync();
+                    }
+                    else
+                    {
+                        ctx.Status("Skipping migrations — apply them via the deploy step...");
+                        app.Logger.LogInformation(
+                            "Startup migrations skipped for environment {Environment}; the schema must be applied out-of-band (migration bundle) so instances do not race.",
+                            app.Environment.EnvironmentName);
+                    }
 
                     ctx.Status("Planting heroic seed data...");
                     await DataSeeder.SeedAsync(scope.ServiceProvider);
@@ -400,6 +410,13 @@ namespace ProjectK.API
                 await Task.Delay(pause);
             }
         }
+
+        // Managed deployments (Production, Staging) apply the schema out-of-band via the
+        // migration bundle in the deploy step, so several instances can boot without racing
+        // each other and startup stays fast. Everything else — Development, E2E, SelfHost,
+        // Tailscale, and any custom single-instance environment — keeps auto-migrating.
+        private static bool ShouldRunMigrationsOnStartup(IHostEnvironment environment)
+            => !environment.IsProduction() && !environment.IsStaging();
 
         private static void ConfigureRateLimiting(IServiceCollection services, IConfiguration configuration)
         {
