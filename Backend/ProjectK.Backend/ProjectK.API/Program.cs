@@ -380,7 +380,7 @@ namespace ProjectK.API
                     using var scope = app.Services.CreateScope();
                     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                    if (ShouldRunMigrationsOnStartup(app.Environment))
+                    if (ShouldRunMigrationsOnStartup(app.Configuration))
                     {
                         ctx.Status("Summoning database goblins...");
                         await dbContext.Database.MigrateAsync();
@@ -411,12 +411,12 @@ namespace ProjectK.API
             }
         }
 
-        // Managed deployments (Production, Staging) apply the schema out-of-band via the
-        // migration bundle in the deploy step, so several instances can boot without racing
-        // each other and startup stays fast. Everything else — Development, E2E, SelfHost,
-        // Tailscale, and any custom single-instance environment — keeps auto-migrating.
-        private static bool ShouldRunMigrationsOnStartup(IHostEnvironment environment)
-            => !environment.IsProduction() && !environment.IsStaging();
+        // Defaults to true, so every environment auto-migrates on startup exactly as before.
+        // Set "Database:RunMigrationsOnStartup": false in an environment's config once you want
+        // that environment to apply the schema out-of-band instead (via the migration bundle,
+        // scripts/build-migration-bundle.*), so several instances can boot without racing.
+        private static bool ShouldRunMigrationsOnStartup(IConfiguration configuration)
+            => configuration.GetValue("Database:RunMigrationsOnStartup", true);
 
         private static void ConfigureRateLimiting(IServiceCollection services, IConfiguration configuration)
         {
