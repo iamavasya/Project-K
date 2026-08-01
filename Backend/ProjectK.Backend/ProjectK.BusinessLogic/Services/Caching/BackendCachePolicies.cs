@@ -18,4 +18,13 @@ public static class BackendCachePolicies
         Prefix: "system-setting",
         Ttl: TimeSpan.FromMinutes(5),
         Scope: CacheScope.Shared);
+
+    // A mentor's group set is re-read on every write-authorization check but barely
+    // ever changes. Scope is per user + permission context so one mentor's set never
+    // leaks to another; assign/revoke invalidate this prefix so a change takes effect
+    // at once rather than waiting out the TTL.
+    public static readonly CachePolicy MentorScopeReads = new(
+        Prefix: "mentor-scope",
+        Ttl: EntityReadTtl,
+        Scope: CacheScope.UserPermissionContext);
 }

@@ -5,6 +5,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Services.Caching;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
@@ -14,11 +15,13 @@ public class ResourceAccessService : IResourceAccessService
 
     private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
+    private readonly IBackendCache _cache;
 
-    public ResourceAccessService(IResourceScopeReader scopeReader, ICurrentUserContext currentUserContext)
+    public ResourceAccessService(IResourceScopeReader scopeReader, ICurrentUserContext currentUserContext, IBackendCache cache)
     {
         _scopeReader = scopeReader;
         _currentUserContext = currentUserContext;
+        _cache = cache;
     }
 
     public async Task<ResourceAccessDecision> CheckAccessAsync(
@@ -212,10 +215,12 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Current user id claim is missing.");
         }
 
-        var mentorGroupKeys = await _scopeReader.GetMentorGroupKeysAsync(
-            currentUserId.Value,
-            currentKurinKey,
-            cancellationToken);
+        var mentorGroupKeys = await _cache.GetOrCreateAsync(
+            BackendCachePolicies.MentorScopeReads,
+            $"groups:kurin:{currentKurinKey}",
+            token => _scopeReader.GetMentorGroupKeysAsync(currentUserId.Value, currentKurinKey, token),
+            cancellationToken,
+            CacheScopeContext.From(_currentUserContext));
 
         if (mentorGroupKeys.Count == 0)
         {

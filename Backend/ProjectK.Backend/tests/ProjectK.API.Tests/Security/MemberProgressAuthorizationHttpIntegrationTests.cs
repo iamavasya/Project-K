@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Services.Caching;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -303,6 +304,8 @@ public class MemberProgressAuthorizationHttpIntegrationTests
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MemberProgressController).Assembly);

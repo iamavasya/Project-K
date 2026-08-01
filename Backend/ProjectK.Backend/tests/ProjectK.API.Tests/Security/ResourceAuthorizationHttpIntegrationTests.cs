@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Services.Caching;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -115,6 +116,8 @@ public class ResourceAuthorizationHttpIntegrationTests
             builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(ResourceAuthorizationHttpIntegrationTests).Assembly);

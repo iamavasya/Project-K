@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Services.Caching;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
@@ -17,6 +18,7 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IGroupRepository> _groupRepoMock = new();
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
+    private readonly Mock<IBackendCache> _cacheMock = new();
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
 
     public AssignMentorCommandHandlerTests()
@@ -59,7 +61,7 @@ public class AssignMentorCommandHandlerTests
         _userManagerMock.Setup(x => x.RemoveFromRolesAsync(user, It.IsAny<IEnumerable<string>>())).ReturnsAsync(IdentityResult.Success);
         _userManagerMock.Setup(x => x.AddToRoleAsync(user, UserRole.Mentor.ToString())).ReturnsAsync(IdentityResult.Success);
 
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -86,7 +88,7 @@ public class AssignMentorCommandHandlerTests
         _userManagerMock.Setup(x => x.FindByIdAsync(mentorUserKey.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { UserRole.Manager.ToString() });
 
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);

@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Services.Caching;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,11 +17,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IBackendCache _cache;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _cache = cache;
         }
 
         public async Task<ServiceResult<Guid>> Handle(AssignMentorCommand request, CancellationToken cancellationToken)
@@ -59,6 +62,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
             _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
             await EnsureMentorRoleAsync(request.MentorUserKey);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // The new assignment changes this mentor's group scope; drop the cached set
+            // so the next authorization check reflects it immediately.
+            _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
             return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);
         }

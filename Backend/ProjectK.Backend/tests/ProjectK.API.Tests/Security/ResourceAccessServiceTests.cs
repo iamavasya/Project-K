@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
@@ -316,6 +319,75 @@ public class ResourceAccessServiceTests
         Assert.Contains("different kurin", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task MentorScope_ShouldBeResolvedOnce_AcrossRepeatedWriteChecks()
+    {
+        var kurinKey = Guid.NewGuid();
+        var mentorUserId = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        var (service, scopeReader, _) = CreateCachingFixture(kurinKey, groupKey, mentorUserId);
+        scopeReader
+            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
+
+        await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+        await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+
+        scopeReader.Verify(
+            x => x.GetMentorGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task MentorScope_ShouldBeReResolved_AfterInvalidation()
+    {
+        var kurinKey = Guid.NewGuid();
+        var mentorUserId = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        var (service, scopeReader, cache) = CreateCachingFixture(kurinKey, groupKey, mentorUserId);
+        scopeReader
+            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
+
+        await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+        cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+
+        scopeReader.Verify(
+            x => x.GetMentorGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    private static (ResourceAccessService Service, Mock<IResourceScopeReader> ScopeReader, IBackendCache Cache) CreateCachingFixture(
+        Guid kurinKey,
+        Guid groupKey,
+        Guid mentorUserId)
+    {
+        var roleValues = new[] { UserRole.Mentor.ToClaimValue() };
+
+        var currentUserContext = new Mock<ICurrentUserContext>();
+        currentUserContext.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUserContext.SetupGet(x => x.KurinKey).Returns(kurinKey);
+        currentUserContext.SetupGet(x => x.UserId).Returns(mentorUserId);
+        currentUserContext.SetupGet(x => x.Roles).Returns(roleValues);
+        currentUserContext
+            .Setup(x => x.IsInRole(It.IsAny<string>()))
+            .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
+
+        var scopeReader = new Mock<IResourceScopeReader>();
+        scopeReader
+            .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { groupKey });
+
+        var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
+        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, cache);
+        return (service, scopeReader, cache);
+    }
+
     private static ResourceAccessFixture CreateFixture(
         bool isAuthenticated,
         Guid? kurinKey,
@@ -353,8 +425,20 @@ public class ResourceAccessServiceTests
             .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
 
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object);
+        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache());
         return new ResourceAccessFixture(service, scopeReader);
+    }
+
+    // Runs the factory every time — keeps these authorization tests independent of the
+    // real cache. Cache hit/invalidation behaviour is covered by MentorScope_* tests.
+    private sealed class PassThroughBackendCache : IBackendCache
+    {
+        public Task<T> GetOrCreateAsync<T>(CachePolicy policy, string key, Func<CancellationToken, Task<T>> factory, CancellationToken cancellationToken, CacheScopeContext? scopeContext = null)
+            => factory(cancellationToken);
+
+        public void Invalidate(CachePolicy policy) { }
+
+        public void InvalidateByPrefix(string prefix) { }
     }
 
     private sealed record ResourceAccessFixture(
