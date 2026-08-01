@@ -16,6 +16,10 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default);
         Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
+        // Narrow reads for handlers that only need one field — avoids loading the full
+        // Include graph of GetByKeyAsync just to read a single key. Null means no such member.
+        Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+        Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
         Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 

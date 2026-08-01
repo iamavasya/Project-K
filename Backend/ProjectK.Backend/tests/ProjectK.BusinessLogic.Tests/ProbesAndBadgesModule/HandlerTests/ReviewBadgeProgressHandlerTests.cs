@@ -88,8 +88,8 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateMember(memberKey, ownerUserKey));
+            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ownerUserKey);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
 
@@ -156,8 +156,8 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateMember(memberKey, ownerUserKey));
+            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ownerUserKey);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "remove");
 
@@ -189,8 +189,8 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateMember(memberKey, null));
+            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)null);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "reject");
 
@@ -240,20 +240,6 @@ public class ReviewBadgeProgressHandlerTests
             BadgeId = badgeId,
             Status = status,
             SubmittedAtUtc = DateTime.UtcNow.AddDays(-1)
-        };
-    }
-
-    private static Member CreateMember(Guid memberKey, Guid? userKey)
-    {
-        return new Member
-        {
-            MemberKey = memberKey,
-            UserKey = userKey,
-            KurinKey = Guid.NewGuid(),
-            FirstName = "Ivan",
-            LastName = "Petrenko",
-            Email = "ivan@example.com",
-            PhoneNumber = "+380000000000"
         };
     }
 }

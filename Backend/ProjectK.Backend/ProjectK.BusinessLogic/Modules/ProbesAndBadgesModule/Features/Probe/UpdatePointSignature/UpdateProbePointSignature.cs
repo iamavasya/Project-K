@@ -50,8 +50,8 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var normalizedProbeId = request.ProbeId.Trim();
         var normalizedPointId = request.PointId.Trim();
 
-        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-        if (member is null)
+        var memberKurinKey = await _unitOfWork.Members.GetKurinKeyByMemberAsync(request.MemberKey, cancellationToken);
+        if (memberKurinKey is null)
         {
             return new ServiceResult<ProbeProgressResponse>(ResultType.NotFound);
         }
@@ -68,7 +68,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var pointUpdateContext = new PointSignatureUpdateContext(
             IsSigned: request.IsSigned,
             MemberKey: request.MemberKey,
-            KurinKey: member.KurinKey,
+            KurinKey: memberKurinKey.Value,
             ProbeId: normalizedProbeId,
             PointId: normalizedPointId,
             TimestampUtc: now,
@@ -86,7 +86,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
             request.IsSigned,
             pointUpdate.PointWasActuallyUnsigned,
             request.MemberKey,
-            member.KurinKey,
+            memberKurinKey.Value,
             normalizedProbeId,
             cancellationToken);
         probeProgress = probeUpdate.ProbeProgress;
@@ -108,7 +108,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         {
             var notStarted = ProbeProgressResponse.CreateNotStarted(
                 request.MemberKey,
-                member.KurinKey,
+                memberKurinKey.Value,
                 normalizedProbeId,
                 latestPointSignatures);
             return new ServiceResult<ProbeProgressResponse>(ResultType.Success, notStarted);

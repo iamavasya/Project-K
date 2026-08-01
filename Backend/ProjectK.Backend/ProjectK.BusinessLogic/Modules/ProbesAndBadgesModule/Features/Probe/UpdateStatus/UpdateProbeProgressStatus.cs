@@ -49,8 +49,8 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             return new ServiceResult<ProbeProgressResponse>(ResultType.BadRequest);
         }
 
-        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-        if (member is null)
+        var memberKurinKey = await _unitOfWork.Members.GetKurinKeyByMemberAsync(request.MemberKey, cancellationToken);
+        if (memberKurinKey is null)
         {
             return new ServiceResult<ProbeProgressResponse>(ResultType.NotFound);
         }
@@ -63,7 +63,7 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             progress = new ProbeProgress
             {
                 MemberKey = request.MemberKey,
-                KurinKey = member.KurinKey,
+                KurinKey = memberKurinKey.Value,
                 ProbeId = request.ProbeId.Trim(),
                 Status = ProbeProgressStatus.NotStarted
             };

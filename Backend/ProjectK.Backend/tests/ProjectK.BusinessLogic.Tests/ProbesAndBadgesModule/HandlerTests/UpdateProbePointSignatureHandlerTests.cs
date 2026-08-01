@@ -52,8 +52,8 @@ public class UpdateProbePointSignatureHandlerTests
         var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
 
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
         _memberRepositoryMock
             .Setup(x => x.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -105,8 +105,8 @@ public class UpdateProbePointSignatureHandlerTests
         var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
 
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
         _memberRepositoryMock
             .Setup(x => x.GetByUserKeyAsync(actorUserKey, It.IsAny<CancellationToken>()))

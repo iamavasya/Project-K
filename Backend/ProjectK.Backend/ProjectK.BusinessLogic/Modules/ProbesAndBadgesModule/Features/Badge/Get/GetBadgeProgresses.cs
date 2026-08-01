@@ -27,8 +27,7 @@ public sealed class GetBadgeProgressesHandler : IRequestHandler<GetBadgeProgress
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeProgresses request, CancellationToken cancellationToken)
     {
-        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-        if (member is null)
+        if (!await _unitOfWork.Members.ExistsAsync(request.MemberKey, cancellationToken))
         {
             return new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.NotFound);
         }

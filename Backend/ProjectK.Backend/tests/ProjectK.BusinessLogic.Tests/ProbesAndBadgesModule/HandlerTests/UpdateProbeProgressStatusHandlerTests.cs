@@ -65,8 +65,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.InProgress, "unsign");
 
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
         _memberRepositoryMock
             .Setup(x => x.GetByUserKeyAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -121,8 +121,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
         _memberRepositoryMock
             .Setup(x => x.GetByUserKeyAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -169,8 +169,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
 
         _memberRepositoryMock
             .Setup(x => x.GetByUserKeyAsync(actorUserKey, It.IsAny<CancellationToken>()))

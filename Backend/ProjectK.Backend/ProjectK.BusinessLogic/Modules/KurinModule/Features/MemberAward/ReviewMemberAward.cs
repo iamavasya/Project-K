@@ -68,8 +68,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
             bool isApproved,
             CancellationToken cancellationToken)
         {
-            var member = await _unitOfWork.Members.GetByKeyAsync(award.MemberKey, cancellationToken);
-            if (member?.UserKey is null)
+            var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(award.MemberKey, cancellationToken);
+            if (ownerUserKey is null)
             {
                 return;
             }
@@ -77,7 +77,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
             await _notificationService.NotifyAsync(
                 new NotificationRequest
                 {
-                    RecipientUserKey = member.UserKey.Value,
+                    RecipientUserKey = ownerUserKey.Value,
                     Type = AppNotificationType.MemberAwardReviewed,
                     Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
                     Title = isApproved ? "Відзначення затверджено" : "Відзначення не затверджено",
@@ -86,7 +86,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward
                         : "Ваше відзначення не затверджено. Перегляньте зауваження.",
                     EntityType = "MemberAward",
                     EntityKey = award.MemberAwardKey,
-                    Route = $"/member/{member.MemberKey}",
+                    Route = $"/member/{award.MemberKey}",
                     ActorUserKey = _currentUserContext.UserId,
                     DeduplicationKey = $"award-review:{award.MemberAwardKey}"
                 },

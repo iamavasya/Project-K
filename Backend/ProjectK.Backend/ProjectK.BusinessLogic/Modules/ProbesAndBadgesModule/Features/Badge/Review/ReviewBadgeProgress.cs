@@ -118,8 +118,8 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         string action,
         CancellationToken cancellationToken)
     {
-        var member = await _unitOfWork.Members.GetByKeyAsync(progress.MemberKey, cancellationToken);
-        if (member?.UserKey is null)
+        var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(progress.MemberKey, cancellationToken);
+        if (ownerUserKey is null)
         {
             return;
         }
@@ -139,7 +139,7 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         await _notificationService.NotifyAsync(
             new NotificationRequest
             {
-                RecipientUserKey = member.UserKey.Value,
+                RecipientUserKey = ownerUserKey.Value,
                 Type = AppNotificationType.MemberSkillReviewed,
                 Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
                 Title = title,

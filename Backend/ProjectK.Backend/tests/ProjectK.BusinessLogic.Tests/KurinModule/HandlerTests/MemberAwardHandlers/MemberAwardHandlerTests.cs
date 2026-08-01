@@ -280,8 +280,8 @@ public class MemberAwardHandlerTests
             .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(award);
         _memberRepositoryMock
-            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = memberUserKey });
+            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(memberUserKey);
         _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
         var result = await _reviewHandler.Handle(new ReviewMemberAward
