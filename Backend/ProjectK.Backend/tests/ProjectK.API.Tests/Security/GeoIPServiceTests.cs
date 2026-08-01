@@ -73,6 +73,33 @@ public class GeoIPServiceTests
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task GetCountryCodeAsync_ShouldTrustForwardedCountry_WithoutOutboundCall()
+    {
+        var handler = new CountingHandler(() => JsonResponse("{\"status\":\"success\",\"countryCode\":\"UA\"}"));
+        var service = CreateService(handler);
+
+        var result = await service.GetCountryCodeAsync("RU", "8.8.8.8");
+
+        result.Should().Be("RU");
+        handler.Calls.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("XX")] // Cloudflare: unknown
+    [InlineData("T1")] // Cloudflare: Tor
+    [InlineData("")]   // header absent
+    public async Task GetCountryCodeAsync_ShouldFallBackToLookup_WhenForwardedCountryIsNotUsable(string forwarded)
+    {
+        var handler = new CountingHandler(() => JsonResponse("{\"status\":\"success\",\"countryCode\":\"UA\"}"));
+        var service = CreateService(handler);
+
+        var result = await service.GetCountryCodeAsync(forwarded, "8.8.8.8");
+
+        result.Should().Be("UA");
+        handler.Calls.Should().Be(1);
+    }
+
     private static GeoIPService CreateService(HttpMessageHandler handler) =>
         new(
             new HttpClient(handler),

@@ -28,8 +28,17 @@ public sealed class GeoIPService
         _logger = logger;
     }
 
-    public async Task<string?> GetCountryCodeAsync(string ip)
+    public Task<string?> GetCountryCodeAsync(string ip)
+        => GetCountryCodeAsync(null, ip);
+
+    public async Task<string?> GetCountryCodeAsync(string? forwardedCountry, string ip)
     {
+        // A proxy/CDN in front (e.g. Cloudflare's CF-IPCountry) already resolved the country,
+        // so trust it and skip the outbound call entirely. Cloudflare sends "XX" for unknown
+        // and "T1" for Tor — treat those as no answer and fall through to the IP lookup.
+        if (IsUsableCountryCode(forwardedCountry))
+            return forwardedCountry!.ToUpperInvariant();
+
         if (string.IsNullOrEmpty(ip))
             return "LOCAL";
 
@@ -67,6 +76,12 @@ public sealed class GeoIPService
         _cache.Set(ip, (string?)null, FailureCacheDuration);
         return null;
     }
+
+    private static bool IsUsableCountryCode(string? code)
+        => !string.IsNullOrWhiteSpace(code)
+           && code.Length == 2
+           && !code.Equals("XX", StringComparison.OrdinalIgnoreCase)
+           && !code.Equals("T1", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsNonRoutable(IPAddress address)
     {

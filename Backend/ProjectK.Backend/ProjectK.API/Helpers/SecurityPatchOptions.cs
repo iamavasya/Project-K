@@ -8,4 +8,9 @@ public sealed class SecurityPatchOptions
     // Geo-blocking settings
     public bool EnableGeoBlocking { get; set; }
     public string[] BlockedCountries { get; set; } = Array.Empty<string>();
+
+    // Header set by an upstream proxy/CDN (e.g. Cloudflare "CF-IPCountry") carrying the
+    // visitor country. When present it is trusted and no outbound GeoIP call is made.
+    // Defaults to "CF-IPCountry" when unset.
+    public string? GeoCountryHeader { get; set; }
 }

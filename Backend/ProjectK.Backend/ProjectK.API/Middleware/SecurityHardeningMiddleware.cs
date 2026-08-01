@@ -35,7 +35,12 @@ public sealed class SecurityHardeningMiddleware
         // 1. Geo-blocking (RU/BY check)
         if (_options.Value.EnableGeoBlocking)
         {
-            var countryCode = await geoIPService.GetCountryCodeAsync(remoteIp);
+            var headerName = string.IsNullOrWhiteSpace(_options.Value.GeoCountryHeader)
+                ? "CF-IPCountry"
+                : _options.Value.GeoCountryHeader;
+            var forwardedCountry = context.Request.Headers[headerName].ToString();
+
+            var countryCode = await geoIPService.GetCountryCodeAsync(forwardedCountry, remoteIp);
             if (countryCode != null && _options.Value.BlockedCountries.Contains(countryCode, StringComparer.OrdinalIgnoreCase))
             {
                 activityLogger.ReportGeoBlocked(remoteIp, countryCode);

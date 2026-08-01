@@ -274,9 +274,12 @@ namespace ProjectK.API
 
             app.UseAuthentication();
 
-            app.UseRateLimiter();
-            
+            // Geo-blocking runs before the rate limiter so blocked regions are rejected
+            // without consuming limiter accounting.
             app.UseMiddleware<ProjectK.API.Middleware.SecurityHardeningMiddleware>();
+
+            app.UseRateLimiter();
+
             app.UseMiddleware<ProjectK.API.Middleware.SecurityActivityMiddleware>();
             app.UseMiddleware<ProjectK.API.Middleware.PrivilegedMfaEnforcementMiddleware>();
 
