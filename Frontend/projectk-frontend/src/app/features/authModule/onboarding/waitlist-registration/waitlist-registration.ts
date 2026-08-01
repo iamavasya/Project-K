@@ -30,7 +30,7 @@ import { RouterLink } from '@angular/router';
   providers: [MessageService],
   template: `
     <p-toast></p-toast>
-    <main class="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    <main class="flex justify-center items-center min-h-screen p-4">
       <p-card
         header="Приєднатися до списку очікування"
         subheader="Залиште заявку, щоб отримати доступ до Лілейки"
@@ -120,7 +120,7 @@ import { RouterLink } from '@angular/router';
         </form>
 
         <ng-template pTemplate="footer">
-          <div class="text-center text-sm text-gray-500">
+          <div class="text-center text-sm text-muted-color">
             Вже маєте доступ?
             <a routerLink="/login" class="font-semibold text-primary no-underline">Увійти</a>
           </div>

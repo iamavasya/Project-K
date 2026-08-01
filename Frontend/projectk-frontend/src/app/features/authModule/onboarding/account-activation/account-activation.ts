@@ -17,7 +17,7 @@ import { ToastModule } from 'primeng/toast';
   providers: [MessageService],
   template: `
     <p-toast></p-toast>
-    <div class="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    <div class="flex justify-center items-center min-h-screen p-4">
       <p-card header="Account Activation" [style]="{ width: '400px' }">
         @if (loading && !validationData) {
           <div class="text-center p-4">
@@ -30,7 +30,7 @@ import { ToastModule } from 'primeng/toast';
           <div class="text-center p-4">
             <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
             <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
-            <p class="text-gray-600 mb-4">The activation link you followed is no longer valid.</p>
+            <p class="text-muted-color mb-4">The activation link you followed is no longer valid.</p>
             <p-button label="Back to Login" (onClick)="goToLogin()"></p-button>
           </div>
         }
