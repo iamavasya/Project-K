@@ -1,3 +1,5 @@
+using FluentValidation;
+using ProjectK.BusinessLogic.Behaviors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -202,8 +204,16 @@ namespace ProjectK.API
             builder.Services.AddSingleton<KurinReportPdfRenderer>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
-                cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly)
-            );
+            {
+                cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly);
+                // Outer -> inner. Timing wraps everything; Validation fails fast; Caching
+                // returns hits before a transaction is opened; Transaction sits around the handler.
+                cfg.AddOpenBehavior(typeof(RequestTimingBehavior<,>));
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+                cfg.AddOpenBehavior(typeof(CachingBehavior<,>));
+                cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+            });
+            builder.Services.AddValidatorsFromAssembly(typeof(GetKurinByKey).Assembly);
             builder.Services.AddControllers()
                 .AddJsonOptions(opt =>
                 {
