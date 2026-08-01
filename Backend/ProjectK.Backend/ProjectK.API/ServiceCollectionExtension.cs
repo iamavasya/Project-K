@@ -97,15 +97,10 @@ namespace ProjectK.API
                     sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
             services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
-            // Repositories
-            services.AddScoped<IKurinRepository, KurinRepository>();
-            services.AddScoped<IGroupRepository, GroupRepository>();
-            services.AddScoped<IMemberRepository, MemberRepository>();
-            services.AddScoped<ILeadershipRepository, LeadershipRepository>();
-            services.AddScoped<IMemberWarningRepository, MemberWarningRepository>();
-            services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
-            services.AddScoped<IProbeProgressRepository, ProbeProgressRepository>();
-            services.AddScoped<IAppNotificationRepository, AppNotificationRepository>();
+            // Repositories are reached only through IUnitOfWork, which owns their
+            // lifetime and shares the request DbContext. Registering them separately
+            // let a second instance exist per request against the same context and
+            // nothing resolved them directly, so those registrations were dropped.
 
             // Probes and badges read-only catalog services.
             services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();

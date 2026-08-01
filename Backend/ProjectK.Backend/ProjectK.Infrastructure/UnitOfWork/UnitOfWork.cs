@@ -19,45 +19,50 @@ namespace ProjectK.Infrastructure.UnitOfWork
     {
         private readonly AppDbContext _context;
 
-        public IKurinRepository Kurins { get; }
-        public IGroupRepository Groups { get; }
-        public IMemberRepository Members { get; }
-        public ILeadershipRepository Leaderships { get; }
-        public IPlanningSessionRepository PlanningSessions { get; }
-        public IBadgeProgressRepository BadgeProgresses { get; }
-        public IProbeProgressRepository ProbeProgresses { get; }
-        public IProbePointProgressRepository ProbePointProgresses { get; }
-        public IMentorAssignmentRepository MentorAssignments { get; }
-        public IMemberWarningRepository MemberWarnings { get; }
-        public IMemberAwardRepository MemberAwards { get; }
-        public IWaitlistRepository WaitlistEntries { get; }
-        public IInvitationRepository Invitations { get; }
-        public IPublicAnnouncementRepository PublicAnnouncements { get; }
-        public IAppNotificationRepository AppNotifications { get; }
-        public ISystemSettingRepository SystemSettings { get; }
-        public IUserTileLayoutRepository UserTileLayouts { get; }
+        // Repositories are created on first access, not up front: a typical request
+        // touches one or two of them, so eagerly newing all 17 was 15-16 wasted
+        // allocations per scoped UnitOfWork. Backing fields (not Lazy<T>) keep it a
+        // single allocation per repo actually used — the UoW is scoped per request
+        // and used single-threaded, so no synchronisation is needed.
+        private IKurinRepository _kurins;
+        private IGroupRepository _groups;
+        private IMemberRepository _members;
+        private ILeadershipRepository _leaderships;
+        private IPlanningSessionRepository _planningSessions;
+        private IBadgeProgressRepository _badgeProgresses;
+        private IProbeProgressRepository _probeProgresses;
+        private IProbePointProgressRepository _probePointProgresses;
+        private IMentorAssignmentRepository _mentorAssignments;
+        private IMemberWarningRepository _memberWarnings;
+        private IMemberAwardRepository _memberAwards;
+        private IWaitlistRepository _waitlistEntries;
+        private IInvitationRepository _invitations;
+        private IPublicAnnouncementRepository _publicAnnouncements;
+        private IAppNotificationRepository _appNotifications;
+        private ISystemSettingRepository _systemSettings;
+        private IUserTileLayoutRepository _userTileLayouts;
+
+        public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
+        public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
+        public IMemberRepository Members => _members ??= new MemberRepository(_context);
+        public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
+        public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
+        public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
+        public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);
+        public IProbePointProgressRepository ProbePointProgresses => _probePointProgresses ??= new ProbePointProgressRepository(_context);
+        public IMentorAssignmentRepository MentorAssignments => _mentorAssignments ??= new MentorAssignmentRepository(_context);
+        public IMemberWarningRepository MemberWarnings => _memberWarnings ??= new MemberWarningRepository(_context);
+        public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);
+        public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
+        public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
+        public IPublicAnnouncementRepository PublicAnnouncements => _publicAnnouncements ??= new PublicAnnouncementRepository(_context);
+        public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
+        public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
+        public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
-
-            Kurins = new KurinRepository(_context);
-            Groups = new GroupRepository(_context);
-            Members = new MemberRepository(_context);
-            Leaderships = new LeadershipRepository(_context);
-            PlanningSessions = new PlanningSessionRepository(_context);
-            BadgeProgresses = new BadgeProgressRepository(_context);
-            ProbeProgresses = new ProbeProgressRepository(_context);
-            ProbePointProgresses = new ProbePointProgressRepository(_context);
-            MentorAssignments = new MentorAssignmentRepository(_context);
-            MemberWarnings = new MemberWarningRepository(_context);
-            MemberAwards = new MemberAwardRepository(_context);
-            WaitlistEntries = new WaitlistRepository(_context);
-            Invitations = new InvitationRepository(_context);
-            PublicAnnouncements = new PublicAnnouncementRepository(_context);
-            AppNotifications = new AppNotificationRepository(_context);
-            SystemSettings = new SystemSettingRepository(_context);
-            UserTileLayouts = new UserTileLayoutRepository(_context);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken token = default)
