@@ -292,6 +292,8 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasForeignKey(e => e.GroupKey)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
+                entity.HasIndex(e => e.MentorUserKey)
+                    .HasFilter("[RevokedAtUtc] IS NULL");
             });
 
             builder.Entity<WaitlistEntry>(entity =>
