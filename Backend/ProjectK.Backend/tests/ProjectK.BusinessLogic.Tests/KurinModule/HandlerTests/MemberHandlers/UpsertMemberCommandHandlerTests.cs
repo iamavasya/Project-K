@@ -1,3 +1,4 @@
+using System.IO;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
@@ -233,7 +234,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             var group = MakeGroup();
             var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            var newBlob = new byte[] { 1, 2, 3 };
+            var newBlob = new MemoryStream(new byte[] { 1, 2, 3 });
             var cmd = new UpsertMember
             {
                 MemberKey = existing.MemberKey,
@@ -255,7 +256,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .ReturnsAsync(group);
 
             _photoServiceMock
-                .Setup(p => p.UploadPhotoAsync(newBlob, "new.png", It.IsAny<CancellationToken>()))
+                .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
 
             var result = await _handler.Handle(cmd, CancellationToken.None);

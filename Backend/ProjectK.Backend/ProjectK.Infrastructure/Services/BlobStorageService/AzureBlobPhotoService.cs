@@ -67,17 +67,17 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             _logger = logger;
         }
 
-        public async Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
-            => await UploadPhotoAsync(photoBytes, fileName, BlobUploadContext.MemberPhoto, cancellationToken).ConfigureAwait(false);
+        public async Task<PhotoUploadResult> UploadPhotoAsync(Stream photoStream, string fileName, CancellationToken cancellationToken)
+            => await UploadPhotoAsync(photoStream, fileName, BlobUploadContext.MemberPhoto, cancellationToken).ConfigureAwait(false);
 
         public async Task<PhotoUploadResult> UploadPhotoAsync(
-            byte[] photoBytes,
+            Stream photoStream,
             string fileName,
             BlobUploadContext uploadContext,
             CancellationToken cancellationToken)
         {
-            if (photoBytes is null || photoBytes.Length == 0)
-                throw new ArgumentException("Порожній вміст файлу.", nameof(photoBytes));
+            if (photoStream is null)
+                throw new ArgumentException("Порожній вміст файлу.", nameof(photoStream));
             if (string.IsNullOrWhiteSpace(fileName))
                 throw new ArgumentException("Порожня назва файлу.", nameof(fileName));
             if (uploadContext is null)
@@ -85,7 +85,7 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
 
             await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
 
-            var upload = await PrepareUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false);
+            var upload = await PrepareUploadAsync(photoStream, fileName, uploadContext, cancellationToken).ConfigureAwait(false);
 
             var blobName = BuildBlobName(uploadContext, upload.FinalExtension);
             var blobClient = _container.GetBlobClient(blobName);
@@ -104,41 +104,69 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             return new PhotoUploadResult(blobName, url);
         }
 
-        internal async Task<PreparedBlobUpload> PrepareUploadAsync(
+        // byte[] overloads buffer into a MemoryStream and reuse the stream-based path,
+        // so existing byte[] callers keep working while the hot path avoids the extra copy.
+        public async Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
+            => await UploadPhotoAsync(photoBytes, fileName, BlobUploadContext.MemberPhoto, cancellationToken).ConfigureAwait(false);
+
+        public async Task<PhotoUploadResult> UploadPhotoAsync(
             byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
+        {
+            if (photoBytes is null || photoBytes.Length == 0)
+                throw new ArgumentException("Порожній вміст файлу.", nameof(photoBytes));
+
+            await using var ms = new MemoryStream(photoBytes, writable: false);
+            return await UploadPhotoAsync(ms, fileName, uploadContext, cancellationToken).ConfigureAwait(false);
+        }
+
+        internal async Task<PreparedBlobUpload> PrepareUploadAsync(
+            Stream photoStream,
             string fileName,
             BlobUploadContext uploadContext,
             CancellationToken cancellationToken)
         {
             return uploadContext.ProcessingMode switch
             {
-                BlobUploadProcessingMode.CompressToJpeg => await PrepareJpegUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
-                BlobUploadProcessingMode.EncodeAsPng => await PreparePngUploadAsync(photoBytes, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
+                BlobUploadProcessingMode.CompressToJpeg => await PrepareJpegUploadAsync(photoStream, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
+                BlobUploadProcessingMode.EncodeAsPng => await PreparePngUploadAsync(photoStream, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
                 _ => throw new ArgumentOutOfRangeException(nameof(uploadContext), uploadContext.ProcessingMode, "Unsupported blob upload processing mode.")
             };
         }
 
+        internal async Task<PreparedBlobUpload> PrepareUploadAsync(
+            byte[] photoBytes,
+            string fileName,
+            BlobUploadContext uploadContext,
+            CancellationToken cancellationToken)
+        {
+            await using var ms = new MemoryStream(photoBytes, writable: false);
+            return await PrepareUploadAsync(ms, fileName, uploadContext, cancellationToken).ConfigureAwait(false);
+        }
+
         internal async Task<(byte[] ProcessedBytes, string FinalExtension)> CompressImageAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken)
         {
-            var upload = await PrepareJpegUploadAsync(photoBytes, fileName, BlobUploadContext.MemberPhoto, cancellationToken)
+            await using var ms = new MemoryStream(photoBytes, writable: false);
+            var upload = await PrepareJpegUploadAsync(ms, fileName, BlobUploadContext.MemberPhoto, cancellationToken)
                 .ConfigureAwait(false);
 
             return (upload.ProcessedBytes, upload.FinalExtension);
         }
 
         private async Task<PreparedBlobUpload> PrepareJpegUploadAsync(
-            byte[] photoBytes,
+            Stream photoStream,
             string fileName,
             BlobUploadContext uploadContext,
             CancellationToken cancellationToken)
         {
-            var originalSize = photoBytes.Length;
             string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
 
             try
             {
-                using var image = Image.Load(photoBytes);
-                
+                using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
+
                 // Resize if too large (max 1920x1920)
                 const int MaxDimension = 1920;
                 if (image.Width > MaxDimension || image.Height > MaxDimension)
@@ -154,43 +182,55 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
                 using var msCompressed = new MemoryStream();
                 var encoder = new JpegEncoder { Quality = 75 };
                 await image.SaveAsync(msCompressed, encoder, cancellationToken).ConfigureAwait(false);
-                
+
                 byte[] processedBytes = msCompressed.ToArray();
-                
-                _logger?.LogInformation("Image {FileName} compressed: {OriginalSize} bytes -> {CompressedSize} bytes (Saved {SavedBytes} bytes)", 
-                    fileName, originalSize, processedBytes.Length, originalSize - processedBytes.Length);
+
+                _logger?.LogInformation("Image {FileName} compressed to {CompressedSize} bytes", fileName, processedBytes.Length);
 
                 return new PreparedBlobUpload(processedBytes, ".jpg", uploadContext.ContentType); // Force extension to jpg since we encoded as jpeg
             }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Failed to compress image {FileName}. Proceeding with original bytes.", fileName);
-                // If it's not a valid image (e.g. corrupted), we fallback to original bytes
+                // If it's not a valid image (e.g. corrupted), we fallback to the original bytes.
                 // The API shouldn't accept non-images, but this is a fallback.
                 finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
-                return new PreparedBlobUpload(photoBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
+                var originalBytes = await ReadOriginalForFallbackAsync(photoStream, cancellationToken).ConfigureAwait(false);
+                return new PreparedBlobUpload(originalBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
             }
         }
 
+        // Recover the original bytes for the non-image fallback. Requires a seekable source
+        // (the request/form stream and the byte[] wrapper both are); otherwise the data was
+        // already consumed and cannot be replayed.
+        private static async Task<byte[]> ReadOriginalForFallbackAsync(Stream photoStream, CancellationToken cancellationToken)
+        {
+            if (photoStream.CanSeek)
+            {
+                photoStream.Position = 0;
+            }
+
+            using var buffer = new MemoryStream();
+            await photoStream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+            return buffer.ToArray();
+        }
+
         private async Task<PreparedBlobUpload> PreparePngUploadAsync(
-            byte[] photoBytes,
+            Stream photoStream,
             string fileName,
             BlobUploadContext uploadContext,
             CancellationToken cancellationToken)
         {
-            var originalSize = photoBytes.Length;
-
             try
             {
-                using var image = Image.Load(photoBytes);
+                using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
                 using var msPng = new MemoryStream();
                 await image.SaveAsync(msPng, new PngEncoder(), cancellationToken).ConfigureAwait(false);
 
                 var processedBytes = msPng.ToArray();
                 _logger?.LogInformation(
-                    "Image {FileName} encoded as PNG: {OriginalSize} bytes -> {ProcessedSize} bytes",
+                    "Image {FileName} encoded as PNG: {ProcessedSize} bytes",
                     fileName,
-                    originalSize,
                     processedBytes.Length);
 
                 return new PreparedBlobUpload(processedBytes, ".png", uploadContext.ContentType);

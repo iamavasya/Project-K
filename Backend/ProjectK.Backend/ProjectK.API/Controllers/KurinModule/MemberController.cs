@@ -76,7 +76,6 @@ namespace ProjectK.API.Controllers.KurinModule
                 return BadRequest("groupKey is required.");
             }
 
-            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 GroupKey = request.GroupKey.Value,
@@ -89,7 +88,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 DateOfBirth = request.DateOfBirth,
                 PlastLevelHistories = request.PlastLevelHistories,
                 CreateUserAccount = request.CreateUserAccount,
-                BlobContent = blobData,
+                BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
             };
@@ -108,7 +107,6 @@ namespace ProjectK.API.Controllers.KurinModule
             [FromForm] UpsertMemberRequest request,
             CancellationToken cancellationToken)
         {
-            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 KurinKey = kurinKey,
@@ -121,7 +119,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 DateOfBirth = request.DateOfBirth,
                 PlastLevelHistories = request.PlastLevelHistories,
                 CreateUserAccount = request.CreateUserAccount,
-                BlobContent = blobData,
+                BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
             };
@@ -143,7 +141,6 @@ namespace ProjectK.API.Controllers.KurinModule
                                                 CancellationToken cancellationToken)
         {
 
-            byte[]? blobData = await request.Blob.ToByteArrayAsync(cancellationToken);
             var command = new UpsertMember
             {
                 MemberKey = memberKey,
@@ -158,7 +155,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 PlastLevelHistories = request.PlastLevelHistories,
                 RemoveProfilePhoto = request.RemoveProfilePhoto ?? false,
                 CreateUserAccount = request.CreateUserAccount,
-                BlobContent = blobData,
+                BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
                 BlobFileName = request.Blob?.FileName,
                 BlobContentType = request.Blob?.ContentType
             };

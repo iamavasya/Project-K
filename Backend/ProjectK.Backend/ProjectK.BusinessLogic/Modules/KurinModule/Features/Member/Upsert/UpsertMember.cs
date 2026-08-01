@@ -1,3 +1,4 @@
+using System.IO;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +33,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         public string? School { get; set; }
         public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
         public bool RemoveProfilePhoto { get; set; }
-        public byte[]? BlobContent { get; set; }
+        public Stream? BlobContent { get; set; }
         public string? BlobFileName { get; set; }
         public string? BlobContentType { get; set; }
     }
@@ -194,7 +195,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 _unitOfWork.Members.Update(existing, cancellationToken);
             }
 
-            if (request.BlobContent is { Length: > 0 } && !string.IsNullOrWhiteSpace(request.BlobFileName))
+            if (request.BlobContent is not null && !string.IsNullOrWhiteSpace(request.BlobFileName))
             {
                 var upload = await _photoService.UploadPhotoAsync(request.BlobContent, request.BlobFileName, cancellationToken);
                 existing.ProfilePhotoBlobName = upload.BlobName;
