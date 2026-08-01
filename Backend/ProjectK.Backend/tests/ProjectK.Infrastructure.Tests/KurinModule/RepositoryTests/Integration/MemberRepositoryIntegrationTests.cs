@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 using ProjectK.Infrastructure.Repositories;
@@ -200,6 +202,139 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
 
             var deleted = await uow.Members.GetByKeyAsync(member.MemberKey);
             Assert.Null(deleted);
+        }
+
+        [Fact]
+        public async Task GetListItemsByKurinKeyAsync_ShouldReturnOnlyActiveLeadershipAndWarnings()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(7);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var group = new Group("Alpha", kurin.KurinKey);
+            uow.Groups.Create(group);
+            await uow.SaveChangesAsync();
+
+            var member = BuildMember(group, kurin, "Active", "Roles");
+            uow.Members.Create(member);
+            await uow.SaveChangesAsync();
+
+            var leadership = new Leadership
+            {
+                LeadershipKey = Guid.NewGuid(),
+                Type = LeadershipType.Group,
+                GroupKey = group.GroupKey,
+                Group = group,
+                Name = "Alpha leadership",
+                StartDate = new DateOnly(2024, 1, 1)
+            };
+            context.Set<Leadership>().Add(leadership);
+            context.Set<LeadershipHistory>().AddRange(
+                new LeadershipHistory
+                {
+                    LeadershipHistoryKey = Guid.NewGuid(),
+                    MemberKey = member.MemberKey,
+                    LeadershipKey = leadership.LeadershipKey,
+                    Role = LeadershipRole.Hurtkoviy,
+                    StartDate = new DateOnly(2024, 1, 1),
+                    EndDate = null // active
+                },
+                new LeadershipHistory
+                {
+                    LeadershipHistoryKey = Guid.NewGuid(),
+                    MemberKey = member.MemberKey,
+                    LeadershipKey = leadership.LeadershipKey,
+                    Role = LeadershipRole.Pysar,
+                    StartDate = new DateOnly(2022, 1, 1),
+                    EndDate = new DateOnly(2023, 1, 1) // archived
+                });
+            context.Set<MemberWarning>().AddRange(
+                new MemberWarning
+                {
+                    MemberKey = member.MemberKey,
+                    Level = MemberWarningLevel.Level2,
+                    IssuedAtUtc = DateTime.UtcNow.AddDays(-1),
+                    ExpiresAtUtc = DateTime.UtcNow.AddDays(30),
+                    IssuedByUserKey = Guid.NewGuid(),
+                    RevokedAtUtc = null // active
+                },
+                new MemberWarning
+                {
+                    MemberKey = member.MemberKey,
+                    Level = MemberWarningLevel.Level1,
+                    IssuedAtUtc = DateTime.UtcNow.AddDays(-10),
+                    ExpiresAtUtc = DateTime.UtcNow.AddDays(-1),
+                    IssuedByUserKey = Guid.NewGuid(),
+                    RevokedAtUtc = DateTime.UtcNow.AddDays(-2) // revoked
+                });
+            await context.SaveChangesAsync();
+
+            var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
+            var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+
+            var item = Assert.Single(items);
+            var activeLeadership = Assert.Single(item.LeadershipHistories);
+            Assert.Equal(LeadershipRole.Hurtkoviy, activeLeadership.Role);
+            Assert.Equal(LeadershipType.Group, activeLeadership.LeadershipType);
+            Assert.Equal(group.Name, activeLeadership.GroupName);
+
+            var activeWarning = Assert.Single(item.Warnings);
+            Assert.Equal(MemberWarningLevel.Level2, activeWarning.Level);
+        }
+
+        [Fact]
+        public async Task GetListItemsByKurinKeyAsync_ShouldMaskPrivateFields_ByVisibility()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(8);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var ownGroup = new Group("Own", kurin.KurinKey);
+            var visibleGroup = new Group("Visible", kurin.KurinKey);
+            var hiddenGroup = new Group("Hidden", kurin.KurinKey);
+            uow.Groups.Create(ownGroup);
+            uow.Groups.Create(visibleGroup);
+            uow.Groups.Create(hiddenGroup);
+            await uow.SaveChangesAsync();
+
+            var ownerUserKey = Guid.NewGuid();
+            var owner = BuildMember(ownGroup, kurin, "Owner", "Self");
+            owner.UserKey = ownerUserKey;
+            owner.Address = "Owner St";
+            owner.School = "Owner School";
+            var inVisibleGroup = BuildMember(visibleGroup, kurin, "In", "VisibleGroup");
+            inVisibleGroup.Address = "Visible St";
+            inVisibleGroup.School = "Visible School";
+            var hidden = BuildMember(hiddenGroup, kurin, "In", "HiddenGroup");
+            hidden.Address = "Hidden St";
+            hidden.School = "Hidden School";
+            uow.Members.Create(owner);
+            uow.Members.Create(inVisibleGroup);
+            uow.Members.Create(hidden);
+            await uow.SaveChangesAsync();
+
+            // Caller is a mentor: not admin/manager, owns `owner`'s account, assigned to visibleGroup only.
+            var visibility = new MemberFieldVisibility(
+                CanSeeAllPrivate: false,
+                CurrentUserId: ownerUserKey,
+                VisibleGroupKeys: new[] { visibleGroup.GroupKey });
+
+            var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+
+            var ownerItem = items.Single(i => i.MemberKey == owner.MemberKey);
+            var visibleItem = items.Single(i => i.MemberKey == inVisibleGroup.MemberKey);
+            var hiddenItem = items.Single(i => i.MemberKey == hidden.MemberKey);
+
+            Assert.Equal("Owner St", ownerItem.Address);           // own record
+            Assert.Equal("Visible St", visibleItem.Address);       // assigned group
+            Assert.Null(hiddenItem.Address);                       // masked
+            Assert.Null(hiddenItem.School);
         }
 
         [Fact]

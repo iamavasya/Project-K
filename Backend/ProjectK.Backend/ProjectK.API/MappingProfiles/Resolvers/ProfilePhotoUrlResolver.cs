@@ -1,10 +1,28 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 
 namespace ProjectK.API.MappingProfiles.Resolvers
 {
+    // Turns a stored blob name into a public URL. Shared by the full member card
+    // (from the entity) and the lean member list (from the projected read model)
+    // so both build the same URL from one place.
+    internal static class ProfilePhotoUrl
+    {
+        public static string? Build(BlobStorageOptions options, string? blobName)
+        {
+            if (string.IsNullOrEmpty(blobName))
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(options.PublicBaseUrl))
+                return $"{options.PublicBaseUrl.TrimEnd('/')}/{Uri.EscapeDataString(blobName)}";
+
+            return blobName;
+        }
+    }
+
     public sealed class ProfilePhotoUrlResolver : IValueResolver<Member, MemberResponse, string?>
     {
         private readonly BlobStorageOptions _options;
@@ -15,14 +33,19 @@ namespace ProjectK.API.MappingProfiles.Resolvers
         }
 
         public string? Resolve(Member source, MemberResponse destination, string? destMember, ResolutionContext context)
+            => ProfilePhotoUrl.Build(_options, source.ProfilePhotoBlobName);
+    }
+
+    public sealed class MemberListItemPhotoUrlResolver : IValueResolver<MemberListItemDto, MemberResponse, string?>
+    {
+        private readonly BlobStorageOptions _options;
+
+        public MemberListItemPhotoUrlResolver(BlobStorageOptions options)
         {
-            if (string.IsNullOrEmpty(source.ProfilePhotoBlobName))
-                return null;
-
-            if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
-                return $"{_options.PublicBaseUrl.TrimEnd('/')}/{Uri.EscapeDataString(source.ProfilePhotoBlobName)}";
-
-            return source.ProfilePhotoBlobName;
+            _options = options;
         }
+
+        public string? Resolve(MemberListItemDto source, MemberResponse destination, string? destMember, ResolutionContext context)
+            => ProfilePhotoUrl.Build(_options, source.ProfilePhotoBlobName);
     }
 }

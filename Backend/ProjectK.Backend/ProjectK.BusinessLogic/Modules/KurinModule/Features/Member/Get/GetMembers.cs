@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Records;
@@ -12,7 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
 {
@@ -40,49 +40,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             _currentUserContext = currentUserContext;
         }
 
-        private async Task ScrubRestrictedDataAsync(IEnumerable<MemberResponse> responses, IEnumerable<MemberEntity> entities, CancellationToken ct)
-        {
-            bool isAdminOrManager = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
-                                   _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue());
-
-            var currentUserId = _currentUserContext.UserId;
-            var assignments = _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()) && currentUserId.HasValue
-                ? await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(currentUserId.Value, ct)
-                : Enumerable.Empty<ProjectK.Common.Entities.KurinModule.MentorAssignment>();
-            
-            var assignedGroupKeys = assignments.Where(a => a.RevokedAtUtc == null).Select(a => a.GroupKey).ToHashSet();
-
-            var entityDict = entities.ToDictionary(e => e.MemberKey);
-
-            foreach (var response in responses)
-            {
-                if (entityDict.TryGetValue(response.MemberKey, out var entity))
-                {
-                    bool isOwner = entity.UserKey.HasValue && entity.UserKey == currentUserId;
-                    bool isAssignedMentor = entity.GroupKey.HasValue && assignedGroupKeys.Contains(entity.GroupKey.Value);
-                    
-                    bool canViewPrivate = isOwner || isAdminOrManager || isAssignedMentor;
-                    
-                    if (!canViewPrivate)
-                    {
-                        response.Address = string.Empty;
-                        response.School = string.Empty;
-                    }
-                }
-            }
-        }
-
         public async Task<ServiceResult<IEnumerable<MemberResponse>>> Handle(GetMembers request, CancellationToken cancellationToken)
         {
-            IEnumerable<MemberEntity> members;
+            var visibility = await BuildFieldVisibilityAsync(cancellationToken);
 
+            IEnumerable<MemberListItemDto> members;
             if (request.KurinKey == Guid.Empty)
             {
-                members = await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken);
+                members = await _unitOfWork.Members.GetListItemsByGroupKeyAsync(request.GroupKey, visibility, cancellationToken);
             }
             else if (request.GroupKey == Guid.Empty)
             {
-                members = await _unitOfWork.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
+                members = await _unitOfWork.Members.GetListItemsByKurinKeyAsync(request.KurinKey, visibility, cancellationToken);
             }
             else
             {
@@ -90,31 +59,31 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             }
 
             var response = _mapper.Map<IEnumerable<MemberResponse>>(members);
-            await EnrichUserRolesAsync(response, members, cancellationToken);
-            await ScrubRestrictedDataAsync(response, members, cancellationToken);
-
             return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
         }
 
-        private async Task EnrichUserRolesAsync(IEnumerable<MemberResponse> responses, IEnumerable<MemberEntity> entities, CancellationToken ct)
+        // Who may see Address/School: admins and managers see everyone; a member sees
+        // their own record; a mentor sees members in their assigned groups. The mentor
+        // group set is the only extra query, and only for mentors — it is passed into
+        // the projection so restricted fields are masked in SQL rather than post-read.
+        private async Task<MemberFieldVisibility> BuildFieldVisibilityAsync(CancellationToken ct)
         {
-            var kurinKey = entities.Select(member => member.KurinKey).FirstOrDefault(key => key != Guid.Empty);
-            if (kurinKey == Guid.Empty)
+            bool isAdminOrManager = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
+                                    _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue());
+            var currentUserId = _currentUserContext.UserId;
+
+            IReadOnlyCollection<Guid> visibleGroupKeys = Array.Empty<Guid>();
+            if (!isAdminOrManager && currentUserId.HasValue &&
+                _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
             {
-                return;
+                var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(currentUserId.Value, ct);
+                visibleGroupKeys = assignments
+                    .Where(a => a.RevokedAtUtc == null)
+                    .Select(a => a.GroupKey)
+                    .ToHashSet();
             }
 
-            var roleLookup = (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, ct))
-                .Where(member => member.UserKey.HasValue)
-                .ToDictionary(member => member.UserKey!.Value, member => member.UserRole);
-
-            foreach (var response in responses)
-            {
-                if (response.UserKey.HasValue && roleLookup.TryGetValue(response.UserKey.Value, out var role))
-                {
-                    response.UserRole = role;
-                }
-            }
+            return new MemberFieldVisibility(isAdminOrManager, currentUserId, visibleGroupKeys);
         }
     }
 }

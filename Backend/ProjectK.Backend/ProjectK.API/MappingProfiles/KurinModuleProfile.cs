@@ -59,6 +59,14 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
 
+            // Lean list read model -> same response shape as the full card. Level,
+            // active leadership and active warnings are already resolved in the
+            // projection; history and awards are card-only and stay empty here.
+            CreateMap<MemberListItemDto, MemberResponse>()
+                .ForMember(dest => dest.PlastLevelHistories, opt => opt.Ignore())
+                .ForMember(dest => dest.Awards, opt => opt.Ignore())
+                .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
+
             CreateMap<Member, MemberLookupDto>();
 
             // Plast Level History Mapping

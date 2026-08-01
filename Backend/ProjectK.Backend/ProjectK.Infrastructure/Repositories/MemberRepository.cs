@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using System;
 using System.Collections.Generic;
@@ -74,6 +75,91 @@ namespace ProjectK.Infrastructure.Repositories
                                          .AsSplitQuery()
                                          .AsNoTracking()
                                          .ToListAsync(cancellationToken);
+        }
+
+        public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
+            => ProjectListItemsAsync(_context.Members.Where(m => m.KurinKey == kurinKey), visibility, cancellationToken);
+
+        public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
+            => ProjectListItemsAsync(_context.Members.Where(m => m.GroupKey == groupKey), visibility, cancellationToken);
+
+        // Single projection shared by the kurin- and group-scoped list reads. No Include
+        // graph: scalars come from the root query, UserRole is a correlated subquery over
+        // Identity (replacing the old per-list GroupJoin), Address/School are masked in SQL
+        // from the caller's visibility, and only active leadership/warnings are pulled.
+        private async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> ProjectListItemsAsync(
+            IQueryable<Member> source,
+            ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility,
+            CancellationToken cancellationToken)
+        {
+            var canSeeAll = visibility.CanSeeAllPrivate;
+            var currentUserId = visibility.CurrentUserId;
+            var visibleGroupKeys = visibility.VisibleGroupKeys as IReadOnlyCollection<Guid> ?? visibility.VisibleGroupKeys.ToList();
+
+            return await source
+                .Select(m => new ProjectK.Common.Models.Dtos.MemberListItemDto
+                {
+                    MemberKey = m.MemberKey,
+                    GroupKey = m.GroupKey,
+                    KurinKey = m.KurinKey,
+                    UserKey = m.UserKey,
+                    UserRole = (from ur in _context.UserRoles
+                                where m.UserKey != null && ur.UserId == m.UserKey
+                                join r in _context.Roles on ur.RoleId equals r.Id
+                                select r.Name).FirstOrDefault(),
+                    FirstName = m.FirstName,
+                    MiddleName = m.MiddleName,
+                    LastName = m.LastName,
+                    Email = m.Email,
+                    PhoneNumber = m.PhoneNumber,
+                    DateOfBirth = m.DateOfBirth,
+                    Address = (canSeeAll
+                        || (m.UserKey != null && m.UserKey == currentUserId)
+                        || (m.GroupKey != null && visibleGroupKeys.Contains(m.GroupKey.Value)))
+                        ? m.Address : null,
+                    School = (canSeeAll
+                        || (m.UserKey != null && m.UserKey == currentUserId)
+                        || (m.GroupKey != null && visibleGroupKeys.Contains(m.GroupKey.Value)))
+                        ? m.School : null,
+                    // Mirror the Member -> MemberResponse mapping: newest history level, else the stored one.
+                    LatestPlastLevel = m.PlastLevelHistory
+                        .OrderByDescending(history => history.DateAchieved)
+                        .Select(history => (PlastLevel?)history.PlastLevel)
+                        .FirstOrDefault() ?? m.LatestPlastLevel,
+                    ProfilePhotoBlobName = m.ProfilePhotoBlobName,
+                    ProfileVerificationStatus = m.ProfileVerificationStatus,
+                    ProfileVerifiedAtUtc = m.ProfileVerifiedAtUtc,
+                    ProfileVerifiedByUserKey = m.ProfileVerifiedByUserKey,
+                    ProfileVerificationNote = m.ProfileVerificationNote,
+                    LeadershipHistories = m.LeadershipHistories
+                        .Where(h => h.EndDate == null)
+                        .Select(h => new ProjectK.Common.Models.Dtos.LeadershipHistoryDto
+                        {
+                            LeadershipHistoryKey = h.LeadershipHistoryKey,
+                            MemberKey = h.MemberKey,
+                            LeadershipKey = h.LeadershipKey,
+                            Role = h.Role,
+                            LeadershipType = h.Leadership.Type,
+                            GroupName = h.Leadership.Group != null ? h.Leadership.Group.Name : null,
+                            StartDate = h.StartDate,
+                            EndDate = h.EndDate
+                        }).ToList(),
+                    Warnings = m.MemberWarnings
+                        .Where(w => w.RevokedAtUtc == null)
+                        .Select(w => new ProjectK.Common.Models.Dtos.MemberWarningDto
+                        {
+                            MemberWarningKey = w.MemberWarningKey,
+                            MemberKey = w.MemberKey,
+                            Level = w.Level,
+                            IssuedAtUtc = w.IssuedAtUtc,
+                            ExpiresAtUtc = w.ExpiresAtUtc,
+                            IssuedByUserKey = w.IssuedByUserKey,
+                            RevokedByUserKey = w.RevokedByUserKey,
+                            RevokedAtUtc = w.RevokedAtUtc
+                        }).ToList()
+                })
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
