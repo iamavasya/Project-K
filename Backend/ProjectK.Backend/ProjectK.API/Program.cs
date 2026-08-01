@@ -39,6 +39,7 @@ namespace ProjectK.API
     public static class Program
     {
         private const string UnknownValue = "unknown";
+        private const int DefaultDevBannerPauseMs = 2000;
 
         public static async Task Main(string[] args)
         {
@@ -72,7 +73,7 @@ namespace ProjectK.API
             });
 
             TryClearConsole();
-            PrintTitle(builder.Configuration);
+            PrintTitle(builder.Configuration, builder.Environment);
 
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
             {
@@ -288,21 +289,40 @@ namespace ProjectK.API
             await app.RunAsync();
         }
 
-        private static void PrintTitle(IConfiguration config)
+        private static void PrintTitle(IConfiguration config, IHostEnvironment env)
         {
             var version = config["ReleaseInfo:Version"] ?? "v0.0.0";
             var codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? "Unknown";
 
             AnsiConsole.Write(new FigletText("Project K").Color(Spectre.Console.Color.Green));
-            
-            AnsiConsole.Write(new Rule($"[yellow]{version} \"{codeName}\"[/]") 
-            { 
-                Justification = Justify.Left 
+
+            AnsiConsole.Write(new Rule($"[yellow]{version} \"{codeName}\"[/]")
+            {
+                Justification = Justify.Left
             });
-            
+
             AnsiConsole.WriteLine();
 
-            Thread.Sleep(2000);
+            var pause = GetBannerPauseMs(config, env);
+            if (pause > 0)
+            {
+                Thread.Sleep(pause);
+            }
+        }
+
+        // The startup banner dwell is a local-console nicety: it keeps the boot
+        // banner readable on a warm DB, where migrations/seeding finish almost
+        // instantly and nothing else holds the screen. Deployed environments pay
+        // it straight into cold start with nobody watching, so it defaults off
+        // outside Development. Startup:ConsoleBannerPauseMs overrides either way.
+        private static int GetBannerPauseMs(IConfiguration config, IHostEnvironment env)
+        {
+            if (int.TryParse(config["Startup:ConsoleBannerPauseMs"], out var configured) && configured >= 0)
+            {
+                return configured;
+            }
+
+            return env.IsDevelopment() ? DefaultDevBannerPauseMs : 0;
         }
 
         private static void ConfigureQuestPdfLicense(IConfiguration configuration)
@@ -362,8 +382,13 @@ namespace ProjectK.API
                         ctx.Status("Startup complete.");
                 });
 
-                    AnsiConsole.MarkupLine("[green]✔ Startup successful![/]");
-                    await Task.Delay(2000);
+            AnsiConsole.MarkupLine("[green]✔ Startup successful![/]");
+
+            var pause = GetBannerPauseMs(app.Configuration, app.Environment);
+            if (pause > 0)
+            {
+                await Task.Delay(pause);
+            }
         }
 
         private static void ConfigureRateLimiting(IServiceCollection services, IConfiguration configuration)
