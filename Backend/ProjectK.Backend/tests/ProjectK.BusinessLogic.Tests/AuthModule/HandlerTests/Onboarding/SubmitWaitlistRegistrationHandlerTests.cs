@@ -56,58 +56,6 @@ public class SubmitWaitlistRegistrationHandlerTests
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory]
-    [InlineData(null, "Ukraine", "StanytsiaRequired")]
-    [InlineData("", "Ukraine", "StanytsiaRequired")]
-    [InlineData("Kyiv", null, "RegionOrCountryRequired")]
-    [InlineData("Kyiv", "", "RegionOrCountryRequired")]
-    public async Task Handle_ShouldReturnBadRequest_WhenLocationFieldsAreMissing(
-        string? stanytsia,
-        string? regionOrCountry,
-        string expectedErrorCode)
-    {
-        var command = CreateCommand(stanytsia, regionOrCountry);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnBadRequest_WhenKurinLeaderCandidateIsNotConfirmed()
-    {
-        var command = CreateCommand(isKurinLeaderCandidate: false);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("KurinLeaderCandidateRequired");
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Theory]
-    [InlineData(null, "ClaimedKurinNumberRequired")]
-    [InlineData("", "ClaimedKurinNumberRequired")]
-    [InlineData("97a", "ClaimedKurinNumberInvalid")]
-    [InlineData("Lisovi Chorty", "ClaimedKurinNumberInvalid")]
-    public async Task Handle_ShouldReturnBadRequest_WhenKurinNumberIsMissingOrNotNumeric(
-        string? claimedKurinNumber,
-        string expectedErrorCode)
-    {
-        var command = CreateCommand(claimedKurinNumber: claimedKurinNumber);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
     private static SubmitWaitlistRegistrationCommand CreateCommand(
         string? stanytsia = "Kyiv",
         string? regionOrCountry = "Ukraine",

@@ -1,5 +1,7 @@
 using System.Net;
 using System.Security.Claims;
+using FluentValidation;
+using ProjectK.BusinessLogic.Behaviors;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -218,7 +220,12 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockEmailService.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
 
-            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly));
+            builder.Services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly);
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            });
+            builder.Services.AddValidatorsFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly);
 
             builder.Services
                 .AddAuthentication(options =>
