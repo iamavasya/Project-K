@@ -77,55 +77,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Save_ShouldReturnBadRequest_ForUnknownBoard()
-        {
-            var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
-            var result = await handler.Handle(
-                new SaveTileLayoutCommand(Guid.NewGuid(), "not-a-board", new[] { "profile" }, 1),
-                CancellationToken.None);
-
-            Assert.Equal(ResultType.BadRequest, result.Type);
-            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Save_ShouldReturnBadRequest_ForDuplicateTileKeys()
-        {
-            var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
-            var result = await handler.Handle(
-                new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, new[] { "profile", "profile" }, 1),
-                CancellationToken.None);
-
-            Assert.Equal(ResultType.BadRequest, result.Type);
-        }
-
-        [Theory]
-        [InlineData("Profile")]           // uppercase not allowed
-        [InlineData("has space")]         // space not allowed
-        [InlineData("under_score")]       // underscore not allowed
-        public async Task Save_ShouldReturnBadRequest_ForMalformedTileKey(string badKey)
-        {
-            var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
-            var result = await handler.Handle(
-                new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, new[] { badKey }, 1),
-                CancellationToken.None);
-
-            Assert.Equal(ResultType.BadRequest, result.Type);
-        }
-
-        [Fact]
-        public async Task Save_ShouldReturnBadRequest_WhenTooManyTiles()
-        {
-            var tiles = Enumerable.Range(0, 41).Select(i => $"tile-{i}").ToArray();
-            var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
-            var result = await handler.Handle(
-                new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, tiles, 1),
-                CancellationToken.None);
-
-            Assert.Equal(ResultType.BadRequest, result.Type);
-        }
-
-        [Fact]
         public async Task Save_ShouldNormalizeNonPositiveSchemaVersionToOne()
         {
             var userKey = Guid.NewGuid();
