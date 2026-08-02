@@ -172,15 +172,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Reset_ShouldReturnBadRequest_ForUnknownBoard()
-        {
-            var handler = new ResetTileLayoutCommandHandler(_unitOfWorkMock.Object);
-            var result = await handler.Handle(new ResetTileLayoutCommand(Guid.NewGuid(), "nope"), CancellationToken.None);
-
-            Assert.Equal(ResultType.BadRequest, result.Type);
-        }
-
-        [Fact]
         public void Serializer_RoundTrips()
         {
             var keys = new[] { "profile", "skills", "probes" };

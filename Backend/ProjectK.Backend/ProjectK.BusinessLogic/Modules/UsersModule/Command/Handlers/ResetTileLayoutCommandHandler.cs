@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -17,11 +16,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
 
         public async Task<ServiceResult<bool>> Handle(ResetTileLayoutCommand request, CancellationToken cancellationToken)
         {
-            if (!TileBoardKeys.All.Contains(request.BoardKey))
-            {
-                return ServiceResult<bool>.Failure(ResultType.BadRequest, "UnknownBoard", "Unknown board key.");
-            }
-
+            // Board key validation lives in ResetTileLayoutCommandValidator (runs in the pipeline).
             var existing = await _unitOfWork.UserTileLayouts.GetByBoardAsync(request.UserKey, request.BoardKey, cancellationToken);
             if (existing != null)
             {
