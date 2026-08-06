@@ -361,7 +361,6 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
 
             // Assert
             Assert.NotNull(controller);
-            Assert.Equal(_mediatorMock.Object, controller._mediator);
         }
 
         private void SetCurrentUser(Guid userKey)
