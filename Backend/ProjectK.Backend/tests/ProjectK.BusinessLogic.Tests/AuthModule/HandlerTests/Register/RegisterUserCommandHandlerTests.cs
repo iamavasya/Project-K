@@ -303,7 +303,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
         }
 
         [Fact]
-        public async Task Handle_ShouldThrowApplicationException_WhenUserCreationFails()
+        public async Task Handle_ShouldThrowInvalidOperationException_WhenUserCreationFails()
         {
             // Arrange
             var command = new RegisterUserCommand
@@ -335,7 +335,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .ReturnsAsync(IdentityResult.Failed(identityErrors));
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
                 () => _handler.Handle(command, CancellationToken.None));
 
             Assert.Contains("User registration failed", exception.Message);
