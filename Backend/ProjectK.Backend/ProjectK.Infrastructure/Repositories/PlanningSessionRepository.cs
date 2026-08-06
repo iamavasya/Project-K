@@ -28,14 +28,14 @@ namespace ProjectK.Infrastructure.Repositories
             _context.PlanningSessions.Remove(entity);
         }
 
-        public Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return await _context.PlanningSessions.AnyAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
         }
 
         public Task<IEnumerable<PlanningSession>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Use GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken token) instead.");
         }
 
         public async Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
@@ -45,7 +45,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public void Update(PlanningSession entity, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            _context.PlanningSessions.Update(entity);
         }
 
         public async Task<PlanningSession?> GetByKeyWithDetailsAsync(Guid entityKey, CancellationToken cancellationToken = default)

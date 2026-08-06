@@ -30,7 +30,7 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 
         public Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException("SystemSetting uses a string key, not a Guid.");
+            throw new NotSupportedException("SystemSetting uses a string key, not a Guid.");
         }
 
         public async Task<IEnumerable<SystemSetting>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 
         public Task<SystemSetting?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException("SystemSetting uses a string key, not a Guid.");
+            throw new NotSupportedException("SystemSetting uses a string key, not a Guid.");
         }
 
         public async Task<SystemSetting?> GetByKeyAsync(string key, CancellationToken token = default)

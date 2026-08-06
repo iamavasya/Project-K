@@ -1,5 +1,8 @@
 namespace ProjectK.Common.Models.Enums;
 
+// Values start at 1 by design: there is no meaningful "no warning" level, and the unset
+// default (0) is an invalid state, rejected by Enum.IsDefined in AssignMemberWarning.
+// Do not add None = 0 — it would let an unset Level slip past that guard.
 public enum MemberWarningLevel
 {
     Level1 = 1,

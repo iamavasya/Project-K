@@ -227,7 +227,7 @@ namespace ProjectK.API.Helpers
                 var result = await userManager.CreateAsync(user);
                 if (!result.Succeeded)
                 {
-                    throw new Exception($"Failed to create passwordless user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    throw new InvalidOperationException($"Failed to create passwordless user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
 
                 await userManager.AddToRoleAsync(user, role.ToClaimValue());
@@ -259,7 +259,7 @@ namespace ProjectK.API.Helpers
                 var result = await userManager.CreateAsync(user, password);
                 if (!result.Succeeded)
                 {
-                    throw new Exception($"Failed to create user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    throw new InvalidOperationException($"Failed to create user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
 
                 await userManager.AddToRoleAsync(user, role.ToClaimValue());
