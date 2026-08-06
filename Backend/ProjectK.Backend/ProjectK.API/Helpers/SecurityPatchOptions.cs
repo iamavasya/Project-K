@@ -1,16 +1,28 @@
 namespace ProjectK.API.Helpers;
 
+/// <summary>
+/// Optional security-hardening settings, bound from the "SecurityPatch" configuration section.
+/// </summary>
 public sealed class SecurityPatchOptions
 {
-    // Rollout toggle for upcoming server-side resource authorization filter.
+    /// <summary>
+    /// Rollout toggle for the server-side resource authorization filter.
+    /// </summary>
     public bool EnableResourceGuard { get; set; }
 
-    // Geo-blocking settings
+    /// <summary>
+    /// Enables geo-blocking of requests originating from <see cref="BlockedCountries"/>.
+    /// </summary>
     public bool EnableGeoBlocking { get; set; }
+
+    /// <summary>
+    /// ISO country codes to block when <see cref="EnableGeoBlocking"/> is on.
+    /// </summary>
     public string[] BlockedCountries { get; set; } = Array.Empty<string>();
 
-    // Header set by an upstream proxy/CDN (e.g. Cloudflare "CF-IPCountry") carrying the
-    // visitor country. When present it is trusted and no outbound GeoIP call is made.
-    // Defaults to "CF-IPCountry" when unset.
-    public string? GeoCountryHeader { get; set; }
+    /// <summary>
+    /// Request header set by an upstream proxy/CDN (e.g. Cloudflare "CF-IPCountry") carrying the
+    /// visitor country. When present it is trusted and no outbound GeoIP call is made.
+    /// </summary>
+    public string GeoCountryHeader { get; set; } = "CF-IPCountry";
 }
