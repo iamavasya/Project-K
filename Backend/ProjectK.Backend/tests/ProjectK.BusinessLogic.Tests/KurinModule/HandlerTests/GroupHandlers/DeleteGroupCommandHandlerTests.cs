@@ -74,7 +74,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.NotFound);
-            result.Data.Should().Be($"Group with key {groupKey} not found.");
+            result.Data.Should().BeNull();
+            result.ErrorCode.Should().Be("GROUP_NOT_FOUND");
+            result.ErrorMessage.Should().Be($"Group with key {groupKey} not found.");
             _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), default), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
         }
@@ -90,7 +92,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.BadRequest);
-            result.Data.Should().Be("GroupKey cannot be empty.");
+            result.Data.Should().BeNull();
+            result.ErrorCode.Should().Be("GROUP_KEY_EMPTY");
+            result.ErrorMessage.Should().Be("GroupKey cannot be empty.");
             _groupRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), default), Times.Never);
             _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), default), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
@@ -117,7 +121,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.InternalServerError);
-            result.Data.Should().Be("Failed to delete Group due to internal error.");
+            result.Data.Should().BeNull();
+            result.ErrorCode.Should().Be("GROUP_DELETE_FAILED");
+            result.ErrorMessage.Should().Be("Failed to delete Group due to internal error.");
             _groupRepositoryMock.Verify(r => r.Delete(group, default), Times.Once);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
         }

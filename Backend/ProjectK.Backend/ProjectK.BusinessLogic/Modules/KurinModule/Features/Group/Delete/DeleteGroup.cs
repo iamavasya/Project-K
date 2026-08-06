@@ -1,26 +1,14 @@
-﻿using MediatR;
+using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
 {
-    public class DeleteGroup : IRequest<ServiceResult<object>>
-    {
-        public Guid GroupKey { get; set; }
-        public DeleteGroup(Guid groupKey)
-        {
-            GroupKey = groupKey;
-        }
-    }
+    public sealed record DeleteGroup(Guid GroupKey) : IRequest<ServiceResult<object>>;
 
-    public class DeleteGroupHandler : IRequestHandler<DeleteGroup, ServiceResult<object>>
+    public sealed class DeleteGroupHandler : IRequestHandler<DeleteGroup, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBackendCache _cache;
@@ -33,15 +21,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
         {
             if (request.GroupKey == Guid.Empty)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.BadRequest,
+                    "GROUP_KEY_EMPTY",
                     "GroupKey cannot be empty.");
             }
             var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
             if (existing is null)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.NotFound,
+                    "GROUP_NOT_FOUND",
                     $"Group with key {request.GroupKey} not found.");
             }
 
@@ -50,8 +40,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
 
             foreach (var member in members)
             {
-                member.Group = null;
-                member.Kurin = null!;
                 _unitOfWork.Members.Delete(member, cancellationToken);
             }
 
@@ -59,8 +47,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.InternalServerError,
+                    "GROUP_DELETE_FAILED",
                     "Failed to delete Group due to internal error.");
             }
             _cache.Invalidate(BackendCachePolicies.GroupReads);
