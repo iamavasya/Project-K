@@ -51,6 +51,21 @@ public class BadgeProgressRepository : IBadgeProgressRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<BadgeProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        var keys = memberKeys as IReadOnlyCollection<Guid> ?? memberKeys.ToList();
+        if (keys.Count == 0)
+        {
+            return Array.Empty<BadgeProgress>();
+        }
+
+        return await _context.BadgeProgresses
+            .Where(x => keys.Contains(x.MemberKey))
+            .Include(x => x.AuditEvents)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<IEnumerable<BadgeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetByMemberKeyAsync instead.");
