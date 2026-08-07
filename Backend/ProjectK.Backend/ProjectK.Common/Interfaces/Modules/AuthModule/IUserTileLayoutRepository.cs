@@ -8,7 +8,7 @@ namespace ProjectK.Common.Interfaces.Modules.AuthModule
 {
     public interface IUserTileLayoutRepository : IBaseEntityRepository<UserTileLayout>
     {
-        Task<IEnumerable<UserTileLayout>> GetByUserAsync(Guid userKey, CancellationToken token = default);
-        Task<UserTileLayout?> GetByBoardAsync(Guid userKey, string boardKey, CancellationToken token = default);
+        Task<IEnumerable<UserTileLayout>> GetByUserAsync(Guid userKey, CancellationToken cancellationToken = default);
+        Task<UserTileLayout?> GetByBoardAsync(Guid userKey, string boardKey, CancellationToken cancellationToken = default);
     }
 }

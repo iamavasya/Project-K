@@ -36,26 +36,28 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<UserTileLayout>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.UserTileLayouts.ToListAsync(cancellationToken);
+            return await _context.UserTileLayouts.AsNoTracking().ToListAsync(cancellationToken);
         }
 
         public async Task<UserTileLayout?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
             return await _context.UserTileLayouts
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.UserTileLayoutKey == entityKey, cancellationToken);
         }
 
-        public async Task<IEnumerable<UserTileLayout>> GetByUserAsync(Guid userKey, CancellationToken token = default)
+        public async Task<IEnumerable<UserTileLayout>> GetByUserAsync(Guid userKey, CancellationToken cancellationToken = default)
         {
             return await _context.UserTileLayouts
+                .AsNoTracking()
                 .Where(x => x.UserKey == userKey)
-                .ToListAsync(token);
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<UserTileLayout?> GetByBoardAsync(Guid userKey, string boardKey, CancellationToken token = default)
+        public async Task<UserTileLayout?> GetByBoardAsync(Guid userKey, string boardKey, CancellationToken cancellationToken = default)
         {
             return await _context.UserTileLayouts
-                .FirstOrDefaultAsync(x => x.UserKey == userKey && x.BoardKey == boardKey, token);
+                .FirstOrDefaultAsync(x => x.UserKey == userKey && x.BoardKey == boardKey, cancellationToken);
         }
 
         public void Update(UserTileLayout entity, CancellationToken cancellationToken = default)
