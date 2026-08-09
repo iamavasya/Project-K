@@ -22,6 +22,8 @@ interface BoardColumn {
 @Component({
   selector: 'app-agenda-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // ConfirmationService is not provided globally; supply it here for the delete confirm dialog.
+  providers: [ConfirmationService],
   imports: [
     CdkDropList, CdkDrag, ButtonModule, TagModule, ConfirmDialogModule,
     EmptyStateComponent, AgendaItemDialogComponent
