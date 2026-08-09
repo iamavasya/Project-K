@@ -68,7 +68,8 @@ const UA_MONTHS = [
     </div>
 
     <app-agenda-item-dialog
-      [(visible)]="dialogVisible"
+      [visible]="dialogVisible()"
+      (visibleChange)="dialogVisible.set($event)"
       [kurinKey]="kurinKey()"
       [item]="editing()"
       (saved)="loadData()" />

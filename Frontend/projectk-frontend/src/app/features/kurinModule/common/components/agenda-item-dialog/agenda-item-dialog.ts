@@ -24,7 +24,8 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
   ],
   template: `
     <p-dialog
-      [(visible)]="visible"
+      [visible]="visible()"
+      (visibleChange)="visible.set($event)"
       [modal]="true"
       [style]="{ width: '34rem' }"
       [draggable]="false"
@@ -59,7 +60,7 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
 
         <div class="agenda-field">
           <label class="agenda-label">Призначити для</label>
-          <app-agenda-assign-select [kurinKey]="kurinKey()" [(targets)]="targets" />
+          <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
         </div>
       </div>
 
