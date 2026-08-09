@@ -43,6 +43,16 @@ namespace ProjectK.Infrastructure.Repositories
                 .FirstOrDefaultAsync(a => a.AgendaItemKey == agendaItemKey, token);
         }
 
+        public void AddAssignment(AgendaAssignment assignment)
+        {
+            _context.AgendaAssignments.Add(assignment);
+        }
+
+        public void RemoveAssignment(AgendaAssignment assignment)
+        {
+            _context.AgendaAssignments.Remove(assignment);
+        }
+
         public Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetForViewerAsync instead.");

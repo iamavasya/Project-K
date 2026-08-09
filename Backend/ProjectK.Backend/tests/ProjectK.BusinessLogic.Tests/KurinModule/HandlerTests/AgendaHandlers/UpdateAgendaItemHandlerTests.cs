@@ -72,7 +72,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
 
             result.Type.Should().Be(ResultType.Success);
             item.EndUtc.Should().Be(request.EndUtc);
-            item.Assignments.Should().ContainSingle().Which.Should().BeSameAs(kurinTarget); // kept, not re-created
+            // Same target kept: no assignment churn, and never a whole-entity Update().
+            _agendaRepo.Verify(r => r.RemoveAssignment(It.IsAny<AgendaAssignment>()), Times.Never);
+            _agendaRepo.Verify(r => r.AddAssignment(It.IsAny<AgendaAssignment>()), Times.Never);
             _agendaRepo.Verify(r => r.Update(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
             _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -109,10 +111,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
             var result = await _handler.Handle(request, default);
 
             result.Type.Should().Be(ResultType.Success);
-            item.Assignments.Should().Contain(keptKurin);
-            item.Assignments.Should().NotContain(removedGroup);
-            item.Assignments.Should().Contain(a => a.TargetType == AgendaTargetType.Member && a.TargetKey == newMember);
-            item.Assignments.Should().HaveCount(2);
+            // Gone target deleted, new target inserted, kept target untouched.
+            _agendaRepo.Verify(r => r.RemoveAssignment(removedGroup), Times.Once);
+            _agendaRepo.Verify(r => r.RemoveAssignment(keptKurin), Times.Never);
+            _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Member && a.TargetKey == newMember)), Times.Once);
+            _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Kurin)), Times.Never);
         }
     }
 }

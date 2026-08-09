@@ -9,6 +9,12 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// <summary>Loads an item with its assignments for detail, edit and authorization checks.</summary>
     Task<AgendaItem?> GetByKeyWithAssignmentsAsync(Guid agendaItemKey, CancellationToken token = default);
 
+    /// <summary>Marks an assignment for insertion. Explicit Added state avoids collection-fixup ambiguity.</summary>
+    void AddAssignment(AgendaAssignment assignment);
+
+    /// <summary>Marks an assignment for deletion. Explicit Deleted state avoids an accidental UPDATE.</summary>
+    void RemoveAssignment(AgendaAssignment assignment);
+
     /// <summary>
     /// Items visible to <paramref name="viewer"/>. <paramref name="onlyDated"/> keeps the calendar to
     /// placed items; <paramref name="fromUtc"/>/<paramref name="toUtc"/> narrow to a window;

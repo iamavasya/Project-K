@@ -76,31 +76,41 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
         item.IsAllDay = request.IsAllDay;
         item.UpdatedDate = DateTime.UtcNow;
 
-        // Reconcile targets in place: keep unchanged rows, drop removed ones, add new ones. Replacing
-        // the whole set (clear + re-add) would delete and re-insert identical rows in one SaveChanges,
-        // which trips the unique (AgendaItemKey, TargetType, TargetKey) index. The item is tracked, so
-        // these collection edits are persisted without an explicit Update() call.
+        // Reconcile targets: keep unchanged rows, delete removed ones, insert new ones — via explicit
+        // DbSet Add/Remove so EF gets unambiguous Added/Deleted states (mutating the tracked collection
+        // alone made EF mark a new assignment Modified and emit an UPDATE that matched no row). The tracked
+        // collection is kept in sync too, so the item stays clean for the notification's own SaveChanges.
         var desired = request.Targets
             .Select(t => (t.TargetType, t.TargetKey))
             .ToHashSet();
 
+        var kept = new HashSet<(AgendaTargetType, Guid)>();
         foreach (var existing in item.Assignments.ToList())
         {
-            if (!desired.Contains((existing.TargetType, existing.TargetKey)))
+            var tuple = (existing.TargetType, existing.TargetKey);
+            if (desired.Contains(tuple))
             {
+                kept.Add(tuple);
+            }
+            else
+            {
+                _uow.AgendaItems.RemoveAssignment(existing);
                 item.Assignments.Remove(existing);
             }
         }
 
-        var current = item.Assignments
-            .Select(a => (a.TargetType, a.TargetKey))
-            .ToHashSet();
-
         foreach (var target in request.Targets)
         {
-            if (current.Add((target.TargetType, target.TargetKey)))
+            if (kept.Add((target.TargetType, target.TargetKey)))
             {
-                item.Assignments.Add(new AgendaAssignment { TargetType = target.TargetType, TargetKey = target.TargetKey });
+                var assignment = new AgendaAssignment
+                {
+                    AgendaItemKey = item.AgendaItemKey,
+                    TargetType = target.TargetType,
+                    TargetKey = target.TargetKey
+                };
+                _uow.AgendaItems.AddAssignment(assignment);
+                item.Assignments.Add(assignment);
             }
         }
 
