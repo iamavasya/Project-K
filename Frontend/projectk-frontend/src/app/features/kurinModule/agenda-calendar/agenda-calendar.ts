@@ -27,7 +27,6 @@ interface WeekSegment {
   lane: number;
   continuesLeft: boolean;
   continuesRight: boolean;
-  multiDay: boolean;
 }
 
 interface CalendarWeek {
@@ -71,29 +70,34 @@ const UA_MONTHS = [
 
           @for (week of weeks(); track $index) {
             <div class="cal-week" [style.--lanes]="week.laneCount" role="row">
-              @for (day of week.days; track day.col) {
-                <div
-                  class="cal-day"
-                  [class.cal-day--muted]="!day.inMonth"
-                  [class.cal-day--today]="day.isToday"
-                  [style.grid-column]="day.col"
-                  role="gridcell">
-                  <span class="cal-day__num">{{ day.dayNumber }}</span>
+              <div class="cal-week__days">
+                @for (day of week.days; track day.col) {
+                  <div
+                    class="cal-day"
+                    [class.cal-day--muted]="!day.inMonth"
+                    [class.cal-day--today]="day.isToday"
+                    role="gridcell">
+                    <span class="cal-day__num">{{ day.dayNumber }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (week.segments.length) {
+                <div class="cal-week__events">
+                  @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
+                    <button
+                      type="button"
+                      class="cal-seg"
+                      [class.cal-seg--cont-l]="seg.continuesLeft"
+                      [class.cal-seg--cont-r]="seg.continuesRight"
+                      [style.grid-column]="seg.startCol + ' / span ' + seg.span"
+                      [style.grid-row]="seg.lane + 1"
+                      (click)="openItem(seg.item)"
+                      [attr.aria-label]="seg.item.title">
+                      <p-tag [severity]="tagSeverity(seg.item)" [styleClass]="tagStyleClass(seg.item)" [value]="seg.item.title" />
+                    </button>
+                  }
                 </div>
-              }
-              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
-                <button
-                  type="button"
-                  class="cal-seg"
-                  [class.cal-seg--bar]="seg.multiDay"
-                  [class.cal-seg--cont-l]="seg.continuesLeft"
-                  [class.cal-seg--cont-r]="seg.continuesRight"
-                  [style.grid-column]="seg.startCol + ' / span ' + seg.span"
-                  [style.grid-row]="seg.lane + 2"
-                  (click)="openItem(seg.item)"
-                  [attr.aria-label]="seg.item.title">
-                  <p-tag [severity]="severityFor(seg.item)" [value]="seg.item.title" styleClass="cal-seg__tag" />
-                </button>
               }
             </div>
           }
@@ -119,35 +123,38 @@ const UA_MONTHS = [
     .cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .cal-weekday { background: var(--p-surface-ground); color: var(--p-text-muted-color); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem; text-align: center; text-transform: uppercase; }
 
-    .cal-week {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      grid-template-rows: 1.6rem;
-      grid-auto-rows: 1.55rem;
-      border-top: 1px solid var(--p-content-border-color);
-      padding-bottom: 0.35rem;
-    }
+    /* A week is a background grid of tall day cells, with a spanning-bar layer laid over it. Cell height
+       floors at 6.25rem and grows with the number of stacked bar lanes so nothing gets clipped. */
+    .cal-week { position: relative; border-top: 1px solid var(--p-content-border-color); }
+    .cal-week__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .cal-day {
-      grid-row: 1 / -1;
-      min-block-size: 6rem;
+      min-block-size: max(6.25rem, calc(2.1rem + var(--lanes, 0) * 1.6rem));
       border-right: 1px solid var(--p-content-border-color);
       padding: 0.3rem;
     }
     .cal-day:nth-child(7n) { border-right: 0; }
     .cal-day--muted { background: var(--p-surface-ground); }
     .cal-day--muted .cal-day__num { color: var(--p-text-muted-color); }
-    .cal-day__num { align-self: flex-start; display: inline-block; font-size: 0.8rem; font-weight: 650; height: 1.5rem; line-height: 1.5rem; min-width: 1.5rem; text-align: center; }
+    .cal-day__num { display: inline-block; font-size: 0.8rem; font-weight: 650; height: 1.5rem; line-height: 1.5rem; min-width: 1.5rem; text-align: center; }
     .cal-day--today .cal-day__num { background: var(--p-primary-color); border-radius: 50%; color: var(--p-primary-contrast-color); }
 
-    .cal-seg { align-self: center; background: none; border: 0; cursor: pointer; margin-inline: 2px; min-width: 0; padding: 0; z-index: 1; }
+    .cal-week__events {
+      position: absolute; inset: 1.95rem 0 0.3rem 0;
+      display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-auto-rows: 1.5rem; row-gap: 2px;
+      pointer-events: none;
+    }
+    .cal-seg { align-self: stretch; background: none; border: 0; cursor: pointer; margin-inline: 2px; min-width: 0; padding: 0; pointer-events: auto; }
     :host ::ng-deep .cal-seg .cal-seg__tag { display: flex; justify-content: flex-start; max-width: 100%; overflow: hidden; width: 100%; }
     :host ::ng-deep .cal-seg .cal-seg__tag .p-tag-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Calendar-only exception (BRANDBOOK §2): events use the muted blue token to stand apart from tasks. */
+    :host ::ng-deep .cal-seg__tag--event { background: var(--lil-blue-50) !important; color: var(--lil-blue-700) !important; }
     /* Continuation edges: flatten the side that runs into an adjacent week. */
     :host ::ng-deep .cal-seg--cont-l .cal-seg__tag { border-bottom-left-radius: 0; border-top-left-radius: 0; }
     :host ::ng-deep .cal-seg--cont-r .cal-seg__tag { border-bottom-right-radius: 0; border-top-right-radius: 0; }
 
     @media (max-width: 640px) {
-      .cal-day { min-block-size: 4.5rem; }
+      .cal-day { min-block-size: max(4.5rem, calc(2.1rem + var(--lanes, 0) * 1.6rem)); }
       .cal-weekday { font-size: 0.6rem; padding: 0.3rem 0.1rem; }
     }
   `]
@@ -243,9 +250,14 @@ export class AgendaCalendarComponent implements OnInit {
     }
   }
 
-  /** Events read as a distinct dark `contrast` tag; tasks keep their status colour. No new palette colour. */
-  severityFor(item: AgendaItemDto): TagSeverity {
-    return item.kind === 'Task' ? AGENDA_STATUS_META[item.status].severity : 'contrast';
+  /** Base severity: tasks by status; events fall back to secondary and are re-coloured blue via class. */
+  tagSeverity(item: AgendaItemDto): TagSeverity {
+    return item.kind === 'Task' ? AGENDA_STATUS_META[item.status].severity : 'secondary';
+  }
+
+  /** Events add the calendar-only blue class; tasks keep their status severity colour. */
+  tagStyleClass(item: AgendaItemDto): string {
+    return item.kind === 'Event' ? 'cal-seg__tag cal-seg__tag--event' : 'cal-seg__tag';
   }
 
   /**
@@ -264,19 +276,14 @@ export class AgendaCalendarComponent implements OnInit {
 
       const segStart = maxDate([itemStart, weekStart]);
       const segEnd = minDate([itemEnd, weekEnd]);
-      const startCol = differenceInCalendarDays(segStart, weekStart) + 1;
-      const span = differenceInCalendarDays(segEnd, segStart) + 1;
-      const continuesLeft = itemStart < weekStart;
-      const continuesRight = itemEnd > weekEnd;
 
       segments.push({
         item,
-        startCol,
-        span,
+        startCol: differenceInCalendarDays(segStart, weekStart) + 1,
+        span: differenceInCalendarDays(segEnd, segStart) + 1,
         lane: 0,
-        continuesLeft,
-        continuesRight,
-        multiDay: differenceInCalendarDays(itemEnd, itemStart) >= 1 || continuesLeft || continuesRight
+        continuesLeft: itemStart < weekStart,
+        continuesRight: itemEnd > weekEnd
       });
     }
 
