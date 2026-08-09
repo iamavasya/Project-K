@@ -3,8 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import {
-  addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
-  parseISO, startOfDay, startOfMonth, startOfWeek
+  addMonths, differenceInCalendarDays, eachDayOfInterval, endOfMonth, endOfWeek, format,
+  isSameMonth, isToday, max as maxDate, min as minDate, parseISO, startOfDay, startOfMonth, startOfWeek
 } from 'date-fns';
 import { AgendaService } from '../common/services/agenda-service/agenda-service';
 import { PermissionService } from '../../authModule/services/permission.service';
@@ -14,11 +14,26 @@ import { AGENDA_STATUS_META, TagSeverity } from '../common/models/agenda-status.
 
 interface CalendarDay {
   date: Date;
-  key: string;
   dayNumber: string;
   inMonth: boolean;
   isToday: boolean;
-  items: AgendaItemDto[];
+  col: number;
+}
+
+interface WeekSegment {
+  item: AgendaItemDto;
+  startCol: number;
+  span: number;
+  lane: number;
+  continuesLeft: boolean;
+  continuesRight: boolean;
+  multiDay: boolean;
+}
+
+interface CalendarWeek {
+  days: CalendarDay[];
+  segments: WeekSegment[];
+  laneCount: number;
 }
 
 const UA_MONTHS = [
@@ -47,20 +62,39 @@ const UA_MONTHS = [
           <p-button label="Сьогодні" severity="secondary" [text]="true" (click)="goToday()" />
         </div>
 
-        <div class="agenda-grid" role="grid">
-          @for (weekday of weekdays; track weekday) {
-            <div class="agenda-grid__weekday" role="columnheader">{{ weekday }}</div>
-          }
-          @for (day of days(); track day.key) {
-            <div class="agenda-cell" [class.agenda-cell--muted]="!day.inMonth" [class.agenda-cell--today]="day.isToday" role="gridcell">
-              <div class="agenda-cell__num">{{ day.dayNumber }}</div>
-              <div class="agenda-cell__items">
-                @for (item of day.items; track item.agendaItemKey) {
-                  <button type="button" class="agenda-chip" (click)="openItem(item)">
-                    <p-tag [severity]="severityFor(item)" [value]="item.title" />
-                  </button>
-                }
-              </div>
+        <div class="cal-month" role="grid">
+          <div class="cal-weekdays" role="row">
+            @for (weekday of weekdays; track weekday) {
+              <div class="cal-weekday" role="columnheader">{{ weekday }}</div>
+            }
+          </div>
+
+          @for (week of weeks(); track $index) {
+            <div class="cal-week" [style.--lanes]="week.laneCount" role="row">
+              @for (day of week.days; track day.col) {
+                <div
+                  class="cal-day"
+                  [class.cal-day--muted]="!day.inMonth"
+                  [class.cal-day--today]="day.isToday"
+                  [style.grid-column]="day.col"
+                  role="gridcell">
+                  <span class="cal-day__num">{{ day.dayNumber }}</span>
+                </div>
+              }
+              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
+                <button
+                  type="button"
+                  class="cal-seg"
+                  [class.cal-seg--bar]="seg.multiDay"
+                  [class.cal-seg--cont-l]="seg.continuesLeft"
+                  [class.cal-seg--cont-r]="seg.continuesRight"
+                  [style.grid-column]="seg.startCol + ' / span ' + seg.span"
+                  [style.grid-row]="seg.lane + 2"
+                  (click)="openItem(seg.item)"
+                  [attr.aria-label]="seg.item.title">
+                  <p-tag [severity]="severityFor(seg.item)" [value]="seg.item.title" styleClass="cal-seg__tag" />
+                </button>
+              }
             </div>
           }
         </div>
@@ -80,19 +114,41 @@ const UA_MONTHS = [
     .agenda-title { color: var(--p-text-color); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
     .agenda-toolbar { align-items: center; display: flex; gap: 0.5rem; padding-bottom: 1rem; }
     .agenda-month { font-weight: 700; min-width: 9rem; text-align: center; }
-    .agenda-grid { display: grid; gap: 1px; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--p-content-border-color); border: 1px solid var(--p-content-border-color); border-radius: 12px; overflow: hidden; }
-    .agenda-grid__weekday { background: var(--p-surface-ground); color: var(--p-text-muted-color); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem; text-align: center; text-transform: uppercase; }
-    .agenda-cell { background: var(--p-content-background); display: flex; flex-direction: column; gap: 0.3rem; min-height: 6.5rem; padding: 0.4rem; }
-    .agenda-cell--muted { background: var(--p-surface-ground); }
-    .agenda-cell--muted .agenda-cell__num { color: var(--p-text-muted-color); }
-    .agenda-cell--today .agenda-cell__num { background: var(--p-primary-color); border-radius: 50%; color: var(--p-primary-contrast-color); }
-    .agenda-cell__num { align-self: flex-start; font-size: 0.8rem; font-weight: 650; height: 1.5rem; line-height: 1.5rem; min-width: 1.5rem; text-align: center; }
-    .agenda-cell__items { display: flex; flex-direction: column; gap: 0.25rem; }
-    .agenda-chip { background: none; border: 0; cursor: pointer; padding: 0; text-align: left; width: 100%; }
-    .agenda-chip :is(.p-tag) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .cal-month { border: 1px solid var(--p-content-border-color); border-radius: 12px; overflow: hidden; }
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .cal-weekday { background: var(--p-surface-ground); color: var(--p-text-muted-color); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem; text-align: center; text-transform: uppercase; }
+
+    .cal-week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-rows: 1.6rem;
+      grid-auto-rows: 1.55rem;
+      border-top: 1px solid var(--p-content-border-color);
+      padding-bottom: 0.35rem;
+    }
+    .cal-day {
+      grid-row: 1 / -1;
+      min-block-size: 6rem;
+      border-right: 1px solid var(--p-content-border-color);
+      padding: 0.3rem;
+    }
+    .cal-day:nth-child(7n) { border-right: 0; }
+    .cal-day--muted { background: var(--p-surface-ground); }
+    .cal-day--muted .cal-day__num { color: var(--p-text-muted-color); }
+    .cal-day__num { align-self: flex-start; display: inline-block; font-size: 0.8rem; font-weight: 650; height: 1.5rem; line-height: 1.5rem; min-width: 1.5rem; text-align: center; }
+    .cal-day--today .cal-day__num { background: var(--p-primary-color); border-radius: 50%; color: var(--p-primary-contrast-color); }
+
+    .cal-seg { align-self: center; background: none; border: 0; cursor: pointer; margin-inline: 2px; min-width: 0; padding: 0; z-index: 1; }
+    :host ::ng-deep .cal-seg .cal-seg__tag { display: flex; justify-content: flex-start; max-width: 100%; overflow: hidden; width: 100%; }
+    :host ::ng-deep .cal-seg .cal-seg__tag .p-tag-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Continuation edges: flatten the side that runs into an adjacent week. */
+    :host ::ng-deep .cal-seg--cont-l .cal-seg__tag { border-bottom-left-radius: 0; border-top-left-radius: 0; }
+    :host ::ng-deep .cal-seg--cont-r .cal-seg__tag { border-bottom-right-radius: 0; border-top-right-radius: 0; }
+
     @media (max-width: 640px) {
-      .agenda-cell { min-height: 4.5rem; }
-      .agenda-grid__weekday { font-size: 0.6rem; padding: 0.3rem 0.1rem; }
+      .cal-day { min-block-size: 4.5rem; }
+      .cal-weekday { font-size: 0.6rem; padding: 0.3rem 0.1rem; }
     }
   `]
 })
@@ -114,22 +170,29 @@ export class AgendaCalendarComponent implements OnInit {
     return `${UA_MONTHS[month.getMonth()]} ${month.getFullYear()}`;
   });
 
-  protected readonly days = computed<CalendarDay[]>(() => {
+  protected readonly weeks = computed<CalendarWeek[]>(() => {
     const gridStart = startOfWeek(startOfMonth(this.currentMonth()), { weekStartsOn: 1 });
     const gridEnd = endOfWeek(endOfMonth(this.currentMonth()), { weekStartsOn: 1 });
-    const byDay = this.indexItemsByDay(this.items());
+    const allDays = eachDayOfInterval({ start: gridStart, end: gridEnd });
+    const dated = this.items().filter(item => item.startUtc);
 
-    return eachDayOfInterval({ start: gridStart, end: gridEnd }).map(date => {
-      const key = format(date, 'yyyy-MM-dd');
-      return {
-        date,
-        key,
-        dayNumber: format(date, 'd'),
-        inMonth: isSameMonth(date, this.currentMonth()),
-        isToday: isToday(date),
-        items: byDay.get(key) ?? []
-      };
-    });
+    const weeks: CalendarWeek[] = [];
+    for (let i = 0; i < allDays.length; i += 7) {
+      const days = allDays.slice(i, i + 7);
+      const weekStart = days[0];
+      const weekEnd = days[days.length - 1];
+      weeks.push({
+        days: days.map((date, col) => ({
+          date,
+          dayNumber: format(date, 'd'),
+          inMonth: isSameMonth(date, this.currentMonth()),
+          isToday: isToday(date),
+          col: col + 1
+        })),
+        ...this.buildSegments(dated, weekStart, weekEnd)
+      });
+    }
+    return weeks;
   });
 
   canManage(): boolean {
@@ -174,34 +237,61 @@ export class AgendaCalendarComponent implements OnInit {
   }
 
   openItem(item: AgendaItemDto): void {
-    this.editing.set(item.canEdit ? item : null);
     if (item.canEdit) {
+      this.editing.set(item);
       this.dialogVisible.set(true);
     }
   }
 
+  /** Events read as a distinct dark `contrast` tag; tasks keep their status colour. No new palette colour. */
   severityFor(item: AgendaItemDto): TagSeverity {
-    return item.kind === 'Task' ? AGENDA_STATUS_META[item.status].severity : 'secondary';
+    return item.kind === 'Task' ? AGENDA_STATUS_META[item.status].severity : 'contrast';
   }
 
-  private indexItemsByDay(items: AgendaItemDto[]): Map<string, AgendaItemDto[]> {
-    const map = new Map<string, AgendaItemDto[]>();
+  /**
+   * Turns the dated items into per-week segments: a multi-day item becomes one bar per week spanning its
+   * columns, instead of a chip repeated on each day. Segments are packed into lanes to avoid overlap.
+   */
+  private buildSegments(items: AgendaItemDto[], weekStart: Date, weekEnd: Date): { segments: WeekSegment[]; laneCount: number } {
+    const segments: WeekSegment[] = [];
+
     for (const item of items) {
-      if (!item.startUtc) {
+      const itemStart = startOfDay(parseISO(item.startUtc!));
+      const itemEnd = startOfDay(parseISO(item.endUtc ?? item.startUtc!));
+      if (itemEnd < weekStart || itemStart > weekEnd) {
         continue;
       }
-      const start = startOfDay(parseISO(item.startUtc));
-      const end = startOfDay(parseISO(item.endUtc ?? item.startUtc));
-      for (const day of eachDayOfInterval({ start, end })) {
-        const key = format(day, 'yyyy-MM-dd');
-        const bucket = map.get(key);
-        if (bucket) {
-          bucket.push(item);
-        } else {
-          map.set(key, [item]);
-        }
-      }
+
+      const segStart = maxDate([itemStart, weekStart]);
+      const segEnd = minDate([itemEnd, weekEnd]);
+      const startCol = differenceInCalendarDays(segStart, weekStart) + 1;
+      const span = differenceInCalendarDays(segEnd, segStart) + 1;
+      const continuesLeft = itemStart < weekStart;
+      const continuesRight = itemEnd > weekEnd;
+
+      segments.push({
+        item,
+        startCol,
+        span,
+        lane: 0,
+        continuesLeft,
+        continuesRight,
+        multiDay: differenceInCalendarDays(itemEnd, itemStart) >= 1 || continuesLeft || continuesRight
+      });
     }
-    return map;
+
+    // Greedy lane packing: earliest start first, longest first on ties, then first free lane.
+    segments.sort((a, b) => a.startCol - b.startCol || b.span - a.span);
+    const laneEndCol: number[] = [];
+    for (const seg of segments) {
+      let lane = 0;
+      while (lane < laneEndCol.length && laneEndCol[lane] >= seg.startCol) {
+        lane++;
+      }
+      seg.lane = lane;
+      laneEndCol[lane] = seg.startCol + seg.span - 1;
+    }
+
+    return { segments, laneCount: laneEndCol.length };
   }
 }
