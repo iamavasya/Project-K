@@ -91,6 +91,7 @@ namespace ProjectK.API
             services.AddScoped<IResourceScopeReader, ProjectK.Infrastructure.Repositories.InfrastructureModule.ResourceScopeReader>();
             services.AddScoped<ResourceAccessService>();
             services.AddScoped<MemberProfileVerificationService>();
+            services.AddScoped<ProjectK.BusinessLogic.Modules.KurinModule.Services.IAgendaAccess, ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaAccess>();
             services.AddScoped<IResourceAccessService>(sp =>
                 new ResourceAccessServiceInstrumentationDecorator(
                     sp.GetRequiredService<ResourceAccessService>(),
