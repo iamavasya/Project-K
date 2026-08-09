@@ -38,7 +38,7 @@ public sealed class GetAgendaItemsHandler
         var lookups = await AgendaLookups.LoadAsync(_uow, request.KurinKey, cancellationToken);
 
         var responses = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames))
+            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, lookups.CreatorNames))
             .ToList();
 
         return new ServiceResult<IEnumerable<AgendaItemResponse>>(ResultType.Success, responses);

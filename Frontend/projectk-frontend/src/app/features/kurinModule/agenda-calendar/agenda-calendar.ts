@@ -113,6 +113,7 @@ const UA_MONTHS = [
         (visibleChange)="dialogVisible.set($event)"
         [kurinKey]="kurinKey()"
         [item]="editing()"
+        [defaultKind]="'Event'"
         (saved)="loadData()" />
     }
   `,

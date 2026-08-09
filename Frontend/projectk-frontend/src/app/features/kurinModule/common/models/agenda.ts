@@ -20,6 +20,7 @@ export interface AgendaItemDto {
   endUtc: string | null;
   isAllDay: boolean;
   createdByUserKey: string;
+  createdByName: string | null;
   canEdit: boolean;
   canChangeStatus: boolean;
   assignments: AgendaAssignmentDto[];

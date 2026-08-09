@@ -15,7 +15,8 @@ public static class AgendaItemResponseFactory
         AgendaViewerContext viewer,
         string kurinLabel,
         IReadOnlyDictionary<Guid, string> groupNames,
-        IReadOnlyDictionary<Guid, string> memberNames)
+        IReadOnlyDictionary<Guid, string> memberNames,
+        IReadOnlyDictionary<Guid, string> creatorNames)
     {
         return new AgendaItemResponse
         {
@@ -29,6 +30,7 @@ public static class AgendaItemResponseFactory
             EndUtc = item.EndUtc,
             IsAllDay = item.IsAllDay,
             CreatedByUserKey = item.CreatedByUserKey,
+            CreatedByName = creatorNames.TryGetValue(item.CreatedByUserKey, out var creator) ? creator : null,
             CanEdit = AgendaPermissions.CanManage(item, viewer),
             CanChangeStatus = AgendaPermissions.CanChangeStatus(item, viewer),
             Assignments = item.Assignments

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -62,9 +62,16 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
           <label class="agenda-label">Призначити для</label>
           <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
         </div>
+
+        @if (item()?.createdByName) {
+          <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
+        }
       </div>
 
       <ng-template pTemplate="footer">
+        @if (item() && item()!.canEdit) {
+          <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+        }
         <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
         <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
       </ng-template>
@@ -72,20 +79,26 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
   `,
   styles: [`
     .agenda-form { display: flex; flex-direction: column; gap: 1rem; padding-top: 0.25rem; }
+    /* Push delete to the left, away from Cancel/Save. */
+    :host ::ng-deep .agenda-footer__delete { margin-inline-end: auto; }
     .agenda-field { display: flex; flex-direction: column; gap: 0.4rem; }
     .agenda-label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
     .agenda-dates { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
     .agenda-form input, .agenda-form textarea { width: 100%; }
+    .agenda-meta { align-items: center; color: var(--p-text-muted-color); display: flex; gap: 0.35rem; font-size: 0.8rem; }
     @media (max-width: 640px) { .agenda-dates { grid-template-columns: 1fr; } }
   `]
 })
 export class AgendaItemDialogComponent {
   private readonly agendaService = inject(AgendaService);
   private readonly messages = inject(MessageService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly visible = model<boolean>(false);
   readonly kurinKey = input.required<string>();
   readonly item = input<AgendaItemDto | null>(null);
+  /** Preselected kind when creating: Event from the calendar, Task from the board. */
+  readonly defaultKind = input<AgendaItemKind>('Event');
   readonly saved = output<void>();
 
   protected readonly kindOptions = [
@@ -100,6 +113,7 @@ export class AgendaItemDialogComponent {
   protected endDate: Date | null = null;
   protected readonly targets = signal<AgendaTargetInput[]>([]);
   protected readonly saving = signal(false);
+  protected readonly deleting = signal(false);
 
   protected readonly canSave = computed(() => this.targets().length > 0);
 
@@ -120,6 +134,8 @@ export class AgendaItemDialogComponent {
       } else {
         this.resetForm();
       }
+      // These are plain fields bound via ngModel; on OnPush the effect's writes need an explicit check.
+      this.cdr.markForCheck();
     });
   }
 
@@ -160,6 +176,31 @@ export class AgendaItemDialogComponent {
     });
   }
 
+  /** Delete a mistakenly created event/task, after a confirm. */
+  remove(): void {
+    const current = this.item();
+    if (!current) {
+      return;
+    }
+    const noun = current.kind === 'Task' ? 'задачу' : 'подію';
+    if (!confirm(`Видалити ${noun} «${current.title}»?`)) {
+      return;
+    }
+    this.deleting.set(true);
+    this.agendaService.delete(current.agendaItemKey).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.messages.add({ severity: 'success', summary: 'Видалено' });
+        this.saved.emit();
+        this.close();
+      },
+      error: () => {
+        this.deleting.set(false);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося видалити' });
+      }
+    });
+  }
+
   close(): void {
     this.visible.set(false);
   }
@@ -169,10 +210,11 @@ export class AgendaItemDialogComponent {
   }
 
   private resetForm(): void {
-    this.kind = 'Event';
+    // New items default to the context kind (Event on calendar, Task on board) and start today.
+    this.kind = this.defaultKind();
     this.title = '';
     this.description = '';
-    this.startDate = null;
+    this.startDate = new Date();
     this.endDate = null;
     this.targets.set([]);
   }

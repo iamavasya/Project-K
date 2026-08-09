@@ -65,6 +65,9 @@ interface BoardColumn {
                   @for (task of column.items; track task.agendaItemKey) {
                     <div class="agenda-card" cdkDrag [cdkDragDisabled]="!task.canChangeStatus">
                       <div class="agenda-card__title">{{ task.title }}</div>
+                      @if (task.createdByName) {
+                        <div class="agenda-card__meta"><i class="pi pi-user"></i> {{ task.createdByName }}</div>
+                      }
                       @if (task.assignments.length) {
                         <div class="agenda-card__targets">
                           @for (assignment of task.assignments; track assignment.targetKey) {
@@ -96,6 +99,7 @@ interface BoardColumn {
         (visibleChange)="dialogVisible.set($event)"
         [kurinKey]="kurinKey()"
         [item]="editing()"
+        [defaultKind]="'Task'"
         (saved)="loadData()" />
       <p-confirmDialog />
     }
@@ -124,6 +128,7 @@ interface BoardColumn {
       padding: 0.75rem;
     }
     .agenda-card__title { color: var(--p-text-color); font-weight: 650; }
+    .agenda-card__meta { align-items: center; color: var(--p-text-muted-color); display: flex; font-size: 0.72rem; gap: 0.3rem; }
     .agenda-card__targets { display: flex; flex-wrap: wrap; gap: 0.3rem; }
     .agenda-card__chip {
       background: var(--p-surface-ground);

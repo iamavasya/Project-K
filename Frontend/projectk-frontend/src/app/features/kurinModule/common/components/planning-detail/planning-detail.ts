@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
+import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
 
 // PrimeNG Imports
@@ -10,6 +11,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
+import { MessageService } from 'primeng/api';
 
 import 'chartjs-adapter-date-fns';
 
@@ -90,6 +92,9 @@ import 'chartjs-adapter-date-fns';
     }
 
   </ng-template> <ng-template pTemplate="footer">
+  @if (session()?.isCalculated && session()?.optimalStartDate) {
+    <p-button label="Перенести в календар" icon="pi pi-calendar-plus" (click)="addToCalendar()" [disabled]="adding()" />
+  }
   <p-button label="Закрити" (click)="close()" [text]="true" severity="secondary" />
 </ng-template>
 </p-dialog>
@@ -101,9 +106,12 @@ export class PlanningDetailComponent implements OnChanges {
   @Output() visibleChange = new EventEmitter<boolean>();
 
   private readonly service = inject(PlanningService);
-  
+  private readonly agendaService = inject(AgendaService);
+  private readonly messages = inject(MessageService);
+
   session = signal<PlanningSessionDto | null>(null);
   loading = signal(false);
+  adding = signal(false);
 
   // Дані для Chart.js
   chartData: {
@@ -140,6 +148,34 @@ export class PlanningDetailComponent implements OnChanges {
   close() {
     this.visible = false;
     this.visibleChange.emit(false);
+  }
+
+  /** Turn this calculated planning into a kurin-wide calendar event (name + optimal dates). */
+  addToCalendar() {
+    const s = this.session();
+    if (!s || !s.optimalStartDate) {
+      return;
+    }
+    this.adding.set(true);
+    this.agendaService.create({
+      kurinKey: s.kurinKey,
+      kind: 'Event',
+      title: s.name,
+      description: 'Створено з планування табору',
+      startUtc: s.optimalStartDate,
+      endUtc: s.optimalEndDate ?? null,
+      isAllDay: true,
+      targets: [{ targetType: 'Kurin', targetKey: s.kurinKey }]
+    }).subscribe({
+      next: () => {
+        this.adding.set(false);
+        this.messages.add({ severity: 'success', summary: 'Додано в календар куреня' });
+      },
+      error: () => {
+        this.adding.set(false);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося додати в календар' });
+      }
+    });
   }
 
   calculateHeight() {

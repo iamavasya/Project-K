@@ -19,6 +19,7 @@ public record AgendaItemResponse
     public DateTime? EndUtc { get; set; }
     public bool IsAllDay { get; set; }
     public Guid CreatedByUserKey { get; set; }
+    public string? CreatedByName { get; set; }
     public bool CanEdit { get; set; }
     public bool CanChangeStatus { get; set; }
     public List<AgendaAssignmentDto> Assignments { get; set; } = [];

@@ -31,7 +31,13 @@ interface TargetNodeData {
       placeholder="Оберіть курінь, гуртки або мемберів"
       appendTo="body"
       emptyMessage="Немає доступних цілей" />
-  `
+  `,
+  styles: [`
+    :host { display: block; width: 100%; }
+    /* Fixed to the field width: selected chips wrap onto new lines instead of stretching the control. */
+    :host ::ng-deep .agenda-assign-select { width: 100%; max-width: 100%; }
+    :host ::ng-deep .agenda-assign-select .p-treeselect-label { flex-wrap: wrap; }
+  `]
 })
 export class AgendaAssignSelectComponent implements OnInit {
   private readonly agendaService = inject(AgendaService);
