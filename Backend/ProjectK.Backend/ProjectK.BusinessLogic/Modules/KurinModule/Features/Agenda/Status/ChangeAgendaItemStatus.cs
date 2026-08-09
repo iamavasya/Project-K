@@ -57,7 +57,8 @@ public sealed class ChangeAgendaItemStatusHandler : IRequestHandler<ChangeAgenda
 
         item.Status = request.Status;
         item.UpdatedDate = DateTime.UtcNow;
-        _uow.AgendaItems.Update(item, cancellationToken);
+        // The item is tracked (loaded with assignments), so the status change is persisted without an
+        // explicit Update() — which would re-mark the client-keyed assignments and fight change tracking.
         await _uow.SaveChangesAsync(cancellationToken);
 
         await NotifyStatusChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);

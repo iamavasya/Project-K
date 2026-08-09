@@ -76,14 +76,34 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
         item.IsAllDay = request.IsAllDay;
         item.UpdatedDate = DateTime.UtcNow;
 
-        // Replace the assignment set; orphaned rows are cascade-deleted on save.
-        item.Assignments.Clear();
-        foreach (var target in request.Targets)
+        // Reconcile targets in place: keep unchanged rows, drop removed ones, add new ones. Replacing
+        // the whole set (clear + re-add) would delete and re-insert identical rows in one SaveChanges,
+        // which trips the unique (AgendaItemKey, TargetType, TargetKey) index. The item is tracked, so
+        // these collection edits are persisted without an explicit Update() call.
+        var desired = request.Targets
+            .Select(t => (t.TargetType, t.TargetKey))
+            .ToHashSet();
+
+        foreach (var existing in item.Assignments.ToList())
         {
-            item.Assignments.Add(new AgendaAssignment { TargetType = target.TargetType, TargetKey = target.TargetKey });
+            if (!desired.Contains((existing.TargetType, existing.TargetKey)))
+            {
+                item.Assignments.Remove(existing);
+            }
         }
 
-        _uow.AgendaItems.Update(item, cancellationToken);
+        var current = item.Assignments
+            .Select(a => (a.TargetType, a.TargetKey))
+            .ToHashSet();
+
+        foreach (var target in request.Targets)
+        {
+            if (current.Add((target.TargetType, target.TargetKey)))
+            {
+                item.Assignments.Add(new AgendaAssignment { TargetType = target.TargetType, TargetKey = target.TargetKey });
+            }
+        }
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         await NotifyUpdatedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
