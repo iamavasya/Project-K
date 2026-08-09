@@ -135,10 +135,32 @@ export class SidebarMenu implements OnChanges {
         }
       );
 
+      // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
+      // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
+      items.push({
+        label: 'Календар',
+        icon: 'pi pi-calendar',
+        routerLink: ['/calendar', kurinKey],
+        command: () => {
+          this.close();
+          this.router.navigate(['/calendar', kurinKey]);
+        }
+      });
+
+      items.push({
+        label: 'Задачі',
+        icon: 'pi pi-check-square',
+        routerLink: ['/tasks', kurinKey],
+        command: () => {
+          this.close();
+          this.router.navigate(['/tasks', kurinKey]);
+        }
+      });
+
       if (canManageMembers) {
         items.push({
           label: 'Планування',
-          icon: 'pi pi-calendar',
+          icon: 'pi pi-clock',
           routerLink: ['/planning', kurinKey],
           command: () => {
             this.close();

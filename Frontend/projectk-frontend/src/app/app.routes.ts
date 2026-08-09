@@ -261,5 +261,21 @@ export const routes: Routes = [
       .then(m => m.PlanningListComponent),
     title: 'Планування',
     data: { breadcrumb: 'Планування', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
+  },
+  {
+    path: 'calendar/:kurinKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/agenda-calendar/agenda-calendar')
+      .then(m => m.AgendaCalendarComponent),
+    title: 'Календар',
+    data: { breadcrumb: 'Календар', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
+  },
+  {
+    path: 'tasks/:kurinKey',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/agenda-board/agenda-board')
+      .then(m => m.AgendaBoardComponent),
+    title: 'Задачі',
+    data: { breadcrumb: 'Задачі', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
   }
 ];
