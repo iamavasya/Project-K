@@ -88,13 +88,17 @@ interface BoardColumn {
       </section>
     </div>
 
-    <app-agenda-item-dialog
-      [visible]="dialogVisible()"
-      (visibleChange)="dialogVisible.set($event)"
-      [kurinKey]="kurinKey()"
-      [item]="editing()"
-      (saved)="loadData()" />
-    <p-confirmDialog />
+    <!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
+         assign-targets) for plain users would 403 and bounce them to /forbidden. -->
+    @if (canManage()) {
+      <app-agenda-item-dialog
+        [visible]="dialogVisible()"
+        (visibleChange)="dialogVisible.set($event)"
+        [kurinKey]="kurinKey()"
+        [item]="editing()"
+        (saved)="loadData()" />
+      <p-confirmDialog />
+    }
   `,
   styles: [`
     .agenda-page { margin-inline: auto; padding-block: 2rem; width: min(100% - 2rem, 72rem); }
