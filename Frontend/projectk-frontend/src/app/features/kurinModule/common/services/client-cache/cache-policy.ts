@@ -6,6 +6,7 @@ export const GROUP_CACHE_PREFIX = 'group:';
 export const KURIN_CACHE_PREFIX = 'kurin:';
 export const LEADERSHIP_CACHE_PREFIX = 'leadership:';
 export const PLANNING_CACHE_PREFIX = 'planning:';
+export const AGENDA_CACHE_PREFIX = 'agenda:';
 export const MEMBER_WARNING_CACHE_PREFIX = 'member-warning:';
 export const MEMBER_PROGRESS_CACHE_PREFIX = 'member-progress:';
 export const BADGES_CATALOG_CACHE_PREFIX = 'catalog:badges:';
@@ -22,6 +23,7 @@ export const KURIN_SCOPED_CACHE_PREFIXES = [
   KURIN_CACHE_PREFIX,
   LEADERSHIP_CACHE_PREFIX,
   PLANNING_CACHE_PREFIX,
+  AGENDA_CACHE_PREFIX,
   MEMBER_WARNING_CACHE_PREFIX,
   MEMBER_PROGRESS_CACHE_PREFIX,
   LAYOUT_CACHE_PREFIX

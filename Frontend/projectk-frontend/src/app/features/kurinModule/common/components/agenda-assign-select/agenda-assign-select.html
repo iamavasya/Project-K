@@ -1,0 +1,12 @@
+<p-treeSelect
+  [(ngModel)]="selectedNodes"
+  (ngModelChange)="onSelectionChange($event)"
+  [options]="nodes()"
+  selectionMode="multiple"
+  [metaKeySelection]="false"
+  [filter]="true"
+  filterBy="label"
+  containerStyleClass="agenda-assign-select"
+  placeholder="Оберіть курінь, гуртки або мемберів"
+  appendTo="body"
+  emptyMessage="Немає доступних цілей" />

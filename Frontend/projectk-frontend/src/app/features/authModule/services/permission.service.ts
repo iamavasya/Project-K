@@ -60,6 +60,13 @@ export class PermissionService {
     return this.isAdmin(role) || this.isManager(role);
   }
 
+  // Anyone above plain "user" (mentor, manager, admin) may create/assign agenda items;
+  // the backend narrows a mentor to their assigned groups per target.
+  canManageAgenda(role?: string | null): boolean {
+    const r = this.getRole(role);
+    return r !== '' && r !== 'user';
+  }
+
   canManageKurinSettings(role?: string | null): boolean {
     return this.isAdmin(role) || this.isManager(role);
   }

@@ -17,9 +17,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
 
     public sealed class VerifyMemberProfileHandler : IRequestHandler<VerifyMemberProfile, ServiceResult<MemberResponse>>
     {
-        private readonly MemberProfileVerificationService _service;
+        private readonly IMemberProfileVerificationService _service;
 
-        public VerifyMemberProfileHandler(MemberProfileVerificationService service)
+        public VerifyMemberProfileHandler(IMemberProfileVerificationService service)
         {
             _service = service;
         }
@@ -30,9 +30,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
 
     public sealed class ResetMemberProfileVerificationHandler : IRequestHandler<ResetMemberProfileVerification, ServiceResult<MemberResponse>>
     {
-        private readonly MemberProfileVerificationService _service;
+        private readonly IMemberProfileVerificationService _service;
 
-        public ResetMemberProfileVerificationHandler(MemberProfileVerificationService service)
+        public ResetMemberProfileVerificationHandler(IMemberProfileVerificationService service)
         {
             _service = service;
         }
@@ -41,7 +41,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             => _service.ResetAsync(request.MemberKey, cancellationToken);
     }
 
-    public sealed class MemberProfileVerificationService
+    public interface IMemberProfileVerificationService
+    {
+        Task<ServiceResult<MemberResponse>> VerifyAsync(Guid memberKey, string? note, CancellationToken cancellationToken);
+
+        Task<ServiceResult<MemberResponse>> ResetAsync(Guid memberKey, CancellationToken cancellationToken);
+    }
+
+    public sealed class MemberProfileVerificationService : IMemberProfileVerificationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;

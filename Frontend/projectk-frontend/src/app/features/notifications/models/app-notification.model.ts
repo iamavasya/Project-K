@@ -6,7 +6,11 @@ export type AppNotificationType =
   | 'MemberAwardReviewed'
   | 'MemberWarningAssigned'
   | 'LeadershipChanged'
-  | 'MemberSkillReviewed';
+  | 'MemberSkillReviewed'
+  | 'AgendaItemAssigned'
+  | 'AgendaItemUpdated'
+  | 'AgendaItemStatusChanged'
+  | 'AgendaItemDeleted';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 

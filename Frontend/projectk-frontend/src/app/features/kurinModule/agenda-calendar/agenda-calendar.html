@@ -1,0 +1,71 @@
+<div class="agenda-page">
+  <section class="kurin-tile">
+    <div class="agenda-header">
+      <h1 class="agenda-title">Календар</h1>
+      @if (canManage()) {
+        <p-button label="Нова подія" icon="pi pi-plus" (click)="openCreate()" />
+      }
+    </div>
+
+    <div class="agenda-toolbar">
+      <p-button icon="pi pi-chevron-left" severity="secondary" [text]="true" [rounded]="true" (click)="previousMonth()" ariaLabel="Попередній місяць" />
+      <span class="agenda-month">{{ monthLabel() }}</span>
+      <p-button icon="pi pi-chevron-right" severity="secondary" [text]="true" [rounded]="true" (click)="nextMonth()" ariaLabel="Наступний місяць" />
+      <p-button label="Сьогодні" severity="secondary" [text]="true" (click)="goToday()" />
+    </div>
+
+    <div class="cal-month" role="grid">
+      <div class="cal-weekdays" role="row">
+        @for (weekday of weekdays; track weekday) {
+          <div class="cal-weekday" role="columnheader">{{ weekday }}</div>
+        }
+      </div>
+
+      @for (week of weeks(); track $index) {
+        <div class="cal-week" [style.--lanes]="week.laneCount" role="row">
+          <div class="cal-week__days">
+            @for (day of week.days; track day.col) {
+              <div
+                class="cal-day"
+                [class.cal-day--muted]="!day.inMonth"
+                [class.cal-day--today]="day.isToday"
+                role="gridcell">
+                <span class="cal-day__num">{{ day.dayNumber }}</span>
+              </div>
+            }
+          </div>
+
+          @if (week.segments.length) {
+            <div class="cal-week__events">
+              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
+                <button
+                  type="button"
+                  class="cal-seg"
+                  [class.cal-seg--cont-l]="seg.continuesLeft"
+                  [class.cal-seg--cont-r]="seg.continuesRight"
+                  [style.grid-column]="seg.startCol + ' / span ' + seg.span"
+                  [style.grid-row]="seg.lane + 1"
+                  (click)="openItem(seg.item)"
+                  [attr.aria-label]="seg.item.title">
+                  <p-tag [severity]="tagSeverity(seg.item)" [styleClass]="tagStyleClass(seg.item)" [value]="seg.item.title" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+</div>
+
+<!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
+     assign-targets) for plain users would 403 and bounce them to /forbidden. -->
+@if (canManage()) {
+  <app-agenda-item-dialog
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [kurinKey]="kurinKey()"
+    [item]="editing()"
+    [defaultKind]="'Event'"
+    (saved)="loadData()" />
+}

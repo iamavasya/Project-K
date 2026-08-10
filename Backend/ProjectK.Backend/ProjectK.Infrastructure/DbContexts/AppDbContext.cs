@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using System;
@@ -25,6 +26,8 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<PlanningSession> PlanningSessions { get; set; }
         public DbSet<PlanningParticipant> PlanningParticipants { get; set; }
         public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
+        public DbSet<AgendaItem> AgendaItems { get; set; }
+        public DbSet<AgendaAssignment> AgendaAssignments { get; set; }
         public DbSet<BadgeProgress> BadgeProgresses { get; set; }
         public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
         public DbSet<ProbeProgress> ProbeProgresses { get; set; }
@@ -191,6 +194,34 @@ namespace ProjectK.Infrastructure.DbContexts
                       .WithMany(pp => pp.BusyRanges)
                       .HasForeignKey(e => e.PlanningParticipantKey)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<AgendaItem>(entity =>
+            {
+                entity.HasKey(e => e.AgendaItemKey);
+                entity.Property(e => e.Kind).HasConversion<int>();
+                entity.Property(e => e.Status).HasConversion<int>();
+                entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.HasOne(e => e.Kurin)
+                      .WithMany(k => k.AgendaItems)
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                // The calendar queries by kurin and date window, so index both.
+                entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
+            });
+
+            builder.Entity<AgendaAssignment>(entity =>
+            {
+                entity.HasKey(e => e.AgendaAssignmentKey);
+                entity.Property(e => e.TargetType).HasConversion<int>();
+                entity.HasOne(e => e.AgendaItem)
+                      .WithMany(a => a.Assignments)
+                      .HasForeignKey(e => e.AgendaItemKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                // One target appears once per item; also the lookup path for "what is assigned to me".
+                entity.HasIndex(e => new { e.AgendaItemKey, e.TargetType, e.TargetKey }).IsUnique();
+                entity.HasIndex(e => new { e.TargetType, e.TargetKey });
             });
 
             builder.Entity<BadgeProgress>(entity =>

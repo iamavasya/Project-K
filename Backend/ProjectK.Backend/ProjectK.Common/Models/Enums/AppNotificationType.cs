@@ -9,6 +9,10 @@ namespace ProjectK.Common.Models.Enums
         MemberAwardReviewed = 4,
         MemberWarningAssigned = 5,
         LeadershipChanged = 6,
-        MemberSkillReviewed = 7
+        MemberSkillReviewed = 7,
+        AgendaItemAssigned = 8,
+        AgendaItemUpdated = 9,
+        AgendaItemStatusChanged = 10,
+        AgendaItemDeleted = 11
     }
 }
