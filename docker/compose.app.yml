@@ -35,6 +35,9 @@ services:
       Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
       Telegram__DevAlerts__Enabled: "false"
       Telegram__PublicChannel__Enabled: "false"
+      # LAN/test convenience: skip privileged-MFA for Admin/Manager (mirrors appsettings.E2E.json).
+      # Defaults off; opt in per env with PROJECTK_BYPASS_MFA=true. Never enable for staging/prod.
+      E2E__BypassPrivilegedMfa: ${PROJECTK_BYPASS_MFA:-false}
     ports:
       - "${PROJECTK_API_PORT:-5205}:8080"
     networks:
