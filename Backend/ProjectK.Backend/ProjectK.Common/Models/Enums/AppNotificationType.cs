@@ -12,6 +12,7 @@ namespace ProjectK.Common.Models.Enums
         MemberSkillReviewed = 7,
         AgendaItemAssigned = 8,
         AgendaItemUpdated = 9,
-        AgendaItemStatusChanged = 10
+        AgendaItemStatusChanged = 10,
+        AgendaItemDeleted = 11
     }
 }

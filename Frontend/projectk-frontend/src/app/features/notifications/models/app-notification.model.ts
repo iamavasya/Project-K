@@ -9,7 +9,8 @@ export type AppNotificationType =
   | 'MemberSkillReviewed'
   | 'AgendaItemAssigned'
   | 'AgendaItemUpdated'
-  | 'AgendaItemStatusChanged';
+  | 'AgendaItemStatusChanged'
+  | 'AgendaItemDeleted';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 
