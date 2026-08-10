@@ -4,7 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import {
   addMonths, differenceInCalendarDays, eachDayOfInterval, endOfMonth, endOfWeek, format,
-  isSameMonth, isToday, max as maxDate, min as minDate, parseISO, startOfDay, startOfMonth, startOfWeek
+  isSameMonth, isToday, max as maxDate, min as minDate, startOfMonth, startOfWeek
 } from 'date-fns';
 import { AgendaService } from '../common/services/agenda-service/agenda-service';
 import { PermissionService } from '../../authModule/services/permission.service';
@@ -149,6 +149,15 @@ export class AgendaCalendarComponent implements OnInit {
   }
 
   /**
+   * All-day items are stored as UTC-midnight; read the calendar date parts and build a local date so the
+   * item lands on the same day for every viewer (no drift for far-negative timezone offsets).
+   */
+  private static localDateOnly(iso: string): Date {
+    const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  /**
    * Turns the dated items into per-week segments: a multi-day item becomes one bar per week spanning its
    * columns, instead of a chip repeated on each day. Segments are packed into lanes to avoid overlap.
    */
@@ -156,8 +165,8 @@ export class AgendaCalendarComponent implements OnInit {
     const segments: WeekSegment[] = [];
 
     for (const item of items) {
-      const itemStart = startOfDay(parseISO(item.startUtc!));
-      const itemEnd = startOfDay(parseISO(item.endUtc ?? item.startUtc!));
+      const itemStart = AgendaCalendarComponent.localDateOnly(item.startUtc!);
+      const itemEnd = AgendaCalendarComponent.localDateOnly(item.endUtc ?? item.startUtc!);
       if (itemEnd < weekStart || itemStart > weekEnd) {
         continue;
       }
