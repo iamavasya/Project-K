@@ -1,0 +1,7 @@
+# Default owner for everything in the repo.
+* @iamavasya
+
+# Security-sensitive config — always review.
+/.github/           @iamavasya
+/SECURITY.md        @iamavasya
+/docker/            @iamavasya
