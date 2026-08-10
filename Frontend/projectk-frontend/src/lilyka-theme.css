@@ -195,6 +195,12 @@ h1, h2, h3 {
   width: 2rem;
 }
 
+/* Central lily petal is always terracotta (brand mark), independent of the
+   currentColor used for the two side petals and stem. Flips with the theme. */
+.lil-mark-center {
+  stroke: var(--lil-clay-500);
+}
+
 .sidebar-content {
   padding: 0.75rem 0.625rem;
 }
