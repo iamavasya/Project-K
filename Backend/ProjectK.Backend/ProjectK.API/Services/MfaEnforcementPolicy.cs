@@ -26,29 +26,20 @@ namespace ProjectK.API.Services
 
         public async Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default)
         {
-            if (_environment.IsDevelopment())
-            {
-                return false;
-            }
+            // All bypasses below apply to LAN/test tiers only. Production and Staging ignore them outright,
+            // so e.g. a stray E2E__BypassPrivilegedMfa in a deployed env file can never disable privileged MFA.
+            var isNonProdEnv = !_environment.IsProduction() && !_environment.IsStaging();
 
-            // The env-gated bypass is for LAN/test tiers only. Production and Staging ignore it outright,
-            // so a stray E2E__BypassPrivilegedMfa in a deployed env file can never disable privileged MFA.
-            if (!_environment.IsProduction()
-                && !_environment.IsStaging()
-                && _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false))
-            {
-                return false;
-            }
+            var isBypassed = isNonProdEnv
+                && (_environment.IsDevelopment()
+                    || _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false)
+                    || (_environment.EnvironmentName == "SelfHost"
+                        && !await _systemSettings.GetBoolAsync(
+                            SystemSettingKeys.EnforcePrivilegedMfa,
+                            defaultValue: false,
+                            cancellationToken)));
 
-            if (_environment.EnvironmentName == "SelfHost")
-            {
-                return await _systemSettings.GetBoolAsync(
-                    SystemSettingKeys.EnforcePrivilegedMfa,
-                    defaultValue: false,
-                    cancellationToken);
-            }
-
-            return true;
+            return !isBypassed;
         }
     }
 }

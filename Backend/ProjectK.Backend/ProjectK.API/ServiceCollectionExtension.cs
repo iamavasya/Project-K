@@ -1,26 +1,28 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.API.Helpers;
+using ProjectK.API.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.API.Helpers;
-using ProjectK.API.Services;
-using ProjectK.Infrastructure.Repositories;
-using ProjectK.Infrastructure.Services.JwtService;
-using ProjectK.Infrastructure.UnitOfWork;
-
-using Microsoft.Extensions.Configuration;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Repositories.InfrastructureModule;
+using ProjectK.Infrastructure.Services;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.EmailService;
+using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
+using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 
 namespace ProjectK.API
@@ -35,24 +37,6 @@ namespace ProjectK.API
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
             services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
             services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
-
-            // Background Services
-            services.AddHostedService<AuditCleanupBackgroundService>();
-            services.AddHostedService<MemberWarningExpiryBackgroundService>();
-
-            // Services
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<IJwtService, JwtService>();
-            services.AddScoped<IMfaService, ProjectK.Infrastructure.Services.MfaService>();
-            services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
-            services.AddScoped<ISystemSettingsService, SystemSettingsService>();
-            services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
-            services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
-            services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
-            services.AddSingleton<IActivityLogger, ActivityLogger>();
-            services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
             services.Configure<PublicAnnouncementImageStoreOptions>(configuration.GetSection("PublicAnnouncements:ImageStore"));
             services.PostConfigure<PublicAnnouncementImageStoreOptions>(options =>
             {
@@ -61,16 +45,58 @@ namespace ProjectK.API
                     options.Path = configuration["PublicAnnouncements:ImageStorePath"];
                 }
             });
-            services.AddSingleton<LocalPublicAnnouncementImageStore>();
+
+            // Services
+
+            // -- Background jobs
+            services.AddHostedService<AuditCleanupBackgroundService>();
+            services.AddHostedService<MemberWarningExpiryBackgroundService>();
+
+            // -- Data access
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
+
+            // Repositories are reached only through IUnitOfWork, which owns their
+            // lifetime and shares the request DbContext. Registering them separately
+            // let a second instance exist per request against the same context and
+            // nothing resolved them directly, so those registrations were dropped.
+
+            // -- Auth & access control
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IMfaService, MfaService>();
+            services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+            services.AddScoped<ISystemSettingsService, SystemSettingsService>();
+            services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
+            services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+            services.AddScoped<ResourceAccessService>();
+            services.AddScoped<IResourceAccessService>(sp =>
+                new ResourceAccessServiceInstrumentationDecorator(
+                    sp.GetRequiredService<ResourceAccessService>(),
+                    sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
+
+            // -- Caching
+            services.AddSingleton<IBackendCache, MemoryBackendCache>();
+
+            // -- Kurin module
+            services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
+            services.AddScoped<IAgendaAccess, AgendaAccess>();
+
+            // -- Notifications
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
+
+            // -- Public announcements
+            services.AddHttpClient<TelegramPublicAnnouncementPublisher>();
+            services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();
             services.AddScoped<IPublicAnnouncementImageStore, AzureBlobPublicAnnouncementImageStore>();
             services.AddScoped<NullPublicAnnouncementPublisher>();
-            services.AddHttpClient<TelegramPublicAnnouncementPublisher>();
             services.AddScoped<IPublicAnnouncementPublisher>(sp =>
                 configuration.GetValue<bool>("Telegram:PublicChannel:Enabled")
                     ? sp.GetRequiredService<TelegramPublicAnnouncementPublisher>()
                     : sp.GetRequiredService<NullPublicAnnouncementPublisher>());
+            services.AddSingleton<LocalPublicAnnouncementImageStore>();
 
-            // Email Service Registration
+            // -- Email
             var emailProvider = configuration["Email:Provider"] ?? "Mock";
             if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
             {
@@ -88,24 +114,14 @@ namespace ProjectK.API
                 services.AddScoped<IEmailService, MockEmailService>();
             }
 
-            services.AddScoped<IResourceScopeReader, ProjectK.Infrastructure.Repositories.InfrastructureModule.ResourceScopeReader>();
-            services.AddScoped<ResourceAccessService>();
-            services.AddScoped<MemberProfileVerificationService>();
-            services.AddScoped<ProjectK.BusinessLogic.Modules.KurinModule.Services.IAgendaAccess, ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaAccess>();
-            services.AddScoped<IResourceAccessService>(sp =>
-                new ResourceAccessServiceInstrumentationDecorator(
-                    sp.GetRequiredService<ResourceAccessService>(),
-                    sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
-            services.AddSingleton<IBackendCache, MemoryBackendCache>();
-
-            // Repositories are reached only through IUnitOfWork, which owns their
-            // lifetime and shares the request DbContext. Registering them separately
-            // let a second instance exist per request against the same context and
-            // nothing resolved them directly, so those registrations were dropped.
-
-            // Probes and badges read-only catalog services.
+            // -- Probes and badges catalog
             services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
             services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
+
+            // -- Misc
+            services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
+            services.AddSingleton<IActivityLogger, ActivityLogger>();
+
             return services;
         }
     }
