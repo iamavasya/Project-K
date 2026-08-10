@@ -8,7 +8,7 @@
   (onHide)="onHide()">
   <div class="agenda-form">
     <div class="agenda-field">
-      <label class="agenda-label">Тип</label>
+      <span class="agenda-label">Тип</span>
       <p-selectButton [options]="kindOptions" [(ngModel)]="kind" optionLabel="label" optionValue="value" [allowEmpty]="false" />
     </div>
 
@@ -34,7 +34,7 @@
     </div>
 
     <div class="agenda-field">
-      <label class="agenda-label">Призначити для</label>
+      <span class="agenda-label">Призначити для</span>
       <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
     </div>
 
