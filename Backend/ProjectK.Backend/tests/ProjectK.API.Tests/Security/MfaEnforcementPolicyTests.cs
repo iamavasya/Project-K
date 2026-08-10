@@ -24,7 +24,7 @@ public class MfaEnforcementPolicyTests
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_WhenE2EBypassEnabled()
     {
         var policy = new MfaEnforcementPolicy(
-            CreateEnvironment("Staging"),
+            CreateEnvironment("E2E"),
             CreateConfiguration(bypassE2E: true),
             CreateSystemSettings(enforce: true).Object);
 
