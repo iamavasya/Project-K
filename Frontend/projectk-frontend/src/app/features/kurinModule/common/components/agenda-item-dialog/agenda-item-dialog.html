@@ -1,0 +1,53 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  [draggable]="false"
+  [header]="item() ? 'Редагувати' : 'Нове призначення'"
+  (onHide)="onHide()">
+  <div class="agenda-form">
+    <div class="agenda-field">
+      <label class="agenda-label">Тип</label>
+      <p-selectButton [options]="kindOptions" [(ngModel)]="kind" optionLabel="label" optionValue="value" [allowEmpty]="false" />
+    </div>
+
+    <div class="agenda-field">
+      <label class="agenda-label" for="agenda-title">Назва</label>
+      <input id="agenda-title" pInputText [(ngModel)]="title" maxlength="200" placeholder="Про що це?" />
+    </div>
+
+    <div class="agenda-field">
+      <label class="agenda-label" for="agenda-desc">Опис</label>
+      <textarea id="agenda-desc" pTextarea [(ngModel)]="description" rows="3" maxlength="2000" placeholder="Деталі (необовʼязково)"></textarea>
+    </div>
+
+    <div class="agenda-dates">
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-start">Початок</label>
+        <p-datePicker id="agenda-start" [(ngModel)]="startDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+      </div>
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-end">Кінець</label>
+        <p-datePicker id="agenda-end" [(ngModel)]="endDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+      </div>
+    </div>
+
+    <div class="agenda-field">
+      <label class="agenda-label">Призначити для</label>
+      <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
+    </div>
+
+    @if (item()?.createdByName) {
+      <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    @if (item() && item()!.canEdit) {
+      <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+    }
+    <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
+    <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
+  </ng-template>
+</p-dialog>

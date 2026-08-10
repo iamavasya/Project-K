@@ -22,72 +22,8 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
     FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
     SelectButtonModule, DatePickerModule, AgendaAssignSelectComponent
   ],
-  template: `
-    <p-dialog
-      [visible]="visible()"
-      (visibleChange)="visible.set($event)"
-      [modal]="true"
-      [style]="{ width: '34rem' }"
-      [draggable]="false"
-      [header]="item() ? 'Редагувати' : 'Нове призначення'"
-      (onHide)="onHide()">
-      <div class="agenda-form">
-        <div class="agenda-field">
-          <label class="agenda-label">Тип</label>
-          <p-selectButton [options]="kindOptions" [(ngModel)]="kind" optionLabel="label" optionValue="value" [allowEmpty]="false" />
-        </div>
-
-        <div class="agenda-field">
-          <label class="agenda-label" for="agenda-title">Назва</label>
-          <input id="agenda-title" pInputText [(ngModel)]="title" maxlength="200" placeholder="Про що це?" />
-        </div>
-
-        <div class="agenda-field">
-          <label class="agenda-label" for="agenda-desc">Опис</label>
-          <textarea id="agenda-desc" pTextarea [(ngModel)]="description" rows="3" maxlength="2000" placeholder="Деталі (необовʼязково)"></textarea>
-        </div>
-
-        <div class="agenda-dates">
-          <div class="agenda-field">
-            <label class="agenda-label" for="agenda-start">Початок</label>
-            <p-datePicker id="agenda-start" [(ngModel)]="startDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
-          </div>
-          <div class="agenda-field">
-            <label class="agenda-label" for="agenda-end">Кінець</label>
-            <p-datePicker id="agenda-end" [(ngModel)]="endDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
-          </div>
-        </div>
-
-        <div class="agenda-field">
-          <label class="agenda-label">Призначити для</label>
-          <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
-        </div>
-
-        @if (item()?.createdByName) {
-          <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
-        }
-      </div>
-
-      <ng-template pTemplate="footer">
-        @if (item() && item()!.canEdit) {
-          <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
-        }
-        <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
-        <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
-      </ng-template>
-    </p-dialog>
-  `,
-  styles: [`
-    .agenda-form { display: flex; flex-direction: column; gap: 1rem; padding-top: 0.25rem; }
-    /* Push delete to the left, away from Cancel/Save. */
-    :host ::ng-deep .agenda-footer__delete { margin-inline-end: auto; }
-    .agenda-field { display: flex; flex-direction: column; gap: 0.4rem; }
-    .agenda-label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
-    .agenda-dates { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
-    .agenda-form input, .agenda-form textarea { width: 100%; }
-    .agenda-meta { align-items: center; color: var(--p-text-muted-color); display: flex; gap: 0.35rem; font-size: 0.8rem; }
-    @media (max-width: 640px) { .agenda-dates { grid-template-columns: 1fr; } }
-  `]
+  templateUrl: './agenda-item-dialog.html',
+  styleUrl: './agenda-item-dialog.css'
 })
 export class AgendaItemDialogComponent {
   private readonly agendaService = inject(AgendaService);
