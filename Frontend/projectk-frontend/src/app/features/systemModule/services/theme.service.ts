@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 
 export type ThemePreference = 'light' | 'dark';
 
-const STORAGE_KEY = 'lilyka-theme';
+const STORAGE_KEY = 'lileyka-theme';
 
 /**
  * Owns the `data-theme` attribute the PrimeNG preset switches on

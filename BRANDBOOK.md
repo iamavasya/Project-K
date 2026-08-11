@@ -54,9 +54,9 @@
 
 | Файл | Призначення |
 |---|---|
-| `assets/lilyka-mark.svg` | основний, двоколірний (зелений + терракотова центральна пелюстка) |
-| `assets/lilyka-mark-mono.svg` | `currentColor`, весь знак одним кольором — для друку/одноколірних контекстів |
-| `assets/lilyka-mark-dark.svg` | для темного фону (`#34C48D` + `#EE9A5A`) |
+| `assets/lileyka-mark.svg` | основний, двоколірний (зелений + терракотова центральна пелюстка) |
+| `assets/lileyka-mark-mono.svg` | `currentColor`, весь знак одним кольором — для друку/одноколірних контекстів |
+| `assets/lileyka-mark-dark.svg` | для темного фону (`#34C48D` + `#EE9A5A`) |
 | `assets/favicon.svg` | 64px, знак на зеленому квадраті `r=14`, центр `#F5C99B` для контрасту |
 | `assets/favicon-16.svg` | 16px, той самий знак, товща лінія для читабельності |
 
@@ -65,7 +65,7 @@
 - **Форма — скаутський fleur-de-lis, нахил 45°.** Попередні варіанти (дво-/трипелюсткова лілея) не відтворювати.
 - **Вільне поле** навколо знака — висота нижнього вістря (≈ 20% висоти знака).
 - Товщина обведення: 5.5 для основного, 6–6.5 для дрібних фавіконів. Знак завжди `fill="none"`, `stroke-linecap="round"`.
-- Центральна пелюстка терракотова на **всіх** поверхнях; на зеленому фоні (фавікон, банер) — світліший клей `#F5C99B` для контрасту. Виняток: **одноколірна** версія (`lilyka-mark-mono.svg`) лишається в один колір. У застосунку центр малюється класом `.lil-mark-center` (`stroke: var(--lil-clay-500)`) — джерело правди кольору.
+- Центральна пелюстка терракотова на **всіх** поверхнях; на зеленому фоні (фавікон, банер) — світліший клей `#F5C99B` для контрасту. Виняток: **одноколірна** версія (`lileyka-mark-mono.svg`) лишається в один колір. У застосунку центр малюється класом `.lil-mark-center` (`stroke: var(--lil-clay-500)`) — джерело правди кольору.
 - Нахил 45° уже «вшитий» у файли (`rotate(45 50 50)`) — додатково не обертати. Не заливати, не додавати тінь чи градієнт. Не ставити в коло, крім аватарки користувача.
 
 ### Логотип (lockup)
@@ -126,7 +126,7 @@
 
 **Виняток — дошка задач (Задачі / Agenda).** У палітрі немає жовтого, а статусна тріада «Зробити → В процесі → Зроблено» потребує теплого середнього тону. Тому на дошці задач `warn`-теракота закріплена за статусом **«В процесі»** (тег `p-tag severity="warn"`) і може повторюватися на кількох картках одночасно — це свідомий виняток із правила одної плями, обмежений сторінкою дошки та статус-тегами календаря. Інші статуси: «Зробити» — `secondary` (сірий), «Зроблено» — `info` (зелений/primary). Джерело правди — `agenda-status.config.ts`.
 
-**Виняток — синій у календарі.** Щоб на календарі **події** не зливалися із **задачами** (які фарбуються статусними кольорами сірий/теракота/зелений), події позначаються приглушеним **синім** тегом. Це єдине місце, де вводиться синій — токени `--lil-blue-50` / `--lil-blue-700` (світла/темна тема) у `lilyka-theme.css`, застосовані лише через клас `.cal-seg__tag--event` на сторінці календаря. Ніде інде синій не використовується.
+**Виняток — синій у календарі.** Щоб на календарі **події** не зливалися із **задачами** (які фарбуються статусними кольорами сірий/теракота/зелений), події позначаються приглушеним **синім** тегом. Це єдине місце, де вводиться синій — токени `--lil-blue-50` / `--lil-blue-700` (світла/темна тема) у `lileyka-theme.css`, застосовані лише через клас `.cal-seg__tag--event` на сторінці календаря. Ніде інде синій не використовується.
 
 ### Статуси (PrimeNG severity)
 
@@ -177,7 +177,7 @@ public/assets/fonts/
 └── neucha-400-latin.woff2
 ```
 
-`@font-face` — у секції 0 `lilyka-theme.css`, з `unicode-range` від Google Fonts. Кирилиця Manrope додатково в `<link rel="preload">` у `index.html`: нею набрано весь інтерфейс. Разом ~112 kB.
+`@font-face` — у секції 0 `lileyka-theme.css`, з `unicode-range` від Google Fonts. Кирилиця Manrope додатково в `<link rel="preload">` у `index.html`: нею набрано весь інтерфейс. Разом ~112 kB.
 
 **Neucha не використовується ніде, крім логотипу й заголовків порожніх станів.** Не в кнопках, не в тегах, не в тултипах, не в заголовках сторінок.
 
@@ -347,19 +347,19 @@ Frontend/projectk-frontend/
 │   ├── README.md                ← маніфест бренд-ассетів (джерело правди)
 │   ├── favicon.svg              ← <link rel="icon">
 │   ├── favicon-16.svg
-│   ├── lilyka-mark.svg
-│   ├── lilyka-mark-mono.svg
-│   ├── lilyka-mark-dark.svg
-│   ├── lilyka-banner-1080x288.svg   ← README
-│   ├── lilyka-og-1200x630.svg       ← og:image
+│   ├── lileyka-mark.svg
+│   ├── lileyka-mark-mono.svg
+│   ├── lileyka-mark-dark.svg
+│   ├── lileyka-banner-1080x288.svg   ← README
+│   ├── lileyka-og-1200x630.svg       ← og:image
 │   └── fonts/                   ← Manrope + Neucha, woff2 (див. §3)
 └── src/
     ├── index.html               ← favicon + preload кирилиці + <title>Лілейка</title>
-    ├── styles.css               ← @import "./lilyka-theme.css";
-    ├── lilyka-theme.css         ← @font-face + токени + .lil-* класи
+    ├── styles.css               ← @import "./lileyka-theme.css";
+    ├── lileyka-theme.css         ← @font-face + токени + .lil-* класи
     └── app/
-        ├── lilyka-preset.ts     ← preset для PrimeNG
-        └── app.config.ts        ← preset: LilykaPreset
+        ├── lileyka-preset.ts     ← preset для PrimeNG
+        └── app.config.ts        ← preset: LileykaPreset
 ```
 
 **Назва системи** береться з `environment.appName` (runtime-конфіг `PROJECTK_APP_NAME`). Дефолт — «Лілейка» в усіх середовищах: `src/environments/*.ts`, `docker/compose.app.yml`, `docker/nginx/40-projectk-env.sh`, `docker/selfhost/compose*.yml`. Самохостер може перезаписати змінною; у коді дефолт більше не «ProjectK».
@@ -368,25 +368,25 @@ Frontend/projectk-frontend/
 
 Не все перекривається через CSS-змінні. PrimeNG вставляє свою тему в `<head>` **після** `styles.css`, тож:
 
-- **Тільки в `lilyka-preset.ts`:** компонентні токени (`tag`, `message` — Aura бере `info` з `{sky.*}`, а `warn` з `{orange.*}`), шкала `primitive.borderRadius`, `semantic.colorScheme.*.text`. Змінні `--p-info-*` / `--p-warn-*` із теми до них не доходять.
+- **Тільки в `lileyka-preset.ts`:** компонентні токени (`tag`, `message` — Aura бере `info` з `{sky.*}`, а `warn` з `{orange.*}`), шкала `primitive.borderRadius`, `semantic.colorScheme.*.text`. Змінні `--p-info-*` / `--p-warn-*` із теми до них не доходять.
 - **Темна схема Aura читає `surface` навпаки:** `surface.0` — це колір тексту, `900` — фон контенту, `950` — тло, `700` — рамка. Шкала йде від світлого до темного, інакше буде темний текст на темному тлі.
 - **У CSS однокласові селектори (`.p-tag`, `.p-toolbar`) потребують префікса `:root`** — інакше програють темі PrimeNG за порядком у каскаді.
 
 `app.config.ts`:
 
 ```ts
-import { LilykaPreset } from './lilyka-preset';
+import { LileykaPreset } from './lileyka-preset';
 
 providePrimeNG({
   translation: { /* без змін */ },
   theme: {
-    preset: LilykaPreset,
+    preset: LileykaPreset,
     options: { darkModeSelector: '[data-theme="dark"]' }
   }
 })
 ```
 
-Окремі класи, які додає `lilyka-theme.css`: `.lil-wordmark` (логотип) · `.lil-sidebar-brand` (шапка сайдбара) · `.lil-empty`, `.lil-empty__art`, `.lil-empty__title`, `.lil-empty__body`, `.lil-empty__accent`, `.lil-empty__dash` (порожній стан). Плюс перевизначення `.kurin-tile`, `.project-table`, а також `:root .p-toolbar`, `:root .p-tag`, `:root .p-panelmenu.lil-menu`.
+Окремі класи, які додає `lileyka-theme.css`: `.lil-wordmark` (логотип) · `.lil-sidebar-brand` (шапка сайдбара) · `.lil-empty`, `.lil-empty__art`, `.lil-empty__title`, `.lil-empty__body`, `.lil-empty__accent`, `.lil-empty__dash` (порожній стан). Плюс перевизначення `.kurin-tile`, `.project-table`, а також `:root .p-toolbar`, `:root .p-tag`, `:root .p-panelmenu.lil-menu`.
 
 ### Порожній стан у коді
 

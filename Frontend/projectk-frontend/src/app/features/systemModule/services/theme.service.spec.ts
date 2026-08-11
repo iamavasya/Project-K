@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ThemeService } from './theme.service';
 
-const STORAGE_KEY = 'lilyka-theme';
+const STORAGE_KEY = 'lileyka-theme';
 
 describe('ThemeService', () => {
   function create(): ThemeService {

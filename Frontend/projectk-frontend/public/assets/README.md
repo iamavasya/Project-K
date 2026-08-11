@@ -27,13 +27,13 @@ Core paths (viewBox `0 0 100 100`, all wrapped in `<g transform="rotate(45 50 50
 
 | File | Size | Use | Notes |
 |---|---|---|---|
-| `lilyka-mark.svg` | 100×100 | primary two-colour mark | green + terracotta centre |
-| `lilyka-mark-dark.svg` | 100×100 | dark backgrounds | `#34C48D` + `#EE9A5A` |
-| `lilyka-mark-mono.svg` | 100×100 | print / single-colour | all `currentColor` (intentional mono exception) |
+| `lileyka-mark.svg` | 100×100 | primary two-colour mark | green + terracotta centre |
+| `lileyka-mark-dark.svg` | 100×100 | dark backgrounds | `#34C48D` + `#EE9A5A` |
+| `lileyka-mark-mono.svg` | 100×100 | print / single-colour | all `currentColor` (intentional mono exception) |
 | `favicon.svg` | 64×64 | `<link rel="icon">` | white mark, `#F5C99B` centre on green tile `r=14` |
 | `favicon-16.svg` | 16px | small favicon | same mark, heavier line for legibility |
-| `lilyka-banner-1080x288.svg` | 1080×288 | README banner | centre `#F5C99B` for contrast on green |
-| `lilyka-og-1200x630.svg` | 1200×630 | `og:image` | cream background, terracotta centre |
+| `lileyka-banner-1080x288.svg` | 1080×288 | README banner | centre `#F5C99B` for contrast on green |
+| `lileyka-og-1200x630.svg` | 1200×630 | `og:image` | cream background, terracotta centre |
 | `images/scouts-main.png` | — | welcome hero photo | not a brand mark |
 
 `favicon.ico` (root of `public/`) is the unused Angular default and is not
@@ -48,5 +48,5 @@ sizes and colours it). When the geometry changes, update **both**:
 - `src/app/features/systemModule/components/welcome-page/welcome-page.html`
 
 The centre petal there carries `class="lil-mark-center"`, styled globally in
-`src/lilyka-theme.css` (`stroke: var(--lil-clay-500)`), so it stays terracotta
+`src/lileyka-theme.css` (`stroke: var(--lil-clay-500)`), so it stays terracotta
 across light/dark themes while the rest of the mark follows `currentColor`.

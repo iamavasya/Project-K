@@ -1,4 +1,4 @@
-<img width="1080" height="288" alt="ProjectK — Лілейка" src="Frontend/projectk-frontend/public/assets/lilyka-banner-1080x288.svg" />
+<img width="1080" height="288" alt="ProjectK — Лілейка" src="Frontend/projectk-frontend/public/assets/lileyka-banner-1080x288.svg" />
 
 # ProjectK
 
