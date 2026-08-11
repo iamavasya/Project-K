@@ -8,8 +8,7 @@
 [![.NET](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml)
 [![Angular CI](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml)
 
-**ProjectK** is the codebase behind **Лілейка** — a management system for a Plast
-(Ukrainian scouting) *kurin*: the whole unit in one place — member registry,
+**ProjectK** is the codebase behind **Лілейка** — a management system for a Plast - National Scout Organization of Ukraine. *kurin*: the whole unit in one place — member registry,
 planning, and skills tracking. Built by scouts, for scouts.
 
 > Naming: the product/UI is **Лілейка**; the repository, Docker images, and CI
