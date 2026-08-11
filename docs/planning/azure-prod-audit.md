@@ -134,6 +134,67 @@ via SAS/CDN/API, not public URLs.
 3. Register Defender, enable free CSPM; enable SQL auditing (Med).
 4. App Service `alwaysOn` + HTTP/2; storage shared-key/network hardening (Low).
 
+## Free remediations — ready-to-run (no extra Azure charge)
+
+Run in an authenticated `az` session on sub `projectk-prod-sub`. These are the
+zero/near-zero-cost fixes; paid Defender plans and Private Endpoints are excluded.
+
+### 1. App Service hardening (free, safe, reversible)
+```bash
+az webapp config set -n api-projectk-prod-new -g rg-projectk-prod-paid \
+  --always-on true --http20-enabled true --ftps-state Disabled
+```
+
+### 2. Defender for Cloud — free foundational CSPM / secure score
+```bash
+az provider register --namespace Microsoft.Security   # free; secure score appears after ~min
+```
+Do **not** set any `az security pricing` plan to `Standard` (that's the paid tier).
+
+### 3. SQL firewall — pin App Service outbound IPs, drop "Allow all Azure services"
+Add the app's *possible* outbound IPs **first**, then remove the broad rule, so
+the app never loses DB access mid-change. On a B1 plan these IPs only change if
+the plan moves scale unit — re-run if connectivity breaks.
+```bash
+RG=rg-projectk-prod-paid; SRV=sql-projectk-server-prod-new
+for ip in 134.112.153.11 134.112.153.93 134.112.10.178 74.248.251.169 \
+  134.112.153.166 74.248.251.186 74.248.10.11 74.248.79.89 74.248.250.82 \
+  134.112.152.45 74.248.251.11 134.112.163.124 74.248.10.93 134.112.163.132 \
+  134.112.163.138 134.112.152.71 134.112.8.251 20.215.86.133 134.112.163.142 \
+  134.112.9.139 134.112.9.189 134.112.152.121 74.248.251.81 74.248.104.106 \
+  134.112.163.241 134.112.153.211 74.248.105.179 74.248.251.197 134.112.11.179 \
+  134.112.153.242 20.215.12.4 20.215.12.8; do \
+  az sql server firewall-rule create -g $RG -s $SRV -n "appsvc-${ip//./-}" \
+    --start-ip-address $ip --end-ip-address $ip -o none; done
+az sql server firewall-rule delete -g $RG -s $SRV -n AllowAllWindowsAzureIps
+```
+
+### 4. SQL auditing → existing storage account (near-free)
+```bash
+az sql server audit-policy update -n sql-projectk-server-prod-new \
+  -g rg-projectk-prod-paid --state Enabled \
+  --blob-storage-target-state Enabled --storage-account stprojectkprodnew
+```
+
+### 5. (Cloudflare) lock App Service origin to Cloudflare — free
+The app is fronted by Cloudflare. Restrict inbound to Cloudflare's published IP
+ranges so the origin can't be reached directly (bypassing WAF/geo-block). Free
+via App Service **access restrictions**. Use the current lists from
+`https://www.cloudflare.com/ips-v4` / `-v6`. Pattern:
+```bash
+# repeat --add for each Cloudflare CIDR, ascending priority
+az webapp config access-restriction add -n api-projectk-prod-new -g rg-projectk-prod-paid \
+  --rule-name cf-<n> --action Allow --ip-address <CLOUDFLARE_CIDR> --priority 100
+```
+Caution: add **all** Cloudflare ranges before the implicit deny takes effect, and
+keep a break-glass rule for your own IP, or you can lock yourself out. Pair with a
+shared secret header validated at the origin for defence-in-depth. Verify the
+custom domain + health checks still pass after applying.
+
+Not free (deferred): Key Vault migration of secrets (#1 — KV itself ≈ $0 but needs
+app changes + redeploy), paid Defender plans, Private Endpoints.
+
 ---
 _Completed live on 2026-08-11 with the user authenticated (`rostyslav.mukha@gmail.com`,
-sub `projectk-prod-sub`). All commands read-only; no credentials stored._
+sub `projectk-prod-sub`). All commands read-only; no credentials stored. State-changing
+remediations are listed for the user to apply in their own session._
