@@ -5,11 +5,14 @@
     <path d="M0 252 C162 209 270 281 432 238 C594 194 702 266 864 223 C972 194 1026 223 1080 209"></path>
     <circle cx="891" cy="69" r="54"></circle>
   </g>
-  <g fill="none" stroke="#FBF8F1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(58 78) translate(0 0) scale(1.32)">
-    <path d="M50 92 V46"></path>
-    <path d="M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z"></path>
-    <path d="M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z"></path>
-    <path d="M50 46 C42 30 44 16 50 8 C56 16 58 30 50 46 Z" stroke="#F5C99B"></path>
+  <g fill="none" stroke="#FBF8F1" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(58 78) scale(1.32)">
+    <g transform="rotate(45 50 50)">
+      <path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51"></path>
+      <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"></path>
+      <path d="M33 60 H67"></path>
+      <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"></path>
+      <path d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" stroke="#F5C99B"></path>
+    </g>
   </g>
   <text x="230" y="140" font-family="Patrick Hand, Comic Sans MS, cursive" font-size="80" fill="#FBF8F1">Лілейка</text>
   <text x="232" y="186" font-family="Karla, Helvetica, Arial, sans-serif" font-size="24" fill="#C6E2D5">Весь курінь під рукою — реєстр, планування, вмілості.</text>

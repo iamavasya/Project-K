@@ -7,19 +7,21 @@ must be kept in sync (see below). Colour and usage rules live in
 
 ## The mark
 
-A **three-petal lily** with a plain vertical stem — **no crossbar**. The centre
-petal is **terracotta** (`#D9762F`, dark `#EE9A5A`); the two side petals and the
-stem are green (`#0E6E4E`, dark `#34C48D`) or `currentColor`. The former
-two-petal variant is retired — it read ambiguously and must not be reproduced.
+A **scout fleur-de-lis** in a **line** style, **tilted 45° right**. Central pointed
+petal is **terracotta** (`#D9762F`, dark `#EE9A5A`, `#F5C99B` on green tiles); the
+two side scrolls, the single band and the lower point are green (`#0E6E4E`, dark
+`#34C48D`) or `currentColor`. Earlier lily variants (two- and three-petal) are
+retired and must not be reproduced.
 
-Core paths (viewBox `0 0 100 100`):
+Core paths (viewBox `0 0 100 100`, all wrapped in `<g transform="rotate(45 50 50)">`):
 
 | Part | Path |
 |---|---|
-| Stem | `M50 92 V46` |
-| Left petal | `M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z` |
-| Right petal | `M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z` |
-| Centre petal (terracotta) | `M50 46 C42 30 44 16 50 8 C56 16 58 30 50 46 Z` |
+| Right scroll | `M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51` |
+| Left scroll | `M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51` |
+| Band | `M33 60 H67` |
+| Lower point | `M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z` |
+| Central petal (terracotta) | `M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z` |
 
 ## Files
 
@@ -28,8 +30,8 @@ Core paths (viewBox `0 0 100 100`):
 | `lilyka-mark.svg` | 100×100 | primary two-colour mark | green + terracotta centre |
 | `lilyka-mark-dark.svg` | 100×100 | dark backgrounds | `#34C48D` + `#EE9A5A` |
 | `lilyka-mark-mono.svg` | 100×100 | print / single-colour | all `currentColor` (intentional mono exception) |
-| `favicon.svg` | 64×64 | `<link rel="icon">` | white mark + terracotta centre on green tile `r=14` |
-| `favicon-16.svg` | 16×16 | small favicon | simplified, no stem, terracotta centre |
+| `favicon.svg` | 64×64 | `<link rel="icon">` | white mark, `#F5C99B` centre on green tile `r=14` |
+| `favicon-16.svg` | 16px | small favicon | same mark, heavier line for legibility |
 | `lilyka-banner-1080x288.svg` | 1080×288 | README banner | centre `#F5C99B` for contrast on green |
 | `lilyka-og-1200x630.svg` | 1200×630 | `og:image` | cream background, terracotta centre |
 | `images/scouts-main.png` | — | welcome hero photo | not a brand mark |
