@@ -108,6 +108,12 @@ foundational CSPM (free) on and only enable paid Defender-for-X if the posture
 warrants the ~$15/resource/month. `alwaysOn` is currently **off** on a paid plan
 (cold starts) — turning it on has no extra cost.
 
+> **Applied 2026-08-11:** free remediations #2 (Defender provider registered),
+> #4 (SQL auditing → storage), #7 (App Service alwaysOn/HTTP2/FTPS) done, and the
+> SQL "Allow all Azure services" rule (#2 in the list) replaced with 32 pinned
+> App Service outbound-IP rules. Remaining: Key Vault migration (#1, biggest),
+> Cloudflare origin lockdown (#5 commands), storage shared-key/Entra (#5/#6).
+
 ## Findings — run 2026-08-11 (severity-ranked)
 
 | # | Severity | Finding | Evidence | Remediation |
