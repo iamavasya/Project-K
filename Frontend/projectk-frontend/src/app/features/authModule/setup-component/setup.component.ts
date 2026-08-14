@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { FloatLabel } from 'primeng/floatlabel';
-import { InputTextModule } from 'primeng/inputtext';
-import { MessageModule } from 'primeng/message';
-import { PasswordModule } from 'primeng/password';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { FloatLabel } from '@openng/optimus-ui/floatlabel';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { MessageModule } from '@openng/optimus-ui/message';
+import { PasswordModule } from '@openng/optimus-ui/password';
+import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { AuthService, InitializeSetupRequest } from '../services/authService/auth.service';
 import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 

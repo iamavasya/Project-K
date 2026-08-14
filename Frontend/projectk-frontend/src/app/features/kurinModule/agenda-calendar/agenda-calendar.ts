@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { TagModule } from '@openng/optimus-ui/tag';
 import {
   addMonths, differenceInCalendarDays, eachDayOfInterval, endOfMonth, endOfWeek, format,
   isSameMonth, isToday, max as maxDate, min as minDate, startOfMonth, startOfWeek

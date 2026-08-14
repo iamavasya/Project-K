@@ -1,17 +1,17 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { UserService } from '../../services/user.service';
 import { UserDto } from '../../models/userDto';
-import { TableModule } from 'primeng/table';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
+import { TableModule } from '@openng/optimus-ui/table';
+import { IconFieldModule } from '@openng/optimus-ui/iconfield';
+import { InputIconModule } from '@openng/optimus-ui/inputicon';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { SelectModule } from "primeng/select";
-import { ButtonModule } from 'primeng/button';
-import { MessageService, ConfirmationService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SelectModule } from "@openng/optimus-ui/select";
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
+import { ToastModule } from '@openng/optimus-ui/toast';
+import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 
 @Component({

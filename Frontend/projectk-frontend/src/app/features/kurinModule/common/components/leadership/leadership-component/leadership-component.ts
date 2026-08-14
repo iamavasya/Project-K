@@ -9,16 +9,16 @@ import { MemberService } from '../../../services/member-service/member.service';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { map } from 'rxjs/operators';
 
-import { TableModule } from 'primeng/table';
+import { TableModule } from '@openng/optimus-ui/table';
 
-import { ButtonModule } from "primeng/button";
-import { InputTextModule } from 'primeng/inputtext';
-import { TooltipModule } from 'primeng/tooltip';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { SelectModule } from 'primeng/select';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
+import { ButtonModule } from "@openng/optimus-ui/button";
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
+import { IconFieldModule } from '@openng/optimus-ui/iconfield';
+import { InputIconModule } from '@openng/optimus-ui/inputicon';
 
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';

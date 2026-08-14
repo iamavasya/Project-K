@@ -1,25 +1,25 @@
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TableModule } from 'primeng/table';
+import { TableModule } from '@openng/optimus-ui/table';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { GroupService } from '../common/services/group-service/group.service';
 import { GroupChevron } from '../common/components/group-chevron/group-chevron';
 import { GroupDto } from '../common/models/groupDto';
 import { MemberList } from '../common/components/member-list/member-list';
 import { MemberLookupDto } from '../common/models/requests/member/memberLookupDto';
-import { DialogModule } from 'primeng/dialog';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { DialogModule } from '@openng/optimus-ui/dialog';
+import { MultiSelectModule } from '@openng/optimus-ui/multiselect';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
-import { TextareaModule } from 'primeng/textarea';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
-import { MenuModule } from 'primeng/menu';
-import { MenuItem } from 'primeng/api';
+import { MenuModule } from '@openng/optimus-ui/menu';
+import { MenuItem } from '@openng/optimus-ui/api';
 import { MenuItemsCache } from '../common/functions/menuItemsCache';
 
 @Component({

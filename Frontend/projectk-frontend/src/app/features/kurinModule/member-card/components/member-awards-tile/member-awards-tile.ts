@@ -1,8 +1,8 @@
 ﻿import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { ConfirmationService } from '@openng/optimus-ui/api';
 import { MemberAwardDto } from '../../../common/models/memberAwardDto';
 import { MemberAwardLevel } from '../../../common/models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../common/models/enums/badge-progress-status.enum';

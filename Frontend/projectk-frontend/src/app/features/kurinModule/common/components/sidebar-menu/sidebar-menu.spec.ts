@@ -6,7 +6,7 @@ import { AuthService } from '../../../../authModule/services/authService/auth.se
 import { BehaviorSubject, Subject, of } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { SimpleChange } from '@angular/core';
-import { MenuItem } from 'primeng/api';
+import { MenuItem } from '@openng/optimus-ui/api';
 
 describe('SidebarMenu', () => {
   let component: SidebarMenu;

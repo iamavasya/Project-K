@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
-import { TagModule } from 'primeng/tag';
+import { TagModule } from '@openng/optimus-ui/tag';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/upcomingBirthdays.function';
 

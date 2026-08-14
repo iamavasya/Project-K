@@ -3,14 +3,14 @@ import { TitleStrategy, provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
-import { providePrimeNG } from 'primeng/config';
+import { provideOptimus } from '@openng/optimus-ui/config';
 import { LileykaPreset } from './lileyka-preset';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
 import { HealthBannerService } from './features/systemModule/services/health-banner.service';
 import { ThemeService } from './features/systemModule/services/theme.service';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     { provide: TitleStrategy, useClass: ProjectKTitleStrategy },
     MessageService,
-    providePrimeNG({
+    provideOptimus({
         translation: {
           firstDayOfWeek: 1,
           dayNames: ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'Пʼятниця', 'Субота'],

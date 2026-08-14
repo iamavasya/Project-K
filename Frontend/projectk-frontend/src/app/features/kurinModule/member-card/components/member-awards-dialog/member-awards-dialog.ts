@@ -1,11 +1,11 @@
 ﻿import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
-import { SelectModule } from 'primeng/select';
-import { TextareaModule } from 'primeng/textarea';
-import { DatePickerModule } from 'primeng/datepicker';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { DialogModule } from '@openng/optimus-ui/dialog';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { MemberAwardDto } from '../../../common/models/memberAwardDto';
 import { MemberAwardLevel } from '../../../common/models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../common/models/enums/badge-progress-status.enum';

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { BreadcrumbService } from './breadcrumb-service';
 import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Route, Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
-import { MenuItem } from 'primeng/api';
+import { MenuItem } from '@openng/optimus-ui/api';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';

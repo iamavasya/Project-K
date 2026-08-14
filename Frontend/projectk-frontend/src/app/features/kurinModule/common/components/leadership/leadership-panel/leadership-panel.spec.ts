@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
-import { Table } from 'primeng/table';
+import { Table } from '@openng/optimus-ui/table';
 import { PermissionService } from '../../../../../authModule/services/permission.service';
 import { LeadershipService } from '../../../services/leadership-service/leadership-service';
 import { LeadershipPanelComponent } from './leadership-panel';

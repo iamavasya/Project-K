@@ -5,7 +5,7 @@ export type ThemePreference = 'light' | 'dark';
 const STORAGE_KEY = 'lileyka-theme';
 
 /**
- * Owns the `data-theme` attribute the PrimeNG preset switches on
+ * Owns the `data-theme` attribute the Optimus UI preset switches on
  * (`darkModeSelector: '[data-theme="dark"]'`). The choice is per device, so it lives in
  * localStorage under its own key and deliberately survives sign-out.
  */

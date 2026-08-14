@@ -8,7 +8,7 @@ import { ProbesCatalogService } from '../common/services/probes-and-badges/probe
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { MemberProbePageComponent } from './member-probe-page.component';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService } from '@openng/optimus-ui/api';
 
 describe('MemberProbePageComponent', () => {
   let fixture: ComponentFixture<MemberProbePageComponent>;

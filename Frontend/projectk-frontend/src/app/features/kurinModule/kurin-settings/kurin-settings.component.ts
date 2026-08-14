@@ -1,9 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { MessageModule } from 'primeng/message';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { MessageModule } from '@openng/optimus-ui/message';
+import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { KurinDto } from '../common/models/kurinDto';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 

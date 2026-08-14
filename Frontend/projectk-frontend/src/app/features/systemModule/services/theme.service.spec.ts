@@ -33,7 +33,7 @@ describe('ThemeService', () => {
     expect(service.current()).toBe('dark');
   });
 
-  it('toggles the attribute the PrimeNG dark selector keys on', () => {
+  it('toggles the attribute the Optimus UI dark selector keys on', () => {
     localStorage.setItem(STORAGE_KEY, 'light');
     const service = create();
 

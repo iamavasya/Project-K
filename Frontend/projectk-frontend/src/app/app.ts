@@ -6,7 +6,7 @@ import { ToolbarHeader } from "./features/kurinModule/common/components/toolbar-
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
 import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog.component';
 import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer.service';
-import { ToastModule } from 'primeng/toast';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-root',

@@ -1,9 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
+import { TableModule } from '@openng/optimus-ui/table';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { TagModule } from '@openng/optimus-ui/tag';
 import { PlanningService } from '../common/services/planning-service/planning-service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { PlanningSessionDto } from '../common/models/planningSessionDto';

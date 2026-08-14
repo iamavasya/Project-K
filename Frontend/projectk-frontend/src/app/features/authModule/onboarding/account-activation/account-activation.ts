@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OnboardingService, InvitationValidationResponse } from '../../services/onboarding.service';
-import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { PasswordModule } from '@openng/optimus-ui/password';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { CardModule } from '@openng/optimus-ui/card';
+import { MessageService } from '@openng/optimus-ui/api';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-account-activation',
