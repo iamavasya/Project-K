@@ -52,27 +52,56 @@ az role assignment create --assignee $principal --role "Key Vault Secrets User" 
 ```
 Role propagation can take a few minutes before references resolve.
 
-## Step 3 — migrate values (PowerShell; values flow App Service → KV, no manual copy)
-Run in your authenticated `az` PowerShell session. It reads each current value,
-stores it in the vault, then replaces the app setting with a KV reference. Idempotent
-(skips empties and settings already referencing KV).
+## Step 2b — grant YOURSELF write access to secrets
+Step 2 gave the *app* read access. To *create* secrets you (the operator) need the
+**Key Vault Secrets Officer** role on the vault. Wait ~1–2 min after granting.
 ```powershell
-$RG="rg-projectk-prod-paid"; $APP="api-projectk-prod-new"; $KV="kv-projectk-prod"
+$me = az ad signed-in-user show --query id -o tsv
+$vid = az keyvault show -n kv-projectk-prod --query id -o tsv
+az role assignment create --assignee $me --role "Key Vault Secrets Officer" --scope $vid
+```
+
+## Step 3 — migrate values (PowerShell; robust against Windows CLI parsing)
+Reads each current value, stores it in the vault via a temp **file** (avoids
+`az.cmd` mangling `;`/`=`/`(` in values), then applies the KV references through a
+**JSON file** (avoids the `@(...)` parenthesis parse error on Windows). Idempotent.
+
+**Two bugs this fixes** (do not revert to the inline one-liner):
+- PowerShell variables are **case-insensitive**, so a `$kv` loop var silently
+  overwrites `$KV` (the vault name). Use distinct names (`$vault`, `$sname`).
+- `--settings "name=@Microsoft.KeyVault(...)"` breaks `az.cmd` on the `(` — pass
+  settings via `--settings "@file.json"` instead.
+
+```powershell
+$RG="rg-projectk-prod-paid"; $APP="api-projectk-prod-new"; $vault="kv-projectk-prod"
 $names = @(
   "Jwt__Key","Email__ApiKey","ConnectionStrings__DefaultConnection","ConnectionStrings__BlobStorage",
   "Telegram__DevAlerts__BotToken","Telegram__PublicChannel__BotToken","RateLimitBypassKey",
   "AdminServiceToken__PublicAnnouncementDraft","APPLICATIONINSIGHTS_CONNECTION_STRING",
   "Serilog__WriteTo__1__Args__connectionString")
 $all = az webapp config appsettings list -n $APP -g $RG | ConvertFrom-Json
-foreach ($name in $names) {
-  $val = ($all | Where-Object { $_.name -eq $name }).value
-  if ([string]::IsNullOrWhiteSpace($val)) { Write-Host "skip $name (empty)"; continue }
-  if ($val -like '@Microsoft.KeyVault*') { Write-Host "skip $name (already KV ref)"; continue }
-  $kv = $name.Replace('__','-').Replace('_','-')
-  az keyvault secret set --vault-name $KV -n $kv --value $val -o none
-  az webapp config appsettings set -n $APP -g $RG --settings "$name=@Microsoft.KeyVault(SecretUri=https://$KV.vault.azure.net/secrets/$kv/)" -o none
-  Write-Host "migrated $name -> $kv"
+$refs = @()
+foreach ($n in $names) {
+  $v = ($all | Where-Object { $_.name -eq $n }).value
+  if ([string]::IsNullOrWhiteSpace($v)) { Write-Host "skip $n (empty)"; continue }
+  if ($v -like '@Microsoft.KeyVault*') { Write-Host "skip $n (already ref)"; continue }
+  $sname = $n.Replace('__','-').Replace('_','-')
+  $tmp = Join-Path $PWD "_secret.tmp"
+  [System.IO.File]::WriteAllText($tmp, $v)
+  az keyvault secret set --vault-name $vault -n $sname --file $tmp -o none
+  Remove-Item $tmp -Force
+  $refs += [pscustomobject]@{ name = $n; value = "@Microsoft.KeyVault(SecretUri=https://$vault.vault.azure.net/secrets/$sname/)"; slotSetting = $false }
+  Write-Host "secret set $sname"
 }
+$json = Join-Path $PWD "kv-settings.json"
+($refs | ConvertTo-Json) | Set-Content -Path $json -Encoding ascii
+az webapp config appsettings set -n $APP -g $RG --settings "@$json"
+Remove-Item $json -Force
+Write-Host "DONE"
+```
+After it succeeds, restart the app so it resolves the references:
+```powershell
+az webapp restart -n api-projectk-prod-new -g rg-projectk-prod-paid
 ```
 
 ## Step 4 — verify
