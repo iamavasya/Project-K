@@ -13,7 +13,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Extract Release Info
       if: github.event_name == 'release'
@@ -44,7 +44,7 @@ jobs:
         done
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '10.0.x'
 
@@ -90,7 +90,7 @@ jobs:
       name: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Download Artifact
       uses: actions/download-artifact@v4
