@@ -44,10 +44,11 @@ az keyvault create -n kv-projectk-prod -g rg-projectk-prod-paid -l polandcentral
 ```
 
 ## Step 2 — grant the App Service managed identity read access
-```bash
-PID=$(az webapp identity show -n api-projectk-prod-new -g rg-projectk-prod-paid --query principalId -o tsv)
-VID=$(az keyvault show -n kv-projectk-prod --query id -o tsv)
-az role assignment create --assignee $PID --role "Key Vault Secrets User" --scope $VID
+PowerShell (avoid `$PID` — it's a read-only automatic variable in PowerShell):
+```powershell
+$principal = az webapp identity show -n api-projectk-prod-new -g rg-projectk-prod-paid --query principalId -o tsv
+$vaultId = az keyvault show -n kv-projectk-prod --query id -o tsv
+az role assignment create --assignee $principal --role "Key Vault Secrets User" --scope $vaultId
 ```
 Role propagation can take a few minutes before references resolve.
 
