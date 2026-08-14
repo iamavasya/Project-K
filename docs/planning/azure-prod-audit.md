@@ -111,8 +111,12 @@ warrants the ~$15/resource/month. `alwaysOn` is currently **off** on a paid plan
 > **Applied 2026-08-11:** free remediations #2 (Defender provider registered),
 > #4 (SQL auditing → storage), #7 (App Service alwaysOn/HTTP2/FTPS) done, and the
 > SQL "Allow all Azure services" rule (#2 in the list) replaced with 32 pinned
-> App Service outbound-IP rules. Remaining: Key Vault migration (#1, biggest),
-> Cloudflare origin lockdown (#5 commands), storage shared-key/Entra (#5/#6).
+> App Service outbound-IP rules.
+> **Applied 2026-08-12:** #1 (Key Vault) **done** — all 10 secrets moved to
+> `kv-projectk-prod`; App Service settings are now KV references, all 10 report
+> **Resolved** via the app's managed identity (see `keyvault.md`). No plaintext
+> secrets remain in App Service config.
+> Remaining: Cloudflare origin lockdown (#5 commands), storage shared-key/Entra (#5/#6).
 
 ## Findings — run 2026-08-11 (severity-ranked)
 

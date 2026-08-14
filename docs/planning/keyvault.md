@@ -1,5 +1,9 @@
 # Key Vault migration — Variant A (Key Vault references)
 
+**Status: DONE (2026-08-12).** All 10 secrets live in `kv-projectk-prod`; App
+Service settings are KV references, all reporting **Resolved** via the app's
+managed identity. No plaintext secrets remain in App Service config.
+
 Closes Azure audit finding #1 (secrets in plaintext App Service settings). Chosen
 approach: **App Service Key Vault references** — no code change, self-host/local
 untouched, the app's existing system-assigned managed identity does the reading.
