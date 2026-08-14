@@ -1,4 +1,4 @@
-﻿FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 # Angular build configuration: production | staging | development | tailscale.
 # apiUrl is still overridable at runtime via env.js, but production flag,
 # codeName and tier are baked per configuration at build time.
