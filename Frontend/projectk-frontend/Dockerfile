@@ -11,7 +11,7 @@ RUN npm ci
 COPY Frontend/projectk-frontend/ ./
 RUN npm run build -- --configuration "${NG_CONFIG}"
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 ENV PROJECTK_API_URL=http://localhost:5205/api
 COPY docker/nginx/projectk-frontend.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/40-projectk-env.sh /docker-entrypoint.d/40-projectk-env.sh
