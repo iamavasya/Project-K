@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, model, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TreeSelectModule } from 'primeng/treeselect';
-import { TreeNode } from 'primeng/api';
+import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
+import { TreeNode } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { AgendaAssignTargets, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
 

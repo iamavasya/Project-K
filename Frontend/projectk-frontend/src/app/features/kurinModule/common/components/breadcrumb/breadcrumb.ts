@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { BreadcrumbModule } from '@openng/optimus-ui/breadcrumb';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-service';
 
 

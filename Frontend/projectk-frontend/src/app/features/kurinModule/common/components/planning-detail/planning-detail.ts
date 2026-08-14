@@ -4,14 +4,14 @@ import { PlanningService } from '../../services/planning-service/planning-servic
 import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
 
-// PrimeNG Imports
-import { DialogModule } from 'primeng/dialog';
-import { ChartModule } from 'primeng/chart';
-import { SkeletonModule } from 'primeng/skeleton';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { DividerModule } from 'primeng/divider';
-import { MessageService } from 'primeng/api';
+// Optimus UI Imports
+import { DialogModule } from '@openng/optimus-ui/dialog';
+import { ChartModule } from '@openng/optimus-ui/chart';
+import { SkeletonModule } from '@openng/optimus-ui/skeleton';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { DividerModule } from '@openng/optimus-ui/divider';
+import { MessageService } from '@openng/optimus-ui/api';
 
 import 'chartjs-adapter-date-fns';
 
@@ -49,18 +49,18 @@ import 'chartjs-adapter-date-fns';
     } @else {
       @if (session(); as s) {
         <div class="flex flex-col gap-6">
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="bg-[var(--p-content-background)] p-4 rounded-xl border border-surface flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Період пошуку</div>
-              <div class="font-bold text-lg text-slate-800">
+              <div class="text-xs text-muted-color font-bold uppercase tracking-wider">Період пошуку</div>
+              <div class="font-bold text-lg text-color">
                 {{ s.searchStart | date:'dd.MM.yyyy' }} — {{ s.searchEnd | date:'dd.MM.yyyy' }}
               </div>
             </div>
             @if (s.isCalculated) {
-              <div class="w-full md:w-auto flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-green-200 shadow-sm">
-                <i class="pi pi-check-circle text-2xl text-green-500 shrink-0"></i>
+              <div class="w-full md:w-auto flex items-center gap-3 bg-[var(--p-content-background)] px-4 py-2 rounded-lg border border-[var(--p-primary-color)]">
+                <i class="pi pi-check-circle text-2xl text-[var(--p-primary-color)] shrink-0"></i>
                 <div>
-                  <div class="text-[10px] text-green-700 font-bold uppercase">Оптимальна дата</div>
+                  <div class="text-[10px] text-[var(--p-primary-color)] font-bold uppercase">Оптимальна дата</div>
                   <div class="text-xl font-bold leading-none mt-1">
                     {{ s.optimalStartDate | date:'dd.MM' }} — {{ s.optimalEndDate | date:'dd.MM' }}
                   </div>
@@ -68,8 +68,8 @@ import 'chartjs-adapter-date-fns';
               </div>
             }
           </div>
-          <div class="border border-slate-200 rounded-xl p-2 md:p-4 overflow-hidden bg-white shadow-sm">
-            <h3 class="font-bold text-slate-700 mb-4 ml-2">Графік зайнятості</h3>
+          <div class="border border-surface rounded-xl p-2 md:p-4 overflow-hidden bg-[var(--p-content-background)]">
+            <h3 class="font-bold text-color mb-4 ml-2">Графік зайнятості</h3>
             @if (chartData) {
               <div class="relative w-full">
                 <p-chart
@@ -82,7 +82,7 @@ import 'chartjs-adapter-date-fns';
               </div>
             }
             @if (!chartData) {
-              <div class="text-center p-4 text-slate-400">
+              <div class="text-center p-4 text-muted-color">
                 Немає даних для відображення
               </div>
             }
@@ -186,9 +186,13 @@ export class PlanningDetailComponent implements OnChanges {
 
   initChart(s: PlanningSessionDto) {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
+    const textColor = documentStyle.getPropertyValue('--p-text-color').trim();
+    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color').trim();
+    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color').trim();
+    const optimalFill = documentStyle.getPropertyValue('--p-primary-color').trim();
+    const optimalBorder = documentStyle.getPropertyValue('--p-primary-600').trim();
+    const busyFill = documentStyle.getPropertyValue('--p-red-400').trim();
+    const busyBorder = documentStyle.getPropertyValue('--p-red-600').trim();
 
     const labels = ['Табір', ...s.participants.map(p => p.fullName)];
 
@@ -215,16 +219,16 @@ export class PlanningDetailComponent implements OnChanges {
       datasets: [
         {
           label: 'Оптимальний час',
-          backgroundColor: '#22c55e',
-          borderColor: '#16a34a',
+          backgroundColor: optimalFill,
+          borderColor: optimalBorder,
           borderWidth: 1,
           barPercentage: 0.6,
           data: optimalData
         },
         {
           label: 'Зайнятий',
-          backgroundColor: '#f87171',
-          borderColor: '#ef4444',
+          backgroundColor: busyFill,
+          borderColor: busyBorder,
           borderWidth: 1,
           barPercentage: 0.5,
           data: busyData

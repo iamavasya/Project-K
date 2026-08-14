@@ -1,15 +1,15 @@
 import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { DrawerModule } from 'primeng/drawer';
-import { ButtonModule } from 'primeng/button';
-import { PanelMenuModule } from 'primeng/panelmenu';
-import { MenuItem } from 'primeng/api';
+import { DrawerModule } from '@openng/optimus-ui/drawer';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
+import { MenuItem } from '@openng/optimus-ui/api';
 import { NavigationEnd, Router } from '@angular/router';
-import { MenuModule } from 'primeng/menu';
+import { MenuModule } from '@openng/optimus-ui/menu';
 import { PermissionService } from '../../../../authModule/services/permission.service';
 import { combineLatest, defer, filter, map, Observable, of, startWith } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
-import { TagModule } from 'primeng/tag';
+import { TagModule } from '@openng/optimus-ui/tag';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({

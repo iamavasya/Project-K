@@ -1,15 +1,15 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { InputTextModule } from 'primeng/inputtext';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { FormsModule } from '@angular/forms';
-import { FloatLabel } from 'primeng/floatlabel';
-import { PasswordModule } from 'primeng/password';
-import { ButtonModule } from 'primeng/button';
+import { FloatLabel } from '@openng/optimus-ui/floatlabel';
+import { PasswordModule } from '@openng/optimus-ui/password';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { AuthService } from '../services/authService/auth.service';
 import { LoginRequest } from '../models/login-request.model';
 import { Router, RouterLink } from '@angular/router';
-import { InputOtpModule } from 'primeng/inputotp';
+import { InputOtpModule } from '@openng/optimus-ui/inputotp';
 import { CommonModule } from '@angular/common';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 
 @Component({

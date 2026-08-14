@@ -1,16 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingService, WaitlistEntry, ZbtStats } from '../../../authModule/services/onboarding.service';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { MessageService, ConfirmationService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { TextareaModule } from 'primeng/textarea';
+import { TableModule } from '@openng/optimus-ui/table';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
+import { ToastModule } from '@openng/optimus-ui/toast';
+import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
+import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { DialogModule } from '@openng/optimus-ui/dialog';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../features/authModule/services/authService/auth.service';
 import {

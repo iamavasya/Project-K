@@ -12,7 +12,7 @@ import {
   signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { reconcileOrder } from './tile-order.function';
 import { TileDefDirective } from './tile-def.directive';
 import { TileDefinition } from './tile-board.models';

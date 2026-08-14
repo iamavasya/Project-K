@@ -2,7 +2,7 @@ import { Component, DestroyRef, ElementRef, HostListener, inject, OnInit } from 
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { NotificationService } from '../../services/notification.service';
 import { AppNotification, AppNotificationSeverity } from '../../models/app-notification.model';
 import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';

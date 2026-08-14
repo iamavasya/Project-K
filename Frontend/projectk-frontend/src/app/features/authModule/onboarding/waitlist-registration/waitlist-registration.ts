@@ -2,14 +2,14 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OnboardingService } from '../../services/onboarding.service';
-import { InputTextModule } from 'primeng/inputtext';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DatePickerModule } from 'primeng/datepicker';
-import { InputMaskModule } from 'primeng/inputmask';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { CheckboxModule } from '@openng/optimus-ui/checkbox';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
+import { InputMaskModule } from '@openng/optimus-ui/inputmask';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { CardModule } from '@openng/optimus-ui/card';
+import { MessageService } from '@openng/optimus-ui/api';
+import { ToastModule } from '@openng/optimus-ui/toast';
 import { RouterLink } from '@angular/router';
 
 @Component({

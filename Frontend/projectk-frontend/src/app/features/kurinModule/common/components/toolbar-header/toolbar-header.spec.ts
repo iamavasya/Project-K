@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToolbarHeader } from './toolbar-header';
 import { provideHttpClient } from '@angular/common/http';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 
 describe('ToolbarHeader', () => {
   let component: ToolbarHeader;

@@ -3,15 +3,15 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-// PrimeNG Imports (v18+)
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { DatePickerModule } from 'primeng/datepicker';
-import { SelectModule } from 'primeng/select';
-import { ButtonModule } from 'primeng/button';
-import { PanelModule } from 'primeng/panel';
-import { DividerModule } from 'primeng/divider';
-import { FloatLabelModule } from 'primeng/floatlabel';
+// Optimus UI Imports
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { PanelModule } from '@openng/optimus-ui/panel';
+import { DividerModule } from '@openng/optimus-ui/divider';
+import { FloatLabelModule } from '@openng/optimus-ui/floatlabel';
 
 import { RoleWeight, RoleWeightOptions } from '../common/models/enums/roleWeight.enum';
 
@@ -74,14 +74,14 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
     
               @for (p of participantsArray.controls; track p; let i = $index) {
                 <div [formGroupName]="i"
-                  class="p-4 border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                  class="p-4 border border-surface rounded-lg bg-[var(--p-content-background)]">
                   <div class="flex flex-wrap md:flex-nowrap gap-4 items-start">
                     <div class="w-full md:w-1/4 flex flex-col gap-3">
-                      <div class="font-bold text-lg text-slate-800">
+                      <div class="font-bold text-lg text-color">
                         {{ p.get('fullName')?.value }}
                       </div>
                       <div class="flex flex-col gap-1">
-                        <label [for]="'participant-role-weight-' + i" class="text-sm text-slate-500">Важливість голосу</label>
+                        <label [for]="'participant-role-weight-' + i" class="text-sm text-muted-color">Важливість голосу</label>
                         <p-select
                           [inputId]="'participant-role-weight-' + i"
                           formControlName="roleWeight"
@@ -91,10 +91,10 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
                           class="w-full" />
                         </div>
                       </div>
-                      <div class="hidden md:block w-px bg-slate-200 self-stretch mx-2"></div>
+                      <div class="hidden md:block w-px bg-[var(--p-content-border-color)] self-stretch mx-2"></div>
                       <div class="flex-1">
                         <div class="flex justify-between items-center mb-2">
-                          <span class="text-sm font-semibold text-slate-600">
+                          <span class="text-sm font-semibold text-muted-color">
                             Коли ця людина ЗАЙНЯТА?
                           </span>
                           <p-button
@@ -123,7 +123,7 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
                                   </div>
                                 }
                                 @if (getBusyRanges(i).length === 0) {
-                                  <div class="text-sm text-slate-400 italic py-2">
+                                  <div class="text-sm text-muted-color italic py-2">
                                     Зазначте дати, якщо людина має плани...
                                   </div>
                                 }
@@ -137,7 +137,6 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
                   </p-panel>
     
                   <div class="flex justify-end gap-4 mt-6 pb-10">
-                    <p-button label="Скасувати" severity="secondary" (click)="goBack()" />
                     <p-button label="Створити та Розрахувати" icon="pi pi-cog" type="submit" [loading]="loading" />
                   </div>
                 </form>
@@ -267,6 +266,6 @@ export class CreatePlanningComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/planning']);
+    this.router.navigate(['/planning', this.kurinKey]);
   }
 }

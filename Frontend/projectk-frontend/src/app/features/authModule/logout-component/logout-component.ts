@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { AuthService } from '../services/authService/auth.service';
 import { Router } from '@angular/router';
 

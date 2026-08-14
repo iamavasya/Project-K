@@ -17,7 +17,7 @@
   font-weight: 600;
 }
 
-/* The inputs carry pInputText, so PrimeNG already gives them the preset's border,
+/* The inputs carry pInputText, so Optimus UI already gives them the preset's border,
    radius and focus ring. Only the width is ours. */
 .field input,
 .field textarea {

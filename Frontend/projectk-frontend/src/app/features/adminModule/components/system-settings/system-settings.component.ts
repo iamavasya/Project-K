@@ -2,10 +2,10 @@ import { Component, inject, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
-import { ToggleSwitchModule, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
-import { ButtonModule } from 'primeng/button';
+import { ToggleSwitchModule, ToggleSwitchChangeEvent } from '@openng/optimus-ui/toggleswitch';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { FormsModule } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 
 const ENFORCE_PRIVILEGED_MFA_KEY = 'Security__EnforcePrivilegedMFA';
 

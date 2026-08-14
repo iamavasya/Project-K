@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Route, Router } from '@angular/router';
-import { MenuItem } from 'primeng/api';
+import { MenuItem } from '@openng/optimus-ui/api';
 import { BehaviorSubject, Observable, catchError, filter, of } from 'rxjs';
 import { authenticatedHomeRoute } from '../../../../authModule/functions/authenticated-home-route';
 import { AuthState } from '../../../../authModule/models/auth-state.model';

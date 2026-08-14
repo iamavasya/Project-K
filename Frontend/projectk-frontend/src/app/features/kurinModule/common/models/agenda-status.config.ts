@@ -1,6 +1,6 @@
 import { AgendaItemStatus } from './agenda';
 
-/** PrimeNG p-tag severities available on the Лілейка theme (no new colours introduced). */
+/** Optimus UI p-tag severities available on the Лілейка theme (no new colours introduced). */
 export type TagSeverity = 'secondary' | 'success' | 'info' | 'warn' | 'danger' | 'contrast';
 
 export interface AgendaStatusMeta {
