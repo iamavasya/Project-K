@@ -1,0 +1,41 @@
+version: 2
+
+# Note: the backend also restores private packages (ProjectK.Optimization,
+# ProjectK.ProbeAndBadges.*) from a private NuGet feed via NUGET_AUTH_TOKEN.
+# Dependabot cannot resolve those without a matching `registries:` block; if the
+# nuget updater errors on them, add a private registry here or scope it with
+# `ignore`. Public transitive packages still update fine. See
+# docs/planning/github-security.md.
+updates:
+  - package-ecosystem: nuget
+    directory: /Backend/ProjectK.Backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /Frontend/projectk-frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories:
+      - /Backend
+      - /Frontend/projectk-frontend
+    schedule:
+      interval: weekly

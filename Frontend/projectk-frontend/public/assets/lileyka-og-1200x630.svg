@@ -4,11 +4,14 @@
     <path d="M600 520 C800 456 960 616 1160 520"></path>
     <path d="M600 570 C800 506 960 666 1160 570"></path>
   </g>
-  <g fill="none" stroke="#0E6E4E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(76 68) scale(0.76)">
-    <path d="M50 92 V46"></path>
-    <path d="M50 46 C28 44 18 30 26 18 C36 8 48 24 50 46 Z"></path>
-    <path d="M50 46 C72 44 82 30 74 18 C64 8 52 24 50 46 Z"></path>
-    <path d="M32 66 H68"></path>
+  <g fill="none" stroke="#0E6E4E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" transform="translate(76 68) scale(0.76)">
+    <g transform="rotate(45 50 50)">
+      <path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51"></path>
+      <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"></path>
+      <path d="M33 60 H67"></path>
+      <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"></path>
+      <path d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" stroke="#D9762F"></path>
+    </g>
   </g>
   <text x="162" y="130" font-family="Patrick Hand, Comic Sans MS, cursive" font-size="56" fill="#101413">Лілейка</text>
   <text x="76" y="330" font-family="Karla, Helvetica, Arial, sans-serif" font-size="88" font-weight="800" fill="#101413">Керуй, точкуй,</text>

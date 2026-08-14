@@ -1,7 +1,7 @@
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
-export const LilykaPreset = definePreset(Aura, {
+export const LileykaPreset = definePreset(Aura, {
   primitive: {
     borderRadius: {
       md: '8px'

@@ -4,7 +4,7 @@ import { TitleStrategy, provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
 import { providePrimeNG } from 'primeng/config';
-import { LilykaPreset } from './lilyka-preset';
+import { LileykaPreset } from './lileyka-preset';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
@@ -33,7 +33,7 @@ export const appConfig: ApplicationConfig = {
           reject: 'Ні'
         },
         theme: {
-          preset: LilykaPreset,
+          preset: LileykaPreset,
           options: {
             darkModeSelector: '[data-theme="dark"]',
           }

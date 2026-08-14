@@ -195,6 +195,12 @@ h1, h2, h3 {
   width: 2rem;
 }
 
+/* Central lily petal is always terracotta (brand mark), independent of the
+   currentColor used for the two side petals and stem. Flips with the theme. */
+.lil-mark-center {
+  stroke: var(--lil-clay-500);
+}
+
 .sidebar-content {
   padding: 0.75rem 0.625rem;
 }
@@ -212,7 +218,7 @@ h1, h2, h3 {
   padding: 0;
 }
 
-/* Фон і колір пунктів живуть у navigation.item.* (lilyka-preset). PrimeNG фарбує
+/* Фон і колір пунктів живуть у navigation.item.* (lileyka-preset). PrimeNG фарбує
    .p-panelmenu-*-content — обгортку над посиланням; якщо фарбувати ще й саме
    посилання, на ховері видно два вкладені прямокутники різних відтінків. */
 :root .p-panelmenu.lil-menu .p-panelmenu-header-link,
