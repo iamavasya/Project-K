@@ -28,6 +28,14 @@ alphanumerics and hyphens); the app-setting **name stays the same**, only its
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | `APPLICATIONINSIGHTS-CONNECTION-STRING` |
 | `Serilog__WriteTo__1__Args__connectionString` | `Serilog-WriteTo-1-Args-connectionString` |
 
+## Step 0 — register the Key Vault resource provider (one-time, free)
+The subscription must be registered for `Microsoft.KeyVault` (same as
+`Microsoft.Security` earlier). Registration is async (~1–2 min).
+```bash
+az provider register --namespace Microsoft.KeyVault
+az provider show --namespace Microsoft.KeyVault --query registrationState -o tsv   # wait for "Registered"
+```
+
 ## Step 1 — create the vault (RBAC model, soft-delete + purge protection)
 Vault name must be globally unique; change if taken.
 ```bash
