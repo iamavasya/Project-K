@@ -1,0 +1,93 @@
+# Key Vault migration — Variant A (Key Vault references)
+
+Closes Azure audit finding #1 (secrets in plaintext App Service settings). Chosen
+approach: **App Service Key Vault references** — no code change, self-host/local
+untouched, the app's existing system-assigned managed identity does the reading.
+
+## Prerequisites (already in place)
+- App Service `api-projectk-prod-new` has a **system-assigned managed identity**.
+- Subscription `projectk-prod-sub`, RG `rg-projectk-prod-paid`, region Poland Central.
+
+## Secrets to migrate
+
+Only these (the rest of the app settings are not secrets and stay as-is). The KV
+secret name is the app-setting name with `_`/`__` → `-` (KV names allow only
+alphanumerics and hyphens); the app-setting **name stays the same**, only its
+**value** becomes a reference.
+
+| App setting | KV secret name |
+|---|---|
+| `Jwt__Key` | `Jwt-Key` |
+| `Email__ApiKey` | `Email-ApiKey` |
+| `ConnectionStrings__DefaultConnection` | `ConnectionStrings-DefaultConnection` |
+| `ConnectionStrings__BlobStorage` | `ConnectionStrings-BlobStorage` |
+| `Telegram__DevAlerts__BotToken` | `Telegram-DevAlerts-BotToken` |
+| `Telegram__PublicChannel__BotToken` | `Telegram-PublicChannel-BotToken` |
+| `RateLimitBypassKey` | `RateLimitBypassKey` |
+| `AdminServiceToken__PublicAnnouncementDraft` | `AdminServiceToken-PublicAnnouncementDraft` |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | `APPLICATIONINSIGHTS-CONNECTION-STRING` |
+| `Serilog__WriteTo__1__Args__connectionString` | `Serilog-WriteTo-1-Args-connectionString` |
+
+## Step 1 — create the vault (RBAC model, soft-delete + purge protection)
+Vault name must be globally unique; change if taken.
+```bash
+az keyvault create -n kv-projectk-prod -g rg-projectk-prod-paid -l polandcentral \
+  --enable-rbac-authorization true --enable-purge-protection true
+```
+
+## Step 2 — grant the App Service managed identity read access
+```bash
+PID=$(az webapp identity show -n api-projectk-prod-new -g rg-projectk-prod-paid --query principalId -o tsv)
+VID=$(az keyvault show -n kv-projectk-prod --query id -o tsv)
+az role assignment create --assignee $PID --role "Key Vault Secrets User" --scope $VID
+```
+Role propagation can take a few minutes before references resolve.
+
+## Step 3 — migrate values (PowerShell; values flow App Service → KV, no manual copy)
+Run in your authenticated `az` PowerShell session. It reads each current value,
+stores it in the vault, then replaces the app setting with a KV reference. Idempotent
+(skips empties and settings already referencing KV).
+```powershell
+$RG="rg-projectk-prod-paid"; $APP="api-projectk-prod-new"; $KV="kv-projectk-prod"
+$names = @(
+  "Jwt__Key","Email__ApiKey","ConnectionStrings__DefaultConnection","ConnectionStrings__BlobStorage",
+  "Telegram__DevAlerts__BotToken","Telegram__PublicChannel__BotToken","RateLimitBypassKey",
+  "AdminServiceToken__PublicAnnouncementDraft","APPLICATIONINSIGHTS_CONNECTION_STRING",
+  "Serilog__WriteTo__1__Args__connectionString")
+$all = az webapp config appsettings list -n $APP -g $RG | ConvertFrom-Json
+foreach ($name in $names) {
+  $val = ($all | Where-Object { $_.name -eq $name }).value
+  if ([string]::IsNullOrWhiteSpace($val)) { Write-Host "skip $name (empty)"; continue }
+  if ($val -like '@Microsoft.KeyVault*') { Write-Host "skip $name (already KV ref)"; continue }
+  $kv = $name.Replace('__','-').Replace('_','-')
+  az keyvault secret set --vault-name $KV -n $kv --value $val -o none
+  az webapp config appsettings set -n $APP -g $RG --settings "$name=@Microsoft.KeyVault(SecretUri=https://$KV.vault.azure.net/secrets/$kv/)" -o none
+  Write-Host "migrated $name -> $kv"
+}
+```
+
+## Step 4 — verify
+```bash
+az webapp config appsettings list -n api-projectk-prod-new -g rg-projectk-prod-paid \
+  --query "[?contains(value,'KeyVault')].name" -o tsv
+```
+Portal → App Service → Configuration shows a green **Key Vault Reference**
+resolution status next to each. Then open the app and confirm login + DB + email
+still work (the app now reads secrets via the vault).
+
+## Notes & caveats
+- **Self-host / local are untouched.** They keep raw env values; no vault involved.
+  This is purely the Azure prod app.
+- **CI unaffected.** The GitHub Actions deploy does not manage these app settings
+  (it only injects the app version into a config file), so migration needs no
+  workflow change.
+- **KV reference caching.** References are cached; after rotating a secret in the
+  vault, restart the app (or wait for the periodic refresh) to pick it up.
+- **`@` escaping.** If `az webapp config appsettings set` misreads the leading `@`
+  of the reference on your shell, set that one via the portal, or use
+  `--settings @file.json` with the pair in a JSON file.
+- **Vault name uniqueness / region.** `kv-projectk-prod` must be globally unique;
+  keep it in Poland Central with the rest of the stack.
+- **Ties to other findings.** Once secrets are in KV, disabling storage shared-key
+  (#6) and enabling SQL Entra-only (#5) becomes a follow-up: swap the
+  `ConnectionStrings__*` secrets for managed-identity access instead of keys/passwords.
