@@ -43,7 +43,7 @@
     "ngx-image-cropper": "^9.1.5",
     "postcss": "^8.5.26",
     "primeicons": "^7.0.0",
-    "primeng": "^21.1.5",
+    "primeng": "^22.0.0",
     "rxjs": "~7.8.0",
     "tailwindcss": "^4.1.13",
     "tailwindcss-primeui": "^0.6.1",
