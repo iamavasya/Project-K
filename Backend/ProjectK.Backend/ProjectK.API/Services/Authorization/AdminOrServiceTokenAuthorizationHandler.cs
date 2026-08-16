@@ -3,8 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.API.Services.Authorization;
 
@@ -30,7 +29,7 @@ public sealed class AdminOrServiceTokenHandler : AuthorizationHandler<AdminOrSer
         AuthorizationHandlerContext context,
         AdminOrServiceTokenRequirement requirement)
     {
-        if (context.User?.IsInRole(UserRole.Admin.ToClaimValue()) == true)
+        if (context.User?.IsInRole(SystemRole.Admin) == true)
         {
             context.Succeed(requirement);
             return Task.CompletedTask;

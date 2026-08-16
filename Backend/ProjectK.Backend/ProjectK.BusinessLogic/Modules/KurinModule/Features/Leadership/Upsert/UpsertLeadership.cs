@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos;
@@ -42,10 +43,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public UpsertLeadershipHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly ILeadershipRoleSyncService _roleSync;
+        public UpsertLeadershipHandler(IUnitOfWork unitOfWork, IMapper mapper, ILeadershipRoleSyncService roleSync)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _roleSync = roleSync;
         }
 
         public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadership request, CancellationToken cancellationToken)
@@ -111,6 +114,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
             {
                 return new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
             }
+
+            // Realign system roles for everyone whose office assignment was touched (added or ended).
+            var affectedMembers = existing.LeadershipHistories
+                .Select(history => history.MemberKey)
+                .Distinct()
+                .ToList();
+            await _roleSync.SyncMembersAsync(affectedMembers, cancellationToken);
 
             var response = _mapper.Map<LeadershipResponse>(existing);
 

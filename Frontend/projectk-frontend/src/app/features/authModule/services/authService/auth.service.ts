@@ -199,8 +199,7 @@ export class AuthService {
       firstName: null,
       lastName: null,
       phoneNumber: null,
-      kurinNumber: kurinDto.number,
-      role: "Manager"
+      kurinNumber: kurinDto.number
     };
 
     return this.http.post<void>(
@@ -271,10 +270,10 @@ export class AuthService {
     }
   }
 
-  updateRole(role: string): void {
+  updatePermissions(permissions: string[], roles: string[], isAdmin: boolean): void {
     const state = this.authState$.value;
     if (state) {
-      const newState = { ...state, role };
+      const newState = { ...state, permissions, roles, isAdmin };
       this.authState$.next(newState);
       this.persistAuthState(newState);
     }
@@ -293,7 +292,9 @@ export class AuthService {
       userKey: response.userKey,
       memberKey: response.memberKey,
       email: response.email,
-      role: response.role,
+      isAdmin: response.isAdmin,
+      permissions: response.permissions ?? [],
+      roles: response.roles ?? [],
       kurinKey: response.kurinKey ?? null,
       accessToken: response.tokens.accessToken
     };
@@ -333,7 +334,9 @@ export class AuthService {
       userKey: state.userKey,
       memberKey: state.memberKey,
       email: state.email,
-      role: state.role,
+      isAdmin: state.isAdmin,
+      permissions: state.permissions ?? [],
+      roles: state.roles ?? [],
       kurinKey: state.kurinKey,
       accessToken: null
     };

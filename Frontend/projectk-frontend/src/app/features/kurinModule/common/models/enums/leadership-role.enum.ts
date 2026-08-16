@@ -9,5 +9,7 @@ export enum LeadershipRole {
     Hronikar   = 'Hronikar',
     Instruktor = 'Instruktor',
     Zvyazkovyi = 'Zvyazkovyi',
-    Vykhovnyk = 'Vykhovnyk', 
+    Vykhovnyk = 'Vykhovnyk',
+    OtherKurin = 'OtherKurin',
+    OtherGroup = 'OtherGroup',
 }

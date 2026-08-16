@@ -45,7 +45,7 @@ describe('KvPanelComponent', () => {
           provide: AuthService,
           useValue: {
             getAuthStateValue: () => null,
-            updateRole: jasmine.createSpy('updateRole'),
+            updatePermissions: jasmine.createSpy('updatePermissions'),
             refreshToken: () => of(null)
           }
         },

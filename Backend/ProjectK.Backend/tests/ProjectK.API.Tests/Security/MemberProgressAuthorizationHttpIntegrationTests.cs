@@ -67,7 +67,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -85,7 +85,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var memberKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: Guid.NewGuid(),
             targetMemberKey: memberKey,
             targetMemberKurinKey: Guid.NewGuid(),
@@ -105,7 +105,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -125,7 +125,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "Group.Hurtkoviy",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -148,7 +148,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var kurinKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "Group.Hurtkoviy",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -193,7 +193,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         public HttpClient Client { get; }
 
         public static async Task<MemberProgressSecurityTestHost> StartAsync(
-            UserRole? role,
+            string? role,
             Guid userKurinKey,
             Guid targetMemberKey,
             Guid targetMemberKurinKey,
@@ -224,16 +224,16 @@ public class MemberProgressAuthorizationHttpIntegrationTests
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Admin"));
 
                 options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
             });
 
             builder.Services.Configure<SecurityPatchOptions>(options =>
@@ -247,7 +247,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
             scopeReader
-                .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new[] { currentUserGroupKey });
 
             var mediator = new Mock<IMediator>();
@@ -328,7 +328,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record MemberProgressAuthState(UserRole? Role, Guid UserId, Guid KurinKey);
+    private sealed record MemberProgressAuthState(string? Role, Guid UserId, Guid KurinKey);
 
     private sealed class MemberProgressAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -353,7 +353,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, _authState.UserId.ToString()),
                 new("sub", _authState.UserId.ToString()),
                 new("kurinKey", _authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -40,7 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup.Handlers
             await InitializationLock.WaitAsync(cancellationToken);
             try
             {
-                var adminUsers = await _userManager.GetUsersInRoleAsync(UserRole.Admin.ToString());
+                var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
                 if (adminUsers.Any())
                 {
                     return new ServiceResult<LoginUserResponse>(ResultType.Forbidden, null, "System is already initialized.");
@@ -62,7 +63,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup.Handlers
                     return new ServiceResult<LoginUserResponse>(ResultType.BadRequest, null, string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
 
-                await _userManager.AddToRoleAsync(user, UserRole.Admin.ToString());
+                await _userManager.AddToRoleAsync(user, SystemRole.Admin);
 
                 await _systemSettings.SetValueAsync(
                     SystemSettingKeys.EnforcePrivilegedMfa,

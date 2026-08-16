@@ -41,7 +41,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
     [InlineData("/api/catalog/probes")]
     public async Task AuthenticatedUser_Request_ShouldReturn200(string route)
     {
-        await using var host = await CatalogSecurityTestHost.StartAsync(UserRole.User.ToClaimValue());
+        await using var host = await CatalogSecurityTestHost.StartAsync("Member");
 
         var response = await host.Client.GetAsync(route);
 
@@ -63,7 +63,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
     [Fact]
     public async Task AuthenticatedUser_BadgesImage_ShouldReturn200()
     {
-        await using var host = await CatalogSecurityTestHost.StartAsync(UserRole.User.ToClaimValue());
+        await using var host = await CatalogSecurityTestHost.StartAsync("Member");
 
         var response = await host.Client.GetAsync("/badges_images/test.png");
 
@@ -159,16 +159,16 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Admin"));
 
                 options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
             });
 
             builder.Services.AddSingleton(badgesCatalogService.Object);

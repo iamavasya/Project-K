@@ -39,7 +39,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -76,7 +76,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -88,7 +88,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -110,7 +110,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -125,7 +125,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -143,7 +143,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         requiresMfa: false,
         tokens: {
@@ -155,7 +155,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'access-token-789'
       };
@@ -184,7 +184,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
         memberKey: null,
         email: 'mfa@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         requiresMfa: true,
         tokens: null
@@ -208,7 +208,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
         memberKey: 'member-123',
         email: 'mfa@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         requiresMfa: false,
         tokens: {
@@ -220,7 +220,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
         memberKey: 'member-123',
         email: 'mfa@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'mfa-access-token'
       };
@@ -244,7 +244,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
         memberKey: null,
         email: 'mfa@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         requiresMfa: false,
         tokens: null
@@ -349,7 +349,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -373,7 +373,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -384,7 +384,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -408,7 +408,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -421,7 +421,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'old-token'
       };
@@ -454,7 +454,7 @@ describe('AuthService', () => {
       loginReq.flush({
         userKey: initialState.userKey,
         email: initialState.email,
-        role: initialState.role,
+        isAdmin: initialState.isAdmin, permissions: initialState.permissions, roles: initialState.roles,
         kurinKey: initialState.kurinKey,
         tokens: { accessToken: initialState.accessToken }
       });
@@ -511,7 +511,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
         memberKey: 'member-123',
         email: 'admin@example.com',
-        role: 'Admin',
+        isAdmin: true, permissions: [], roles: ['Admin'],
         kurinKey: null,
         accessToken: null
       };
@@ -554,8 +554,7 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         phoneNumber: null,
-        kurinNumber: 42,
-        role: 'Manager'
+        kurinNumber: 42
       };
 
       service.registerFirstManager(kurinDto).subscribe(() => {
@@ -599,7 +598,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -614,7 +613,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -627,7 +626,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -651,7 +650,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -662,7 +661,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -680,7 +679,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -698,7 +697,7 @@ describe('AuthService', () => {
         userKey: 'user-123',
       memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -716,7 +715,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
@@ -728,22 +727,22 @@ describe('AuthService', () => {
     });
   });
 
-  describe('updateRole', () => {
+  describe('updatePermissions', () => {
     it('should update role in auth state and persisted storage', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
-        service.updateRole('Mentor');
+        service.updatePermissions(['Group:Update:OwnGroups'], ['Group.Hurtkoviy'], false);
 
-        expect(service.getAuthStateValue()?.role).toBe('Mentor');
-        expect(JSON.parse(localStorage.getItem('authState')!).role).toBe('Mentor');
+        expect(service.getAuthStateValue()?.roles).toEqual(['Group.Hurtkoviy']);
+        expect(JSON.parse(localStorage.getItem('authState')!).roles).toEqual(['Group.Hurtkoviy']);
         done();
       });
 
@@ -752,7 +751,7 @@ describe('AuthService', () => {
         userKey: mockAuthState.userKey,
         memberKey: mockAuthState.memberKey,
         email: mockAuthState.email,
-        role: mockAuthState.role,
+        isAdmin: mockAuthState.isAdmin, permissions: mockAuthState.permissions, roles: mockAuthState.roles,
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });

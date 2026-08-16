@@ -89,7 +89,7 @@ describe('UpsertMemberComponent', () => {
       userKey: 'current-user',
       memberKey: 'current-member',
       email: 'current@example.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: loadedMember.kurinKey,
       accessToken: 'token'
     });

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Enums;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Setup.Handlers
 
         public async Task<ServiceResult<SetupStatusResponse>> Handle(GetSetupStatusQuery request, CancellationToken cancellationToken)
         {
-            var adminUsers = await _userManager.GetUsersInRoleAsync(UserRole.Admin.ToString());
+            var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
             var isInitialized = adminUsers.Any();
             return new ServiceResult<SetupStatusResponse>(ResultType.Success, new SetupStatusResponse(isInitialized));
         }

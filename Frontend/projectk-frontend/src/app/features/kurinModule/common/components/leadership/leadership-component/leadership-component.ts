@@ -37,8 +37,8 @@ const MULTI_MEMBER_ROLES = new Set<LeadershipRole>([LeadershipRole.Vykhovnyk, Le
 
 export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
   kv: [ LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.Zvyazkovyi ],
-  kurin: [ LeadershipRole.Kurinnuy, ...COMMON_ROLES ],
-  group: [ LeadershipRole.Hurtkoviy, ...COMMON_ROLES ]
+  kurin: [ LeadershipRole.Kurinnuy, ...COMMON_ROLES, LeadershipRole.OtherKurin ],
+  group: [ LeadershipRole.Hurtkoviy, ...COMMON_ROLES, LeadershipRole.OtherGroup ]
 };
 
 type LeadershipType = 'kurin' | 'group' | 'kv';

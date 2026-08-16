@@ -39,7 +39,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true);
 
-            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object);
+            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
         }
 
         [Fact]

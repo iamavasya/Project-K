@@ -55,7 +55,7 @@ export class SidebarMenu implements OnChanges {
         map(state => state?.email ?? null)
       );
       this.role$ = this.state$.pipe(
-        map(state => state?.role ?? null)
+        map(() => this.currentRoleLabel())
       );
     }
   }
@@ -100,11 +100,10 @@ export class SidebarMenu implements OnChanges {
   private buildItems(state: AuthState | null): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
-    const role = state?.role ?? '';
-    const isAdmin = this.permissionService.isAdmin(role);
-    const canReviewSkills = this.permissionService.canReviewSkills(role);
-    const canManageMembers = this.permissionService.canManageMembers(role);
-    const canManageKurinSettings = this.permissionService.canManageKurinSettings(role);
+    const isAdmin = this.permissionService.isAdmin();
+    const canReviewSkills = this.permissionService.canReviewSkills();
+    const canManageMembers = this.permissionService.canManageMembers();
+    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
     const disabled = !kurinKey;
 
     const items: MenuItem[] = [];
@@ -247,7 +246,20 @@ export class SidebarMenu implements OnChanges {
     this.visibleChange.emit(this.visible);
   }
 
-  getSeverityOnRole(role: string | null): string {
-    return this.permissionService.getRoleSeverity(role);
+  getSeverityOnRole(_role: string | null): string {
+    return this.permissionService.getRoleSeverity();
+  }
+
+  private currentRoleLabel(): string {
+    if (this.permissionService.isAdmin()) {
+      return 'Адміністратор';
+    }
+    if (this.permissionService.isManager()) {
+      return 'Провід куреня';
+    }
+    if (this.permissionService.isMentor()) {
+      return 'Гуртковий провід';
+    }
+    return 'Учасник';
   }
 }

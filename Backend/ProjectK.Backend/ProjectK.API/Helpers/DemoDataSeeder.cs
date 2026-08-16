@@ -1,159 +1,221 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.API.Helpers
 {
+    /// <summary>
+    /// Seeds a realistic kurin for local testing: three гуртки with діловодські offices, a курінний
+    /// провід, a КВ (Зв'язковий + Впорядники), and mentor assignments — everyone a bare Member whose
+    /// access is derived from their office via <see cref="ILeadershipRoleSyncService"/>.
+    /// </summary>
     public class DemoDataSeeder : IDemoDataSeeder
     {
+        private const string Password = "User@12345";
+
+        private static readonly string[] FirstNames =
+        {
+            "Андрій", "Богдан", "Василь", "Григорій", "Дмитро", "Остап", "Ігор", "Тарас",
+            "Юрій", "Роман", "Степан", "Микола", "Олег", "Павло", "Сергій", "Назар",
+            "Максим", "Орест", "Левко", "Артем", "Данило", "Марко", "Захар", "Устим",
+            "Ярослав", "Мирослав", "Святослав", "Володимир", "Любомир", "Ростислав"
+        };
+
+        private static readonly string[] LastNames =
+        {
+            "Шевченко", "Франко", "Коваль", "Бондаренко", "Мельник", "Ткаченко", "Кравчук", "Гнатюк",
+            "Панчук", "Савчук", "Романюк", "Дідух", "Іваненко", "Кузьменко", "Лисенко", "Марчук",
+            "Гаврилюк", "Оліярник", "Соловей", "Вербицький", "Гончар", "Пасічник", "Цимбалюк", "Яремчук",
+            "Стельмах", "Чорновіл", "Кушнір", "Бойчук", "Сорока", "Левицький"
+        };
+
+        // The six гуртковий-провід offices assigned to the first members of each гурток.
+        private static readonly LeadershipRole[] GroupOffices =
+        {
+            LeadershipRole.Hurtkoviy, LeadershipRole.Suddya, LeadershipRole.Pysar,
+            LeadershipRole.Skarbnyk, LeadershipRole.Horunjiy, LeadershipRole.Gospodar
+        };
+
+        // The курінний-провід offices assigned to the провідний гурток's members.
+        private static readonly LeadershipRole[] KurinOffices =
+        {
+            LeadershipRole.Kurinnuy, LeadershipRole.Suddya, LeadershipRole.Pysar, LeadershipRole.Skarbnyk,
+            LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar, LeadershipRole.OtherKurin
+        };
+
         private readonly AppDbContext _dbContext;
         private readonly UserManager<AppUser> _userManager;
+        private readonly ILeadershipRoleSyncService _roleSync;
 
-        public DemoDataSeeder(AppDbContext dbContext, UserManager<AppUser> userManager)
+        private int _personIndex;
+        private int _emailIndex;
+
+        public DemoDataSeeder(AppDbContext dbContext, UserManager<AppUser> userManager, ILeadershipRoleSyncService roleSync)
         {
             _dbContext = dbContext;
             _userManager = userManager;
+            _roleSync = roleSync;
         }
 
         public async Task SeedAsync(CancellationToken cancellationToken = default)
         {
-            // 1. Seed Kurin
-            var kurin1 = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == 1, cancellationToken);
-            if (kurin1 == null)
+            var membersToSync = new HashSet<Guid>();
+
+            // 1. Kurin
+            var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == 1, cancellationToken);
+            if (kurin == null)
             {
-                kurin1 = new Kurin(1) { IsZbtKurin = true };
-                _dbContext.Kurins.Add(kurin1);
+                kurin = new Kurin(1) { IsZbtKurin = true };
+                _dbContext.Kurins.Add(kurin);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            // 2. Seed Groups
-            var group1 = await _dbContext.Groups.FirstOrDefaultAsync(g => g.Name == "Gurtok 1" && g.KurinKey == kurin1.KurinKey, cancellationToken);
-            if (group1 == null)
+            // 2. Groups: two ordinary гуртки and one провідний (its members form the курінний провід).
+            var sokoly = await EnsureGroupAsync("Соколи", kurin.KurinKey, cancellationToken);
+            var levy = await EnsureGroupAsync("Леви", kurin.KurinKey, cancellationToken);
+            var vedmedi = await EnsureGroupAsync("Ведмеді", kurin.KurinKey, cancellationToken);
+
+            // 3. Зв'язковий — adult, whole-kurin authority.
+            var zvyazkovyi = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
+            var kvLeadership = await EnsureLeadershipAsync(LeadershipType.KV, kurin.KurinKey, null, cancellationToken);
+            AddOffice(kvLeadership, zvyazkovyi.MemberKey, LeadershipRole.Zvyazkovyi);
+            membersToSync.Add(zvyazkovyi.MemberKey);
+
+            // 4. Ordinary гуртки: 8 members each, first 6 hold гуртковий-провід offices.
+            foreach (var group in new[] { sokoly, levy })
             {
-                group1 = new Group("Gurtok 1", kurin1.KurinKey);
-                _dbContext.Groups.Add(group1);
+                var leadership = await EnsureLeadershipAsync(LeadershipType.Group, null, group.GroupKey, cancellationToken);
+                for (var i = 0; i < 8; i++)
+                {
+                    var member = await CreateMemberAsync(kurin.KurinKey, group.GroupKey, cancellationToken);
+                    if (i < GroupOffices.Length)
+                    {
+                        AddOffice(leadership, member.MemberKey, GroupOffices[i]);
+                        membersToSync.Add(member.MemberKey);
+                    }
+                }
             }
 
-            var group2 = await _dbContext.Groups.FirstOrDefaultAsync(g => g.Name == "Gurtok 2" && g.KurinKey == kurin1.KurinKey, cancellationToken);
-            if (group2 == null)
+            // 5. Провідний гурток "Ведмеді": its 8 members form the курінний провід.
+            var kurinLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, kurin.KurinKey, null, cancellationToken);
+            for (var i = 0; i < 8; i++)
             {
-                group2 = new Group("Gurtok 2", kurin1.KurinKey);
-                _dbContext.Groups.Add(group2);
+                var member = await CreateMemberAsync(kurin.KurinKey, vedmedi.GroupKey, cancellationToken);
+                AddOffice(kurinLeadership, member.MemberKey, KurinOffices[i]);
+                membersToSync.Add(member.MemberKey);
             }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // 3. Seed Demo Users
-            var password = "User@12345";
-
-            // Manager of Kurin 1 (also a member)
-            var manager = await DataSeeder.EnsureUser(_userManager, "manager1@projectk.com", "Kurin", "Manager", UserRole.Manager, password, kurin1.KurinKey);
-            if (manager != null)
+            // 6. One Впорядник (mentor) per гурток: a КВ Впорядник office plus a mentor assignment that
+            //    scopes their group access. Both the КВ table and the mentor list are filled this way.
+            foreach (var group in new[] { sokoly, levy, vedmedi })
             {
-                await EnsureMember(manager, kurin1.KurinKey, null, "Kurin", "Manager", "100000001", new DateOnly(1990, 1, 1));
-            }
-
-            // Mentors of groups (each mentor has both user and member)
-            var mentor1 = await DataSeeder.EnsureUser(_userManager, "mentor1@projectk.com", "Group", "Mentor", UserRole.Mentor, password, kurin1.KurinKey);
-            if (mentor1 != null && group1 != null)
-            {
-                await EnsureMember(mentor1, kurin1.KurinKey, group1.GroupKey, "Group", "Mentor", "100000002", new DateOnly(1992, 2, 2));
-                await EnsureMentorAssignment(mentor1.Id, group1.GroupKey);
-            }
-
-            var mentor2 = await DataSeeder.EnsureUser(_userManager, "mentor2@projectk.com", "Second", "Mentor", UserRole.Mentor, password, kurin1.KurinKey);
-            if (mentor2 != null && group2 != null)
-            {
-                await EnsureMember(mentor2, kurin1.KurinKey, group2.GroupKey, "Second", "Mentor", "100000003", new DateOnly(1993, 3, 3));
-                await EnsureMentorAssignment(mentor2.Id, group2.GroupKey);
-            }
-
-            // Additional members (2 per group)
-            if (group1 != null)
-            {
-                var group1Member1 = await DataSeeder.EnsureUser(_userManager, "g1member1@projectk.com", "Group1", "MemberOne", UserRole.User, password, kurin1.KurinKey);
-                if (group1Member1 != null)
-                {
-                    await EnsureMember(group1Member1, kurin1.KurinKey, group1.GroupKey, "Group1", "MemberOne", "100000011", new DateOnly(2010, 5, 5));
-                }
-
-                var group1Member2 = await DataSeeder.EnsureUser(_userManager, "g1member2@projectk.com", "Group1", "MemberTwo", UserRole.User, password, kurin1.KurinKey);
-                if (group1Member2 != null)
-                {
-                    await EnsureMember(group1Member2, kurin1.KurinKey, group1.GroupKey, "Group1", "MemberTwo", "100000012", new DateOnly(2011, 6, 6));
-                }
-            }
-
-            if (group2 != null)
-            {
-                var group2Member1 = await DataSeeder.EnsureUser(_userManager, "g2member1@projectk.com", "Group2", "MemberOne", UserRole.User, password, kurin1.KurinKey);
-                if (group2Member1 != null)
-                {
-                    await EnsureMember(group2Member1, kurin1.KurinKey, group2.GroupKey, "Group2", "MemberOne", "100000021", new DateOnly(2010, 7, 7));
-                }
-
-                var group2Member2 = await DataSeeder.EnsureUser(_userManager, "g2member2@projectk.com", "Group2", "MemberTwo", UserRole.User, password, kurin1.KurinKey);
-                if (group2Member2 != null)
-                {
-                    await EnsureMember(group2Member2, kurin1.KurinKey, group2.GroupKey, "Group2", "MemberTwo", "100000022", new DateOnly(2011, 8, 8));
-                }
-            }
-        }
-
-        private async Task EnsureMember(
-            AppUser user,
-            Guid kurinKey,
-            Guid? groupKey,
-            string firstName,
-            string lastName,
-            string phoneNumber,
-            DateOnly dateOfBirth)
-        {
-            var isMentor = await _userManager.IsInRoleAsync(user, UserRole.Mentor.ToClaimValue());
-            var effectiveGroupKey = isMentor ? null : groupKey;
-            var member = await _dbContext.Members.FirstOrDefaultAsync(m => m.UserKey == user.Id);
-            if (member == null)
-            {
-                member = new Member
-                {
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Email = user.Email!,
-                    PhoneNumber = phoneNumber,
-                    DateOfBirth = dateOfBirth,
-                    KurinKey = kurinKey,
-                    GroupKey = effectiveGroupKey,
-                    UserKey = user.Id
-                };
-                _dbContext.Members.Add(member);
-            }
-            else
-            {
-                member.KurinKey = kurinKey;
-                member.GroupKey = effectiveGroupKey;
-                member.Email = user.Email!;
-            }
-
-            await _dbContext.SaveChangesAsync();
-        }
-
-        private async Task EnsureMentorAssignment(Guid mentorUserKey, Guid groupKey)
-        {
-            var existingAssignment = await _dbContext.MentorAssignments.AnyAsync(
-                a => a.MentorUserKey == mentorUserKey && a.GroupKey == groupKey);
-            if (!existingAssignment)
-            {
+                var mentor = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
+                AddOffice(kvLeadership, mentor.MemberKey, LeadershipRole.Vykhovnyk);
                 _dbContext.MentorAssignments.Add(new MentorAssignment
                 {
-                    MentorUserKey = mentorUserKey,
-                    GroupKey = groupKey,
+                    MentorUserKey = mentor.UserKey!.Value,
+                    GroupKey = group.GroupKey,
                     AssignedAtUtc = DateTime.UtcNow
                 });
-                await _dbContext.SaveChangesAsync();
+                membersToSync.Add(mentor.MemberKey);
+            }
+
+            // 7. One Інструктор in the КВ.
+            var instructor = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
+            AddOffice(kvLeadership, instructor.MemberKey, LeadershipRole.Instruktor);
+            membersToSync.Add(instructor.MemberKey);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // 8. Derive system roles from the offices and assignments just created.
+            await _roleSync.SyncMembersAsync(membersToSync, cancellationToken);
+        }
+
+        private async Task<Group> EnsureGroupAsync(string name, Guid kurinKey, CancellationToken cancellationToken)
+        {
+            var group = await _dbContext.Groups.FirstOrDefaultAsync(g => g.Name == name && g.KurinKey == kurinKey, cancellationToken);
+            if (group == null)
+            {
+                group = new Group(name, kurinKey);
+                _dbContext.Groups.Add(group);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return group;
+        }
+
+        private async Task<Member> CreateMemberAsync(Guid kurinKey, Guid? groupKey, CancellationToken cancellationToken)
+        {
+            var firstName = FirstNames[_personIndex % FirstNames.Length];
+            var lastName = LastNames[_personIndex % LastNames.Length];
+            _personIndex++;
+
+            var email = $"demo{_emailIndex++}@projectk.com";
+            var user = await DataSeeder.EnsureUser(_userManager, email, firstName, lastName, UserRole.Member, Password, kurinKey);
+
+            var member = new Member
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                PhoneNumber = $"050{_emailIndex:D7}",
+                DateOfBirth = new DateOnly(2005, 1, 1).AddDays(_personIndex * 37),
+                KurinKey = kurinKey,
+                GroupKey = groupKey,
+                UserKey = user!.Id
+            };
+            _dbContext.Members.Add(member);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return member;
+        }
+
+        private async Task<Leadership> EnsureLeadershipAsync(
+            LeadershipType type,
+            Guid? kurinKey,
+            Guid? groupKey,
+            CancellationToken cancellationToken)
+        {
+            var leadership = await _dbContext.Leaderships
+                .Include(l => l.LeadershipHistories)
+                .FirstOrDefaultAsync(l => l.Type == type
+                    && (kurinKey == null || l.KurinKey == kurinKey)
+                    && (groupKey == null || l.GroupKey == groupKey), cancellationToken);
+
+            if (leadership == null)
+            {
+                leadership = new Leadership
+                {
+                    Type = type,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow)
+                };
+                _dbContext.Leaderships.Add(leadership);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return leadership;
+        }
+
+        private static void AddOffice(Leadership leadership, Guid memberKey, LeadershipRole role)
+        {
+            var alreadyHolds = leadership.LeadershipHistories
+                .Any(h => h.MemberKey == memberKey && h.Role == role && h.EndDate == null);
+            if (!alreadyHolds)
+            {
+                leadership.LeadershipHistories.Add(new LeadershipHistory
+                {
+                    MemberKey = memberKey,
+                    Role = role,
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow)
+                });
             }
         }
     }

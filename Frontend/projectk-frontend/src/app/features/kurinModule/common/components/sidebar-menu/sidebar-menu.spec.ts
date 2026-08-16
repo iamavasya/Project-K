@@ -26,7 +26,7 @@ describe('SidebarMenu', () => {
       events: routerEvents.asObservable(),
       url: '/kurin'
     });
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getAuthState']);
+    mockAuthService = jasmine.createSpyObj('AuthService', ['getAuthState', 'getAuthStateValue']);
     mockAuthService.getAuthState.and.returnValue(authStateSubject.asObservable());
 
     await TestBed.configureTestingModule({
@@ -53,12 +53,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -75,12 +76,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -96,24 +98,26 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
 
       component.role$.subscribe(role => {
-        expect(role).toBe('Manager');
+        expect(role).toBe('Провід куреня');
         done();
       });
     });
 
     it('should set email$ to null when state is null', (done) => {
       component.state$ = of(null);
+      mockAuthService.getAuthStateValue.and.returnValue(null);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -130,7 +134,7 @@ describe('SidebarMenu', () => {
       userKey: 'user-1',
       memberKey: 'member-1',
       email: 'manager@projectk.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     };
@@ -139,6 +143,7 @@ describe('SidebarMenu', () => {
       Object.defineProperty(mockRouter, 'url', { value: url, configurable: true });
 
       component.state$ = of(managerState);
+      mockAuthService.getAuthStateValue.and.returnValue(managerState);
       component.ngOnChanges({ state$: new SimpleChange(null, component.state$, true) });
 
       return new Promise(resolve => component.items$.subscribe(resolve));
@@ -179,12 +184,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -210,12 +216,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-999',
         memberKey: 'test-member-key',
         email: 'user@example.com',
-        role: 'User',
+        isAdmin: false, permissions: [], roles: ['Member'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -232,12 +239,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -255,12 +263,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'admin@example.com',
-        role: 'Admin',
+        isAdmin: true, permissions: [], roles: ['Admin'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -280,12 +289,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-999',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        role: 'Mentor',
+        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -302,12 +312,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'admin@example.com',
-        role: 'Admin',
+        isAdmin: true, permissions: [], roles: ['Admin'],
         kurinKey: null,
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -330,6 +341,7 @@ describe('SidebarMenu', () => {
 
     it('should disable kurin-related items when kurinKey is null and NOT show them if they rely on kurinKey', (done) => {
       component.state$ = of(null);
+      mockAuthService.getAuthStateValue.and.returnValue(null);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -347,12 +359,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -373,12 +386,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'admin@example.com',
-        role: 'Admin',
+        isAdmin: true, permissions: [], roles: ['Admin'],
         kurinKey: null,
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -399,12 +413,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'admin@example.com',
-        role: 'Admin',
+        isAdmin: true, permissions: [], roles: ['Admin'],
         kurinKey: null,
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -425,12 +440,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        role: 'Mentor',
+        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -466,13 +482,14 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       spyOn(component, 'close');
       component.state$ = of(mockState);
+      mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -490,31 +507,32 @@ describe('SidebarMenu', () => {
   });
 
   describe('getSeverityOnRole', () => {
-    it('should return "danger" for Admin role', () => {
-      expect(component.getSeverityOnRole('Admin')).toBe('danger');
-      expect(component.getSeverityOnRole('admin')).toBe('danger');
-      expect(component.getSeverityOnRole('ADMIN')).toBe('danger');
+    // The method now reflects the current user's access level (derived from permissions),
+    // so we seed the auth state and ignore the passed argument.
+    function withState(state: Partial<AuthState>): void {
+      mockAuthService.getAuthStateValue.and.returnValue({
+        userKey: 'u', memberKey: 'm', email: 'e', isAdmin: false, permissions: [], roles: [],
+        kurinKey: 'k', accessToken: 't', ...state
+      } as AuthState);
+    }
+
+    it('should return "danger" for an admin', () => {
+      withState({ isAdmin: true });
+      expect(component.getSeverityOnRole(null)).toBe('danger');
     });
 
-    it('should return "warning" for Manager role', () => {
-      expect(component.getSeverityOnRole('Manager')).toBe('warning');
-      expect(component.getSeverityOnRole('manager')).toBe('warning');
-      expect(component.getSeverityOnRole('MANAGER')).toBe('warning');
+    it('should return "warning" for a whole-kurin manager', () => {
+      withState({ permissions: ['Group:Manage:KurinWide'] });
+      expect(component.getSeverityOnRole(null)).toBe('warning');
     });
 
-    it('should return "success" for Mentor role', () => {
-      expect(component.getSeverityOnRole('Mentor')).toBe('success');
-      expect(component.getSeverityOnRole('mentor')).toBe('success');
-      expect(component.getSeverityOnRole('MENTOR')).toBe('success');
+    it('should return "success" for a group leader', () => {
+      withState({ permissions: ['Group:Update:OwnGroups'] });
+      expect(component.getSeverityOnRole(null)).toBe('success');
     });
 
-    it('should return "info" for unknown roles', () => {
-      expect(component.getSeverityOnRole('User')).toBe('info');
-      expect(component.getSeverityOnRole('Guest')).toBe('info');
-      expect(component.getSeverityOnRole('')).toBe('info');
-    });
-
-    it('should return "info" for null role', () => {
+    it('should return "info" for a bare member', () => {
+      withState({ permissions: [] });
       expect(component.getSeverityOnRole(null)).toBe('info');
     });
   });
@@ -551,12 +569,13 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       component.state$ = of(managerState);
+      mockAuthService.getAuthStateValue.and.returnValue(managerState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$, true)
       });
@@ -567,11 +586,12 @@ describe('SidebarMenu', () => {
 
         const adminState: AuthState = {
           ...managerState,
-          role: 'Admin',
+          isAdmin: true, permissions: [], roles: ['Admin'],
           kurinKey: null
         };
 
         component.state$ = of(adminState);
+      mockAuthService.getAuthStateValue.and.returnValue(adminState);
         component.ngOnChanges({
           state$: new SimpleChange(of(managerState), component.state$, false)
         });
@@ -602,7 +622,7 @@ describe('SidebarMenu', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        role: 'Manager',
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       });

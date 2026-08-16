@@ -65,6 +65,7 @@ namespace ProjectK.API
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IMfaService, MfaService>();
             services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+            services.AddScoped<ILeadershipRoleSyncService, LeadershipRoleSyncService>();
             services.AddScoped<ISystemSettingsService, SystemSettingsService>();
             services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();

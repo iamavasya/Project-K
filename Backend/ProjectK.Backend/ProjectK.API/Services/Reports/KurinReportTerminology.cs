@@ -96,6 +96,8 @@ public static class KurinReportTerminology
             [ProjectK.Common.Models.Enums.LeadershipRole.Hronikar] = "Хронікар",
             [ProjectK.Common.Models.Enums.LeadershipRole.Instruktor] = "Інструктор",
             [ProjectK.Common.Models.Enums.LeadershipRole.Vykhovnyk] = "Впорядник",
-            [ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi] = "Зв'язковий"
+            [ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi] = "Зв'язковий",
+            [ProjectK.Common.Models.Enums.LeadershipRole.OtherKurin] = "Інша курінна роль",
+            [ProjectK.Common.Models.Enums.LeadershipRole.OtherGroup] = "Інша гурткова роль"
         };
 }

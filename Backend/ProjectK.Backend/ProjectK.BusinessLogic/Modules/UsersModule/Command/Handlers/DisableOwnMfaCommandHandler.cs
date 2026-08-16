@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -40,7 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             }
 
             var roles = await _userManager.GetRolesAsync(user);
-            if (roles.Contains(UserRole.Admin.ToString()) || roles.Contains(UserRole.Manager.ToString()))
+            if (roles.Any(role => SystemRole.WholeKurinManagementRoles().Contains(role, StringComparer.OrdinalIgnoreCase)))
             {
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "MfaRequired", "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");
             }

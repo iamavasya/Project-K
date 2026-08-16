@@ -76,7 +76,7 @@ public class ResourceAuthorizationHttpIntegrationTests
             builder.WebHost.UseTestServer();
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddSingleton(new ResourceGuardAuthState(UserRole.User, Guid.NewGuid(), userKurinKey));
+            builder.Services.AddSingleton(new ResourceGuardAuthState("Member", Guid.NewGuid(), userKurinKey));
 
             builder.Services
                 .AddAuthentication(options =>
@@ -91,16 +91,16 @@ public class ResourceAuthorizationHttpIntegrationTests
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Admin"));
 
                 options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
             });
 
             builder.Services.Configure<SecurityPatchOptions>(options =>
@@ -140,7 +140,7 @@ public class ResourceAuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record ResourceGuardAuthState(UserRole Role, Guid UserId, Guid KurinKey);
+    private sealed record ResourceGuardAuthState(string Role, Guid UserId, Guid KurinKey);
 
     private sealed class ResourceGuardAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -160,7 +160,7 @@ public class ResourceAuthorizationHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, _authState.UserId.ToString()),
                 new("sub", _authState.UserId.ToString()),
                 new("kurinKey", _authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, _authState.Role.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

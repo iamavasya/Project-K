@@ -26,7 +26,7 @@ describe('AdminPanelComponent', () => {
     userKey: 'user-1',
     memberKey: null,
     email: 'admin@projectk.com',
-    role: 'Admin',
+    isAdmin: true, permissions: [], roles: ['Admin'],
     kurinKey: '1',
     accessToken: 'scoped-token'
   };

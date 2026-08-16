@@ -312,8 +312,14 @@ export class KvPanelComponent implements OnChanges {
     return left.memberKey === right.memberKey;
   }
 
+  // member.userRole now carries an office system-role name (e.g. "KV.Zvyazkovyi"); map the legacy
+  // labels onto the офіс that grants the same standing.
   private isUserRole(member: MemberLookupDto, role: 'Manager' | 'Mentor'): boolean {
-    return (member.userRole ?? '').toLowerCase() === role.toLowerCase();
+    const userRole = (member.userRole ?? '').toLowerCase();
+    if (role === 'Manager') {
+      return userRole.includes('zvyazkovyi');
+    }
+    return userRole.includes('hurtkoviy') || userRole.includes('vykhovnyk');
   }
 
   private refreshCurrentUserRoleAfterTransfer(): void {
@@ -322,7 +328,7 @@ export class KvPanelComponent implements OnChanges {
       return;
     }
 
-    this.authService.updateRole('Mentor');
+    // Permissions are re-derived from offices on the next token; refresh to pick them up.
     this.authService.refreshToken().subscribe({
       error: (err) => console.error('Error refreshing token after manager transfer:', err)
     });

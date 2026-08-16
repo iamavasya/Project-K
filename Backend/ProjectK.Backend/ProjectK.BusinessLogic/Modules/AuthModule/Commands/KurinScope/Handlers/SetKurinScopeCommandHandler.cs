@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -37,7 +38,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope.Handlers
             }
 
             var roles = await _userManager.GetRolesAsync(user);
-            if (!roles.Contains(UserRole.Admin.ToClaimValue(), StringComparer.OrdinalIgnoreCase))
+            if (!roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase))
             {
                 return ServiceResult<LoginUserResponse>.Failure(
                     ResultType.Forbidden,

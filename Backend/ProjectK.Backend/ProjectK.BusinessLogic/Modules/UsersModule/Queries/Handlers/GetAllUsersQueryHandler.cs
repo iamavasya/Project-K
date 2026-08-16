@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -39,7 +40,8 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers
                     KurinKey = user.KurinKey,
                     KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
                     Email = user.Email!,
-                    Role = role.FirstOrDefault()!,
+                    // Admin panel manages the system role only; offices are shown elsewhere.
+                    Role = role.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
                     TwoFactorEnabled = user.TwoFactorEnabled,
                     FirstName = user.FirstName!,
                     LastName = user.LastName!

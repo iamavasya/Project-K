@@ -153,7 +153,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Single(result.Data);
-            Assert.Null(result.Data.First().Role); // FirstOrDefault on empty list returns null
+            Assert.Equal("Member", result.Data.First().Role);
         }
 
         [Fact]
@@ -242,8 +242,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             var userList = result.Data.ToList();
             Assert.Equal("Admin", userList[0].Role);
-            Assert.Equal("Manager", userList[1].Role);
-            Assert.Equal("User", userList[2].Role);
+            Assert.Equal("Member", userList[1].Role);
+            Assert.Equal("Member", userList[2].Role);
         }
 
         [Fact]
@@ -283,7 +283,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal("test@example.com", userDto.Email);
             Assert.Equal("Test", userDto.FirstName);
             Assert.Equal("User", userDto.LastName);
-            Assert.Equal("TestRole", userDto.Role);
+            Assert.Equal("Member", userDto.Role);
         }
 
         [Fact]

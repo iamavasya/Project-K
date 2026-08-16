@@ -54,7 +54,7 @@ describe('MemberList', () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getAuthStateValue']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
-    authServiceSpy.getAuthStateValue.and.returnValue({ role: 'Manager' } as AuthState);
+    authServiceSpy.getAuthStateValue.and.returnValue({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'] } as AuthState);
 
     await TestBed.configureTestingModule({
       imports: [MemberList],

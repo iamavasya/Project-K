@@ -10,7 +10,7 @@
 
         <ng-template #end>
             <div class="toolbar-actions">
-                @if (state.kurinKey && isAdmin(state.role)) {
+                @if (state.kurinKey && isAdmin()) {
                     <p-button (onClick)="backToKurinPanel()" label="До адміністрації" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
                 }
                 <p-button

@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -43,110 +45,51 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 return new ServiceResult<bool>(ResultType.NotFound, false, "Target user not found.");
             }
 
-            // Current user context
-            var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToString());
-            var isManager = _currentUserContext.IsInRole(UserRole.Manager.ToString());
-            var currentUserKurinKey = _currentUserContext.KurinKey;
-            var currentUserId = _currentUserContext.UserId;
-
-            // Policy check
-            if (!isAdmin)
+            // Only admins manage the system Admin role. Kurin-level roles come from діловодські
+            // offices (the Leadership screen) and are synced automatically, not set here.
+            if (!_currentUserContext.IsAdmin())
             {
-                if (!isManager)
-                {
-                    return new ServiceResult<bool>(ResultType.Forbidden, false, "You do not have permission to change roles.");
-                }
-
-                // Manager restrictions
-                if (request.NewRole == UserRole.Admin)
-                {
-                    return new ServiceResult<bool>(ResultType.Forbidden, false, "Managers cannot promote to Admin.");
-                }
-
-                if (targetUser.KurinKey != currentUserKurinKey)
-                {
-                    return new ServiceResult<bool>(ResultType.Forbidden, false, "You can only manage roles for users in your own Kurin.");
-                }
+                return new ServiceResult<bool>(ResultType.Forbidden, false, "Only admins can change system roles.");
             }
 
-            // Perform Role Change
             var currentRoles = await _userManager.GetRolesAsync(targetUser);
+            var isCurrentlyAdmin = currentRoles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase);
 
-            // If already in role, do nothing
-            if (currentRoles.Count == 1 && currentRoles.First() == request.NewRole.ToString())
+            if (request.NewRole == UserRole.Admin)
             {
-                return new ServiceResult<bool>(ResultType.Success, true, "User is already in the requested role.");
-            }
-
-            // Check if this is a downgrade
-            bool isDowngradeToUser = (currentRoles.Contains(UserRole.Mentor.ToString()) || currentRoles.Contains(UserRole.Manager.ToString()))
-                                     && request.NewRole == UserRole.User;
-            bool isDowngradeToMentor = currentRoles.Contains(UserRole.Manager.ToString()) && request.NewRole == UserRole.Mentor;
-
-            // Remove existing roles
-            if (currentRoles.Any())
-            {
-                var removeResult = await _userManager.RemoveFromRolesAsync(targetUser, currentRoles);
-                if (!removeResult.Succeeded)
+                if (isCurrentlyAdmin)
                 {
-                    return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to remove existing roles.");
+                    return new ServiceResult<bool>(ResultType.Success, true, "User is already an admin.");
+                }
+
+                var addResult = await _userManager.AddToRoleAsync(targetUser, SystemRole.Admin);
+                if (!addResult.Succeeded)
+                {
+                    return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to grant admin role.");
+                }
+            }
+            else
+            {
+                if (isCurrentlyAdmin)
+                {
+                    var removeResult = await _userManager.RemoveFromRoleAsync(targetUser, SystemRole.Admin);
+                    if (!removeResult.Succeeded)
+                    {
+                        return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to revoke admin role.");
+                    }
+                }
+
+                if (!currentRoles.Contains(SystemRole.Member, StringComparer.OrdinalIgnoreCase))
+                {
+                    await _userManager.AddToRoleAsync(targetUser, SystemRole.Member);
                 }
             }
 
-            // Add new role
-            var addResult = await _userManager.AddToRoleAsync(targetUser, request.NewRole.ToString());
-            if (!addResult.Succeeded)
-            {
-                // Attempt rollback?
-                return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to assign new role.");
-            }
-
-            if (!isAdmin
-                && isManager
-                && request.NewRole == UserRole.Manager
-                && currentUserId.HasValue
-                && currentUserId.Value != targetUser.Id)
-            {
-                var currentUser = await _userManager.FindByIdAsync(currentUserId.Value.ToString());
-                if (currentUser != null)
-                {
-                    var managerRoles = await _userManager.GetRolesAsync(currentUser);
-                    if (managerRoles.Any())
-                    {
-                        var removeManagerResult = await _userManager.RemoveFromRolesAsync(currentUser, managerRoles);
-                        if (!removeManagerResult.Succeeded)
-                        {
-                            return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to complete manager role transfer.");
-                        }
-                    }
-
-                    var addMentorResult = await _userManager.AddToRoleAsync(currentUser, UserRole.Mentor.ToString());
-                    if (!addMentorResult.Succeeded)
-                    {
-                        return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to assign previous manager to Mentor role.");
-                    }
-                }
-            }
-
-            // Log Side Effects (Audit / Cleanup)
             _activityLogger.LogAudit(
                 action: "Admin.UserRoleChanged",
                 actorUserId: _currentUserContext.UserId,
                 targetUserId: targetUser.Id,
-                reason: $"Role changed from {string.Join(',', currentRoles)} to {request.NewRole}.");
-
-            if (isDowngradeToUser || isDowngradeToMentor)
-            {
-                _logger.LogInformation("SIDE EFFECT: User {TargetUserId} downgraded to {NewRole}. Revoking explicit group assignments.",
-                    targetUser.Id, request.NewRole);
-
-                var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(targetUser.Id, cancellationToken);
-                foreach (var assignment in assignments.Where(a => a.RevokedAtUtc == null))
-                {
-                    assignment.RevokedAtUtc = DateTime.UtcNow;
-                    _unitOfWork.MentorAssignments.Update(assignment, cancellationToken);
-                }
-            }
+                reason: $"System role changed to {request.NewRole}.");
 
             return new ServiceResult<bool>(ResultType.Success, true);
         }

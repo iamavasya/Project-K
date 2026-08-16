@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using Microsoft.AspNetCore.Identity.Data;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
+using ProjectK.Common.Models.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -236,7 +237,8 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _mediator.Send(new GetUserQuery(Guid.Parse(userKeyClaim!)));
-            var isPrivileged = User.IsInRole(UserRole.Admin.ToString()) || User.IsInRole(UserRole.Manager.ToString());
+            var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(
+                User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
             var isMfaRequired = isPrivileged && await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(HttpContext.RequestAborted);
             return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled, isMfaRequired });
         }

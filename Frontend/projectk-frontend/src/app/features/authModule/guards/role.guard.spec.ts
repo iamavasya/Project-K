@@ -11,7 +11,7 @@ describe('roleGuard', () => {
 
   beforeEach(() => {
     forbiddenTree = {} as UrlTree;
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthState']);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthState', 'getAuthStateValue']);
     router = jasmine.createSpyObj<Router>('Router', ['createUrlTree']);
     router.createUrlTree.and.returnValue(forbiddenTree);
 
@@ -35,10 +35,11 @@ describe('roleGuard', () => {
       userKey: 'user-1',
       memberKey: null,
       email: 'admin@example.com',
-      role: 'Admin',
+      isAdmin: true, permissions: [], roles: ['Admin'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     }));
+    authService.getAuthStateValue.and.returnValue({ userKey: 'user-1', memberKey: null, email: 'admin@example.com', isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-1', accessToken: 'token' } as never);
 
     TestBed.runInInjectionContext(() => {
       const result$ = runGuard(['Admin', 'Manager']);
@@ -55,10 +56,11 @@ describe('roleGuard', () => {
       userKey: 'user-1',
       memberKey: null,
       email: 'mentor@example.com',
-      role: 'Mentor',
+      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     }));
+    authService.getAuthStateValue.and.returnValue({ userKey: 'user-1', memberKey: null, email: 'mentor@example.com', isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'], kurinKey: 'kurin-1', accessToken: 'token' } as never);
 
     TestBed.runInInjectionContext(() => {
       const result$ = runGuard(['Admin', 'Manager']);

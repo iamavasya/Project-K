@@ -68,7 +68,7 @@ describe('MemberCardComponent', () => {
       userKey: 'user-mentor',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
-      role: 'Mentor',
+      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
       kurinKey: member.kurinKey,
       accessToken: 'token'
     });

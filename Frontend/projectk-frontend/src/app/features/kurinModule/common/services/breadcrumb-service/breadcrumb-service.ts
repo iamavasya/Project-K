@@ -88,7 +88,7 @@ export class BreadcrumbService {
       return 'Курінь';
     }
 
-    if (this.permissionService.isAdmin(state?.role)) {
+    if (this.permissionService.isAdmin()) {
       return 'Адміністрація';
     }
 
@@ -387,10 +387,17 @@ export class BreadcrumbService {
       return true;
     }
 
-    const currentRole = this.permissionService.getRole();
-    return parentRoles.some(role =>
-      typeof role === 'string' && role.trim().toLowerCase() === currentRole
-    );
+    return parentRoles.some(role => {
+      if (typeof role !== 'string') {
+        return false;
+      }
+      switch (role.trim().toLowerCase()) {
+        case 'admin': return this.permissionService.isAdmin();
+        case 'manager': return this.permissionService.isManager();
+        case 'mentor': return this.permissionService.isMentor();
+        default: return false;
+      }
+    });
   }
   
   private resolveParameters(path: string): string {

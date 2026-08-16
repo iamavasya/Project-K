@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
@@ -19,8 +20,8 @@ namespace ProjectK.API.Helpers
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-            // 1. Seed Roles (Required for all environments)
-            foreach (var roleName in Enum.GetNames(typeof(UserRole)))
+            // 1. Seed Roles (Required for all environments): Admin, Member and every office role.
+            foreach (var roleName in SystemRole.All())
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
@@ -37,7 +38,7 @@ namespace ProjectK.API.Helpers
             // 3. Seed Load Test User (Required for load tests across all environments)
             if (env.EnvironmentName != "SelfHost")
             {
-                await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.User);
+                await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.Member);
             }
 
             // --- STOP HERE FOR PRODUCTION AND SELFHOST ---

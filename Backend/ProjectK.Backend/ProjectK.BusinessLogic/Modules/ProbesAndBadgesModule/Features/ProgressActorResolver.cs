@@ -1,6 +1,5 @@
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 
@@ -14,28 +13,18 @@ internal static class ProgressActorResolver
             ResolveRole(currentUserContext));
     }
 
+    // Records who performed the action for the audit trail: admin, otherwise the highest office role
+    // the user holds, otherwise the bare member baseline.
     private static string ResolveRole(ICurrentUserContext currentUserContext)
     {
-        if (currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()))
+        if (currentUserContext.IsInRole(SystemRole.Admin))
         {
-            return UserRole.Admin.ToClaimValue();
+            return SystemRole.Admin;
         }
 
-        if (currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
-        {
-            return UserRole.Manager.ToClaimValue();
-        }
+        var office = currentUserContext.Roles
+            .FirstOrDefault(role => !string.Equals(role, SystemRole.Member, StringComparison.OrdinalIgnoreCase));
 
-        if (currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
-        {
-            return UserRole.Mentor.ToClaimValue();
-        }
-
-        if (currentUserContext.IsInRole(UserRole.User.ToClaimValue()))
-        {
-            return UserRole.User.ToClaimValue();
-        }
-
-        return currentUserContext.Roles.FirstOrDefault() ?? "Unknown";
+        return office ?? SystemRole.Member;
     }
 }

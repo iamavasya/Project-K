@@ -32,12 +32,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IResourceScopeReader _scopeReader;
 
-        public GetMembersHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext)
+        public GetMembersHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
+            _scopeReader = scopeReader;
         }
 
         public async Task<ServiceResult<IEnumerable<MemberResponse>>> Handle(GetMembers request, CancellationToken cancellationToken)
@@ -62,28 +64,24 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
         }
 
-        // Who may see Address/School: admins and managers see everyone; a member sees
-        // their own record; a mentor sees members in their assigned groups. The mentor
-        // group set is the only extra query, and only for mentors — it is passed into
+        // Who may see Address/School: whole-kurin managers see everyone; a member sees
+        // their own record; a group leader sees members in the groups they lead. The led
+        // group set is the only extra query, and only for group leaders — it is passed into
         // the projection so restricted fields are masked in SQL rather than post-read.
         private async Task<MemberFieldVisibility> BuildFieldVisibilityAsync(CancellationToken ct)
         {
-            bool isAdminOrManager = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
-                                    _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue());
+            bool canManageWholeKurin = _currentUserContext.CanManageWholeKurin();
             var currentUserId = _currentUserContext.UserId;
+            var kurinKey = _currentUserContext.KurinKey;
 
             IReadOnlyCollection<Guid> visibleGroupKeys = Array.Empty<Guid>();
-            if (!isAdminOrManager && currentUserId.HasValue &&
-                _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
+            if (!canManageWholeKurin && currentUserId.HasValue && kurinKey.HasValue &&
+                _currentUserContext.CanLeadGroups())
             {
-                var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(currentUserId.Value, ct);
-                visibleGroupKeys = assignments
-                    .Where(a => a.RevokedAtUtc == null)
-                    .Select(a => a.GroupKey)
-                    .ToHashSet();
+                visibleGroupKeys = await _scopeReader.GetLedGroupKeysAsync(currentUserId.Value, kurinKey.Value, ct);
             }
 
-            return new MemberFieldVisibility(isAdminOrManager, currentUserId, visibleGroupKeys);
+            return new MemberFieldVisibility(canManageWholeKurin, currentUserId, visibleGroupKeys);
         }
     }
 }

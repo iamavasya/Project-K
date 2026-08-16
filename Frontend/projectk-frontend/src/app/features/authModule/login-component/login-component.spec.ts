@@ -111,7 +111,7 @@ describe('LoginComponent', () => {
   });
 
   it('should navigate to active kurin for admin role with selected kurin', () => {
-    const state = createAuthState({ role: 'Admin', memberKey: 'member-123', kurinKey: 'kurin-123' });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: 'kurin-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
 
@@ -124,7 +124,7 @@ describe('LoginComponent', () => {
   });
 
   it('should navigate to admin panel for admin role without selected kurin', () => {
-    const state = createAuthState({ role: 'Admin', memberKey: 'member-123', kurinKey: null });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: null });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
 
@@ -235,7 +235,7 @@ describe('LoginComponent', () => {
       userKey: 'user-123',
       memberKey: 'member-123',
       email: 'test@example.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-123',
       accessToken: 'token-123',
       ...overrides
@@ -247,7 +247,7 @@ describe('LoginComponent', () => {
       userKey: 'user-123',
       memberKey: 'member-123',
       email: 'test@example.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-123',
       requiresMfa: false,
       tokens: { accessToken: 'token-123' },

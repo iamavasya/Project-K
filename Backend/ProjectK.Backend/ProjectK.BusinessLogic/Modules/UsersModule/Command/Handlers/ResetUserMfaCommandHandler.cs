@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -36,24 +38,24 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                 return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
             }
 
-            var isAdmin = _currentUserContext.IsInRole(UserRole.Admin.ToString());
-            var isManager = _currentUserContext.IsInRole(UserRole.Manager.ToString());
-            if (!isAdmin && !isManager)
+            var isAdmin = _currentUserContext.IsAdmin();
+            var isKurinManager = !isAdmin && _currentUserContext.CanManageWholeKurin();
+            if (!isAdmin && !isKurinManager)
             {
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "You do not have permission to perform this action.");
             }
 
             var targetRoles = await _userManager.GetRolesAsync(targetUser);
-            if (isManager)
+            if (isKurinManager)
             {
                 if (targetUser.KurinKey != _currentUserContext.KurinKey)
                 {
-                    return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "Managers can reset MFA only in their own Kurin.");
+                    return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "Kurin managers can reset MFA only in their own Kurin.");
                 }
 
-                if (targetRoles.Contains(UserRole.Admin.ToString()) || targetRoles.Contains(UserRole.Manager.ToString()))
+                if (targetRoles.Any(role => SystemRole.WholeKurinManagementRoles().Contains(role, StringComparer.OrdinalIgnoreCase)))
                 {
-                    return ServiceResult<bool>.Failure(ResultType.Forbidden, "CannotResetPrivilegedMfa", "Managers cannot reset MFA for privileged users.");
+                    return ServiceResult<bool>.Failure(ResultType.Forbidden, "CannotResetPrivilegedMfa", "Kurin managers cannot reset MFA for privileged users.");
                 }
             }
 

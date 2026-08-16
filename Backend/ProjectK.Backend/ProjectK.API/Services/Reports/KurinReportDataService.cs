@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -153,9 +154,7 @@ public sealed class KurinReportDataService
             .Where(member =>
                 member.UserKey.HasValue
                 && rolesByUserKey.TryGetValue(member.UserKey.Value, out var roles)
-                && roles.Any(role => role.Equals(UserRole.Manager.ToClaimValue(), StringComparison.OrdinalIgnoreCase)
-                    || role.Equals(UserRole.Mentor.ToClaimValue(), StringComparison.OrdinalIgnoreCase)
-                    || role.Equals(UserRole.Admin.ToClaimValue(), StringComparison.OrdinalIgnoreCase)))
+                && RolePermissionMap.GrantsGroupLeadership(roles))
             .Select(member => member.MemberKey)
             .Concat(members
                 .SelectMany(member => member.LeadershipHistories)

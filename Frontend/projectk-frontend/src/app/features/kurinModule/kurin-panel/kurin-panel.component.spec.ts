@@ -30,7 +30,7 @@ describe('KurinPanelComponent', () => {
     userKey: 'u1',
       memberKey: 'test-member-key',
     email: 'test@example.com',
-    role: 'admin',
+    isAdmin: true, permissions: [], roles: ['Admin'],
     kurinKey: 'k1',
     accessToken: 'token'
   };
@@ -127,7 +127,7 @@ describe('KurinPanelComponent', () => {
   it('does not allow mentor to add kurin-level members', () => {
     const mentorState = {
       ...mockAuthState,
-      role: 'Mentor'
+      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy']
     };
     authService.getAuthStateValue.and.returnValue(mentorState);
     authState$.next(mentorState);

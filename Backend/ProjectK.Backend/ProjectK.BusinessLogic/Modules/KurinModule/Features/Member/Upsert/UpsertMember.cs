@@ -68,14 +68,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
         private bool CanEditRestrictedFields()
         {
-            return _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
-                   _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()) ||
-                   _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue());
+            return _currentUserContext.IsLeadership();
         }
 
         private bool IsAdmin()
         {
-            return _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
+            return _currentUserContext.IsAdmin();
         }
 
         private bool IsCurrentUserOwner(MemberEntity member)

@@ -14,7 +14,6 @@ describe('kurinAccessGuard', () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', [
       'isAdmin',
-      'getRole',
       'canManagePlanning'
     ]);
     router = jasmine.createSpyObj<Router>('Router', ['createUrlTree']);
@@ -30,7 +29,7 @@ describe('kurinAccessGuard', () => {
 
   it('redirects panel route to active kurin even for admin', () => {
     const tree = { target: '/kurin' };
-    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'Admin', kurinKey: 'kurin-123' }));
+    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-123' }));
     permissionService.isAdmin.and.returnValue(true);
     router.createUrlTree.and.returnValue(tree as never);
 
@@ -41,7 +40,7 @@ describe('kurinAccessGuard', () => {
   });
 
   it('allows panel route when admin has no active kurin', () => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'Admin', kurinKey: null }));
+    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
     permissionService.isAdmin.and.returnValue(true);
 
     const result = runGuard('panel');
@@ -52,7 +51,7 @@ describe('kurinAccessGuard', () => {
 
   it('redirects kurin route to panel for admin without active kurin', () => {
     const tree = { target: '/panel' };
-    authService.getAuthStateValue.and.returnValue(createAuthState({ role: 'Admin', kurinKey: null }));
+    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
     permissionService.isAdmin.and.returnValue(true);
     router.createUrlTree.and.returnValue(tree as never);
 
@@ -71,7 +70,7 @@ describe('kurinAccessGuard', () => {
       userKey: 'user-123',
       memberKey: 'member-123',
       email: 'test@example.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-123',
       accessToken: 'token-123',
       ...overrides

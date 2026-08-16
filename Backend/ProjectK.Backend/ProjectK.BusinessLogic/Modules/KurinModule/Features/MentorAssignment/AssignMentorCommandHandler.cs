@@ -1,8 +1,5 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -16,13 +13,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
     public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly ILeadershipRoleSyncService _roleSync;
         private readonly IBackendCache _cache;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IBackendCache cache)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, ILeadershipRoleSyncService roleSync, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
-            _userManager = userManager;
+            _roleSync = roleSync;
             _cache = cache;
         }
 
@@ -60,36 +57,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
             };
 
             _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
-            await EnsureMentorRoleAsync(request.MentorUserKey);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // The new assignment changes this mentor's group scope; drop the cached set
-            // so the next authorization check reflects it immediately.
+            // The assignment grants гуртковий access; realign the member's roles and drop the cached
+            // scope set so the next authorization check reflects it immediately.
+            await _roleSync.SyncMemberAsync(mentorMember.MemberKey, cancellationToken);
             _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
             return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);
-        }
-
-        private async Task EnsureMentorRoleAsync(Guid mentorUserKey)
-        {
-            var user = await _userManager.FindByIdAsync(mentorUserKey.ToString());
-            if (user == null)
-            {
-                return;
-            }
-
-            var currentRoles = await _userManager.GetRolesAsync(user);
-            if (currentRoles.Contains(UserRole.Admin.ToClaimValue()) || currentRoles.Contains(UserRole.Manager.ToClaimValue()))
-            {
-                return;
-            }
-
-            if (currentRoles.Count > 0)
-            {
-                await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            }
-
-            await _userManager.AddToRoleAsync(user, UserRole.Mentor.ToClaimValue());
         }
     }
 }

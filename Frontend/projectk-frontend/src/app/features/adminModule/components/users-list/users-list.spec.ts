@@ -16,7 +16,7 @@ describe('UsersListComponent', () => {
       email: 'user1@example.com',
       firstName: 'John',
       lastName: 'Doe',
-      role: 'Manager',
+      role: 'Member',
       kurinNumber: 101, kurinKey: 'kurin-1'
     },
     {
@@ -32,7 +32,7 @@ describe('UsersListComponent', () => {
       email: 'user3@example.com',
       firstName: 'Bob',
       lastName: 'Johnson',
-      role: 'Mentor',
+      role: 'Member',
       kurinNumber: 101, kurinKey: 'kurin-2'
     }
   ];
@@ -103,7 +103,7 @@ describe('UsersListComponent', () => {
 
       expect(component.users[0].userId).toBe('user-1');
       expect(component.users[0].email).toBe('user1@example.com');
-      expect(component.users[0].role).toBe('Manager');
+      expect(component.users[0].role).toBe('Member');
       expect(component.users[1].userId).toBe('user-2');
       expect(component.users[1].role).toBe('Admin');
     });

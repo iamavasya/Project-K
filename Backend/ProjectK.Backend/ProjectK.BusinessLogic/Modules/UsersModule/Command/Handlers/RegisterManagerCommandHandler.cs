@@ -3,10 +3,13 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -53,12 +56,12 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                     Password = request.Password,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Role = UserRole.Manager.ToClaimValue(),
+                    Role = SystemRole.Member,
                     KurinKey = kurinResult.Data.KurinKey
                 }, cancellationToken);
 
                 // Step 3: Create the new Member and associate with User
-                await _mediator.Send(new UpsertMember
+                var memberResult = await _mediator.Send(new UpsertMember
                 {
                     FirstName = request.FirstName,
                     MiddleName = request.MiddleName,
@@ -69,7 +72,25 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                     UserKey = userResult.Data.UserId
                 }, cancellationToken);
 
-                // Step 4: Save all changes and commit transaction
+                // Step 4: Make the new owner the kurin's Зв'язковий (KV office). Upsert syncs the
+                // system role from the office automatically, granting full kurin management.
+                await _mediator.Send(new UpsertLeadership(new UpsertLeadershipRequest
+                {
+                    Type = LeadershipType.KV.ToString(),
+                    EntityKey = kurinResult.Data.KurinKey,
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    LeadershipHistories = new[]
+                    {
+                        new LeadershipHistoryMemberDto
+                        {
+                            Role = LeadershipRole.Zvyazkovyi.ToString(),
+                            StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                            Member = new MemberLookupDto { MemberKey = memberResult.Data.MemberKey }
+                        }
+                    }
+                }), cancellationToken);
+
+                // Step 5: Save all changes and commit transaction
                 await _uow.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 

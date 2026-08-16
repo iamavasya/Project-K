@@ -30,11 +30,10 @@ export class UsersListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
+  // System-level roles only. Kurin offices are managed on the Leadership screen.
   roles = [
     { label: 'Admin', value: 0 },
-    { label: 'Manager', value: 1 },
-    { label: 'Mentor', value: 2 },
-    { label: 'User', value: 3 }
+    { label: 'Member', value: 1 }
   ];
 
   ngOnInit() {

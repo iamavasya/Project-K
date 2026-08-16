@@ -4,6 +4,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
@@ -51,7 +52,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
                 UserKey = user.Id,
                 MemberKey = member?.MemberKey,
                 Email = user.Email!,
-                Role = roles.FirstOrDefault()!,
+                IsAdmin = roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase),
+                Permissions = RolePermissionMap.Resolve(roles).Select(permission => permission.ToClaimValue()).ToArray(),
+                Roles = roles.ToArray(),
                 KurinKey = kurinKey,
                 RequiresMfa = false,
                 Tokens = jwt

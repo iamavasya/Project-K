@@ -28,7 +28,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         public UpsertLeadershipHandlerTests()
         {
             _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-            _handler = new UpsertLeadershipHandler(_unitOfWorkMock.Object, _mapperMock.Object);
+            _handler = new UpsertLeadershipHandler(_unitOfWorkMock.Object, _mapperMock.Object, new Mock<ProjectK.BusinessLogic.Modules.AuthModule.Services.ILeadershipRoleSyncService>().Object);
         }
 
         private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()

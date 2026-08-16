@@ -1,7 +1,7 @@
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -64,9 +64,15 @@ public sealed class AgendaAccess : IAgendaAccess
     public async Task<AgendaViewerContext> BuildViewerAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         var userKey = _currentUser.UserId;
-        var isAdmin = _currentUser.IsInRole(UserRole.Admin.ToClaimValue());
-        var isManager = _currentUser.IsInRole(UserRole.Manager.ToClaimValue());
-        var isMentor = _currentUser.IsInRole(UserRole.Mentor.ToClaimValue());
+
+        // Whole-kurin leadership can manage groups anywhere; a гуртковий leader manages only its
+        // groups. Both are derived from permissions so the agenda shares one authorization model.
+        var permissions = RolePermissionMap.Resolve(_currentUser.Roles);
+        var canSeeWholeKurin =
+            RolePermissionMap.WidestScope(permissions, ResourceType.Group, ResourceAction.Manage) == AccessScope.KurinWide;
+        var isLeadership =
+            canSeeWholeKurin ||
+            RolePermissionMap.WidestScope(permissions, ResourceType.Group, ResourceAction.Update) is not null;
 
         Guid? memberKey = null;
         Guid? ownGroupKey = null;
@@ -86,10 +92,10 @@ public sealed class AgendaAccess : IAgendaAccess
             visibilityGroups.Add(ownGroupKey.Value);
         }
 
-        if (isMentor && userKey.HasValue)
+        if (isLeadership && !canSeeWholeKurin && userKey.HasValue)
         {
-            var mentorGroups = await _scopeReader.GetMentorGroupKeysAsync(userKey.Value, kurinKey, cancellationToken);
-            foreach (var groupKey in mentorGroups)
+            var ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey.Value, kurinKey, cancellationToken);
+            foreach (var groupKey in ledGroups)
             {
                 visibilityGroups.Add(groupKey);
             }
@@ -101,8 +107,8 @@ public sealed class AgendaAccess : IAgendaAccess
             ViewerMemberKey: memberKey,
             ViewerOwnGroupKey: ownGroupKey,
             VisibilityGroupKeys: visibilityGroups,
-            CanSeeWholeKurin: isAdmin || isManager,
-            IsLeadership: isAdmin || isManager || isMentor);
+            CanSeeWholeKurin: canSeeWholeKurin,
+            IsLeadership: isLeadership);
     }
 
     public Task<ResourceAccessDecision> AuthorizeTargetAsync(

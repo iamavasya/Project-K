@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.API.Middleware
 {
@@ -63,8 +63,9 @@ namespace ProjectK.API.Middleware
                 return false;
             }
 
-            return context.User.IsInRole(UserRole.Admin.ToString())
-                || context.User.IsInRole(UserRole.Manager.ToString());
+            // Privileged = whole-kurin managers (Зв'язковий, Курінний, admin).
+            return RolePermissionMap.GrantsWholeKurinManagement(
+                context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
         }
 
         private static bool IsExemptPath(PathString path)

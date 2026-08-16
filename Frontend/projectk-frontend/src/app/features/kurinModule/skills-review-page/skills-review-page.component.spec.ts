@@ -36,7 +36,7 @@ describe('SkillsReviewPageComponent', () => {
       userKey: 'user-1',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
-      role: 'Mentor',
+      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });
@@ -162,7 +162,7 @@ describe('SkillsReviewPageComponent', () => {
       userKey: 'user-2',
       memberKey: 'test-member-key',
       email: 'member@example.com',
-      role: 'User',
+      isAdmin: false, permissions: [], roles: ['Member'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });

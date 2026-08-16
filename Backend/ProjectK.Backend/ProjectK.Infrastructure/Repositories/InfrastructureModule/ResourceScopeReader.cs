@@ -62,28 +62,45 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
             };
         }
 
-        public async Task<IReadOnlyCollection<Guid>> GetMentorGroupKeysAsync(
+        public async Task<IReadOnlyCollection<Guid>> GetLedGroupKeysAsync(
             Guid userKey,
             Guid kurinKey,
             CancellationToken cancellationToken = default)
         {
+            // Primary source: groups where the user currently holds a гуртковий-провід office.
+            var officeGroups = await _context.LeadershipHistories
+                .Where(h => h.EndDate == null)
+                .Join(
+                    _context.Leaderships.Where(l => l.Type == LeadershipType.Group && l.GroupKey != null),
+                    h => h.LeadershipKey,
+                    l => l.LeadershipKey,
+                    (h, l) => new { h.MemberKey, GroupKey = l.GroupKey!.Value })
+                .Join(
+                    _context.Members.Where(m => m.UserKey == userKey && m.KurinKey == kurinKey),
+                    x => x.MemberKey,
+                    m => m.MemberKey,
+                    (x, m) => x.GroupKey)
+                .ToListAsync(cancellationToken);
+
+            // Legacy source: explicit mentor assignments, kept until fully migrated to offices.
             var assigned = await _context.MentorAssignments
                 .Where(a => a.MentorUserKey == userKey && a.RevokedAtUtc == null)
                 .Select(a => a.GroupKey)
                 .ToListAsync(cancellationToken);
 
-            // Compatibility fallback: a mentor also covers the group they are a member of.
+            // Compatibility fallback: a group leader also covers the group they are a member of.
             var ownGroupKey = await _context.Members
                 .Where(m => m.KurinKey == kurinKey && m.UserKey == userKey && m.GroupKey != null)
                 .Select(m => m.GroupKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
+            var ledGroups = officeGroups.Concat(assigned);
             if (ownGroupKey.HasValue)
             {
-                assigned.Add(ownGroupKey.Value);
+                ledGroups = ledGroups.Append(ownGroupKey.Value);
             }
 
-            return assigned.Distinct().ToArray();
+            return ledGroups.Distinct().ToArray();
         }
 
         private async Task<ResourceScope?> GetLeadershipScopeAsync(Guid leadershipKey, CancellationToken cancellationToken)

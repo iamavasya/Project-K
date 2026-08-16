@@ -31,7 +31,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
 
             _loginResponseFactoryMock
                 .Setup(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new LoginUserResponse { Email = "admin@projectk.com", Role = "Admin" });
+                .ReturnsAsync(new LoginUserResponse { Email = "admin@projectk.com", IsAdmin = true });
 
             _handler = new SetKurinScopeCommandHandler(
                 _userManagerMock.Object,
@@ -39,7 +39,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
                 _loginResponseFactoryMock.Object);
         }
 
-        private AppUser ArrangeUser(params UserRole[] roles)
+        private AppUser ArrangeUser(params string[] roles)
         {
             var user = new AppUser
             {
@@ -51,7 +51,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles.Select(role => role.ToClaimValue()).ToList());
+                .ReturnsAsync(roles.ToList());
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
             return user;
@@ -60,7 +60,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         [Fact]
         public async Task Handle_ShouldScopeAdminIntoKurin()
         {
-            var user = ArrangeUser(UserRole.Admin);
+            var user = ArrangeUser("Admin");
             var kurinKey = Guid.NewGuid();
             _kurinsMock.Setup(x => x.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Kurin(12) { KurinKey = kurinKey });
@@ -75,7 +75,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         [Fact]
         public async Task Handle_ShouldClearScope_WhenKurinKeyIsNull()
         {
-            var user = ArrangeUser(UserRole.Admin);
+            var user = ArrangeUser("Admin");
             user.ActiveKurinKey = Guid.NewGuid();
 
             var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, null), CancellationToken.None);
@@ -87,7 +87,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         [Fact]
         public async Task Handle_ShouldForbidNonAdmin()
         {
-            var user = ArrangeUser(UserRole.Manager);
+            var user = ArrangeUser("KV.Zvyazkovyi");
             var kurinKey = Guid.NewGuid();
 
             var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, kurinKey), CancellationToken.None);
@@ -100,7 +100,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         [Fact]
         public async Task Handle_ShouldReturnNotFound_WhenKurinDoesNotExist()
         {
-            var user = ArrangeUser(UserRole.Admin);
+            var user = ArrangeUser("Admin");
             var kurinKey = Guid.NewGuid();
             _kurinsMock.Setup(x => x.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Kurin?)null);

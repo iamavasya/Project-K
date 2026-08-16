@@ -114,7 +114,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             Assert.Equal(userId, result.Data.UserKey);
             Assert.Equal(memberKey, result.Data.MemberKey);
             Assert.Equal(email, result.Data.Email);
-            Assert.Equal("User", result.Data.Role);
+            Assert.False(result.Data.IsAdmin);
             Assert.Equal(kurinKey.ToString(), result.Data.KurinKey);
             Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
             Assert.Equal(refreshToken.Token, result.Data.Tokens.RefreshToken.Token);
@@ -172,7 +172,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             Assert.NotNull(result.Data);
             Assert.Equal(userId, result.Data.UserKey);
             Assert.Equal(email, result.Data.Email);
-            Assert.Equal("Admin", result.Data.Role);
+            Assert.True(result.Data.IsAdmin);
             Assert.Null(result.Data.KurinKey);
 
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, null), Times.Once);
@@ -362,7 +362,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.NotNull(result.Data);
-            Assert.Equal("Admin", result.Data.Role); // Should return first role
+            Assert.True(result.Data.IsAdmin);
             Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
 
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()), Times.Once);

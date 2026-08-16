@@ -19,5 +19,7 @@ namespace ProjectK.Common.Models.Enums
         Instruktor,
         Vykhovnyk,
         Zvyazkovyi,
+        OtherKurin,
+        OtherGroup,
     }
 }

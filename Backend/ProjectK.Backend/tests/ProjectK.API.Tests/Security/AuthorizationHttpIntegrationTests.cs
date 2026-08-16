@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
@@ -34,11 +35,11 @@ public class AuthorizationHttpIntegrationTests
     }
 
     [Theory]
-    [InlineData(UserRole.User, "/api/user/users")]
-    [InlineData(UserRole.User, "/api/planning/{0}")]
-    public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(UserRole role, string routeTemplate)
+    [InlineData(SystemRole.Member, "/api/user/users")]
+    [InlineData(SystemRole.Member, "/api/planning/{0}")]
+    public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(string roleClaim, string routeTemplate)
     {
-        await using var host = await SecurityTestHost.StartAsync(role);
+        await using var host = await SecurityTestHost.StartAsync(roleClaim);
         var route = routeTemplate.Contains("{0}")
             ? string.Format(routeTemplate, Guid.NewGuid())
             : routeTemplate;
@@ -60,7 +61,7 @@ public class AuthorizationHttpIntegrationTests
 
         public HttpClient Client { get; }
 
-        public static async Task<SecurityTestHost> StartAsync(UserRole? role = null)
+        public static async Task<SecurityTestHost> StartAsync(string? roleClaim = null)
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions
             {
@@ -68,7 +69,7 @@ public class AuthorizationHttpIntegrationTests
             });
 
             builder.WebHost.UseTestServer();
-            builder.Services.AddSingleton(new TestAuthState(role));
+            builder.Services.AddSingleton(new TestAuthState(roleClaim));
 
             builder.Services
                 .AddAuthentication(options =>
@@ -83,16 +84,18 @@ public class AuthorizationHttpIntegrationTests
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole(SystemRole.Admin));
 
                 options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsWholeKurinManagement(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsGroupLeadership(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx => ctx.User.Identity?.IsAuthenticated == true));
             });
 
             builder.Services.AddControllers()
@@ -116,7 +119,7 @@ public class AuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record TestAuthState(UserRole? Role);
+    private sealed record TestAuthState(string? RoleClaim);
 
     private sealed class TestAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -131,7 +134,7 @@ public class AuthorizationHttpIntegrationTests
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (_authState.Role is null)
+            if (_authState.RoleClaim is null)
             {
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
@@ -139,7 +142,7 @@ public class AuthorizationHttpIntegrationTests
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.RoleClaim)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

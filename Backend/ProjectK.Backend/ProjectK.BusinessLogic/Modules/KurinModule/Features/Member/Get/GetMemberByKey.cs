@@ -29,27 +29,27 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IResourceScopeReader _scopeReader;
 
-        public GetMemberByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext)
+        public GetMemberByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
+            _scopeReader = scopeReader;
         }
 
         private async Task ScrubRestrictedDataAsync(MemberResponse response, MemberEntity entity, CancellationToken ct)
         {
             bool isOwner = entity.UserKey.HasValue && entity.UserKey == _currentUserContext.UserId;
-            bool isAdminOrManager = _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
-                                   _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue());
-            
-            bool canViewPrivate = isOwner || isAdminOrManager;
+            bool canViewPrivate = isOwner || _currentUserContext.CanManageWholeKurin();
 
-            if (!canViewPrivate && _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
+            var kurinKey = _currentUserContext.KurinKey;
+            if (!canViewPrivate && _currentUserContext.CanLeadGroups()
+                && _currentUserContext.UserId.HasValue && kurinKey.HasValue && entity.GroupKey.HasValue)
             {
-                var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(_currentUserContext.UserId!.Value, ct);
-                bool isAssignedMentor = assignments.Any(a => a.GroupKey == entity.GroupKey && a.RevokedAtUtc == null);
-                canViewPrivate = canViewPrivate || isAssignedMentor;
+                var ledGroups = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, kurinKey.Value, ct);
+                canViewPrivate = ledGroups.Contains(entity.GroupKey.Value);
             }
 
             if (!canViewPrivate)

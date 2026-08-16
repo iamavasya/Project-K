@@ -81,7 +81,7 @@ export class AccountSettingsComponent implements OnInit {
   }
 
   get isPrivileged(): boolean {
-    return this.permissionService.isAdmin(this.settings?.role) || this.permissionService.isManager(this.settings?.role);
+    return this.permissionService.isAdmin() || this.permissionService.isManager();
   }
 
   get isEmailChanged(): boolean {

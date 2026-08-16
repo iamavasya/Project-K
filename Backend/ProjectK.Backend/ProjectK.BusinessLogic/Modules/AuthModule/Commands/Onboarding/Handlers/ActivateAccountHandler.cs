@@ -1,8 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -16,11 +20,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IMediator _mediator;
 
-        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
+        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IMediator mediator)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _mediator = mediator;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
@@ -63,13 +69,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"Failed to update user status: {errors}");
             }
 
-            // 3.5. Assign Role
+            // 3.5. Assign the baseline system role. Kurin authority comes from a діловодський office,
+            // created below for a kurin-leader candidate.
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
-            string roleToAssign = (entry?.IsKurinLeaderCandidate ?? false)
-                ? UserRole.Manager.ToString()
-                : UserRole.User.ToString();
+            bool isKurinLeaderCandidate = entry?.IsKurinLeaderCandidate ?? false;
 
-            await _userManager.AddToRoleAsync(user, roleToAssign);
+            await _userManager.AddToRoleAsync(user, SystemRole.Member);
 
             // 4. Mark Invitation as used
             invitation.UsedAtUtc = DateTime.UtcNow;
@@ -77,6 +82,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
 
             // 5. Create Member record if it doesn't exist
             var existingMember = await _unitOfWork.Members.GetByEmailAsync(user.Email!, cancellationToken);
+            Guid memberKey;
             if (existingMember == null)
             {
                 var member = new Member
@@ -91,14 +97,36 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                     KurinKey = user.KurinKey ?? Guid.Empty
                 };
                 _unitOfWork.Members.Create(member, cancellationToken);
+                memberKey = member.MemberKey;
             }
             else
             {
                 existingMember.UserKey = user.Id;
                 _unitOfWork.Members.Update(existingMember, cancellationToken);
+                memberKey = existingMember.MemberKey;
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // 6. A kurin-leader candidate becomes the kurin's Зв'язковий; the office sync grants the role.
+            if (isKurinLeaderCandidate && user.KurinKey.HasValue)
+            {
+                await _mediator.Send(new UpsertLeadership(new UpsertLeadershipRequest
+                {
+                    Type = LeadershipType.KV.ToString(),
+                    EntityKey = user.KurinKey.Value,
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    LeadershipHistories = new[]
+                    {
+                        new LeadershipHistoryMemberDto
+                        {
+                            Role = LeadershipRole.Zvyazkovyi.ToString(),
+                            StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                            Member = new MemberLookupDto { MemberKey = memberKey }
+                        }
+                    }
+                }), cancellationToken);
+            }
 
             return new ServiceResult<Guid>(ResultType.Success, user.Id);
         }

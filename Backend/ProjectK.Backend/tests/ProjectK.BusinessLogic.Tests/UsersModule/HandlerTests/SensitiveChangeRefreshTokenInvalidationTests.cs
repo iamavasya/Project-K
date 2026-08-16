@@ -205,7 +205,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(new[] { UserRole.User.ToString() });
+                .ReturnsAsync(new[] { "Member" });
             _userManagerMock.Setup(x => x.SetTwoFactorEnabledAsync(user, false))
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
@@ -223,9 +223,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Theory]
-        [InlineData(UserRole.Admin)]
-        [InlineData(UserRole.Manager)]
-        public async Task DisableOwnMfa_ShouldReturnForbiddenAndKeepMfa_WhenUserIsPrivileged(UserRole role)
+        [InlineData("Admin")]
+        [InlineData("KV.Zvyazkovyi")]
+        public async Task DisableOwnMfa_ShouldReturnForbiddenAndKeepMfa_WhenUserIsPrivileged(string role)
         {
             // Arrange
             var user = CreateUserWithRefreshToken();
@@ -239,7 +239,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(new[] { role.ToString() });
+                .ReturnsAsync(new[] { role });
 
             // Act
             var result = await handler.Handle(new DisableOwnMfaCommand(user.Id, "current-password"), CancellationToken.None);
@@ -262,8 +262,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             targetUser.KurinKey = kurinKey;
             targetUser.TwoFactorEnabled = true;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
             var handler = new ResetUserMfaCommandHandler(
                 _userManagerMock.Object,
@@ -273,7 +273,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
-                .ReturnsAsync(new[] { UserRole.User.ToString() });
+                .ReturnsAsync(new[] { "Member" });
             _userManagerMock.Setup(x => x.SetTwoFactorEnabledAsync(targetUser, false))
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.ResetAuthenticatorKeyAsync(targetUser))
@@ -300,8 +300,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var targetUser = CreateUserWithRefreshToken();
             targetUser.KurinKey = kurinKey;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.IsInRole("KV.Zvyazkovyi")).Returns(true);
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
             var handler = new ResetUserMfaCommandHandler(
                 _userManagerMock.Object,
@@ -311,7 +311,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
-                .ReturnsAsync(new[] { UserRole.Manager.ToString() });
+                .ReturnsAsync(new[] { "KV.Zvyazkovyi" });
 
             // Act
             var result = await handler.Handle(new ResetUserMfaCommand(targetUser.Id), CancellationToken.None);

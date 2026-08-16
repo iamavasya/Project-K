@@ -1,18 +1,21 @@
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Planning;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Services.Caching;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
+/// <summary>
+/// The single authorization decision point. It answers two orthogonal questions: <b>what</b> the
+/// user may do (their <see cref="Permission"/> set, resolved from roles via <see cref="RolePermissionMap"/>)
+/// and <b>where</b> it applies (the <see cref="AccessScope"/> of the widest matching permission,
+/// checked against the resource's kurin/group/owner). Role names are never inspected here beyond the
+/// system-admin bypass.
+/// </summary>
 public class ResourceAccessService : IResourceAccessService
 {
-    private const string MentorScopeChecksPassed = "Mentor scoped checks passed.";
-
     private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IBackendCache _cache;
@@ -38,15 +41,16 @@ public class ResourceAccessService : IResourceAccessService
         // An unscoped admin is system-wide: that is the /panel view, where there is no kurin to
         // check against. Once they step into a kurin the claim is re-issued and they are held to
         // that scope like anyone else — otherwise browser history reaches other kurins' data.
-        if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) && _currentUserContext.KurinKey is null)
+        if (_currentUserContext.IsInRole(SystemRole.Admin) && _currentUserContext.KurinKey is null)
         {
             return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");
         }
 
-        var roleActionDecision = EvaluateRoleActionPermission(resourceType, action);
-        if (!roleActionDecision.IsAllowed)
+        var permissions = RolePermissionMap.Resolve(_currentUserContext.Roles);
+        var grantedScope = RolePermissionMap.WidestScope(permissions, resourceType, action);
+        if (grantedScope is null)
         {
-            return roleActionDecision;
+            return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
         }
 
         var currentKurinKey = _currentUserContext.KurinKey;
@@ -61,16 +65,10 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Resource was not found or has no resolvable scope.");
         }
 
-        var roleScopeDecision = await EvaluateRoleSpecificScopeRulesAsync(
-            resourceType,
-            action,
-            scope,
-            currentKurinKey.Value,
-            cancellationToken);
-
-        if (!roleScopeDecision.IsAllowed)
+        var scopeDecision = await EvaluateScopeAsync(grantedScope.Value, scope, currentKurinKey.Value, cancellationToken);
+        if (!scopeDecision.IsAllowed)
         {
-            return roleScopeDecision;
+            return scopeDecision;
         }
 
         if (scope.KurinKey != currentKurinKey.Value)
@@ -78,244 +76,32 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Resource belongs to a different kurin scope.");
         }
 
-        return ResourceAccessDecision.Allow("Role and resource scope checks passed.");
+        return ResourceAccessDecision.Allow("Permission and resource scope checks passed.");
     }
 
-    private ResourceAccessDecision EvaluateRoleActionPermission(ResourceType resourceType, ResourceAction action)
-    {
-        // A scoped admin may do anything inside the kurin they stepped into; the scope
-        // check further down is the only thing that still constrains them.
-        if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()))
-        {
-            return ResourceAccessDecision.Allow("Admin action is allowed; validating scope.");
-        }
-
-        if (_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
-        {
-            return EvaluateManagerActionPermission(resourceType, action);
-        }
-
-        if (_currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
-        {
-            return EvaluateMentorActionPermission(resourceType, action);
-        }
-
-        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue()))
-        {
-            return EvaluateUserActionPermission(resourceType, action);
-        }
-
-        return ResourceAccessDecision.Deny("Current user does not have a supported role for resource access.");
-    }
-
-    private static ResourceAccessDecision EvaluateManagerActionPermission(ResourceType resourceType, ResourceAction action)
-    {
-        if (resourceType == ResourceType.Kurin && action is ResourceAction.Delete or ResourceAction.Manage)
-        {
-            return ResourceAccessDecision.Deny("Manager cannot perform irreversible kurin actions.");
-        }
-
-        return ResourceAccessDecision.Allow("Manager action is allowed; validating scope.");
-    }
-
-    private static ResourceAccessDecision EvaluateMentorActionPermission(ResourceType resourceType, ResourceAction action)
-    {
-        if (!IsMentorActionAllowed(resourceType, action))
-        {
-            return ResourceAccessDecision.Deny("Mentor role is not allowed to perform this action.");
-        }
-
-        return ResourceAccessDecision.Allow("Mentor action is allowed; validating scope.");
-    }
-
-    private static ResourceAccessDecision EvaluateUserActionPermission(ResourceType resourceType, ResourceAction action)
-    {
-        if (action == ResourceAction.Read)
-        {
-            return ResourceAccessDecision.Allow("User read access is allowed; validating scope.");
-        }
-
-        if (resourceType == ResourceType.Member && action == ResourceAction.Update)
-        {
-            return ResourceAccessDecision.Allow("User may update own member profile; validating ownership.");
-        }
-
-        if (resourceType == ResourceType.BadgeProgress && action is ResourceAction.Create or ResourceAction.Update)
-        {
-            return ResourceAccessDecision.Allow("User may submit own badge progress; validating ownership.");
-        }
-
-        return resourceType == ResourceType.Member && action == ResourceAction.Manage
-            ? ResourceAccessDecision.Deny("User role is limited to read access.")
-            : ResourceAccessDecision.Deny("User role is limited to read access and own member profile update.");
-    }
-
-    private static bool IsMentorActionAllowed(ResourceType resourceType, ResourceAction action)
-    {
-        return resourceType switch
-        {
-            ResourceType.Member or ResourceType.Group =>
-                action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update,
-
-            ResourceType.Kurin or ResourceType.PlanningSession or ResourceType.Leadership =>
-                action is ResourceAction.Read,
-
-            ResourceType.ProbeProgress or ResourceType.BadgeProgress =>
-                action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update,
-
-            _ => false
-        };
-    }
-
-    private async Task<ResourceAccessDecision> EvaluateRoleSpecificScopeRulesAsync(
-        ResourceType resourceType,
-        ResourceAction action,
+    private async Task<ResourceAccessDecision> EvaluateScopeAsync(
+        AccessScope grantedScope,
         ResourceScope scope,
         Guid currentKurinKey,
         CancellationToken cancellationToken)
     {
-        if (_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
+        switch (grantedScope)
         {
-            return ResourceAccessDecision.Allow("Manager scoped checks passed.");
-        }
+            case AccessScope.KurinWide:
+                return ResourceAccessDecision.Allow("Kurin-wide permission; validating kurin scope.");
 
-        if (_currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue()))
-        {
-            return await EvaluateMentorScopeRulesAsync(resourceType, action, scope, currentKurinKey, cancellationToken);
-        }
+            case AccessScope.Own:
+                return ValidateOwnership(scope);
 
-        if (_currentUserContext.IsInRole(UserRole.User.ToClaimValue()))
-        {
-            return EvaluateUserScopeRules(resourceType, action, scope);
-        }
+            case AccessScope.OwnGroups:
+                return await ValidateOwnGroupsAsync(scope, currentKurinKey, cancellationToken);
 
-        return ResourceAccessDecision.Allow("Role scoped checks passed.");
+            default:
+                return ResourceAccessDecision.Deny("Unknown access scope.");
+        }
     }
 
-    private async Task<ResourceAccessDecision> EvaluateMentorScopeRulesAsync(
-        ResourceType resourceType,
-        ResourceAction action,
-        ResourceScope scope,
-        Guid currentKurinKey,
-        CancellationToken cancellationToken)
-    {
-        if (!RequiresMentorGroupScope(resourceType))
-        {
-            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-        }
-
-        if (action == ResourceAction.Read)
-        {
-            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-        }
-
-        var currentUserId = _currentUserContext.UserId;
-        if (currentUserId is null)
-        {
-            return ResourceAccessDecision.Deny("Current user id claim is missing.");
-        }
-
-        var mentorGroupKeys = await _cache.GetOrCreateAsync(
-            BackendCachePolicies.MentorScopeReads,
-            $"groups:kurin:{currentKurinKey}",
-            token => _scopeReader.GetMentorGroupKeysAsync(currentUserId.Value, currentKurinKey, token),
-            cancellationToken,
-            CacheScopeContext.From(_currentUserContext));
-
-        if (mentorGroupKeys.Count == 0)
-        {
-            return ResourceAccessDecision.Deny("Mentor group scope could not be resolved or no groups assigned.");
-        }
-
-        return resourceType switch
-        {
-            ResourceType.Group => ValidateMentorGroupAccess(action, scope, mentorGroupKeys),
-            ResourceType.Member => ValidateMentorMemberAccess(scope, mentorGroupKeys, currentUserId),
-            ResourceType.ProbeProgress or ResourceType.BadgeProgress => ValidateMentorProgressAccess(scope, mentorGroupKeys),
-            _ => ResourceAccessDecision.Allow(MentorScopeChecksPassed)
-        };
-    }
-
-    private ResourceAccessDecision EvaluateUserScopeRules(
-        ResourceType resourceType,
-        ResourceAction action,
-        ResourceScope scope)
-    {
-        if (resourceType == ResourceType.Member && action == ResourceAction.Update)
-        {
-            return ValidateCurrentUserOwnership(scope, "User can update only own member profile.");
-        }
-
-        if (resourceType is ResourceType.BadgeProgress or ResourceType.ProbeProgress &&
-            action is ResourceAction.Read or ResourceAction.Create or ResourceAction.Update)
-        {
-            return ValidateCurrentUserOwnership(scope, "User can access only own progress resources.");
-        }
-
-        return ResourceAccessDecision.Allow("Role scoped checks passed.");
-    }
-
-    private static bool RequiresMentorGroupScope(ResourceType resourceType)
-    {
-        return resourceType == ResourceType.Group ||
-               resourceType == ResourceType.Member ||
-               resourceType == ResourceType.BadgeProgress ||
-               resourceType == ResourceType.ProbeProgress;
-    }
-
-    private static ResourceAccessDecision ValidateMentorGroupAccess(
-        ResourceAction action,
-        ResourceScope scope,
-        IEnumerable<Guid> mentorGroupKeys)
-    {
-        if (action != ResourceAction.Read && action != ResourceAction.Create)
-        {
-            return ResourceAccessDecision.Deny("Mentor cannot rename or delete group data.");
-        }
-
-        if (!scope.GroupKey.HasValue || !mentorGroupKeys.Contains(scope.GroupKey.Value))
-        {
-            return ResourceAccessDecision.Deny("Mentor has access only to assigned groups.");
-        }
-
-        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-    }
-
-    private static ResourceAccessDecision ValidateMentorMemberAccess(
-        ResourceScope scope,
-        IEnumerable<Guid> mentorGroupKeys,
-        Guid? currentUserId)
-    {
-        if (currentUserId.HasValue &&
-            scope.MemberUserKey.HasValue &&
-            scope.MemberUserKey.Value == currentUserId.Value)
-        {
-            return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-        }
-
-        if (!scope.GroupKey.HasValue || !mentorGroupKeys.Contains(scope.GroupKey.Value))
-        {
-            return ResourceAccessDecision.Deny("Mentor can manage only own member profile or members from assigned groups.");
-        }
-
-        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-    }
-
-    private static ResourceAccessDecision ValidateMentorProgressAccess(
-        ResourceScope scope,
-        IEnumerable<Guid> mentorGroupKeys)
-    {
-        if (!scope.GroupKey.HasValue || !mentorGroupKeys.Contains(scope.GroupKey.Value))
-        {
-            return ResourceAccessDecision.Deny("Mentor can manage only progress records of members from assigned groups.");
-        }
-
-        return ResourceAccessDecision.Allow(MentorScopeChecksPassed);
-    }
-
-    private ResourceAccessDecision ValidateCurrentUserOwnership(
-        ResourceScope scope,
-        string denyMessage)
+    private ResourceAccessDecision ValidateOwnership(ResourceScope scope)
     {
         var currentUserId = _currentUserContext.UserId;
         if (currentUserId is null)
@@ -325,10 +111,46 @@ public class ResourceAccessService : IResourceAccessService
 
         if (!scope.MemberUserKey.HasValue || scope.MemberUserKey.Value != currentUserId.Value)
         {
-            return ResourceAccessDecision.Deny(denyMessage);
+            return ResourceAccessDecision.Deny("Permission is limited to own resources.");
         }
 
-        return ResourceAccessDecision.Allow("Role scoped checks passed.");
+        return ResourceAccessDecision.Allow("Ownership check passed.");
     }
 
+    private async Task<ResourceAccessDecision> ValidateOwnGroupsAsync(
+        ResourceScope scope,
+        Guid currentKurinKey,
+        CancellationToken cancellationToken)
+    {
+        var currentUserId = _currentUserContext.UserId;
+        if (currentUserId is null)
+        {
+            return ResourceAccessDecision.Deny("Current user id claim is missing.");
+        }
+
+        // Managing one's own record is always allowed within a group-scoped grant.
+        if (scope.MemberUserKey.HasValue && scope.MemberUserKey.Value == currentUserId.Value)
+        {
+            return ResourceAccessDecision.Allow("Own record within group-scoped permission.");
+        }
+
+        var ledGroupKeys = await _cache.GetOrCreateAsync(
+            BackendCachePolicies.MentorScopeReads,
+            $"ledgroups:kurin:{currentKurinKey}",
+            token => _scopeReader.GetLedGroupKeysAsync(currentUserId.Value, currentKurinKey, token),
+            cancellationToken,
+            CacheScopeContext.From(_currentUserContext));
+
+        if (ledGroupKeys.Count == 0)
+        {
+            return ResourceAccessDecision.Deny("No groups are led by the current user.");
+        }
+
+        if (!scope.GroupKey.HasValue || !ledGroupKeys.Contains(scope.GroupKey.Value))
+        {
+            return ResourceAccessDecision.Deny("Permission is limited to led groups.");
+        }
+
+        return ResourceAccessDecision.Allow("Led-group scope check passed.");
+    }
 }

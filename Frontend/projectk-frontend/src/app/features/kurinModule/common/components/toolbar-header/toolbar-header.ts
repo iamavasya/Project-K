@@ -34,8 +34,8 @@ export class ToolbarHeader {
     this.sidebarVisible = !this.sidebarVisible;
   }
 
-  isAdmin(role?: string | null): boolean {
-    return this.permissionService.isAdmin(role);
+  isAdmin(): boolean {
+    return this.permissionService.isAdmin();
   }
 
   backToKurinPanel() {

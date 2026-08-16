@@ -1,4 +1,5 @@
 ﻿using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -20,5 +21,27 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
 
         Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
         void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories);
+
+        /// <summary>The offices a member currently holds (active <see cref="LeadershipHistory"/>), each with its провід.</summary>
+        Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Member keys holding an active office in one of <paramref name="roles"/>, optionally scoped to a
+        /// kurin (курінний/КВ offices) or a specific group (гуртковий offices).
+        /// </summary>
+        Task<IReadOnlyList<Guid>> GetActiveOfficeMemberKeysAsync(
+            IReadOnlyCollection<LeadershipRole> roles,
+            Guid? kurinKey = null,
+            Guid? groupKey = null,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Members currently holding a kurin- or КВ-scoped office in the kurin, one lookup row per office,
+        /// with <c>UserRole</c> set to the office role name. Used to render the КВ / провід tables.
+        /// </summary>
+        Task<IReadOnlyList<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetOfficeMembersLookupAsync(
+            Guid kurinKey,
+            LeadershipType type,
+            CancellationToken cancellationToken = default);
     }
 }

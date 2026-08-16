@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
@@ -25,12 +27,9 @@ public class GetKurinKvMembersHandler : IRequestHandler<GetKurinKvMembers, Servi
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetKurinKvMembers request, CancellationToken cancellationToken)
     {
-        var memberLookupDto = (await _uow.Members.GetMentorCandidatesLookupAsync(request.kurinKey, cancellationToken))
-            .Where(m => string.Equals(m.UserRole, Common.Models.Enums.UserRole.Manager.ToString(), StringComparison.OrdinalIgnoreCase)
-                || string.Equals(m.UserRole, Common.Models.Enums.UserRole.Mentor.ToString(), StringComparison.OrdinalIgnoreCase))
-            .DistinctBy(m => m.MemberKey)
-            .ToList();
+        // One row per active КВ office (Зв'язковий / Впорядник / Інструктор), UserRole = office role name.
+        var kvMembers = await _uow.Leaderships.GetOfficeMembersLookupAsync(request.kurinKey, LeadershipType.KV, cancellationToken);
 
-        return new ServiceResult<IEnumerable<MemberLookupDto>>(Common.Models.Enums.ResultType.Success, memberLookupDto);
+        return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, kvMembers);
     }
 }

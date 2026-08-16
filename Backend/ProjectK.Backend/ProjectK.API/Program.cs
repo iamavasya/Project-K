@@ -12,6 +12,7 @@ using ProjectK.API.Helpers;
 using ProjectK.API.MappingProfiles;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -119,19 +120,23 @@ namespace ProjectK.API
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireRole(SystemRole.Admin));
 
                 options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
                     policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
 
+                // These coarse gates are expressed as permissions so nothing checks role names; the
+                // fine-grained ResourceAccessService still applies scope on top per request.
                 options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsWholeKurinManagement(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsGroupLeadership(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+                    policy => policy.RequireAssertion(ctx => ctx.User.Identity?.IsAuthenticated == true));
             });
 
             builder.Services.AddCors(options =>
@@ -398,6 +403,9 @@ namespace ProjectK.API
 
                     ctx.Status("Planting heroic seed data...");
                     await DataSeeder.SeedAsync(scope.ServiceProvider);
+
+                    ctx.Status("Migrating legacy roles to offices...");
+                    await LegacyRoleMigrationSeeder.MigrateAsync(scope.ServiceProvider);
 
                     ctx.Status("Waking the badges archive...");
                     _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();

@@ -17,7 +17,7 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
         if (resource == 'panel' && kurinKey) {
             return router.createUrlTree(['/kurin']);
         }
-        if (resource == 'planning' && kurinKey && permissionService.getRole() === 'user') {
+        if (resource == 'planning' && kurinKey && !permissionService.isReviewer()) {
             return router.createUrlTree(['/kurin']);
         }
         if (resource == 'planning-create' && !permissionService.canManagePlanning()) {

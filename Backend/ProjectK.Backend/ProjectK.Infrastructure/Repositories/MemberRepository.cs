@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using System;
@@ -176,7 +177,9 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members
+            // Join fans out to one row per (member, role); a member now holds several roles (Member plus
+            // office roles), so collapse to one row per member and prefer a non-baseline role for display.
+            var rows = await _context.Members
                 .Where(m => m.KurinKey == kurinKey && m.UserKey != null)
                 .GroupJoin(_context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
                 .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
@@ -193,6 +196,14 @@ namespace ProjectK.Infrastructure.Repositories
                 })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+
+            return rows
+                .GroupBy(row => row.MemberKey)
+                .Select(group => group
+                    .OrderBy(row => string.IsNullOrEmpty(row.UserRole)
+                        || string.Equals(row.UserRole, SystemRole.Member, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .First())
+                .ToList();
         }
 
         public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)

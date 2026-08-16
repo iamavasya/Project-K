@@ -114,7 +114,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurin>(cmd => cmd.Number == 5), It.IsAny<CancellationToken>()), Times.Once);
             _mediatorMock.Verify(x => x.Send(It.Is<RegisterUserCommand>(cmd =>
                 cmd.Email == command.Email &&
-                cmd.Role == "Manager" &&
+                cmd.Role == "Member" &&
                 cmd.KurinKey == kurinKey), It.IsAny<CancellationToken>()), Times.Once);
             _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
                 cmd.KurinKey == kurinKey &&
@@ -179,7 +179,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 cmd.Password == "SecurePass123!" &&
                 cmd.FirstName == "Manager" &&
                 cmd.LastName == "User" &&
-                cmd.Role == "Manager" &&
+                cmd.Role == "Member" &&
                 cmd.KurinKey == kurinKey), It.IsAny<CancellationToken>()), Times.Once);
         }
 
