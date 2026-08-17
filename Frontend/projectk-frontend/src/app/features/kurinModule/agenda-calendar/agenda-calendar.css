@@ -8,8 +8,9 @@
 .agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
 .agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; text-transform: capitalize; }
 
-/* FullCalendar owns its own pixel height (set from the viewport in the component), so the timegrid scrolls
-   inside this box instead of stretching the page. */
+/* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
+   scrolls inside the card instead of the whole page. */
+.agenda-calendar-host { max-block-size: calc(100vh - 16rem); min-block-size: 18rem; overflow: auto; }
 :host ::ng-deep full-calendar { display: block; }
 
 /* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
