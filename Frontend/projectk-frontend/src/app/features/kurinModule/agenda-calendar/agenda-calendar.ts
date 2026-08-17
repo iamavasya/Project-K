@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -31,13 +31,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
   templateUrl: './agenda-calendar.html',
   styleUrl: './agenda-calendar.css'
 })
-export class AgendaCalendarComponent implements OnInit {
+export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly agendaService = inject(AgendaService);
   private readonly permissionService = inject(PermissionService);
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
   private readonly calendar = viewChild(FullCalendarComponent);
+  private readonly host = viewChild<ElementRef<HTMLElement>>('calHost');
+  private resizeObserver?: ResizeObserver;
 
   protected readonly kurinKey = signal('');
   protected readonly items = signal<AgendaItemDto[]>([]);
@@ -92,6 +94,21 @@ export class AgendaCalendarComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    // FullCalendar can mount before this flex/overflow host has real dimensions, collapsing the view to
+    // zero height (only the day-of-week header shows). A ResizeObserver re-measures it the moment the host
+    // gets a size — on first layout and on every later resize — which is the reliable cure for that race.
+    const el = this.host()?.nativeElement;
+    if (el) {
+      this.resizeObserver = new ResizeObserver(() => this.calendar()?.getApi().updateSize());
+      this.resizeObserver.observe(el);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
+
   // ---- Native toolbar → FullCalendar API ----
   private api() {
     return this.calendar()?.getApi();
@@ -132,6 +149,9 @@ export class AgendaCalendarComponent implements OnInit {
     this.viewTitle.set(arg.view.title);
     this.currentView.set(arg.view.type);
     this.reload();
+    // Deferred re-measure: guards the first paint, where FullCalendar can size itself before the host has
+    // layout and collapse the grid body to zero height (only the weekday header would show).
+    setTimeout(() => this.calendar()?.getApi().updateSize(), 0);
   }
 
   private reload(): void {
