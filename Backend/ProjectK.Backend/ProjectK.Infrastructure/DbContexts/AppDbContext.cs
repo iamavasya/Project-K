@@ -212,12 +212,13 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
                 // The calendar queries by kurin and date window, so index both.
                 entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
-                // Category is optional; deleting a group leaves its past items uncategorised rather than
-                // cascading them away.
+                // NoAction (not SetNull) so Kurin keeps a single cascade path to AgendaItems: Category→Kurin
+                // is Cascade, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
+                // DeleteAgendaCategory nulls out referencing items itself before removing the group.
                 entity.HasOne(e => e.Category)
                       .WithMany()
                       .HasForeignKey(e => e.AgendaCategoryKey)
-                      .OnDelete(DeleteBehavior.SetNull);
+                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             builder.Entity<AgendaCategory>(entity =>
@@ -227,12 +228,13 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.Property(e => e.ColorHex).HasMaxLength(32).IsRequired();
                 entity.Property(e => e.Icon).HasMaxLength(64);
                 entity.Property(e => e.DefaultDescription).HasMaxLength(2000);
-                // Restrict (not Cascade) so Kurin has a single cascade path to AgendaItems: the item→category
-                // FK is SetNull, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
+                // Cascade: an event group belongs to its kurin and dies with it (so the seeder's kurin reset
+                // and any kurin delete clear categories automatically). The item→category side is NoAction to
+                // keep this the only cascade path to AgendaItems.
                 entity.HasOne(e => e.Kurin)
                       .WithMany()
                       .HasForeignKey(e => e.KurinKey)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
             });
 

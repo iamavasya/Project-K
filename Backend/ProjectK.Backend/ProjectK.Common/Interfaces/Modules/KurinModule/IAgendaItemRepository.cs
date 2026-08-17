@@ -15,6 +15,9 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// <summary>Marks an assignment for deletion. Explicit Deleted state avoids an accidental UPDATE.</summary>
     void RemoveAssignment(AgendaAssignment assignment);
 
+    /// <summary>Nulls the category on every item that referenced it — run before deleting an event group.</summary>
+    Task ClearCategoryAsync(Guid agendaCategoryKey, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Items visible to <paramref name="viewer"/>. <paramref name="onlyDated"/> keeps the calendar to
     /// placed items; <paramref name="fromUtc"/>/<paramref name="toUtc"/> narrow to a window;

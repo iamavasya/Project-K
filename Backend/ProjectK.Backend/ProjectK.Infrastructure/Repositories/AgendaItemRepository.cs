@@ -53,6 +53,13 @@ namespace ProjectK.Infrastructure.Repositories
             _context.AgendaAssignments.Remove(assignment);
         }
 
+        public async Task ClearCategoryAsync(Guid agendaCategoryKey, CancellationToken cancellationToken = default)
+        {
+            await _context.AgendaItems
+                .Where(a => a.AgendaCategoryKey == agendaCategoryKey)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.AgendaCategoryKey, (Guid?)null), cancellationToken);
+        }
+
         public Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetForViewerAsync instead.");

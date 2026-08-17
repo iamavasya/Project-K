@@ -33,6 +33,9 @@ public sealed class DeleteAgendaCategoryHandler : IRequestHandler<DeleteAgendaCa
             return ServiceResult<object>.Failure(ResultType.Forbidden, "CATEGORY_OTHER_KURIN", "Event group belongs to a different kurin.");
         }
 
+        // The item→category FK is NoAction, so detach any events from this group before removing it.
+        await _uow.AgendaItems.ClearCategoryAsync(category.AgendaCategoryKey, cancellationToken);
+
         _uow.AgendaCategories.Delete(category, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
