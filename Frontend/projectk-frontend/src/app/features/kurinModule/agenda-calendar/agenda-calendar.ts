@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -62,8 +62,9 @@ export class AgendaCalendarComponent implements OnInit {
     initialView: 'dayGridMonth',
     firstDay: 1,
     headerToolbar: false,
-    height: '100%',
-    expandRows: true,
+    // A fixed pixel height (not '100%') gives FullCalendar a definite box: the month grid fills it and the
+    // timegrid scrolls inside it, so the card scrolls rather than the page. Recomputed on window resize.
+    height: AgendaCalendarComponent.calcHeight(),
     nowIndicator: true,
     slotMinTime: '06:00:00',
     slotMaxTime: '23:00:00',
@@ -79,6 +80,16 @@ export class AgendaCalendarComponent implements OnInit {
     eventDrop: (arg: EventDropArg) => this.applyDateChange(arg.event, arg.revert),
     eventResize: (arg: EventResizeDoneArg) => this.applyDateChange(arg.event, arg.revert)
   });
+
+  /** Calendar box height derived from the viewport, leaving room for the app bar, page header and toolbar. */
+  private static calcHeight(): number {
+    return Math.max(360, window.innerHeight - 240);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.api()?.setOption('height', AgendaCalendarComponent.calcHeight());
+  }
 
   canManage(): boolean {
     return this.permissionService.canManageAgenda();

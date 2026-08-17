@@ -8,9 +8,9 @@
 .agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
 .agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; text-transform: capitalize; }
 
-/* Bound the grid so the timegrid (week/day) scrolls inside the card instead of stretching the page. */
-.agenda-calendar-host { block-size: calc(100vh - 16rem); min-block-size: 24rem; }
-:host ::ng-deep full-calendar { display: block; height: 100%; }
+/* FullCalendar owns its own pixel height (set from the viewport in the component), so the timegrid scrolls
+   inside this box instead of stretching the page. */
+:host ::ng-deep full-calendar { display: block; }
 
 /* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
 :host ::ng-deep full-calendar {
@@ -42,5 +42,4 @@
 
 @media (max-width: 640px) {
   .agenda-toolbar { align-items: stretch; flex-direction: column; }
-  .agenda-calendar-host { block-size: calc(100vh - 20rem); }
 }
