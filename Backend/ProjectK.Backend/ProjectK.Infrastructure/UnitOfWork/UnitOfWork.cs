@@ -30,6 +30,8 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private ILeadershipRepository _leaderships;
         private IPlanningSessionRepository _planningSessions;
         private IAgendaItemRepository _agendaItems;
+        private IAgendaCategoryRepository _agendaCategories;
+        private IAgendaResponseRepository _agendaResponses;
         private IBadgeProgressRepository _badgeProgresses;
         private IProbeProgressRepository _probeProgresses;
         private IProbePointProgressRepository _probePointProgresses;
@@ -49,6 +51,8 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
         public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
         public IAgendaItemRepository AgendaItems => _agendaItems ??= new AgendaItemRepository(_context);
+        public IAgendaCategoryRepository AgendaCategories => _agendaCategories ??= new AgendaCategoryRepository(_context);
+        public IAgendaResponseRepository AgendaResponses => _agendaResponses ??= new AgendaResponseRepository(_context);
         public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
         public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);
         public IProbePointProgressRepository ProbePointProgresses => _probePointProgresses ??= new ProbePointProgressRepository(_context);

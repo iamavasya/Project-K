@@ -19,6 +19,8 @@ namespace ProjectK.Common.Interfaces
         ILeadershipRepository Leaderships { get; }
         IPlanningSessionRepository PlanningSessions { get; }
         IAgendaItemRepository AgendaItems { get; }
+        IAgendaCategoryRepository AgendaCategories { get; }
+        IAgendaResponseRepository AgendaResponses { get; }
         IBadgeProgressRepository BadgeProgresses { get; }
         IProbeProgressRepository ProbeProgresses { get; }
         IProbePointProgressRepository ProbePointProgresses { get; }

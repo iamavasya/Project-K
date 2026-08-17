@@ -43,7 +43,7 @@ public sealed class GetAgendaBoardHandler
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var responses = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels))
+            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories))
             .ToList();
 
         return new ServiceResult<IEnumerable<AgendaItemResponse>>(ResultType.Success, responses);

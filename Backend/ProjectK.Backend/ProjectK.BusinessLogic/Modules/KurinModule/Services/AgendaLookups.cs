@@ -1,3 +1,4 @@
+using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 
@@ -8,7 +9,8 @@ public sealed record AgendaLookups(
     IReadOnlyDictionary<Guid, string> GroupNames,
     IReadOnlyDictionary<Guid, string> MemberNames,
     IReadOnlyDictionary<Guid, string> CreatorNames,
-    IReadOnlyDictionary<Guid, string> LeadershipLabels)
+    IReadOnlyDictionary<Guid, string> LeadershipLabels,
+    IReadOnlyDictionary<Guid, AgendaCategory> Categories)
 {
     public const string KurinLabel = "Весь курінь";
     public const string KvLabel = "КВ";
@@ -34,7 +36,11 @@ public sealed record AgendaLookups(
             r => r.LeadershipKey,
             r => LabelFor(r.Type, r.GroupKey, groupNames));
 
-        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels);
+        // Include archived groups so historical items still resolve their colour/icon.
+        var categories = (await uow.AgendaCategories.GetForKurinAsync(kurinKey, includeArchived: true, cancellationToken))
+            .ToDictionary(c => c.AgendaCategoryKey);
+
+        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels, categories);
     }
 
     public static string LabelFor(LeadershipType type, Guid? groupKey, IReadOnlyDictionary<Guid, string> groupNames) =>

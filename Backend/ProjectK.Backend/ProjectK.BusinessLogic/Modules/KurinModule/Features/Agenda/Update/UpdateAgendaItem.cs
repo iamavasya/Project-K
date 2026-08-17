@@ -18,6 +18,7 @@ public sealed record UpdateAgendaItem : IRequest<ServiceResult<object>>
     public DateTime? StartUtc { get; init; }
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
+    public Guid? AgendaCategoryKey { get; init; }
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
@@ -74,6 +75,7 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
         item.StartUtc = request.StartUtc;
         item.EndUtc = request.EndUtc;
         item.IsAllDay = request.IsAllDay;
+        item.AgendaCategoryKey = request.AgendaCategoryKey;
         item.UpdatedDate = DateTime.UtcNow;
 
         // Reconcile targets: keep unchanged rows, delete removed ones, insert new ones — via explicit

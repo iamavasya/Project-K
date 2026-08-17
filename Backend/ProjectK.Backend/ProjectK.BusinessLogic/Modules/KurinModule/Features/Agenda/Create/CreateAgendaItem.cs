@@ -18,6 +18,7 @@ public sealed record CreateAgendaItem : IRequest<ServiceResult<Guid>>
     public DateTime? StartUtc { get; init; }
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
+    public Guid? AgendaCategoryKey { get; init; }
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
@@ -69,6 +70,7 @@ public sealed class CreateAgendaItemHandler : IRequestHandler<CreateAgendaItem, 
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             IsAllDay = request.IsAllDay,
+            AgendaCategoryKey = request.AgendaCategoryKey,
             CreatedByUserKey = actorUserKey.Value,
             Assignments = request.Targets
                 .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey })

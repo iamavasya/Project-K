@@ -28,6 +28,8 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
         public DbSet<AgendaItem> AgendaItems { get; set; }
         public DbSet<AgendaAssignment> AgendaAssignments { get; set; }
+        public DbSet<AgendaCategory> AgendaCategories { get; set; }
+        public DbSet<AgendaResponse> AgendaResponses { get; set; }
         public DbSet<BadgeProgress> BadgeProgresses { get; set; }
         public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
         public DbSet<ProbeProgress> ProbeProgresses { get; set; }
@@ -209,6 +211,38 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
                 // The calendar queries by kurin and date window, so index both.
                 entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
+                // Category is optional; deleting a group leaves its past items uncategorised rather than
+                // cascading them away.
+                entity.HasOne(e => e.Category)
+                      .WithMany()
+                      .HasForeignKey(e => e.AgendaCategoryKey)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<AgendaCategory>(entity =>
+            {
+                entity.HasKey(e => e.AgendaCategoryKey);
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.ColorHex).HasMaxLength(32).IsRequired();
+                entity.Property(e => e.Icon).HasMaxLength(64);
+                entity.Property(e => e.DefaultDescription).HasMaxLength(2000);
+                entity.HasOne(e => e.Kurin)
+                      .WithMany()
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
+            });
+
+            builder.Entity<AgendaResponse>(entity =>
+            {
+                entity.HasKey(e => e.AgendaResponseKey);
+                entity.Property(e => e.Status).HasConversion<int>();
+                entity.HasOne(e => e.AgendaItem)
+                      .WithMany(a => a.Responses)
+                      .HasForeignKey(e => e.AgendaItemKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                // One answer per user per item; the RSVP list also queries by item.
+                entity.HasIndex(e => new { e.AgendaItemKey, e.UserKey }).IsUnique();
             });
 
             builder.Entity<AgendaAssignment>(entity =>

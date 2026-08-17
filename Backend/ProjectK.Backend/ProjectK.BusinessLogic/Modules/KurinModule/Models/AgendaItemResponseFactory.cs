@@ -17,8 +17,15 @@ public static class AgendaItemResponseFactory
         IReadOnlyDictionary<Guid, string> groupNames,
         IReadOnlyDictionary<Guid, string> memberNames,
         IReadOnlyDictionary<Guid, string> creatorNames,
-        IReadOnlyDictionary<Guid, string> leadershipLabels)
+        IReadOnlyDictionary<Guid, string> leadershipLabels,
+        IReadOnlyDictionary<Guid, AgendaCategory> categories)
     {
+        AgendaCategory? category = null;
+        if (item.AgendaCategoryKey.HasValue)
+        {
+            categories.TryGetValue(item.AgendaCategoryKey.Value, out category);
+        }
+
         return new AgendaItemResponse
         {
             AgendaItemKey = item.AgendaItemKey,
@@ -34,6 +41,10 @@ public static class AgendaItemResponseFactory
             CreatedByName = creatorNames.TryGetValue(item.CreatedByUserKey, out var creator) ? creator : null,
             CanEdit = AgendaPermissions.CanManage(item, viewer),
             CanChangeStatus = AgendaPermissions.CanChangeStatus(item, viewer),
+            CategoryKey = category?.AgendaCategoryKey,
+            CategoryName = category?.Name,
+            CategoryColorHex = category?.ColorHex,
+            CategoryIcon = category?.Icon,
             Assignments = item.Assignments
                 .Select(a => new AgendaAssignmentDto
                 {

@@ -22,6 +22,13 @@ public record AgendaItemResponse
     public string? CreatedByName { get; set; }
     public bool CanEdit { get; set; }
     public bool CanChangeStatus { get; set; }
+
+    /// <summary>Event group, resolved for display; null when the item is uncategorised.</summary>
+    public Guid? CategoryKey { get; set; }
+    public string? CategoryName { get; set; }
+    public string? CategoryColorHex { get; set; }
+    public string? CategoryIcon { get; set; }
+
     public List<AgendaAssignmentDto> Assignments { get; set; } = [];
 }
 
