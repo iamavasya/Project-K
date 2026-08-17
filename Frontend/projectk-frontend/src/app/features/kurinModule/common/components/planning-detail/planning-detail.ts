@@ -165,6 +165,7 @@ export class PlanningDetailComponent implements OnChanges {
       startUtc: s.optimalStartDate,
       endUtc: s.optimalEndDate ?? null,
       isAllDay: true,
+      agendaCategoryKey: null,
       targets: [{ targetType: 'Kurin', targetKey: s.kurinKey }]
     }).subscribe({
       next: () => {

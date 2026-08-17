@@ -22,6 +22,30 @@
       <textarea id="agenda-desc" pTextarea [(ngModel)]="description" rows="3" maxlength="2000" placeholder="Деталі (необовʼязково)"></textarea>
     </div>
 
+    @if (kind === 'Event') {
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-category">Група подій</label>
+        <p-select
+          id="agenda-category"
+          [options]="categories()"
+          [(ngModel)]="categoryKey"
+          (onChange)="onCategoryChange()"
+          optionLabel="name"
+          optionValue="agendaCategoryKey"
+          [showClear]="true"
+          appendTo="body"
+          placeholder="Без групи">
+          <ng-template let-group pTemplate="item">
+            <span class="agenda-category-option">
+              <i class="agenda-category-dot" [style.background]="group.colorHex"></i>
+              @if (group.icon) { <i [class]="group.icon"></i> }
+              {{ group.name }}
+            </span>
+          </ng-template>
+        </p-select>
+      </div>
+    }
+
     <div class="agenda-dates">
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-start">Початок</label>
@@ -40,6 +64,42 @@
 
     @if (item()?.createdByName) {
       <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
+    }
+
+    @if (rsvp(); as picture) {
+      <div class="agenda-rsvp">
+        <span class="agenda-label">Твоя відповідь</span>
+        <p-selectButton
+          [options]="rsvpOptions"
+          [ngModel]="picture.myStatus"
+          (onChange)="setRsvp($event.value)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [disabled]="rsvpSaving()" />
+
+        <div class="agenda-rsvp__summary">
+          <span><i class="pi pi-check-circle"></i> Йдуть: {{ picture.goingConfirmedCount }}</span>
+          @if (picture.goingWaitlistCount > 0) {
+            <span><i class="pi pi-clock"></i> Черга: {{ picture.goingWaitlistCount }}</span>
+          }
+          <span><i class="pi pi-question-circle"></i> Можливо: {{ picture.maybeCount }}</span>
+          <span><i class="pi pi-times-circle"></i> Не йдуть: {{ picture.notGoingCount }}</span>
+        </div>
+
+        @if (picture.responses.length > 0) {
+          <ul class="agenda-rsvp__list">
+            @for (r of picture.responses; track r.userKey) {
+              <li [class.is-waitlisted]="r.isWaitlisted">
+                <span class="agenda-rsvp__name">{{ r.displayName }}</span>
+                <span class="agenda-rsvp__badge" [attr.data-status]="r.status">
+                  {{ r.status === 'Going' ? (r.isWaitlisted ? 'у черзі' : 'йде') : r.status === 'Maybe' ? 'можливо' : 'не йде' }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
     }
   </div>
 

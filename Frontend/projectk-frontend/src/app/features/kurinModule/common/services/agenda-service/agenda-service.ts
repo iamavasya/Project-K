@@ -6,10 +6,14 @@ import { ClientCacheService } from '../client-cache/client-cache.service';
 import { AGENDA_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../client-cache/cache-policy';
 import {
   AgendaAssignTargets,
+  AgendaCategoryDto,
   AgendaItemDto,
   AgendaItemStatus,
+  AgendaResponsesResponse,
+  AgendaRsvpStatus,
   CreateAgendaItemRequest,
-  UpdateAgendaItemRequest
+  UpdateAgendaItemRequest,
+  UpsertAgendaCategoryRequest
 } from '../../models/agenda';
 
 @Injectable({ providedIn: 'root' })
@@ -66,6 +70,47 @@ export class AgendaService {
 
   delete(agendaItemKey: string): Observable<unknown> {
     return this.http.delete(`${this.apiUrl}/${agendaItemKey}`, { responseType: 'text' }).pipe(tap(() => this.invalidate()));
+  }
+
+  // ---- Event groups (categories) ----
+
+  /** Active event groups for the item dialog picker. */
+  getCategories(kurinKey: string): Observable<AgendaCategoryDto[]> {
+    return this.cache.get(
+      `${AGENDA_CACHE_PREFIX}categories:${kurinKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<AgendaCategoryDto[]>(`${this.apiUrl}/${kurinKey}/categories`)
+    );
+  }
+
+  /** All event groups incl. archived — for the Зв'язковий management page (not cached). */
+  getCategoriesForManagement(kurinKey: string): Observable<AgendaCategoryDto[]> {
+    return this.http.get<AgendaCategoryDto[]>(`${this.apiUrl}/${kurinKey}/categories/manage`);
+  }
+
+  upsertCategory(request: UpsertAgendaCategoryRequest): Observable<AgendaCategoryDto> {
+    const call$ = request.agendaCategoryKey
+      ? this.http.put<AgendaCategoryDto>(`${this.apiUrl}/categories/${request.agendaCategoryKey}`, request)
+      : this.http.post<AgendaCategoryDto>(`${this.apiUrl}/categories`, request);
+    return call$.pipe(tap(() => this.invalidate()));
+  }
+
+  deleteCategory(kurinKey: string, categoryKey: string): Observable<unknown> {
+    return this.http
+      .delete(`${this.apiUrl}/${kurinKey}/categories/${categoryKey}`, { responseType: 'text' })
+      .pipe(tap(() => this.invalidate()));
+  }
+
+  // ---- RSVP ----
+
+  getResponses(agendaItemKey: string): Observable<AgendaResponsesResponse> {
+    return this.http.get<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/responses`);
+  }
+
+  setResponse(agendaItemKey: string, status: AgendaRsvpStatus): Observable<AgendaResponsesResponse> {
+    return this.http
+      .put<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/response`, { status })
+      .pipe(tap(() => this.invalidate()));
   }
 
   private invalidate(): void {

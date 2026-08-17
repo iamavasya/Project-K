@@ -5,11 +5,19 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
+import { SelectModule } from '@openng/optimus-ui/select';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
-import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/agenda';
+import {
+  AgendaCategoryDto,
+  AgendaItemDto,
+  AgendaItemKind,
+  AgendaResponsesResponse,
+  AgendaRsvpStatus,
+  AgendaTargetInput
+} from '../../models/agenda';
 
 /**
  * Create/edit dialog for an agenda item, per BRANDBOOK §5 (12px, actions bottom-right, Скасувати → primary).
@@ -20,7 +28,7 @@ import { AgendaItemDto, AgendaItemKind, AgendaTargetInput } from '../../models/a
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
-    SelectButtonModule, DatePickerModule, AgendaAssignSelectComponent
+    SelectButtonModule, SelectModule, DatePickerModule, AgendaAssignSelectComponent
   ],
   templateUrl: './agenda-item-dialog.html',
   styleUrl: './agenda-item-dialog.css'
@@ -51,6 +59,19 @@ export class AgendaItemDialogComponent {
   protected readonly saving = signal(false);
   protected readonly deleting = signal(false);
 
+  /** Event groups for the picker (events only). */
+  protected readonly categories = signal<AgendaCategoryDto[]>([]);
+  protected categoryKey: string | null = null;
+
+  /** RSVP picture for an already-saved event; null for tasks and unsaved items. */
+  protected readonly rsvp = signal<AgendaResponsesResponse | null>(null);
+  protected readonly rsvpSaving = signal(false);
+  protected readonly rsvpOptions = [
+    { label: 'Йду', value: 'Going' as AgendaRsvpStatus },
+    { label: 'Можливо', value: 'Maybe' as AgendaRsvpStatus },
+    { label: 'Не йду', value: 'NotGoing' as AgendaRsvpStatus }
+  ];
+
   protected readonly canSave = computed(() => this.targets().length > 0);
 
   constructor() {
@@ -66,12 +87,72 @@ export class AgendaItemDialogComponent {
         this.description = current.description ?? '';
         this.startDate = current.startUtc ? new Date(current.startUtc) : null;
         this.endDate = current.endUtc ? new Date(current.endUtc) : null;
+        this.categoryKey = current.categoryKey ?? null;
         this.targets.set(current.assignments.map(a => ({ targetType: a.targetType, targetKey: a.targetKey })));
       } else {
         this.resetForm();
       }
+
+      this.loadCategories();
+      this.loadResponses();
       // These are plain fields bound via ngModel; on OnPush the effect's writes need an explicit check.
       this.cdr.markForCheck();
+    });
+  }
+
+  private loadCategories(): void {
+    this.agendaService.getCategories(this.kurinKey()).subscribe(categories => {
+      this.categories.set(categories);
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** When a group is picked on a fresh event, inherit its template description and default duration. */
+  onCategoryChange(): void {
+    const category = this.categories().find(c => c.agendaCategoryKey === this.categoryKey);
+    if (!category || this.item()) {
+      return;
+    }
+    if (!this.description.trim() && category.defaultDescription) {
+      this.description = category.defaultDescription;
+    }
+    if (category.defaultDurationMinutes && this.startDate && !this.endDate) {
+      this.endDate = new Date(this.startDate.getTime() + category.defaultDurationMinutes * 60_000);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private loadResponses(): void {
+    const current = this.item();
+    this.rsvp.set(null);
+    if (!current || current.kind !== 'Event') {
+      return;
+    }
+    this.agendaService.getResponses(current.agendaItemKey).subscribe({
+      next: picture => {
+        this.rsvp.set(picture);
+        this.cdr.markForCheck();
+      },
+      error: () => this.rsvp.set(null)
+    });
+  }
+
+  setRsvp(status: AgendaRsvpStatus): void {
+    const current = this.item();
+    if (!current) {
+      return;
+    }
+    this.rsvpSaving.set(true);
+    this.agendaService.setResponse(current.agendaItemKey, status).subscribe({
+      next: picture => {
+        this.rsvp.set(picture);
+        this.rsvpSaving.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.rsvpSaving.set(false);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося зберегти відповідь' });
+      }
     });
   }
 
@@ -90,6 +171,7 @@ export class AgendaItemDialogComponent {
       startUtc: this.toUtcMidnight(this.startDate),
       endUtc: this.toUtcMidnight(this.endDate),
       isAllDay: true,
+      agendaCategoryKey: this.kind === 'Event' ? this.categoryKey : null,
       targets: this.targets()
     };
 
@@ -152,7 +234,9 @@ export class AgendaItemDialogComponent {
     this.description = '';
     this.startDate = new Date();
     this.endDate = null;
+    this.categoryKey = null;
     this.targets.set([]);
+    this.rsvp.set(null);
   }
 
   /** Day-only selection → UTC midnight ISO string, so the wire value has no local-time drift. */

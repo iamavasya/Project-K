@@ -32,6 +32,19 @@
     </div>
   </section>
 
+  @if (kurinKey) {
+    <section class="settings-section" aria-labelledby="event-groups-title">
+      <div class="setting-copy">
+        <h2 id="event-groups-title">Групи подій</h2>
+        <p>
+          Табори, заходи, сходини — кожна група задає колір, іконку, ліміт місць, шаблон опису та
+          нагадування для своїх подій у календарі.
+        </p>
+      </div>
+      <app-agenda-category-manager [kurinKey]="kurinKey" />
+    </section>
+  }
+
   <footer class="settings-actions">
     <p-button
       label="Скасувати"
