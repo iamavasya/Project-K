@@ -1,4 +1,5 @@
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -6,9 +7,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 public sealed record AgendaLookups(
     IReadOnlyDictionary<Guid, string> GroupNames,
     IReadOnlyDictionary<Guid, string> MemberNames,
-    IReadOnlyDictionary<Guid, string> CreatorNames)
+    IReadOnlyDictionary<Guid, string> CreatorNames,
+    IReadOnlyDictionary<Guid, string> LeadershipLabels)
 {
     public const string KurinLabel = "Весь курінь";
+    public const string KvLabel = "КВ";
+    public const string KurinLeadershipLabel = "Курінний провід";
+    public const string GroupLeadershipLabel = "Гуртковий провід";
 
     public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, Guid kurinKey, CancellationToken cancellationToken)
     {
@@ -24,6 +29,21 @@ public sealed record AgendaLookups(
             .GroupBy(m => m.UserKey!.Value)
             .ToDictionary(g => g.Key, g => $"{g.First().FirstName} {g.First().LastName}".Trim());
 
-        return new AgendaLookups(groupNames, memberNames, creatorNames);
+        var leadershipRefs = await uow.Leaderships.GetLeadershipRefsForKurinAsync(kurinKey, cancellationToken);
+        var leadershipLabels = leadershipRefs.ToDictionary(
+            r => r.LeadershipKey,
+            r => LabelFor(r.Type, r.GroupKey, groupNames));
+
+        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels);
     }
+
+    public static string LabelFor(LeadershipType type, Guid? groupKey, IReadOnlyDictionary<Guid, string> groupNames) =>
+        type switch
+        {
+            LeadershipType.KV => KvLabel,
+            LeadershipType.Kurin => KurinLeadershipLabel,
+            LeadershipType.Group when groupKey.HasValue && groupNames.TryGetValue(groupKey.Value, out var name)
+                => $"{GroupLeadershipLabel} — {name}",
+            _ => GroupLeadershipLabel
+        };
 }

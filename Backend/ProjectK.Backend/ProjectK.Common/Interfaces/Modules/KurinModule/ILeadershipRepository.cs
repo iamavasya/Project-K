@@ -43,5 +43,14 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
             Guid kurinKey,
             LeadershipType type,
             CancellationToken cancellationToken = default);
+
+        /// <summary>Every провід/КВ that belongs to the kurin (курінь/КВ by kurin, гуртковий by its group).</summary>
+        Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+        /// <summary>User keys of the members who currently hold an office in the given провід (active history).</summary>
+        Task<IReadOnlyList<Guid>> GetActiveMemberUserKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
+
+        /// <summary>The провід keys a member currently belongs to (active <see cref="LeadershipHistory"/>).</summary>
+        Task<IReadOnlyList<Guid>> GetActiveLeadershipKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
     }
 }

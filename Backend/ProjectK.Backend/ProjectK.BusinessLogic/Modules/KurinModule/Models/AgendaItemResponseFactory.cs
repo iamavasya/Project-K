@@ -16,7 +16,8 @@ public static class AgendaItemResponseFactory
         string kurinLabel,
         IReadOnlyDictionary<Guid, string> groupNames,
         IReadOnlyDictionary<Guid, string> memberNames,
-        IReadOnlyDictionary<Guid, string> creatorNames)
+        IReadOnlyDictionary<Guid, string> creatorNames,
+        IReadOnlyDictionary<Guid, string> leadershipLabels)
     {
         return new AgendaItemResponse
         {
@@ -38,7 +39,7 @@ public static class AgendaItemResponseFactory
                 {
                     TargetType = a.TargetType,
                     TargetKey = a.TargetKey,
-                    Label = ResolveLabel(a, kurinLabel, groupNames, memberNames)
+                    Label = ResolveLabel(a, kurinLabel, groupNames, memberNames, leadershipLabels)
                 })
                 .ToList()
         };
@@ -48,13 +49,15 @@ public static class AgendaItemResponseFactory
         AgendaAssignment assignment,
         string kurinLabel,
         IReadOnlyDictionary<Guid, string> groupNames,
-        IReadOnlyDictionary<Guid, string> memberNames)
+        IReadOnlyDictionary<Guid, string> memberNames,
+        IReadOnlyDictionary<Guid, string> leadershipLabels)
     {
         return assignment.TargetType switch
         {
             AgendaTargetType.Kurin => kurinLabel,
             AgendaTargetType.Group => groupNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
             AgendaTargetType.Member => memberNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
+            AgendaTargetType.Leadership => leadershipLabels.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
             _ => "—"
         };
     }

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
 import { TreeNode } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
-import { AgendaAssignTargets, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
+import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
 
 interface TargetNodeData {
   targetType: AgendaTargetType;
@@ -65,34 +65,55 @@ export class AgendaAssignSelectComponent implements OnInit {
   private buildNodes(tree: AgendaAssignTargets): TreeNode<TargetNodeData>[] {
     const roots: TreeNode<TargetNodeData>[] = [];
 
-    if (tree.canTargetKurin) {
+    // Курінь-вузол несе КВ і Курінний провід як дочірні тіла; показуємо його, якщо є хоч одна ціль
+    // курінного рівня (сам курінь чи котресь тіло).
+    if (tree.canTargetKurin || tree.kurinLeaderships.length > 0) {
       roots.push({
         key: `kurin:${tree.kurinKey}`,
         label: tree.kurinLabel,
         icon: 'pi pi-flag',
-        selectable: true,
-        data: { targetType: 'Kurin', targetKey: tree.kurinKey }
+        selectable: tree.canTargetKurin,
+        data: { targetType: 'Kurin', targetKey: tree.kurinKey },
+        children: tree.kurinLeaderships.map(office => this.leadershipNode(office))
       });
     }
 
     for (const group of tree.groups) {
+      const children: TreeNode<TargetNodeData>[] = [];
+      if (group.leadership) {
+        children.push(this.leadershipNode(group.leadership));
+      }
+      for (const member of group.members) {
+        children.push({
+          key: `member:${member.memberKey}`,
+          label: member.fullName,
+          icon: 'pi pi-user',
+          selectable: true,
+          data: { targetType: 'Member' as AgendaTargetType, targetKey: member.memberKey }
+        });
+      }
+
       roots.push({
         key: `group:${group.groupKey}`,
         label: group.name,
         icon: 'pi pi-sitemap',
         selectable: group.canTargetGroup,
         data: { targetType: 'Group', targetKey: group.groupKey },
-        children: group.members.map(member => ({
-          key: `member:${member.memberKey}`,
-          label: member.fullName,
-          icon: 'pi pi-user',
-          selectable: true,
-          data: { targetType: 'Member' as AgendaTargetType, targetKey: member.memberKey }
-        }))
+        children
       });
     }
 
     return roots;
+  }
+
+  private leadershipNode(office: AgendaLeadershipTarget): TreeNode<TargetNodeData> {
+    return {
+      key: `leadership:${office.leadershipKey}`,
+      label: office.label,
+      icon: 'pi pi-users',
+      selectable: office.canTarget,
+      data: { targetType: 'Leadership' as AgendaTargetType, targetKey: office.leadershipKey }
+    };
   }
 
   private syncSelectionFromTargets(): void {

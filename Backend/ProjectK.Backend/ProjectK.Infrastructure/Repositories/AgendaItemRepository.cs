@@ -99,10 +99,12 @@ namespace ProjectK.Infrastructure.Repositories
             if (!viewer.CanSeeWholeKurin)
             {
                 var groupKeys = viewer.ViewerGroupKeys;
+                var leadershipKeys = viewer.ViewerLeadershipKeys;
                 var memberKey = viewer.ViewerMemberKey;
                 query = query.Where(a => a.Assignments.Any(x =>
                     x.TargetType == AgendaTargetType.Kurin ||
                     (x.TargetType == AgendaTargetType.Group && groupKeys.Contains(x.TargetKey)) ||
+                    (x.TargetType == AgendaTargetType.Leadership && leadershipKeys.Contains(x.TargetKey)) ||
                     (x.TargetType == AgendaTargetType.Member && memberKey != null && x.TargetKey == memberKey)));
             }
 

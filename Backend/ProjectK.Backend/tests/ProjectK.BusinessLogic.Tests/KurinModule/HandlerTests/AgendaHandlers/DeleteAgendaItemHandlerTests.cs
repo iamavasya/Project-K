@@ -49,7 +49,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         {
             _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AgendaViewerContext(
-                    _kurinKey, viewerUserKey, null, null, Array.Empty<Guid>(), canSeeWholeKurin, isLeadership));
+                    _kurinKey, viewerUserKey, null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), canSeeWholeKurin, isLeadership));
         }
 
         [Fact]

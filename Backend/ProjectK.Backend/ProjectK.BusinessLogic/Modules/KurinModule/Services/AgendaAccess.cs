@@ -19,11 +19,12 @@ public sealed record AgendaViewerContext(
     Guid? ViewerMemberKey,
     Guid? ViewerOwnGroupKey,
     IReadOnlyCollection<Guid> VisibilityGroupKeys,
+    IReadOnlyCollection<Guid> ViewerLeadershipKeys,
     bool CanSeeWholeKurin,
     bool IsLeadership)
 {
     public AgendaViewerScope ToScope() =>
-        new(KurinKey, ViewerMemberKey, VisibilityGroupKeys, CanSeeWholeKurin);
+        new(KurinKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
 }
 
 public interface IAgendaAccess
@@ -86,6 +87,11 @@ public sealed class AgendaAccess : IAgendaAccess
             }
         }
 
+        // Проводи/КВ the viewer belongs to — so an item aimed at their провід is visible to them.
+        var leadershipKeys = memberKey.HasValue
+            ? await _uow.Leaderships.GetActiveLeadershipKeysForMemberAsync(memberKey.Value, cancellationToken)
+            : (IReadOnlyList<Guid>)Array.Empty<Guid>();
+
         var visibilityGroups = new HashSet<Guid>();
         if (ownGroupKey.HasValue)
         {
@@ -107,15 +113,31 @@ public sealed class AgendaAccess : IAgendaAccess
             ViewerMemberKey: memberKey,
             ViewerOwnGroupKey: ownGroupKey,
             VisibilityGroupKeys: visibilityGroups,
+            ViewerLeadershipKeys: leadershipKeys,
             CanSeeWholeKurin: canSeeWholeKurin,
             IsLeadership: isLeadership);
     }
 
-    public Task<ResourceAccessDecision> AuthorizeTargetAsync(
+    public async Task<ResourceAccessDecision> AuthorizeTargetAsync(
         AgendaTargetInput target,
         ResourceAction action,
         CancellationToken cancellationToken = default)
     {
+        // Aiming at a провід is authorized like aiming at its scope: a гуртковий провід as its group,
+        // a курінний провід / КВ as the whole kurin. This reuses the tested resource guard.
+        if (target.TargetType == AgendaTargetType.Leadership)
+        {
+            var leadership = await _uow.Leaderships.GetByKeyAsync(target.TargetKey, cancellationToken);
+            if (leadership is null)
+            {
+                return ResourceAccessDecision.Deny("Leadership target was not found.");
+            }
+
+            return leadership.Type == LeadershipType.Group && leadership.GroupKey.HasValue
+                ? await _resourceAccess.CheckAccessAsync(ResourceType.Group, action, leadership.GroupKey.Value, cancellationToken)
+                : await _resourceAccess.CheckAccessAsync(ResourceType.Kurin, action, leadership.KurinKey ?? Guid.Empty, cancellationToken);
+        }
+
         var resourceType = target.TargetType switch
         {
             AgendaTargetType.Kurin => ResourceType.Kurin,
@@ -124,7 +146,7 @@ public sealed class AgendaAccess : IAgendaAccess
             _ => ResourceType.Kurin
         };
 
-        return _resourceAccess.CheckAccessAsync(resourceType, action, target.TargetKey, cancellationToken);
+        return await _resourceAccess.CheckAccessAsync(resourceType, action, target.TargetKey, cancellationToken);
     }
 }
 

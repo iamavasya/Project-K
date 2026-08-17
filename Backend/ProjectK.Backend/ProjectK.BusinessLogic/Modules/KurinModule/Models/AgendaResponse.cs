@@ -43,6 +43,9 @@ public record AgendaAssignTargetsResponse
     public bool CanTargetKurin { get; set; }
     public Guid KurinKey { get; set; }
     public string KurinLabel { get; set; } = string.Empty;
+
+    /// <summary>Kurin-level проводи the viewer may target: КВ and Курінний провід.</summary>
+    public List<AgendaLeadershipTargetDto> KurinLeaderships { get; set; } = [];
     public List<AgendaGroupTargetDto> Groups { get; set; } = [];
 }
 
@@ -53,7 +56,17 @@ public record AgendaGroupTargetDto
 
     /// <summary>False when the group is shown only as a container for its members (no group-level target right).</summary>
     public bool CanTargetGroup { get; set; }
+
+    /// <summary>The group's Гуртковий провід, when it has an active office; null otherwise.</summary>
+    public AgendaLeadershipTargetDto? Leadership { get; set; }
     public List<AgendaMemberTargetDto> Members { get; set; } = [];
+}
+
+public record AgendaLeadershipTargetDto
+{
+    public Guid LeadershipKey { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public bool CanTarget { get; set; }
 }
 
 public record AgendaMemberTargetDto

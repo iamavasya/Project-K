@@ -159,5 +159,39 @@ namespace ProjectK.Infrastructure.Repositories
                 })
                 .ToList();
         }
+
+        public async Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            var groupKeys = await _context.Groups
+                .Where(g => g.KurinKey == kurinKey)
+                .Select(g => g.GroupKey)
+                .ToListAsync(cancellationToken);
+
+            return await _context.Leaderships
+                .Where(l => l.KurinKey == kurinKey || (l.GroupKey != null && groupKeys.Contains(l.GroupKey.Value)))
+                .Select(l => new LeadershipRef(l.LeadershipKey, l.Type, l.GroupKey))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetActiveMemberUserKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.LeadershipHistories
+                .Where(h => h.LeadershipKey == leadershipKey && h.EndDate == null)
+                .Join(_context.Members, h => h.MemberKey, m => m.MemberKey, (h, m) => m.UserKey)
+                .Where(userKey => userKey != null)
+                .Select(userKey => userKey!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetActiveLeadershipKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.LeadershipHistories
+                .Where(h => h.MemberKey == memberKey && h.EndDate == null)
+                .Select(h => h.LeadershipKey)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+        }
     }
 }

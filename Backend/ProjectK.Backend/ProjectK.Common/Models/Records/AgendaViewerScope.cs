@@ -10,4 +10,5 @@ public sealed record AgendaViewerScope(
     Guid KurinKey,
     Guid? ViewerMemberKey,
     IReadOnlyCollection<Guid> ViewerGroupKeys,
+    IReadOnlyCollection<Guid> ViewerLeadershipKeys,
     bool CanSeeWholeKurin);

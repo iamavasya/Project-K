@@ -1,7 +1,7 @@
 /** Mirrors the backend AgendaItemKind / AgendaItemStatus / AgendaTargetType enums (serialized as strings). */
 export type AgendaItemKind = 'Event' | 'Task';
 export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
-export type AgendaTargetType = 'Kurin' | 'Group' | 'Member';
+export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership';
 
 export interface AgendaAssignmentDto {
   targetType: AgendaTargetType;
@@ -51,10 +51,17 @@ export interface AgendaMemberTarget {
   fullName: string;
 }
 
+export interface AgendaLeadershipTarget {
+  leadershipKey: string;
+  label: string;
+  canTarget: boolean;
+}
+
 export interface AgendaGroupTarget {
   groupKey: string;
   name: string;
   canTargetGroup: boolean;
+  leadership: AgendaLeadershipTarget | null;
   members: AgendaMemberTarget[];
 }
 
@@ -62,5 +69,6 @@ export interface AgendaAssignTargets {
   canTargetKurin: boolean;
   kurinKey: string;
   kurinLabel: string;
+  kurinLeaderships: AgendaLeadershipTarget[];
   groups: AgendaGroupTarget[];
 }

@@ -9,5 +9,8 @@ public enum AgendaTargetType
 {
     Kurin = 0,
     Group = 1,
-    Member = 2
+    Member = 2,
+
+    /// <summary>A провід/КВ — <c>TargetKey</c> is a <c>LeadershipKey</c> (Type KV/Kurin/Group).</summary>
+    Leadership = 3
 }
