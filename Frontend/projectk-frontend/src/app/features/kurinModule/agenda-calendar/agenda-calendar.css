@@ -1,44 +1,47 @@
-.agenda-page { margin-inline: auto; padding-block: 2rem; width: min(100% - 2rem, 72rem); }
-.agenda-header { align-items: center; display: flex; gap: 1rem; justify-content: space-between; padding-bottom: 1rem; }
-.agenda-title { color: var(--p-text-color); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
-.agenda-toolbar { align-items: center; display: flex; gap: 0.5rem; padding-bottom: 1rem; }
-.agenda-month { font-weight: 700; min-width: 9rem; text-align: center; }
+.agenda-page { padding: 1rem; }
+.kurin-tile { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius, 12px); padding: 1.25rem; }
+.agenda-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.agenda-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
 
-.cal-month { border: 1px solid var(--p-content-border-color); border-radius: 12px; overflow: hidden; }
-.cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.cal-weekday { background: var(--p-surface-ground); color: var(--p-text-muted-color); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem; text-align: center; text-transform: uppercase; }
-
-/* A week is a background grid of tall day cells, with a spanning-bar layer laid over it. Cell height
-   floors at 6.25rem and grows with the number of stacked bar lanes so nothing gets clipped. */
-.cal-week { position: relative; border-top: 1px solid var(--p-content-border-color); }
-.cal-week__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.cal-day {
-  min-block-size: max(6.25rem, calc(2.1rem + var(--lanes, 0) * 1.6rem));
-  border-right: 1px solid var(--p-content-border-color);
-  padding: 0.3rem;
+/* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
+:host ::ng-deep full-calendar {
+  --fc-border-color: var(--p-content-border-color);
+  --fc-page-bg-color: var(--p-content-background);
+  --fc-neutral-bg-color: var(--p-content-hover-background);
+  --fc-today-bg-color: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  --fc-now-indicator-color: var(--p-primary-color);
+  --fc-event-bg-color: var(--p-primary-color);
+  --fc-event-border-color: var(--p-primary-color);
+  --fc-event-text-color: var(--p-primary-contrast-color);
+  display: block;
+  font-family: inherit;
 }
-.cal-day:nth-child(7n) { border-right: 0; }
-.cal-day--muted { background: var(--p-surface-ground); }
-.cal-day--muted .cal-day__num { color: var(--p-text-muted-color); }
-.cal-day__num { display: inline-block; font-size: 0.8rem; font-weight: 650; height: 1.5rem; line-height: 1.5rem; min-width: 1.5rem; text-align: center; }
-.cal-day--today .cal-day__num { background: var(--p-primary-color); border-radius: 50%; color: var(--p-primary-contrast-color); }
 
-.cal-week__events {
-  position: absolute; inset: 1.95rem 0 0.3rem 0;
-  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: 1.5rem; row-gap: 2px;
-  pointer-events: none;
-}
-.cal-seg { align-self: stretch; background: none; border: 0; cursor: pointer; margin-inline: 2px; min-width: 0; padding: 0; pointer-events: auto; }
-:host ::ng-deep .cal-seg .cal-seg__tag { display: flex; justify-content: flex-start; max-width: 100%; overflow: hidden; width: 100%; }
-:host ::ng-deep .cal-seg .cal-seg__tag .p-tag-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Calendar-only exception (BRANDBOOK §2): events use the muted blue token to stand apart from tasks. */
-:host ::ng-deep .cal-seg__tag--event { background: var(--lil-blue-50) !important; color: var(--lil-blue-700) !important; }
-/* Continuation edges: flatten the side that runs into an adjacent week. */
-:host ::ng-deep .cal-seg--cont-l .cal-seg__tag { border-bottom-left-radius: 0; border-top-left-radius: 0; }
-:host ::ng-deep .cal-seg--cont-r .cal-seg__tag { border-bottom-right-radius: 0; border-top-right-radius: 0; }
+:host ::ng-deep .fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 650; }
+:host ::ng-deep .fc .fc-col-header-cell-cushion,
+:host ::ng-deep .fc .fc-daygrid-day-number { color: var(--p-text-color); text-decoration: none; }
 
-@media (max-width: 640px) {
-  .cal-day { min-block-size: max(4.5rem, calc(2.1rem + var(--lanes, 0) * 1.6rem)); }
-  .cal-weekday { font-size: 0.6rem; padding: 0.3rem 0.1rem; }
+/* Buttons follow the brand primary / secondary tokens instead of FullCalendar's default blue. */
+:host ::ng-deep .fc .fc-button-primary {
+  background: var(--p-content-hover-background);
+  border-color: var(--p-content-border-color);
+  color: var(--p-text-color);
 }
+:host ::ng-deep .fc .fc-button-primary:not(:disabled):hover { background: var(--p-content-border-color); }
+:host ::ng-deep .fc .fc-button-primary:not(:disabled).fc-button-active,
+:host ::ng-deep .fc .fc-button-primary:not(:disabled):active {
+  background: var(--p-primary-color);
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
+:host ::ng-deep .fc .fc-button:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color) 40%, transparent); }
+
+/* Event kinds when no category colour is set. */
+:host ::ng-deep .agenda-ev { border-radius: var(--p-border-radius-sm, 6px); cursor: pointer; font-size: 0.8rem; }
+:host ::ng-deep .agenda-ev--event { background: var(--p-primary-color); border-color: var(--p-primary-color); color: var(--p-primary-contrast-color); }
+:host ::ng-deep .agenda-ev--task { background: var(--p-content-hover-background); border-color: var(--p-content-border-color); color: var(--p-text-color); }
+:host ::ng-deep .agenda-ev--inprogress { background: var(--p-yellow-100); border-color: var(--p-yellow-300); color: var(--p-yellow-800); }
+:host ::ng-deep .agenda-ev--done { background: var(--p-blue-100); border-color: var(--p-blue-300); color: var(--p-blue-800); }
+/* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
+:host ::ng-deep .agenda-ev--series { opacity: 0.92; }
+:host ::ng-deep .agenda-ev--series .fc-event-title::before { content: '↻ '; }

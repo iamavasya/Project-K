@@ -46,14 +46,19 @@
       </div>
     }
 
+    <div class="agenda-allday">
+      <label for="agenda-allday">Весь день</label>
+      <p-toggleswitch inputId="agenda-allday" [(ngModel)]="allDay" />
+    </div>
+
     <div class="agenda-dates">
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-start">Початок</label>
-        <p-datePicker id="agenda-start" [(ngModel)]="startDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+        <p-datePicker id="agenda-start" [(ngModel)]="startDate" [dateFormat]="'dd.mm.yy'" [showTime]="!allDay" [showIcon]="true" appendTo="body" />
       </div>
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-end">Кінець</label>
-        <p-datePicker id="agenda-end" [(ngModel)]="endDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+        <p-datePicker id="agenda-end" [(ngModel)]="endDate" [dateFormat]="'dd.mm.yy'" [showTime]="!allDay" [showIcon]="true" appendTo="body" />
       </div>
     </div>
 

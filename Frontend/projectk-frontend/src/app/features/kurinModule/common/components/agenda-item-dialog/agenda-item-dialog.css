@@ -22,6 +22,8 @@
 .agenda-rsvp__badge[data-status="Maybe"] { background: var(--p-yellow-100); color: var(--p-yellow-700); }
 .agenda-rsvp__badge[data-status="NotGoing"] { background: var(--p-red-100); color: var(--p-red-700); }
 
+.agenda-allday { align-items: center; display: flex; gap: 0.6rem; justify-content: space-between; }
+.agenda-allday label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
 .agenda-recur-detail { display: flex; flex-direction: column; gap: 0.9rem; }
 .agenda-recur-interval { align-items: center; display: grid; gap: 0.5rem; grid-template-columns: auto 5rem auto; }
 .agenda-recur-interval .agenda-label { margin: 0; }

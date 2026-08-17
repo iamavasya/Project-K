@@ -7,6 +7,7 @@ import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
+import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
@@ -30,7 +31,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
-    SelectButtonModule, SelectModule, DatePickerModule, AgendaAssignSelectComponent
+    SelectButtonModule, SelectModule, DatePickerModule, ToggleSwitchModule, AgendaAssignSelectComponent
   ],
   templateUrl: './agenda-item-dialog.html',
   styleUrl: './agenda-item-dialog.css'
@@ -45,6 +46,10 @@ export class AgendaItemDialogComponent {
   readonly item = input<AgendaItemDto | null>(null);
   /** Preselected kind when creating: Event from the calendar, Task from the board. */
   readonly defaultKind = input<AgendaItemKind>('Event');
+  /** Prefill a fresh item from a calendar slot selection (date/time + all-day-ness). */
+  readonly presetStart = input<Date | null>(null);
+  readonly presetEnd = input<Date | null>(null);
+  readonly presetAllDay = input<boolean>(true);
   readonly saved = output<void>();
 
   protected readonly kindOptions = [
@@ -55,6 +60,7 @@ export class AgendaItemDialogComponent {
   protected kind: AgendaItemKind = 'Event';
   protected title = '';
   protected description = '';
+  protected allDay = true;
   protected startDate: Date | null = null;
   protected endDate: Date | null = null;
   protected readonly targets = signal<AgendaTargetInput[]>([]);
@@ -100,6 +106,7 @@ export class AgendaItemDialogComponent {
         this.kind = current.kind;
         this.title = current.title;
         this.description = current.description ?? '';
+        this.allDay = current.isAllDay;
         this.startDate = current.startUtc ? new Date(current.startUtc) : null;
         this.endDate = current.endUtc ? new Date(current.endUtc) : null;
         this.categoryKey = current.categoryKey ?? null;
@@ -187,9 +194,9 @@ export class AgendaItemDialogComponent {
       kind: this.kind,
       title: this.title.trim(),
       description: this.description.trim() || null,
-      startUtc: this.toUtcMidnight(this.startDate),
-      endUtc: this.toUtcMidnight(this.endDate),
-      isAllDay: true,
+      startUtc: this.toWire(this.startDate),
+      endUtc: this.toWire(this.endDate),
+      isAllDay: this.allDay,
       agendaCategoryKey: this.kind === 'Event' ? this.categoryKey : null,
       recurrenceFrequency: this.recurrenceFrequency,
       recurrenceInterval: Math.max(1, this.recurrenceInterval || 1),
@@ -252,12 +259,14 @@ export class AgendaItemDialogComponent {
   }
 
   private resetForm(): void {
-    // New items default to the context kind (Event on calendar, Task on board) and start today.
+    // New items default to the context kind (Event on calendar, Task on board). A calendar-slot
+    // selection prefills the dates/time and all-day-ness; otherwise it's an all-day item starting today.
     this.kind = this.defaultKind();
     this.title = '';
     this.description = '';
-    this.startDate = new Date();
-    this.endDate = null;
+    this.allDay = this.presetAllDay();
+    this.startDate = this.presetStart() ?? new Date();
+    this.endDate = this.presetEnd();
     this.categoryKey = null;
     this.recurrenceFrequency = 'None';
     this.recurrenceInterval = 1;
@@ -276,7 +285,17 @@ export class AgendaItemDialogComponent {
     return (this.recurrenceByWeekday & bit) !== 0;
   }
 
-  /** Day-only selection → UTC midnight ISO string, so the wire value has no local-time drift. */
+  /**
+   * All-day items are sent as UTC midnight (no local-time drift, every viewer sees the same day); timed
+   * items keep their real instant. Recurrence-end always uses the day form.
+   */
+  private toWire(date: Date | null): string | null {
+    if (!date) {
+      return null;
+    }
+    return this.allDay ? this.toUtcMidnight(date) : date.toISOString();
+  }
+
   private toUtcMidnight(date: Date | null): string | null {
     if (!date) {
       return null;
