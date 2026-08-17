@@ -107,8 +107,8 @@ export class AgendaItemDialogComponent {
         this.title = current.title;
         this.description = current.description ?? '';
         this.allDay = current.isAllDay;
-        this.startDate = current.startUtc ? new Date(current.startUtc) : null;
-        this.endDate = current.endUtc ? new Date(current.endUtc) : null;
+        this.startDate = this.parseForForm(current.startUtc, current.isAllDay);
+        this.endDate = this.parseForForm(current.endUtc, current.isAllDay);
         this.categoryKey = current.categoryKey ?? null;
         this.recurrenceFrequency = current.recurrenceFrequency ?? 'None';
         this.recurrenceInterval = current.recurrenceInterval || 1;
@@ -283,6 +283,21 @@ export class AgendaItemDialogComponent {
 
   isWeekdaySelected(bit: number): boolean {
     return (this.recurrenceByWeekday & bit) !== 0;
+  }
+
+  /**
+   * Reads a stored value into the form: an all-day date is taken as its calendar day (built in local time
+   * so the picker shows the same day for every viewer), a timed value as its real instant.
+   */
+  private parseForForm(iso: string | null, allDay: boolean): Date | null {
+    if (!iso) {
+      return null;
+    }
+    if (allDay) {
+      const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(iso);
   }
 
   /**

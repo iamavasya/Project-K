@@ -40,8 +40,10 @@ public static class AgendaItemResponseFactory
             Title = item.Title,
             Description = item.Description,
             Status = item.Status,
-            StartUtc = occurrenceStartUtc ?? item.StartUtc,
-            EndUtc = isInstance ? occurrenceEndUtc : item.EndUtc,
+            // Stamp Kind=Utc so the JSON carries a 'Z'; EF returns these as Unspecified, which would
+            // otherwise serialize without an offset and be read as local time by the browser.
+            StartUtc = AsUtc(occurrenceStartUtc ?? item.StartUtc),
+            EndUtc = AsUtc(isInstance ? occurrenceEndUtc : item.EndUtc),
             IsAllDay = item.IsAllDay,
             CreatedByUserKey = item.CreatedByUserKey,
             CreatedByName = creatorNames.TryGetValue(item.CreatedByUserKey, out var creator) ? creator : null,
@@ -54,7 +56,7 @@ public static class AgendaItemResponseFactory
             RecurrenceFrequency = item.RecurrenceFrequency,
             RecurrenceInterval = item.RecurrenceInterval,
             RecurrenceByWeekday = item.RecurrenceByWeekday,
-            RecurrenceEndUtc = item.RecurrenceEndUtc,
+            RecurrenceEndUtc = AsUtc(item.RecurrenceEndUtc),
             RecurrenceCount = item.RecurrenceCount,
             IsRecurrenceInstance = isInstance,
             Assignments = item.Assignments
@@ -67,6 +69,10 @@ public static class AgendaItemResponseFactory
                 .ToList()
         };
     }
+
+    /// <summary>Marks a stored-UTC value as <see cref="DateTimeKind.Utc"/> so JSON emits a trailing 'Z'.</summary>
+    private static DateTime? AsUtc(DateTime? value) =>
+        value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
 
     private static string ResolveLabel(
         AgendaAssignment assignment,

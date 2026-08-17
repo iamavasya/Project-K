@@ -1,7 +1,16 @@
 .agenda-page { padding: 1rem; }
-.kurin-tile { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius, 12px); padding: 1.25rem; }
+.kurin-tile { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius, 12px); display: flex; flex-direction: column; padding: 1.25rem; }
 .agenda-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 1rem; }
 .agenda-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+/* Native Optimus toolbar replaces FullCalendar's own header (headerToolbar: false). */
+.agenda-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; margin-bottom: 0.75rem; }
+.agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
+.agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; text-transform: capitalize; }
+
+/* Bound the grid so the timegrid (week/day) scrolls inside the card instead of stretching the page. */
+.agenda-calendar-host { block-size: calc(100vh - 16rem); min-block-size: 24rem; }
+:host ::ng-deep full-calendar { display: block; height: 100%; }
 
 /* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
 :host ::ng-deep full-calendar {
@@ -13,28 +22,13 @@
   --fc-event-bg-color: var(--p-primary-color);
   --fc-event-border-color: var(--p-primary-color);
   --fc-event-text-color: var(--p-primary-contrast-color);
-  display: block;
   font-family: inherit;
 }
 
-:host ::ng-deep .fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 650; }
 :host ::ng-deep .fc .fc-col-header-cell-cushion,
-:host ::ng-deep .fc .fc-daygrid-day-number { color: var(--p-text-color); text-decoration: none; }
-
-/* Buttons follow the brand primary / secondary tokens instead of FullCalendar's default blue. */
-:host ::ng-deep .fc .fc-button-primary {
-  background: var(--p-content-hover-background);
-  border-color: var(--p-content-border-color);
-  color: var(--p-text-color);
-}
-:host ::ng-deep .fc .fc-button-primary:not(:disabled):hover { background: var(--p-content-border-color); }
-:host ::ng-deep .fc .fc-button-primary:not(:disabled).fc-button-active,
-:host ::ng-deep .fc .fc-button-primary:not(:disabled):active {
-  background: var(--p-primary-color);
-  border-color: var(--p-primary-color);
-  color: var(--p-primary-contrast-color);
-}
-:host ::ng-deep .fc .fc-button:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color) 40%, transparent); }
+:host ::ng-deep .fc .fc-daygrid-day-number,
+:host ::ng-deep .fc .fc-timegrid-axis-cushion,
+:host ::ng-deep .fc .fc-timegrid-slot-label-cushion { color: var(--p-text-color); text-decoration: none; }
 
 /* Event kinds when no category colour is set. */
 :host ::ng-deep .agenda-ev { border-radius: var(--p-border-radius-sm, 6px); cursor: pointer; font-size: 0.8rem; }
@@ -45,3 +39,8 @@
 /* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
 :host ::ng-deep .agenda-ev--series { opacity: 0.92; }
 :host ::ng-deep .agenda-ev--series .fc-event-title::before { content: '↻ '; }
+
+@media (max-width: 640px) {
+  .agenda-toolbar { align-items: stretch; flex-direction: column; }
+  .agenda-calendar-host { block-size: calc(100vh - 20rem); }
+}

@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
-import { FullCalendarModule } from '@fullcalendar/angular';
+import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
+import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
 import ukLocale from '@fullcalendar/core/locales/uk';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -17,13 +19,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Month + hourly week/day calendar built on FullCalendar (MIT plugins only: daygrid, timegrid,
- * interaction). Server-expanded recurrence instances render as normal events; the theme is driven by
- * brandbook CSS variables in the stylesheet. Drag/resize writes the new dates back through UpdateAgendaItem.
+ * interaction). Server-expanded recurrence instances render as normal events. FullCalendar's own header
+ * is disabled — navigation is driven by native Optimus buttons wired to its API — and the grid is bounded
+ * so the timegrid scrolls inside the card instead of stretching the page. Drag/resize writes the new dates
+ * back through UpdateAgendaItem.
  */
 @Component({
   selector: 'app-agenda-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, FullCalendarModule, AgendaItemDialogComponent],
+  imports: [FormsModule, ButtonModule, SelectButtonModule, FullCalendarModule, AgendaItemDialogComponent],
   templateUrl: './agenda-calendar.html',
   styleUrl: './agenda-calendar.css'
 })
@@ -33,6 +37,8 @@ export class AgendaCalendarComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
+  private readonly calendar = viewChild(FullCalendarComponent);
+
   protected readonly kurinKey = signal('');
   protected readonly items = signal<AgendaItemDto[]>([]);
   protected readonly dialogVisible = signal(false);
@@ -41,21 +47,27 @@ export class AgendaCalendarComponent implements OnInit {
   protected readonly presetEnd = signal<Date | null>(null);
   protected readonly presetAllDay = signal(true);
 
+  /** Title + active view mirrored from FullCalendar so the native toolbar stays in sync. */
+  protected readonly viewTitle = signal('');
+  protected readonly currentView = signal('dayGridMonth');
+  protected readonly viewOptions = [
+    { label: 'Місяць', value: 'dayGridMonth' },
+    { label: 'Тиждень', value: 'timeGridWeek' },
+    { label: 'День', value: 'timeGridDay' }
+  ];
+
   protected readonly calendarOptions = signal<CalendarOptions>({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     locale: ukLocale,
     initialView: 'dayGridMonth',
     firstDay: 1,
-    height: 'auto',
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    buttonText: { today: 'Сьогодні', month: 'Місяць', week: 'Тиждень', day: 'День' },
+    headerToolbar: false,
+    height: '100%',
+    expandRows: true,
     nowIndicator: true,
     slotMinTime: '06:00:00',
     slotMaxTime: '23:00:00',
+    allDaySlot: true,
     editable: true,
     selectable: true,
     selectMirror: true,
@@ -64,8 +76,8 @@ export class AgendaCalendarComponent implements OnInit {
     datesSet: (arg: DatesSetArg) => this.onDatesSet(arg),
     eventClick: (arg: EventClickArg) => this.onEventClick(arg),
     select: (arg: DateSelectArg) => this.onSelect(arg),
-    eventDrop: (arg: EventDropArg) => this.onEventDrop(arg),
-    eventResize: (arg: EventResizeDoneArg) => this.onEventResize(arg)
+    eventDrop: (arg: EventDropArg) => this.applyDateChange(arg.event, arg.revert),
+    eventResize: (arg: EventResizeDoneArg) => this.applyDateChange(arg.event, arg.revert)
   });
 
   canManage(): boolean {
@@ -76,6 +88,27 @@ export class AgendaCalendarComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       this.kurinKey.set(params.get('kurinKey') ?? '');
     });
+  }
+
+  // ---- Native toolbar → FullCalendar API ----
+  private api() {
+    return this.calendar()?.getApi();
+  }
+
+  prev(): void {
+    this.api()?.prev();
+  }
+
+  next(): void {
+    this.api()?.next();
+  }
+
+  today(): void {
+    this.api()?.today();
+  }
+
+  changeView(view: string): void {
+    this.api()?.changeView(view);
   }
 
   openCreate(): void {
@@ -90,11 +123,12 @@ export class AgendaCalendarComponent implements OnInit {
     this.reload();
   }
 
-  /** Reload the window FullCalendar is currently showing (kept from the last datesSet). */
   private currentRange: { from: string; to: string } | null = null;
 
   private onDatesSet(arg: DatesSetArg): void {
     this.currentRange = { from: arg.start.toISOString(), to: arg.end.toISOString() };
+    this.viewTitle.set(arg.view.title);
+    this.currentView.set(arg.view.type);
     this.reload();
   }
 
@@ -110,20 +144,22 @@ export class AgendaCalendarComponent implements OnInit {
   }
 
   private toEvent(item: AgendaItemDto): EventInput {
-    // All-day FullCalendar ranges are end-exclusive; our stored EndUtc is the inclusive last day, so push
-    // the display end one day out. Timed events use their real end unchanged.
-    const end = item.endUtc
-      ? (item.isAllDay ? new Date(new Date(item.endUtc).getTime() + DAY_MS).toISOString() : item.endUtc)
-      : undefined;
+    // All-day events are placed by date only (no time-of-day, no timezone shift); FullCalendar's all-day
+    // range is end-exclusive, so the inclusive stored end is pushed one day out. Timed events keep their
+    // real UTC instants and render in the viewer's local time.
+    const allDay = item.isAllDay;
+    const start = allDay ? item.startUtc!.slice(0, 10) : item.startUtc ?? undefined;
+    const end = allDay
+      ? (item.endUtc ? this.addDays(item.endUtc.slice(0, 10), 1) : undefined)
+      : (item.endUtc ?? undefined);
 
-    const editable = item.canEdit && !item.isRecurrenceInstance;
     return {
       id: `${item.agendaItemKey}|${item.startUtc}`,
       title: item.title,
-      start: item.startUtc ?? undefined,
+      start,
       end,
-      allDay: item.isAllDay,
-      editable,
+      allDay,
+      editable: item.canEdit && !item.isRecurrenceInstance,
       backgroundColor: item.categoryColorHex ?? undefined,
       borderColor: item.categoryColorHex ?? undefined,
       classNames: this.eventClasses(item),
@@ -158,17 +194,9 @@ export class AgendaCalendarComponent implements OnInit {
     this.editing.set(null);
     this.presetAllDay.set(arg.allDay);
     this.presetStart.set(arg.start);
-    // For an all-day range FullCalendar's end is exclusive; step back a day for our inclusive model.
+    // An all-day selection's end is exclusive; step back a day for our inclusive model.
     this.presetEnd.set(arg.allDay ? new Date(arg.end.getTime() - DAY_MS) : arg.end);
     this.dialogVisible.set(true);
-  }
-
-  private onEventDrop(arg: EventDropArg): void {
-    this.applyDateChange(arg.event, arg.revert);
-  }
-
-  private onEventResize(arg: EventResizeDoneArg): void {
-    this.applyDateChange(arg.event, arg.revert);
   }
 
   /** Common path for drag and resize: recurring instances are read-only in v1; others save new dates. */
@@ -181,14 +209,18 @@ export class AgendaCalendarComponent implements OnInit {
     }
 
     const allDay = event.allDay;
-    const startUtc = event.start ? event.start.toISOString() : item.startUtc;
-    let endUtc: string | null = null;
-    if (event.end) {
-      // Undo the display shift for all-day ends before persisting.
-      endUtc = allDay ? new Date(event.end.getTime() - DAY_MS).toISOString() : event.end.toISOString();
+    let startUtc: string;
+    let endUtc: string | null;
+    if (allDay) {
+      // startStr/endStr are calendar-date strings; persist them as UTC midnight (end is exclusive → −1 day).
+      startUtc = this.dateToUtcMidnight(event.startStr.slice(0, 10));
+      endUtc = event.endStr ? this.dateToUtcMidnight(this.addDays(event.endStr.slice(0, 10), -1)) : null;
       if (endUtc === startUtc) {
         endUtc = null;
       }
+    } else {
+      startUtc = event.start ? event.start.toISOString() : item.startUtc!;
+      endUtc = event.end ? event.end.toISOString() : null;
     }
 
     const payload: UpdateAgendaItemRequest = {
@@ -219,5 +251,17 @@ export class AgendaCalendarComponent implements OnInit {
         revert();
       }
     });
+  }
+
+  /** 'YYYY-MM-DD' → that calendar day at UTC midnight, as an ISO string. */
+  private dateToUtcMidnight(dateStr: string): string {
+    return new Date(`${dateStr}T00:00:00Z`).toISOString();
+  }
+
+  /** Shift a 'YYYY-MM-DD' string by whole days, staying in the date domain (no timezone drift). */
+  private addDays(dateStr: string, days: number): string {
+    const d = new Date(`${dateStr}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
   }
 }
