@@ -39,6 +39,10 @@ public record AgendaItemResponse
     /// <summary>True when this row is one expanded occurrence of a series (its dates differ from the stored item).</summary>
     public bool IsRecurrenceInstance { get; set; }
 
+    /// <summary>The series' stored (unshifted) start/end, so a dragged occurrence can move the whole series by its delta.</summary>
+    public DateTime? SeriesStartUtc { get; set; }
+    public DateTime? SeriesEndUtc { get; set; }
+
     public List<AgendaAssignmentDto> Assignments { get; set; } = [];
 }
 

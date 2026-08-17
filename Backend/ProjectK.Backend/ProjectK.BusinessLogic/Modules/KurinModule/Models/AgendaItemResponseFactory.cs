@@ -59,6 +59,8 @@ public static class AgendaItemResponseFactory
             RecurrenceEndUtc = AsUtc(item.RecurrenceEndUtc),
             RecurrenceCount = item.RecurrenceCount,
             IsRecurrenceInstance = isInstance,
+            SeriesStartUtc = AsUtc(item.StartUtc),
+            SeriesEndUtc = AsUtc(item.EndUtc),
             Assignments = item.Assignments
                 .Select(a => new AgendaAssignmentDto
                 {

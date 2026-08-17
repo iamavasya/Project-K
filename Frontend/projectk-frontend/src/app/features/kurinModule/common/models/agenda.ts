@@ -46,6 +46,8 @@ export interface AgendaItemDto {
   recurrenceEndUtc: string | null;
   recurrenceCount: number | null;
   isRecurrenceInstance: boolean;
+  seriesStartUtc: string | null;
+  seriesEndUtc: string | null;
   assignments: AgendaAssignmentDto[];
 }
 

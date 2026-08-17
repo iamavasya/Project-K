@@ -76,6 +76,9 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     selectable: true,
     selectMirror: true,
     dayMaxEvents: true,
+    // Render every event as a solid block (not the default month-view dot) so a category's colour fills
+    // the whole event bar in all views. Month view drags by day; the time views drag by time and day.
+    eventDisplay: 'block',
     events: [],
     datesSet: (arg: DatesSetArg) => this.onDatesSet(arg),
     eventClick: (arg: EventClickArg) => this.onEventClick(arg),
@@ -181,7 +184,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       start,
       end,
       allDay,
-      editable: item.canEdit && !item.isRecurrenceInstance,
+      editable: item.canEdit,
       backgroundColor: item.categoryColorHex ?? undefined,
       borderColor: item.categoryColorHex ?? undefined,
       classNames: this.eventClasses(item),
@@ -221,19 +224,20 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     this.dialogVisible.set(true);
   }
 
-  /** Common path for drag and resize: recurring instances are read-only in v1; others save new dates. */
+  /**
+   * Common path for drag and resize. A one-off saves the event's new dates directly; a recurring occurrence
+   * shifts the whole series (v1) by the same delta the dragged occurrence moved — in whole days for all-day
+   * items, in milliseconds for timed ones.
+   */
   private applyDateChange(event: EventClickArg['event'], revert: () => void): void {
     const item = event.extendedProps['item'] as AgendaItemDto;
-    if (item.isRecurrenceInstance) {
-      this.messages.add({ severity: 'info', summary: 'Повторювану подію змінюйте через редагування серії' });
-      revert();
-      return;
-    }
-
     const allDay = event.allDay;
     let startUtc: string;
     let endUtc: string | null;
-    if (allDay) {
+
+    if (item.isRecurrenceInstance) {
+      ({ startUtc, endUtc } = this.shiftedSeriesDates(item, event, allDay));
+    } else if (allDay) {
       // startStr/endStr are calendar-date strings; persist them as UTC midnight (end is exclusive → −1 day).
       startUtc = this.dateToUtcMidnight(event.startStr.slice(0, 10));
       endUtc = event.endStr ? this.dateToUtcMidnight(this.addDays(event.endStr.slice(0, 10), -1)) : null;
@@ -273,6 +277,31 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
         revert();
       }
     });
+  }
+
+  /**
+   * New series start/end when a recurring occurrence is dragged/resized: the series base is shifted by the
+   * delta between the occurrence's old and new position (whole days for all-day, real duration for timed).
+   */
+  private shiftedSeriesDates(item: AgendaItemDto, event: EventClickArg['event'], allDay: boolean): { startUtc: string; endUtc: string | null } {
+    if (allDay) {
+      const dayDelta = this.daysBetween(item.startUtc!.slice(0, 10), event.startStr.slice(0, 10));
+      const seriesStartDay = this.addDays(item.seriesStartUtc!.slice(0, 10), dayDelta);
+      // Occurrence span in days (FullCalendar end is exclusive); a single day has no stored end.
+      const spanDays = event.endStr ? this.daysBetween(event.startStr.slice(0, 10), event.endStr.slice(0, 10)) : 1;
+      const endUtc = spanDays > 1 ? this.dateToUtcMidnight(this.addDays(seriesStartDay, spanDays - 1)) : null;
+      return { startUtc: this.dateToUtcMidnight(seriesStartDay), endUtc };
+    }
+
+    const startDelta = event.start!.getTime() - new Date(item.startUtc!).getTime();
+    const newStart = new Date(new Date(item.seriesStartUtc!).getTime() + startDelta);
+    const endUtc = event.end ? new Date(newStart.getTime() + (event.end.getTime() - event.start!.getTime())).toISOString() : null;
+    return { startUtc: newStart.toISOString(), endUtc };
+  }
+
+  /** Whole-day difference between two 'YYYY-MM-DD' strings. */
+  private daysBetween(fromDateStr: string, toDateStr: string): number {
+    return Math.round((new Date(`${toDateStr}T00:00:00Z`).getTime() - new Date(`${fromDateStr}T00:00:00Z`).getTime()) / DAY_MS);
   }
 
   /** 'YYYY-MM-DD' → that calendar day at UTC midnight, as an ISO string. */
