@@ -94,15 +94,20 @@ namespace ProjectK.Infrastructure.Repositories
             // A dated item overlaps the window when it starts before the window ends and finishes
             // after it begins; a single-day item (no EndUtc) is treated as ending at its start. Recurring
             // items skip this narrowing — their base date may sit outside the window while occurrences fall
-            // inside — so the handler's expansion decides which instances land in range.
+            // inside — so the handler's expansion decides which instances land in range. We still drop a
+            // recurring series once its recurrence-end is before the window, so ended series aren't fetched.
             if (fromUtc.HasValue)
             {
-                query = query.Where(a => a.RecurrenceFrequency != RecurrenceFrequency.None || (a.EndUtc ?? a.StartUtc) == null || (a.EndUtc ?? a.StartUtc) >= fromUtc.Value);
+                query = query.Where(a =>
+                    (a.RecurrenceFrequency != RecurrenceFrequency.None && (a.RecurrenceEndUtc == null || a.RecurrenceEndUtc >= fromUtc.Value))
+                    || (a.RecurrenceFrequency == RecurrenceFrequency.None && ((a.EndUtc ?? a.StartUtc) == null || (a.EndUtc ?? a.StartUtc) >= fromUtc.Value)));
             }
 
             if (toUtc.HasValue)
             {
-                query = query.Where(a => a.RecurrenceFrequency != RecurrenceFrequency.None || a.StartUtc == null || a.StartUtc <= toUtc.Value);
+                // Occurrences (recurring or not) never start before the base start, so a series/item starting
+                // after the window ends has nothing to show.
+                query = query.Where(a => a.StartUtc == null || a.StartUtc <= toUtc.Value);
             }
 
             if (!viewer.CanSeeWholeKurin)

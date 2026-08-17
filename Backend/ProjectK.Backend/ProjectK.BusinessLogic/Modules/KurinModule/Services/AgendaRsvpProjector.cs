@@ -24,14 +24,17 @@ public static class AgendaRsvpProjector
             .OrderBy(r => r.RespondedAtUtc)
             .ToList();
 
-        var confirmedCount = capacity.HasValue ? Math.Min(going.Count, capacity.Value) : going.Count;
+        // A waitlist only exists when the category both caps capacity and enables the queue; otherwise every
+        // «Going» is confirmed (capacity without a waitlist is advisory, so the counts must not claim a queue).
+        var useWaitlist = capacity.HasValue && waitlistEnabled;
+        var confirmedCount = useWaitlist ? Math.Min(going.Count, capacity!.Value) : going.Count;
         var waitlistCount = going.Count - confirmedCount;
 
         var dtos = new List<AgendaRsvpDto>(responses.Count);
         for (var i = 0; i < going.Count; i++)
         {
             var r = going[i];
-            dtos.Add(ToDto(r, nameByUserKey, isWaitlisted: capacity.HasValue && waitlistEnabled && i >= capacity.Value));
+            dtos.Add(ToDto(r, nameByUserKey, isWaitlisted: useWaitlist && i >= capacity!.Value));
         }
 
         foreach (var r in responses.Where(r => r.Status != AgendaRsvpStatus.Going).OrderBy(r => r.RespondedAtUtc))

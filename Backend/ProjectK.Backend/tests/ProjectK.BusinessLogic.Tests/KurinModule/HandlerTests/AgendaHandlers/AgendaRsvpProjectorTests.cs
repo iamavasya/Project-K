@@ -46,14 +46,15 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         }
 
         [Fact]
-        public void Project_OverCapacityButWaitlistDisabled_NeverMarksWaitlisted()
+        public void Project_OverCapacityButWaitlistDisabled_ConfirmsAllAndReportsNoQueue()
         {
             var rows = new List<AgendaResponse> { Going(1), Going(2), Going(3) };
 
             var result = AgendaRsvpProjector.Project(_item, rows, capacity: 2, waitlistEnabled: false, new Dictionary<Guid, string>(), null);
 
-            result.GoingConfirmedCount.Should().Be(2);
-            result.GoingWaitlistCount.Should().Be(1);
+            // Capacity without a waitlist is advisory: everyone is confirmed and the queue count stays 0.
+            result.GoingConfirmedCount.Should().Be(3);
+            result.GoingWaitlistCount.Should().Be(0);
             result.Responses.Should().OnlyContain(r => !r.IsWaitlisted);
         }
 

@@ -37,6 +37,13 @@ public sealed class GetAgendaResponsesHandler : IRequestHandler<GetAgendaRespons
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.BadRequest, "AGENDA_NOT_EVENT", "Only events accept RSVPs.");
         }
 
+        // Bind to the caller's kurin scope: CanSeeWholeKurin is role-derived, so without this a manager of
+        // one kurin could read another kurin's event RSVPs by key.
+        if (item.KurinKey != _currentUser.KurinKey)
+        {
+            return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+        }
+
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (!AgendaPermissions.IsVisibleTo(item, viewer))
         {
