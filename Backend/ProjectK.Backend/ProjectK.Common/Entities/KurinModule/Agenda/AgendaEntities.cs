@@ -31,6 +31,24 @@ public class AgendaItem : Entity
     /// <summary>The event group (табір/захід/сходини) this item belongs to; null when uncategorised.</summary>
     public Guid? AgendaCategoryKey { get; set; }
 
+    /// <summary>How the item repeats; <c>None</c> stores a single occurrence.</summary>
+    public RecurrenceFrequency RecurrenceFrequency { get; set; } = RecurrenceFrequency.None;
+
+    /// <summary>Step size in the frequency's unit — every N weeks/months/years. Always ≥ 1.</summary>
+    public int RecurrenceInterval { get; set; } = 1;
+
+    /// <summary>
+    /// Weekly-only bitmask of weekdays (bit 0 = Sunday … bit 6 = Saturday). 0 falls back to the start
+    /// day. Ignored for monthly/yearly.
+    /// </summary>
+    public int RecurrenceByWeekday { get; set; }
+
+    /// <summary>Inclusive UTC end of the series; null means open-ended (bounded by the query window).</summary>
+    public DateTime? RecurrenceEndUtc { get; set; }
+
+    /// <summary>Max number of occurrences; null means unbounded. Applied together with <see cref="RecurrenceEndUtc"/>.</summary>
+    public int? RecurrenceCount { get; set; }
+
     public Guid CreatedByUserKey { get; set; }
 
     public Kurin Kurin { get; set; } = null!;

@@ -37,7 +37,7 @@
 
           @if (week.segments.length) {
             <div class="cal-week__events">
-              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
+              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.item.startUtc + ':' + seg.lane) {
                 <button
                   type="button"
                   class="cal-seg"

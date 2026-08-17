@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProjectK.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAgendaCategoriesAndResponses : Migration
+    public partial class AddAgendaGroupsRsvpAndRecurrence : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,6 +16,39 @@ namespace ProjectK.Infrastructure.Migrations
                 table: "AgendaItems",
                 type: "uniqueidentifier",
                 nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "RecurrenceByWeekday",
+                table: "AgendaItems",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<int>(
+                name: "RecurrenceCount",
+                table: "AgendaItems",
+                type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "RecurrenceEndUtc",
+                table: "AgendaItems",
+                type: "datetime2",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "RecurrenceFrequency",
+                table: "AgendaItems",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<int>(
+                name: "RecurrenceInterval",
+                table: "AgendaItems",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateTable(
                 name: "AgendaCategories",
@@ -44,7 +77,7 @@ namespace ProjectK.Infrastructure.Migrations
                         column: x => x.KurinKey,
                         principalTable: "Kurins",
                         principalColumn: "KurinKey",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -114,6 +147,26 @@ namespace ProjectK.Infrastructure.Migrations
 
             migrationBuilder.DropColumn(
                 name: "AgendaCategoryKey",
+                table: "AgendaItems");
+
+            migrationBuilder.DropColumn(
+                name: "RecurrenceByWeekday",
+                table: "AgendaItems");
+
+            migrationBuilder.DropColumn(
+                name: "RecurrenceCount",
+                table: "AgendaItems");
+
+            migrationBuilder.DropColumn(
+                name: "RecurrenceEndUtc",
+                table: "AgendaItems");
+
+            migrationBuilder.DropColumn(
+                name: "RecurrenceFrequency",
+                table: "AgendaItems");
+
+            migrationBuilder.DropColumn(
+                name: "RecurrenceInterval",
                 table: "AgendaItems");
         }
     }

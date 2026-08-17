@@ -1,4 +1,5 @@
 using FluentValidation;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 
@@ -19,5 +20,14 @@ public sealed class UpdateAgendaItemValidator : AbstractValidator<UpdateAgendaIt
         RuleFor(command => command)
             .Must(c => !(c.StartUtc.HasValue && c.EndUtc.HasValue) || c.EndUtc!.Value >= c.StartUtc!.Value)
             .WithMessage("EndUtc must not be before StartUtc.");
+
+        RuleFor(c => c.RecurrenceInterval).GreaterThanOrEqualTo(1);
+        RuleFor(c => c.RecurrenceCount).GreaterThan(0).When(c => c.RecurrenceCount.HasValue);
+        RuleFor(c => c)
+            .Must(c => c.RecurrenceFrequency == RecurrenceFrequency.None || c.StartUtc.HasValue)
+            .WithMessage("A recurring item needs a start date.");
+        RuleFor(c => c)
+            .Must(c => !(c.RecurrenceEndUtc.HasValue && c.StartUtc.HasValue) || c.RecurrenceEndUtc!.Value >= c.StartUtc!.Value)
+            .WithMessage("RecurrenceEndUtc must not be before StartUtc.");
     }
 }

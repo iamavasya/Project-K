@@ -19,6 +19,11 @@ public sealed record UpdateAgendaItem : IRequest<ServiceResult<object>>
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
     public Guid? AgendaCategoryKey { get; init; }
+    public RecurrenceFrequency RecurrenceFrequency { get; init; } = RecurrenceFrequency.None;
+    public int RecurrenceInterval { get; init; } = 1;
+    public int RecurrenceByWeekday { get; init; }
+    public DateTime? RecurrenceEndUtc { get; init; }
+    public int? RecurrenceCount { get; init; }
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
@@ -76,6 +81,11 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
         item.EndUtc = request.EndUtc;
         item.IsAllDay = request.IsAllDay;
         item.AgendaCategoryKey = request.AgendaCategoryKey;
+        item.RecurrenceFrequency = request.RecurrenceFrequency;
+        item.RecurrenceInterval = Math.Max(1, request.RecurrenceInterval);
+        item.RecurrenceByWeekday = request.RecurrenceByWeekday;
+        item.RecurrenceEndUtc = request.RecurrenceEndUtc;
+        item.RecurrenceCount = request.RecurrenceCount;
         item.UpdatedDate = DateTime.UtcNow;
 
         // Reconcile targets: keep unchanged rows, delete removed ones, insert new ones — via explicit

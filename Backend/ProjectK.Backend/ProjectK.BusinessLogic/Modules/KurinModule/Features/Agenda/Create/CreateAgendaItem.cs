@@ -19,6 +19,11 @@ public sealed record CreateAgendaItem : IRequest<ServiceResult<Guid>>
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
     public Guid? AgendaCategoryKey { get; init; }
+    public RecurrenceFrequency RecurrenceFrequency { get; init; } = RecurrenceFrequency.None;
+    public int RecurrenceInterval { get; init; } = 1;
+    public int RecurrenceByWeekday { get; init; }
+    public DateTime? RecurrenceEndUtc { get; init; }
+    public int? RecurrenceCount { get; init; }
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
@@ -71,6 +76,11 @@ public sealed class CreateAgendaItemHandler : IRequestHandler<CreateAgendaItem, 
             EndUtc = request.EndUtc,
             IsAllDay = request.IsAllDay,
             AgendaCategoryKey = request.AgendaCategoryKey,
+            RecurrenceFrequency = request.RecurrenceFrequency,
+            RecurrenceInterval = Math.Max(1, request.RecurrenceInterval),
+            RecurrenceByWeekday = request.RecurrenceByWeekday,
+            RecurrenceEndUtc = request.RecurrenceEndUtc,
+            RecurrenceCount = request.RecurrenceCount,
             CreatedByUserKey = actorUserKey.Value,
             Assignments = request.Targets
                 .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey })

@@ -18,13 +18,19 @@ public static class AgendaItemResponseFactory
         IReadOnlyDictionary<Guid, string> memberNames,
         IReadOnlyDictionary<Guid, string> creatorNames,
         IReadOnlyDictionary<Guid, string> leadershipLabels,
-        IReadOnlyDictionary<Guid, AgendaCategory> categories)
+        IReadOnlyDictionary<Guid, AgendaCategory> categories,
+        DateTime? occurrenceStartUtc = null,
+        DateTime? occurrenceEndUtc = null)
     {
         AgendaCategory? category = null;
         if (item.AgendaCategoryKey.HasValue)
         {
             categories.TryGetValue(item.AgendaCategoryKey.Value, out category);
         }
+
+        // For a recurring series the calendar shows one row per occurrence: the dates come from the
+        // expansion, but the key stays the series key so edit/delete act on the whole series (v1).
+        var isInstance = occurrenceStartUtc.HasValue;
 
         return new AgendaItemResponse
         {
@@ -34,8 +40,8 @@ public static class AgendaItemResponseFactory
             Title = item.Title,
             Description = item.Description,
             Status = item.Status,
-            StartUtc = item.StartUtc,
-            EndUtc = item.EndUtc,
+            StartUtc = occurrenceStartUtc ?? item.StartUtc,
+            EndUtc = isInstance ? occurrenceEndUtc : item.EndUtc,
             IsAllDay = item.IsAllDay,
             CreatedByUserKey = item.CreatedByUserKey,
             CreatedByName = creatorNames.TryGetValue(item.CreatedByUserKey, out var creator) ? creator : null,
@@ -45,6 +51,12 @@ public static class AgendaItemResponseFactory
             CategoryName = category?.Name,
             CategoryColorHex = category?.ColorHex,
             CategoryIcon = category?.Icon,
+            RecurrenceFrequency = item.RecurrenceFrequency,
+            RecurrenceInterval = item.RecurrenceInterval,
+            RecurrenceByWeekday = item.RecurrenceByWeekday,
+            RecurrenceEndUtc = item.RecurrenceEndUtc,
+            RecurrenceCount = item.RecurrenceCount,
+            IsRecurrenceInstance = isInstance,
             Assignments = item.Assignments
                 .Select(a => new AgendaAssignmentDto
                 {

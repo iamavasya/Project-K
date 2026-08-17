@@ -166,6 +166,11 @@ export class PlanningDetailComponent implements OnChanges {
       endUtc: s.optimalEndDate ?? null,
       isAllDay: true,
       agendaCategoryKey: null,
+      recurrenceFrequency: 'None',
+      recurrenceInterval: 1,
+      recurrenceByWeekday: 0,
+      recurrenceEndUtc: null,
+      recurrenceCount: null,
       targets: [{ targetType: 'Kurin', targetKey: s.kurinKey }]
     }).subscribe({
       next: () => {

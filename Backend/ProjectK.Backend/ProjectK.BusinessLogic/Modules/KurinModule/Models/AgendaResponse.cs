@@ -29,6 +29,16 @@ public record AgendaItemResponse
     public string? CategoryColorHex { get; set; }
     public string? CategoryIcon { get; set; }
 
+    /// <summary>Recurrence rule echoed back so the edit dialog can repopulate the series settings.</summary>
+    public RecurrenceFrequency RecurrenceFrequency { get; set; }
+    public int RecurrenceInterval { get; set; } = 1;
+    public int RecurrenceByWeekday { get; set; }
+    public DateTime? RecurrenceEndUtc { get; set; }
+    public int? RecurrenceCount { get; set; }
+
+    /// <summary>True when this row is one expanded occurrence of a series (its dates differ from the stored item).</summary>
+    public bool IsRecurrenceInstance { get; set; }
+
     public List<AgendaAssignmentDto> Assignments { get; set; } = [];
 }
 

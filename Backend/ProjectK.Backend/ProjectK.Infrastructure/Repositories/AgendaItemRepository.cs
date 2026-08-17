@@ -85,15 +85,17 @@ namespace ProjectK.Infrastructure.Repositories
             }
 
             // A dated item overlaps the window when it starts before the window ends and finishes
-            // after it begins; a single-day item (no EndUtc) is treated as ending at its start.
+            // after it begins; a single-day item (no EndUtc) is treated as ending at its start. Recurring
+            // items skip this narrowing — their base date may sit outside the window while occurrences fall
+            // inside — so the handler's expansion decides which instances land in range.
             if (fromUtc.HasValue)
             {
-                query = query.Where(a => (a.EndUtc ?? a.StartUtc) == null || (a.EndUtc ?? a.StartUtc) >= fromUtc.Value);
+                query = query.Where(a => a.RecurrenceFrequency != RecurrenceFrequency.None || (a.EndUtc ?? a.StartUtc) == null || (a.EndUtc ?? a.StartUtc) >= fromUtc.Value);
             }
 
             if (toUtc.HasValue)
             {
-                query = query.Where(a => a.StartUtc == null || a.StartUtc <= toUtc.Value);
+                query = query.Where(a => a.RecurrenceFrequency != RecurrenceFrequency.None || a.StartUtc == null || a.StartUtc <= toUtc.Value);
             }
 
             if (!viewer.CanSeeWholeKurin)

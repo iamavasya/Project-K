@@ -3,6 +3,18 @@ export type AgendaItemKind = 'Event' | 'Task';
 export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
 export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership';
 export type AgendaRsvpStatus = 'Going' | 'NotGoing' | 'Maybe';
+export type RecurrenceFrequency = 'None' | 'Weekly' | 'Monthly' | 'Yearly';
+
+/** Weekday bitmask helpers for RecurrenceByWeekday (bit 0 = Sunday … bit 6 = Saturday). */
+export const WEEKDAY_BITS = [
+  { label: 'Нд', bit: 1 << 0 },
+  { label: 'Пн', bit: 1 << 1 },
+  { label: 'Вт', bit: 1 << 2 },
+  { label: 'Ср', bit: 1 << 3 },
+  { label: 'Чт', bit: 1 << 4 },
+  { label: 'Пт', bit: 1 << 5 },
+  { label: 'Сб', bit: 1 << 6 }
+];
 
 export interface AgendaAssignmentDto {
   targetType: AgendaTargetType;
@@ -28,6 +40,12 @@ export interface AgendaItemDto {
   categoryName: string | null;
   categoryColorHex: string | null;
   categoryIcon: string | null;
+  recurrenceFrequency: RecurrenceFrequency;
+  recurrenceInterval: number;
+  recurrenceByWeekday: number;
+  recurrenceEndUtc: string | null;
+  recurrenceCount: number | null;
+  isRecurrenceInstance: boolean;
   assignments: AgendaAssignmentDto[];
 }
 
@@ -97,6 +115,11 @@ export interface CreateAgendaItemRequest {
   endUtc: string | null;
   isAllDay: boolean;
   agendaCategoryKey: string | null;
+  recurrenceFrequency: RecurrenceFrequency;
+  recurrenceInterval: number;
+  recurrenceByWeekday: number;
+  recurrenceEndUtc: string | null;
+  recurrenceCount: number | null;
   targets: AgendaTargetInput[];
 }
 

@@ -203,6 +203,7 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasKey(e => e.AgendaItemKey);
                 entity.Property(e => e.Kind).HasConversion<int>();
                 entity.Property(e => e.Status).HasConversion<int>();
+                entity.Property(e => e.RecurrenceFrequency).HasConversion<int>();
                 entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.HasOne(e => e.Kurin)
@@ -226,10 +227,12 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.Property(e => e.ColorHex).HasMaxLength(32).IsRequired();
                 entity.Property(e => e.Icon).HasMaxLength(64);
                 entity.Property(e => e.DefaultDescription).HasMaxLength(2000);
+                // Restrict (not Cascade) so Kurin has a single cascade path to AgendaItems: the item→category
+                // FK is SetNull, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
                 entity.HasOne(e => e.Kurin)
                       .WithMany()
                       .HasForeignKey(e => e.KurinKey)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
             });
 

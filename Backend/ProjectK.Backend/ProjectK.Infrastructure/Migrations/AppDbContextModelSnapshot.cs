@@ -737,6 +737,21 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("RecurrenceByWeekday")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RecurrenceCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("RecurrenceEndUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RecurrenceFrequency")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecurrenceInterval")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("StartUtc")
                         .HasColumnType("datetime2");
 
@@ -1618,7 +1633,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
                         .WithMany()
                         .HasForeignKey("KurinKey")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Kurin");

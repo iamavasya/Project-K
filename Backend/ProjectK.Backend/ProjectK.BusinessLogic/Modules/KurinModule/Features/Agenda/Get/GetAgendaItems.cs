@@ -42,8 +42,17 @@ public sealed class GetAgendaItemsHandler
         var lookups = await AgendaLookups.LoadAsync(_uow, request.KurinKey, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
+        // Recurring items are expanded into one row per occurrence inside the query window; one-offs pass
+        // through unchanged. A missing window is bounded so an open-ended series can't expand forever.
+        var windowFrom = request.FromUtc ?? DateTime.UtcNow.AddMonths(-6);
+        var windowTo = request.ToUtc ?? DateTime.UtcNow.AddMonths(12);
+
         var responses = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories))
+            .SelectMany(item => item.RecurrenceFrequency == RecurrenceFrequency.None
+                ? new[] { AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories) }
+                : AgendaRecurrence.Expand(item, windowFrom, windowTo)
+                    .Select(occ => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories, occ.StartUtc, occ.EndUtc)))
+            .OrderBy(r => r.StartUtc)
             .ToList();
 
         return new ServiceResult<IEnumerable<AgendaItemResponse>>(ResultType.Success, responses);

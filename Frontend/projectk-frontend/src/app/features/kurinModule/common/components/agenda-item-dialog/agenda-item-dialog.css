@@ -22,4 +22,13 @@
 .agenda-rsvp__badge[data-status="Maybe"] { background: var(--p-yellow-100); color: var(--p-yellow-700); }
 .agenda-rsvp__badge[data-status="NotGoing"] { background: var(--p-red-100); color: var(--p-red-700); }
 
+.agenda-recur-detail { display: flex; flex-direction: column; gap: 0.9rem; }
+.agenda-recur-interval { align-items: center; display: grid; gap: 0.5rem; grid-template-columns: auto 5rem auto; }
+.agenda-recur-interval .agenda-label { margin: 0; }
+.agenda-recur-interval input { width: 100%; }
+.agenda-recur-unit { color: var(--p-text-muted-color); font-size: 0.85rem; }
+.agenda-weekdays { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.agenda-weekday { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 999px; cursor: pointer; font-size: 0.8rem; min-width: 2.4rem; padding: 0.3rem 0.5rem; }
+.agenda-weekday.is-active { background: var(--p-primary-color); border-color: var(--p-primary-color); color: var(--p-primary-contrast-color); }
+
 @media (max-width: 640px) { .agenda-dates { grid-template-columns: 1fr; } }

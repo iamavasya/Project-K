@@ -16,7 +16,9 @@ import {
   AgendaItemKind,
   AgendaResponsesResponse,
   AgendaRsvpStatus,
-  AgendaTargetInput
+  AgendaTargetInput,
+  RecurrenceFrequency,
+  WEEKDAY_BITS
 } from '../../models/agenda';
 
 /**
@@ -72,6 +74,19 @@ export class AgendaItemDialogComponent {
     { label: 'Не йду', value: 'NotGoing' as AgendaRsvpStatus }
   ];
 
+  /** Recurrence rule (v1: freq + interval + weekly weekday mask + end date). */
+  protected recurrenceFrequency: RecurrenceFrequency = 'None';
+  protected recurrenceInterval = 1;
+  protected recurrenceByWeekday = 0;
+  protected recurrenceEndDate: Date | null = null;
+  protected readonly weekdays = WEEKDAY_BITS;
+  protected readonly frequencyOptions = [
+    { label: 'Не повторюється', value: 'None' as RecurrenceFrequency },
+    { label: 'Щотижня', value: 'Weekly' as RecurrenceFrequency },
+    { label: 'Щомісяця', value: 'Monthly' as RecurrenceFrequency },
+    { label: 'Щороку', value: 'Yearly' as RecurrenceFrequency }
+  ];
+
   protected readonly canSave = computed(() => this.targets().length > 0);
 
   constructor() {
@@ -88,6 +103,10 @@ export class AgendaItemDialogComponent {
         this.startDate = current.startUtc ? new Date(current.startUtc) : null;
         this.endDate = current.endUtc ? new Date(current.endUtc) : null;
         this.categoryKey = current.categoryKey ?? null;
+        this.recurrenceFrequency = current.recurrenceFrequency ?? 'None';
+        this.recurrenceInterval = current.recurrenceInterval || 1;
+        this.recurrenceByWeekday = current.recurrenceByWeekday ?? 0;
+        this.recurrenceEndDate = current.recurrenceEndUtc ? new Date(current.recurrenceEndUtc) : null;
         this.targets.set(current.assignments.map(a => ({ targetType: a.targetType, targetKey: a.targetKey })));
       } else {
         this.resetForm();
@@ -172,6 +191,11 @@ export class AgendaItemDialogComponent {
       endUtc: this.toUtcMidnight(this.endDate),
       isAllDay: true,
       agendaCategoryKey: this.kind === 'Event' ? this.categoryKey : null,
+      recurrenceFrequency: this.recurrenceFrequency,
+      recurrenceInterval: Math.max(1, this.recurrenceInterval || 1),
+      recurrenceByWeekday: this.recurrenceFrequency === 'Weekly' ? this.recurrenceByWeekday : 0,
+      recurrenceEndUtc: this.recurrenceFrequency !== 'None' ? this.toUtcMidnight(this.recurrenceEndDate) : null,
+      recurrenceCount: null,
       targets: this.targets()
     };
 
@@ -235,8 +259,21 @@ export class AgendaItemDialogComponent {
     this.startDate = new Date();
     this.endDate = null;
     this.categoryKey = null;
+    this.recurrenceFrequency = 'None';
+    this.recurrenceInterval = 1;
+    this.recurrenceByWeekday = 0;
+    this.recurrenceEndDate = null;
     this.targets.set([]);
     this.rsvp.set(null);
+  }
+
+  /** Flip one weekday bit in the weekly recurrence mask. */
+  toggleWeekday(bit: number): void {
+    this.recurrenceByWeekday ^= bit;
+  }
+
+  isWeekdaySelected(bit: number): boolean {
+    return (this.recurrenceByWeekday & bit) !== 0;
   }
 
   /** Day-only selection → UTC midnight ISO string, so the wire value has no local-time drift. */

@@ -58,6 +58,49 @@
     </div>
 
     <div class="agenda-field">
+      <label class="agenda-label" for="agenda-recur">Повторення</label>
+      <p-select
+        id="agenda-recur"
+        [options]="frequencyOptions"
+        [(ngModel)]="recurrenceFrequency"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body" />
+    </div>
+
+    @if (recurrenceFrequency !== 'None') {
+      <div class="agenda-recur-detail">
+        <div class="agenda-field agenda-recur-interval">
+          <label class="agenda-label" for="agenda-interval">Кожні</label>
+          <input id="agenda-interval" pInputText type="number" min="1" [(ngModel)]="recurrenceInterval" />
+          <span class="agenda-recur-unit">
+            {{ recurrenceFrequency === 'Weekly' ? 'тижн.' : recurrenceFrequency === 'Monthly' ? 'міс.' : 'р.' }}
+          </span>
+        </div>
+
+        @if (recurrenceFrequency === 'Weekly') {
+          <div class="agenda-field">
+            <span class="agenda-label">Дні тижня</span>
+            <div class="agenda-weekdays">
+              @for (day of weekdays; track day.bit) {
+                <button
+                  type="button"
+                  class="agenda-weekday"
+                  [class.is-active]="isWeekdaySelected(day.bit)"
+                  (click)="toggleWeekday(day.bit)">{{ day.label }}</button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="agenda-field">
+          <label class="agenda-label" for="agenda-recur-end">Повторювати до</label>
+          <p-datePicker id="agenda-recur-end" [(ngModel)]="recurrenceEndDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" placeholder="Без кінця" />
+        </div>
+      </div>
+    }
+
+    <div class="agenda-field">
       <span class="agenda-label">Призначити для</span>
       <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
     </div>
