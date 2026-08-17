@@ -4,9 +4,29 @@
   [modal]="true"
   [style]="{ width: '34rem' }"
   [draggable]="false"
-  [header]="item() ? 'Редагувати' : 'Нове призначення'"
+  [header]="viewOnly() ? 'Подія' : (item() ? 'Редагувати' : 'Нове призначення')"
   (onHide)="onHide()">
   <div class="agenda-form">
+    @if (viewOnly()) {
+      <div class="agenda-view">
+        <h3 class="agenda-view__title">{{ item()?.title }}</h3>
+        @if (item()?.categoryName) {
+          <span class="agenda-view__badge" [style.background]="item()?.categoryColorHex">{{ item()?.categoryName }}</span>
+        }
+        <div class="agenda-view__when">
+          <i class="pi pi-calendar"></i>
+          @if (item()?.isAllDay) {
+            {{ item()?.startUtc | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'dd.MM.yyyy' }} }
+          } @else {
+            {{ item()?.startUtc | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'HH:mm' }} }
+          }
+        </div>
+        @if (item()?.description) {
+          <p class="agenda-view__desc">{{ item()?.description }}</p>
+        }
+      </div>
+    } @else {
+
     <div class="agenda-field">
       <span class="agenda-label">Тип</span>
       <p-selectButton [options]="kindOptions" [(ngModel)]="kind" optionLabel="label" optionValue="value" [allowEmpty]="false" />
@@ -110,6 +130,8 @@
       <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
     </div>
 
+    }
+
     @if (item()?.createdByName) {
       <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
     }
@@ -152,10 +174,14 @@
   </div>
 
   <ng-template pTemplate="footer">
-    @if (item() && item()!.canEdit) {
-      <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+    @if (viewOnly()) {
+      <p-button label="Закрити" severity="secondary" variant="text" (click)="close()" />
+    } @else {
+      @if (item() && item()!.canEdit) {
+        <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+      }
+      <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
+      <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
     }
-    <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
-    <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
   </ng-template>
 </p-dialog>

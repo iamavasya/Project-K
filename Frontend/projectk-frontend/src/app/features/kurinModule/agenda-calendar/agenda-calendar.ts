@@ -204,12 +204,11 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private onEventClick(arg: EventClickArg): void {
+    // Open for everyone: editors get the form, viewers get read-only details + RSVP.
     const item = arg.event.extendedProps['item'] as AgendaItemDto;
-    if (item.canEdit) {
-      this.editing.set(item);
-      this.presetStart.set(null);
-      this.dialogVisible.set(true);
-    }
+    this.editing.set(item);
+    this.presetStart.set(null);
+    this.dialogVisible.set(true);
   }
 
   private onSelect(arg: DateSelectArg): void {

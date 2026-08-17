@@ -29,17 +29,17 @@
   </section>
 </div>
 
-<!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
-     assign-targets) for plain users would 403 and bounce them to /forbidden. -->
-@if (canManage()) {
-  <app-agenda-item-dialog
-    [visible]="dialogVisible()"
-    (visibleChange)="dialogVisible.set($event)"
-    [kurinKey]="kurinKey()"
-    [item]="editing()"
-    [defaultKind]="'Event'"
-    [presetStart]="presetStart()"
-    [presetEnd]="presetEnd()"
-    [presetAllDay]="presetAllDay()"
-    (saved)="onSaved()" />
-}
+<!-- Rendered for everyone: managers get the edit form, plain members a read-only view with RSVP. The
+     dialog only mounts the mentor-only assign-select in edit mode, so viewers never hit its 403. -->
+<app-agenda-item-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [kurinKey]="kurinKey()"
+  [item]="editing()"
+  [defaultKind]="'Event'"
+  [canManage]="canManage()"
+  [presetStart]="presetStart()"
+  [presetEnd]="presetEnd()"
+  [presetAllDay]="presetAllDay()"
+  (saved)="onSaved()" />
+

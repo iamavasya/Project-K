@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -30,7 +31,7 @@ import {
   selector: 'app-agenda-item-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
+    DatePipe, FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
     SelectButtonModule, SelectModule, DatePickerModule, ToggleSwitchModule, AgendaAssignSelectComponent
   ],
   templateUrl: './agenda-item-dialog.html',
@@ -46,6 +47,8 @@ export class AgendaItemDialogComponent {
   readonly item = input<AgendaItemDto | null>(null);
   /** Preselected kind when creating: Event from the calendar, Task from the board. */
   readonly defaultKind = input<AgendaItemKind>('Event');
+  /** False for plain members: the dialog then opens read-only (view + RSVP), never the edit form. */
+  readonly canManage = input<boolean>(true);
   /** Prefill a fresh item from a calendar slot selection (date/time + all-day-ness). */
   readonly presetStart = input<Date | null>(null);
   readonly presetEnd = input<Date | null>(null);
@@ -94,6 +97,15 @@ export class AgendaItemDialogComponent {
   ];
 
   protected readonly canSave = computed(() => this.targets().length > 0);
+
+  /** View-only mode: a plain member, or anyone opening an item they may not edit. Shows details + RSVP only. */
+  protected readonly viewOnly = computed(() => {
+    if (!this.canManage()) {
+      return true;
+    }
+    const current = this.item();
+    return !!current && !current.canEdit;
+  });
 
   constructor() {
     // Populate the form whenever the dialog opens for a specific item (or a fresh create).
