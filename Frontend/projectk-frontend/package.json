@@ -53,7 +53,7 @@
   "devDependencies": {
     "@angular/build": "^21.2.6",
     "@angular/cli": "^21.2.6",
-    "@angular/compiler-cli": "^21.2.7",
+    "@angular/compiler-cli": "^22.1.2",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@types/jasmine": "~6.0.0",
