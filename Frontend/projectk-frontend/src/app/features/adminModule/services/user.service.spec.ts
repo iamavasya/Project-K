@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { UserService } from './user.service';
 import { UserDto } from '../models/userDto';
@@ -17,7 +17,7 @@ describe('UserService', () => {
     TestBed.configureTestingModule({
       providers: [
         UserService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting()
       ]
     });

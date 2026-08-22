@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -48,6 +48,7 @@ interface SkillsReviewItemView {
     EmptyStateComponent
   ],
   templateUrl: './skills-review-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './skills-review-page.component.css'
 })
 export class SkillsReviewPageComponent implements OnInit {

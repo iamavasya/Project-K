@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingService, WaitlistEntry, ZbtStats } from '../../../authModule/services/onboarding.service';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -143,6 +143,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
       </p-table>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .waitlist-empty-cell {
       border: 0 !important;

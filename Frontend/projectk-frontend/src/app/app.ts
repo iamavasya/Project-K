@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,6 +12,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
   selector: 'app-root',
   imports: [RouterOutlet, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
 })
 export class App implements AfterViewInit {

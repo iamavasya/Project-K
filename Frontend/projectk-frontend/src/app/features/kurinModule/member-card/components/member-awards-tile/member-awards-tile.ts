@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+﻿import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
@@ -29,6 +29,7 @@ interface AwardGroup {
   ],
   providers: [ConfirmationService],
   templateUrl: './member-awards-tile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-awards-tile.css'
 })
 export class MemberAwardsTileComponent {

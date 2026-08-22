@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { Component, Input, OnChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -35,6 +35,7 @@ import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-
     EmptyStateComponent
   ],
   templateUrl: './leadership-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leadership-panel.css'
 })
 export class LeadershipPanelComponent implements OnChanges {

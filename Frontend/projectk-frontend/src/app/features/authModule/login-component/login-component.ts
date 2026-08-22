@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { FormsModule } from '@angular/forms';
 import { FloatLabel } from '@openng/optimus-ui/floatlabel';
@@ -16,6 +16,7 @@ import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
   selector: 'app-login-component',
   imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule, InputOtpModule, CommonModule, RouterLink],
   templateUrl: './login-component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login-component.css'
 })
 export class LoginComponent implements OnInit {

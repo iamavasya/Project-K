@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, HostListener, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,6 +11,7 @@ import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
   selector: 'app-notification-bell',
   imports: [ButtonModule, LocalUtcDatePipe, NgClass],
   templateUrl: './notification-bell.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './notification-bell.css'
 })
 export class NotificationBell implements OnInit {

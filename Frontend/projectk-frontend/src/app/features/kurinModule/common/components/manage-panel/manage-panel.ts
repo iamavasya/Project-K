@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -33,6 +33,7 @@ export interface ManagePanelConfig {
   selector: 'app-manage-panel',
   imports: [DialogModule, CommonModule, InputTextModule, TextareaModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
   templateUrl: './manage-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './manage-panel.css'
 })
 export class ManagePanel implements OnChanges {

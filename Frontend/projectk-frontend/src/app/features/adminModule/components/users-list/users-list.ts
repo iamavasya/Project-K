@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UserService } from '../../services/user.service';
 import { UserDto } from '../../models/userDto';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -20,6 +20,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
   imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, CommonModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './users-list.css'
 })
 export class UsersListComponent implements OnInit {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { Component, Input, OnChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -45,6 +45,7 @@ interface MentorAssignmentRow {
     EmptyStateComponent
   ],
   templateUrl: './kv-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './kv-panel.css'
 })
 export class KvPanelComponent implements OnChanges {

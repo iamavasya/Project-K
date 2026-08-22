@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TableModule } from '@openng/optimus-ui/table';
 import { SplitButtonModule } from '@openng/optimus-ui/splitbutton';
 
@@ -15,6 +15,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
   selector: 'app-admin-panel',
   imports: [TableModule, SplitButtonModule, ManagePanel, ButtonModule, EmptyStateComponent, RouterModule],
   templateUrl: './admin-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./admin-panel.component.css']
 })
 export class AdminPanelComponent implements OnInit {

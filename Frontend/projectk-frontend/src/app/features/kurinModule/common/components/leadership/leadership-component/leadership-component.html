@@ -48,7 +48,7 @@
       <ng-template pTemplate="body" let-rowControl let-i="rowIndex">
         <tr [formGroupName]="i" [hidden]="!isRowVisible(i)">
           <td>
-            <span class="font-semibold">{{ getRoleDisplayName(rowControl.get('role')?.value) }}</span>
+            <span class="font-semibold">{{ getRoleDisplayName($safeNavigationMigration(rowControl.get('role')?.value)) }}</span>
           </td>
 
           <td>
@@ -81,24 +81,24 @@
           </td>
 
           @if (showArchived) {
-            <td>{{ rowControl.get('startDate')?.value | date:'dd.MM.yyyy' }}</td>
-            <td>{{ rowControl.get('endDate')?.value | date:'dd.MM.yyyy' }}</td>
+            <td>{{ $safeNavigationMigration(rowControl.get('startDate')?.value) | date:'dd.MM.yyyy' }}</td>
+            <td>{{ $safeNavigationMigration(rowControl.get('endDate')?.value) | date:'dd.MM.yyyy' }}</td>
           }
 
           <td class="text-right">
             <div class="flex gap-2 justify-end">
-              @if (canHaveMultipleMembers(rowControl.get('role')?.value) && !rowControl.get('endDate')?.value) {
+              @if (canHaveMultipleMembers($safeNavigationMigration(rowControl.get('role')?.value)) && !rowControl.get('endDate')?.value) {
                 <button
                   pButton
                   type="button"
                   icon="pi pi-plus"
                   class="p-button-rounded p-button-text p-button-success"
-                  (click)="addRoleRow(rowControl.get('role')?.value)"
+                  (click)="addRoleRow($safeNavigationMigration(rowControl.get('role')?.value))"
                   pTooltip="Додати ще">
                 </button>
               }
 
-              @if (!rowControl.get('endDate')?.value && (canHaveMultipleMembers(rowControl.get('role')?.value) || rowControl.get('member')?.value)) {
+              @if (!rowControl.get('endDate')?.value && (canHaveMultipleMembers($safeNavigationMigration(rowControl.get('role')?.value)) || rowControl.get('member')?.value)) {
                 <button
                   pButton
                   type="button"

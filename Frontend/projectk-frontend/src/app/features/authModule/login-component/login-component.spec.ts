@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
@@ -30,7 +30,7 @@ describe('LoginComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         { provide: AuthService, useValue: authService },
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: {} },

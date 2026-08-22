@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
@@ -15,6 +15,7 @@ import { environment } from '../../../../../../environments/environment';
 @Component({
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
 export class SidebarMenu implements OnChanges {

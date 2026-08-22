@@ -5,7 +5,7 @@ import { routes } from './app.routes';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
 import { provideOptimus } from '@openng/optimus-ui/config';
 import { LileykaPreset } from './lileyka-preset';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
 import { HealthBannerService } from './features/systemModule/services/health-banner.service';
@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
           }
         }
     }),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withXhr(), withInterceptorsFromDi()),
     // Constructing ThemeService applies the stored preference. Without this it would only
     // happen once the toolbar renders, so login and welcome would ignore a dark preference.
     provideAppInitializer(() => void inject(ThemeService)),

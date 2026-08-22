@@ -3,7 +3,7 @@ import { MemberCardComponent } from './member-card.component';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
@@ -130,7 +130,7 @@ describe('MemberCardComponent', () => {
     await TestBed.configureTestingModule({
       imports: [MemberCardComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: KurinService, useValue: kurinServiceSpy },

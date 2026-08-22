@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { TileLayoutService } from './tile-layout.service';
 import { environment } from '../../../environments/environment';
 
@@ -17,7 +17,7 @@ describe('TileLayoutService', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), TileLayoutService]
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), TileLayoutService]
     });
     service = TestBed.inject(TileLayoutService);
     httpMock = TestBed.inject(HttpTestingController);

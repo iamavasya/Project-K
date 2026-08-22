@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -26,6 +26,7 @@ import { parseDateOnlyString, toDateOnlyString } from '../../../common/functions
     DatePickerModule
   ],
   templateUrl: './member-awards-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-awards-dialog.css'
 })
 export class MemberAwardsDialogComponent implements OnChanges {

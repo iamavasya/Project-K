@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -28,6 +28,7 @@ import { PermissionService } from '../services/permission.service';
     MfaSetupDialogComponent
   ],
   templateUrl: './account-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-settings.component.css'
 })
 export class AccountSettingsComponent implements OnInit {

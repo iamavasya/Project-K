@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { environment } from '../../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { MEMBER_CACHE_PREFIX, MEMBER_WARNING_CACHE_PREFIX } from '../client-cache/cache-policy';
@@ -29,7 +29,7 @@ describe('MemberWarningService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         MemberWarningService
       ]

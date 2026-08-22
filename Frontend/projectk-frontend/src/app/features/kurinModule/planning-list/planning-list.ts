@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -83,6 +83,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .planning-page {
       margin-inline: auto;

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { AuthService } from '../services/authService/auth.service';
 import { Router } from '@angular/router';
@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-logout-component',
   imports: [ButtonModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './logout-component.html',
 })
 export class LogoutComponent {

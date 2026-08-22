@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { BadgeImageBlobService } from './badge-image-blob.service';
 import { environment } from '../../../../../../environments/environment';
 
@@ -12,7 +12,7 @@ describe('BadgeImageBlobService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         BadgeImageBlobService
       ]

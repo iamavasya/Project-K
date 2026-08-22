@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MemberService } from '../../services/member-service/member.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
@@ -46,6 +46,7 @@ import { PermissionService } from '../../../../authModule/services/permission.se
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [DatePipe]
 })
 export class MemberList implements OnInit {

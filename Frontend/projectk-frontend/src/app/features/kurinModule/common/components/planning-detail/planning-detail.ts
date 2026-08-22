@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
@@ -27,6 +27,7 @@ import 'chartjs-adapter-date-fns';
     TagModule,
     DividerModule
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
 <p-dialog
   [(visible)]="visible"

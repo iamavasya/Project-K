@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -22,6 +22,7 @@ import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
     PasswordModule,
     ToggleSwitchModule
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './setup.component.html'
 })
 export class SetupComponent {

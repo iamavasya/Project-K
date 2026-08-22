@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ToolbarModule } from '@openng/optimus-ui/toolbar';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { AvatarModule } from '@openng/optimus-ui/avatar';
@@ -18,6 +18,7 @@ import { BreadcrumbComponent } from '../breadcrumb/breadcrumb';
   selector: 'app-toolbar-header',
   imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenu, NotificationBell, TooltipModule, BreadcrumbComponent],
   templateUrl: './toolbar-header.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './toolbar-header.css',
 })
 export class ToolbarHeader {

@@ -1,12 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TileBoardComponent } from './tile-board.component';
 import { TileDefDirective } from './tile-def.directive';
 
 @Component({
   imports: [TileBoardComponent, TileDefDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-tile-board boardKey="member-card">
       <ng-template [appTileDef]="{ key: 'profile', span: 'full', pinned: true, label: 'Профіль' }">
@@ -27,7 +28,7 @@ describe('TileBoardComponent (projection)', () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       imports: [HostComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()]
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()]
     });
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();

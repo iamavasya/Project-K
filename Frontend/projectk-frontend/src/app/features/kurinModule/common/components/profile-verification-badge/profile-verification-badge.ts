@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
@@ -6,6 +6,7 @@ import { MemberProfileVerificationStatus } from '../../models/enums/member-profi
   selector: 'app-profile-verification-badge',
   imports: [TooltipModule],
   templateUrl: './profile-verification-badge.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-verification-badge.css'
 })
 export class ProfileVerificationBadgeComponent {

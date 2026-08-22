@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/upcomingBirthdays.function';
@@ -8,6 +8,7 @@ import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/up
   selector: 'app-upcoming-birthdays-tile',
   imports: [CommonModule, TagModule],
   templateUrl: './upcoming-birthdays-tile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './upcoming-birthdays-tile.css'
 })
 export class UpcomingBirthdaysTileComponent implements OnInit, OnChanges {

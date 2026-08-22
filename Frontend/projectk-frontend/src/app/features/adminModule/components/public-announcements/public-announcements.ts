@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -52,6 +52,7 @@ interface Option<T> {
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './public-announcements.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './public-announcements.css'
 })
 export class PublicAnnouncementsComponent implements OnInit {

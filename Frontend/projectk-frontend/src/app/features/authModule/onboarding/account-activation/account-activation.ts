@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, ToastModule],
   providers: [MessageService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <p-toast></p-toast>
     <div class="flex justify-center items-center min-h-screen p-4">

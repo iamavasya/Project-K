@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -18,6 +18,7 @@ import { AgendaCategoryManagerComponent } from '../common/components/agenda-cate
     AgendaCategoryManagerComponent
   ],
   templateUrl: './kurin-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./kurin-settings.component.css']
 })
 export class KurinSettingsComponent implements OnInit {

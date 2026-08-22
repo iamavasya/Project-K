@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, TitleStrategy, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { PageTitleService } from './page-title.service';
 import { ProjectKTitleStrategy } from './page-title.strategy';
 import { AuthService } from '../../authModule/services/authService/auth.service';
@@ -179,7 +179,7 @@ describe('ProjectKTitleStrategy wiring', () => {
     // Router into it would fail bootstrap with NG0200 — a stubbed Router hides that.
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideRouter([]),
         { provide: TitleStrategy, useClass: ProjectKTitleStrategy }
       ]

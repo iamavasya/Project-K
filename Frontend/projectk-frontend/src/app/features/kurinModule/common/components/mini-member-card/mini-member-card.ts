@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
@@ -13,6 +13,7 @@ import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.fu
   selector: 'app-mini-member-card',
   imports: [CommonModule, ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent],
   templateUrl: './mini-member-card.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './mini-member-card.css'
 })
 export class MiniMemberCardComponent {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OnboardingService } from '../../services/onboarding.service';
@@ -28,6 +28,7 @@ import { RouterLink } from '@angular/router';
     RouterLink
   ],
   providers: [MessageService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <p-toast></p-toast>
     <main class="flex justify-center items-center min-h-screen p-4">

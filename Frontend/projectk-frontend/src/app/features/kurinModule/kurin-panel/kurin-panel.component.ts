@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpResponse } from '@angular/common/http';
@@ -46,6 +46,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
     EmptyStateComponent
   ],
   templateUrl: './kurin-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./kurin-panel.component.css']
 })
 export class KurinPanelComponent implements OnInit {

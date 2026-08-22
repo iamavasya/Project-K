@@ -16,9 +16,9 @@
         <div class="agenda-view__when">
           <i class="pi pi-calendar"></i>
           @if (item()?.isAllDay) {
-            {{ item()?.startUtc | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'dd.MM.yyyy' }} }
+            {{ $safeNavigationMigration(item()?.startUtc) | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ $safeNavigationMigration(item()?.endUtc) | date:'dd.MM.yyyy' }} }
           } @else {
-            {{ item()?.startUtc | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'HH:mm' }} }
+            {{ $safeNavigationMigration(item()?.startUtc) | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ $safeNavigationMigration(item()?.endUtc) | date:'HH:mm' }} }
           }
         </div>
         @if (item()?.description) {
