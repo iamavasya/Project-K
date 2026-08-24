@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, output } from '@angular/core';
+import { Component, Input, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, output, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
@@ -100,7 +100,7 @@ import 'chartjs-adapter-date-fns';
 })
 export class PlanningDetailComponent implements OnChanges {
   @Input() visible = false;
-  @Input() sessionId: string | null = null;
+  readonly sessionId = input<string | null>(null);
   readonly visibleChange = output<boolean>();
 
   private readonly service = inject(PlanningService);
@@ -126,8 +126,9 @@ export class PlanningDetailComponent implements OnChanges {
   chartOptions: Record<string, unknown> | null = null;
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['visible'] && this.visible && this.sessionId) {
-      this.loadData(this.sessionId);
+    const sessionId = this.sessionId();
+    if (changes['visible'] && this.visible && sessionId) {
+      this.loadData(sessionId);
     }
   }
 

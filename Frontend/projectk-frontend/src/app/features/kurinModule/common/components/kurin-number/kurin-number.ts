@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 
 @Component({
@@ -8,5 +8,5 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
   styleUrl: './kurin-number.css'
 })
 export class KurinNumberComponent {
-  @Input() number: number | null = null;
+  readonly number = input<number | null>(null);
 }

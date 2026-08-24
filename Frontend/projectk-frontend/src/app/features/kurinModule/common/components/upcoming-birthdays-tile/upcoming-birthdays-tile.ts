@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, Input, OnChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/upcomingBirthdays.function';
@@ -14,7 +14,7 @@ import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/up
 export class UpcomingBirthdaysTileComponent implements OnInit, OnChanges {
   @Input() members: MemberLookupDto[] = [];
   @Input() daysAhead = 30;
-  @Input() title = 'Найближчі дні народження';
+  readonly title = input('Найближчі дні народження');
 
   readonly previewLimit = 5;
   upcomingBirthdays: UpcomingBirthdayItem[] = [];
