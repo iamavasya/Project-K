@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from '@openng/optimus-ui/floatlabel';
 import { FormGroup, FormsModule, NgForm } from '@angular/forms';
@@ -44,7 +44,7 @@ import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
   styleUrl: './upsert-member.component.css'
 })
 export class UpsertMemberComponent implements OnInit {
-  @ViewChild('form') form!: NgForm;
+  readonly form = viewChild.required<NgForm>('form');
   activeAccordionPanels: string[] = ['0'];
 
   member: MemberDto = {
@@ -204,7 +204,7 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   markFormDirty() {
-    this.form?.form.markAsDirty();
+    this.form()?.form.markAsDirty();
   }
 
   onUpuToggle(value: boolean) {

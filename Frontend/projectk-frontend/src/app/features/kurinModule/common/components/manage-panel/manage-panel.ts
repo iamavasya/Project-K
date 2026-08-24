@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, ElementRef, Input, OnChanges, QueryList, SimpleChanges, ViewChildren, ChangeDetectionStrategy, output } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy, output, viewChildren } from '@angular/core';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TitleCasePipe } from '@angular/common';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -49,7 +49,7 @@ export class ManagePanel implements OnChanges {
     entityType: string;
 }>();
 
-  @ViewChildren('autoField') autoFields!: QueryList<ElementRef>;
+  readonly autoFields = viewChildren<ElementRef>('autoField');
 
   form: FormGroup = new FormGroup({});
   ready = false;
@@ -85,7 +85,7 @@ export class ManagePanel implements OnChanges {
   }
 
   private focusFirstInput(): void {
-    const target = this.autoFields?.find(ref => {
+    const target = this.autoFields()?.find(ref => {
       const el = ref.nativeElement as HTMLElement;
       const disabled = (el as HTMLInputElement).disabled;
       const hidden = el.offsetParent === null;

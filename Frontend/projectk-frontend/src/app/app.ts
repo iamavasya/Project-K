@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,7 +21,7 @@ export class App implements AfterViewInit {
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly router = inject(Router);
 
-  @ViewChild('mfaDialog') mfaDialog!: MfaSetupDialogComponent;
+  readonly mfaDialog = viewChild.required<MfaSetupDialogComponent>('mfaDialog');
 
   constructor() {
     this.updateShellVisibility(this.router.url);
@@ -34,7 +34,7 @@ export class App implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.mfaEnforcer.checkAndEnforce(this.mfaDialog);
+    this.mfaEnforcer.checkAndEnforce(this.mfaDialog());
   }
 
   private updateShellVisibility(url: string): void {
