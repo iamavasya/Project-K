@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, Input, ChangeDetectionStrategy, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, output, input } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
@@ -17,7 +17,7 @@ import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.fu
   styleUrl: './mini-member-card.css'
 })
 export class MiniMemberCardComponent {
-  @Input({ required: true }) member!: MemberLookupDto;
+  readonly member = input.required<MemberLookupDto>();
   readonly navigate = output<MemberLookupDto>();
 
   readonly warningLevels = [
@@ -27,7 +27,7 @@ export class MiniMemberCardComponent {
   ];
 
   onNavigate(): void {
-    this.navigate.emit(this.member);
+    this.navigate.emit(this.member());
   }
 
   get hasActiveWarnings(): boolean {
@@ -67,7 +67,7 @@ export class MiniMemberCardComponent {
   }
 
   private getActiveWarnings(): MemberWarningDto[] {
-    const warnings = this.member?.warnings ?? [];
+    const warnings = this.member()?.warnings ?? [];
     const now = Date.now();
     return warnings.filter(warning =>
       !warning.revokedAtUtc && this.parseUtcDate(warning.expiresAtUtc) > now

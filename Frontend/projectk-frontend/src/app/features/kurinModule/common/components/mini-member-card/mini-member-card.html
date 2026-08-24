@@ -1,8 +1,8 @@
 <article class="mini-member-card group relative overflow-hidden rounded-2xl p-3">
     <div class="mini-member-card__photo-shell relative overflow-hidden rounded-xl">
         <img
-            src="{{ member.profilePhotoUrl || 'https://placehold.co/480x360?text=Member+Photo' }}"
-            alt="{{ member.firstName }} {{ member.lastName }}"
+            src="{{ member().profilePhotoUrl || 'https://placehold.co/480x360?text=Member+Photo' }}"
+            alt="{{ member().firstName }} {{ member().lastName }}"
             class="h-full w-full object-cover"
         />
 
@@ -23,10 +23,10 @@
             <div class="mini-member-card__header flex flex-col gap-2">
                 <div class="flex items-center flex-row gap-2">
                     <h4 class="mini-member-card__name line-clamp-2 text-lg font-semibold leading-tight">
-                        {{ member.firstName }} {{ member.lastName }}
+                        {{ member().firstName }} {{ member().lastName }}
                     </h4>
 
-                    <app-profile-verification-badge [status]="member.profileVerificationStatus" />
+                    <app-profile-verification-badge [status]="member().profileVerificationStatus" />
                 </div>
 
                 @if (hasActiveWarnings) {
@@ -45,18 +45,18 @@
                 }
             </div>
 
-            <p-tag [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
+            <p-tag [value]="member().latestPlastLevelDisplay || member().latestPlastLevel || 'Рівень не вказано'"
                 severity="info"
                 styleClass="!rounded-full !px-2.5 !py-1 !text-[10px] !font-semibold"
              />
         </div>
 
         <p class="mini-member-card__meta text-sm">
-            {{ member.phoneNumber || 'Телефон не вказано' }}
+            {{ member().phoneNumber || 'Телефон не вказано' }}
         </p>
 
         <p class="mini-member-card__meta text-sm">
-            {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Дата народження не вказана' }}
+            {{ member().dateOfBirth ? (member().dateOfBirth | date:'dd.MM.yyyy') : 'Дата народження не вказана' }}
         </p>
     </div>
 </article>

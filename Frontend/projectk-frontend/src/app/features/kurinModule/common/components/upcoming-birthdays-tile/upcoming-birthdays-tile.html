@@ -42,7 +42,7 @@
                     <p class="birthdays-note mt-2 text-xs">Ще {{ remainingBirthdaysCount }} днів народження у межах періоду.</p>
                 }
             } @else {
-                <p class="birthdays-note mt-3 text-sm">У найближчі {{ daysAhead }} днів днів народження не знайдено.</p>
+                <p class="birthdays-note mt-3 text-sm">У найближчі {{ daysAhead() }} днів днів народження не знайдено.</p>
             }
         </div>
     </div>
