@@ -6,7 +6,7 @@ import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { SelectModule } from "@openng/optimus-ui/select";
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
@@ -16,8 +16,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 
 @Component({
   selector: 'app-users-list',
-  standalone: true,
-  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, CommonModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
+  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.html',
   changeDetection: ChangeDetectionStrategy.Eager,

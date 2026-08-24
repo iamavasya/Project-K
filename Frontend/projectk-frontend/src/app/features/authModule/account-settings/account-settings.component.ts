@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -16,9 +16,7 @@ import { PermissionService } from '../services/permission.service';
 
 @Component({
   selector: 'app-account-settings',
-  standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     InputTextModule,
     PasswordModule,
@@ -26,7 +24,7 @@ import { PermissionService } from '../services/permission.service';
     DividerModule,
     TagModule,
     MfaSetupDialogComponent
-  ],
+],
   templateUrl: './account-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-settings.component.css'

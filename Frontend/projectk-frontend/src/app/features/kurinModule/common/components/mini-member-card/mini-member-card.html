@@ -7,15 +7,14 @@
         />
 
         <div class="mini-member-card__overlay absolute inset-0 flex items-end justify-end p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <p-button
-                label="Перейти"
+            <p-button label="Перейти"
                 icon="pi pi-arrow-right"
                 iconPos="right"
                 severity="contrast"
                 size="small"
                 styleClass="!rounded-lg !px-3 !py-1.5 !text-xs"
                 (onClick)="onNavigate()"
-            ></p-button>
+             />
         </div>
     </div>
 
@@ -27,7 +26,7 @@
                         {{ member.firstName }} {{ member.lastName }}
                     </h4>
 
-                    <app-profile-verification-badge [status]="member.profileVerificationStatus"></app-profile-verification-badge>
+                    <app-profile-verification-badge [status]="member.profileVerificationStatus" />
                 </div>
 
                 @if (hasActiveWarnings) {
@@ -46,11 +45,10 @@
                 }
             </div>
 
-            <p-tag
-                [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
+            <p-tag [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
                 severity="info"
                 styleClass="!rounded-full !px-2.5 !py-1 !text-[10px] !font-semibold"
-            ></p-tag>
+             />
         </div>
 
         <p class="mini-member-card__meta text-sm">

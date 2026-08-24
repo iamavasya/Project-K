@@ -11,7 +11,6 @@ const ENFORCE_PRIVILEGED_MFA_KEY = 'Security__EnforcePrivilegedMFA';
 
 @Component({
   selector: 'app-system-settings',
-  standalone: true,
   imports: [ToggleSwitchModule, ButtonModule, FormsModule],
   templateUrl: './system-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

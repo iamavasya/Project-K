@@ -6,7 +6,7 @@
         <p>Контактні дані, пароль і двофакторна автентифікація.</p>
       </div>
       @if (settings) {
-        <p-tag [value]="settings.role"></p-tag>
+        <p-tag [value]="settings.role" />
       }
     </header>
 
@@ -74,7 +74,7 @@
         </form>
       </section>
 
-      <p-divider></p-divider>
+      <p-divider />
 
       <section class="settings-section">
         <div class="section-copy">
@@ -134,7 +134,7 @@
         </form>
       </section>
 
-      <p-divider></p-divider>
+      <p-divider />
 
       <section class="settings-section">
         <div class="section-copy">
@@ -254,4 +254,4 @@
   </section>
 </main>
 
-<app-mfa-setup-dialog #mfaSetupDialog (enabled)="onMfaEnabled()"></app-mfa-setup-dialog>
+<app-mfa-setup-dialog #mfaSetupDialog (enabled)="onMfaEnabled()" />

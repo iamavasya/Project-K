@@ -1,11 +1,10 @@
 <div class="notification-bell">
-  <p-button
-    icon="pi pi-bell"
+  <p-button icon="pi pi-bell"
     [text]="true"
     severity="secondary"
     ariaLabel="Сповіщення"
     (onClick)="toggle()"
-  ></p-button>
+   />
 
   @if (unreadCount > 0) {
     <span class="notification-count">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -15,15 +14,14 @@
     <div class="notification-panel">
       <div class="notification-panel__header">
         <span class="notification-panel__title">Сповіщення</span>
-        <p-button
-          icon="pi pi-check"
+        <p-button icon="pi pi-check"
           [text]="true"
           size="small"
           severity="secondary"
           ariaLabel="Позначити всі як прочитані"
           [disabled]="unreadCount === 0"
           (onClick)="markAllAsRead()"
-        ></p-button>
+         />
       </div>
 
       <div class="notification-panel__body">

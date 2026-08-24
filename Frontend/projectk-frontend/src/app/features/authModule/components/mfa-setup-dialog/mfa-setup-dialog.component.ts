@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, EventEmitter, inject, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -9,8 +9,7 @@ import { AuthService, MfaSetupResponse } from '../../services/authService/auth.s
 
 @Component({
   selector: 'app-mfa-setup-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, DialogModule, ButtonModule, InputOtpModule],
+  imports: [FormsModule, DialogModule, ButtonModule, InputOtpModule],
   templateUrl: './mfa-setup-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './mfa-setup-dialog.component.css'

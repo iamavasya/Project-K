@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, Input, OnChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -22,7 +22,6 @@ import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-
 @Component({
   selector: 'app-leadership-panel',
   imports: [
-    CommonModule,
     FormsModule,
     ButtonModule,
     IconFieldModule,
@@ -32,8 +31,9 @@ import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-
     TagModule,
     ToggleSwitchModule,
     TooltipModule,
-    EmptyStateComponent
-  ],
+    EmptyStateComponent,
+    DatePipe
+],
   templateUrl: './leadership-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leadership-panel.css'

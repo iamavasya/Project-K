@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
@@ -17,16 +17,15 @@ import 'chartjs-adapter-date-fns';
 
 @Component({
   selector: 'app-planning-detail',
-  standalone: true,
   imports: [
-    CommonModule, 
-    DialogModule, 
-    ChartModule, 
-    SkeletonModule, 
-    ButtonModule, 
+    DialogModule,
+    ChartModule,
+    SkeletonModule,
+    ButtonModule,
     TagModule,
-    DividerModule
-  ],
+    DividerModule,
+    DatePipe
+],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
 <p-dialog
@@ -73,13 +72,11 @@ import 'chartjs-adapter-date-fns';
             <h3 class="font-bold text-color mb-4 ml-2">Графік зайнятості</h3>
             @if (chartData) {
               <div class="relative w-full">
-                <p-chart
-                  type="bar"
+                <p-chart type="bar"
                   [data]="chartData"
                   [options]="chartOptions"
                   [height]="calculateHeight()"
-                  [responsive]="true">
-                </p-chart>
+                  [responsive]="true" />
               </div>
             }
             @if (!chartData) {

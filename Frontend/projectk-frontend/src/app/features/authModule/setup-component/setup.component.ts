@@ -12,7 +12,6 @@ import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 
 @Component({
   selector: 'app-setup',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     ButtonModule,

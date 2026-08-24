@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -31,7 +31,6 @@ interface MentorAssignmentRow {
 @Component({
   selector: 'app-kv-panel',
   imports: [
-    CommonModule,
     FormsModule,
     ButtonModule,
     DialogModule,
@@ -43,7 +42,7 @@ interface MentorAssignmentRow {
     TooltipModule,
     LocalUtcDatePipe,
     EmptyStateComponent
-  ],
+],
   templateUrl: './kv-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './kv-panel.css'

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -13,8 +13,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-planning-list',
-  standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent],
+  imports: [TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
   template: `
     <div class="planning-page">
       <section class="kurin-tile">
@@ -76,10 +75,8 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
       </section>
 
       @if (detailsVisible) {
-        <app-planning-detail
-          [(visible)]="detailsVisible"
-          [sessionId]="selectedSessionId">
-        </app-planning-detail>
+        <app-planning-detail [(visible)]="detailsVisible"
+          [sessionId]="selectedSessionId" />
       }
     </div>
   `,

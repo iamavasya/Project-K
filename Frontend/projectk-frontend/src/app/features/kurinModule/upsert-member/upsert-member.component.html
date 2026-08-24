@@ -8,15 +8,12 @@
                     <div class="upsert-profile-header">
                         <div class="upsert-profile-name">
                             <span>{{ member.firstName }} {{ member.lastName }}</span>
-                            <app-profile-verification-badge
-                                [enabled]="profileVerificationEnabled"
-                                [status]="member.profileVerificationStatus">
-                            </app-profile-verification-badge>
+                            <app-profile-verification-badge [enabled]="profileVerificationEnabled"
+                                [status]="member.profileVerificationStatus" />
                         </div>
 
                         @if (canManageProfileVerification) {
-                            <p-button
-                                type="button"
+                            <p-button type="button"
                                 [icon]="profileVerificationActionIcon"
                                 [rounded]="true"
                                 [text]="true"
@@ -26,8 +23,7 @@
                                 tooltipPosition="top"
                                 [showDelay]="2000"
                                 (onClick)="onProfileVerificationAction()"
-                                styleClass="upsert-profile-verification-action">
-                            </p-button>
+                                styleClass="upsert-profile-verification-action" />
                         }
                     </div>
 
@@ -115,26 +111,22 @@
                         </p-floatlabel>
                     </div>
                     <div class="flex flex-col gap-2">
-                        <p-fileUpload
-                            name="photo"
+                        <p-fileUpload name="photo"
                             accept="image/*"
                             mode="basic"
                             chooseLabel="Завантажити фото"
                             (onSelect)="fileChangeEvent($event)"
-                            >
-                        </p-fileUpload>
+                             />
                         <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{width: '400px'}">
-                            <image-cropper
-                                [imageFile]="imageFile"
+                            <image-cropper [imageFile]="imageFile"
                                 [maintainAspectRatio]="true"
                                 [aspectRatio]="1 / 1"
                                 format="png"
-                                (imageCropped)="imageCropped($event)">
-                            </image-cropper>
+                                (imageCropped)="imageCropped($event)" />
             
                             <div class="flex justify-content-end gap-2 mt-3">
-                                <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)"></p-button>
-                                <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()"></p-button>
+                                <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)" />
+                                <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()" />
                             </div>
                         </p-dialog>
             
@@ -143,7 +135,7 @@
                             <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" alt="{{member.firstName}} {{member.lastName}}" />
                             <p-button type="button" icon="pi pi-trash" label="Очистити фото"
                                 [disabled]="!member.profilePhotoUrl && !croppedImage"
-                                (onClick)="clearProfilePhoto(form.form)"></p-button>
+                                (onClick)="clearProfilePhoto(form.form)" />
                         }
                         @if (isCreate) {
                             <div class="flex align-items-center gap-2 mt-2">
@@ -161,56 +153,56 @@
                 <div class="flex flex-col gap-4">
                     <div>
                         УПЮ
-                        <p-toggleswitch [ngModel]="showUpuLevels" (ngModelChange)="onUpuToggle($event)" name="upuSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUpuLevels" (ngModelChange)="onUpuToggle($event)" name="upuSwitch" />
                         УСП
-                        <p-toggleswitch [ngModel]="showUspLevels" (ngModelChange)="onUspToggle($event)" name="uspSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUspLevels" (ngModelChange)="onUspToggle($event)" name="uspSwitch" />
                         УПС
-                        <p-toggleswitch [ngModel]="showUpsLevels" (ngModelChange)="onUpsToggle($event)" name="upsSwitch"></p-toggleswitch>
+                        <p-toggleswitch [ngModel]="showUpsLevels" (ngModelChange)="onUpsToggle($event)" name="upsSwitch" />
                     </div>
                     <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" (ngModelChange)="markFormDirty()" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" (ngModelChange)="markFormDirty()" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                         <label for="plastLevelEntry">Дата вступу в Пласт</label>
                     </p-floatLabel>
                     <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                         <label for="plastLevelUchasnyk">Дата заприсяження</label>
                     </p-floatLabel>
 
                     @if (showUpuLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" (ngModelChange)="markFormDirty()" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" (ngModelChange)="markFormDirty()" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelRozviduvach">Дата здобуття розвідувача</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelSkob">Дата здобуття скоба/вірлиці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelHetmanskiySkob">Дата здобуття гетьманського скоба/вірлиці</label>
                         </p-floatLabel>
                     }
                     @if (showUspLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" (ngModelChange)="markFormDirty()" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" (ngModelChange)="markFormDirty()" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelStarshoplastun">Дата переходу в УСП</label>
                         </p-floatLabel>
                     }
                     @if (showUpsLevels) {
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelSenior">Дата переходу в УПС</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelSeniorPratsi">Дата здобуття пл. сен. праці</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelSeniorDovirja">Дата здобуття пл. сен. довір'я</label>
                         </p-floatLabel>
                         <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat"></p-datePicker>
+                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat" />
                             <label for="plastLevelSeniorKerivnytstva">Дата здобуття пл. сен. керівництва</label>
                         </p-floatLabel>
                     }
@@ -247,9 +239,9 @@
     </p-accordion>
     <div>
         <div class="upsert-member-actions">
-            <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)"></p-button>
+            <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)" />
             @if (canDeleteMember()) {
-                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash"></p-button>
+                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash" />
             }
         </div>
     </div>

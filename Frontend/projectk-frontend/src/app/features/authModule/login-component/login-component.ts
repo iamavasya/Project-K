@@ -8,13 +8,13 @@ import { AuthService } from '../services/authService/auth.service';
 import { LoginRequest } from '../models/login-request.model';
 import { Router, RouterLink } from '@angular/router';
 import { InputOtpModule } from '@openng/optimus-ui/inputotp';
-import { CommonModule } from '@angular/common';
+
 import { MessageService } from '@openng/optimus-ui/api';
 import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 
 @Component({
   selector: 'app-login-component',
-  imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule, InputOtpModule, CommonModule, RouterLink],
+  imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule, InputOtpModule, RouterLink],
   templateUrl: './login-component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login-component.css'

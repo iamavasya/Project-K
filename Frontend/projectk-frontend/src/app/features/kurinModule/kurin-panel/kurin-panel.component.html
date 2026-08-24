@@ -1,7 +1,7 @@
 <section class="kurin-tile kurin-header">
     <div class="kurin-header-main">
         <div class="kurin-number-slot">
-            <app-kurin-number [number]="kurinNumber"></app-kurin-number>
+            <app-kurin-number [number]="kurinNumber" />
         </div>
 
         <div class="kurin-identity">
@@ -14,11 +14,10 @@
                         }
                     </h1>
                     @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
-                        <p-tag
-                            [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'"
+                        <p-tag [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'"
                             [value]="'CBT active users: ' + (zbtStats?.currentActiveUsers || 0) + ' / ' + (zbtStats?.betaCap || 15)"
                             pTooltip="Ліміт активних користувачів для закритого бета тестування."
-                            tooltipPosition="bottom"></p-tag>
+                            tooltipPosition="bottom" />
                     }
                 </div>
 
@@ -129,19 +128,15 @@
                     </td>
                     <td class="group-actions" data-mobile-label="Дії">
                         @if (canManageGroups) {
-                            <p-splitButton
-                                label="Відкрити"
+                            <p-splitButton label="Відкрити"
                                 icon="pi pi-arrow-right"
                                 (onClick)="onOpenClick(group.groupKey)"
                                 [model]="actions"
-                                (onDropdownClick)="prepareItemActions(group)">
-                            </p-splitButton>
+                                (onDropdownClick)="prepareItemActions(group)" />
                         } @else {
-                            <p-button
-                                icon="pi pi-arrow-right"
+                            <p-button icon="pi pi-arrow-right"
                                 label="Відкрити"
-                                (onClick)="onOpenClick(group.groupKey)">
-                            </p-button>
+                                (onClick)="onOpenClick(group.groupKey)" />
                         }
                     </td>
                 </tr>
@@ -162,16 +157,16 @@
 
     <div class="kurin-side-tiles">
         <section class="kurin-tile">
-            <app-kv-panel [kurinKey]="kurinKey"></app-kv-panel>
+            <app-kv-panel [kurinKey]="kurinKey" />
         </section>
 
         <section class="kurin-tile">
-            <app-leadership-panel [leadershipType]="'kurin'" [typeKey]="kurinKey"></app-leadership-panel>
+            <app-leadership-panel [leadershipType]="'kurin'" [typeKey]="kurinKey" />
         </section>
     </div>
 
     <section class="kurin-tile">
-        <app-member-list [type]="'kurin'" [typeKey]="kurinKey"></app-member-list>
+        <app-member-list [type]="'kurin'" [typeKey]="kurinKey" />
         @if (canManageMembers) {
             <div class="mt-3">
                 <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" icon="pi pi-plus" />
@@ -180,10 +175,8 @@
     </section>
 </div>
 
-<app-manage-panel
-  [(visible)]="groupPanelVisible"
+<app-manage-panel [(visible)]="groupPanelVisible"
   [parameter]="groupPanelParameter"
   [entity]="selectedGroup"
   [config]="groupPanelConfig"
-  (actionPerformed)="onGroupManage($event)">
-</app-manage-panel>
+  (actionPerformed)="onGroupManage($event)" />

@@ -20,8 +20,8 @@
       <p class="delete-confirm__warning">Цю дію неможливо скасувати.</p>
     </div>
     <div class="actions">
-      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
-      <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()"></p-button>
+      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />
+      <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()" />
     </div>
   } @else {
     @if (ready) {
@@ -71,12 +71,10 @@
           </div>
         }
         <div class="actions">
-          <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
-          <p-button
-            type="submit"
+          <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />
+          <p-button type="submit"
             [label]="actionLabel()"
-            [disabled]="parameter !== 'delete' && form.invalid">
-          </p-button>
+            [disabled]="parameter !== 'delete' && form.invalid" />
         </div>
       </form>
     }

@@ -1,5 +1,5 @@
 ﻿import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
@@ -15,16 +15,14 @@ import { parseDateOnlyString, toDateOnlyString } from '../../../common/functions
 
 @Component({
   selector: 'app-member-awards-dialog',
-  standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     ButtonModule,
     DialogModule,
     SelectModule,
     TextareaModule,
     DatePickerModule
-  ],
+],
   templateUrl: './member-awards-dialog.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-awards-dialog.css'

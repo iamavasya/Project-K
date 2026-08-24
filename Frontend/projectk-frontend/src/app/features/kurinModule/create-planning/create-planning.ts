@@ -22,7 +22,6 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
 
 @Component({
   selector: 'app-create-planning',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     InputTextModule,

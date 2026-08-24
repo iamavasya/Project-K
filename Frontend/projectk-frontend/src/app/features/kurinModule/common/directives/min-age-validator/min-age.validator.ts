@@ -4,7 +4,6 @@ import { NG_VALIDATORS, Validator, AbstractControl, ValidationErrors } from '@an
 
 @Directive({
   selector: '[minAge]',
-  standalone: true,
   providers: [
     {
       provide: NG_VALIDATORS,

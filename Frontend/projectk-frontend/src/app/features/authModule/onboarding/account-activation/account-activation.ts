@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OnboardingService, InvitationValidationResponse } from '../../services/onboarding.service';
@@ -12,12 +12,11 @@ import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-account-activation',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, ToastModule],
+  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, ToastModule],
   providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast></p-toast>
+    <p-toast />
     <div class="flex justify-center items-center min-h-screen p-4">
       <p-card header="Account Activation" [style]="{ width: '400px' }">
         @if (loading && !validationData) {
@@ -32,7 +31,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
             <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
             <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
             <p class="text-muted-color mb-4">The activation link you followed is no longer valid.</p>
-            <p-button label="Back to Login" (onClick)="goToLogin()"></p-button>
+            <p-button label="Back to Login" (onClick)="goToLogin()" />
           </div>
         }
 
@@ -46,11 +45,11 @@ import { ToastModule } from '@openng/optimus-ui/toast';
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
                 <label for="password">New Password</label>
-                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
+                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
               </div>
               <div class="flex flex-col gap-2">
                 <label for="confirmPassword">Confirm Password</label>
-                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"></p-password>
+                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
                 @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
                   <small class="p-error text-red-500">
                     Passwords do not match
@@ -58,7 +57,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
                 }
               </div>
               
-              <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full"></p-button>
+              <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full" />
             </form>
           </div>
         }

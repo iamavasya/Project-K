@@ -1,5 +1,5 @@
 ﻿import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService } from '@openng/optimus-ui/api';
@@ -20,13 +20,11 @@ interface AwardGroup {
 
 @Component({
   selector: 'app-member-awards-tile',
-  standalone: true,
   imports: [
-    CommonModule,
     ButtonModule,
     ConfirmDialogModule,
     MemberAwardsDialogComponent
-  ],
+],
   providers: [ConfirmationService],
   templateUrl: './member-awards-tile.html',
   changeDetection: ChangeDetectionStrategy.Eager,

@@ -2,9 +2,9 @@
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-bold">Адміністрація</h2>
         <div class="flex gap-2">
-            <p-button label="Оголошення" icon="pi pi-megaphone" severity="secondary" [routerLink]="['/announcements']"></p-button>
-            <p-button label="Заявки" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']"></p-button>
-            <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']"></p-button>
+            <p-button label="Оголошення" icon="pi pi-megaphone" severity="secondary" [routerLink]="['/announcements']" />
+            <p-button label="Заявки" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']" />
+            <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']" />
         </div>
     </div>
     <p-table [value]="data" styleClass="project-table">
@@ -34,9 +34,7 @@
                     </div>
                 </td>
                 <td class="admin-kurin-actions" data-mobile-label="Дії">
-                    <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)">
-
-                    </p-splitButton>
+                    <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)" />
                 </td>
             </tr>
         </ng-template>
@@ -52,10 +50,9 @@
         </div>
     }
 </div>
-<app-manage-panel
-  [(visible)]="managePanelVisible"
+<app-manage-panel [(visible)]="managePanelVisible"
   [parameter]="managePanelParameter"
   [entity]="selectedItem"
   [config]="managePanelConfig"
   (actionPerformed)="onManageAction($event)"
-></app-manage-panel>
+ />

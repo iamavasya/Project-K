@@ -15,7 +15,7 @@
         </div>
 
         <div class="sidebar-content">
-            <p-panelmenu [model]="(items$ | async) ?? []" styleClass="lil-menu"></p-panelmenu>
+            <p-panelmenu [model]="(items$ | async) ?? []" styleClass="lil-menu" />
         </div>
 
         <div class="sidebar-version">{{ versionLabel }}</div>
@@ -23,7 +23,7 @@
         <div class="sidebar-footer">
             <span class="pi pi-user" aria-hidden="true"></span>
             <span class="sidebar-footer__email">{{ (email$ | async) ?? 'Error' }}</span>
-            <p-tag [severity]="$any(getSeverityOnRole(role$ | async))" [value]="(role$ | async) ?? 'Error'"></p-tag>
+            <p-tag [severity]="$any(getSeverityOnRole(role$ | async))" [value]="(role$ | async) ?? 'Error'" />
         </div>
     </ng-template>
 </p-drawer>

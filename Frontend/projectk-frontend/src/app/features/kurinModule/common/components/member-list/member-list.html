@@ -34,8 +34,7 @@
             @if (canSetupLeadership) {
               <p-button icon="pi pi-cog" [rounded]="true" [text]="true" 
                       pTooltip="Налаштувати провід" tooltipPosition="left"
-                      (onClick)="onLeadershipSettingsSelect()">
-              </p-button>
+                      (onClick)="onLeadershipSettingsSelect()" />
             }
             <p-toggleswitch pTooltip="Архівні записи" tooltipPosition="bottom" [(ngModel)]="showArchived" (onChange)="refreshList()" />
           </div>
@@ -53,11 +52,9 @@
         <ng-template pTemplate="body" let-history>
           <tr class="cursor-pointer leadership-row" (click)="onMemberSelect(history.member)">
             <td data-mobile-label="Роль">
-              <p-tag 
-                [value]="getRoleDisplayName(history.role)" 
+              <p-tag [value]="getRoleDisplayName(history.role)" 
                 [severity]="getRoleSeverity(history)"
-                [rounded]="true">
-              </p-tag>
+                [rounded]="true" />
             </td>
             
             <td data-mobile-label="Учасник">
@@ -93,7 +90,7 @@
 
   @else {
     @if (type === 'group' && hasUpcomingBirthdays) {
-      <app-upcoming-birthdays-tile class="mb-4 block" [members]="membersLookup" [daysAhead]="upcomingBirthdaysDaysAhead"></app-upcoming-birthdays-tile>
+      <app-upcoming-birthdays-tile class="mb-4 block" [members]="membersLookup" [daysAhead]="upcomingBirthdaysDaysAhead" />
     }
 
     @if (type === 'group' && showGroupCardView) {
@@ -125,7 +122,7 @@
         @if (filteredMembersLookup.length) {
           <div class="member-cards-grid grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
             @for (member of filteredMembersLookup; track member.memberKey) {
-              <app-mini-member-card [member]="member" (navigate)="onMemberSelect($event)"></app-mini-member-card>
+              <app-mini-member-card [member]="member" (navigate)="onMemberSelect($event)" />
             }
           </div>
         } @else {
@@ -186,7 +183,7 @@
             <td data-mobile-label="Учасник">
               <span class="member-name-cell">
                 <span>{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</span>
-                <app-profile-verification-badge [status]="member.profileVerificationStatus"></app-profile-verification-badge>
+                <app-profile-verification-badge [status]="member.profileVerificationStatus" />
               </span>
             </td>
             <td data-mobile-label="Статус">

@@ -2,7 +2,7 @@
     <div class="flex justify-between items-center">
         <h3 class="text-xl font-semibold m-0">Відзначення УПЮ</h3>
         @if (canEdit) {
-            <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" (onClick)="openDialog()"></p-button>
+            <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" (onClick)="openDialog()" />
         }
     </div>
 
@@ -46,16 +46,14 @@
     }
 </div>
 
-<app-member-awards-dialog
-    [(visible)]="dialogVisible"
+<app-member-awards-dialog [(visible)]="dialogVisible"
     [awardToEdit]="selectedAward"
     [existingAwards]="awards"
     [canEdit]="canEdit"
     [canReview]="canReview"
     (save)="onSave($event)"
     (approve)="approveAward($event)"
-    (delete)="confirmDelete($event)">
-</app-member-awards-dialog>
+    (delete)="confirmDelete($event)" />
 
-<p-confirmDialog></p-confirmDialog>
+<p-confirmDialog />
 

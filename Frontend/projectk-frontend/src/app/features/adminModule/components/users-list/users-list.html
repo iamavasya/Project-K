@@ -1,6 +1,6 @@
 <div class="users-list-shell">
-    <p-toast></p-toast>
-    <p-confirmDialog></p-confirmDialog>
+    <p-toast />
+    <p-confirmDialog />
     <p-table #usersTable [value]="users" dataKey="userId" editMode="row" styleClass="project-table" [globalFilterFields]="['email', 'firstName', 'lastName']"
              rowGroupMode="subheader" groupRowsBy="kurinNumber" [sortField]="'kurinNumber'" sortMode="single">
         <ng-template #caption>
@@ -52,7 +52,7 @@
                     <td data-mobile-label="Роль">
                         <p-cellEditor>
                             <ng-template #input>
-                                <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body"></p-select>
+                                <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body" />
                             </ng-template>
                             <ng-template #output>
                                 {{user.role}}

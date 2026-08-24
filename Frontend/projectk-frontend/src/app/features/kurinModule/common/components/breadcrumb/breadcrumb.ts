@@ -6,7 +6,6 @@ import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-
 
 @Component({
   selector: 'app-breadcrumb',
-  standalone: true,
   imports: [BreadcrumbModule, AsyncPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `

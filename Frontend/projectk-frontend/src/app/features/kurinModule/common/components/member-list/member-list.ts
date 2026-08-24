@@ -11,7 +11,7 @@ import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
-import { DatePipe, CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/roleDisplayName';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
@@ -29,7 +29,6 @@ import { PermissionService } from '../../../../authModule/services/permission.se
 @Component({
   selector: 'app-member-list',
   imports: [
-    CommonModule,
     TableModule,
     InputIconModule,
     IconFieldModule,
@@ -42,7 +41,8 @@ import { PermissionService } from '../../../../authModule/services/permission.se
     MiniMemberCardComponent,
     UpcomingBirthdaysTileComponent,
     ProfileVerificationBadgeComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    DatePipe
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',

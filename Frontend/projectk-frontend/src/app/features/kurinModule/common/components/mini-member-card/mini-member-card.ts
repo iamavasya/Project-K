@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -11,7 +11,7 @@ import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.fu
 
 @Component({
   selector: 'app-mini-member-card',
-  imports: [CommonModule, ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent],
+  imports: [ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent, DatePipe],
   templateUrl: './mini-member-card.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './mini-member-card.css'

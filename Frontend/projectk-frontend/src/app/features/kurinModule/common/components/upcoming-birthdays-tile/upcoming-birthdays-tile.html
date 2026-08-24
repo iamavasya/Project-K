@@ -30,9 +30,9 @@
                             </div>
 
                             @if (birthday.daysUntilBirthday === 0) {
-                                <p-tag value="Сьогодні" severity="danger" styleClass="!rounded-full !px-2.5 !py-1 !text-[11px]"></p-tag>
+                                <p-tag value="Сьогодні" severity="danger" styleClass="!rounded-full !px-2.5 !py-1 !text-[11px]" />
                             } @else {
-                                <p-tag [value]="'Через ' + birthday.daysUntilBirthday + ' дн.'" severity="warn" styleClass="!rounded-full !px-2.5 !py-1 !text-[11px]"></p-tag>
+                                <p-tag [value]="'Через ' + birthday.daysUntilBirthday + ' дн.'" severity="warn" styleClass="!rounded-full !px-2.5 !py-1 !text-[11px]" />
                             }
                         </li>
                     }
