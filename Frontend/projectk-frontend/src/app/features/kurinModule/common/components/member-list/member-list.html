@@ -1,11 +1,11 @@
 <div class="mt-4">
-  @if (type === 'leadership') {
+  @if (type() === 'leadership') {
     <div class="card">
       <p-table #dt [value]="leadershipHistories" styleClass="member-list-table member-list-table--leadership" stripedRows [rowHover]="true" [globalFilterFields]="['member.lastName', 'member.firstName', 'roleNameUA']">
         <ng-template #caption>
           <div class="flex items-center gap-2">
-            @if (leadershipType === 'kurin') { <h3 class="text-xl font-bold">Провід куреня</h3> }
-            @else if (leadershipType === 'group') { <h3 class="text-xl font-bold">Провід гуртка</h3> }
+            @if (leadershipType() === 'kurin') { <h3 class="text-xl font-bold">Провід куреня</h3> }
+            @else if (leadershipType() === 'group') { <h3 class="text-xl font-bold">Провід гуртка</h3> }
             @else { <h3 class="text-xl font-bold">Кадра виховників</h3> }
             
             @if(leadership) {
@@ -89,11 +89,11 @@
   } 
 
   @else {
-    @if (type === 'group' && hasUpcomingBirthdays) {
+    @if (type() === 'group' && hasUpcomingBirthdays) {
       <app-upcoming-birthdays-tile class="mb-4 block" [members]="membersLookup" [daysAhead]="upcomingBirthdaysDaysAhead" />
     }
 
-    @if (type === 'group' && showGroupCardView) {
+    @if (type() === 'group' && showGroupCardView) {
       <div class="member-view-shell">
         <div class="member-list-heading mb-4 flex flex-wrap items-center gap-3">
           <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3>
@@ -147,7 +147,7 @@
         
         <ng-template #caption>
           <div class="member-list-heading flex flex-wrap items-center gap-3">
-              @if (type === 'kurin') { <h3 class="member-list-title text-xl font-bold">Всі учасники куреня</h3> }
+              @if (type() === 'kurin') { <h3 class="member-list-title text-xl font-bold">Всі учасники куреня</h3> }
               @else { <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3> }
 
               <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
@@ -158,7 +158,7 @@
                     <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." class="member-list-search-input p-inputtext-sm" />
                 </p-iconfield>
 
-                @if (type === 'group') {
+                @if (type() === 'group') {
                   <div class="member-card-toggle flex items-center gap-2">
                     <span class="text-sm">Картками</span>
                     <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
