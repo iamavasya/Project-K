@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpErrorResponse, provideHttpClient, withXhr } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRouteSnapshot, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { EntityGuard } from './entity.guard';
@@ -23,7 +23,7 @@ describe('EntityGuard', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         { provide: EntityService, useValue: entityService },
         { provide: Router, useValue: router }
       ]

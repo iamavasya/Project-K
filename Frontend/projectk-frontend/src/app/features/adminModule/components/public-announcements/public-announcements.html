@@ -250,14 +250,14 @@
           <p-tag severity="secondary" [value]="getPlacementLabel(form.imagePlacement)" />
         }
         @if (selectedDraft?.telegramMessageId) {
-          <p-tag severity="success" [value]="'Telegram #' + $safeNavigationMigration(selectedDraft?.telegramMessageId)" />
+          <p-tag severity="success" [value]="'Telegram #' + selectedDraft.telegramMessageId" />
         }
       </div>
 
       @if (selectedDraft?.lastPublishError) {
         <div class="error-panel">
           <strong>Остання помилка публікації</strong>
-          <span>{{ selectedDraft?.lastPublishError }}</span>
+          <span>{{ selectedDraft.lastPublishError }}</span>
         </div>
       }
 
@@ -277,7 +277,7 @@
 
       @if (preview?.warnings?.length) {
         <ul class="warning-list">
-          @for (warning of preview?.warnings; track warning) {
+          @for (warning of preview.warnings; track warning) {
             <li>{{ warning }}</li>
           }
         </ul>

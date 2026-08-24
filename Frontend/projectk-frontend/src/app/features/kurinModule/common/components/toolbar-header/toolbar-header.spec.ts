@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToolbarHeader } from './toolbar-header';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
 
 describe('ToolbarHeader', () => {
@@ -11,7 +11,7 @@ describe('ToolbarHeader', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ToolbarHeader],
-      providers: [provideHttpClient(withXhr()), MessageService],
+      providers: [provideHttpClient(), MessageService],
     })
     .compileComponents();
 

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { KurinService } from './kurin.service';
 import { environment } from '../../../../../../environments/environment';
@@ -15,7 +15,7 @@ describe('KurinService', () => {
     TestBed.configureTestingModule({
       providers: [
         KurinService,
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting()
       ]
     });

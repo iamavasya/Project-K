@@ -38,8 +38,8 @@ import { ToastModule } from '@openng/optimus-ui/toast';
         @if (validationData?.isValid) {
           <div>
             <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-              <p class="font-bold text-blue-800">Welcome, {{ validationData?.firstName }}!</p>
-              <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData?.email }}.</p>
+              <p class="font-bold text-blue-800">Welcome, {{ validationData.firstName }}!</p>
+              <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData.email }}.</p>
             </div>
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">

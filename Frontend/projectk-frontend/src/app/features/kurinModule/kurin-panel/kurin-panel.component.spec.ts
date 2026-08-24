@@ -2,7 +2,7 @@
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { KurinPanelComponent } from './kurin-panel.component';
@@ -79,7 +79,7 @@ describe('KurinPanelComponent', () => {
         { provide: UserService, useValue: userService },
         { provide: AuthService, useValue: authService },
         { provide: Router, useValue: router },
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations()
       ]

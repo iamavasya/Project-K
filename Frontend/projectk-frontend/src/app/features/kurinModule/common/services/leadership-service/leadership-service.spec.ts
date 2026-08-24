@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { LeadershipService } from './leadership-service';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { environment } from '../../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
@@ -26,7 +26,7 @@ describe('LeadershipService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting()
       ]
     });

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarMenu } from './sidebar-menu';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { Event, Router } from '@angular/router';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { BehaviorSubject, Subject, of } from 'rxjs';
@@ -32,7 +32,7 @@ describe('SidebarMenu', () => {
     await TestBed.configureTestingModule({
       imports: [SidebarMenu],
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService }
       ],

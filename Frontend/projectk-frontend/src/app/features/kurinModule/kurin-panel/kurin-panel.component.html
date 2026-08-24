@@ -10,12 +10,12 @@
                     <h1 class="kurin-title">
                         <span>{{ kurinNumber || '-' }} курінь</span>
                         @if (kurinData?.namedAfter) {
-                            <span class="kurin-title__patron">ім. {{ kurinData?.namedAfter }}</span>
+                            <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
                         }
                     </h1>
                     @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
-                        <p-tag [severity]="(zbtStats?.currentActiveUsers || 0) >= (zbtStats?.betaCap || 15) ? 'danger' : 'info'"
-                            [value]="'CBT active users: ' + (zbtStats?.currentActiveUsers || 0) + ' / ' + (zbtStats?.betaCap || 15)"
+                        <p-tag [severity]="(zbtStats.currentActiveUsers || 0) >= (zbtStats.betaCap || 15) ? 'danger' : 'info'"
+                            [value]="'CBT active users: ' + (zbtStats.currentActiveUsers || 0) + ' / ' + (zbtStats.betaCap || 15)"
                             pTooltip="Ліміт активних користувачів для закритого бета тестування."
                             tooltipPosition="bottom" />
                     }

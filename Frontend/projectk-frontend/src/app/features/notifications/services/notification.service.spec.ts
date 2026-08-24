@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from './notification.service';
 import { AppNotification } from '../models/app-notification.model';
@@ -12,7 +12,7 @@ describe('NotificationService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()]
+      providers: [provideHttpClient(), provideHttpClientTesting()]
     });
 
     service = TestBed.inject(NotificationService);

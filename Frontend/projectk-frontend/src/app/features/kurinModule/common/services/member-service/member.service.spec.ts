@@ -1,6 +1,6 @@
 ﻿import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { MemberService } from './member.service';
 import { environment } from '../../../../../../environments/environment';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
@@ -42,7 +42,7 @@ describe('MemberService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting(),
         MemberService
       ]

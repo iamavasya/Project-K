@@ -3,7 +3,7 @@
         <div class="group-hero__main">
             <div class="group-hero__icon">
                 @if (group?.silhouetteUrl) {
-                    <img class="group-hero__silhouette" [src]="$safeNavigationMigration(group?.silhouetteUrl)" [alt]="group?.name || 'Сильветка гуртка'" />
+                    <img class="group-hero__silhouette" [src]="group.silhouetteUrl" [alt]="group.name || 'Сильветка гуртка'" />
                 } @else {
                     <app-group-chevron />
                 }
@@ -13,7 +13,7 @@
                 <span class="group-hero__eyebrow">Гурток</span>
                 <h1>{{ group?.name || 'Гурток' }}</h1>
                 @if (group?.kurinNumber) {
-                    <p>{{ group?.kurinNumber }} курінь</p>
+                    <p>{{ group.kurinNumber }} курінь</p>
                 }
             </div>
 

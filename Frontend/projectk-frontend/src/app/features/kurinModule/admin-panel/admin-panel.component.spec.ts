@@ -5,7 +5,7 @@ import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { KurinDto } from '../common/models/kurinDto';
 import { AuthState } from '../../authModule/models/auth-state.model';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
@@ -40,7 +40,7 @@ describe('AdminPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminPanelComponent],
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting(),
         provideNoopAnimations(),
         provideRouter([]),

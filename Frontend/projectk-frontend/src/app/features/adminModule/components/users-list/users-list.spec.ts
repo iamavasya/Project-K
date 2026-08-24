@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UsersListComponent } from './users-list';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { UserService } from '../../services/user.service';
 import { UserDto } from '../../models/userDto';
 import { of, throwError } from 'rxjs';
@@ -45,7 +45,7 @@ describe('UsersListComponent', () => {
     await TestBed.configureTestingModule({
       imports: [UsersListComponent],
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         { provide: UserService, useValue: mockUserService }
       ],
     })

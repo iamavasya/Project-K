@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { environment } from '../../../../../../environments/environment';
 import { BadgeCatalogItemDto } from '../../models/probes-and-badges/badgeCatalogItemDto';
 import { BadgesMetadataDto } from '../../models/probes-and-badges/badgesMetadataDto';
@@ -40,7 +40,7 @@ describe('BadgesCatalogService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withXhr()),
+        provideHttpClient(),
         provideHttpClientTesting(),
         BadgesCatalogService
       ]
