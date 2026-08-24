@@ -1,5 +1,6 @@
 ﻿import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { LoginRequest } from '../../models/login-request.model';
 import { LoginResponse } from '../../models/login-response.model';
@@ -16,8 +17,7 @@ describe('AuthService', () => {
     localStorage.clear();
     
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [AuthService]
+      providers: [AuthService, provideHttpClient(), provideHttpClientTesting()]
     });
 
     service = TestBed.inject(AuthService);
@@ -52,8 +52,7 @@ describe('AuthService', () => {
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        imports: [HttpClientTestingModule],
-        providers: [AuthService]
+        providers: [AuthService, provideHttpClient(), provideHttpClientTesting()]
       });
 
       const newService = TestBed.inject(AuthService);
@@ -519,8 +518,7 @@ describe('AuthService', () => {
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        imports: [HttpClientTestingModule],
-        providers: [AuthService]
+        providers: [AuthService, provideHttpClient(), provideHttpClientTesting()]
       });
 
       const hydratedService = TestBed.inject(AuthService);
