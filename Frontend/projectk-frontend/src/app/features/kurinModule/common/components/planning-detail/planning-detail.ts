@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, output, input } from '@angular/core';
+import { Component, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, input, model } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
@@ -99,9 +99,8 @@ import 'chartjs-adapter-date-fns';
 `
 })
 export class PlanningDetailComponent implements OnChanges {
-  @Input() visible = false;
+  readonly visible = model(false);
   readonly sessionId = input<string | null>(null);
-  readonly visibleChange = output<boolean>();
 
   private readonly service = inject(PlanningService);
   private readonly agendaService = inject(AgendaService);
@@ -127,7 +126,7 @@ export class PlanningDetailComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     const sessionId = this.sessionId();
-    if (changes['visible'] && this.visible && sessionId) {
+    if (changes['visible'] && this.visible() && sessionId) {
       this.loadData(sessionId);
     }
   }
@@ -145,8 +144,7 @@ export class PlanningDetailComponent implements OnChanges {
   }
 
   close() {
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.visible.set(false);
   }
 
   /** Turn this calculated planning into a kurin-wide calendar event (name + optimal dates). */

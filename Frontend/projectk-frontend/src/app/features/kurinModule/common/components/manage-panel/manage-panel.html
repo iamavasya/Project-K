@@ -11,7 +11,7 @@
     <div class="delete-confirm">
       <p>
         Ви впевнені, що хочете видалити
-        <strong>{{ config.entityType | titlecase }}</strong>
+        <strong>{{ config().entityType | titlecase }}</strong>
         @if (entityDisplayName()) {
           <strong>"{{ entityDisplayName() }}"</strong>
         }
@@ -26,7 +26,7 @@
   } @else {
     @if (ready) {
       <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()">
-        @for (f of config.fields; track f) {
+        @for (f of config().fields; track f) {
           @if (!isHidden(f)) {
             <div class="field">
               <span class="field-label">{{ f.label }} @if (f.required) {
@@ -74,7 +74,7 @@
           <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />
           <p-button type="submit"
             [label]="actionLabel()"
-            [disabled]="parameter !== 'delete' && form.invalid" />
+            [disabled]="parameter() !== 'delete' && form.invalid" />
         </div>
       </form>
     }
