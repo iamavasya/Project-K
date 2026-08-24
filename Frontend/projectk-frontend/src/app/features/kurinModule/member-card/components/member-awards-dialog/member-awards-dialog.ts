@@ -1,4 +1,4 @@
-﻿import { Component, Input, OnChanges, inject, ChangeDetectionStrategy, output } from '@angular/core';
+﻿import { Component, OnChanges, inject, ChangeDetectionStrategy, output, input, model } from '@angular/core';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -28,13 +28,12 @@ import { parseDateOnlyString, toDateOnlyString } from '../../../common/functions
   styleUrl: './member-awards-dialog.css'
 })
 export class MemberAwardsDialogComponent implements OnChanges {
-  @Input() visible = false;
-  @Input() awardToEdit: MemberAwardDto | null = null;
-  @Input() existingAwards: MemberAwardDto[] = [];
-  @Input() canEdit = false;
-  @Input() canReview = false;
+  readonly visible = model(false);
+  readonly awardToEdit = input<MemberAwardDto | null>(null);
+  readonly existingAwards = input<MemberAwardDto[]>([]);
+  readonly canEdit = input(false);
+  readonly canReview = input(false);
 
-  readonly visibleChange = output<boolean>();
   readonly save = output<UpsertMemberAwardRequest>();
   readonly approve = output<string>();
   readonly delete = output<MemberAwardDto>();
@@ -59,12 +58,13 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   ngOnChanges(): void {
-    if (this.visible) {
-      if (this.awardToEdit) {
+    if (this.visible()) {
+      const awardToEdit = this.awardToEdit();
+      if (awardToEdit) {
         this.form.patchValue({
-          level: this.awardToEdit.level,
-          dateAcquired: parseDateOnlyString(this.awardToEdit.dateAcquired),
-          note: this.awardToEdit.note
+          level: awardToEdit.level,
+          dateAcquired: parseDateOnlyString(awardToEdit.dateAcquired),
+          note: awardToEdit.note
         });
         this.form.get('level')?.disable();
       } else {
@@ -75,15 +75,14 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   close(): void {
-    this.visible = false;
-    this.visibleChange.emit(this.visible);
+    this.visible.set(false);
   }
 
   onSave(): void {
     if (this.form.valid) {
       const formValue = this.form.getRawValue();
       const request: UpsertMemberAwardRequest = {
-        memberAwardKey: this.awardToEdit?.memberAwardKey,
+        memberAwardKey: this.awardToEdit()?.memberAwardKey,
         level: formValue.level,
         dateAcquired: toDateOnlyString(formValue.dateAcquired)!,
         note: formValue.note
@@ -94,20 +93,22 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   onApprove(): void {
-    if (!this.canApproveAward || !this.awardToEdit) {
+    const awardToEdit = this.awardToEdit();
+    if (!this.canApproveAward || !awardToEdit) {
       return;
     }
 
-    this.approve.emit(this.awardToEdit.memberAwardKey);
+    this.approve.emit(awardToEdit.memberAwardKey);
     this.close();
   }
 
   onDelete(): void {
-    if (!this.canDeleteAward || !this.awardToEdit) {
+    const awardToEdit = this.awardToEdit();
+    if (!this.canDeleteAward || !awardToEdit) {
       return;
     }
 
-    this.delete.emit(this.awardToEdit);
+    this.delete.emit(awardToEdit);
     this.close();
   }
 
@@ -116,20 +117,22 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   get canApproveAward(): boolean {
-    return this.canReview
-      && !!this.awardToEdit
-      && this.normalizeStatus(this.awardToEdit.status) === BadgeProgressStatus.Submitted;
+    const awardToEdit = this.awardToEdit();
+    return this.canReview()
+      && !!awardToEdit
+      && this.normalizeStatus(awardToEdit.status) === BadgeProgressStatus.Submitted;
   }
 
   get canDeleteAward(): boolean {
-    return this.canEdit && !!this.awardToEdit;
+    return this.canEdit() && !!this.awardToEdit();
   }
 
   get statusLabel(): string | null {
-    if (!this.awardToEdit) {
+    const awardToEdit = this.awardToEdit();
+    if (!awardToEdit) {
       return null;
     }
-    return getBadgeProgressShortStatusLabel(this.normalizeStatus(this.awardToEdit.status));
+    return getBadgeProgressShortStatusLabel(this.normalizeStatus(awardToEdit.status));
   }
 
   private normalizeStatus(status: BadgeProgressStatus | string | number): BadgeProgressStatus {

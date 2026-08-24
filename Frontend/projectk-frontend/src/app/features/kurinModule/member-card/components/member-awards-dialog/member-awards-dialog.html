@@ -1,6 +1,6 @@
 ﻿<p-dialog
     [(visible)]="visible"
-    [header]="awardToEdit ? 'Редагувати відзначення' : 'Додати відзначення'"
+    [header]="awardToEdit() ? 'Редагувати відзначення' : 'Додати відзначення'"
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
