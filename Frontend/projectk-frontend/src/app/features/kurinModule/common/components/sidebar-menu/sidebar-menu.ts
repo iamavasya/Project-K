@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy, output } from '@angular/core';
+import { Component, inject, OnChanges, SimpleChanges, ChangeDetectionStrategy, model, input } from '@angular/core';
 import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
@@ -21,9 +21,8 @@ import { environment } from '../../../../../../environments/environment';
 export class SidebarMenu implements OnChanges {
   private readonly router = inject(Router);
   private readonly permissionService = inject(PermissionService);
-  @Input() visible = false;
-  @Input() state$: Observable<AuthState | null> = of(null);
-  readonly visibleChange = output<boolean>();
+  readonly visible = model(false);
+  readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
   role$: Observable<string | null> = of(null);
@@ -49,13 +48,13 @@ export class SidebarMenu implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
-      this.items$ = combineLatest([this.state$, this.currentUrl$]).pipe(
+      this.items$ = combineLatest([this.state$(), this.currentUrl$]).pipe(
         map(([state, url]) => this.markCurrent(this.buildItems(state), url))
       );
-      this.email$ = this.state$.pipe(
+      this.email$ = this.state$().pipe(
         map(state => state?.email ?? null)
       );
-      this.role$ = this.state$.pipe(
+      this.role$ = this.state$().pipe(
         map(() => this.currentRoleLabel())
       );
     }
@@ -243,8 +242,7 @@ export class SidebarMenu implements OnChanges {
   }
 
   close() {
-    this.visible = false;
-    this.visibleChange.emit(this.visible);
+    this.visible.set(false);
   }
 
   getSeverityOnRole(_role: string | null): string {
