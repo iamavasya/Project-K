@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { PlanningService } from '../../services/planning-service/planning-service';
 import { AgendaService } from '../../services/agenda-service/agenda-service';
@@ -101,7 +101,7 @@ import 'chartjs-adapter-date-fns';
 export class PlanningDetailComponent implements OnChanges {
   @Input() visible = false;
   @Input() sessionId: string | null = null;
-  @Output() visibleChange = new EventEmitter<boolean>();
+  readonly visibleChange = output<boolean>();
 
   private readonly service = inject(PlanningService);
   private readonly agendaService = inject(AgendaService);

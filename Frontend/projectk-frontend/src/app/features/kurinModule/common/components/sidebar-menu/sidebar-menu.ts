@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy, output } from '@angular/core';
 import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
@@ -23,7 +23,7 @@ export class SidebarMenu implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   @Input() visible = false;
   @Input() state$: Observable<AuthState | null> = of(null);
-  @Output() visibleChange: EventEmitter<boolean> = new EventEmitter<boolean>();
+  readonly visibleChange = output<boolean>();
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
   role$: Observable<string | null> = of(null);

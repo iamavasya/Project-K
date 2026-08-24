@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, output } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
@@ -18,7 +18,7 @@ import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.fu
 })
 export class MiniMemberCardComponent {
   @Input({ required: true }) member!: MemberLookupDto;
-  @Output() navigate = new EventEmitter<MemberLookupDto>();
+  readonly navigate = output<MemberLookupDto>();
 
   readonly warningLevels = [
     MemberWarningLevel.Level1,

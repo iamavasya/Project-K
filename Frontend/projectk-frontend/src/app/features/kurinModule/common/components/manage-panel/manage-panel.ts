@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, QueryList, SimpleChanges, ViewChildren, ChangeDetectionStrategy, output } from '@angular/core';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TitleCasePipe } from '@angular/common';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -42,8 +42,12 @@ export class ManagePanel implements OnChanges {
   @Input() entity: any = null;
   @Input() config!: ManagePanelConfig;
 
-  @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() actionPerformed = new EventEmitter<{action: ManageAction; entity: any; entityType: string}>();
+  readonly visibleChange = output<boolean>();
+  readonly actionPerformed = output<{
+    action: ManageAction;
+    entity: any;
+    entityType: string;
+}>();
 
   @ViewChildren('autoField') autoFields!: QueryList<ElementRef>;
 

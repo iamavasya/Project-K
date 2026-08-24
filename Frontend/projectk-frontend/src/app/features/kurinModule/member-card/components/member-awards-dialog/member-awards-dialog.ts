@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, Input, OnChanges, inject, ChangeDetectionStrategy, output } from '@angular/core';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -34,10 +34,10 @@ export class MemberAwardsDialogComponent implements OnChanges {
   @Input() canEdit = false;
   @Input() canReview = false;
 
-  @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() save = new EventEmitter<UpsertMemberAwardRequest>();
-  @Output() approve = new EventEmitter<string>();
-  @Output() delete = new EventEmitter<MemberAwardDto>();
+  readonly visibleChange = output<boolean>();
+  readonly save = output<UpsertMemberAwardRequest>();
+  readonly approve = output<string>();
+  readonly delete = output<MemberAwardDto>();
 
   form: FormGroup;
 

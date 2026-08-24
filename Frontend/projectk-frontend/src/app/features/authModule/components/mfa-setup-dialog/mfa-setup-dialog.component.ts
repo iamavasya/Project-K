@@ -1,5 +1,5 @@
 
-import { Component, EventEmitter, inject, Output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -18,7 +18,7 @@ export class MfaSetupDialogComponent {
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
 
-  @Output() enabled = new EventEmitter<void>();
+  readonly enabled = output<void>();
 
   visible = false;
   mandatory = false;

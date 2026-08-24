@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, Input, inject, ChangeDetectionStrategy, output } from '@angular/core';
 
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
@@ -35,9 +35,12 @@ export class MemberAwardsTileComponent {
   @Input() canEdit = false;
   @Input() canReview = false;
 
-  @Output() saveAward = new EventEmitter<UpsertMemberAwardRequest>();
-  @Output() deleteAward = new EventEmitter<string>();
-  @Output() reviewAward = new EventEmitter<{ awardKey: string, isApproved: boolean }>();
+  readonly saveAward = output<UpsertMemberAwardRequest>();
+  readonly deleteAward = output<string>();
+  readonly reviewAward = output<{
+    awardKey: string;
+    isApproved: boolean;
+}>();
 
   dialogVisible = false;
   selectedAward: MemberAwardDto | null = null;
