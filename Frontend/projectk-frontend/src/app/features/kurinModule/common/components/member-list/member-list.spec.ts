@@ -112,7 +112,7 @@ describe('MemberList', () => {
           memberKey: 'manager',
           firstName: 'Manager',
           lastName: 'Member',
-          userRole: 'Manager',
+          userRole: 'KV.Zvyazkovyi',
           leadershipHistories: []
         },
         {
@@ -277,7 +277,7 @@ describe('MemberList', () => {
         firstName: 'John',
         lastName: 'Doe',
         middleName: 'M',
-        userRole: 'Mentor'
+        userRole: 'KV.Vykhovnyk'
       });
 
       expect(tags).toEqual(jasmine.arrayContaining([

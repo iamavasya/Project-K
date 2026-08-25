@@ -2,7 +2,7 @@
 import { Component, OnChanges, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MultiSelectModule } from '@openng/optimus-ui/multiselect';
@@ -21,6 +21,10 @@ import { UserService } from '../../../../adminModule/services/user.service';
 import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
 import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pipe';
 import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
+import { holdsOffice } from '../../functions/systemRole.function';
+import { toDateOnlyString } from '../../functions/toDateOnlyString.function';
+import { LeadershipService } from '../../services/leadership-service/leadership-service';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -55,6 +59,7 @@ export class KvPanelComponent implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   private readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
+  private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
 
   groups: GroupDto[] = [];
@@ -192,13 +197,42 @@ export class KvPanelComponent implements OnChanges {
     this.transferDialogVisible = true;
   }
 
+  // Transferring means moving the Зв'язковий office, not changing a system role: access is derived
+  // from the офіс. The upsert endpoint diffs the провід, so sending the roster with the new holder
+  // ends the outgoing one and seats the incoming one in a single call.
   transferManagerRole(): void {
     if (!this.selectedManagerUserKey || this.transferInProgress) {
       return;
     }
 
+    const incoming = this.kvMembers.find(member => member.userKey === this.selectedManagerUserKey);
+    if (!incoming) {
+      return;
+    }
+
     this.transferInProgress = true;
-    this.userService.changeUserRole(this.selectedManagerUserKey, 1).subscribe({
+    this.leadershipService.getLeadershipByTypeAndKey('kv', this.kurinKey()).pipe(
+      switchMap(leadership => {
+        const today = toDateOnlyString(new Date()) ?? '';
+        const retained = (leadership.leadershipHistories ?? [])
+          .filter(history => !history.endDate && history.role !== LeadershipRole.Zvyazkovyi);
+
+        return this.leadershipService.update(leadership.leadershipKey!, {
+          ...leadership,
+          leadershipHistories: [
+            ...retained,
+            {
+              leadershipHistoryKey: '',
+              leadershipKey: leadership.leadershipKey!,
+              role: LeadershipRole.Zvyazkovyi,
+              startDate: today,
+              endDate: null,
+              member: incoming
+            }
+          ]
+        });
+      })
+    ).subscribe({
       next: () => {
         this.refreshCurrentUserRoleAfterTransfer();
         this.transferInProgress = false;
@@ -312,14 +346,13 @@ export class KvPanelComponent implements OnChanges {
     return left.memberKey === right.memberKey;
   }
 
-  // member.userRole now carries an office system-role name (e.g. "KV.Zvyazkovyi"); map the legacy
-  // labels onto the офіс that grants the same standing.
   private isUserRole(member: MemberLookupDto, role: 'Manager' | 'Mentor'): boolean {
-    const userRole = (member.userRole ?? '').toLowerCase();
     if (role === 'Manager') {
-      return userRole.includes('zvyazkovyi');
+      return holdsOffice(member.userRole, LeadershipRole.Zvyazkovyi);
     }
-    return userRole.includes('hurtkoviy') || userRole.includes('vykhovnyk');
+
+    return holdsOffice(member.userRole, LeadershipRole.Hurtkoviy)
+      || holdsOffice(member.userRole, LeadershipRole.Vykhovnyk);
   }
 
   private refreshCurrentUserRoleAfterTransfer(): void {

@@ -20,6 +20,7 @@ import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
 import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcoming-birthdays-tile';
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 import { compareLeadershipHistoriesByDefault, getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
+import { holdsOffice, parseOfficeRole } from '../../functions/systemRole.function';
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
 
@@ -249,12 +250,11 @@ export class MemberList implements OnInit {
 
 
   private getKvRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'danger' }[] {
-    const role = (member.userRole ?? '').toLowerCase();
-    if (role === 'manager') {
+    if (holdsOffice(member.userRole, LeadershipRole.Zvyazkovyi)) {
       return [{ label: "Зв'язковий", severity: 'danger' }];
     }
 
-    if (role === 'mentor') {
+    if (holdsOffice(member.userRole, LeadershipRole.Vykhovnyk)) {
       return [{ label: 'Впорядник', severity: 'success' }];
     }
 
@@ -278,16 +278,8 @@ export class MemberList implements OnInit {
   }
 
   private getKvRoleSortWeight(role?: string | null): number {
-    const normalized = (role ?? '').toLowerCase();
-    if (normalized === 'manager') {
-      return getLeadershipRoleSortWeight(LeadershipRole.Zvyazkovyi);
-    }
-
-    if (normalized === 'mentor') {
-      return getLeadershipRoleSortWeight(LeadershipRole.Vykhovnyk);
-    }
-
-    return Number.MAX_SAFE_INTEGER;
+    const office = parseOfficeRole(role);
+    return office ? getLeadershipRoleSortWeight(office.role) : Number.MAX_SAFE_INTEGER;
   }
 
   private getMemberRoleLabel(history: LeadershipHistoryDto): string {
