@@ -1,0 +1,57 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{yml,yaml,json,md}]
+indent_size = 2
+
+[*.cs]
+indent_size = 4
+
+# Namespaces follow the folder, and file-scoped namespaces are the house style for new files.
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_using_directive_placement = outside_namespace:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+csharp_prefer_braces = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+dotnet_style_prefer_conditional_expression_over_return = false:none
+
+# Reserved exception types hide the failure mode from callers — this one is worth acting on.
+dotnet_diagnostic.CA2201.severity = warning
+
+# Async suffix on awaitable members.
+dotnet_naming_rule.async_methods_end_in_async.severity = suggestion
+dotnet_naming_rule.async_methods_end_in_async.symbols = any_async_method
+dotnet_naming_rule.async_methods_end_in_async.style = ends_with_async
+dotnet_naming_symbols.any_async_method.applicable_kinds = method
+dotnet_naming_symbols.any_async_method.required_modifiers = async
+dotnet_naming_style.ends_with_async.required_suffix = Async
+dotnet_naming_style.ends_with_async.capitalization = pascal_case
+
+[Backend/ProjectK.Backend/tests/**/*.cs]
+# Test names read as Method_Scenario_Expectation on purpose; CA1707 flagged 545 of them and buried
+# every other finding. Suppressed here only — production identifiers are still checked.
+dotnet_diagnostic.CA1707.severity = none
+
+# Throwing a bare Exception from a test double is how a failure gets simulated. Production code has
+# none of these, which the analyzer confirmed.
+dotnet_diagnostic.CA2201.severity = none
+
+# Test fixtures are assigned in constructors and setup methods the analyzer does not follow.
+dotnet_diagnostic.CS8618.severity = none
+
+[Backend/ProjectK.Backend/**/Migrations/*.cs]
+# EF-generated; not ours to style.
+generated_code = true
+
+[*.{ts,html,css,scss,js}]
+indent_size = 2
+quote_type = single
