@@ -12,6 +12,11 @@ import { InputOtpModule } from '@openng/optimus-ui/inputotp';
 import { MessageService } from '@openng/optimus-ui/api';
 import { authenticatedHomeRoute } from '../functions/authenticated-home-route';
 
+const LOGIN_ERROR_TEXT: Record<string, string> = {
+  InvalidCredentials: 'Невірний email або пароль.',
+  Unauthorized: 'Невірний email або пароль.'
+};
+
 @Component({
   selector: 'app-login-component',
   imports: [InputTextModule, FormsModule, FloatLabel, PasswordModule, ButtonModule, InputOtpModule, RouterLink],
@@ -83,7 +88,7 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.showError(error.error?.message || error.message || 'Не вдалося увійти.');
+        this.showError(this.errorText(error, 'Не вдалося увійти.'));
       }
     });
   }
@@ -97,7 +102,7 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.showError(error.error?.message || error.message || 'Невірний код підтвердження.');
+        this.showError(this.errorText(error, 'Невірний код підтвердження.'));
       }
     });
   }
@@ -123,6 +128,17 @@ export class LoginComponent implements OnInit {
 
   private navigateToPanel(): void {
     this.router.navigate(authenticatedHomeRoute(this.authService.getAuthStateValue()));
+  }
+
+  /**
+   * The API answers every failure as `{ error, message }`, where `error` is a stable code and
+   * `message` is English. The wording belongs to the UI, so map the code and fall back to our own
+   * text — never to `HttpErrorResponse.message`, which Angular always fills with a transport string
+   * like "Http failure response for ...", so it would render as the user-facing error.
+   */
+  private errorText(error: unknown, fallback: string): string {
+    const code = (error as { error?: { error?: string } })?.error?.error;
+    return (code && LOGIN_ERROR_TEXT[code]) || fallback;
   }
 
   private showError(detail: string): void {

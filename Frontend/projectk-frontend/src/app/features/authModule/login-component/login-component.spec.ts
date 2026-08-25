@@ -188,8 +188,10 @@ describe('LoginComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('should show message when login fails', () => {
-    authService.login.and.returnValue(throwError(() => ({ error: { message: 'Bad credentials' } })));
+  it('should show our own wording for a known error code, not the English message from the API', () => {
+    authService.login.and.returnValue(throwError(() => ({
+      error: { error: 'InvalidCredentials', message: 'Email or password is incorrect.' }
+    })));
 
     component.email = 'user@example.com';
     component.password = 'wrong-password';
@@ -198,9 +200,28 @@ describe('LoginComponent', () => {
 
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'error',
-      detail: 'Bad credentials'
+      detail: 'Невірний email або пароль.'
     }));
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to our text rather than the transport message on an unmapped error', () => {
+    // HttpErrorResponse.message is always populated with something like "Http failure response
+    // for ...", so using it as a fallback would render that string to the user.
+    authService.login.and.returnValue(throwError(() => ({
+      message: 'Http failure response for http://localhost/api/auth/login: 500 Internal Server Error',
+      error: { error: 'SomethingElse', message: 'An unexpected error occurred.' }
+    })));
+
+    component.email = 'user@example.com';
+    component.password = 'wrong-password';
+
+    component.onSubmit();
+
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      detail: 'Не вдалося увійти.'
+    }));
   });
 
   it('should sanitize otp input to six digits', () => {
