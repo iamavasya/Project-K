@@ -1,8 +1,10 @@
 name: Frontend CI/CD
 
 on:
+  # Every branch is linted, tested and built. PRs stay wired up only for the Azure SWA
+  # preview environments, not as a review gate.
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "**" ]
     paths:
       - 'Frontend/**'
   pull_request:
@@ -59,14 +61,22 @@ jobs:
       - run: npm ci
         working-directory: Frontend/projectk-frontend
 
+      # Lint is a real gate again: sonarjs findings are warnings, so only genuine errors fail.
       - name: Run lint
         run: npm run lint
         working-directory: Frontend/projectk-frontend
-        continue-on-error: ${{ github.ref == 'refs/heads/dev' }}
 
       - name: Test
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+        run: npm run test-c -- --watch=false --browsers=ChromeHeadless
         working-directory: Frontend/projectk-frontend
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: Frontend/projectk-frontend/coverage/
+          if-no-files-found: warn
 
       - name: Notify dev Telegram on frontend failure
         if: failure()
@@ -84,7 +94,14 @@ jobs:
 
   build_and_deploy:
     needs: lint_and_test
-    if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    # The push trigger now covers every branch, so deployment is pinned to the long-lived ones.
+    # PR builds still deploy, because that is how SWA preview environments are produced.
+    if: >-
+      github.event_name == 'release'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'pull_request' && github.event.action != 'closed')
+      || (github.event_name == 'push'
+          && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
     runs-on: ubuntu-latest
     name: Build and Deploy to Azure SWA
     environment:
