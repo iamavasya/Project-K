@@ -155,7 +155,9 @@ namespace ProjectK.Infrastructure.Repositories
                     FirstName = r.FirstName,
                     MiddleName = r.MiddleName,
                     LastName = r.LastName,
-                    UserRole = r.Role.ToString()
+                    // The system-role name, not the bare enum: MemberLookupDto.UserRole is read as an
+                    // office identity, and MemberRepository fills the same field the same way.
+                    UserRole = SystemRole.ForOffice(type, r.Role)
                 })
                 .ToList();
         }

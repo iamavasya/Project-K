@@ -104,9 +104,15 @@ namespace ProjectK.Infrastructure.Repositories
                     GroupKey = m.GroupKey,
                     KurinKey = m.KurinKey,
                     UserKey = m.UserKey,
+                    // Everyone carries the baseline Member role, so taking whatever the store returned
+                    // first often hid the office. Skip the baseline and order so the result is stable.
+                    // A single field still cannot express a member holding several offices — see the
+                    // role-system unification work.
                     UserRole = (from ur in _context.UserRoles
                                 where m.UserKey != null && ur.UserId == m.UserKey
                                 join r in _context.Roles on ur.RoleId equals r.Id
+                                where r.Name != SystemRole.Member
+                                orderby r.Name
                                 select r.Name).FirstOrDefault(),
                     FirstName = m.FirstName,
                     MiddleName = m.MiddleName,
