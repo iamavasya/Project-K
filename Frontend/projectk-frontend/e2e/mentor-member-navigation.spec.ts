@@ -11,11 +11,11 @@ test.describe('Mentor and Member navigation checks', () => {
 
       await page.goto(`/group/${groupKey}`);
       await expect(page).toHaveURL(new RegExp(`/group/${groupKey}`));
-      await expect(page.getByRole('button', { name: /Р РµРґР°РіСѓРІР°С‚Рё/ })).toBeHidden();
+      await expect(page.getByRole('button', { name: /Редагувати/ })).toBeHidden();
 
       await page.goto(`/planning/${kurinKey}`);
       await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
-      await expect(page.getByRole('button', { name: /РЎС‚РІРѕСЂРёС‚Рё/ })).toBeHidden();
+      await expect(page.getByRole('button', { name: /Створити/ })).toBeHidden();
       await expect(page.getByRole('button', { name: /РќРѕРІРёР№/ })).toBeHidden();
     });
   });
@@ -26,7 +26,7 @@ test.describe('Mentor and Member navigation checks', () => {
 
       await page.goto(`/group/${groupKey}`);
       await expect(page).toHaveURL(new RegExp(`/group/${groupKey}`));
-      await expect(page.getByRole('button', { name: /Р РµРґР°РіСѓРІР°С‚Рё/ })).toBeHidden();
+      await expect(page.getByRole('button', { name: /Редагувати/ })).toBeHidden();
 
       await page.goto(`/group/${groupKey}/member/upsert`);
       await expect(page).toHaveURL(/\/forbidden|\/kurin|\/group/);

@@ -8,7 +8,8 @@ interface LoginResponse {
   };
   kurinKey?: string;
   memberKey?: string;
-  role?: string;
+  permissions?: string[];
+  roles?: string[];
   userKey?: string;
 }
 

@@ -82,7 +82,8 @@ test.describe('Full onboarding organization workflow', () => {
       await expect(page).toHaveURL(/\/login/, { timeout: 5_000 });
 
       const login = await loginViaApi(request, managerUser);
-      expect(login.role).toBe('Manager');
+      // Активований керівник саджається Зв'язковим, а це і є повне керування куренем.
+      expect(login.permissions).toContain('Group:Manage:KurinWide');
       expect(login.kurinKey).toBeTruthy();
 
       const kurin = await getKurinByKey(request, managerUser, login.kurinKey!);
@@ -147,7 +148,8 @@ test.describe('Full onboarding organization workflow', () => {
       await assignMentorViaApi(request, managerUser, groupA.groupKey, mentorMember.userKey!);
 
       const mentorLogin = await loginViaApi(request, mentorUser);
-      expect(mentorLogin.role).toBe('Mentor');
+      // Призначення ментора саме по собі синкає офіс Виховника (LeadershipRoleSyncService).
+      expect(mentorLogin.permissions).toContain('Group:Update:OwnGroups');
       expect(mentorLogin.kurinKey).toBe(kurinKey);
 
       await createLeadershipViaApi(request, managerUser, {
