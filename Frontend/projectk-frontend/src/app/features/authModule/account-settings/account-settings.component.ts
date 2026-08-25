@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+
+import { Component, OnInit, inject, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -16,9 +16,7 @@ import { PermissionService } from '../services/permission.service';
 
 @Component({
   selector: 'app-account-settings',
-  standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     InputTextModule,
     PasswordModule,
@@ -26,8 +24,9 @@ import { PermissionService } from '../services/permission.service';
     DividerModule,
     TagModule,
     MfaSetupDialogComponent
-  ],
+],
   templateUrl: './account-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-settings.component.css'
 })
 export class AccountSettingsComponent implements OnInit {
@@ -39,7 +38,7 @@ export class AccountSettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  @ViewChild('mfaSetupDialog') mfaSetupDialog?: MfaSetupDialogComponent;
+  readonly mfaSetupDialog = viewChild<MfaSetupDialogComponent>('mfaSetupDialog');
 
   settings: AccountSettings | null = null;
   loading = false;
@@ -245,7 +244,7 @@ export class AccountSettingsComponent implements OnInit {
   }
 
   setupMfa(mandatory = false): void {
-    this.mfaSetupDialog?.show(mandatory);
+    this.mfaSetupDialog()?.show(mandatory);
   }
 
   onMfaEnabled(): void {

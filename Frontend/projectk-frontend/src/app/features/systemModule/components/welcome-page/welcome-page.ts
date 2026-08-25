@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DividerModule } from '@openng/optimus-ui/divider';
@@ -9,6 +9,7 @@ import { environment } from '../../../../../environments/environment';
   selector: 'app-welcome-page',
   imports: [RouterLink, ButtonModule, DividerModule, TagModule],
   templateUrl: './welcome-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './welcome-page.css'
 })
 export class WelcomePageComponent {

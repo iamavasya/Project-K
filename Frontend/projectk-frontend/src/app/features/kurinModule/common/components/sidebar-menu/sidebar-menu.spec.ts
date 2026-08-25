@@ -58,10 +58,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -81,10 +81,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.email$.subscribe(email => {
@@ -103,10 +103,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.role$.subscribe(role => {
@@ -116,10 +116,10 @@ describe('SidebarMenu', () => {
     });
 
     it('should set email$ to null when state is null', (done) => {
-      component.state$ = of(null);
+      fixture.componentRef.setInput('state$', of(null));
       mockAuthService.getAuthStateValue.and.returnValue(null);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.email$.subscribe(email => {
@@ -142,9 +142,9 @@ describe('SidebarMenu', () => {
     function itemsAt(url: string): Promise<MenuItem[]> {
       Object.defineProperty(mockRouter, 'url', { value: url, configurable: true });
 
-      component.state$ = of(managerState);
+      fixture.componentRef.setInput('state$', of(managerState));
       mockAuthService.getAuthStateValue.and.returnValue(managerState);
-      component.ngOnChanges({ state$: new SimpleChange(null, component.state$, true) });
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
 
       return new Promise(resolve => component.items$.subscribe(resolve));
     }
@@ -189,10 +189,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -221,10 +221,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -244,10 +244,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -268,10 +268,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -294,10 +294,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -317,10 +317,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -340,10 +340,10 @@ describe('SidebarMenu', () => {
     });
 
     it('should disable kurin-related items when kurinKey is null and NOT show them if they rely on kurinKey', (done) => {
-      component.state$ = of(null);
+      fixture.componentRef.setInput('state$', of(null));
       mockAuthService.getAuthStateValue.and.returnValue(null);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -364,10 +364,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -391,10 +391,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -418,10 +418,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -445,10 +445,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -465,16 +465,17 @@ describe('SidebarMenu', () => {
 
   describe('close', () => {
     it('should set visible to false', () => {
-      component.visible = true;
+      fixture.componentRef.setInput('visible', true);
       component.close();
-      expect(component.visible).toBeFalse();
+      expect(component.visible()).toBeFalse();
     });
 
     it('should emit visibleChange event', () => {
-      spyOn(component.visibleChange, 'emit');
-      component.visible = true;
+      let emittedClose: boolean | undefined;
+      component.visible.subscribe(v => emittedClose = v);
+      fixture.componentRef.setInput('visible', true);
       component.close();
-      expect(component.visibleChange.emit).toHaveBeenCalledWith(false);
+      expect(emittedClose).toBeFalse();
     });
 
     it('should close sidebar when menu item is clicked', (done) => {
@@ -488,10 +489,10 @@ describe('SidebarMenu', () => {
       };
 
       spyOn(component, 'close');
-      component.state$ = of(mockState);
+      fixture.componentRef.setInput('state$', of(mockState));
       mockAuthService.getAuthStateValue.and.returnValue(mockState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -539,25 +540,26 @@ describe('SidebarMenu', () => {
 
   describe('Input/Output bindings', () => {
     it('should have visible input property', () => {
-      component.visible = true;
-      expect(component.visible).toBeTrue();
+      fixture.componentRef.setInput('visible', true);
+      expect(component.visible()).toBeTrue();
       
-      component.visible = false;
-      expect(component.visible).toBeFalse();
+      fixture.componentRef.setInput('visible', false);
+      expect(component.visible()).toBeFalse();
     });
 
     it('should have state$ input property', () => {
       const mockState$ = of(null);
-      component.state$ = mockState$;
-      expect(component.state$).toBe(mockState$);
+      fixture.componentRef.setInput('state$', mockState$);
+      expect(component.state$()).toBe(mockState$);
     });
 
     it('should emit visibleChange when changed', () => {
       let emittedValue: boolean | undefined;
-      component.visibleChange.subscribe(value => {
+      component.visible.subscribe(value => {
         emittedValue = value;
       });
 
+      fixture.componentRef.setInput('visible', true);
       component.close();
       expect(emittedValue).toBeFalse();
     });
@@ -574,10 +576,10 @@ describe('SidebarMenu', () => {
         accessToken: 'token-789'
       };
 
-      component.state$ = of(managerState);
+      fixture.componentRef.setInput('state$', of(managerState));
       mockAuthService.getAuthStateValue.and.returnValue(managerState);
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
@@ -590,10 +592,10 @@ describe('SidebarMenu', () => {
           kurinKey: null
         };
 
-        component.state$ = of(adminState);
+        fixture.componentRef.setInput('state$', of(adminState));
       mockAuthService.getAuthStateValue.and.returnValue(adminState);
         component.ngOnChanges({
-          state$: new SimpleChange(of(managerState), component.state$, false)
+          state$: new SimpleChange(of(managerState), component.state$(), false)
         });
 
         component.items$.subscribe(newItems => {
@@ -605,9 +607,9 @@ describe('SidebarMenu', () => {
     });
 
     it('should show correct menu items based on auth state changes', (done) => {
-      component.state$ = authStateSubject.asObservable();
+      fixture.componentRef.setInput('state$', authStateSubject.asObservable());
       component.ngOnChanges({
-        state$: new SimpleChange(null, component.state$, true)
+        state$: new SimpleChange(null, component.state$(), true)
       });
 
       const subscription = component.items$.subscribe(items => {

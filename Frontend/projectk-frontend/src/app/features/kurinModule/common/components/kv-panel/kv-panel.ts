@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+
+import { Component, OnChanges, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -31,7 +31,6 @@ interface MentorAssignmentRow {
 @Component({
   selector: 'app-kv-panel',
   imports: [
-    CommonModule,
     FormsModule,
     ButtonModule,
     DialogModule,
@@ -43,12 +42,13 @@ interface MentorAssignmentRow {
     TooltipModule,
     LocalUtcDatePipe,
     EmptyStateComponent
-  ],
+],
   templateUrl: './kv-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './kv-panel.css'
 })
 export class KvPanelComponent implements OnChanges {
-  @Input() kurinKey = '';
+  readonly kurinKey = input('');
 
   private readonly groupService = inject(GroupService);
   private readonly memberService = inject(MemberService);
@@ -76,7 +76,7 @@ export class KvPanelComponent implements OnChanges {
   transferInProgress = false;
 
   ngOnChanges(): void {
-    if (this.kurinKey) {
+    if (this.kurinKey()) {
       this.loadData();
     }
   }
@@ -119,10 +119,10 @@ export class KvPanelComponent implements OnChanges {
     this.isLoading = true;
 
     forkJoin({
-      groups: this.groupService.getAllByKurinKey(this.kurinKey),
-      kvMembers: this.memberService.getKVMembers(this.kurinKey),
-      mentorAssignments: this.groupService.getMentorAssignments(this.kurinKey),
-      mentorCandidates: this.canManageKv ? this.memberService.getMentorCandidates(this.kurinKey) : of([] as MemberLookupDto[])
+      groups: this.groupService.getAllByKurinKey(this.kurinKey()),
+      kvMembers: this.memberService.getKVMembers(this.kurinKey()),
+      mentorAssignments: this.groupService.getMentorAssignments(this.kurinKey()),
+      mentorCandidates: this.canManageKv ? this.memberService.getMentorCandidates(this.kurinKey()) : of([] as MemberLookupDto[])
     }).subscribe({
       next: ({ groups, kvMembers, mentorAssignments, mentorCandidates }) => {
         this.groups = groups;

@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
 import { MemberService } from '../../services/member-service/member.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
@@ -11,7 +11,7 @@ import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
-import { DatePipe, CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/roleDisplayName';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
@@ -29,7 +29,6 @@ import { PermissionService } from '../../../../authModule/services/permission.se
 @Component({
   selector: 'app-member-list',
   imports: [
-    CommonModule,
     TableModule,
     InputIconModule,
     IconFieldModule,
@@ -42,16 +41,18 @@ import { PermissionService } from '../../../../authModule/services/permission.se
     MiniMemberCardComponent,
     UpcomingBirthdaysTileComponent,
     ProfileVerificationBadgeComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    DatePipe
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [DatePipe]
 })
 export class MemberList implements OnInit {
-  @Input() type: 'kurin' | 'group' | 'leadership' = 'group';
-  @Input() leadershipType: 'kurin' | 'group' | 'kv' = 'group';
-  @Input() typeKey = '';
+  readonly type = input<'kurin' | 'group' | 'leadership'>('group');
+  readonly leadershipType = input<'kurin' | 'group' | 'kv'>('group');
+  readonly typeKey = input('');
 
   private readonly groupCardViewStorageKeyPrefix = 'member-list:group-card-view';
   private readonly upcomingBirthdaysWindowDays = 30;
@@ -80,9 +81,10 @@ export class MemberList implements OnInit {
   selectedMember: MemberLookupDto | null = null;
 
   ngOnInit(): void {
-    if (!this.type || !this.typeKey) return;
+    const type = this.type();
+    if (!type || !this.typeKey()) return;
 
-    switch (this.type) {
+    switch (type) {
       case 'kurin':
         this.loadMembers();
         break;
@@ -97,9 +99,9 @@ export class MemberList implements OnInit {
   }
 
   private loadMembers(): void {
-    const request$ = this.type === 'kurin' 
-      ? this.memberService.getAll(undefined, this.typeKey)
-      : this.memberService.getAll(this.typeKey);
+    const request$ = this.type() === 'kurin' 
+      ? this.memberService.getAll(undefined, this.typeKey())
+      : this.memberService.getAll(this.typeKey());
 
     request$.subscribe({
       next: (members) => {
@@ -151,7 +153,7 @@ export class MemberList implements OnInit {
   }
 
   onGroupCardViewToggleChange(): void {
-    if (this.type !== 'group') {
+    if (this.type() !== 'group') {
       return;
     }
 
@@ -159,7 +161,7 @@ export class MemberList implements OnInit {
   }
 
   private getGroupCardViewStorageKey(): string {
-    return `${this.groupCardViewStorageKeyPrefix}:${this.typeKey}`;
+    return `${this.groupCardViewStorageKeyPrefix}:${this.typeKey()}`;
   }
 
   private restoreGroupCardViewState(): void {
@@ -192,7 +194,7 @@ export class MemberList implements OnInit {
   }
 
   private loadLeadership(): void {
-    this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType, this.typeKey).subscribe({
+    this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType(), this.typeKey()).subscribe({
       next: (leadership) => {
         this.leadership = leadership;
         this.allHistories = leadership.leadershipHistories;
@@ -220,10 +222,11 @@ export class MemberList implements OnInit {
   }
 
   onLeadershipSettingsSelect(): void {
+    const typeKey = this.typeKey();
     if (this.leadership) {
-      this.router.navigate(['/leadership', this.leadership.leadershipKey, this.leadershipType, this.typeKey]);
-    } else if (this.type && this.typeKey) {
-      this.router.navigate(['/leadership/create', this.leadershipType, this.typeKey]);
+      this.router.navigate(['/leadership', this.leadership.leadershipKey, this.leadershipType(), this.typeKey()]);
+    } else if (this.type() && typeKey) {
+      this.router.navigate(['/leadership/create', this.leadershipType(), typeKey]);
     }
   }
 

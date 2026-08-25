@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './auth.interceptor';
 import { AuthService } from './authService/auth.service';
 import { Router } from '@angular/router';
@@ -17,8 +17,9 @@ describe('AuthInterceptor', () => {
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

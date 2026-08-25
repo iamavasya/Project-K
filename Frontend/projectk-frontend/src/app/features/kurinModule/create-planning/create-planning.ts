@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,7 +22,6 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
 
 @Component({
   selector: 'app-create-planning',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     InputTextModule,
@@ -34,6 +33,7 @@ import { MemberLookupDto } from '../common/models/requests/member/memberLookupDt
     DividerModule,
     FloatLabelModule
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="max-w-5xl mx-auto p-6">
       <div class="flex items-center gap-4 mb-6">

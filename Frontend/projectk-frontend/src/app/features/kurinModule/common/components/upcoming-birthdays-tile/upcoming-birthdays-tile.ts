@@ -1,19 +1,20 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, OnChanges, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { buildUpcomingBirthdays, UpcomingBirthdayItem } from '../../functions/upcomingBirthdays.function';
 
 @Component({
   selector: 'app-upcoming-birthdays-tile',
-  imports: [CommonModule, TagModule],
+  imports: [TagModule, DatePipe],
   templateUrl: './upcoming-birthdays-tile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './upcoming-birthdays-tile.css'
 })
 export class UpcomingBirthdaysTileComponent implements OnInit, OnChanges {
-  @Input() members: MemberLookupDto[] = [];
-  @Input() daysAhead = 30;
-  @Input() title = 'Найближчі дні народження';
+  readonly members = input<MemberLookupDto[]>([]);
+  readonly daysAhead = input(30);
+  readonly title = input('Найближчі дні народження');
 
   readonly previewLimit = 5;
   upcomingBirthdays: UpcomingBirthdayItem[] = [];
@@ -35,7 +36,7 @@ export class UpcomingBirthdaysTileComponent implements OnInit, OnChanges {
   }
 
   buildUpcomingBirthdays(referenceDate: Date = new Date()): UpcomingBirthdayItem[] {
-    return buildUpcomingBirthdays(this.members, this.daysAhead, referenceDate);
+    return buildUpcomingBirthdays(this.members(), this.daysAhead(), referenceDate);
   }
 
   private refreshUpcomingBirthdays(): void {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
+import { Component, ElementRef, OnChanges, SimpleChanges, ChangeDetectionStrategy, viewChildren, model, input, output } from '@angular/core';
 import { DialogModule } from '@openng/optimus-ui/dialog';
-import { CommonModule, TitleCasePipe } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -31,20 +31,24 @@ export interface ManagePanelConfig {
 
 @Component({
   selector: 'app-manage-panel',
-  imports: [DialogModule, CommonModule, InputTextModule, TextareaModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
+  imports: [DialogModule, InputTextModule, TextareaModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
   templateUrl: './manage-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './manage-panel.css'
 })
 export class ManagePanel implements OnChanges {
-  @Input() visible = false;
-  @Input() parameter: ManageAction | 'undef' = 'undef';
-  @Input() entity: any = null;
-  @Input() config!: ManagePanelConfig;
+  readonly visible = model(false);
+  readonly parameter = input<ManageAction | 'undef'>('undef');
+  readonly entity = input<any>(null);
+  readonly config = input.required<ManagePanelConfig>();
 
-  @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() actionPerformed = new EventEmitter<{action: ManageAction; entity: any; entityType: string}>();
+  readonly actionPerformed = output<{
+    action: ManageAction;
+    entity: any;
+    entityType: string;
+}>();
 
-  @ViewChildren('autoField') autoFields!: QueryList<ElementRef>;
+  readonly autoFields = viewChildren<ElementRef>('autoField');
 
   form: FormGroup = new FormGroup({});
   ready = false;
@@ -55,14 +59,15 @@ export class ManagePanel implements OnChanges {
     } else if (changes['entity']) {
       this.patchEntity();
     }
+    const parameter = this.parameter();
     if (changes['parameter']) {
       this.applyStatePerAction();
-      if (this.parameter === 'create') {
+      if (parameter === 'create') {
         this.resetControlsState();
       }
     }
-    if (changes['visible'] && this.visible) {
-      if (this.parameter === 'create') {
+    if (changes['visible'] && this.visible()) {
+      if (parameter === 'create') {
         this.buildForm(); // новий чистий об'єкт
       } else {
         // інші дії: просто пропатчити актуальне entity
@@ -80,7 +85,7 @@ export class ManagePanel implements OnChanges {
   }
 
   private focusFirstInput(): void {
-    const target = this.autoFields?.find(ref => {
+    const target = this.autoFields()?.find(ref => {
       const el = ref.nativeElement as HTMLElement;
       const disabled = (el as HTMLInputElement).disabled;
       const hidden = el.offsetParent === null;
@@ -102,12 +107,13 @@ export class ManagePanel implements OnChanges {
   }
 
   private buildForm(): void {
-    if (!this.config) return;
+    const config = this.config();
+    if (!config) return;
     this.ready = false;
-    const base = this.entity ?? this.config.createFactory?.() ?? {};
+    const base = this.entity() ?? config.createFactory?.() ?? {};
     const group: Record<string, FormControl> = {};
 
-    this.config.fields.forEach(field => {
+    config.fields.forEach(field => {
       group[field.name] = new FormControl(
         base[field.name] ?? null,
         field.required ? [Validators.required] : []
@@ -120,9 +126,10 @@ export class ManagePanel implements OnChanges {
   }
 
   private patchEntity(): void {
-    if (!this.config || !this.form) return;
-    const src = this.entity ?? this.config.createFactory?.() ?? {};
-    this.config.fields.forEach(f => {
+    const config = this.config();
+    if (!config || !this.form) return;
+    const src = this.entity() ?? config.createFactory?.() ?? {};
+    config.fields.forEach(f => {
       if (this.form.get(f.name)) {
         this.form.get(f.name)!.setValue(src[f.name] ?? null, { emitEvent: false });
       }
@@ -130,10 +137,11 @@ export class ManagePanel implements OnChanges {
   }
 
   private applyStatePerAction(): void {
-    if (!this.config || !this.form) return;
-    const action = this.parameter as ManageAction;
+    const config = this.config();
+    if (!config || !this.form) return;
+    const action = this.parameter() as ManageAction;
 
-    this.config.fields.forEach(f => {
+    config.fields.forEach(f => {
       const ctrl = this.form.get(f.name);
       if (!ctrl) return;
 
@@ -154,8 +162,7 @@ export class ManagePanel implements OnChanges {
   }
 
   hide(): void {
-    this.visible = false;
-    this.visibleChange.emit(this.visible);
+    this.visible.set(false);
 
     if (this.form) {
       this.form.reset();
@@ -164,33 +171,35 @@ export class ManagePanel implements OnChanges {
   }
 
   submit(): void {
-    if (this.parameter === 'undef') return;
-    const action = this.parameter;
+    const parameter = this.parameter();
+    if (parameter === 'undef') return;
+    const action = parameter;
 
     let raw = {
-      ...(this.entity ?? this.config.createFactory?.()),
+      ...(this.entity() ?? this.config().createFactory?.()),
       ...this.form.getRawValue()
     };
 
-    if (this.config.mapOut) {
-      raw = this.config.mapOut(raw);
+    const config = this.config();
+    if (config.mapOut) {
+      raw = config.mapOut(raw);
     }
 
     this.actionPerformed.emit({
       action,
       entity: raw,
-      entityType: this.config.entityType
+      entityType: config.entityType
     });
     this.hide();
   }
 
   isHidden(field: ManagePanelField): boolean {
-    const action = this.parameter as ManageAction;
+    const action = this.parameter() as ManageAction;
     return !!field.hiddenOn && field.hiddenOn.includes(action);
   }
 
   actionLabel(): string {
-    switch (this.parameter) {
+    switch (this.parameter()) {
       case 'create': return 'Створити';
       case 'update': return 'Оновити';
       case 'delete': return 'Видалити';
@@ -199,23 +208,26 @@ export class ManagePanel implements OnChanges {
   }
 
   header(): string {
-    return this.config?.title || (this.config?.entityType ?? '');
+    const config = this.config();
+    return config?.title || (config?.entityType ?? '');
   }
 
   entityDisplayName(): string {
-    if (!this.entity) return '';
-    return this.config?.displayName?.(this.entity)
-      || this.entity.name
-      || this.entity.number?.toString()
+    const entity = this.entity();
+    if (!entity) return '';
+    return this.config()?.displayName?.(entity)
+      || entity.name
+      || entity.number?.toString()
       || '';
   }
 
   isDeleteMode(): boolean {
-    return this.parameter === 'delete';
+    return this.parameter() === 'delete';
   }
 
   visibleFields(): ManagePanelField[] {
-    if (!this.config) return [];
-    return this.config.fields.filter(f => !this.isHidden(f));
+    const config = this.config();
+    if (!config) return [];
+    return config.fields.filter(f => !this.isHidden(f));
   }
 }

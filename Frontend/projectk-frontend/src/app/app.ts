@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,6 +12,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
   selector: 'app-root',
   imports: [RouterOutlet, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
 })
 export class App implements AfterViewInit {
@@ -20,7 +21,7 @@ export class App implements AfterViewInit {
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly router = inject(Router);
 
-  @ViewChild('mfaDialog') mfaDialog!: MfaSetupDialogComponent;
+  readonly mfaDialog = viewChild.required<MfaSetupDialogComponent>('mfaDialog');
 
   constructor() {
     this.updateShellVisibility(this.router.url);
@@ -33,7 +34,7 @@ export class App implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.mfaEnforcer.checkAndEnforce(this.mfaDialog);
+    this.mfaEnforcer.checkAndEnforce(this.mfaDialog());
   }
 
   private updateShellVisibility(url: string): void {

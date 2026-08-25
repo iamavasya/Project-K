@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { AccountSettings, AccountSettingsService } from './account-settings.service';
 import { ClientCacheService } from '../../kurinModule/common/services/client-cache/client-cache.service';
@@ -13,8 +14,7 @@ describe('AccountSettingsService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [AccountSettingsService]
+      providers: [AccountSettingsService, provideHttpClient(), provideHttpClientTesting()]
     });
 
     service = TestBed.inject(AccountSettingsService);

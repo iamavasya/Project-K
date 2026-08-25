@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
@@ -11,9 +11,9 @@ const ENFORCE_PRIVILEGED_MFA_KEY = 'Security__EnforcePrivilegedMFA';
 
 @Component({
   selector: 'app-system-settings',
-  standalone: true,
   imports: [ToggleSwitchModule, ButtonModule, FormsModule],
   templateUrl: './system-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './system-settings.component.css'
 })
 export class SystemSettingsComponent implements OnInit {

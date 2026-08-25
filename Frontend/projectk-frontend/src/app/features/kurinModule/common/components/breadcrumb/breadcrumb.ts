@@ -1,13 +1,13 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BreadcrumbModule } from '@openng/optimus-ui/breadcrumb';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-service';
 
 
 @Component({
   selector: 'app-breadcrumb',
-  standalone: true,
   imports: [BreadcrumbModule, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (home$ | async; as home) {
       <p-breadcrumb [model]="(breadcrumbs$ | async) ?? []" [home]="home" [homeAriaLabel]="home.title ?? ''" />

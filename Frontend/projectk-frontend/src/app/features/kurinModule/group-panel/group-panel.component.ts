@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
 import { MemberService } from '../common/services/member-service/member.service';
@@ -39,10 +39,11 @@ import { MenuItemsCache } from '../common/functions/menuItemsCache';
     MenuModule
   ],
   templateUrl: './group-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './group-panel.component.css'
 })
 export class GroupPanelComponent implements OnInit {
-  @ViewChild('silhouetteInput') private silhouetteInput?: ElementRef<HTMLInputElement>;
+  private readonly silhouetteInput = viewChild<ElementRef<HTMLInputElement>>('silhouetteInput');
 
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly router: Router = inject(Router);
@@ -331,7 +332,7 @@ export class GroupPanelComponent implements OnInit {
       return;
     }
 
-    this.silhouetteInput?.nativeElement.click();
+    this.silhouetteInput()?.nativeElement.click();
   }
 
   deleteSilhouette(): void {

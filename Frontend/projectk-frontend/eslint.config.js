@@ -30,6 +30,18 @@ module.exports = tseslint.config(
           style: "kebab-case",
         },
       ],
+      // The Angular 22 migration stamped ChangeDetectionStrategy.Eager onto every
+      // component to preserve v21 behaviour, which this rule flags by definition.
+      // Keep it off until components are actually moved to OnPush.
+      "@angular-eslint/prefer-on-push-component-change-detection": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
   {

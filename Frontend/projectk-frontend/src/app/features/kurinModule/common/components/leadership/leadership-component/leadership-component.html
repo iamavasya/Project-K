@@ -23,11 +23,9 @@
 
             <div class="flex items-center gap-2">
               <label class="text-sm text-gray-500 cursor-pointer select-none" for="archiveSwitch">Архів</label>
-              <p-toggleswitch
-                [(ngModel)]="showArchived"
+              <p-toggleswitch [(ngModel)]="showArchived"
                 [ngModelOptions]="{standalone: true}"
-                inputId="archiveSwitch">
-              </p-toggleswitch>
+                inputId="archiveSwitch" />
             </div>
           </div>
         </div>
@@ -115,7 +113,7 @@
     </p-table>
 
     <div class="mt-4 flex">
-      <p-button label="Зберегти" type="submit" [disabled]="leadershipForm.invalid"></p-button>
+      <p-button label="Зберегти" type="submit" [disabled]="leadershipForm.invalid" />
     </div>
   </form>
 </div>

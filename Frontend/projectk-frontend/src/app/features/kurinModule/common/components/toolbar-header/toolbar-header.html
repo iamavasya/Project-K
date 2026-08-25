@@ -22,13 +22,13 @@
                     severity="secondary"
                     (onClick)="themeService.toggle()" />
                 @if (state.accessToken) {
-                    <app-notification-bell></app-notification-bell>
-                    <app-logout-component></app-logout-component>
+                    <app-notification-bell />
+                    <app-logout-component />
                 }
             </div>
         </ng-template>
     </p-toolbar>
 
-    <app-sidebar-menu [visible]="sidebarVisible" [state$]="state$" (visibleChange)="sidebarVisible = $event"></app-sidebar-menu>
+    <app-sidebar-menu [visible]="sidebarVisible" [state$]="state$" (visibleChange)="sidebarVisible = $event" />
     }
 }

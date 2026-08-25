@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { LeadershipDto, LeadershipHistoryDto } from '../../../models/requests/leadership/leadershipDto';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
@@ -59,6 +59,7 @@ type LeadershipType = 'kurin' | 'group' | 'kv';
     IconFieldModule,
     InputIconModule
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './leadership-component.html',
 })
 export class LeadershipComponent implements OnInit {

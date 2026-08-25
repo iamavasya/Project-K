@@ -17,7 +17,7 @@ describe('ProfileVerificationBadgeComponent', () => {
   });
 
   it('should show current verification badge', () => {
-    component.status = MemberProfileVerificationStatus.VerifiedCurrent;
+    fixture.componentRef.setInput('status', MemberProfileVerificationStatus.VerifiedCurrent);
     fixture.detectChanges();
 
     const badge = fixture.debugElement.query(By.css('.profile-verification-badge'));
@@ -28,7 +28,7 @@ describe('ProfileVerificationBadgeComponent', () => {
   });
 
   it('should show stale verification badge', () => {
-    component.status = MemberProfileVerificationStatus.VerifiedStale;
+    fixture.componentRef.setInput('status', MemberProfileVerificationStatus.VerifiedStale);
     fixture.detectChanges();
 
     const badge = fixture.debugElement.query(By.css('.profile-verification-badge'));
@@ -39,14 +39,14 @@ describe('ProfileVerificationBadgeComponent', () => {
   });
 
   it('should hide badge when disabled or unverified', () => {
-    component.status = MemberProfileVerificationStatus.VerifiedCurrent;
-    component.enabled = false;
+    fixture.componentRef.setInput('status', MemberProfileVerificationStatus.VerifiedCurrent);
+    fixture.componentRef.setInput('enabled', false);
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('.profile-verification-badge'))).toBeNull();
 
-    component.enabled = true;
-    component.status = MemberProfileVerificationStatus.Unverified;
+    fixture.componentRef.setInput('enabled', true);
+    fixture.componentRef.setInput('status', MemberProfileVerificationStatus.Unverified);
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('.profile-verification-badge'))).toBeNull();

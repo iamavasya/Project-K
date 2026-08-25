@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { MemberDto } from '../common/models/memberDto';
 import { MemberService } from '../common/services/member-service/member.service';
@@ -71,6 +71,7 @@ import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive'
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-card.component.css'
 })
 export class MemberCardComponent implements OnInit {

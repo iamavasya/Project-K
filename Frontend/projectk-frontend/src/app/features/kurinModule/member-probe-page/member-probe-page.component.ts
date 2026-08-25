@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -34,6 +34,7 @@ interface ProbeDetailSectionView {
   imports: [ButtonModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
   providers: [ConfirmationService],
   templateUrl: './member-probe-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-probe-page.component.css'
 })
 export class MemberProbePageComponent implements OnInit {

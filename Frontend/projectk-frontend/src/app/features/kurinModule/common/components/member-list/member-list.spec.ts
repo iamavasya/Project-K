@@ -80,15 +80,15 @@ describe('MemberList', () => {
 
   describe('ngOnInit', () => {
     it('should do nothing if typeKey is missing', () => {
-      component.typeKey = '';
+      fixture.componentRef.setInput('typeKey', '');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).not.toHaveBeenCalled();
       expect(leadershipServiceSpy.getLeadershipByTypeAndKey).not.toHaveBeenCalled();
     });
 
     it('should load members for group type', () => {
-      component.type = 'group';
-      component.typeKey = 'g1';
+      fixture.componentRef.setInput('type', 'group');
+      fixture.componentRef.setInput('typeKey', 'g1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith('g1');
       expect(component.membersLookup.length).toBe(1);
@@ -98,8 +98,8 @@ describe('MemberList', () => {
     });
 
     it('should load members for kurin type', () => {
-      component.type = 'kurin';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('type', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith(undefined, 'k1');
       expect(component.membersLookup.length).toBe(1);
@@ -135,8 +135,8 @@ describe('MemberList', () => {
           }]
         }
       ]));
-      component.type = 'kurin';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('type', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
 
       component.ngOnInit();
 
@@ -146,9 +146,9 @@ describe('MemberList', () => {
     });
 
     it('should load leadership for leadership type', () => {
-      component.type = 'leadership';
-      component.leadershipType = 'kurin';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('type', 'leadership');
+      fixture.componentRef.setInput('leadershipType', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
       component.ngOnInit();
       expect(leadershipServiceSpy.getLeadershipByTypeAndKey).toHaveBeenCalledWith('kurin', 'k1');
       expect(component.leadership).toEqual(mockLeadership);
@@ -158,8 +158,8 @@ describe('MemberList', () => {
 
   describe('Leadership List Logic', () => {
     beforeEach(() => {
-      component.type = 'leadership';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('type', 'leadership');
+      fixture.componentRef.setInput('typeKey', 'k1');
       component.ngOnInit(); // Loads mockLeadership
     });
 
@@ -230,8 +230,8 @@ describe('MemberList', () => {
 
     it('onLeadershipSettingsSelect should navigate to edit if leadership exists', () => {
       component.leadership = mockLeadership;
-      component.leadershipType = 'kurin';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('leadershipType', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
       
       component.onLeadershipSettingsSelect();
       
@@ -240,9 +240,9 @@ describe('MemberList', () => {
 
     it('onLeadershipSettingsSelect should navigate to create if leadership is null', () => {
       component.leadership = null;
-      component.type = 'leadership'; // Ensure context is correct
-      component.leadershipType = 'kurin';
-      component.typeKey = 'k1';
+      fixture.componentRef.setInput('type', 'leadership'); // Ensure context is correct
+      fixture.componentRef.setInput('leadershipType', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
 
       component.onLeadershipSettingsSelect();
 
@@ -287,8 +287,8 @@ describe('MemberList', () => {
   });
   describe('Group card mode', () => {
     beforeEach(() => {
-      component.type = 'group';
-      component.typeKey = 'g1';
+      fixture.componentRef.setInput('type', 'group');
+      fixture.componentRef.setInput('typeKey', 'g1');
       memberServiceSpy.getAll.and.returnValue(of([
         {
           memberKey: 'm1',
@@ -325,8 +325,8 @@ describe('MemberList', () => {
     it('should restore card view state from session storage for current group key', () => {
       const getItemSpy = spyOn(window.sessionStorage, 'getItem').and.returnValue('true');
 
-      component.type = 'group';
-      component.typeKey = 'g42';
+      fixture.componentRef.setInput('type', 'group');
+      fixture.componentRef.setInput('typeKey', 'g42');
       component.ngOnInit();
 
       expect(getItemSpy).toHaveBeenCalledWith('member-list:group-card-view:g42');
@@ -336,8 +336,8 @@ describe('MemberList', () => {
     it('should persist card view state to session storage on toggle change', () => {
       const setItemSpy = spyOn(window.sessionStorage, 'setItem');
 
-      component.type = 'group';
-      component.typeKey = 'g77';
+      fixture.componentRef.setInput('type', 'group');
+      fixture.componentRef.setInput('typeKey', 'g77');
       component.showGroupCardView = true;
       component.onGroupCardViewToggleChange();
 
@@ -362,8 +362,8 @@ describe('MemberList', () => {
         } as MemberDto
       ]));
 
-      component.type = 'group';
-      component.typeKey = 'g1';
+      fixture.componentRef.setInput('type', 'group');
+      fixture.componentRef.setInput('typeKey', 'g1');
       component.ngOnInit();
 
       expect(component.hasUpcomingBirthdays).toBeFalse();
