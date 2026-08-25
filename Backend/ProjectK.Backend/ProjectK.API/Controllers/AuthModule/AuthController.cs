@@ -1,4 +1,5 @@
 using AutoMapper;
+using ProjectK.API.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -88,7 +89,7 @@ namespace ProjectK.API.Controllers.AuthModule
             var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userKeyClaim, out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var command = new SetKurinScopeCommand(userKey, request.KurinKey);
@@ -114,13 +115,13 @@ namespace ProjectK.API.Controllers.AuthModule
             var expectedKey = config["RateLimitBypassKey"];
             if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
             {
-                return Unauthorized(new { message = "Invalid or disabled load test API key." });
+                return this.Failure(ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");
             }
 
             var user = await userManager.FindByEmailAsync("loadtest@projectk.com");
             if (user == null) 
             {
-                return NotFound(new { message = "Load test user not found." });
+                return this.Failure(ResultType.NotFound, "UserNotFound", "Load test user not found.");
             }
 
             var roles = await userManager.GetRolesAsync(user);
@@ -136,7 +137,7 @@ namespace ProjectK.API.Controllers.AuthModule
             var refreshTokens = GetRefreshTokenCookieValues();
             if (refreshTokens.Count == 0)
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             foreach (var refreshToken in refreshTokens.Distinct(StringComparer.Ordinal))
@@ -151,7 +152,7 @@ namespace ProjectK.API.Controllers.AuthModule
             }
 
             DeleteRefreshTokenCookie();
-            return Unauthorized();
+            return this.UnreadableIdentity();
         }
 
         [Authorize(Policy = "RequireUser")]

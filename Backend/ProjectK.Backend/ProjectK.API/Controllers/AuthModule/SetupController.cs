@@ -1,4 +1,6 @@
 using MediatR;
+using ProjectK.Common.Models.Enums;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup;
@@ -43,7 +45,7 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             if (!IsSelfHost)
             {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Setup is only available for self-hosted deployments." });
+                return this.Failure(ResultType.Forbidden, "SelfHostOnly", "Setup is only available for self-hosted deployments.");
             }
 
             var response = await _mediator.Send(command);

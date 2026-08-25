@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +44,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new GetAccountSettingsQuery(userKey));
@@ -60,7 +61,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new UpdateAccountProfileCommand(userKey, request.Email, request.PhoneNumber, request.CurrentPassword));
@@ -77,7 +78,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new ConfirmAccountEmailChangeCommand(userKey, request.Email, request.Token));
@@ -94,7 +95,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new ChangeOwnPasswordCommand(userKey, request.CurrentPassword, request.NewPassword));
@@ -111,7 +112,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new ResetOwnMfaCommand(userKey, request.CurrentPassword));
@@ -128,7 +129,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new DisableOwnMfaCommand(userKey, request.CurrentPassword));
@@ -143,7 +144,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new GetTileLayoutsQuery(userKey));
@@ -159,7 +160,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var tileKeys = request.TileKeys ?? new List<string>();
@@ -175,7 +176,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!TryGetCurrentUserKey(out var userKey))
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var response = await _mediator.Send(new ResetTileLayoutCommand(userKey, boardKey));
@@ -213,7 +214,7 @@ namespace ProjectK.API.Controllers.UsersModule
         {
             if (!Enum.IsDefined(newRole))
             {
-                return BadRequest(new { error = "InvalidRole", message = "Unknown user role." });
+                return this.Failure(ResultType.BadRequest, "InvalidRole", "Unknown user role.");
             }
 
             var request = new ChangeUserRoleCommand(userId, newRole);

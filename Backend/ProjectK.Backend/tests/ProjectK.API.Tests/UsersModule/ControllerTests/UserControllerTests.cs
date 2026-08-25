@@ -10,6 +10,7 @@ using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
+using ProjectK.API.Tests.TestHelpers;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
 {
@@ -116,7 +117,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -135,8 +136,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            var conflictResult = Assert.IsType<ConflictObjectResult>(result);
-            Assert.IsType<object[]>(conflictResult.Value);
+            ApiErrorAssert.HasError(result, StatusCodes.Status409Conflict);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -154,9 +154,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            var objectResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, objectResult.StatusCode);
-            Assert.Equal("An unexpected error occurred.", objectResult.Value);
+            ApiErrorAssert.HasError(result, StatusCodes.Status500InternalServerError);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 

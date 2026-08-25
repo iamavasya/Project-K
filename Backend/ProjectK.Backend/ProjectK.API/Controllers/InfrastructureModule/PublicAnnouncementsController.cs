@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.API.Extensions;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -131,23 +132,23 @@ public class PublicAnnouncementsController : ControllerBase
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest(new { error = "ImageRequired", message = "Image file is required." });
+            return this.Failure(ResultType.BadRequest, "ImageRequired", "Image file is required.");
         }
 
         if (file.Length > 8 * 1024 * 1024)
         {
-            return BadRequest(new { error = "ImageTooLarge", message = "Image must be 8 MB or smaller." });
+            return this.Failure(ResultType.BadRequest, "ImageTooLarge", "Image must be 8 MB or smaller.");
         }
 
         if (string.IsNullOrWhiteSpace(file.ContentType) || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest(new { error = "InvalidImageType", message = "Only image files are supported." });
+            return this.Failure(ResultType.BadRequest, "InvalidImageType", "Only image files are supported.");
         }
 
         var bytes = await file.ToByteArrayAsync(cancellationToken);
         if (bytes == null || bytes.Length == 0)
         {
-            return BadRequest(new { error = "ImageRequired", message = "Image file is required." });
+            return this.Failure(ResultType.BadRequest, "ImageRequired", "Image file is required.");
         }
 
         try
@@ -162,7 +163,7 @@ public class PublicAnnouncementsController : ControllerBase
         }
         catch (InvalidOperationException)
         {
-            return BadRequest(new { error = "InvalidImageContent", message = "Uploaded file is not a valid image." });
+            return this.Failure(ResultType.BadRequest, "InvalidImageContent", "Uploaded file is not a valid image.");
         }
     }
 
@@ -176,7 +177,7 @@ public class PublicAnnouncementsController : ControllerBase
         var image = await imageStore.OpenAsync(imageKey, cancellationToken);
         if (image == null)
         {
-            return NotFound(new { error = "ImageNotFound", message = "Announcement image was not found." });
+            return this.Failure(ResultType.NotFound, "ImageNotFound", "Announcement image was not found.");
         }
 
         return File(image.Content, image.ContentType, enableRangeProcessing: true);

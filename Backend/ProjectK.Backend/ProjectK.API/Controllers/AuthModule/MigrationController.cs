@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries;

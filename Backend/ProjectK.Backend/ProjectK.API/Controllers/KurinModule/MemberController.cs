@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -73,7 +74,7 @@ namespace ProjectK.API.Controllers.KurinModule
         {
             if (!request.GroupKey.HasValue || request.GroupKey.Value == Guid.Empty)
             {
-                return BadRequest("groupKey is required.");
+                return this.Failure(ResultType.BadRequest, "GroupKeyRequired", "groupKey is required.");
             }
 
             var command = new UpsertMember

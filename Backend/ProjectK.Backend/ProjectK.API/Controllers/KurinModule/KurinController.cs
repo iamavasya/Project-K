@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -68,7 +69,7 @@ namespace ProjectK.API.Controllers.KurinModule
             var report = await _kurinReportDataService.BuildAsync(kurinKey, cancellationToken);
             if (report is null)
             {
-                return NotFound();
+                return this.Failure(ResultType.NotFound, "KurinNotFound", "No report data exists for this kurin.");
             }
 
             var bytes = _kurinReportPdfRenderer.Render(report);

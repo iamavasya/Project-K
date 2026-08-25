@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -109,23 +110,23 @@ namespace ProjectK.API.Controllers.KurinModule
         {
             if (file == null || file.Length == 0)
             {
-                return BadRequest(new { error = "MissingImage", message = "Image file is required." });
+                return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
             }
 
             if (file.Length > MaxSilhouetteFileSizeBytes)
             {
-                return BadRequest(new { error = "ImageTooLarge", message = "Image file must be 5 MB or smaller." });
+                return this.Failure(ResultType.BadRequest, "ImageTooLarge", "Image file must be 5 MB or smaller.");
             }
 
             if (!AllowedSilhouetteContentTypes.Contains(file.ContentType))
             {
-                return BadRequest(new { error = "UnsupportedImageType", message = "Allowed image types are PNG, JPEG and WebP." });
+                return this.Failure(ResultType.BadRequest, "UnsupportedImageType", "Allowed image types are PNG, JPEG and WebP.");
             }
 
             var bytes = await file.ToByteArrayAsync(cancellationToken);
             if (bytes == null || bytes.Length == 0)
             {
-                return BadRequest(new { error = "MissingImage", message = "Image file is required." });
+                return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
             }
 
             var command = new UploadGroupSilhouette(groupKey, bytes, file.FileName);

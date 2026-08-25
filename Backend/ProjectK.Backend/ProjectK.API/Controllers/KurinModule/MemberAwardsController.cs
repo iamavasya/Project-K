@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Helpers;
@@ -64,7 +65,7 @@ namespace ProjectK.API.Controllers.KurinModule
             var stream = _awardImagesStore.GetAwardImageStream(level, colored);
             if (stream == null)
             {
-                return NotFound();
+                return this.Failure(ResultType.NotFound, "AwardImageNotFound", "No award image exists for this level.");
             }
 
             return File(stream, "image/png");

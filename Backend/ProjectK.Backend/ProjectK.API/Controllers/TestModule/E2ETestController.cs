@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.API.Helpers;
@@ -71,7 +73,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            return BadRequest(new { message = "Email is required." });
+            return this.Failure(ResultType.BadRequest, "EmailRequired", "Email is required.");
         }
 
         var normalizedEmail = email.Trim().ToUpperInvariant();
@@ -88,7 +90,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (invitation == null)
         {
-            return NotFound(new { message = "Invitation was not found." });
+            return this.Failure(ResultType.NotFound, "InvitationNotFound", "Invitation was not found.");
         }
 
         return Ok(new
@@ -108,6 +110,7 @@ public sealed class E2ETestController : ControllerBase
     {
         if (!_environment.IsEnvironment("E2E"))
         {
+            // Deliberately bare: a structured error would confirm the endpoint exists outside E2E.
             return NotFound();
         }
 
@@ -120,7 +123,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken) || providedToken != expectedToken)
         {
-            return Unauthorized(new { message = "Invalid E2E reset token." });
+            return this.Failure(ResultType.Unauthorized, "InvalidResetToken", "Invalid E2E reset token.");
         }
 
         return null;

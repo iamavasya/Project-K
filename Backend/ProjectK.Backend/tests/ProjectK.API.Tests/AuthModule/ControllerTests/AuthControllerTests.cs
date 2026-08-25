@@ -14,6 +14,7 @@ using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
+using ProjectK.API.Tests.TestHelpers;
 
 namespace ProjectK.API.Tests.Controllers
 {
@@ -146,7 +147,7 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Login(request);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
         }
 
         [Fact]
@@ -159,7 +160,9 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Refresh();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            // Every failure now carries { error, message }; assert the contract, not the result type.
+            var unauthorized = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
         }
 
         [Fact]
@@ -174,7 +177,9 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Refresh();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            // Every failure now carries { error, message }; assert the contract, not the result type.
+            var unauthorized = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
             Assert.Contains("refreshToken=", _controller.Response.Headers["Set-Cookie"].ToString());
             _mediatorMock.Verify(m => m.Send(It.IsAny<LogoutUserCommand>(), default), Times.Never);
         }
@@ -363,7 +368,7 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.VerifyMfaLogin(request);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
             Assert.DoesNotContain("refreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
         }
 
