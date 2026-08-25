@@ -30,7 +30,9 @@ describe('PermissionService', () => {
     'Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Member:Manage:KurinWide',
     'PlanningSession:Manage:KurinWide'
   ];
-  const groupLeadPerms = ['Group:Update:OwnGroups', 'Member:Update:OwnGroups'];
+  const vykhovnykPerms = ['Group:Update:OwnGroups', 'Member:Update:OwnGroups', 'AgendaItem:Create:KurinWide', 'PlanningSession:Create:OwnGroups'];
+  const providPerms = ['AgendaItem:Create:KurinWide', 'PlanningSession:Create:KurinWide'];
+  const kurinnyyPerms = [...providPerms, 'Leadership:Update:KurinWide'];
   const memberPerms = ['Group:Read:KurinWide', 'Member:Read:KurinWide'];
 
   beforeEach(() => {
@@ -64,13 +66,31 @@ describe('PermissionService', () => {
     expect(service.canSetupLeadership()).toBeFalse();
   });
 
-  it('treats a Гуртковий as a group leader but not a whole-kurin manager', () => {
-    setState(groupLeadPerms);
+  it('treats a Виховник as a group leader but not a whole-kurin manager', () => {
+    setState(vykhovnykPerms);
     expect(service.isManager()).toBeFalse();
     expect(service.isMentor()).toBeTrue();
     expect(service.isReviewer()).toBeTrue();
     expect(service.canManageAgenda()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeFalse();
+  });
+
+  it('lets a провід office raise agenda and planning without touching groups', () => {
+    setState(providPerms);
+    expect(service.isManager()).toBeFalse();
+    expect(service.isMentor()).toBeFalse();
+    expect(service.canManageGroups()).toBeFalse();
+    expect(service.canManageAgenda()).toBeTrue();
+    expect(service.canCreatePlanning()).toBeTrue();
+    expect(service.canManagePlanning()).toBeFalse();
+    expect(service.canSetupLeadership()).toBeFalse();
+  });
+
+  it('lets a Курінний seat offices but not moderate members', () => {
+    setState(kurinnyyPerms);
+    expect(service.canSetupLeadership()).toBeTrue();
+    expect(service.isMentor()).toBeFalse();
+    expect(service.canManageMembers()).toBeFalse();
   });
 
   it('treats a bare member as read-only', () => {

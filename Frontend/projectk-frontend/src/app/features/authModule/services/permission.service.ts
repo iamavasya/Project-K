@@ -24,12 +24,12 @@ export class PermissionService {
     return this.authService.getAuthStateValue?.()?.isAdmin ?? false;
   }
 
-  /** Whole-kurin managers: Зв'язковий, Курінний, admin. */
+  /** Whole-kurin managers: Зв'язковий and admin. */
   isManager(): boolean {
     return this.isAdmin() || this.has('Group:Manage:KurinWide');
   }
 
-  /** Group leaders (гуртковий) and above. */
+  /** Runs a гурток: Виховник and above. Провід offices are not included — they lead, they do not moderate. */
   isMentor(): boolean {
     return this.has('Group:Update');
   }
@@ -54,22 +54,30 @@ export class PermissionService {
     return this.isReviewer();
   }
 
+  // Зв'язковий manages every провід; Курінний and Гуртковий seat the offices below them, which the
+  // backend narrows to their own body.
   canSetupLeadership(): boolean {
-    return this.isAdmin() || this.has('Leadership:Manage:KurinWide');
+    return this.isAdmin() || this.has('Leadership:Manage:KurinWide') || this.has('Leadership:Update');
   }
 
   canReviewSkills(): boolean {
     return this.isReviewer();
   }
 
+  /** Kurin-wide planning control (Зв'язковий, admin) — the destructive row actions. */
   canManagePlanning(): boolean {
     return this.isAdmin() || this.has('PlanningSession:Manage:KurinWide');
   }
 
-  // Anyone above a bare member (гуртковий leaders, kurin managers, admin) may create/assign agenda
-  // items; the backend narrows a group leader to their led groups per target.
+  /** Opening a planning session: the whole провід, each within their own scope. */
+  canCreatePlanning(): boolean {
+    return this.isAdmin() || this.has('PlanningSession:Create');
+  }
+
+  // The whole провід raises agenda items; the backend decides who may edit one afterwards
+  // (its author, or the Виховник of a гурток it targets).
   canManageAgenda(): boolean {
-    return this.isReviewer();
+    return this.isAdmin() || this.has('AgendaItem:Create');
   }
 
   canManageKurinSettings(): boolean {

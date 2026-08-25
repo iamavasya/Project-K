@@ -19,7 +19,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
       <section class="kurin-tile">
         <div class="planning-header">
           <h1 class="planning-title">Планування таборів</h1>
-          @if (canManagePlanning && sessions().length) {
+          @if (canCreatePlanning && sessions().length) {
             <p-button
               label="Створити нове"
               icon="pi pi-plus"
@@ -64,7 +64,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
                   art="calendar"
                   title="Календар ще спить"
                   body="Перша сходина в плані — і він прокинеться.">
-                  @if (canManagePlanning) {
+                  @if (canCreatePlanning) {
                     <p-button label="Створити планування" icon="pi pi-plus" (click)="createNew()" />
                   }
                 </app-empty-state>
@@ -192,6 +192,10 @@ export class PlanningListComponent implements OnInit {
 
   get canManagePlanning(): boolean {
     return this.permissionService.canManagePlanning();
+  }
+
+  get canCreatePlanning(): boolean {
+    return this.permissionService.canCreatePlanning();
   }
 
   ngOnInit() {

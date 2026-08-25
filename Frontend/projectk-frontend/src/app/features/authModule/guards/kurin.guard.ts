@@ -20,7 +20,7 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
         if (resource == 'planning' && kurinKey && !permissionService.isReviewer()) {
             return router.createUrlTree(['/kurin']);
         }
-        if (resource == 'planning-create' && !permissionService.canManagePlanning()) {
+        if (resource == 'planning-create' && !permissionService.canCreatePlanning()) {
             return router.createUrlTree(['/forbidden']);
         }
         return true;

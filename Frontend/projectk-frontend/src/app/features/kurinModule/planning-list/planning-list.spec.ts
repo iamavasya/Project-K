@@ -20,8 +20,9 @@ describe('PlanningList', () => {
     memberServiceSpy.getAll.and.returnValue(of([]));
 
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    const permissionServiceSpy = jasmine.createSpyObj('PermissionService', ['canManagePlanning']);
+    const permissionServiceSpy = jasmine.createSpyObj('PermissionService', ['canManagePlanning', 'canCreatePlanning']);
     permissionServiceSpy.canManagePlanning.and.returnValue(true);
+    permissionServiceSpy.canCreatePlanning.and.returnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [PlanningListComponent],
