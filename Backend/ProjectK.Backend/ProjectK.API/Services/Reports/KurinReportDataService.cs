@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Records;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -354,19 +355,7 @@ public sealed class KurinReportDataService
     }
 
     private string? BuildBlobUrl(string? blobName)
-    {
-        if (string.IsNullOrWhiteSpace(blobName))
-        {
-            return null;
-        }
-
-        if (string.IsNullOrWhiteSpace(_blobOptions.PublicBaseUrl))
-        {
-            return blobName;
-        }
-
-        return $"{_blobOptions.PublicBaseUrl.TrimEnd('/')}/{EncodeBlobPath(blobName)}";
-    }
+        => BlobPublicUrl.Build(_blobOptions.PublicBaseUrl, blobName);
 
     private string ResolveReleaseInfo(params string[] keys)
     {
@@ -381,11 +370,6 @@ public sealed class KurinReportDataService
 
         return "unknown";
     }
-
-    private static string EncodeBlobPath(string blobName)
-        => string.Join("/", blobName
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .Select(Uri.EscapeDataString));
 
     private static string BuildFullName(Member member)
         => string.Join(" ", new[] { member.FirstName, member.MiddleName, member.LastName }

@@ -383,11 +383,7 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
         }
 
         private string BuildPublicUrl(BlobClient client)
-        {
-            if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
-                return $"{_options.PublicBaseUrl.TrimEnd('/')}/{Uri.EscapeDataString(client.Name)}";
-            return client.Uri.ToString();
-        }
+            => BlobPublicUrl.Build(_options.PublicBaseUrl, client.Name, client.Uri.ToString())!;
 
         private string? ResolveContentType(string fileName, string extension)
         {

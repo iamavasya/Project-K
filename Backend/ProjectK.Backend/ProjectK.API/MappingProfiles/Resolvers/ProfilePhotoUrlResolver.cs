@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Records;
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
@@ -12,15 +13,7 @@ namespace ProjectK.API.MappingProfiles.Resolvers
     internal static class ProfilePhotoUrl
     {
         public static string? Build(BlobStorageOptions options, string? blobName)
-        {
-            if (string.IsNullOrEmpty(blobName))
-                return null;
-
-            if (!string.IsNullOrWhiteSpace(options.PublicBaseUrl))
-                return $"{options.PublicBaseUrl.TrimEnd('/')}/{Uri.EscapeDataString(blobName)}";
-
-            return blobName;
-        }
+            => BlobPublicUrl.Build(options.PublicBaseUrl, blobName);
     }
 
     public sealed class ProfilePhotoUrlResolver : IValueResolver<Member, MemberResponse, string?>

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Records;
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
@@ -26,17 +27,7 @@ namespace ProjectK.API.MappingProfiles.Resolvers
                 return null;
             }
 
-            if (string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
-            {
-                return source.SilhouetteBlobName;
-            }
-
-            return $"{_options.PublicBaseUrl.TrimEnd('/')}/{EncodeBlobPath(source.SilhouetteBlobName)}";
+            return BlobPublicUrl.Build(_options.PublicBaseUrl, source.SilhouetteBlobName);
         }
-
-        private static string EncodeBlobPath(string blobName)
-            => string.Join("/", blobName
-                .Split('/', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Uri.EscapeDataString));
     }
 }
