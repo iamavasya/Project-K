@@ -1,4 +1,5 @@
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Models.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -125,7 +126,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: "Group.Hurtkoviy",
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -148,7 +149,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var kurinKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: "Group.Hurtkoviy",
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -230,10 +231,18 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
 
                 options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
+                    policy => policy.RequireRole("KV.Vykhovnyk", "KV.Zvyazkovyi", "Admin"));
+
+                options.AddPolicy("RequireAgendaAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
+
+                options.AddPolicy("RequirePlanningAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
+                    policy => policy.RequireRole("Member", "KV.Vykhovnyk", "KV.Zvyazkovyi", "Admin"));
             });
 
             builder.Services.Configure<SecurityPatchOptions>(options =>

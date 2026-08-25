@@ -125,7 +125,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                             Member = new MemberLookupDto { MemberKey = memberKey }
                         }
                     }
-                }), cancellationToken);
+                })
+                {
+                    // The activating user is still anonymous here, so there is no assigner to check.
+                    SeatedBySystem = true
+                }, cancellationToken);
             }
 
             return new ServiceResult<Guid>(ResultType.Success, user.Id);

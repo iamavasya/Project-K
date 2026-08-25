@@ -8,5 +8,6 @@ public enum ResourceType
     PlanningSession,
     Leadership,
     ProbeProgress,
-    BadgeProgress
+    BadgeProgress,
+    AgendaItem
 }

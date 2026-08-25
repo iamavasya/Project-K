@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Solvers;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -31,16 +32,19 @@ public class CreatePlanningSessionHandler : IRequestHandler<CreatePlanningSessio
     private readonly IUnitOfWork _uow;
     private readonly IOptimizer _optimizer;
     private readonly IMapper _mapper;
-    public CreatePlanningSessionHandler(IUnitOfWork uow, IOptimizer optimizer, IMapper mapper)
+    private readonly ICurrentUserContext _currentUserContext;
+    public CreatePlanningSessionHandler(IUnitOfWork uow, IOptimizer optimizer, IMapper mapper, ICurrentUserContext currentUserContext)
     {
         _uow = uow;
         _optimizer = optimizer;
         _mapper = mapper;
+        _currentUserContext = currentUserContext;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreatePlanningSession request, CancellationToken cancellationToken)
     {
         var session = _mapper.Map<PlanningSessionEntity>(request);
+        session.CreatedByUserKey = _currentUserContext.UserId;
 
         var problem = new CampDateSolver(
             session.SearchStart,

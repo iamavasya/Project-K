@@ -3,6 +3,8 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
@@ -19,6 +21,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
         public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; } = [];
+
+        /// <summary>
+        /// Set only by server-side flows that seat an office with no signed-in assigner — account
+        /// activation makes the new kurin leader the Зв'язковий while the caller is still anonymous.
+        /// It is absent from <see cref="UpsertLeadershipRequest"/>, so an HTTP caller cannot set it.
+        /// </summary>
+        public bool SeatedBySystem { get; init; }
 
         public UpsertLeadership(UpsertLeadershipRequest request)
         {
@@ -44,11 +53,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILeadershipRoleSyncService _roleSync;
-        public UpsertLeadershipHandler(IUnitOfWork unitOfWork, IMapper mapper, ILeadershipRoleSyncService roleSync)
+        private readonly ICurrentUserContext _currentUserContext;
+        public UpsertLeadershipHandler(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ILeadershipRoleSyncService roleSync,
+            ICurrentUserContext currentUserContext)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _roleSync = roleSync;
+            _currentUserContext = currentUserContext;
         }
 
         public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadership request, CancellationToken cancellationToken)
@@ -76,6 +91,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                         existing.KurinKey = null;
                         break;
                 }
+                if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
+                {
+                    return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
+                }
+
                 ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
                 _unitOfWork.Leaderships.Update(existing, cancellationToken);
             }
@@ -103,6 +123,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                         break;
                 }
                 existing.LeadershipHistories.Clear();
+                if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
+                {
+                    return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
+                }
+
                 ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
                 _unitOfWork.Leaderships.Add(existing, cancellationToken);
                 isCreated = true;
@@ -128,6 +153,57 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                 ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
                 : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
         }
+
+        /// <summary>
+        /// Rejects the request when it would seat or unseat an office the caller may not assign. Only
+        /// the offices actually changing are checked — resubmitting an untouched провід stays allowed.
+        /// </summary>
+        private bool MayAssignTouchedOffices(
+            LeadershipEntity leadership,
+            IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
+            LeadershipType type)
+        {
+            var assignable = RolePermissionMap.AssignableOffices(_currentUserContext.Roles);
+            var requested = ParseRequestedAssignments(requestedHistories);
+            var active = leadership.LeadershipHistories
+                .Where(history => history.EndDate == null)
+                .ToList();
+
+            var touched = new HashSet<LeadershipRole>();
+            foreach (var activeHistory in active)
+            {
+                var isStillAssigned = requested.Any(assignment =>
+                    assignment.Role == activeHistory.Role && assignment.MemberKey == activeHistory.MemberKey);
+                if (!isStillAssigned)
+                {
+                    touched.Add(activeHistory.Role);
+                }
+            }
+
+            foreach (var assignment in requested)
+            {
+                var alreadyActive = active.Any(history =>
+                    history.Role == assignment.Role && history.MemberKey == assignment.MemberKey);
+                if (!alreadyActive)
+                {
+                    touched.Add(assignment.Role);
+                }
+            }
+
+            return touched.All(role => assignable.Contains((type, role)));
+        }
+
+        private static List<(LeadershipRole Role, Guid MemberKey)> ParseRequestedAssignments(
+            IEnumerable<LeadershipHistoryMemberDto> requestedHistories) =>
+            requestedHistories
+                .Where(history => history.EndDate == null)
+                .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
+                .Where(history => !string.IsNullOrWhiteSpace(history.Role))
+                .Select(history => (
+                    Role: Enum.Parse<LeadershipRole>(history.Role, ignoreCase: true),
+                    MemberKey: history.Member.MemberKey))
+                .Distinct()
+                .ToList();
 
         private static void ApplyLeadershipHistoryChanges(
             LeadershipEntity leadership,

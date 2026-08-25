@@ -41,7 +41,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = "RequireUser")]
         [HttpPost]
         [ResourceAuthorize("arg:dto.Type", ResourceAction.Create, "arg:dto.EntityKey")]
         public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
@@ -51,7 +51,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = "RequireUser")]
         [HttpPut("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Update, "route:leadershipKey")]
         public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)

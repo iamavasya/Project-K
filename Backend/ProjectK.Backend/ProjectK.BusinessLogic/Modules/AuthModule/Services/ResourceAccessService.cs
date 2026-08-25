@@ -146,7 +146,11 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("No groups are led by the current user.");
         }
 
-        if (!scope.GroupKey.HasValue || !ledGroupKeys.Contains(scope.GroupKey.Value))
+        var reachesLedGroup =
+            (scope.GroupKey.HasValue && ledGroupKeys.Contains(scope.GroupKey.Value))
+            || (scope.GroupKeys is not null && scope.GroupKeys.Any(ledGroupKeys.Contains));
+
+        if (!reachesLedGroup)
         {
             return ResourceAccessDecision.Deny("Permission is limited to led groups.");
         }

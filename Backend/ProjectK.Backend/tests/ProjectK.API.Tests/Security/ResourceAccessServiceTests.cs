@@ -22,7 +22,7 @@ public class ResourceAccessServiceTests
     // Гуртковий = group leader, Member = plain user.
     private static readonly string AdminRole = SystemRole.Admin;
     private static readonly string ManagerRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string MentorRole = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+    private static readonly string MentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
     private static readonly string MemberRole = SystemRole.Member;
 
     [Fact]

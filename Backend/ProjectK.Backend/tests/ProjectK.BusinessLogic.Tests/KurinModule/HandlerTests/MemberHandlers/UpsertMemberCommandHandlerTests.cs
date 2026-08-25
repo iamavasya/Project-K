@@ -402,8 +402,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 DateOfBirth = new DateOnly(1995, 5, 5)
             };
 
-            _currentUserContextMock.Setup(x => x.IsInRole("Group.Hurtkoviy")).Returns(true);
-            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Group.Hurtkoviy" });
+            _currentUserContextMock.Setup(x => x.IsInRole("KV.Vykhovnyk")).Returns(true);
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
             _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
             _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))

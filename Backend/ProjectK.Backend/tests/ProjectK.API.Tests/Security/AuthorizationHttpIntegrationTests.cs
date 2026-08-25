@@ -94,6 +94,14 @@ public class AuthorizationHttpIntegrationTests
                     policy => policy.RequireAssertion(ctx =>
                         RolePermissionMap.GrantsGroupLeadership(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
+                options.AddPolicy("RequireAgendaAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
+
+                options.AddPolicy("RequirePlanningAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
+
                 options.AddPolicy("RequireUser",
                     policy => policy.RequireAssertion(ctx => ctx.User.Identity?.IsAuthenticated == true));
             });

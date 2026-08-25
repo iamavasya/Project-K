@@ -184,7 +184,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var groupKey = Guid.NewGuid();
             var member = CreateMember(kurinKey, groupKey: groupKey);
 
-            SetupCurrentUser(mentorUserKey, kurinKey, "Group.Hurtkoviy");
+            SetupCurrentUser(mentorUserKey, kurinKey, "KV.Vykhovnyk");
             SetupMember(member);
             _scopeReaderMock.Setup(x => x.GetLedGroupKeysAsync(mentorUserKey, kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new[] { groupKey });
             _mentorAssignmentRepoMock
@@ -208,7 +208,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var kurinKey = Guid.NewGuid();
             var member = CreateMember(kurinKey, groupKey: Guid.NewGuid());
 
-            SetupCurrentUser(mentorUserKey, kurinKey, "Group.Hurtkoviy");
+            SetupCurrentUser(mentorUserKey, kurinKey, "KV.Vykhovnyk");
             _memberRepoMock
                 .Setup(x => x.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member);

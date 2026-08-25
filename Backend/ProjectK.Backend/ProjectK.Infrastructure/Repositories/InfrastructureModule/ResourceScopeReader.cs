@@ -39,10 +39,12 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 
                 ResourceType.PlanningSession => await _context.PlanningSessions
                     .Where(p => p.PlanningSessionKey == resourceKey)
-                    .Select(p => new ResourceScope(p.KurinKey, null, null))
+                    .Select(p => new ResourceScope(p.KurinKey, null, p.CreatedByUserKey))
                     .FirstOrDefaultAsync(cancellationToken),
 
                 ResourceType.Leadership => await GetLeadershipScopeAsync(resourceKey, cancellationToken),
+
+                ResourceType.AgendaItem => await GetAgendaItemScopeAsync(resourceKey, cancellationToken),
 
                 // Progress records carry the kurin already, but the group and owning user
                 // come from the member the rules are actually about.
@@ -101,6 +103,31 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
             }
 
             return ledGroups.Distinct().ToArray();
+        }
+
+        /// <summary>
+        /// An agenda item is owned by its author and reaches every гурток it is assigned to, so a
+        /// Виховник moderates anything targeting a group he leads.
+        /// </summary>
+        private async Task<ResourceScope?> GetAgendaItemScopeAsync(Guid agendaItemKey, CancellationToken cancellationToken)
+        {
+            var item = await _context.AgendaItems
+                .Where(a => a.AgendaItemKey == agendaItemKey)
+                .Select(a => new { a.KurinKey, a.CreatedByUserKey })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (item is null)
+            {
+                return null;
+            }
+
+            var groupKeys = await _context.AgendaAssignments
+                .Where(a => a.AgendaItemKey == agendaItemKey && a.TargetType == AgendaTargetType.Group)
+                .Select(a => a.TargetKey)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            return new ResourceScope(item.KurinKey, null, item.CreatedByUserKey, groupKeys);
         }
 
         private async Task<ResourceScope?> GetLeadershipScopeAsync(Guid leadershipKey, CancellationToken cancellationToken)

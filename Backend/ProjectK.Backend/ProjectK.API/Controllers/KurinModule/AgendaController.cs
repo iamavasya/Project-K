@@ -47,7 +47,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = "RequireAgendaAuthor")]
         [HttpGet("{kurinKey:guid}/assign-targets")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(AgendaAssignTargetsResponse), StatusCodes.Status200OK)]
@@ -57,7 +57,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = "RequireAgendaAuthor")]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
@@ -69,8 +69,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = "RequireUser")]
         [HttpPut("{agendaItemKey:guid}")]
+        [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Update, "route:agendaItemKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -93,8 +94,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = "RequireUser")]
         [HttpDelete("{agendaItemKey:guid}")]
+        [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Delete, "route:agendaItemKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

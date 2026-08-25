@@ -20,9 +20,9 @@ public class PlanningController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize(Policy = "RequireManager")]
+    [Authorize(Policy = "RequirePlanningAuthor")]
     [HttpPost]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "arg:request.KurinKey")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
     public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSession request)
     {
         var response = await _mediator.Send(request);

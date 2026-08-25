@@ -1,11 +1,16 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Services;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.UsersModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
@@ -38,6 +43,76 @@ public class AuthorizationBaselineMatrixTests
         var allowAnonymous = action.GetCustomAttribute<AllowAnonymousAttribute>();
         Assert.NotNull(allowAnonymous);
     }
+
+    /// <summary>
+    /// The matrix only guards what it lists, so a whole controller can slip in unchecked — that is how
+    /// the agenda endpoints went unlisted. This fails until every action is accounted for.
+    /// </summary>
+    [Fact]
+    public void EveryControllerAction_ShouldBeCoveredByTheMatrix()
+    {
+        var covered = PolicyEndpoints()
+            .Select(row => (MethodInfo)row[0])
+            .Concat(AllowAnonymousEndpoints().Select(row => (MethodInfo)row[0]))
+            .ToHashSet();
+
+        var uncovered = typeof(AgendaController).Assembly
+            .GetTypes()
+            .Where(type => typeof(ControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Where(method => method.GetCustomAttributes<HttpMethodAttribute>().Any())
+            .Where(method => !covered.Contains(method))
+            .Select(method => $"{method.DeclaringType!.Name}.{method.Name}")
+            .OrderBy(name => name)
+            .ToList();
+
+        var unexpected = uncovered.Except(KnownUnlistedEndpoints).ToList();
+        Assert.True(
+            unexpected.Count == 0,
+            $"These endpoints are not in the authorization baseline: {string.Join(", ", unexpected)}. "
+            + "Add a row for each, or extend KnownUnlistedEndpoints if the gap is deliberate.");
+
+        var closed = KnownUnlistedEndpoints.Except(uncovered).ToList();
+        Assert.True(
+            closed.Count == 0,
+            $"These endpoints are now listed and can leave KnownUnlistedEndpoints: {string.Join(", ", closed)}.");
+    }
+
+    /// <summary>
+    /// Endpoints the baseline never covered. They are pinned so the gap cannot grow silently, not
+    /// because leaving them unlisted is right — each still needs a row.
+    /// </summary>
+    private static readonly IReadOnlySet<string> KnownUnlistedEndpoints = new HashSet<string>
+    {
+        "AuthController.LoadTestLogin", "AuthController.SetKurinScope",
+        "E2ETestController.GetLatestInvitationByEmail", "E2ETestController.Reset",
+        "GroupController.AssignMentor", "GroupController.RevokeMentor",
+        "KurinController.ExportReportPdf", "KurinController.GetBadgeReviewQueue",
+        "MemberAwardsController.DeleteAward", "MemberAwardsController.GetAwardImage",
+        "MemberAwardsController.ReviewAward", "MemberAwardsController.UpsertAward",
+        "MemberController.CreateByKurin", "MemberController.GetKurinMentorCandidates",
+        "MemberController.ResetProfileVerification", "MemberController.VerifyProfile",
+        "MemberProgressController.SignProbePoint", "MemberProgressController.UnsignProbePoint",
+        "MemberWarningsController.AssignWarning", "MemberWarningsController.CancelWarning",
+        "MemberWarningsController.GetWarnings", "MigrationController.GetPreflightReport",
+        "NotificationsController.GetInbox", "NotificationsController.GetUnreadCount",
+        "NotificationsController.MarkAllAsRead", "NotificationsController.MarkAsRead",
+        "OnboardingController.ActivateAccount", "OnboardingController.ApproveWaitlistEntry",
+        "OnboardingController.GetOnboardingStats", "OnboardingController.GetWaitlistEntries",
+        "OnboardingController.RejectWaitlistEntry", "OnboardingController.RequestPasswordReset",
+        "OnboardingController.ResendInvitation", "OnboardingController.ResetPassword",
+        "OnboardingController.SubmitWaitlistRegistration", "OnboardingController.ValidateInvitationToken",
+        "PublicAnnouncementsController.Approve", "PublicAnnouncementsController.Create",
+        "PublicAnnouncementsController.Delete", "PublicAnnouncementsController.DeleteImage",
+        "PublicAnnouncementsController.GetAll", "PublicAnnouncementsController.GetByKey",
+        "PublicAnnouncementsController.GetCleanupStatus", "PublicAnnouncementsController.GetImage",
+        "PublicAnnouncementsController.Preview", "PublicAnnouncementsController.Publish",
+        "PublicAnnouncementsController.Reject", "PublicAnnouncementsController.SubmitForApproval",
+        "PublicAnnouncementsController.Update", "PublicAnnouncementsController.UploadImage",
+        "SettingsController.GetSettings", "SettingsController.UpdateSetting",
+        "SetupController.GetStatus", "SetupController.Initialize",
+        "UserController.GetTileLayouts", "UserController.ResetTileLayout", "UserController.SaveTileLayout"
+    };
 
     public static IEnumerable<object[]> PolicyEndpoints()
     {
@@ -88,11 +163,11 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<LeadershipController, string, Guid, CancellationToken>>(nameof(LeadershipController.GetLeadershipByType), "RequireUser");
         yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipByKey), "RequireManager");
-        yield return Row<Action<LeadershipController, UpsertLeadershipRequest>>(nameof(LeadershipController.CreateLeadership), "RequireManager");
-        yield return Row<Action<LeadershipController, Guid, UpsertLeadershipRequest>>(nameof(LeadershipController.UpdateLeadership), "RequireManager");
+        yield return Row<Action<LeadershipController, UpsertLeadershipRequest>>(nameof(LeadershipController.CreateLeadership), "RequireUser");
+        yield return Row<Action<LeadershipController, Guid, UpsertLeadershipRequest>>(nameof(LeadershipController.UpdateLeadership), "RequireUser");
         yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipHistories), "RequireManager");
 
-        yield return Row<Action<PlanningController, CreatePlanningSession>>(nameof(PlanningController.CreatePlanningSession), "RequireManager");
+        yield return Row<Action<PlanningController, CreatePlanningSession>>(nameof(PlanningController.CreatePlanningSession), "RequirePlanningAuthor");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), "RequireMentor");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), "RequireMentor");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), "RequireManager");
@@ -109,6 +184,23 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), "RequireMentor");
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireMentor");
+
+        // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
+        // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
+        yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?>>(nameof(AgendaController.GetCalendar), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetBoard), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireAgendaAuthor");
+        yield return Row<Action<AgendaController, CreateAgendaItem>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
+        yield return Row<Action<AgendaController, Guid, UpdateAgendaItem>>(nameof(AgendaController.Update), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, ChangeAgendaStatusRequest>>(nameof(AgendaController.ChangeStatus), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.Delete), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategories), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategoriesForManagement), "RequireUser");
+        yield return Row<Action<AgendaController, UpsertAgendaCategory>>(nameof(AgendaController.UpsertCategory), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, UpsertAgendaCategory>>(nameof(AgendaController.UpdateCategory), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, Guid>>(nameof(AgendaController.DeleteCategory), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
     }
 
     public static IEnumerable<object[]> AllowAnonymousEndpoints()

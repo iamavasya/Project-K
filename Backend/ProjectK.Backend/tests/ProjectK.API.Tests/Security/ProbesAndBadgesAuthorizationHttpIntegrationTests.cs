@@ -1,4 +1,5 @@
 using System.Net;
+using ProjectK.Common.Models.Authorization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -166,6 +167,14 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
                 options.AddPolicy("RequireMentor",
                     policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
+
+                options.AddPolicy("RequireAgendaAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
+
+                options.AddPolicy("RequirePlanningAuthor",
+                    policy => policy.RequireAssertion(ctx =>
+                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
 
                 options.AddPolicy("RequireUser",
                     policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
