@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
@@ -34,11 +34,16 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
 
         public async Task<ServiceResult<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
         {
+            // Both failure branches answer identically on purpose: a distinct "no such user" reply
+            // would let a caller enumerate which addresses are registered.
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
                 _activityLogger.TrackFailedLogin(request.Email);
-                return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+                return ServiceResult<LoginUserResponse>.Failure(
+                    ResultType.Unauthorized,
+                    "InvalidCredentials",
+                    "Email or password is incorrect.");
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
@@ -46,7 +51,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
             if (!result.Succeeded)
             {
                 _activityLogger.TrackFailedLogin(request.Email);
-                return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+                return ServiceResult<LoginUserResponse>.Failure(
+                    ResultType.Unauthorized,
+                    "InvalidCredentials",
+                    "Email or password is incorrect.");
             }
 
             var bypassMfa = _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa");
