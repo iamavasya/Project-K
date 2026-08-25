@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -34,19 +35,13 @@ namespace ProjectK.API.Helpers
             "Стельмах", "Чорновіл", "Кушнір", "Бойчук", "Сорока", "Левицький"
         };
 
-        // The six гуртковий-провід offices assigned to the first members of each гурток.
+        // Taken from the office registry rather than restated: the local copy had already lost
+        // Hronikar from the гуртковий провід, so demo data no longer matched what the app allows.
         private static readonly LeadershipRole[] GroupOffices =
-        {
-            LeadershipRole.Hurtkoviy, LeadershipRole.Suddya, LeadershipRole.Pysar,
-            LeadershipRole.Skarbnyk, LeadershipRole.Horunjiy, LeadershipRole.Gospodar
-        };
+            LeadershipOffices.Grouping[LeadershipType.Group].ToArray();
 
-        // The курінний-провід offices assigned to the провідний гурток's members.
         private static readonly LeadershipRole[] KurinOffices =
-        {
-            LeadershipRole.Kurinnuy, LeadershipRole.Suddya, LeadershipRole.Pysar, LeadershipRole.Skarbnyk,
-            LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar, LeadershipRole.OtherKurin
-        };
+            LeadershipOffices.Grouping[LeadershipType.Kurin].ToArray();
 
         private readonly AppDbContext _dbContext;
         private readonly UserManager<AppUser> _userManager;

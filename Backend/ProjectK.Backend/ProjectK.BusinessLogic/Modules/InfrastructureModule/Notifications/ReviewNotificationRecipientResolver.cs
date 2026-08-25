@@ -7,6 +7,20 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 
 public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRecipientResolver
 {
+    /// <summary>
+    /// Offices whose grants let them act on any member in the kurin. Derived from the permission map
+    /// rather than listed, because a hardcoded list here kept notifying Курінний and Гуртковий after
+    /// the офіс model took their member rights away.
+    /// </summary>
+    private static readonly LeadershipRole[] KurinWideReviewerOffices = LeadershipOffices.All()
+        .Where(office => RolePermissionMap.WidestScope(
+            RolePermissionMap.Resolve(new[] { SystemRole.ForOffice(office.Type, office.Role) }),
+            ResourceType.Member,
+            ResourceAction.Update) == AccessScope.KurinWide)
+        .Select(office => office.Role)
+        .Distinct()
+        .ToArray();
+
     private readonly IUnitOfWork _unitOfWork;
 
     public ReviewNotificationRecipientResolver(IUnitOfWork unitOfWork)
@@ -26,23 +40,14 @@ public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRec
             .GroupBy(candidate => candidate.MemberKey)
             .ToDictionary(group => group.Key, group => group.First().UserKey!.Value);
 
-        // Whole-kurin managers (Зв'язковий, Курінний) always review.
-        var managerRoles = new[] { LeadershipRole.Zvyazkovyi, LeadershipRole.Kurinnuy };
         var managerMemberKeys = await _unitOfWork.Leaderships
-            .GetActiveOfficeMemberKeysAsync(managerRoles, kurinKey: kurinKey, cancellationToken: cancellationToken);
+            .GetActiveOfficeMemberKeysAsync(KurinWideReviewerOffices, kurinKey: kurinKey, cancellationToken: cancellationToken);
 
         var reviewerUserKeys = new HashSet<Guid>(ResolveUsers(managerMemberKeys, memberToUser));
 
-        // Group leaders (гуртковий office holders and legacy mentor assignments) review their group.
+        // A Виховник reviews only where he leads, and that scoping comes from his mentor assignments.
         if (groupKey.HasValue)
         {
-            var groupLeaderMemberKeys = await _unitOfWork.Leaderships
-                .GetActiveOfficeMemberKeysAsync(new[] { LeadershipRole.Hurtkoviy }, groupKey: groupKey.Value, cancellationToken: cancellationToken);
-            foreach (var userKey in ResolveUsers(groupLeaderMemberKeys, memberToUser))
-            {
-                reviewerUserKeys.Add(userKey);
-            }
-
             var assignments = await _unitOfWork.MentorAssignments
                 .GetByGroupKeyAsync(groupKey.Value, cancellationToken);
             foreach (var userKey in assignments.Where(a => a.RevokedAtUtc is null).Select(a => a.MentorUserKey))
