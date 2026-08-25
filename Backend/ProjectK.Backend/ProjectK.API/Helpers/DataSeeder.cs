@@ -53,6 +53,13 @@ namespace ProjectK.API.Helpers
             // 4. Seed comprehensive demo data (kurin, groups, mentors, members)
             var demoSeeder = scope.ServiceProvider.GetRequiredService<IDemoDataSeeder>();
             await demoSeeder.SeedAsync();
+
+            // Named fixtures the Playwright suite addresses directly. E2E only: they live in their own
+            // kurin and must not leak into demo data for other environments.
+            if (env.EnvironmentName == "E2E")
+            {
+                await E2eFixtureSeeder.SeedAsync(scope.ServiceProvider);
+            }
         }
 
         private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
