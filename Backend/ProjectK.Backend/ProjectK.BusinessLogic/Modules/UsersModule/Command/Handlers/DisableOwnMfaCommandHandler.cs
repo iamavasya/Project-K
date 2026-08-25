@@ -41,7 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
             }
 
             var roles = await _userManager.GetRolesAsync(user);
-            if (roles.Any(role => SystemRole.WholeKurinManagementRoles().Contains(role, StringComparer.OrdinalIgnoreCase)))
+            if (RolePermissionMap.GrantsWholeKurinManagement(roles))
             {
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "MfaRequired", "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");
             }

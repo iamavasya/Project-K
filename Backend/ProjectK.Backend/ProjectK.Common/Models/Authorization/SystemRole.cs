@@ -23,17 +23,8 @@ public static class SystemRole
             .Concat(LeadershipOffices.All().Select(office => ForOffice(office.Type, office.Role)))
             .ToArray();
 
-    /// <summary>Roles that manage the whole kurin (privileged): admin plus Зв'язковий and Курінний.</summary>
-    public static IReadOnlyList<string> WholeKurinManagementRoles() => new[]
-    {
-        Admin,
-        ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi),
-        ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy)
-    };
-
-    /// <summary>Roles that may review/lead (whole-kurin managers plus the гуртковий leader).</summary>
-    public static IReadOnlyList<string> LeadershipRoles() =>
-        WholeKurinManagementRoles()
-            .Append(ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy))
-            .ToArray();
+    // Deliberately no "who is privileged" list here. That question is answered by
+    // RolePermissionMap.GrantsWholeKurinManagement, derived from the grant tables — a second
+    // hardcoded list drifted from it once already and left Курінний unable to disable an MFA
+    // he was never required to enable.
 }

@@ -53,7 +53,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers
                     return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "Kurin managers can reset MFA only in their own Kurin.");
                 }
 
-                if (targetRoles.Any(role => SystemRole.WholeKurinManagementRoles().Contains(role, StringComparer.OrdinalIgnoreCase)))
+                if (RolePermissionMap.GrantsWholeKurinManagement(targetRoles))
                 {
                     return ServiceResult<bool>.Failure(ResultType.Forbidden, "CannotResetPrivilegedMfa", "Kurin managers cannot reset MFA for privileged users.");
                 }
