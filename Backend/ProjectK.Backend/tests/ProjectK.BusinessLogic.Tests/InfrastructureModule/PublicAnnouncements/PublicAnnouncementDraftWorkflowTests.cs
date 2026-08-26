@@ -1,3 +1,5 @@
+﻿using ProjectK.BusinessLogic.MappingProfiles;
+using AutoMapper;
 using System.Net;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +34,8 @@ public class PublicAnnouncementDraftWorkflowTests
             unitOfWork,
             currentUserContext.Object,
             new PublicAnnouncementRenderer(),
-            activityLogger.Object);
+            activityLogger.Object,
+            CreateMapper());
 
         var result = await handler.Handle(
             new CreatePublicAnnouncementDraftCommand(
@@ -79,7 +82,8 @@ public class PublicAnnouncementDraftWorkflowTests
             unitOfWork,
             currentUserContext.Object,
             new PublicAnnouncementRenderer(),
-            activityLogger.Object);
+            activityLogger.Object,
+            CreateMapper());
 
         var command = new CreatePublicAnnouncementDraftCommand(
             "Release",
@@ -117,7 +121,8 @@ public class PublicAnnouncementDraftWorkflowTests
             unitOfWork,
             currentUserContext.Object,
             new PublicAnnouncementRenderer(),
-            activityLogger.Object);
+            activityLogger.Object,
+            CreateMapper());
 
         var result = await handler.Handle(
             new CreatePublicAnnouncementDraftCommand(
@@ -154,9 +159,12 @@ public class PublicAnnouncementDraftWorkflowTests
         var renderer = new PublicAnnouncementRenderer();
         var publisher = new NullPublicAnnouncementPublisher(NullLogger<NullPublicAnnouncementPublisher>.Instance);
 
-        var createHandler = new CreatePublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, activityLogger.Object);
-        var transitionHandler = new TransitionPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, activityLogger.Object, imageStore.Object);
-        var publishHandler = new PublishPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, publisher, activityLogger.Object, imageStore.Object);
+        var createHandler = new CreatePublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, activityLogger.Object,
+            CreateMapper());
+        var transitionHandler = new TransitionPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, activityLogger.Object, imageStore.Object,
+            CreateMapper());
+        var publishHandler = new PublishPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, publisher, activityLogger.Object, imageStore.Object,
+            CreateMapper());
 
         var created = await createHandler.Handle(
             new CreatePublicAnnouncementDraftCommand(
@@ -210,9 +218,12 @@ public class PublicAnnouncementDraftWorkflowTests
         var renderer = new PublicAnnouncementRenderer();
         var publisher = new NullPublicAnnouncementPublisher(NullLogger<NullPublicAnnouncementPublisher>.Instance);
 
-        var createHandler = new CreatePublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, activityLogger.Object);
-        var transitionHandler = new TransitionPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, activityLogger.Object, imageStore.Object);
-        var publishHandler = new PublishPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, publisher, activityLogger.Object, imageStore.Object);
+        var createHandler = new CreatePublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, activityLogger.Object,
+            CreateMapper());
+        var transitionHandler = new TransitionPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, activityLogger.Object, imageStore.Object,
+            CreateMapper());
+        var publishHandler = new PublishPublicAnnouncementDraftCommandHandler(unitOfWork, currentUserContext.Object, renderer, publisher, activityLogger.Object, imageStore.Object,
+            CreateMapper());
 
         var created = await createHandler.Handle(
             new CreatePublicAnnouncementDraftCommand(
@@ -471,6 +482,17 @@ public class PublicAnnouncementDraftWorkflowTests
         Assert.Contains("\"photo\":\"https://example.com/release.png\"", handler.Requests[1].Body);
         Assert.Contains("\"caption\":null", handler.Requests[1].Body);
         Assert.Contains("\"show_caption_above_media\":false", handler.Requests[1].Body);
+    }
+
+
+    /// <summary>The real profile, so the workflow tests cover the mapping and not a stub of it.</summary>
+    private static IMapper CreateMapper()
+    {
+        var configuration = new MapperConfiguration(
+            cfg => cfg.AddProfile(new InfrastructureModuleProfile()),
+            NullLoggerFactory.Instance);
+
+        return configuration.CreateMapper();
     }
 
     private static AppDbContext CreateContext()

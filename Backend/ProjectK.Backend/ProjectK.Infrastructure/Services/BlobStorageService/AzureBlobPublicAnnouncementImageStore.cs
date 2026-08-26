@@ -1,9 +1,10 @@
-using Azure;
+﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService
 {

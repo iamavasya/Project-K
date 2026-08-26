@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Queries;
 using ProjectK.Common.Interfaces;
@@ -11,10 +12,12 @@ public sealed class GetPublicAnnouncementDraftQueryHandler
     : IRequestHandler<GetPublicAnnouncementDraftQuery, ServiceResult<PublicAnnouncementDraftDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public GetPublicAnnouncementDraftQueryHandler(IUnitOfWork unitOfWork)
+    public GetPublicAnnouncementDraftQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<ServiceResult<PublicAnnouncementDraftDto>> Handle(
@@ -27,6 +30,6 @@ public sealed class GetPublicAnnouncementDraftQueryHandler
             return ServiceResult<PublicAnnouncementDraftDto>.Failure(ResultType.NotFound, "DraftNotFound", "Announcement draft not found.");
         }
 
-        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, PublicAnnouncementMapper.ToDto(draft));
+        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, _mapper.Map<PublicAnnouncementDraftDto>(draft));
     }
 }

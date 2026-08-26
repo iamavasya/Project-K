@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Records;
+﻿using ProjectK.Common.Models.Records;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -10,6 +10,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using Microsoft.Extensions.Configuration;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.API.Services.Reports;
 

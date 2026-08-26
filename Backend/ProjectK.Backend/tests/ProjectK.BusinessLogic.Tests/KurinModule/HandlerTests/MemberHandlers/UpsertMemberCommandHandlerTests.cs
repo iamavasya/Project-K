@@ -1,11 +1,11 @@
-using System.IO;
+﻿using System.IO;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.MappingProfiles;
-using ProjectK.API.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -18,6 +18,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using Xunit;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {

@@ -1,6 +1,7 @@
-using Azure;
+﻿using Azure;
 using Azure.Storage.Blobs;
 using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.API.Services.Reports;
 

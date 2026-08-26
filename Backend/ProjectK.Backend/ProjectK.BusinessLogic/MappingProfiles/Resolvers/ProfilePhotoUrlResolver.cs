@@ -1,11 +1,11 @@
-using ProjectK.Common.Models.Records;
+﻿using ProjectK.Common.Models.Records;
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.API.MappingProfiles.Resolvers
+namespace ProjectK.BusinessLogic.MappingProfiles.Resolvers
 {
     // Turns a stored blob name into a public URL. Shared by the full member card
     // (from the entity) and the lean member list (from the projected read model)

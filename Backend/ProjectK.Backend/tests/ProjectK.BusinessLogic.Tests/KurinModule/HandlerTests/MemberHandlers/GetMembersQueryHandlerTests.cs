@@ -1,8 +1,8 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.API.MappingProfiles;
-using ProjectK.API.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {

@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.Common.Interfaces;
@@ -12,6 +13,7 @@ public sealed class UpdatePublicAnnouncementDraftCommandHandler
     : IRequestHandler<UpdatePublicAnnouncementDraftCommand, ServiceResult<PublicAnnouncementDraftDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IPublicAnnouncementRenderer _renderer;
     private readonly IActivityLogger _activityLogger;
@@ -22,9 +24,10 @@ public sealed class UpdatePublicAnnouncementDraftCommandHandler
         ICurrentUserContext currentUserContext,
         IPublicAnnouncementRenderer renderer,
         IActivityLogger activityLogger,
-        IPublicAnnouncementImageStore imageStore)
+        IPublicAnnouncementImageStore imageStore, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         _currentUserContext = currentUserContext;
         _renderer = renderer;
         _activityLogger = activityLogger;
@@ -96,7 +99,7 @@ public sealed class UpdatePublicAnnouncementDraftCommandHandler
             actorUserId: _currentUserContext.UserId,
             reason: $"DraftKey={draft.PublicAnnouncementDraftKey}; Status={draft.Status}; Title={draft.Title}");
 
-        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, PublicAnnouncementMapper.ToDto(draft));
+        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, _mapper.Map<PublicAnnouncementDraftDto>(draft));
     }
 
     private static string? NormalizeOptional(string? value)

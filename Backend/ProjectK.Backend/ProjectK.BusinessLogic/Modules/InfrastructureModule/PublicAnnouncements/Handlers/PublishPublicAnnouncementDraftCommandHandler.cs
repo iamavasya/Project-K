@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.Common.Interfaces;
@@ -12,6 +13,7 @@ public sealed class PublishPublicAnnouncementDraftCommandHandler
     : IRequestHandler<PublishPublicAnnouncementDraftCommand, ServiceResult<PublicAnnouncementDraftDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IPublicAnnouncementRenderer _renderer;
     private readonly IPublicAnnouncementPublisher _publisher;
@@ -24,9 +26,10 @@ public sealed class PublishPublicAnnouncementDraftCommandHandler
         IPublicAnnouncementRenderer renderer,
         IPublicAnnouncementPublisher publisher,
         IActivityLogger activityLogger,
-        IPublicAnnouncementImageStore imageStore)
+        IPublicAnnouncementImageStore imageStore, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         _currentUserContext = currentUserContext;
         _renderer = renderer;
         _publisher = publisher;
@@ -120,7 +123,7 @@ public sealed class PublishPublicAnnouncementDraftCommandHandler
             reason: $"DraftKey={draft.PublicAnnouncementDraftKey}; Status={draft.Status}; TelegramMessageId={draft.TelegramMessageId}; Partial={result.PartiallySucceeded}; Title={draft.Title}");
 
         return result.Succeeded
-            ? new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, PublicAnnouncementMapper.ToDto(draft))
+            ? new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, _mapper.Map<PublicAnnouncementDraftDto>(draft))
             : ServiceResult<PublicAnnouncementDraftDto>.Failure(ResultType.BadRequest, "TelegramPublishFailed", result.ErrorMessage ?? "Failed to publish Telegram announcement.");
     }
 }

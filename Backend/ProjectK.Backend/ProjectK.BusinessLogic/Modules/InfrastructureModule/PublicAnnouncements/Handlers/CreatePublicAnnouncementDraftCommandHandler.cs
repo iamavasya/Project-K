@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.Common.Entities.InfrastructureModule;
@@ -13,6 +14,7 @@ public sealed class CreatePublicAnnouncementDraftCommandHandler
     : IRequestHandler<CreatePublicAnnouncementDraftCommand, ServiceResult<PublicAnnouncementDraftDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IPublicAnnouncementRenderer _renderer;
     private readonly IActivityLogger _activityLogger;
@@ -21,9 +23,10 @@ public sealed class CreatePublicAnnouncementDraftCommandHandler
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IPublicAnnouncementRenderer renderer,
-        IActivityLogger activityLogger)
+        IActivityLogger activityLogger, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         _currentUserContext = currentUserContext;
         _renderer = renderer;
         _activityLogger = activityLogger;
@@ -99,7 +102,7 @@ public sealed class CreatePublicAnnouncementDraftCommandHandler
 
         return new ServiceResult<PublicAnnouncementDraftDto>(
             ResultType.Created,
-            PublicAnnouncementMapper.ToDto(draft),
+            _mapper.Map<PublicAnnouncementDraftDto>(draft),
             CreatedAtActionName: "GetByKey",
             CreatedAtRouteValues: new { draftKey = draft.PublicAnnouncementDraftKey });
     }

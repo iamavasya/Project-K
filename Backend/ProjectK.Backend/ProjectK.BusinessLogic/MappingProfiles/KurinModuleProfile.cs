@@ -1,6 +1,6 @@
-using AutoMapper;
+﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
-using ProjectK.API.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
@@ -17,7 +17,7 @@ using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.API.MappingProfiles
+namespace ProjectK.BusinessLogic.MappingProfiles
 {
     public class KurinModuleProfile : Profile
     {
@@ -27,7 +27,7 @@ namespace ProjectK.API.MappingProfiles
             CreateMap<Kurin, KurinResponse>()
                 .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
                 .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Members.Count));
-            CreateMap<UpsertKurin, Kurin>()
+            CreateMap<UpsertKurin, Kurin>(MemberList.None)
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
@@ -35,13 +35,13 @@ namespace ProjectK.API.MappingProfiles
             CreateMap<Group, GroupResponse>()
                 .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number))
                 .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
-            CreateMap<UpsertGroup, Group>()
+            CreateMap<UpsertGroup, Group>(MemberList.None)
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping
-            CreateMap<UpsertMember, Member>()
+            CreateMap<UpsertMember, Member>(MemberList.None)
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UserKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
@@ -57,7 +57,10 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
                 .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => src.MemberWarnings))
                 .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))
-                .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>());
+                .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>())
+                // Offices live in LeadershipHistories, not on Member, so the entity cannot answer
+                // this. The repository projections fill it; mapping from the entity leaves it null.
+                .ForMember(dest => dest.UserRole, opt => opt.Ignore());
 
             // Lean list read model -> same response shape as the full card. Level,
             // active leadership and active warnings are already resolved in the
@@ -67,7 +70,8 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.Awards, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
-            CreateMap<Member, MemberLookupDto>();
+            CreateMap<Member, MemberLookupDto>()
+                .ForMember(dest => dest.UserRole, opt => opt.Ignore());
 
             // Plast Level History Mapping
             CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
@@ -103,9 +107,13 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate));
 
             // Leadership Mapping
-            CreateMap<Leadership, LeadershipResponse>();
+            CreateMap<Leadership, LeadershipResponse>()
+                .ForMember(dest => dest.EntityKey, opt => opt.MapFrom(src =>
+                    src.Type == LeadershipType.Group
+                        ? (src.GroupKey ?? Guid.Empty)
+                        : (src.KurinKey ?? Guid.Empty)));
 
-            CreateMap<UpsertLeadership, Leadership>()
+            CreateMap<UpsertLeadership, Leadership>(MemberList.None)
                 .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Type, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
@@ -113,11 +121,11 @@ namespace ProjectK.API.MappingProfiles
                 .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
 
             // Planning Mapping
-            CreateMap<CreatePlanningSession, PlanningSession>();
+            CreateMap<CreatePlanningSession, PlanningSession>(MemberList.None);
 
-            CreateMap<ParticipantInputDto, PlanningParticipant>();
+            CreateMap<ParticipantInputDto, PlanningParticipant>(MemberList.None);
 
-            CreateMap<DateRangeDto, ParticipantBusyRange>();
+            CreateMap<DateRangeDto, ParticipantBusyRange>(MemberList.None);
 
             // Entity -> Response DTO
             CreateMap<PlanningSession, PlanningSessionResponse>();

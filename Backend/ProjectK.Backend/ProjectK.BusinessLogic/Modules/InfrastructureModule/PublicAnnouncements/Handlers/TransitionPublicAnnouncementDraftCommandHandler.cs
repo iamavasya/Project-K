@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.Common.Interfaces;
@@ -12,6 +13,7 @@ public sealed class TransitionPublicAnnouncementDraftCommandHandler
     : IRequestHandler<TransitionPublicAnnouncementDraftCommand, ServiceResult<PublicAnnouncementDraftDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IActivityLogger _activityLogger;
     private readonly IPublicAnnouncementImageStore _imageStore;
@@ -20,9 +22,10 @@ public sealed class TransitionPublicAnnouncementDraftCommandHandler
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IActivityLogger activityLogger,
-        IPublicAnnouncementImageStore imageStore)
+        IPublicAnnouncementImageStore imageStore, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         _currentUserContext = currentUserContext;
         _activityLogger = activityLogger;
         _imageStore = imageStore;
@@ -89,7 +92,7 @@ public sealed class TransitionPublicAnnouncementDraftCommandHandler
             actorUserId: _currentUserContext.UserId,
             reason: $"DraftKey={draft.PublicAnnouncementDraftKey}; Status={draft.Status}; Title={draft.Title}");
 
-        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, PublicAnnouncementMapper.ToDto(draft));
+        return new ServiceResult<PublicAnnouncementDraftDto>(ResultType.Success, _mapper.Map<PublicAnnouncementDraftDto>(draft));
     }
 
     private static string GetAuditAction(PublicAnnouncementStatus status)

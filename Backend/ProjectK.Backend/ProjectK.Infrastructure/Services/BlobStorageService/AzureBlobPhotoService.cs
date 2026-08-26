@@ -19,23 +19,10 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService
 {
-    // Options used for both Azure Blob Storage and Azurite emulator.
-    public sealed class BlobStorageOptions
-    {
-        // Full connection string. For Azurite you can use:
-        // "UseDevelopmentStorage=true"
-        // or explicit:
-        // "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vd...==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
-        public string ConnectionString { get; init; } = string.Empty;
-        public string ContainerName { get; init; } = "photos";
-        public string? PublicBaseUrl { get; init; }
-        public bool AutoCreateContainer { get; init; } = true;
-        public bool PublicAccess { get; init; } = true;
-        public string UsageMetadataKey { get; init; } = "inUse";
-    }
 
     public interface IPhotoReferenceProvider
     {

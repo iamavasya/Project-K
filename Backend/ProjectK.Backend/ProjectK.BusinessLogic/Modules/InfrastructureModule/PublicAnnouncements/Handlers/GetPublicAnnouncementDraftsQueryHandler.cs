@@ -1,3 +1,4 @@
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Queries;
 using ProjectK.Common.Interfaces;
@@ -10,10 +11,12 @@ public sealed class GetPublicAnnouncementDraftsQueryHandler
     : IRequestHandler<GetPublicAnnouncementDraftsQuery, ServiceResult<IReadOnlyCollection<PublicAnnouncementDraftDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public GetPublicAnnouncementDraftsQueryHandler(IUnitOfWork unitOfWork)
+    public GetPublicAnnouncementDraftsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<ServiceResult<IReadOnlyCollection<PublicAnnouncementDraftDto>>> Handle(
@@ -21,7 +24,7 @@ public sealed class GetPublicAnnouncementDraftsQueryHandler
         CancellationToken cancellationToken)
     {
         var drafts = await _unitOfWork.PublicAnnouncements.GetByStatusAsync(request.Status, cancellationToken);
-        var result = drafts.Select(PublicAnnouncementMapper.ToDto).ToList();
+        var result = drafts.Select(_mapper.Map<PublicAnnouncementDraftDto>).ToList();
         return new ServiceResult<IReadOnlyCollection<PublicAnnouncementDraftDto>>(ProjectK.Common.Models.Enums.ResultType.Success, result);
     }
 }

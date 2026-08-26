@@ -1,3 +1,5 @@
+﻿using ProjectK.BusinessLogic.MappingProfiles;
+using Microsoft.Extensions.Logging.Abstractions;
 using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
@@ -18,13 +20,17 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
-        private readonly Mock<IMapper> _mapperMock = new();
+        // The real profile: EntityKey is derived by the mapping, so a stubbed IMapper
+        // would assert the stub rather than the behaviour.
+        private readonly IMapper _mapper = new MapperConfiguration(
+            cfg => cfg.AddProfile(new KurinModuleProfile()),
+            NullLoggerFactory.Instance).CreateMapper();
         private readonly GetLeadershipByKeyHandler _handler;
 
         public GetLeadershipByKeyHandlerTests()
         {
             _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-            _handler = new GetLeadershipByKeyHandler(_unitOfWorkMock.Object, _mapperMock.Object);
+            _handler = new GetLeadershipByKeyHandler(_unitOfWorkMock.Object, _mapper);
         }
 
         private static Leadership BuildLeadership(LeadershipType type, Guid? kurinKey = null, Guid? groupKey = null) =>
@@ -62,7 +68,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             Assert.Equal(ResultType.NotFound, result.Type);
             Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
         }
 
         [Fact]
@@ -75,9 +80,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -98,9 +100,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -120,9 +119,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -142,9 +138,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -162,9 +155,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -183,9 +173,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
                 .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, cts.Token))
                 .ReturnsAsync(entity);
 
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(entity))
-                .Returns(() => BuildDto(entity));
 
             var result = await _handler.Handle(query, cts.Token);
 

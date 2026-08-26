@@ -1,10 +1,10 @@
-using ProjectK.Common.Models.Records;
+﻿using ProjectK.Common.Models.Records;
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.API.MappingProfiles.Resolvers
+namespace ProjectK.BusinessLogic.MappingProfiles.Resolvers
 {
     public sealed class GroupSilhouetteUrlResolver : IValueResolver<Group, GroupResponse, string?>
     {
