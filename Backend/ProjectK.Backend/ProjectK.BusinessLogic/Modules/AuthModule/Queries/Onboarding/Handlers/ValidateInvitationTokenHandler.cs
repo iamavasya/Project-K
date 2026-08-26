@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
@@ -13,17 +13,19 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
     public class ValidateInvitationTokenHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly TimeProvider _timeProvider;
 
-        public ValidateInvitationTokenHandler(IUnitOfWork unitOfWork)
+        public ValidateInvitationTokenHandler(IUnitOfWork unitOfWork, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
+            _timeProvider = timeProvider;
         }
 
         public async Task<ServiceResult<InvitationValidationResponse>> Handle(ValidateInvitationTokenQuery request, CancellationToken cancellationToken)
         {
             var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
 
-            if (invitation == null || invitation.ExpiresAtUtc < DateTime.UtcNow)
+            if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
             {
                 return new ServiceResult<InvitationValidationResponse>(
                     ResultType.NotFound,

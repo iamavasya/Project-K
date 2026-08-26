@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -28,12 +28,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IMapper _mapper;
+        private readonly TimeProvider _timeProvider;
 
-        public CancelMemberWarningHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper)
+        public CancelMemberWarningHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
             _mapper = mapper;
+            _timeProvider = timeProvider;
         }
 
         public async Task<ServiceResult<MemberWarningDto>> Handle(CancelMemberWarning request, CancellationToken cancellationToken)
@@ -49,7 +51,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning
                 return new ServiceResult<MemberWarningDto>(ResultType.NotFound);
             }
 
-            if (warning.RevokedAtUtc.HasValue || warning.ExpiresAtUtc <= DateTime.UtcNow)
+            if (warning.RevokedAtUtc.HasValue || warning.ExpiresAtUtc <= _timeProvider.GetUtcNow().UtcDateTime)
             {
                 return new ServiceResult<MemberWarningDto>(ResultType.Conflict);
             }

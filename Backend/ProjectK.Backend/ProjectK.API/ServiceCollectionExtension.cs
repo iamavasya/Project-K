@@ -68,6 +68,10 @@ namespace ProjectK.API
             services.AddScoped<ILeadershipRoleSyncService, LeadershipRoleSyncService>();
             services.AddScoped<ISystemSettingsService, SystemSettingsService>();
             services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
+            // Injected wherever the clock decides something — token and invitation expiry, warning
+            // windows, the agenda's default range — so those rules can be tested at a fixed instant.
+            // Plain timestamps still use DateTime.UtcNow.
+            services.AddSingleton(TimeProvider.System);
             services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             services.AddScoped<ResourceAccessService>();
             services.AddScoped<IResourceAccessService>(sp =>

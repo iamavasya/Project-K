@@ -29,7 +29,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
             _userManagerMock = new Mock<UserManager<AppUser>>(
                 userStoreMock.Object, null, null, null, null, null, null, null, null);
             _jwtServiceMock = new Mock<IJwtService>();
-            _handler = new RefreshTokenCommandHandler(_userManagerMock.Object, _jwtServiceMock.Object);
+            _handler = new RefreshTokenCommandHandler(_userManagerMock.Object, _jwtServiceMock.Object, TimeProvider.System);
         }
 
         [Fact]

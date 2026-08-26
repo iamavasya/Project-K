@@ -18,15 +18,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken.Handle
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
-        public RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtService jwtService)
+        private readonly TimeProvider _timeProvider;
+        public RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtService jwtService, TimeProvider timeProvider)
         {
             _userManager = userManager;
             _jwtService = jwtService;
+            _timeProvider = timeProvider;
         }
         public async Task<ServiceResult<JwtResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
             var user = _userManager.Users.FirstOrDefault(u => u.RefreshToken == request.RefreshToken);
-            if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            if (user == null || user.RefreshTokenExpiryTime <= _timeProvider.GetUtcNow().UtcDateTime)
             {
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }

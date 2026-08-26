@@ -16,10 +16,12 @@ namespace ProjectK.Infrastructure.Services.JwtService
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
+        private readonly TimeProvider _timeProvider;
 
-        public JwtService(IConfiguration config)
+        public JwtService(IConfiguration config, TimeProvider timeProvider)
         {
             _config = config;
+            _timeProvider = timeProvider;
         }
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
+                expires: _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
                 signingCredentials: creds
             );
 
@@ -67,7 +69,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
             return new RefreshToken
             {
                 Token = Convert.ToBase64String(randomBytes),
-                Expires = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:RefreshTokenExpiresInDays"])),
+                Expires = _timeProvider.GetUtcNow().UtcDateTime.AddDays(int.Parse(_config["Jwt:RefreshTokenExpiresInDays"])),
                 Created = DateTime.UtcNow
             };
         }

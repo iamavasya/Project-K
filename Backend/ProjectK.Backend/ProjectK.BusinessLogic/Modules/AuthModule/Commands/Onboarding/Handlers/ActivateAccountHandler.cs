@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Entities.AuthModule;
@@ -21,12 +21,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMediator _mediator;
+        private readonly TimeProvider _timeProvider;
 
-        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IMediator mediator)
+        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _mediator = mediator;
+            _timeProvider = timeProvider;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
@@ -34,7 +36,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
             // 1. Validate Token
             var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
 
-            if (invitation == null || invitation.ExpiresAtUtc < DateTime.UtcNow)
+            if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
             {
                 return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, "Invalid or expired invitation token.");
             }

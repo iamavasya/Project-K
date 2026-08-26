@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -15,11 +15,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
+        private readonly TimeProvider _timeProvider;
 
-        public ResendInvitationHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+        public ResendInvitationHandler(IUnitOfWork unitOfWork, IEmailService emailService, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _timeProvider = timeProvider;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ResendInvitationCommand request, CancellationToken cancellationToken)
@@ -47,7 +49,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 Token = Guid.NewGuid().ToString("N"),
                 WaitlistEntryKey = entry.WaitlistEntryKey,
                 TargetUserKey = invitation.TargetUserKey,
-                ExpiresAtUtc = DateTime.UtcNow.AddDays(7)
+                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
             };
             _unitOfWork.Invitations.Create(newInvitation, cancellationToken);
 

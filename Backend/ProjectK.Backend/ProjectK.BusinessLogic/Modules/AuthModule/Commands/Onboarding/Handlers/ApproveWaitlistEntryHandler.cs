@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,19 +22,22 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IConfiguration _configuration;
+        private readonly TimeProvider _timeProvider;
 
         public ApproveWaitlistEntryHandler(
             IUnitOfWork unitOfWork,
             UserManager<AppUser> userManager,
             IEmailService emailService,
             ICurrentUserContext currentUserContext,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
             _configuration = configuration;
+            _timeProvider = timeProvider;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
@@ -112,7 +115,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                 Token = Guid.NewGuid().ToString("N"), // Simple token for now
                 WaitlistEntryKey = entry.WaitlistEntryKey,
                 TargetUserKey = user.Id,
-                ExpiresAtUtc = DateTime.UtcNow.AddDays(7)
+                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
             };
             _unitOfWork.Invitations.Create(invitation, cancellationToken);
 
