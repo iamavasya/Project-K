@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Authorization;
@@ -246,6 +247,86 @@ namespace ProjectK.API.Helpers
                 await userManager.UpdateAsync(user);
             }
             return user;
+        }
+
+        /// <summary>
+        /// The password every seeded demo/fixture account gets. Seeded accounts exist only in
+        /// non-production environments.
+        /// </summary>
+        internal const string SeededPassword = "User@12345";
+
+        /// <summary>Finds the named group in the kurin, creating it when it is missing.</summary>
+        internal static async Task<Group> EnsureGroupAsync(
+            AppDbContext dbContext,
+            string name,
+            Guid kurinKey,
+            CancellationToken cancellationToken = default)
+        {
+            var group = await dbContext.Groups
+                .FirstOrDefaultAsync(g => g.Name == name && g.KurinKey == kurinKey, cancellationToken);
+            if (group == null)
+            {
+                group = new Group(name, kurinKey);
+                dbContext.Groups.Add(group);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return group;
+        }
+
+        /// <summary>
+        /// Finds the member by email, creating the member row and its linked account when missing.
+        /// Keyed on email so re-running a seeder does not give one account a second member row.
+        /// </summary>
+        internal static async Task<Member> EnsureMemberAsync(
+            AppDbContext dbContext,
+            UserManager<AppUser> userManager,
+            string email,
+            string firstName,
+            string lastName,
+            Guid kurinKey,
+            Guid? groupKey,
+            string phoneNumber,
+            DateOnly dateOfBirth,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await EnsureUser(userManager, email, firstName, lastName, UserRole.Member, SeededPassword, kurinKey);
+
+            var member = await dbContext.Members.FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
+            if (member == null)
+            {
+                member = new Member
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = email,
+                    PhoneNumber = phoneNumber,
+                    DateOfBirth = dateOfBirth,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    UserKey = user!.Id
+                };
+                dbContext.Members.Add(member);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return member;
+        }
+
+        /// <summary>Seats the member in the office unless they already hold it.</summary>
+        internal static void AddOffice(Leadership leadership, Guid memberKey, LeadershipRole role)
+        {
+            var alreadyHolds = leadership.LeadershipHistories
+                .Any(h => h.MemberKey == memberKey && h.Role == role && h.EndDate == null);
+            if (!alreadyHolds)
+            {
+                leadership.LeadershipHistories.Add(new LeadershipHistory
+                {
+                    MemberKey = memberKey,
+                    Role = role,
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow)
+                });
+            }
         }
 
         internal static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password, Guid? kurinKey = null)

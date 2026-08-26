@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Authorization;
+﻿using ProjectK.Common.Models.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -17,7 +17,6 @@ namespace ProjectK.API.Helpers
     /// </summary>
     public class DemoDataSeeder : IDemoDataSeeder
     {
-        private const string Password = "User@12345";
 
         private static readonly string[] FirstNames =
         {
@@ -71,14 +70,14 @@ namespace ProjectK.API.Helpers
             }
 
             // 2. Groups: two ordinary гуртки and one провідний (its members form the курінний провід).
-            var sokoly = await EnsureGroupAsync("Соколи", kurin.KurinKey, cancellationToken);
-            var levy = await EnsureGroupAsync("Леви", kurin.KurinKey, cancellationToken);
-            var vedmedi = await EnsureGroupAsync("Ведмеді", kurin.KurinKey, cancellationToken);
+            var sokoly = await DataSeeder.EnsureGroupAsync(_dbContext, "Соколи", kurin.KurinKey, cancellationToken);
+            var levy = await DataSeeder.EnsureGroupAsync(_dbContext, "Леви", kurin.KurinKey, cancellationToken);
+            var vedmedi = await DataSeeder.EnsureGroupAsync(_dbContext, "Ведмеді", kurin.KurinKey, cancellationToken);
 
             // 3. Зв'язковий — adult, whole-kurin authority.
             var zvyazkovyi = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
             var kvLeadership = await EnsureLeadershipAsync(LeadershipType.KV, kurin.KurinKey, null, cancellationToken);
-            AddOffice(kvLeadership, zvyazkovyi.MemberKey, LeadershipRole.Zvyazkovyi);
+            DataSeeder.AddOffice(kvLeadership, zvyazkovyi.MemberKey, LeadershipRole.Zvyazkovyi);
             membersToSync.Add(zvyazkovyi.MemberKey);
 
             // 4. Ordinary гуртки: 8 members each, first 6 hold гуртковий-провід offices.
@@ -90,7 +89,7 @@ namespace ProjectK.API.Helpers
                     var member = await CreateMemberAsync(kurin.KurinKey, group.GroupKey, cancellationToken);
                     if (i < GroupOffices.Length)
                     {
-                        AddOffice(leadership, member.MemberKey, GroupOffices[i]);
+                        DataSeeder.AddOffice(leadership, member.MemberKey, GroupOffices[i]);
                         membersToSync.Add(member.MemberKey);
                     }
                 }
@@ -101,7 +100,7 @@ namespace ProjectK.API.Helpers
             for (var i = 0; i < 8; i++)
             {
                 var member = await CreateMemberAsync(kurin.KurinKey, vedmedi.GroupKey, cancellationToken);
-                AddOffice(kurinLeadership, member.MemberKey, KurinOffices[i]);
+                DataSeeder.AddOffice(kurinLeadership, member.MemberKey, KurinOffices[i]);
                 membersToSync.Add(member.MemberKey);
             }
 
@@ -112,7 +111,7 @@ namespace ProjectK.API.Helpers
             foreach (var group in new[] { sokoly, levy, vedmedi })
             {
                 var mentor = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
-                AddOffice(kvLeadership, mentor.MemberKey, LeadershipRole.Vykhovnyk);
+                DataSeeder.AddOffice(kvLeadership, mentor.MemberKey, LeadershipRole.Vykhovnyk);
                 _dbContext.MentorAssignments.Add(new MentorAssignment
                 {
                     MentorUserKey = mentor.UserKey!.Value,
@@ -124,26 +123,13 @@ namespace ProjectK.API.Helpers
 
             // 7. One Інструктор in the КВ.
             var instructor = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
-            AddOffice(kvLeadership, instructor.MemberKey, LeadershipRole.Instruktor);
+            DataSeeder.AddOffice(kvLeadership, instructor.MemberKey, LeadershipRole.Instruktor);
             membersToSync.Add(instructor.MemberKey);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             // 8. Derive system roles from the offices and assignments just created.
             await _roleSync.SyncMembersAsync(membersToSync, cancellationToken);
-        }
-
-        private async Task<Group> EnsureGroupAsync(string name, Guid kurinKey, CancellationToken cancellationToken)
-        {
-            var group = await _dbContext.Groups.FirstOrDefaultAsync(g => g.Name == name && g.KurinKey == kurinKey, cancellationToken);
-            if (group == null)
-            {
-                group = new Group(name, kurinKey);
-                _dbContext.Groups.Add(group);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-
-            return group;
         }
 
         private async Task<Member> CreateMemberAsync(Guid kurinKey, Guid? groupKey, CancellationToken cancellationToken)
@@ -153,22 +139,18 @@ namespace ProjectK.API.Helpers
             _personIndex++;
 
             var email = $"demo{_emailIndex++}@projectk.com";
-            var user = await DataSeeder.EnsureUser(_userManager, email, firstName, lastName, UserRole.Member, Password, kurinKey);
 
-            var member = new Member
-            {
-                FirstName = firstName,
-                LastName = lastName,
-                Email = email,
-                PhoneNumber = $"050{_emailIndex:D7}",
-                DateOfBirth = new DateOnly(2005, 1, 1).AddDays(_personIndex * 37),
-                KurinKey = kurinKey,
-                GroupKey = groupKey,
-                UserKey = user!.Id
-            };
-            _dbContext.Members.Add(member);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return member;
+            return await DataSeeder.EnsureMemberAsync(
+                _dbContext,
+                _userManager,
+                email,
+                firstName,
+                lastName,
+                kurinKey,
+                groupKey,
+                $"050{_emailIndex:D7}",
+                new DateOnly(2005, 1, 1).AddDays(_personIndex * 37),
+                cancellationToken);
         }
 
         private async Task<Leadership> EnsureLeadershipAsync(
@@ -199,19 +181,5 @@ namespace ProjectK.API.Helpers
             return leadership;
         }
 
-        private static void AddOffice(Leadership leadership, Guid memberKey, LeadershipRole role)
-        {
-            var alreadyHolds = leadership.LeadershipHistories
-                .Any(h => h.MemberKey == memberKey && h.Role == role && h.EndDate == null);
-            if (!alreadyHolds)
-            {
-                leadership.LeadershipHistories.Add(new LeadershipHistory
-                {
-                    MemberKey = memberKey,
-                    Role = role,
-                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow)
-                });
-            }
-        }
     }
 }
