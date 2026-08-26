@@ -14,28 +14,26 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace ProjectK.Infrastructure.Repositories
 {
-    public class MemberRepository : IMemberRepository
+    public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     {
-        private readonly AppDbContext _context;
         private readonly string memberMessage = "Member not found.";
-        public MemberRepository(AppDbContext context)
+        public MemberRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public void Create(Member member, CancellationToken cancellationToken = default)
+        public override void Create(Member member, CancellationToken cancellationToken = default)
         {
-            _context.Members.Add(member);
+            Context.Members.Add(member);
         }
 
-        public void Delete(Member member, CancellationToken cancellationToken = default)
+        public override void Delete(Member member, CancellationToken cancellationToken = default)
         {
-            _context.Members.Remove(member);
+            Context.Members.Remove(member);
         }
 
-        public async Task<Member?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public override async Task<Member?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members.Include(m => m.Group)
+            return await Context.Members.Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
                                          .Include(m => m.LeadershipHistories)
@@ -48,7 +46,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members.Where(m => m.GroupKey == groupKey)
+            return await Context.Members.Where(m => m.GroupKey == groupKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
@@ -64,7 +62,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members.Where(m => m.KurinKey == kurinKey)
+            return await Context.Members.Where(m => m.KurinKey == kurinKey)
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
@@ -79,10 +77,10 @@ namespace ProjectK.Infrastructure.Repositories
         }
 
         public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-            => ProjectListItemsAsync(_context.Members.Where(m => m.KurinKey == kurinKey), visibility, cancellationToken);
+            => ProjectListItemsAsync(Context.Members.Where(m => m.KurinKey == kurinKey), visibility, cancellationToken);
 
         public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-            => ProjectListItemsAsync(_context.Members.Where(m => m.GroupKey == groupKey), visibility, cancellationToken);
+            => ProjectListItemsAsync(Context.Members.Where(m => m.GroupKey == groupKey), visibility, cancellationToken);
 
         // Single projection shared by the kurin- and group-scoped list reads. No Include
         // graph: scalars come from the root query, UserRole is a correlated subquery over
@@ -108,9 +106,9 @@ namespace ProjectK.Infrastructure.Repositories
                     // first often hid the office. Skip the baseline and order so the result is stable.
                     // A single field still cannot express a member holding several offices — see the
                     // role-system unification work.
-                    UserRole = (from ur in _context.UserRoles
+                    UserRole = (from ur in Context.UserRoles
                                 where m.UserKey != null && ur.UserId == m.UserKey
-                                join r in _context.Roles on ur.RoleId equals r.Id
+                                join r in Context.Roles on ur.RoleId equals r.Id
                                 where r.Name != SystemRole.Member
                                 orderby r.Name
                                 select r.Name).FirstOrDefault(),
@@ -170,13 +168,13 @@ namespace ProjectK.Infrastructure.Repositories
         }
 
         public Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
-            => _context.Members
+            => Context.Members
                 .Where(m => m.MemberKey == memberKey)
                 .Select(m => m.UserKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
         public Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
-            => _context.Members
+            => Context.Members
                 .Where(m => m.MemberKey == memberKey)
                 .Select(m => (Guid?)m.KurinKey)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -185,11 +183,11 @@ namespace ProjectK.Infrastructure.Repositories
         {
             // Join fans out to one row per (member, role); a member now holds several roles (Member plus
             // office roles), so collapse to one row per member and prefer a non-baseline role for display.
-            var rows = await _context.Members
+            var rows = await Context.Members
                 .Where(m => m.KurinKey == kurinKey && m.UserKey != null)
-                .GroupJoin(_context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
+                .GroupJoin(Context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
                 .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
-                .GroupJoin(_context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })
+                .GroupJoin(Context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })
                 .SelectMany(x => x.roles.DefaultIfEmpty(), (x, role) => new { x.member, role })
                 .Select(m => new ProjectK.Common.Models.Dtos.MemberLookupDto
                 {
@@ -214,7 +212,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members
+            return await Context.Members
                 .Include(m => m.Group)
                 .Include(m => m.Kurin)
                 .Include(m => m.MemberWarnings)
@@ -225,35 +223,30 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
         {
-            return await _context.Members
+            return await Context.Members
                 .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
         }
 
         public async Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            return await _context.Members
+            return await Context.Members
                 .FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
         }
 
-        public Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
+        public override Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");
         }
 
-        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public override void Update(Member member, CancellationToken cancellationToken = default)
         {
-            return await _context.Members.AnyAsync(e => e.MemberKey == entityKey, cancellationToken);
-        }
-
-        public void Update(Member member, CancellationToken cancellationToken = default)
-        {
-            _context.Members.Update(member);
+            Context.Members.Update(member);
         }
 
         #region PlastLevelHistory Methods
         public async Task AddPlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory history, CancellationToken cancellationToken = default)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -270,7 +263,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken = default)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -289,7 +282,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<PlastLevelHistory>> GetPlastLevelHistoryAsync(Guid memberKey, CancellationToken cancellationToken = default)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -298,7 +291,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task UpdatePlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory updatedHistory, CancellationToken cancellationToken = default)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.PlastLevelHistory)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -328,7 +321,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task AddLeadershipHistoryAsync(Guid memberKey, LeadershipHistory history, CancellationToken cancellationToken)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -339,7 +332,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task EndLeadershipAsync(Guid memberKey, Guid historyKey, DateOnly endDate, CancellationToken cancellationToken)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 
@@ -352,7 +345,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task RemoveLeadershipHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
             if (member == null) throw new ArgumentNullException(memberMessage);
@@ -368,7 +361,7 @@ namespace ProjectK.Infrastructure.Repositories
             LeadershipHistory updatedHistory,
             CancellationToken cancellationToken)
         {
-            var member = await _context.Members
+            var member = await Context.Members
                 .Include(m => m.LeadershipHistories)
                 .FirstOrDefaultAsync(m => m.MemberKey == memberKey, cancellationToken);
 

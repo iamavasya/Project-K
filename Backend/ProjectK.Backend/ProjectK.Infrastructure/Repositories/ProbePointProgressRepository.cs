@@ -1,32 +1,20 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories;
 
-public class ProbePointProgressRepository : IProbePointProgressRepository
+public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgress>, IProbePointProgressRepository
 {
-    private readonly AppDbContext _context;
 
-    public ProbePointProgressRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    public ProbePointProgressRepository(AppDbContext context) : base(context)
+        {
+        }
 
-    public void Create(ProbePointProgress entity, CancellationToken cancellationToken = default)
+    public override async Task<ProbePointProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        _context.ProbePointProgresses.Add(entity);
-    }
-
-    public void Delete(ProbePointProgress entity, CancellationToken cancellationToken = default)
-    {
-        _context.ProbePointProgresses.Remove(entity);
-    }
-
-    public async Task<ProbePointProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-    {
-        return await _context.ProbePointProgresses
+        return await Context.ProbePointProgresses
             .AsTracking()
             .FirstOrDefaultAsync(x => x.ProbePointProgressKey == entityKey, cancellationToken);
     }
@@ -37,7 +25,7 @@ public class ProbePointProgressRepository : IProbePointProgressRepository
         string pointId,
         CancellationToken cancellationToken = default)
     {
-        return await _context.ProbePointProgresses
+        return await Context.ProbePointProgresses
             .AsTracking()
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.ProbeId == probeId && x.PointId == pointId,
@@ -49,32 +37,22 @@ public class ProbePointProgressRepository : IProbePointProgressRepository
         string probeId,
         CancellationToken cancellationToken = default)
     {
-        return await _context.ProbePointProgresses
+        return await Context.ProbePointProgresses
             .Where(x => x.MemberKey == memberKey && x.ProbeId == probeId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<IEnumerable<ProbePointProgress>> GetAllAsync(CancellationToken cancellationToken = default)
+    public override Task<IEnumerable<ProbePointProgress>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetByMemberAndProbeAsync instead.");
     }
 
-    public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await _context.ProbePointProgresses
+        return await Context.ProbePointProgresses
             .AnyAsync(x => x.ProbePointProgressKey == entityKey, cancellationToken);
     }
 
-    public void Update(ProbePointProgress entity, CancellationToken cancellationToken = default)
-    {
-        var entry = _context.Entry(entity);
-        if (entry.State == EntityState.Detached)
-        {
-            _context.ProbePointProgresses.Update(entity);
-            return;
-        }
-
-        entry.State = EntityState.Modified;
-    }
+    public override void Update(ProbePointProgress entity, CancellationToken cancellationToken = default) => MarkModified(entity);
 }

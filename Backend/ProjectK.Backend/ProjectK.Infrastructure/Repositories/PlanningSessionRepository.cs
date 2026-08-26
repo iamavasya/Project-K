@@ -10,47 +10,30 @@ using System.Threading.Tasks;
 
 namespace ProjectK.Infrastructure.Repositories
 {
-    public class PlanningSessionRepository : IPlanningSessionRepository
+    public class PlanningSessionRepository : BaseEntityRepository<PlanningSession>, IPlanningSessionRepository
     {
-        private readonly AppDbContext _context;
-        public PlanningSessionRepository(AppDbContext context)
+        public PlanningSessionRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public void Create(PlanningSession entity, CancellationToken cancellationToken = default)
+        public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            _context.PlanningSessions.Add(entity);
+            return await Context.PlanningSessions.AnyAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
         }
 
-        public void Delete(PlanningSession entity, CancellationToken cancellationToken = default)
-        {
-            _context.PlanningSessions.Remove(entity);
-        }
-
-        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
-        {
-            return await _context.PlanningSessions.AnyAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
-        }
-
-        public Task<IEnumerable<PlanningSession>> GetAllAsync(CancellationToken cancellationToken = default)
+        public override Task<IEnumerable<PlanningSession>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken token) instead.");
         }
 
-        public async Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public override async Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await _context.PlanningSessions.FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
-        }
-
-        public void Update(PlanningSession entity, CancellationToken cancellationToken = default)
-        {
-            _context.PlanningSessions.Update(entity);
+            return await Context.PlanningSessions.FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
         }
 
         public async Task<PlanningSession?> GetByKeyWithDetailsAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await _context.PlanningSessions
+            return await Context.PlanningSessions
                                  .Include(ps => ps.Participants)
                                     .ThenInclude(p => p.BusyRanges)
                                  .FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
@@ -58,7 +41,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         public async Task<IEnumerable<PlanningSession>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            return await _context.PlanningSessions
+            return await Context.PlanningSessions
                                  .Where(ps => ps.KurinKey == kurinKey)
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);

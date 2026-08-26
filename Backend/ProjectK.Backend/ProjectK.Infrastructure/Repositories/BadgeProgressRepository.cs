@@ -1,32 +1,20 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories;
 
-public class BadgeProgressRepository : IBadgeProgressRepository
+public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBadgeProgressRepository
 {
-    private readonly AppDbContext _context;
 
-    public BadgeProgressRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    public BadgeProgressRepository(AppDbContext context) : base(context)
+        {
+        }
 
-    public void Create(BadgeProgress entity, CancellationToken cancellationToken = default)
+    public override async Task<BadgeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        _context.BadgeProgresses.Add(entity);
-    }
-
-    public void Delete(BadgeProgress entity, CancellationToken cancellationToken = default)
-    {
-        _context.BadgeProgresses.Remove(entity);
-    }
-
-    public async Task<BadgeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-    {
-        return await _context.BadgeProgresses
+        return await Context.BadgeProgresses
             .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.BadgeProgressKey == entityKey, cancellationToken);
@@ -34,7 +22,7 @@ public class BadgeProgressRepository : IBadgeProgressRepository
 
     public async Task<BadgeProgress?> GetByMemberAndBadgeIdAsync(Guid memberKey, string badgeId, CancellationToken cancellationToken = default)
     {
-        return await _context.BadgeProgresses
+        return await Context.BadgeProgresses
             .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
@@ -44,7 +32,7 @@ public class BadgeProgressRepository : IBadgeProgressRepository
 
     public async Task<IEnumerable<BadgeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
-        return await _context.BadgeProgresses
+        return await Context.BadgeProgresses
             .Where(x => x.MemberKey == memberKey)
             .Include(x => x.AuditEvents)
             .AsNoTracking()
@@ -59,33 +47,23 @@ public class BadgeProgressRepository : IBadgeProgressRepository
             return Array.Empty<BadgeProgress>();
         }
 
-        return await _context.BadgeProgresses
+        return await Context.BadgeProgresses
             .Where(x => keys.Contains(x.MemberKey))
             .Include(x => x.AuditEvents)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<IEnumerable<BadgeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
+    public override Task<IEnumerable<BadgeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetByMemberKeyAsync instead.");
     }
 
-    public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await _context.BadgeProgresses
+        return await Context.BadgeProgresses
             .AnyAsync(x => x.BadgeProgressKey == entityKey, cancellationToken);
     }
 
-    public void Update(BadgeProgress entity, CancellationToken cancellationToken = default)
-    {
-        var entry = _context.Entry(entity);
-        if (entry.State == EntityState.Detached)
-        {
-            _context.BadgeProgresses.Update(entity);
-            return;
-        }
-
-        entry.State = EntityState.Modified;
-    }
+    public override void Update(BadgeProgress entity, CancellationToken cancellationToken = default) => MarkModified(entity);
 }

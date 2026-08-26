@@ -1,32 +1,20 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories;
 
-public class ProbeProgressRepository : IProbeProgressRepository
+public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IProbeProgressRepository
 {
-    private readonly AppDbContext _context;
 
-    public ProbeProgressRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    public ProbeProgressRepository(AppDbContext context) : base(context)
+        {
+        }
 
-    public void Create(ProbeProgress entity, CancellationToken cancellationToken = default)
+    public override async Task<ProbeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        _context.ProbeProgresses.Add(entity);
-    }
-
-    public void Delete(ProbeProgress entity, CancellationToken cancellationToken = default)
-    {
-        _context.ProbeProgresses.Remove(entity);
-    }
-
-    public async Task<ProbeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-    {
-        return await _context.ProbeProgresses
+        return await Context.ProbeProgresses
             .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.ProbeProgressKey == entityKey, cancellationToken);
@@ -34,7 +22,7 @@ public class ProbeProgressRepository : IProbeProgressRepository
 
     public async Task<ProbeProgress?> GetByMemberAndProbeIdAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
     {
-        return await _context.ProbeProgresses
+        return await Context.ProbeProgresses
             .AsTracking()
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.ProbeId == probeId,
@@ -46,7 +34,7 @@ public class ProbeProgressRepository : IProbeProgressRepository
         string probeId,
         CancellationToken cancellationToken = default)
     {
-        return await _context.ProbeProgresses
+        return await Context.ProbeProgresses
             .AsTracking()
             .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
@@ -56,33 +44,23 @@ public class ProbeProgressRepository : IProbeProgressRepository
 
     public async Task<IEnumerable<ProbeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
-        return await _context.ProbeProgresses
+        return await Context.ProbeProgresses
             .Where(x => x.MemberKey == memberKey)
             .Include(x => x.AuditEvents)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<IEnumerable<ProbeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
+    public override Task<IEnumerable<ProbeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetByMemberKeyAsync instead.");
     }
 
-    public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await _context.ProbeProgresses
+        return await Context.ProbeProgresses
             .AnyAsync(x => x.ProbeProgressKey == entityKey, cancellationToken);
     }
 
-    public void Update(ProbeProgress entity, CancellationToken cancellationToken = default)
-    {
-        var entry = _context.Entry(entity);
-        if (entry.State == EntityState.Detached)
-        {
-            _context.ProbeProgresses.Update(entity);
-            return;
-        }
-
-        entry.State = EntityState.Modified;
-    }
+    public override void Update(ProbeProgress entity, CancellationToken cancellationToken = default) => MarkModified(entity);
 }

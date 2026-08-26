@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -6,29 +6,22 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories;
 
-public class PublicAnnouncementRepository : IPublicAnnouncementRepository
+public class PublicAnnouncementRepository : BaseEntityRepository<PublicAnnouncementDraft>, IPublicAnnouncementRepository
 {
-    private readonly AppDbContext _context;
 
-    public PublicAnnouncementRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    public PublicAnnouncementRepository(AppDbContext context) : base(context)
+        {
+        }
 
-    public void Create(PublicAnnouncementDraft entity, CancellationToken cancellationToken = default)
+    public override async Task<PublicAnnouncementDraft?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        _context.PublicAnnouncementDrafts.Add(entity);
-    }
-
-    public async Task<PublicAnnouncementDraft?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-    {
-        return await _context.PublicAnnouncementDrafts
+        return await Context.PublicAnnouncementDrafts
             .FirstOrDefaultAsync(x => x.PublicAnnouncementDraftKey == entityKey, cancellationToken);
     }
 
-    public async Task<IEnumerable<PublicAnnouncementDraft>> GetAllAsync(CancellationToken cancellationToken = default)
+    public override async Task<IEnumerable<PublicAnnouncementDraft>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.PublicAnnouncementDrafts
+        return await Context.PublicAnnouncementDrafts
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
@@ -37,7 +30,7 @@ public class PublicAnnouncementRepository : IPublicAnnouncementRepository
         PublicAnnouncementStatus? status,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.PublicAnnouncementDrafts.AsQueryable();
+        var query = Context.PublicAnnouncementDrafts.AsQueryable();
 
         if (status.HasValue)
         {
@@ -56,7 +49,7 @@ public class PublicAnnouncementRepository : IPublicAnnouncementRepository
         CancellationToken cancellationToken = default)
     {
         var normalizedSourceId = sourceId.Trim();
-        var query = _context.PublicAnnouncementDrafts
+        var query = Context.PublicAnnouncementDrafts
             .Where(x => x.SourceType == sourceType
                 && x.SourceId == normalizedSourceId
                 && x.Status != PublicAnnouncementStatus.Deleted
@@ -72,19 +65,10 @@ public class PublicAnnouncementRepository : IPublicAnnouncementRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await _context.PublicAnnouncementDrafts
+        return await Context.PublicAnnouncementDrafts
             .AnyAsync(x => x.PublicAnnouncementDraftKey == entityKey, cancellationToken);
     }
 
-    public void Update(PublicAnnouncementDraft entity, CancellationToken cancellationToken = default)
-    {
-        _context.PublicAnnouncementDrafts.Update(entity);
-    }
-
-    public void Delete(PublicAnnouncementDraft entity, CancellationToken cancellationToken = default)
-    {
-        _context.PublicAnnouncementDrafts.Remove(entity);
-    }
 }

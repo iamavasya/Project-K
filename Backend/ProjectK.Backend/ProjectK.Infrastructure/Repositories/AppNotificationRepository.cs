@@ -1,61 +1,39 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories
 {
-    public class AppNotificationRepository : IAppNotificationRepository
+    public class AppNotificationRepository : BaseEntityRepository<AppNotification>, IAppNotificationRepository
     {
-        private readonly AppDbContext _context;
 
-        public AppNotificationRepository(AppDbContext context)
+        public AppNotificationRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public void Create(AppNotification entity, CancellationToken cancellationToken = default)
+        public override async Task<AppNotification?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            _context.AppNotifications.Add(entity);
-        }
-
-        public void Delete(AppNotification entity, CancellationToken cancellationToken = default)
-        {
-            _context.AppNotifications.Remove(entity);
-        }
-
-        public async Task<AppNotification?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-        {
-            return await _context.AppNotifications
+            return await Context.AppNotifications
                 .AsTracking()
                 .FirstOrDefaultAsync(x => x.NotificationKey == entityKey, cancellationToken);
         }
 
-        public async Task<IEnumerable<AppNotification>> GetAllAsync(CancellationToken cancellationToken = default)
+        public override async Task<IEnumerable<AppNotification>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.AppNotifications
+            return await Context.AppNotifications
                 .AsNoTracking()
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
+        public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await _context.AppNotifications
+            return await Context.AppNotifications
                 .AnyAsync(x => x.NotificationKey == entityKey, cancellationToken);
         }
 
-        public void Update(AppNotification entity, CancellationToken cancellationToken = default)
-        {
-            var entry = _context.Entry(entity);
-            if (entry.State == EntityState.Detached)
-            {
-                _context.AppNotifications.Update(entity);
-                return;
-            }
-
-            entry.State = EntityState.Modified;
-        }
+        public override void Update(AppNotification entity, CancellationToken cancellationToken = default) => MarkModified(entity);
 
         public async Task<IReadOnlyList<AppNotification>> GetInboxAsync(
             Guid recipientUserKey,
@@ -93,7 +71,7 @@ namespace ProjectK.Infrastructure.Repositories
             Guid notificationKey,
             CancellationToken cancellationToken = default)
         {
-            return await _context.AppNotifications
+            return await Context.AppNotifications
                 .AsTracking()
                 .FirstOrDefaultAsync(
                     x => x.RecipientUserKey == recipientUserKey
@@ -120,7 +98,7 @@ namespace ProjectK.Infrastructure.Repositories
             DateTime readAtUtc,
             CancellationToken cancellationToken = default)
         {
-            return await _context.AppNotifications
+            return await Context.AppNotifications
                 .Where(x => x.RecipientUserKey == recipientUserKey && x.ReadAtUtc == null)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(x => x.ReadAtUtc, readAtUtc)
@@ -130,7 +108,7 @@ namespace ProjectK.Infrastructure.Repositories
 
         private IQueryable<AppNotification> ActiveForRecipient(Guid recipientUserKey, DateTime nowUtc)
         {
-            return _context.AppNotifications
+            return Context.AppNotifications
                 .Where(x => x.RecipientUserKey == recipientUserKey
                             && (x.ExpiresAtUtc == null || x.ExpiresAtUtc > nowUtc));
         }

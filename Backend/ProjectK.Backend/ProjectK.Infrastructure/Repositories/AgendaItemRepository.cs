@@ -8,67 +8,40 @@ using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.Infrastructure.Repositories
 {
-    public class AgendaItemRepository : IAgendaItemRepository
+    public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaItemRepository
     {
-        private readonly AppDbContext _context;
 
-        public AgendaItemRepository(AppDbContext context)
+        public AgendaItemRepository(AppDbContext context) : base(context)
         {
-            _context = context;
-        }
-
-        public void Create(AgendaItem entity, CancellationToken cancellationToken = default)
-        {
-            _context.AgendaItems.Add(entity);
-        }
-
-        public void Update(AgendaItem entity, CancellationToken cancellationToken = default)
-        {
-            _context.AgendaItems.Update(entity);
-        }
-
-        public void Delete(AgendaItem entity, CancellationToken cancellationToken = default)
-        {
-            _context.AgendaItems.Remove(entity);
-        }
-
-        public async Task<AgendaItem?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
-        {
-            return await _context.AgendaItems.FirstOrDefaultAsync(a => a.AgendaItemKey == entityKey, cancellationToken);
         }
 
         public async Task<AgendaItem?> GetByKeyWithAssignmentsAsync(Guid agendaItemKey, CancellationToken token = default)
         {
-            return await _context.AgendaItems
+            return await Context.AgendaItems
                 .Include(a => a.Assignments)
                 .FirstOrDefaultAsync(a => a.AgendaItemKey == agendaItemKey, token);
         }
 
         public void AddAssignment(AgendaAssignment assignment)
         {
-            _context.AgendaAssignments.Add(assignment);
+            Context.AgendaAssignments.Add(assignment);
         }
 
         public void RemoveAssignment(AgendaAssignment assignment)
         {
-            _context.AgendaAssignments.Remove(assignment);
+            Context.AgendaAssignments.Remove(assignment);
         }
 
         public async Task ClearCategoryAsync(Guid agendaCategoryKey, CancellationToken cancellationToken = default)
         {
-            await _context.AgendaItems
+            await Context.AgendaItems
                 .Where(a => a.AgendaCategoryKey == agendaCategoryKey)
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.AgendaCategoryKey, (Guid?)null), cancellationToken);
         }
 
-        public Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
+        public override Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetForViewerAsync instead.");
-        }
-
-        public async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
-        {
-            return await _context.AgendaItems.AnyAsync(a => a.AgendaItemKey == entityKey, cancellationToken);
         }
 
         public async Task<IEnumerable<AgendaItem>> GetForViewerAsync(
@@ -79,7 +52,7 @@ namespace ProjectK.Infrastructure.Repositories
             AgendaItemKind? kind,
             CancellationToken token = default)
         {
-            var query = _context.AgendaItems
+            var query = Context.AgendaItems
                 .Where(a => a.KurinKey == viewer.KurinKey);
 
             if (kind.HasValue)
