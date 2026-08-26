@@ -36,6 +36,7 @@ using ProjectK.Common.Models.Settings;
 using ProjectK.API.Services.Authorization;
 using ProjectK.API.Services.Reports;
 using QuestPDF.Infrastructure;
+using ProjectK.API.Serialization;
 
 namespace ProjectK.API
 {
@@ -231,6 +232,8 @@ namespace ProjectK.API
                 .AddJsonOptions(opt =>
                 {
                     opt.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeConverter());
                 });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
