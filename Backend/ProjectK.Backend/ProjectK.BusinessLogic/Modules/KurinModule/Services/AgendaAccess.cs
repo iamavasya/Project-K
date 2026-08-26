@@ -1,4 +1,4 @@
-using ProjectK.Common.Entities.KurinModule.Agenda;
+﻿using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
@@ -183,18 +183,7 @@ public static class AgendaPermissions
     /// only accepted on events the user could actually see. Requires <see cref="AgendaItem.Assignments"/>.
     /// </summary>
     public static bool IsVisibleTo(AgendaItem item, AgendaViewerContext viewer)
-    {
-        if (viewer.CanSeeWholeKurin)
-        {
-            return true;
-        }
-
-        return item.Assignments.Any(a =>
-            a.TargetType == AgendaTargetType.Kurin ||
-            (a.TargetType == AgendaTargetType.Group && viewer.VisibilityGroupKeys.Contains(a.TargetKey)) ||
-            (a.TargetType == AgendaTargetType.Leadership && viewer.ViewerLeadershipKeys.Contains(a.TargetKey)) ||
-            (a.TargetType == AgendaTargetType.Member && viewer.ViewerMemberKey.HasValue && a.TargetKey == viewer.ViewerMemberKey.Value));
-    }
+        => AgendaVisibility.IsVisible(item, viewer.ToScope());
 
     /// <summary>The current user is individually on the hook for the item (their own task).</summary>
     public static bool IsAssignee(AgendaItem item, AgendaViewerContext viewer)

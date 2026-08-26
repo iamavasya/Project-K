@@ -1,9 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.Infrastructure.Repositories
 {
@@ -112,14 +113,7 @@ namespace ProjectK.Infrastructure.Repositories
 
             if (!viewer.CanSeeWholeKurin)
             {
-                var groupKeys = viewer.ViewerGroupKeys;
-                var leadershipKeys = viewer.ViewerLeadershipKeys;
-                var memberKey = viewer.ViewerMemberKey;
-                query = query.Where(a => a.Assignments.Any(x =>
-                    x.TargetType == AgendaTargetType.Kurin ||
-                    (x.TargetType == AgendaTargetType.Group && groupKeys.Contains(x.TargetKey)) ||
-                    (x.TargetType == AgendaTargetType.Leadership && leadershipKeys.Contains(x.TargetKey)) ||
-                    (x.TargetType == AgendaTargetType.Member && memberKey != null && x.TargetKey == memberKey)));
+                query = query.Where(AgendaVisibility.AssignedToViewer(viewer));
             }
 
             return await query
