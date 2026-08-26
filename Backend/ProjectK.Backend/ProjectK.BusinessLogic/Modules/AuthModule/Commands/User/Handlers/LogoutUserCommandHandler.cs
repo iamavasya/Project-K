@@ -24,18 +24,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers
         {
             if (string.IsNullOrEmpty(request.UserKey))
             {
-                return new(
+                return ServiceResult<object>.Failure(
                     ResultType.Unauthorized,
-                    "Access token is missing or invalid."
-                );
+                    "InvalidToken",
+                    "Access token is missing or invalid.");
             }
             var user = await _userManager.FindByIdAsync(request.UserKey);
             if (user == null)
             {
-                return new(
+                return ServiceResult<object>.Failure(
                     ResultType.NotFound,
-                    "User not found."
-                );
+                    "UserNotFound",
+                    "User not found.");
             }
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;

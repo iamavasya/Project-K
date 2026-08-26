@@ -89,7 +89,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Equal("Access token is missing or invalid.", result.Data);
+            Assert.Equal("Access token is missing or invalid.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -106,7 +106,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Equal("Access token is missing or invalid.", result.Data);
+            Assert.Equal("Access token is missing or invalid.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -127,7 +127,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.NotFound, result.Type);
-            Assert.Equal("User not found.", result.Data);
+            Assert.Equal("User not found.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(userKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -244,7 +244,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.NotFound, result.Type);
-            Assert.Equal("User not found.", result.Data);
+            Assert.Equal("User not found.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(invalidUserKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);

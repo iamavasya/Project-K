@@ -31,23 +31,26 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
         {
             if (request.MemberKey == Guid.Empty)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.BadRequest,
+                    "MemberKeyRequired",
                     "MemberKey cannot be empty.");
             }
             var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
             if (existing is null)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.NotFound,
+                    "MemberNotFound",
                     $"Member with key {request.MemberKey} not found.");
             }
             _unitOfWork.Members.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.InternalServerError,
+                    "MemberDeleteFailed",
                     "Failed to delete Member due to internal error.");
             }
             return new ServiceResult<object>(ResultType.Success);

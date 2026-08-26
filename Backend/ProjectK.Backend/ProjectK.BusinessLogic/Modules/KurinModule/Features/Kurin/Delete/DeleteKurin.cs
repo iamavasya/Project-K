@@ -35,8 +35,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
         {
             if (request.KurinKey == Guid.Empty)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.BadRequest,
+                    "KurinKeyRequired",
                     "KurinKey cannot be empty.");
             }
 
@@ -44,8 +45,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
 
             if (existing is null)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.NotFound,
+                    "KurinNotFound",
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
@@ -65,8 +67,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
 
             if (changes <= 0)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.InternalServerError,
+                    "KurinDeleteFailed",
                     "Failed to delete Kurin due to internal error.");
             }
 
