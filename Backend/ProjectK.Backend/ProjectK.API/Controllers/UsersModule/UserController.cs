@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +11,6 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using System.Collections.Generic;
-using System.Security.Claims;
 
 namespace ProjectK.API.Controllers.UsersModule
 {
@@ -224,8 +223,8 @@ namespace ProjectK.API.Controllers.UsersModule
 
         private bool TryGetCurrentUserKey(out Guid userKey)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Guid.TryParse(userKeyClaim, out userKey);
+            userKey = this.UserKey() ?? Guid.Empty;
+            return userKey != Guid.Empty;
         }
     }
 }

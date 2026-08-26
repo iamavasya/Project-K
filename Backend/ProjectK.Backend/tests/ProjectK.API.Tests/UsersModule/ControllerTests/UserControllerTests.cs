@@ -125,7 +125,6 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
         public async Task GetAllUsers_ShouldReturnConflict_WhenConflict()
         {
             // Arrange
-            var conflictData = "Conflict occurred";
             var serviceResult = new ServiceResult<IEnumerable<UserDto>>(ResultType.Conflict, null);
 
             _mediatorMock

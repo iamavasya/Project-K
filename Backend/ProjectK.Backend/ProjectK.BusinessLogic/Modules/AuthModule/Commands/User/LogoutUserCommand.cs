@@ -11,7 +11,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.User
     public class LogoutUserCommand : IRequest<ServiceResult<object>>
     {
         public string? UserKey { get; set; }
-        public LogoutUserCommand(string userKey)
+        public LogoutUserCommand(string? userKey)
         {
             UserKey = userKey;
         }

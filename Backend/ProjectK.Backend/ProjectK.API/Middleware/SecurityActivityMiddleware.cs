@@ -1,6 +1,6 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Middleware
 {
@@ -15,10 +15,7 @@ namespace ProjectK.API.Middleware
 
         public async Task InvokeAsync(HttpContext context, IActivityLogger activityLogger)
         {
-            var userIdValue = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.User.FindFirstValue("sub");
-
-            if (Guid.TryParse(userIdValue, out var userId))
+            if (context.User.GetUserKey() is { } userId)
             {
                 var ip = context.Connection.RemoteIpAddress?.ToString();
                 if (!string.IsNullOrWhiteSpace(ip))

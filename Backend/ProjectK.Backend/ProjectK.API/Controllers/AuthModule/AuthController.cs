@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using ProjectK.API.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -86,8 +86,7 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("kurin-scope")]
         public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userKeyClaim, out var userKey))
+            if (this.UserKey() is not { } userKey)
             {
                 return this.UnreadableIdentity();
             }
@@ -159,8 +158,7 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new LogoutUserCommand(userKeyClaim!);
+            var command = new LogoutUserCommand(this.UserKey()?.ToString());
             var response = await _mediator.Send(command);
             var refreshToken = Request.Cookies[refreshTokenCookieName];
             if (refreshToken != null)
@@ -189,8 +187,12 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpGet("mfa/setup")]
         public async Task<IActionResult> GetMfaSetup()
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var query = new GetMfaSetupQuery(Guid.Parse(userKeyClaim!));
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var query = new GetMfaSetupQuery(userKey);
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);
         }
@@ -200,8 +202,12 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("mfa/enable")]
         public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequestDto request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new EnableMfaCommand(Guid.Parse(userKeyClaim!), request.Code);
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var command = new EnableMfaCommand(userKey, request.Code);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -211,8 +217,12 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpPost("mfa/recovery-codes")]
         public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequestDto request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new GenerateMfaRecoveryCodesCommand(Guid.Parse(userKeyClaim!), request.CurrentPassword);
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var command = new GenerateMfaRecoveryCodesCommand(userKey, request.CurrentPassword);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -236,8 +246,12 @@ namespace ProjectK.API.Controllers.AuthModule
         [HttpGet("mfa/status")]
         public async Task<IActionResult> GetMfaStatus([FromServices] IMfaEnforcementPolicy mfaEnforcementPolicy)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _mediator.Send(new GetUserQuery(Guid.Parse(userKeyClaim!)));
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var user = await _mediator.Send(new GetUserQuery(userKey));
             var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(
                 User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
             var isMfaRequired = isPrivileged && await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(HttpContext.RequestAborted);

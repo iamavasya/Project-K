@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ProjectK.BusinessLogic.Behaviors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -452,7 +452,7 @@ namespace ProjectK.API
                     }
 
                     return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        partitionKey: httpContext.User.GetUserKeyValue()
                             ?? httpContext.Connection.RemoteIpAddress?.ToString()
                             ?? httpContext.Request.Headers.Host.ToString(),
                         factory: partition => new FixedWindowRateLimiterOptions
@@ -491,7 +491,7 @@ namespace ProjectK.API
                         return bypassPartition.Value;
                     }
 
-                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    var partitionKey = httpContext.User.GetUserKeyValue()
                         ?? httpContext.Connection.RemoteIpAddress?.ToString()
                         ?? "anonymous";
 

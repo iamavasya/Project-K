@@ -1,6 +1,5 @@
-using System;
+﻿using System;
 using System.Diagnostics;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.Options;
 using ProjectK.API.Helpers;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using Serilog.Context;
+using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Services
 {
@@ -183,8 +183,7 @@ namespace ProjectK.API.Services
                 return new RequestContext(null, ipOverride, null, null, null, null, null);
             }
 
-            var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? httpContext.User.FindFirstValue("sub");
+            var userId = httpContext.User.GetUserKeyValue();
 
             var ip = ipOverride ?? httpContext.Connection.RemoteIpAddress?.ToString();
             var path = httpContext.Request?.Path.Value;

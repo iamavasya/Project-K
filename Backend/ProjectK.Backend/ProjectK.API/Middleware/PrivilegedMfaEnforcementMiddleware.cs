@@ -1,9 +1,10 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Middleware
 {
@@ -30,9 +31,7 @@ namespace ProjectK.API.Middleware
                 return;
             }
 
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (!Guid.TryParse(userId, out var userKey))
+            if (context.User.GetUserKey() is not { } userKey)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return;

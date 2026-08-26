@@ -1,5 +1,6 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Helpers;
 
@@ -16,10 +17,7 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
 
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated ?? false;
 
-    public Guid? UserId =>
-        ParseGuid(
-            Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? Principal?.FindFirstValue("sub"));
+    public Guid? UserId => Principal.GetUserKey();
 
     public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue("kurinKey"));
 
