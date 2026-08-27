@@ -25,6 +25,8 @@ using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Logging;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.API
 {

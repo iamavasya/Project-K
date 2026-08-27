@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
-namespace ProjectK.API.Helpers
+namespace ProjectK.Infrastructure.Seeding
 {
     /// <summary>
     /// Seeds the stable fixtures the Playwright suite addresses by name: a dedicated kurin holding

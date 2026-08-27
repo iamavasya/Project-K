@@ -1,25 +1,11 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
-
-/// <summary>
-/// Keeps a member's <see cref="SystemRole"/> office roles equal to the offices they currently hold.
-/// The діловодство registry (<c>LeadershipHistory</c>) is the source of truth; this realigns the
-/// identity roles whenever an office is assigned or ended. It never touches <see cref="SystemRole.Admin"/>
-/// or any role it does not manage.
-/// </summary>
-public interface ILeadershipRoleSyncService
-{
-    /// <summary>Realigns one member's office roles with their active offices.</summary>
-    Task SyncMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
-
-    /// <summary>Realigns several members (e.g. everyone touched by an <c>UpsertLeadership</c> call).</summary>
-    Task SyncMembersAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default);
-}
 
 public sealed class LeadershipRoleSyncService : ILeadershipRoleSyncService
 {

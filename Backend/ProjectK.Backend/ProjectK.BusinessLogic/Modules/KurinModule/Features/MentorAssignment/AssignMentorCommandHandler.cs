@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment
 {

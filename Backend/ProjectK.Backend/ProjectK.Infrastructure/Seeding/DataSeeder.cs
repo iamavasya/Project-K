@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using ProjectK.Common.Entities.AuthModule;
@@ -9,7 +10,7 @@ using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.API.Helpers
+namespace ProjectK.Infrastructure.Seeding
 {
     public static class DataSeeder
     {

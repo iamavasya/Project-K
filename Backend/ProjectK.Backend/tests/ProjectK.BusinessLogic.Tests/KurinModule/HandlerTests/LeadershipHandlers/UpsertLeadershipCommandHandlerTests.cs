@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers
 {
@@ -38,7 +39,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
             _handler = new UpsertLeadershipHandler(
                 _unitOfWorkMock.Object,
                 _mapperMock.Object,
-                new Mock<ProjectK.BusinessLogic.Modules.AuthModule.Services.ILeadershipRoleSyncService>().Object,
+                new Mock<ILeadershipRoleSyncService>().Object,
                 _currentUserContextMock.Object);
         }
 

@@ -5,8 +5,9 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.BlobStorageService;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService
+namespace ProjectK.Infrastructure.Services.PublicAnnouncements
 {
     public sealed class AzureBlobPublicAnnouncementImageStore : IPublicAnnouncementImageStore
     {

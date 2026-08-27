@@ -1,14 +1,15 @@
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
-namespace ProjectK.API.Helpers
+namespace ProjectK.Infrastructure.Seeding
 {
     /// <summary>
     /// One-off, idempotent back-fill that moves users off the old flat Identity roles

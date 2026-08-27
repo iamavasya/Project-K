@@ -1,14 +1,15 @@
-﻿using ProjectK.Common.Models.Authorization;
+﻿using Microsoft.Extensions.DependencyInjection;
+using ProjectK.Common.Models.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
-namespace ProjectK.API.Helpers
+namespace ProjectK.Infrastructure.Seeding
 {
     /// <summary>
     /// Seeds a realistic kurin for local testing: three гуртки with діловодські offices, a курінний

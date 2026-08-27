@@ -42,6 +42,7 @@ using ProjectK.Infrastructure.Reports;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.API
 {
