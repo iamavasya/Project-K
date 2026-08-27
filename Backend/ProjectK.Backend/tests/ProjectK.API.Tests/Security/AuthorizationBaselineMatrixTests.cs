@@ -17,6 +17,7 @@ using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Tests.Security;
 

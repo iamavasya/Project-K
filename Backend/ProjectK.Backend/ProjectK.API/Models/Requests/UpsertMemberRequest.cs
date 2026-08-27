@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.API.Models.Requests;
 
-namespace ProjectK.Common.Models.Dtos.Requests
+namespace ProjectK.API.Models.Requests
 {
     public class UpsertMemberRequest
     {

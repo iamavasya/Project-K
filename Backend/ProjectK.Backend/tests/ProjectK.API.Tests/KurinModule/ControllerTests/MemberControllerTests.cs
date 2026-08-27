@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {
