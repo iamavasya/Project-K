@@ -218,11 +218,6 @@ namespace ProjectK.API
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient();
-            builder.Services.AddScoped<GeoIPService>();
-            builder.Services.AddScoped<KurinReportDataService>();
-            builder.Services.AddScoped<IKurinReportSource, KurinReportSource>();
-            builder.Services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
-            builder.Services.AddSingleton<KurinReportPdfRenderer>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
             {

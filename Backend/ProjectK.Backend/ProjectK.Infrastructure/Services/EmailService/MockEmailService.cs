@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
+namespace ProjectK.Infrastructure.Services.EmailService
 {
     public class MockEmailService : IEmailService
     {
