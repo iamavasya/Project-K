@@ -1,11 +1,11 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Models.Authorization;
 
-namespace ProjectK.API.Services.Authorization;
+namespace ProjectK.API.Authorization;
 
 public sealed class AdminOrServiceTokenRequirement : IAuthorizationRequirement
 {

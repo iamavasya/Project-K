@@ -1,7 +1,8 @@
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using ProjectK.Common.Models;
 
-namespace ProjectK.API.Services
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
 {
     public interface IMfaEnforcementPolicy
     {

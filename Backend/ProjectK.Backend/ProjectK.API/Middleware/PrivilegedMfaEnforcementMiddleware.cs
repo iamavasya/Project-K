@@ -5,6 +5,7 @@ using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 namespace ProjectK.API.Middleware
 {

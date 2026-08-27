@@ -1,10 +1,10 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace ProjectK.API.Services;
+namespace ProjectK.Infrastructure.Services.GeoIP;
 
 public sealed class GeoIPService
 {

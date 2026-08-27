@@ -22,6 +22,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 using ProjectK.API.Services;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 namespace ProjectK.API.Controllers.AuthModule
 {

@@ -24,6 +24,7 @@ using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
+using ProjectK.Infrastructure.BackgroundServices;
 
 namespace ProjectK.API
 {

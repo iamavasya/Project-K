@@ -1,3 +1,4 @@
+﻿using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -6,7 +7,7 @@ using ProjectK.Common.Models.Settings;
 using Serilog.Core;
 using Serilog.Events;
 
-namespace ProjectK.API.Services.TelegramDevAlerts;
+namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
 public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
 {

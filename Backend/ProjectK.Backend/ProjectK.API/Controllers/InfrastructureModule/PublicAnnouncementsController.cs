@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Services.Authorization;
+using ProjectK.API.Authorization;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Queries;
 using ProjectK.Common.Extensions;

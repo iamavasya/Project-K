@@ -31,12 +31,13 @@ using Serilog;
 using Serilog.Enrichers.Sensitive;
 using Serilog.Filters.Expressions;
 using Microsoft.OpenApi;
-using ProjectK.API.Services.TelegramDevAlerts;
+using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using ProjectK.Common.Models.Settings;
-using ProjectK.API.Services.Authorization;
+using ProjectK.API.Authorization;
 using ProjectK.API.Services.Reports;
 using QuestPDF.Infrastructure;
 using ProjectK.API.Serialization;
+using ProjectK.Infrastructure.Services.GeoIP;
 
 namespace ProjectK.API
 {
@@ -212,7 +213,7 @@ namespace ProjectK.API
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient();
-            builder.Services.AddScoped<ProjectK.API.Services.GeoIPService>();
+            builder.Services.AddScoped<GeoIPService>();
             builder.Services.AddScoped<KurinReportDataService>();
             builder.Services.AddScoped<KurinReportMediaService>();
             builder.Services.AddSingleton<KurinReportPdfRenderer>();

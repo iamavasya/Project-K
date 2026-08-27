@@ -1,9 +1,9 @@
-using ProjectK.Common.Models.Settings;
+﻿using ProjectK.Common.Models.Settings;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Events;
 
-namespace ProjectK.API.Services.TelegramDevAlerts;
+namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
 public static class TelegramDevAlertSerilogExtensions
 {
