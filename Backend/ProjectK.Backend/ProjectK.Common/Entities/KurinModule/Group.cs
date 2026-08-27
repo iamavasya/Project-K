@@ -1,9 +1,9 @@
-﻿using ProjectK.Infrastructure.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Entities;
 
 namespace ProjectK.Common.Entities.KurinModule
 {
