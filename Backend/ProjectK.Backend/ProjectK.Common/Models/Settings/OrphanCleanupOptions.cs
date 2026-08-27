@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup
+namespace ProjectK.Common.Models.Settings
 {
     public sealed class OrphanCleanupOptions
     {

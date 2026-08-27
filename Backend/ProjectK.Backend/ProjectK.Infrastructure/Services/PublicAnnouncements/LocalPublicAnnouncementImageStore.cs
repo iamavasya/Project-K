@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
@@ -121,5 +121,22 @@ public sealed class LocalPublicAnnouncementImageStore : IPublicAnnouncementImage
         return !string.IsNullOrWhiteSpace(normalizedKey)
             && normalizedKey.Equals(imageKey, StringComparison.Ordinal)
             && normalizedKey.EndsWith(Extension, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public Task<IReadOnlyList<StoredAnnouncementImage>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(_rootPath))
+        {
+            return Task.FromResult<IReadOnlyList<StoredAnnouncementImage>>([]);
+        }
+
+        var images = Directory
+            .EnumerateFiles(_rootPath)
+            .Select(path => new StoredAnnouncementImage(
+                Path.GetFileName(path),
+                new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero)))
+            .ToArray();
+
+        return Task.FromResult<IReadOnlyList<StoredAnnouncementImage>>(images);
     }
 }

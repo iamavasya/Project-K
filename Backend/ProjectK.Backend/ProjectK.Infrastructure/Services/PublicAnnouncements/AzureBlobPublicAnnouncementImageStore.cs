@@ -95,5 +95,25 @@ namespace ProjectK.Infrastructure.Services.PublicAnnouncements
                 && !normalizedKey.Contains("..", StringComparison.Ordinal)
                 && normalizedKey.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase);
         }
+
+        public async Task<IReadOnlyList<StoredAnnouncementImage>> ListAsync(CancellationToken cancellationToken = default)
+        {
+            var images = new List<StoredAnnouncementImage>();
+            if (!await _container.ExistsAsync(cancellationToken))
+            {
+                return images;
+            }
+
+            await foreach (var blob in _container.GetBlobsAsync(
+                               traits: BlobTraits.None,
+                               states: BlobStates.None,
+                               prefix: BlobUploadFolders.PublicAnnouncements,
+                               cancellationToken: cancellationToken))
+            {
+                images.Add(new StoredAnnouncementImage(blob.Name, blob.Properties.LastModified));
+            }
+
+            return images;
+        }
     }
 }

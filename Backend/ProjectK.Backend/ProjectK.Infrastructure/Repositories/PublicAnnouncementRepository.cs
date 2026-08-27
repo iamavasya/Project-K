@@ -65,6 +65,16 @@ public class PublicAnnouncementRepository : BaseEntityRepository<PublicAnnouncem
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<string>> GetReferencedImageKeysAsync(CancellationToken cancellationToken = default)
+    {
+        return await Context.PublicAnnouncementDrafts
+            .AsNoTracking()
+            .Where(draft => draft.ImageBlobKey != null && draft.ImageBlobKey != "")
+            .Select(draft => draft.ImageBlobKey!)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.PublicAnnouncementDrafts

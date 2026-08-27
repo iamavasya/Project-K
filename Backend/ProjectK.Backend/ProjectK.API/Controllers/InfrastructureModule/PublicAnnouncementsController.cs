@@ -1,10 +1,8 @@
 ﻿using MediatR;
 using ProjectK.API.Extensions;
-using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
@@ -15,7 +13,6 @@ using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Common.Models.Settings;
@@ -52,52 +49,10 @@ public class PublicAnnouncementsController : ControllerBase
 
     [Authorize(Policy = "RequireAdmin")]
     [HttpGet("cleanup-status")]
-    public async Task<IActionResult> GetCleanupStatus(
-        [FromServices] AppDbContext db,
-        [FromServices] BlobStorageOptions blobOptions,
-        [FromServices] IOptions<OrphanCleanupOptions> cleanupOptions,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCleanupStatus()
     {
-        var blobServiceClient = new BlobServiceClient(blobOptions.ConnectionString);
-        var container = blobServiceClient.GetBlobContainerClient(blobOptions.ContainerName);
-        var blobs = new List<BlobItem>();
-
-        if (await container.ExistsAsync(cancellationToken))
-        {
-            await foreach (var blob in container.GetBlobsAsync(
-                               traits: BlobTraits.None,
-                               states: BlobStates.None,
-                               prefix: BlobUploadFolders.PublicAnnouncements,
-                               cancellationToken: cancellationToken))
-            {
-                blobs.Add(blob);
-            }
-        }
-
-        var referencedKeys = await db.PublicAnnouncementDrafts
-            .AsNoTracking()
-            .Where(a => a.ImageBlobKey != null && a.ImageBlobKey != "")
-            .Select(a => a.ImageBlobKey!)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        var referencedSet = new HashSet<string>(referencedKeys, StringComparer.Ordinal);
-        var graceThreshold = DateTimeOffset.UtcNow - cleanupOptions.Value.GracePeriod;
-        var orphanBlobs = blobs
-            .Where(blob => !referencedSet.Contains(blob.Name))
-            .ToList();
-
-        var status = new PublicAnnouncementCleanupStatusDto(
-            $"blob://{blobOptions.ContainerName}/{BlobUploadFolders.PublicAnnouncements}",
-            blobs.Count,
-            referencedSet.Count,
-            orphanBlobs.Count,
-            orphanBlobs.Count(blob => blob.Properties.LastModified is { } lastModified && lastModified < graceThreshold),
-            cleanupOptions.Value.GracePeriod,
-            cleanupOptions.Value.DryRun,
-            DateTime.UtcNow);
-
-        return Ok(status);
+        var response = await _mediator.Send(new GetPublicAnnouncementCleanupStatusQuery());
+        return response.ToActionResult(this);
     }
 
     [HttpPost]
