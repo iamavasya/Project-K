@@ -1,5 +1,4 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
+﻿using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;

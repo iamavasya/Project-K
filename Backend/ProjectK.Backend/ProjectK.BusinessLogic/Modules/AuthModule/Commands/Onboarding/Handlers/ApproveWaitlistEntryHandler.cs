@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -63,8 +62,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers
                     var existingKurin = await _unitOfWork.Kurins.GetByNumberAsync(num, cancellationToken);
                     if (existingKurin != null && existingKurin.IsZbtKurin)
                     {
-                        var activeUsersCount = await _userManager.Users
-                            .CountAsync(u => u.KurinKey == existingKurin.KurinKey && u.OnboardingStatus == OnboardingStatus.Active, cancellationToken);
+                        var activeUsersCount = await _unitOfWork.Users
+                            .CountActiveAsync(existingKurin.KurinKey, cancellationToken);
 
                         if (activeUsersCount >= existingKurin.ZbtUserCap)
                         {

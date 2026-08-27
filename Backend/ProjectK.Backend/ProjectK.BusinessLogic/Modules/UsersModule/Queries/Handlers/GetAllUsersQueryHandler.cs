@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
@@ -26,7 +25,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers
         }
         public async Task<ServiceResult<IEnumerable<UserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var users = _userManager.Users.ToList();
+            var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
             var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
                 .ToDictionary(k => k.KurinKey, k => k.Number);
             

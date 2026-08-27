@@ -32,6 +32,7 @@ namespace ProjectK.Common.Interfaces
         IAppNotificationRepository AppNotifications { get; }
         ISystemSettingRepository SystemSettings { get; }
         IUserTileLayoutRepository UserTileLayouts { get; }
+        IAppUserRepository Users { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
         Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default);
     }

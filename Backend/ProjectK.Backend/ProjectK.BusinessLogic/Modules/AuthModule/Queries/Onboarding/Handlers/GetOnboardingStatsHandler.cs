@@ -1,6 +1,5 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding;
@@ -45,7 +44,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
                 kurinKey = _currentUserContext.KurinKey;
             }
 
-            var query = _userManager.Users.Where(u => u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active);
             string? kurinName = null;
             string scope = "Global";
 
@@ -54,7 +52,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
 
             if (kurinKey.HasValue)
             {
-                query = query.Where(u => u.KurinKey == kurinKey.Value);
                 var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey.Value, cancellationToken);
                 kurinName = kurin != null ? $"Kurin {kurin.Number}" : null;
                 scope = "Kurin";
@@ -65,7 +62,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding.Handlers
                 }
             }
 
-            var activeBetaUsersCount = await query.CountAsync(cancellationToken);
+            var activeBetaUsersCount = await _unitOfWork.Users.CountActiveBetaAsync(kurinKey, cancellationToken);
 
             // If not in closed beta, we can return effectively infinite cap or just signal it via a large number
             if (!isClosedBeta)

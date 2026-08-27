@@ -43,11 +43,13 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private IPublicAnnouncementRepository _publicAnnouncements;
         private IAppNotificationRepository _appNotifications;
         private ISystemSettingRepository _systemSettings;
+        private IAppUserRepository _users;
         private IUserTileLayoutRepository _userTileLayouts;
 
         public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
         public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
         public IMemberRepository Members => _members ??= new MemberRepository(_context);
+        public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
         public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
         public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
         public IAgendaItemRepository AgendaItems => _agendaItems ??= new AgendaItemRepository(_context);

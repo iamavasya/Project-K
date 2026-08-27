@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System.Linq.Expressions;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
@@ -16,6 +17,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly GetAllUsersQueryHandler _handler;
 
@@ -28,6 +30,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.Users).Returns(_appUserRepositoryMock.Object);
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Kurin>());
 
@@ -372,7 +375,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
         private void SetupUserManagerUsers(IQueryable<AppUser> users)
         {
-            _userManagerMock.Setup(x => x.Users).Returns(users);
+            _appUserRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(users.ToList());
         }
     }
 }

@@ -1,6 +1,5 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -31,7 +30,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers
             var report = new MigrationPreflightReport();
 
             var members = (await _unitOfWork.Members.GetAllAsync(cancellationToken)).ToList();
-            var users = await _userManager.Users.ToListAsync(cancellationToken);
+            var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
 
             report.TotalMembers = members.Count;
             report.TotalUsers = users.Count;
