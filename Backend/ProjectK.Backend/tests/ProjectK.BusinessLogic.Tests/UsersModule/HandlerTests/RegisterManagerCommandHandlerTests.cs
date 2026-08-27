@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
@@ -19,14 +18,14 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     {
         private readonly Mock<IMediator> _mediatorMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly Mock<IDbContextTransaction> _transactionMock;
+        private readonly Mock<IUnitOfWorkTransaction> _transactionMock;
         private readonly RegisterManagerCommandHandler _handler;
 
         public RegisterManagerHandlerTests()
         {
             _mediatorMock = new Mock<IMediator>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
-            _transactionMock = new Mock<IDbContextTransaction>();
+            _transactionMock = new Mock<IUnitOfWorkTransaction>();
 
             _unitOfWorkMock.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_transactionMock.Object);

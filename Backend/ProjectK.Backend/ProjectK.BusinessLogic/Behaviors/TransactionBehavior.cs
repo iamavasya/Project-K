@@ -1,5 +1,4 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using MediatR;
 using ProjectK.Common.Interfaces;
 
 namespace ProjectK.BusinessLogic.Behaviors;
@@ -31,8 +30,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>
             return await next(cancellationToken);
         }
 
-        await using IDbContextTransaction transaction =
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {

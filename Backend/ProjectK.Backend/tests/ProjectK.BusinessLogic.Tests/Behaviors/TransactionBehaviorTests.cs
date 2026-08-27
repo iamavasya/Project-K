@@ -1,6 +1,5 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using MediatR;
-using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.Common.Interfaces;
@@ -16,7 +15,7 @@ public class TransactionBehaviorTests
     public sealed record TransactionalRequest : IRequest<ServiceResult<bool>>, ITransactionalRequest;
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly Mock<IDbContextTransaction> _transaction = new();
+    private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
 
     public TransactionBehaviorTests()
     {

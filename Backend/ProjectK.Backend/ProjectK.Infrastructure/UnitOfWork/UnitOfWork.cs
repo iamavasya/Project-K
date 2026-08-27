@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -76,14 +76,9 @@ namespace ProjectK.Infrastructure.UnitOfWork
             return _context.SaveChangesAsync(token);
         }
 
-        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default)
+        public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default)
         {
-            return _context.Database.BeginTransactionAsync(token);
-        }
-
-        public void DetectChanges()
-        {
-            _context.ChangeTracker.DetectChanges();
+            return new EfCoreUnitOfWorkTransaction(await _context.Database.BeginTransactionAsync(token));
         }
     }
 }
