@@ -3,7 +3,7 @@ using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories
+namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 {
     public class AppNotificationRepository : BaseEntityRepository<AppNotification>, IAppNotificationRepository
     {

@@ -16,6 +16,9 @@ using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
+using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure;
 

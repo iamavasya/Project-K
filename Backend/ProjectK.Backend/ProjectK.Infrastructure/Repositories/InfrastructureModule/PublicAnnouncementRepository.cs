@@ -4,7 +4,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories;
+namespace ProjectK.Infrastructure.Repositories.InfrastructureModule;
 
 public class PublicAnnouncementRepository : BaseEntityRepository<PublicAnnouncementDraft>, IPublicAnnouncementRepository
 {

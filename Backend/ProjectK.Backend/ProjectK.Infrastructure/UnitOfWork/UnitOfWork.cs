@@ -12,6 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork
 {

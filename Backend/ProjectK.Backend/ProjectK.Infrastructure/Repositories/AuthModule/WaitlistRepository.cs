@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ProjectK.Infrastructure.Repositories
+namespace ProjectK.Infrastructure.Repositories.AuthModule
 {
     public class WaitlistRepository : BaseEntityRepository<WaitlistEntry>, IWaitlistRepository
     {

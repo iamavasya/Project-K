@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace ProjectK.Infrastructure.Repositories
+namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
     public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     {

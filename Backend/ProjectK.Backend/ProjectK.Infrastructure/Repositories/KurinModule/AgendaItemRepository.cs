@@ -6,7 +6,7 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Common.Models.Authorization;
 
-namespace ProjectK.Infrastructure.Repositories
+namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
     public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaItemRepository
     {

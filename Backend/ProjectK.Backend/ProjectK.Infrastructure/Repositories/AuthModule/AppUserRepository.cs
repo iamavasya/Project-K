@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories;
+namespace ProjectK.Infrastructure.Repositories.AuthModule;
 
 public sealed class AppUserRepository : IAppUserRepository
 {

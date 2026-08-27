@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Infrastructure.Repositories
+namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
     public class PlanningSessionRepository : BaseEntityRepository<PlanningSession>, IPlanningSessionRepository
     {

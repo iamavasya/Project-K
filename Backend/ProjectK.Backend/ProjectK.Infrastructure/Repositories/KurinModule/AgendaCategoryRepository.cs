@@ -3,7 +3,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories;
+namespace ProjectK.Infrastructure.Repositories.KurinModule;
 
 public class AgendaCategoryRepository : BaseEntityRepository<AgendaCategory>, IAgendaCategoryRepository
 {

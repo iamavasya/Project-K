@@ -3,7 +3,7 @@ using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories;
+namespace ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgress>, IProbePointProgressRepository
 {
