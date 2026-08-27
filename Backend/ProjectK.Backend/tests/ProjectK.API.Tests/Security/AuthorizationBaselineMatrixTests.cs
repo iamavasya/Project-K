@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.API.Services;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;

@@ -34,10 +34,14 @@ using Microsoft.OpenApi;
 using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using ProjectK.Common.Models.Settings;
 using ProjectK.API.Authorization;
-using ProjectK.API.Services.Reports;
 using QuestPDF.Infrastructure;
 using ProjectK.API.Serialization;
 using ProjectK.Infrastructure.Services.GeoIP;
+using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+using ProjectK.Infrastructure.Reports;
+using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Infrastructure.Repositories;
 
 namespace ProjectK.API
 {
@@ -215,7 +219,8 @@ namespace ProjectK.API
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<GeoIPService>();
             builder.Services.AddScoped<KurinReportDataService>();
-            builder.Services.AddScoped<KurinReportMediaService>();
+            builder.Services.AddScoped<IKurinReportSource, KurinReportSource>();
+            builder.Services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
             builder.Services.AddSingleton<KurinReportPdfRenderer>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>

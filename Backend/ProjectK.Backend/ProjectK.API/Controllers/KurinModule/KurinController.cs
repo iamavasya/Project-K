@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Helpers;
-using ProjectK.API.Services.Reports;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
@@ -16,6 +15,9 @@ using ProjectK.Common.Models.Dtos.Requests;
 
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+using ProjectK.Infrastructure.Reports;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using Serilog.Context;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.API.Services
+namespace ProjectK.Infrastructure.Logging
 {
     public sealed class ActivityLogger : IActivityLogger
     {
@@ -188,7 +188,7 @@ namespace ProjectK.API.Services
             var ip = ipOverride ?? httpContext.Connection.RemoteIpAddress?.ToString();
             var path = httpContext.Request?.Path.Value;
             var method = httpContext.Request?.Method;
-            var userAgent = httpContext.Request?.Headers.UserAgent.ToString();
+            var userAgent = httpContext.Request?.Headers["User-Agent"].ToString();
             var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
             var requestId = httpContext.TraceIdentifier;
 

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;

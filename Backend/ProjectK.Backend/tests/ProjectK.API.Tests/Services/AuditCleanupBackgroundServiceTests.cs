@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;

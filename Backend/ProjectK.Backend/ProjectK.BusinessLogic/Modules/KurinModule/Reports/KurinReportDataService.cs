@@ -1,42 +1,41 @@
 ﻿using ProjectK.Common.Models.Records;
-using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Services.BlobStorageService;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Reports;
 
-namespace ProjectK.API.Services.Reports;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 
 public sealed class KurinReportDataService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IKurinReportSource _source;
     private readonly ICurrentUserContext _currentUser;
     private readonly BlobStorageOptions _blobOptions;
-    private readonly KurinReportMediaService _mediaService;
+    private readonly IKurinReportMedia _media;
     private readonly IProbesCatalogService _probesCatalogService;
     private readonly IBadgesCatalogService _badgesCatalogService;
     private readonly IConfiguration _configuration;
 
     public KurinReportDataService(
-        AppDbContext dbContext,
+        IKurinReportSource source,
         ICurrentUserContext currentUser,
         BlobStorageOptions blobOptions,
-        KurinReportMediaService mediaService,
+        IKurinReportMedia media,
         IProbesCatalogService probesCatalogService,
         IBadgesCatalogService badgesCatalogService,
         IConfiguration configuration)
     {
-        _dbContext = dbContext;
+        _source = source;
         _currentUser = currentUser;
         _blobOptions = blobOptions;
-        _mediaService = mediaService;
+        _media = media;
         _probesCatalogService = probesCatalogService;
         _badgesCatalogService = badgesCatalogService;
         _configuration = configuration;
@@ -44,75 +43,13 @@ public sealed class KurinReportDataService
 
     public async Task<KurinReportData?> BuildAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
-        var kurin = await _dbContext.Kurins
-            .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.KurinKey == kurinKey, cancellationToken);
-
-        if (kurin is null)
+        var source = await _source.LoadAsync(kurinKey, _currentUser.UserId, cancellationToken);
+        if (source is null)
         {
             return null;
         }
 
-        var groups = await _dbContext.Groups
-            .AsNoTracking()
-            .Where(group => group.KurinKey == kurinKey)
-            .OrderBy(group => group.Name)
-            .ToListAsync(cancellationToken);
-
-        var groupKeys = groups.Select(group => group.GroupKey).ToArray();
-
-        var mentorAssignments = await _dbContext.MentorAssignments
-            .AsNoTracking()
-            .Where(assignment => groupKeys.Contains(assignment.GroupKey) && assignment.RevokedAtUtc == null)
-            .ToListAsync(cancellationToken);
-
-        var members = await _dbContext.Members
-            .AsNoTracking()
-            .AsSplitQuery()
-            .Where(member => member.KurinKey == kurinKey)
-            .Include(member => member.PlastLevelHistory)
-            .Include(member => member.ProbeProgresses)
-            .Include(member => member.ProbePointProgresses)
-            .Include(member => member.BadgeProgresses)
-            .Include(member => member.MemberWarnings)
-            .Include(member => member.MemberAwards)
-            .Include(member => member.LeadershipHistories)
-                .ThenInclude(history => history.Leadership)
-            .OrderBy(member => member.LastName)
-            .ThenBy(member => member.FirstName)
-            .ToListAsync(cancellationToken);
-
-        var userKeys = members
-            .Select(member => member.UserKey)
-            .OfType<Guid>()
-            .Concat(mentorAssignments.Select(assignment => assignment.MentorUserKey))
-            .Concat(_currentUser.UserId is Guid userId ? [userId] : [])
-            .Distinct()
-            .ToArray();
-
-        var usersByKey = await _dbContext.Users
-            .AsNoTracking()
-            .Where(user => userKeys.Contains(user.Id))
-            .ToDictionaryAsync(user => user.Id, cancellationToken);
-
-        var roleRows = await (
-                from userRole in _dbContext.UserRoles.AsNoTracking()
-                join role in _dbContext.Roles.AsNoTracking() on userRole.RoleId equals role.Id
-                where userKeys.Contains(userRole.UserId)
-                select new { userRole.UserId, role.Name })
-            .ToListAsync(cancellationToken);
-
-        var rolesByUserKey = roleRows
-            .GroupBy(row => row.UserId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(row => row.Name)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Cast<string>()
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(name => name)
-                    .ToArray() as IReadOnlyList<string>);
+        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey) = source;
 
         var groupNamesByKey = groups.ToDictionary(group => group.GroupKey, group => group.Name);
         var memberByUserKey = members
@@ -136,7 +73,7 @@ public sealed class KurinReportDataService
                 group.Name,
                 group.Description,
                 BuildBlobUrl(group.SilhouetteBlobName),
-                await _mediaService.TryDownloadAsync(group.SilhouetteBlobName, cancellationToken),
+                await _media.TryDownloadAsync(group.SilhouetteBlobName, cancellationToken),
                 ResolveMentorNames(group.GroupKey, mentorAssignments, memberByUserKey, usersByKey),
                 members
                     .Where(member => member.GroupKey == group.GroupKey)
@@ -220,7 +157,7 @@ public sealed class KurinReportDataService
             member.Address,
             member.School,
             BuildBlobUrl(member.ProfilePhotoBlobName),
-            await _mediaService.TryDownloadAsync(member.ProfilePhotoBlobName, cancellationToken),
+            await _media.TryDownloadAsync(member.ProfilePhotoBlobName, cancellationToken),
             member.LatestPlastLevel,
             roles,
             member.PlastLevelHistory

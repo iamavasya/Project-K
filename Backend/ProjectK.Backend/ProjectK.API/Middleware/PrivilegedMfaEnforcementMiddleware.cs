@@ -1,7 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Extensions;

@@ -1,11 +1,14 @@
-﻿using Azure;
+﻿using Microsoft.Extensions.Logging;
+using Azure;
 using Azure.Storage.Blobs;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 
-namespace ProjectK.API.Services.Reports;
+namespace ProjectK.Infrastructure.Reports;
 
-public sealed class KurinReportMediaService
+public sealed class KurinReportMediaService : IKurinReportMedia
 {
     private const long MaxReportImageBytes = 5 * 1024 * 1024;
 
@@ -26,7 +29,7 @@ public sealed class KurinReportMediaService
         });
     }
 
-    public async Task<byte[]?> TryDownloadAsync(string? blobName, CancellationToken cancellationToken)
+    public async Task<byte[]?> TryDownloadAsync(string? blobName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(blobName))
         {

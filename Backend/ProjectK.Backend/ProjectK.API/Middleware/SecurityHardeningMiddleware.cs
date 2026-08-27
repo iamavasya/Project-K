@@ -6,7 +6,6 @@ using ProjectK.API.Helpers;
 using ProjectK.Common.Models.Enums;
 using System.Security.Claims;
 using ProjectK.Common.Extensions;
-using ProjectK.API.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.Services.GeoIP;
 

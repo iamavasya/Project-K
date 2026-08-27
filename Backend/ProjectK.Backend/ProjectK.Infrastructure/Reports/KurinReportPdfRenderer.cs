@@ -1,9 +1,10 @@
-using QuestPDF.Fluent;
+﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
+using ProjectK.Common.Models.Reports;
 
-namespace ProjectK.API.Services.Reports;
+namespace ProjectK.Infrastructure.Reports;
 
 public sealed class KurinReportPdfRenderer
 {

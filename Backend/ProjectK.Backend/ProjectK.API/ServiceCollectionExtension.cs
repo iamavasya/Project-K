@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.API.Helpers;
-using ProjectK.API.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
@@ -25,6 +24,7 @@ using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 using ProjectK.Infrastructure.BackgroundServices;
+using ProjectK.Infrastructure.Logging;
 
 namespace ProjectK.API
 {

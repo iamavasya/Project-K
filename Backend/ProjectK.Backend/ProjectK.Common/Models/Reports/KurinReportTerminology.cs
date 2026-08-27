@@ -1,6 +1,6 @@
-using ProjectK.Common.Models.Enums;
+﻿using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.API.Services.Reports;
+namespace ProjectK.Common.Models.Reports;
 
 public static class KurinReportTerminology
 {

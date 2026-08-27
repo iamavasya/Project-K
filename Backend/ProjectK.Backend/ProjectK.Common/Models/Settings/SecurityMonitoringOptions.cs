@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace ProjectK.API.Helpers
+namespace ProjectK.Common.Models.Settings
 {
     public sealed class SecurityMonitoringOptions
     {

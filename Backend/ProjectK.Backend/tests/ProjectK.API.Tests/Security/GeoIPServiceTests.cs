@@ -3,7 +3,6 @@ using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
-using ProjectK.API.Services;
 using ProjectK.Infrastructure.Services.GeoIP;
 
 namespace ProjectK.API.Tests.Security;
