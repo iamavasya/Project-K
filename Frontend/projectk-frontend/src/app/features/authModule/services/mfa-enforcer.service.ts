@@ -3,7 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { AuthService } from './authService/auth.service';
 import { PermissionService } from './permission.service';
 import { catchError, filter, merge, of, Subscription } from 'rxjs';
-import { MfaSetupDialogComponent } from '../components/mfa-setup-dialog/mfa-setup-dialog.component';
+import { MfaSetupDialogComponent } from '../components/mfa-setup-dialog/mfa-setup-dialog';
 import { environment } from '../../../../environments/environment';
 import { getMfaSetupRequiredKey, getMfaStatusCheckedKey } from './mfa-session-state';
 

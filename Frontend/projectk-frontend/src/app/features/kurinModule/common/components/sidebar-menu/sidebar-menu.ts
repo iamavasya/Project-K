@@ -18,7 +18,7 @@ import { environment } from '../../../../../../environments/environment';
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
-export class SidebarMenu implements OnChanges {
+export class SidebarMenuComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly permissionService = inject(PermissionService);
   readonly visible = model(false);

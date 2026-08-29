@@ -5,7 +5,7 @@ import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { Router } from '@angular/router';
-import { LeadershipService } from '../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadershipDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -50,7 +50,7 @@ import { PermissionService } from '../../../../authModule/services/permission.se
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [DatePipe]
 })
-export class MemberList implements OnInit {
+export class MemberListComponent implements OnInit {
   readonly type = input<'kurin' | 'group' | 'leadership'>('group');
   readonly leadershipType = input<'kurin' | 'group' | 'kv'>('group');
   readonly typeKey = input('');

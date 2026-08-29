@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BreadcrumbModule } from '@openng/optimus-ui/breadcrumb';
-import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb-service';
+import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb.service';
 
 
 @Component({

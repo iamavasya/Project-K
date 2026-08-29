@@ -23,7 +23,7 @@ import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pip
 import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
 import { holdsOffice } from '../../functions/systemRole.function';
 import { toDateOnlyString } from '../../functions/toDateOnlyString.function';
-import { LeadershipService } from '../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 
 interface MentorAssignmentRow {

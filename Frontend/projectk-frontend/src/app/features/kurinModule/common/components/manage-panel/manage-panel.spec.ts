@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ManagePanel, ManagePanelConfig, ManagePanelField } from './manage-panel';
+import { ManagePanelComponent, ManagePanelConfig, ManagePanelField } from './manage-panel';
 import { SimpleChange } from '@angular/core';
 import { Validators } from '@angular/forms';
 
-describe('ManagePanel', () => {
-  let component: ManagePanel;
-  let fixture: ComponentFixture<ManagePanel>;
+describe('ManagePanelComponent', () => {
+  let component: ManagePanelComponent;
+  let fixture: ComponentFixture<ManagePanelComponent>;
 
   const mockConfig: ManagePanelConfig = {
     entityType: 'TestEntity',
@@ -52,11 +52,11 @@ describe('ManagePanel', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ManagePanel]
+      imports: [ManagePanelComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ManagePanel);
+    fixture = TestBed.createComponent(ManagePanelComponent);
     component = fixture.componentInstance;
   });
 

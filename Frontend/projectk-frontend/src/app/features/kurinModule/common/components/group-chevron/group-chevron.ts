@@ -7,6 +7,6 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './group-chevron.css'
 })
-export class GroupChevron {
+export class GroupChevronComponent {
 
 }

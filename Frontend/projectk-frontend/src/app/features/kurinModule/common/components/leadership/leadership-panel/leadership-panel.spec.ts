@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { Table } from '@openng/optimus-ui/table';
 import { PermissionService } from '../../../../../authModule/services/permission.service';
-import { LeadershipService } from '../../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../../services/leadership-service/leadership.service';
 import { LeadershipPanelComponent } from './leadership-panel';
 
 describe('LeadershipPanelComponent', () => {

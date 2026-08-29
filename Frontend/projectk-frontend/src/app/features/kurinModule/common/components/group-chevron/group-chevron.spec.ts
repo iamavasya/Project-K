@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GroupChevron } from './group-chevron';
+import { GroupChevronComponent } from './group-chevron';
 
-describe('GroupChevron', () => {
-  let component: GroupChevron;
-  let fixture: ComponentFixture<GroupChevron>;
+describe('GroupChevronComponent', () => {
+  let component: GroupChevronComponent;
+  let fixture: ComponentFixture<GroupChevronComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GroupChevron]
+      imports: [GroupChevronComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GroupChevron);
+    fixture = TestBed.createComponent(GroupChevronComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

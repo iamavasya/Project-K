@@ -2,15 +2,15 @@ import { AfterViewInit, Component, inject, signal, ChangeDetectionStrategy, view
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ToolbarHeader } from "./features/kurinModule/common/components/toolbar-header/toolbar-header";
+import { ToolbarHeaderComponent } from "./features/kurinModule/common/components/toolbar-header/toolbar-header";
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
-import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog.component';
+import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog';
 import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer.service';
 import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
+  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'

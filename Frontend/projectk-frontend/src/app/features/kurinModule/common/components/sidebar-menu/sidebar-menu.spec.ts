@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SidebarMenu } from './sidebar-menu';
+import { SidebarMenuComponent } from './sidebar-menu';
 import { provideHttpClient } from '@angular/common/http';
 import { Event, Router } from '@angular/router';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
@@ -8,9 +8,9 @@ import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { SimpleChange } from '@angular/core';
 import { MenuItem } from '@openng/optimus-ui/api';
 
-describe('SidebarMenu', () => {
-  let component: SidebarMenu;
-  let fixture: ComponentFixture<SidebarMenu>;
+describe('SidebarMenuComponent', () => {
+  let component: SidebarMenuComponent;
+  let fixture: ComponentFixture<SidebarMenuComponent>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
   let authStateSubject: BehaviorSubject<AuthState | null>;
@@ -30,7 +30,7 @@ describe('SidebarMenu', () => {
     mockAuthService.getAuthState.and.returnValue(authStateSubject.asObservable());
 
     await TestBed.configureTestingModule({
-      imports: [SidebarMenu],
+      imports: [SidebarMenuComponent],
       providers: [
         provideHttpClient(),
         { provide: Router, useValue: mockRouter },
@@ -39,7 +39,7 @@ describe('SidebarMenu', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SidebarMenu);
+    fixture = TestBed.createComponent(SidebarMenuComponent);
     component = fixture.componentInstance;
   });
 

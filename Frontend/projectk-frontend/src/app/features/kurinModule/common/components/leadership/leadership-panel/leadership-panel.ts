@@ -14,7 +14,7 @@ import { PermissionService } from '../../../../../authModule/services/permission
 import { LeadershipDto, LeadershipHistoryDto } from '../../../models/requests/leadership/leadershipDto';
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
-import { LeadershipService } from '../../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../../services/leadership-service/leadership.service';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
 import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
 import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';

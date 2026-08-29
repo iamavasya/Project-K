@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect
 import { FormsModule } from '@angular/forms';
 import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
 import { TreeNode } from '@openng/optimus-ui/api';
-import { AgendaService } from '../../services/agenda-service/agenda-service';
+import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
 
 interface TargetNodeData {

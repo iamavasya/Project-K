@@ -15,7 +15,7 @@ import { FloatLabelModule } from '@openng/optimus-ui/floatlabel';
 
 import { RoleWeight, RoleWeightOptions } from '../common/models/enums/roleWeight.enum';
 
-import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PlanningService } from '../common/services/planning-service/planning.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberLookupDto } from '../common/models/requests/member/memberLookupDto';
 

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { MemberService } from '../common/services/member-service/member.service';
-import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PlanningService } from '../common/services/planning-service/planning.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 
 import { PlanningListComponent } from './planning-list';

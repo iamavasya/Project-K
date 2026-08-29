@@ -10,7 +10,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { EventResizeDoneArg } from '@fullcalendar/interaction';
 import { MessageService } from '@openng/optimus-ui/api';
-import { AgendaService } from '../common/services/agenda-service/agenda-service';
+import { AgendaService } from '../common/services/agenda-service/agenda.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { AgendaItemDialogComponent } from '../common/components/agenda-item-dialog/agenda-item-dialog';
 import { AgendaItemDto, UpdateAgendaItemRequest } from '../common/models/agenda';

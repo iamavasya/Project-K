@@ -8,7 +8,7 @@ import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { MessageService } from '@openng/optimus-ui/api';
-import { AgendaService } from '../../services/agenda-service/agenda-service';
+import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaCategoryDto, UpsertAgendaCategoryRequest } from '../../models/agenda';
 
 /** Curated brand-token colours and icons so groups stay inside BRANDBOOK §0 (no ad-hoc colours). */

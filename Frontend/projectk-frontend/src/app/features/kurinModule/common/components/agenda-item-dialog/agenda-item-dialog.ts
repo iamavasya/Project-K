@@ -10,7 +10,7 @@ import { SelectModule } from '@openng/optimus-ui/select';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { MessageService } from '@openng/optimus-ui/api';
-import { AgendaService } from '../../services/agenda-service/agenda-service';
+import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
 import {
   AgendaCategoryDto,

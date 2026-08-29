@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, input, model } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { PlanningService } from '../../services/planning-service/planning-service';
-import { AgendaService } from '../../services/agenda-service/agenda-service';
+import { PlanningService } from '../../services/planning-service/planning.service';
+import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
 
 // Optimus UI Imports

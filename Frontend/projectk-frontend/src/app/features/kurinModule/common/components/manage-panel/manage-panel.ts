@@ -36,7 +36,7 @@ export interface ManagePanelConfig {
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './manage-panel.css'
 })
-export class ManagePanel implements OnChanges {
+export class ManagePanelComponent implements OnChanges {
   readonly visible = model(false);
   readonly parameter = input<ManageAction | 'undef'>('undef');
   readonly entity = input<any>(null);

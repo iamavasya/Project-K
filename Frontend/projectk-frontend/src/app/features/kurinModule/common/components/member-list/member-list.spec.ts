@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MemberList } from './member-list';
+import { MemberListComponent } from './member-list';
 import { MemberService } from '../../services/member-service/member.service';
-import { LeadershipService } from '../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
@@ -10,9 +10,9 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 
-describe('MemberList', () => {
-  let component: MemberList;
-  let fixture: ComponentFixture<MemberList>;
+describe('MemberListComponent', () => {
+  let component: MemberListComponent;
+  let fixture: ComponentFixture<MemberListComponent>;
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
@@ -57,7 +57,7 @@ describe('MemberList', () => {
     authServiceSpy.getAuthStateValue.and.returnValue({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'] } as AuthState);
 
     await TestBed.configureTestingModule({
-      imports: [MemberList],
+      imports: [MemberListComponent],
       providers: [
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: LeadershipService, useValue: leadershipServiceSpy },
@@ -66,7 +66,7 @@ describe('MemberList', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(MemberList);
+    fixture = TestBed.createComponent(MemberListComponent);
     component = fixture.componentInstance;
     
     // Default mocks

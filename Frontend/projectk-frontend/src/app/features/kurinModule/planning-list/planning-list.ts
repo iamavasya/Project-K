@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PlanningService } from '../common/services/planning-service/planning.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { PlanningSessionDto } from '../common/models/planningSessionDto';
 import { PlanningDetailComponent } from '../common/components/planning-detail/planning-detail';
