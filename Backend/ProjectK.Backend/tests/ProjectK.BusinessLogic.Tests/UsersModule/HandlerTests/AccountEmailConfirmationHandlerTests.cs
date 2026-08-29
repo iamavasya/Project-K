@@ -7,13 +7,15 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
+using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

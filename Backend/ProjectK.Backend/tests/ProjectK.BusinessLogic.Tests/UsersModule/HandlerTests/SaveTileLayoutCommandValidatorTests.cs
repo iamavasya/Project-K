@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation.TestHelper;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using Xunit;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

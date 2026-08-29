@@ -8,7 +8,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -17,6 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager
 {

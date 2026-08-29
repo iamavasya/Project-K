@@ -1,4 +1,5 @@
-using ProjectK.Common.Entities.AuthModule;
+﻿using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
 {

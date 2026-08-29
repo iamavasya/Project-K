@@ -7,7 +7,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Dtos.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

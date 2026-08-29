@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign
 {

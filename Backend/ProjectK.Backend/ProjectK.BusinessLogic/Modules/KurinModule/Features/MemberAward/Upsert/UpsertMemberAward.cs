@@ -10,6 +10,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
 {

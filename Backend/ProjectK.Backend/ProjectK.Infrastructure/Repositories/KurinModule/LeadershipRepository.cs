@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
@@ -129,7 +130,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                          .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetOfficeMembersLookupAsync(
+        public async Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
             Guid kurinKey,
             LeadershipType type,
             CancellationToken cancellationToken = default)
@@ -148,7 +149,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                      .ToListAsync(cancellationToken);
 
             return rows
-                .Select(r => new ProjectK.Common.Models.Dtos.MemberLookupDto
+                .Select(r => new MemberLookupDto
                 {
                     MemberKey = r.MemberKey,
                     UserKey = r.UserKey,

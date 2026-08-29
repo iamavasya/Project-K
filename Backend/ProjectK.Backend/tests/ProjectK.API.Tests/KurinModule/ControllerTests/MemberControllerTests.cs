@@ -9,7 +9,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerifica
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -18,6 +17,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using ProjectK.API.Models.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {

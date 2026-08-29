@@ -4,13 +4,14 @@ using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using System.Net;
 using System.Net.Mail;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile
 {

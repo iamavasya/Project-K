@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 {

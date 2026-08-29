@@ -11,13 +11,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Dtos.Requests;
 
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

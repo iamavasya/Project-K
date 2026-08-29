@@ -6,7 +6,6 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
 using System;
@@ -14,6 +13,7 @@ using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,8 +12,8 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Update
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 

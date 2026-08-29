@@ -19,6 +19,7 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using Xunit;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {

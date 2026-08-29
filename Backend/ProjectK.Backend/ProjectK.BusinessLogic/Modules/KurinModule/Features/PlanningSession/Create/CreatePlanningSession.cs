@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Solvers;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Optimization.Abstractions;
@@ -14,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PlanningSessionEntity = ProjectK.Common.Entities.KurinModule.Planning.PlanningSession;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 

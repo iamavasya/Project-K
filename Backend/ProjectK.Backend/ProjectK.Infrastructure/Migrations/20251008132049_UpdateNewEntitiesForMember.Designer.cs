@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 #nullable disable
 

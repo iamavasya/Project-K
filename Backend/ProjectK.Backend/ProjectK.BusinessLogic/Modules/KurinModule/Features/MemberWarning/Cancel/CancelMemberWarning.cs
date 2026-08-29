@@ -8,6 +8,7 @@ using ProjectK.Common.Models.Records;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel
 {

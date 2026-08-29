@@ -6,7 +6,6 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.Requests;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -19,6 +18,8 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {

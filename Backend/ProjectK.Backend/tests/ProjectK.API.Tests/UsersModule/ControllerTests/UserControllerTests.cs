@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
@@ -17,6 +17,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
 {

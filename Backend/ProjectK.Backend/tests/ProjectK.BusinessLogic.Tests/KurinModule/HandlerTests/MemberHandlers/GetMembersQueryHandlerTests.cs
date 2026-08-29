@@ -19,6 +19,7 @@ using Xunit;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {

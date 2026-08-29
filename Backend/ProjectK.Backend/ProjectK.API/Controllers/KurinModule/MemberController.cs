@@ -11,8 +11,8 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.API.Models.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

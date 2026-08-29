@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
@@ -76,19 +77,19 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                          .ToListAsync(cancellationToken);
         }
 
-        public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
             => ProjectListItemsAsync(Context.Members.Where(m => m.KurinKey == kurinKey), visibility, cancellationToken);
 
-        public Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
             => ProjectListItemsAsync(Context.Members.Where(m => m.GroupKey == groupKey), visibility, cancellationToken);
 
         // Single projection shared by the kurin- and group-scoped list reads. No Include
         // graph: scalars come from the root query, UserRole is a correlated subquery over
         // Identity (replacing the old per-list GroupJoin), Address/School are masked in SQL
         // from the caller's visibility, and only active leadership/warnings are pulled.
-        private async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberListItemDto>> ProjectListItemsAsync(
+        private async Task<IEnumerable<MemberListItemDto>> ProjectListItemsAsync(
             IQueryable<Member> source,
-            ProjectK.Common.Models.Dtos.MemberFieldVisibility visibility,
+            MemberFieldVisibility visibility,
             CancellationToken cancellationToken)
         {
             var canSeeAll = visibility.CanSeeAllPrivate;
@@ -96,7 +97,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             var visibleGroupKeys = visibility.VisibleGroupKeys as IReadOnlyCollection<Guid> ?? visibility.VisibleGroupKeys.ToList();
 
             return await source
-                .Select(m => new ProjectK.Common.Models.Dtos.MemberListItemDto
+                .Select(m => new MemberListItemDto
                 {
                     MemberKey = m.MemberKey,
                     GroupKey = m.GroupKey,
@@ -138,7 +139,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                     ProfileVerificationNote = m.ProfileVerificationNote,
                     LeadershipHistories = m.LeadershipHistories
                         .Where(h => h.EndDate == null)
-                        .Select(h => new ProjectK.Common.Models.Dtos.LeadershipHistoryDto
+                        .Select(h => new LeadershipHistoryDto
                         {
                             LeadershipHistoryKey = h.LeadershipHistoryKey,
                             MemberKey = h.MemberKey,
@@ -151,7 +152,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                         }).ToList(),
                     Warnings = m.MemberWarnings
                         .Where(w => w.RevokedAtUtc == null)
-                        .Select(w => new ProjectK.Common.Models.Dtos.MemberWarningDto
+                        .Select(w => new MemberWarningDto
                         {
                             MemberWarningKey = w.MemberWarningKey,
                             MemberKey = w.MemberKey,
@@ -179,7 +180,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .Select(m => (Guid?)m.KurinKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        public async Task<IEnumerable<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
             // Join fans out to one row per (member, role); a member now holds several roles (Member plus
             // office roles), so collapse to one row per member and prefer a non-baseline role for display.
@@ -189,7 +190,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
                 .GroupJoin(Context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })
                 .SelectMany(x => x.roles.DefaultIfEmpty(), (x, role) => new { x.member, role })
-                .Select(m => new ProjectK.Common.Models.Dtos.MemberLookupDto
+                .Select(m => new MemberLookupDto
                 {
                     MemberKey = m.member.MemberKey,
                     UserKey = m.member.UserKey,

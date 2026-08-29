@@ -1,7 +1,8 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 using FluentValidation;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save
 {

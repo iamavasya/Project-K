@@ -13,6 +13,7 @@ using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 #nullable disable
 

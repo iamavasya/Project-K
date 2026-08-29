@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +13,8 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Records;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 {

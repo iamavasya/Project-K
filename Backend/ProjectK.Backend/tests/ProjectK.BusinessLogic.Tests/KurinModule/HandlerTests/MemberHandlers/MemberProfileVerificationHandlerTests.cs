@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Xunit;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {

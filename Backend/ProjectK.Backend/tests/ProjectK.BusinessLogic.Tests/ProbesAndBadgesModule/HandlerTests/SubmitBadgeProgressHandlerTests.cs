@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
 using ProjectK.Common.Entities.KurinModule;
@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

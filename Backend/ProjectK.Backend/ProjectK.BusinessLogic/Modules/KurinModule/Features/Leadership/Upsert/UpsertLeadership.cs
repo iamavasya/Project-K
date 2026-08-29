@@ -6,11 +6,12 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
 {

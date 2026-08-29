@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.API.Controllers.InfrastructureModule
 {

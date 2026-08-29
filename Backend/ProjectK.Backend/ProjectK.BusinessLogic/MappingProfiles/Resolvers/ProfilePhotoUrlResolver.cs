@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.MappingProfiles.Resolvers
 {

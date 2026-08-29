@@ -1,10 +1,11 @@
 ﻿using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save
 {

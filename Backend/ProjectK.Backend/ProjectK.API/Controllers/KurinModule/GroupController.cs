@@ -13,10 +13,11 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

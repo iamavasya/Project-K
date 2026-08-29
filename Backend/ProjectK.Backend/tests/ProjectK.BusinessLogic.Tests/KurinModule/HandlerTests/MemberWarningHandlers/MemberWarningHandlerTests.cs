@@ -10,6 +10,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHandlers;
 

@@ -13,11 +13,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.API.Models.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.Security;
 

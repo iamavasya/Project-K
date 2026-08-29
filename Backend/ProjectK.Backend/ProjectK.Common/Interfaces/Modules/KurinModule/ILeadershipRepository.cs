@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
@@ -39,7 +40,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         /// Members currently holding a kurin- or КВ-scoped office in the kurin, one lookup row per office,
         /// with <c>UserRole</c> set to the office role name. Used to render the КВ / провід tables.
         /// </summary>
-        Task<IReadOnlyList<ProjectK.Common.Models.Dtos.MemberLookupDto>> GetOfficeMembersLookupAsync(
+        Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
             Guid kurinKey,
             LeadershipType type,
             CancellationToken cancellationToken = default);

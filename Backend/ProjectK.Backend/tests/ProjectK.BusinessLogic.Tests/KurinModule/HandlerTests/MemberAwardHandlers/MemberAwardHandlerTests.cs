@@ -18,6 +18,8 @@ using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssign
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 

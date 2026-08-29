@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.API.Models.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.API.Models.Requests
 {

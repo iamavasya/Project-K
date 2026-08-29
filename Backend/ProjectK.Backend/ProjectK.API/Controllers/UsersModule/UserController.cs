@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using System.Collections.Generic;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
@@ -22,6 +22,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Controllers.UsersModule
 {
