@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Moq;
@@ -15,6 +15,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 

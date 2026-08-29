@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using Xunit;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
 

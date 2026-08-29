@@ -6,16 +6,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Commands;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements.Handlers;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.UnitOfWork;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Create;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Publish;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Transition;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.PublicAnnouncements;
 

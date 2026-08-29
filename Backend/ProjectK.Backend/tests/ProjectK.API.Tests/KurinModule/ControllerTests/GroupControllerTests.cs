@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {

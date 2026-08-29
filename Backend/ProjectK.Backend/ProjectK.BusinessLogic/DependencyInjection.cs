@@ -1,9 +1,8 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.PublicAnnouncements;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -14,6 +13,7 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement;
 
 namespace ProjectK.BusinessLogic;
 

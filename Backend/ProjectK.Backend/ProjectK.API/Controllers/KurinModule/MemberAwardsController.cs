@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +11,9 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
 using System;
 using System.Threading.Tasks;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
 
 namespace ProjectK.API.Controllers.KurinModule
 {

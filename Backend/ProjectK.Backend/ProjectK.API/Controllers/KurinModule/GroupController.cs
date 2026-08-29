@@ -14,6 +14,9 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.Requests;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -186,7 +189,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
         public async Task<IActionResult> AssignMentor(Guid groupKey, Guid mentorUserKey)
         {
-            var command = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.AssignMentorCommand(mentorUserKey, groupKey);
+            var command = new AssignMentorCommand(mentorUserKey, groupKey);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
@@ -196,7 +199,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
         public async Task<IActionResult> RevokeMentor(Guid groupKey, Guid mentorUserKey)
         {
-            var command = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.RevokeMentorCommand(mentorUserKey, groupKey);
+            var command = new RevokeMentorCommand(mentorUserKey, groupKey);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
