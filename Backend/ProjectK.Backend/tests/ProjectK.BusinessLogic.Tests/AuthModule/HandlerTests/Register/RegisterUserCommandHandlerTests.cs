@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
 {

@@ -1,14 +1,15 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

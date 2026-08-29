@@ -8,9 +8,8 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

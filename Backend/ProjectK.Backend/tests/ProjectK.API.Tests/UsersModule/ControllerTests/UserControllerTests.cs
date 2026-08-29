@@ -3,14 +3,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.UsersModule;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
 using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
 {

@@ -1,10 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -14,6 +11,9 @@ using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

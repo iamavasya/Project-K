@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using FluentValidation.TestHelper;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.Common.Models.Dtos.UserModule;
 using Xunit;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

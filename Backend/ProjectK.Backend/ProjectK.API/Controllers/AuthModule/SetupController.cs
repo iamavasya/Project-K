@@ -1,12 +1,12 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.Common.Models.Enums;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Setup;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Setup;
 using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup.Get;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup.Initialize;
 
 namespace ProjectK.API.Controllers.AuthModule
 {

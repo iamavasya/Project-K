@@ -7,13 +7,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using System.Security.Claims;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
 {

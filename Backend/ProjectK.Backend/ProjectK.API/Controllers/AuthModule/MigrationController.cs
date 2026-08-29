@@ -1,10 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport;
 
 namespace ProjectK.API.Controllers.AuthModule
 {

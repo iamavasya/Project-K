@@ -1,8 +1,6 @@
-using Moq;
+﻿using Moq;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -13,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

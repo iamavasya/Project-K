@@ -7,21 +7,27 @@ using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using Microsoft.AspNetCore.Identity.Data;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
 using ProjectK.Common.Models.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.Common.Models.Enums;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
 
 namespace ProjectK.API.Controllers.AuthModule
 {

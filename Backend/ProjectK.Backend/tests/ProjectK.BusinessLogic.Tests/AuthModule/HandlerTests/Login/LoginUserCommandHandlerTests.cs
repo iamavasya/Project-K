@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -12,6 +10,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
 {

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using ProjectK.Common.Models.Authorization;
 using System.Security.Claims;
 using FluentValidation;
@@ -28,7 +28,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 
 namespace ProjectK.API.Tests.Security;
 

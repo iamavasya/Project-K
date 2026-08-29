@@ -1,12 +1,20 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Onboarding;
 using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetStats;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetWaitlistEntries;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWaitlistEntry;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken;
 
 namespace ProjectK.API.Controllers.AuthModule
 {

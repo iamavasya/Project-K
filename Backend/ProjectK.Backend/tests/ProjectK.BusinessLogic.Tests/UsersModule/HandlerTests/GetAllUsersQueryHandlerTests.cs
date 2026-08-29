@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -10,6 +8,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System.Linq.Expressions;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope.Handlers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
@@ -10,6 +8,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
 {

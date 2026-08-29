@@ -4,17 +4,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
 using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
 
 namespace ProjectK.API.Tests.Controllers
 {

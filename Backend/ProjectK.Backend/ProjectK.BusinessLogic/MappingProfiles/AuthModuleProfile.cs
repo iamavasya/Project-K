@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 
 namespace ProjectK.BusinessLogic.MappingProfiles
 {

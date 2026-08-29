@@ -1,14 +1,13 @@
-using Moq;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Layouts;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers;
+﻿using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Dtos.UserModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
