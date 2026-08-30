@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadershipDto';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 
@@ -271,18 +272,28 @@ describe('MemberListComponent', () => {
         expect(component.getRoleDisplayName(role)).toBeTruthy();
     });
 
-    it('getMemberRoleTags should include KV mentor status', () => {
+    it('getMemberRoleTags should name the office once, from the leadership history', () => {
       const tags = component.getMemberRoleTags({
         memberKey: 'm1',
         firstName: 'John',
         lastName: 'Doe',
         middleName: 'M',
-        userRole: 'KV.Vykhovnyk'
-      });
+        // The system role mirrors the office below. Reading both used to produce the tag twice.
+        userRole: 'KV.Vykhovnyk',
+        leadershipHistories: [{
+          leadershipHistoryKey: 'lh-1',
+          leadershipKey: 'l1',
+          role: LeadershipRole.Vykhovnyk,
+          leadershipType: 'KV',
+          startDate: '2025-01-01',
+          endDate: null,
+          member: { memberKey: 'm1', firstName: 'John', lastName: 'Doe', middleName: 'M' }
+        }]
+      } as MemberLookupDto);
 
-      expect(tags).toEqual(jasmine.arrayContaining([
-        jasmine.objectContaining({ label: 'Впорядник', severity: 'success' })
-      ]));
+      expect(tags).toEqual([
+        jasmine.objectContaining({ label: 'Впорядник' })
+      ]);
     });
   });
   describe('Group card mode', () => {

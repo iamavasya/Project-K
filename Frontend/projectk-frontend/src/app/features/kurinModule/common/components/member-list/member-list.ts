@@ -12,14 +12,13 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { DatePipe } from '@angular/common';
-import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { FormsModule } from '@angular/forms';
 import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
 import { UpcomingBirthdaysTileComponent } from '../upcoming-birthdays-tile/upcoming-birthdays-tile';
 import { buildUpcomingBirthdays } from '../../functions/upcomingBirthdays.function';
 import { compareLeadershipHistoriesByDefault, getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
-import { holdsOffice, parseOfficeRole } from '../../functions/systemRole.function';
+import { parseOfficeRole } from '../../functions/systemRole.function';
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
 
@@ -236,30 +235,22 @@ export class MemberListComponent implements OnInit {
     return leadershipRoleDisplayName(role);
   }
 
+  /**
+   * The offices a member currently holds, one tag each.
+   *
+   * Only `leadershipHistories` is read. `userRole` names the same office — it is the system role
+   * auto-synced from it — so a second tag built from it said "Зв'язковий" twice, and for Впорядник
+   * said it twice in two different colours. It can also carry only one office, so it never told us
+   * anything the histories did not.
+   */
   getMemberRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null }[] {
-    return [
-      ...this.getKvRoleTags(member),
-      ...(member.leadershipHistories ?? [])
+    return (member.leadershipHistories ?? [])
       .filter(history => !history.endDate)
       .sort(compareLeadershipHistoriesByDefault)
       .map(history => ({
         label: this.getMemberRoleLabel(history),
         severity: leadershipRoleSeverity(history)
-      }))
-    ];
-  }
-
-
-  private getKvRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'danger' }[] {
-    if (holdsOffice(member.userRole, LeadershipRole.Zvyazkovyi)) {
-      return [{ label: "Зв'язковий", severity: 'danger' }];
-    }
-
-    if (holdsOffice(member.userRole, LeadershipRole.Vykhovnyk)) {
-      return [{ label: 'Впорядник', severity: 'success' }];
-    }
-
-    return [];
+      }));
   }
 
   private getFullNameSortValue(member: Pick<MemberLookupDto, 'lastName' | 'firstName' | 'middleName'>): string {
