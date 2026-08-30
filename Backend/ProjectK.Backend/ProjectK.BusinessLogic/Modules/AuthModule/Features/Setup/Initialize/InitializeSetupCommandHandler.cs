@@ -44,7 +44,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup.Initialize
                 var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
                 if (adminUsers.Any())
                 {
-                    return new ServiceResult<LoginUserResponse>(ResultType.Forbidden, null, "System is already initialized.");
+                    return ServiceResult<LoginUserResponse>.Failure(
+                        ResultType.Forbidden,
+                        "AlreadyInitialized",
+                        "System is already initialized.");
                 }
 
                 var user = new AppUser

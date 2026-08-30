@@ -20,7 +20,8 @@ namespace ProjectK.API.Controllers.KurinModule
 {
     [ApiController]
     [Route("api/member/{memberKey:guid}/awards")]
-    [Authorize]
+    // Says what it means: authenticated. The scope check is the ResourceAuthorize filter on each action.
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     public class MemberAwardsController : ControllerBase
     {
         private readonly IMediator _mediator;

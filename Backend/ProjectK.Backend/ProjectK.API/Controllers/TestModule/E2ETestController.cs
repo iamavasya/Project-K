@@ -36,6 +36,7 @@ public sealed class E2ETestController : ControllerBase
         _logger = logger;
     }
 
+    [AllowAnonymous]
     [HttpPost("reset")]
     public async Task<IActionResult> Reset(CancellationToken cancellationToken)
     {
@@ -63,6 +64,7 @@ public sealed class E2ETestController : ControllerBase
         });
     }
 
+    [AllowAnonymous]
     [HttpGet("invitations/by-email")]
     public async Task<IActionResult> GetLatestInvitationByEmail([FromQuery] string email, CancellationToken cancellationToken)
     {

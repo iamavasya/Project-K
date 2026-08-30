@@ -21,6 +21,8 @@ using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.InfrastructureModule;
+using ProjectK.API.Controllers.TestModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -83,40 +85,11 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// Endpoints the baseline never covered. They are pinned so the gap cannot grow silently, not
-    /// because leaving them unlisted is right — each still needs a row.
+    /// Nothing is unlisted any more. Every controller action has a row below, reviewed one by one in
+    /// 0.19.0 — the set is kept so a newly added endpoint has somewhere to be pinned deliberately,
+    /// rather than being added here by reflex.
     /// </summary>
-    private static readonly IReadOnlySet<string> KnownUnlistedEndpoints = new HashSet<string>
-    {
-        "AuthController.LoadTestLogin", "AuthController.SetKurinScope",
-        "E2ETestController.GetLatestInvitationByEmail", "E2ETestController.Reset",
-        "GroupController.AssignMentor", "GroupController.RevokeMentor",
-        "KurinController.ExportReportPdf", "KurinController.GetBadgeReviewQueue",
-        "MemberAwardsController.DeleteAward", "MemberAwardsController.GetAwardImage",
-        "MemberAwardsController.ReviewAward", "MemberAwardsController.UpsertAward",
-        "MemberController.CreateByKurin", "MemberController.GetKurinMentorCandidates",
-        "MemberController.ResetProfileVerification", "MemberController.VerifyProfile",
-        "MemberProgressController.SignProbePoint", "MemberProgressController.UnsignProbePoint",
-        "MemberWarningsController.AssignWarning", "MemberWarningsController.CancelWarning",
-        "MemberWarningsController.GetWarnings", "MigrationController.GetPreflightReport",
-        "NotificationsController.GetInbox", "NotificationsController.GetUnreadCount",
-        "NotificationsController.MarkAllAsRead", "NotificationsController.MarkAsRead",
-        "OnboardingController.ActivateAccount", "OnboardingController.ApproveWaitlistEntry",
-        "OnboardingController.GetOnboardingStats", "OnboardingController.GetWaitlistEntries",
-        "OnboardingController.RejectWaitlistEntry", "OnboardingController.RequestPasswordReset",
-        "OnboardingController.ResendInvitation", "OnboardingController.ResetPassword",
-        "OnboardingController.SubmitWaitlistRegistration", "OnboardingController.ValidateInvitationToken",
-        "PublicAnnouncementsController.Approve", "PublicAnnouncementsController.Create",
-        "PublicAnnouncementsController.Delete", "PublicAnnouncementsController.DeleteImage",
-        "PublicAnnouncementsController.GetAll", "PublicAnnouncementsController.GetByKey",
-        "PublicAnnouncementsController.GetCleanupStatus", "PublicAnnouncementsController.GetImage",
-        "PublicAnnouncementsController.Preview", "PublicAnnouncementsController.Publish",
-        "PublicAnnouncementsController.Reject", "PublicAnnouncementsController.SubmitForApproval",
-        "PublicAnnouncementsController.Update", "PublicAnnouncementsController.UploadImage",
-        "SettingsController.GetSettings", "SettingsController.UpdateSetting",
-        "SetupController.GetStatus", "SetupController.Initialize",
-        "UserController.GetTileLayouts", "UserController.ResetTileLayout", "UserController.SaveTileLayout"
-    };
+    private static readonly IReadOnlySet<string> KnownUnlistedEndpoints = new HashSet<string>();
 
     public static IEnumerable<object[]> PolicyEndpoints()
     {
@@ -205,6 +178,52 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid, Guid>>(nameof(AgendaController.DeleteCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
+
+        yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberController>(nameof(MemberController.VerifyProfile), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.UnsignProbePoint), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.AssignWarning), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.CancelWarning), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.GetWarnings), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<MigrationController>(nameof(MigrationController.GetPreflightReport), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.GetInbox), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.GetUnreadCount), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAllAsRead), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAsRead), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<OnboardingController>(nameof(OnboardingController.ApproveWaitlistEntry), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetOnboardingStats), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetWaitlistEntries), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<OnboardingController>(nameof(OnboardingController.RejectWaitlistEntry), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<OnboardingController>(nameof(OnboardingController.ResendInvitation), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Approve), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Create), AdminOrServiceTokenRequirement.PolicyName);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Delete), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.DeleteImage), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetAll), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetByKey), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetCleanupStatus), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Preview), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Publish), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Reject), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.SubmitForApproval), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Update), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.UploadImage), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<SettingsController>(nameof(SettingsController.GetSettings), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<SettingsController>(nameof(SettingsController.UpdateSetting), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<UserController>(nameof(UserController.GetTileLayouts), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<UserController>(nameof(UserController.ResetTileLayout), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<UserController>(nameof(UserController.SaveTileLayout), AuthorizationPolicies.RequireUser);
     }
 
     public static IEnumerable<object[]> AllowAnonymousEndpoints()
@@ -212,6 +231,19 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController, LoginUserRequest>>(nameof(AuthController.Login));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
+
+yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLogin));
+        yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.GetLatestInvitationByEmail));
+        yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
+        yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResetPassword));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.SubmitWaitlistRegistration));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ValidateInvitationToken));
+        yield return AnonymousEndpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetImage));
+        yield return AnonymousEndpoint<SetupController>(nameof(SetupController.GetStatus));
+        yield return AnonymousEndpoint<SetupController>(nameof(SetupController.Initialize));
     }
 
     private static object[] Row<TDelegate>(string methodName)
@@ -224,6 +256,37 @@ public class AuthorizationBaselineMatrixTests
     {
         var action = ResolveMethod<TDelegate>(methodName);
         return [action, policy];
+    }
+
+    /// <summary>
+    /// A row for an action whose name is unique on its controller — most of them. The delegate form
+    /// below stays for the handful that are overloaded; writing one out for all fifty-seven endpoints
+    /// is how they stayed unlisted in the first place.
+    /// </summary>
+    private static object[] Endpoint<TController>(string methodName, string policy)
+    {
+        return [ResolveUnique<TController>(methodName), policy];
+    }
+
+    private static object[] AnonymousEndpoint<TController>(string methodName)
+    {
+        return [ResolveUnique<TController>(methodName)];
+    }
+
+    private static MethodInfo ResolveUnique<TController>(string methodName)
+    {
+        var candidates = typeof(TController)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Where(method => method.Name == methodName)
+            .ToArray();
+
+        return candidates.Length switch
+        {
+            1 => candidates[0],
+            0 => throw new InvalidOperationException($"{typeof(TController).Name} has no action '{methodName}'."),
+            _ => throw new InvalidOperationException(
+                $"{typeof(TController).Name}.{methodName} is overloaded; use the delegate form to pick one.")
+        };
     }
 
     private static MethodInfo ResolveMethod<TDelegate>(string methodName)
