@@ -15,6 +15,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvita
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -37,7 +38,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("waitlist/{key}/approve")]
         public async Task<IActionResult> ApproveWaitlistEntry(Guid key)
         {
@@ -45,7 +46,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("waitlist/{key}/resend-invitation")]
         public async Task<IActionResult> ResendInvitation(Guid key)
         {
@@ -53,7 +54,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("waitlist/{key}/reject")]
         public async Task<IActionResult> RejectWaitlistEntry(Guid key, [FromBody] string? note)
         {
@@ -61,7 +62,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("waitlist")]
         public async Task<IActionResult> GetWaitlistEntries()
         {
@@ -69,7 +70,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("stats")]
         public async Task<IActionResult> GetOnboardingStats([FromQuery] Guid? kurinKey)
         {

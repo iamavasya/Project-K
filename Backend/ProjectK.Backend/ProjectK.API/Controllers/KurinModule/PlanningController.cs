@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -21,7 +22,7 @@ public class PlanningController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize(Policy = "RequirePlanningAuthor")]
+    [Authorize(Policy = AuthorizationPolicies.RequirePlanningAuthor)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
     public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSession request)
@@ -30,7 +31,7 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpGet("session/{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Read, "route:planningSessionKey")]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
@@ -40,7 +41,7 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)
@@ -50,7 +51,7 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireManager")]
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpDelete("{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Delete, "route:planningSessionKey")]
     public async Task<IActionResult> DeletePlanningSession(Guid planningSessionKey)

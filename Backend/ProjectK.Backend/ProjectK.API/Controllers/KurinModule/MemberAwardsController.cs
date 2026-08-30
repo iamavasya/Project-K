@@ -14,6 +14,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -41,7 +42,7 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [HttpPost("{awardKey:guid}/review")]
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         public async Task<IActionResult> ReviewAward(Guid memberKey, Guid awardKey, [FromBody] ReviewBadgeProgressRequest request)
         {

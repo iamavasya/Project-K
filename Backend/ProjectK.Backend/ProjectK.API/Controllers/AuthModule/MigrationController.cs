@@ -5,10 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [Route("api/auth/migration")]
     [ApiController]
     public class MigrationController : ControllerBase

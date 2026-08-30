@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.InfrastructureModule
 {
@@ -21,7 +22,7 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet]
         [ProducesResponseType(typeof(IReadOnlyList<AppNotificationDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -37,7 +38,7 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("unread-count")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -47,7 +48,7 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{notificationKey:guid}/read")]
         [ProducesResponseType(typeof(AppNotificationDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -63,7 +64,7 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("read-all")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -28,6 +28,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -45,7 +46,7 @@ namespace ProjectK.API.Controllers.AuthModule
             _mapper = mapper;
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("register/manager")]
         public async Task<IActionResult> RegisterManager([FromBody] RegisterUserRequest request)
         {
@@ -62,7 +63,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [EnableRateLimiting("StrictAuthLimit")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
@@ -88,7 +89,7 @@ namespace ProjectK.API.Controllers.AuthModule
 
         public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("kurin-scope")]
         public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
         {
@@ -160,7 +161,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return this.UnreadableIdentity();
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -174,7 +175,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("check-access")]
         public async Task<IActionResult> CheckAccess([FromBody] CheckEntityAccessRequest request)
         {
@@ -188,7 +189,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("mfa/setup")]
         public async Task<IActionResult> GetMfaSetup()
@@ -203,7 +204,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("mfa/enable")]
         public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequestDto request)
@@ -218,7 +219,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("mfa/recovery-codes")]
         public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequestDto request)
@@ -247,7 +248,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("mfa/status")]
         public async Task<IActionResult> GetMfaStatus([FromServices] IMfaEnforcementPolicy mfaEnforcementPolicy)

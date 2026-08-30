@@ -13,6 +13,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Get;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -27,7 +28,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
         [ProducesResponseType(typeof(IEnumerable<MemberWarningDto>), StatusCodes.Status200OK)]
@@ -38,7 +39,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status201Created)]
@@ -51,7 +52,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{warningKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status200OK)]

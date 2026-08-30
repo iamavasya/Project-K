@@ -1,13 +1,14 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule
 {
     [Route("api/catalog/probes")]
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [ApiController]
     public class ProbesCatalogController : ControllerBase
     {

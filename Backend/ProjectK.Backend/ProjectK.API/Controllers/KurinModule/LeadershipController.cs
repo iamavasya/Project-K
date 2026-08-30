@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -22,7 +23,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("type/{leadershipType}/{typeKey:guid}")]
         [ResourceAuthorize("route:leadershipType", ResourceAction.Read, "route:typeKey")]
         public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
@@ -32,7 +33,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
         public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
@@ -42,7 +43,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize("arg:dto.Type", ResourceAction.Create, "arg:dto.EntityKey")]
         public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
@@ -52,7 +53,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Update, "route:leadershipKey")]
         public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
@@ -62,7 +63,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("histories/{leadershipKey}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
         public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)

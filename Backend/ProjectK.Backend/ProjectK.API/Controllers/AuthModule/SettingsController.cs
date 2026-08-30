@@ -6,6 +6,7 @@ using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Get;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Update;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -20,7 +21,7 @@ namespace ProjectK.API.Controllers.AuthModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet]
         public async Task<IActionResult> GetSettings()
         {
@@ -28,7 +29,7 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPut("{key}")]
         public async Task<IActionResult> UpdateSetting(string key, [FromBody] UpdateSettingRequest request)
         {

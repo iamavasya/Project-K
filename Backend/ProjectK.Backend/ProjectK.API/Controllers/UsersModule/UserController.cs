@@ -23,6 +23,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
 using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.UsersModule
 {
@@ -36,7 +37,7 @@ namespace ProjectK.API.Controllers.UsersModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("users")]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers()
@@ -46,7 +47,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("me")]
         [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
@@ -62,7 +63,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPut("me")]
         [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
@@ -79,7 +80,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/email/confirm")]
         [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
@@ -96,7 +97,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -113,7 +114,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -130,7 +131,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/disable")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -147,7 +148,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("me/layouts")]
         [ProducesResponseType(typeof(IReadOnlyList<TileLayoutDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -162,7 +163,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("me/layouts/{boardKey}")]
         [ProducesResponseType(typeof(TileLayoutDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -179,7 +180,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("me/layouts/{boardKey}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -194,7 +195,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("{userId}/mfa/reset")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -205,7 +206,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpDelete("{userId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -216,7 +217,7 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPost("{userId}/role")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

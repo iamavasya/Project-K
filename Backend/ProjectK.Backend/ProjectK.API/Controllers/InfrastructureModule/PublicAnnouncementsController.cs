@@ -36,7 +36,7 @@ public class PublicAnnouncementsController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] PublicAnnouncementStatus? status)
     {
@@ -44,7 +44,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("{draftKey:guid}", Name = "GetPublicAnnouncementDraftByKey")]
     public async Task<IActionResult> GetByKey(Guid draftKey)
     {
@@ -52,7 +52,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("cleanup-status")]
     public async Task<IActionResult> GetCleanupStatus()
     {
@@ -83,7 +83,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("image")]
     [RequestSizeLimit(8 * 1024 * 1024)]
     public async Task<IActionResult> UploadImage(
@@ -144,7 +144,7 @@ public class PublicAnnouncementsController : ControllerBase
         return File(image.Content, image.ContentType, enableRangeProcessing: true);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("image/{*imageKey}")]
     public async Task<IActionResult> DeleteImage(
         string imageKey,
@@ -155,7 +155,7 @@ public class PublicAnnouncementsController : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPut("{draftKey:guid}")]
     public async Task<IActionResult> Update(Guid draftKey, [FromBody] UpdatePublicAnnouncementDraftRequestDto request)
     {
@@ -174,7 +174,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/preview")]
     public async Task<IActionResult> Preview(Guid draftKey)
     {
@@ -182,7 +182,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/submit")]
     public async Task<IActionResult> SubmitForApproval(Guid draftKey)
     {
@@ -192,7 +192,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/approve")]
     public async Task<IActionResult> Approve(Guid draftKey)
     {
@@ -202,7 +202,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/reject")]
     public async Task<IActionResult> Reject(Guid draftKey)
     {
@@ -212,7 +212,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/publish")]
     public async Task<IActionResult> Publish(Guid draftKey)
     {
@@ -220,7 +220,7 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("{draftKey:guid}")]
     public async Task<IActionResult> Delete(Guid draftKey)
     {

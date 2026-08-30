@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -39,7 +40,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _kurinReportPdfRenderer = kurinReportPdfRenderer;
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpGet("{kurinKey:guid}/badges/review")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
@@ -49,7 +50,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
@@ -61,7 +62,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("{kurinKey:guid}/report/pdf")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/pdf")]
@@ -80,7 +81,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return File(bytes, "application/pdf", fileName);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("kurins")]
         [ProducesResponseType(typeof(IEnumerable<KurinResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -91,7 +92,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAdmin")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -103,7 +104,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPut("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
@@ -124,7 +125,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpDelete("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Delete, "route:kurinKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]

@@ -178,7 +178,7 @@ public class ResourceAuthorizationHttpIntegrationTests
 [Route("api/test-resource")]
 public class ResourceGuardProbeController : ControllerBase
 {
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("member/{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     public IActionResult GetMember(Guid memberKey)

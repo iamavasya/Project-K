@@ -20,6 +20,7 @@ using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -120,7 +121,7 @@ public class AuthorizationBaselineMatrixTests
     public static IEnumerable<object[]> PolicyEndpoints()
     {
         yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterManager), "RequireAdmin");
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), "RequireManager");
+        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<AuthController>>(nameof(AuthController.Logout), "RequireUser");
         yield return Row<Action<AuthController, CheckEntityAccessRequest>>(nameof(AuthController.CheckAccess), "RequireUser");
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");
@@ -135,45 +136,45 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<UserController, ChangePasswordRequestDto>>(nameof(UserController.ChangePassword), "RequireUser");
         yield return Row<Action<UserController, ResetMfaRequestDto>>(nameof(UserController.ResetMfa), "RequireUser");
         yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa), "RequireUser");
-        yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa), "RequireManager");
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<UserController, Guid>>(nameof(UserController.DeleteUser), "RequireAdmin");
-        yield return Row<Action<UserController, Guid, UserRole>>(nameof(UserController.ChangeUserRole), "RequireManager");
+        yield return Row<Action<UserController, Guid, UserRole>>(nameof(UserController.ChangeUserRole), AuthorizationPolicies.RequireKurinManagement);
 
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
-        yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), "RequireMentor");
+        yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<MemberController, Guid, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Update), "RequireUser");
-        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), "RequireMentor");
+        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetKurinKvMembers), "RequireUser");
 
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetByKey), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Exists), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAll), "RequireUser");
-        yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), "RequireMentor");
-        yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), "RequireMentor");
-        yield return Row<Action<GroupController, Guid, IFormFile, CancellationToken>>(nameof(GroupController.UploadSilhouette), "RequireMentor");
-        yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), "RequireMentor");
-        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), "RequireManager");
+        yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<GroupController, Guid, IFormFile, CancellationToken>>(nameof(GroupController.UploadSilhouette), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireUser");
 
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
         yield return Row<Action<KurinController, int>>(nameof(KurinController.Create), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireManager");
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireManager");
+        yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), AuthorizationPolicies.RequireKurinManagement);
 
         yield return Row<Action<LeadershipController, string, Guid, CancellationToken>>(nameof(LeadershipController.GetLeadershipByType), "RequireUser");
-        yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipByKey), "RequireManager");
+        yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipByKey), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<LeadershipController, UpsertLeadershipRequest>>(nameof(LeadershipController.CreateLeadership), "RequireUser");
         yield return Row<Action<LeadershipController, Guid, UpsertLeadershipRequest>>(nameof(LeadershipController.UpdateLeadership), "RequireUser");
-        yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipHistories), "RequireManager");
+        yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipHistories), AuthorizationPolicies.RequireKurinManagement);
 
         yield return Row<Action<PlanningController, CreatePlanningSession>>(nameof(PlanningController.CreatePlanningSession), "RequirePlanningAuthor");
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), "RequireMentor");
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), "RequireMentor");
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), "RequireManager");
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), AuthorizationPolicies.RequireKurinManagement);
 
         yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata), "RequireUser");
         yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll), "RequireUser");
@@ -184,9 +185,9 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetBadgeProgresses), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");
-        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), "RequireMentor");
+        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
-        yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireMentor");
+        yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), AuthorizationPolicies.RequireGroupLeadership);
 
         // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
         // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).

@@ -13,6 +13,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -27,7 +28,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{memberKey}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
@@ -39,7 +40,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("groups/{groupKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
         [ProducesResponseType(typeof(IEnumerable<MemberResponse>), StatusCodes.Status200OK)]
@@ -51,7 +52,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<MemberResponse>), StatusCodes.Status200OK)]
@@ -63,7 +64,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Create, "arg:request.GroupKey")]
         [Consumes("multipart/form-data")]
@@ -98,7 +99,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
         [Consumes("multipart/form-data")]
@@ -130,7 +131,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [Consumes("multipart/form-data")]
@@ -165,7 +166,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPut("{memberKey:guid}/profile-verification")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
@@ -185,7 +186,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{memberKey:guid}/profile-verification")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
@@ -204,7 +205,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireMentor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Delete, "route:memberKey")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -217,7 +218,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("members/kv/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
@@ -227,7 +228,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("members/mentor-candidates/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,6 +14,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -28,7 +29,7 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
@@ -38,7 +39,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/board")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
@@ -48,7 +49,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAgendaAuthor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
         [HttpGet("{kurinKey:guid}/assign-targets")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(AgendaAssignTargetsResponse), StatusCodes.Status200OK)]
@@ -58,7 +59,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireAgendaAuthor")]
+        [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
@@ -70,7 +71,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}")]
         [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Update, "route:agendaItemKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -84,7 +85,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}/status")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -95,7 +96,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{agendaItemKey:guid}")]
         [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Delete, "route:agendaItemKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -109,7 +110,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         // ---- Event groups (categories) ----
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/categories")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
@@ -119,7 +120,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/categories/manage")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
         [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
@@ -129,7 +130,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("categories")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
         [ProducesResponseType(typeof(AgendaCategoryResponse), StatusCodes.Status201Created)]
@@ -141,7 +142,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("categories/{categoryKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
         [ProducesResponseType(typeof(AgendaCategoryResponse), StatusCodes.Status200OK)]
@@ -155,7 +156,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{kurinKey:guid}/categories/{categoryKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -169,7 +170,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         // ---- RSVP ----
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{agendaItemKey:guid}/responses")]
         [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -180,7 +181,7 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}/response")]
         [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

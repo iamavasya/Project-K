@@ -14,6 +14,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
@@ -28,7 +29,7 @@ public class MemberProgressController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("badges/progress")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
@@ -39,7 +40,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/submit")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
@@ -52,7 +53,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPost("badges/{badgeId}/review")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
@@ -65,7 +66,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/{probeId}/progress")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
@@ -77,7 +78,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/progress/status")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
@@ -93,7 +94,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
@@ -109,7 +110,7 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]

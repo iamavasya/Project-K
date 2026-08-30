@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using ProjectK.Common.Models.Authorization;
 
@@ -21,10 +21,10 @@ public static class AuthorizationPolicies
     public const string RequireUser = "RequireUser";
 
     /// <summary>Offices that manage the whole kurin.</summary>
-    public const string RequireKurinManagement = "RequireManager";
+    public const string RequireKurinManagement = "RequireKurinManagement";
 
     /// <summary>Offices that lead groups, whole-kurin management included.</summary>
-    public const string RequireGroupLeadership = "RequireMentor";
+    public const string RequireGroupLeadership = "RequireGroupLeadership";
 
     /// <summary>Offices allowed to author agenda items.</summary>
     public const string RequireAgendaAuthor = "RequireAgendaAuthor";
