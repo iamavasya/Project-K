@@ -23,7 +23,9 @@
         <div class="sidebar-footer">
             <span class="pi pi-user" aria-hidden="true"></span>
             <span class="sidebar-footer__email">{{ (email$ | async) ?? 'Error' }}</span>
-            <p-tag [severity]="$any(getSeverityOnRole(role$ | async))" [value]="(role$ | async) ?? 'Error'" />
+            @if (roleTag$ | async; as roleTag) {
+                <p-tag [severity]="$any(roleTag.severity)" [value]="roleTag.label" />
+            }
         </div>
     </ng-template>
 </p-drawer>

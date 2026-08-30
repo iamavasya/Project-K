@@ -11,6 +11,10 @@ import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { environment } from '../../../../../../environments/environment';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { parseOfficeRole } from '../../functions/systemRole.function';
+import { getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
+import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadershipRoleDisplay.function';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -25,7 +29,7 @@ export class SidebarMenuComponent implements OnChanges {
   readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
-  role$: Observable<string | null> = of(null);
+  roleTag$: Observable<{ label: string; severity: RoleSeverity }> = of(GENERIC_MEMBER_TAG);
 
   kurinKey: string | null = null;
 
@@ -54,8 +58,8 @@ export class SidebarMenuComponent implements OnChanges {
       this.email$ = this.state$().pipe(
         map(state => state?.email ?? null)
       );
-      this.role$ = this.state$().pipe(
-        map(() => this.currentRoleLabel())
+      this.roleTag$ = this.state$().pipe(
+        map(state => this.currentRoleTag(state))
       );
     }
   }
@@ -245,20 +249,48 @@ export class SidebarMenuComponent implements OnChanges {
     this.visible.set(false);
   }
 
-  getSeverityOnRole(_role: string | null): string {
-    return this.permissionService.getRoleSeverity();
-  }
-
-  private currentRoleLabel(): string {
+  /**
+   * What the viewer is called in the footer.
+   *
+   * The office comes first, so a Зв'язковий reads "Зв'язковий" rather than the tier "Провід
+   * куреня" — the tier is what the office grants, not what the person is called, and it lumps
+   * Зв'язковий together with Курінний. Colour follows the same rule the member list uses, so an
+   * office is not one colour here and another there. The tiers stay as the fallback for accounts
+   * that hold no office at all.
+   */
+  private currentRoleTag(state: AuthState | null): { label: string; severity: RoleSeverity } {
     if (this.permissionService.isAdmin()) {
-      return 'Адміністратор';
+      return { label: 'Адміністратор', severity: 'danger' };
     }
+
+    const office = mostSeniorOffice(state?.roles ?? []);
+    if (office) {
+      return {
+        label: leadershipRoleDisplayName(office),
+        severity: leadershipRoleSeverityForRole(office)
+      };
+    }
+
     if (this.permissionService.canManageWholeKurin()) {
-      return 'Провід куреня';
+      return { label: 'Провід куреня', severity: 'warn' };
     }
     if (this.permissionService.canLeadGroups()) {
-      return 'Гуртковий провід';
+      return { label: 'Гуртковий провід', severity: 'success' };
     }
-    return 'Учасник';
+    return GENERIC_MEMBER_TAG;
   }
+}
+
+const GENERIC_MEMBER_TAG: { label: string; severity: RoleSeverity } = { label: 'Учасник', severity: 'info' };
+
+/**
+ * The office to show when an account holds several. Ordered by the same weights the member list
+ * sorts by, so "most senior" means one thing across the app.
+ */
+function mostSeniorOffice(systemRoles: string[]): LeadershipRole | null {
+  return systemRoles
+    .map(parseOfficeRole)
+    .filter((office): office is NonNullable<ReturnType<typeof parseOfficeRole>> => office !== null)
+    .map(office => office.role)
+    .sort((left, right) => getLeadershipRoleSortWeight(left) - getLeadershipRoleSortWeight(right))[0] ?? null;
 }

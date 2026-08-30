@@ -15,11 +15,12 @@ export type RoleSeverity = 'success' | 'secondary' | 'info' | 'warn' | 'danger' 
  * every distinction either of them made.
  */
 export function leadershipRoleSeverity(history: LeadershipHistoryDto): RoleSeverity {
-  if (history.endDate) {
-    return 'secondary';
-  }
+  return history.endDate ? 'secondary' : leadershipRoleSeverityForRole(history.role);
+}
 
-  switch (history.role as LeadershipRole) {
+/** The same colour, for callers holding the office name alone rather than a history record. */
+export function leadershipRoleSeverityForRole(role: LeadershipRole | string): RoleSeverity {
+  switch (role as LeadershipRole) {
     case LeadershipRole.Kurinnuy:
     case LeadershipRole.Zvyazkovyi:
     case LeadershipRole.Hurtkoviy:

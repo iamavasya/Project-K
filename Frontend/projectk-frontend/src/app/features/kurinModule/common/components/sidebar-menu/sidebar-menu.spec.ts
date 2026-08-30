@@ -93,7 +93,7 @@ describe('SidebarMenuComponent', () => {
       });
     });
 
-    it('should update role$ when state$ changes', (done) => {
+    it('should name the office rather than the tier it grants', (done) => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -109,8 +109,9 @@ describe('SidebarMenuComponent', () => {
         state$: new SimpleChange(null, component.state$(), true)
       });
 
-      component.role$.subscribe(role => {
-        expect(role).toBe('Провід куреня');
+      component.roleTag$.subscribe(roleTag => {
+        expect(roleTag.label).toBe("Зв'язковий");
+        expect(roleTag.severity).toBe('danger');
         done();
       });
     });
@@ -507,34 +508,46 @@ describe('SidebarMenuComponent', () => {
     });
   });
 
-  describe('getSeverityOnRole', () => {
-    // The method now reflects the current user's access level (derived from permissions),
-    // so we seed the auth state and ignore the passed argument.
-    function withState(state: Partial<AuthState>): void {
-      mockAuthService.getAuthStateValue.and.returnValue({
+  describe('the footer tag', () => {
+    // The office decides the label and the colour. The access tiers below it are only reached by
+    // accounts that hold no office, so every case here seeds `roles` deliberately.
+    function tagFor(state: Partial<AuthState>): Promise<{ label: string; severity: string }> {
+      const full = {
         userKey: 'u', memberKey: 'm', email: 'e', isAdmin: false, permissions: [], roles: [],
         kurinKey: 'k', accessToken: 't', ...state
-      } as AuthState);
+      } as AuthState;
+      mockAuthService.getAuthStateValue.and.returnValue(full);
+      fixture.componentRef.setInput('state$', of(full));
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
+
+      return new Promise(resolve => component.roleTag$.subscribe(resolve));
     }
 
-    it('should return "danger" for an admin', () => {
-      withState({ isAdmin: true });
-      expect(component.getSeverityOnRole(null)).toBe('danger');
+    it('names the office, not the tier it grants', async () => {
+      expect(await tagFor({ roles: ['KV.Zvyazkovyi'], permissions: ['Group:Manage:KurinWide'] }))
+        .toEqual({ label: "Зв'язковий", severity: 'danger' });
     });
 
-    it('should return "warn" for a whole-kurin manager', () => {
-      withState({ permissions: ['Group:Manage:KurinWide'] });
-      expect(component.getSeverityOnRole(null)).toBe('warn');
+    it('picks the most senior office when an account holds several', async () => {
+      expect((await tagFor({ roles: ['Group.Pysar', 'KV.Zvyazkovyi'] })).label).toBe("Зв'язковий");
     });
 
-    it('should return "success" for a group leader', () => {
-      withState({ permissions: ['Group:Update:OwnGroups'] });
-      expect(component.getSeverityOnRole(null)).toBe('success');
+    it('calls an admin an admin', async () => {
+      expect(await tagFor({ isAdmin: true })).toEqual({ label: 'Адміністратор', severity: 'danger' });
     });
 
-    it('should return "info" for a bare member', () => {
-      withState({ permissions: [] });
-      expect(component.getSeverityOnRole(null)).toBe('info');
+    it('falls back to the tier for a whole-kurin manager holding no office', async () => {
+      expect(await tagFor({ permissions: ['Group:Manage:KurinWide'] }))
+        .toEqual({ label: 'Провід куреня', severity: 'warn' });
+    });
+
+    it('falls back to the tier for a group leader holding no office', async () => {
+      expect(await tagFor({ permissions: ['Group:Update:OwnGroups'] }))
+        .toEqual({ label: 'Гуртковий провід', severity: 'success' });
+    });
+
+    it('calls an account with neither office nor permissions a member', async () => {
+      expect(await tagFor({ permissions: [] })).toEqual({ label: 'Учасник', severity: 'info' });
     });
   });
 
