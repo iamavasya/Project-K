@@ -17,7 +17,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
@@ -47,10 +47,10 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-        [HttpPost("register/manager")]
-        public async Task<IActionResult> RegisterManager([FromBody] RegisterUserRequest request)
+        [HttpPost("register/kurin")]
+        public async Task<IActionResult> RegisterKurin([FromBody] RegisterUserRequest request)
         {
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = request.Email,
                 Password = request.Password ?? "tempManagerPass1!",

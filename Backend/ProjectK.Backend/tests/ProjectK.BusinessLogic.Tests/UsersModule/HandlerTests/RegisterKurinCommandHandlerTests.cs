@@ -8,19 +8,19 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
-    public class RegisterManagerHandlerTests
+    public class RegisterKurinHandlerTests
     {
         private readonly Mock<IMediator> _mediatorMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IUnitOfWorkTransaction> _transactionMock;
-        private readonly RegisterManagerCommandHandler _handler;
+        private readonly RegisterKurinCommandHandler _handler;
 
-        public RegisterManagerHandlerTests()
+        public RegisterKurinHandlerTests()
         {
             _mediatorMock = new Mock<IMediator>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -29,14 +29,14 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _unitOfWorkMock.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_transactionMock.Object);
 
-            _handler = new RegisterManagerCommandHandler(_mediatorMock.Object, _unitOfWorkMock.Object);
+            _handler = new RegisterKurinCommandHandler(_mediatorMock.Object, _unitOfWorkMock.Object);
         }
 
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenAllStepsSucceed()
         {
             // Arrange
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = "manager@example.com",
                 Password = "Password123!",
@@ -130,7 +130,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldCreateCorrectUpsertKurin()
         {
             // Arrange
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = "test@example.com",
                 Password = "password",
@@ -155,7 +155,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldCreateCorrectRegisterUser()
         {
             // Arrange
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = "manager@test.com",
                 Password = "SecurePass123!",
@@ -185,7 +185,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldCreateCorrectUpsertMember()
         {
             // Arrange
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = "member@test.com",
                 Password = "password",
@@ -317,7 +317,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task Handle_ShouldHandleNullMiddleName()
         {
             // Arrange
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = "test@example.com",
                 Password = "password",
@@ -391,15 +391,15 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public void Constructor_ShouldInitializeCorrectly()
         {
             // Arrange & Act
-            var handler = new RegisterManagerCommandHandler(_mediatorMock.Object, _unitOfWorkMock.Object);
+            var handler = new RegisterKurinCommandHandler(_mediatorMock.Object, _unitOfWorkMock.Object);
 
             // Assert
             Assert.NotNull(handler);
         }
 
-        private RegisterManagerCommand CreateValid()
+        private RegisterKurinCommand CreateValid()
         {
-            return new RegisterManagerCommand
+            return new RegisterKurinCommand
             {
                 Email = "test@example.com",
                 Password = "Password123!",
@@ -437,7 +437,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse()));
         }
 
-        private void SetupSuccessfulScenario(RegisterManagerCommand command, Guid? kurinKey = null, Guid? userId = null)
+        private void SetupSuccessfulScenario(RegisterKurinCommand command, Guid? kurinKey = null, Guid? userId = null)
         {
             var actualKurinKey = kurinKey ?? Guid.NewGuid();
             var actualUserId = userId ?? Guid.NewGuid();

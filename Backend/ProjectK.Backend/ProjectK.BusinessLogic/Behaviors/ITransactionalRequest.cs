@@ -1,4 +1,4 @@
-namespace ProjectK.BusinessLogic.Behaviors;
+﻿namespace ProjectK.BusinessLogic.Behaviors;
 
 /// <summary>
 /// Opt-in marker. A request carrying it runs inside a single database transaction
@@ -6,7 +6,7 @@ namespace ProjectK.BusinessLogic.Behaviors;
 /// rollback on any exception.
 /// </summary>
 /// <remarks>
-/// Do NOT add this to a handler that opens its own transaction (e.g. RegisterManagerCommandHandler) —
+/// Do NOT add this to a handler that opens its own transaction (e.g. RegisterKurinCommandHandler) —
 /// SQL Server does not support nested transactions and the behaviour would collide with it.
 /// </remarks>
 public interface ITransactionalRequest;

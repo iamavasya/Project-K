@@ -8,9 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin
 {
-    public class RegisterManagerCommand : IRequest<ServiceResult<RegisterUserResponse>>
+    public class RegisterKurinCommand : IRequest<ServiceResult<RegisterUserResponse>>
     {
         public string Email { get; set; }
         public string Password { get; set; }

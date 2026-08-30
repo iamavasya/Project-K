@@ -120,7 +120,7 @@ public class AuthorizationBaselineMatrixTests
 
     public static IEnumerable<object[]> PolicyEndpoints()
     {
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterManager), "RequireAdmin");
+        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterKurin), "RequireAdmin");
         yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<AuthController>>(nameof(AuthController.Logout), "RequireUser");
         yield return Row<Action<AuthController, CheckEntityAccessRequest>>(nameof(AuthController.CheckAccess), "RequireUser");

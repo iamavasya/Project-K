@@ -19,20 +19,20 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
-namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin
 {
-    public class RegisterManagerCommandHandler : IRequestHandler<RegisterManagerCommand, ServiceResult<RegisterUserResponse>>
+    public class RegisterKurinCommandHandler : IRequestHandler<RegisterKurinCommand, ServiceResult<RegisterUserResponse>>
     {
         private readonly IMediator _mediator;
         private readonly IUnitOfWork _uow;
 
-        public RegisterManagerCommandHandler(IMediator mediator, IUnitOfWork unitOfWork)
+        public RegisterKurinCommandHandler(IMediator mediator, IUnitOfWork unitOfWork)
         {
             _mediator = mediator;
             _uow = unitOfWork;
         }
 
-        public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterManagerCommand request, CancellationToken cancellationToken)
+        public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterKurinCommand request, CancellationToken cancellationToken)
         {
             await using var transaction = await _uow.BeginTransactionAsync(cancellationToken);
 

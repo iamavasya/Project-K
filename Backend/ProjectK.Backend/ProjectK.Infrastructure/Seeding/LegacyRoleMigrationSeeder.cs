@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
@@ -47,6 +48,13 @@ namespace ProjectK.Infrastructure.Seeding
             {
                 return;
             }
+
+            // Logged so it is visible whether any environment still carries pre-office roles. Once
+            // this stops appearing everywhere, the back-fill can go.
+            var logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger(nameof(LegacyRoleMigrationSeeder));
+            logger?.LogWarning(
+                "Legacy Identity roles are still present ({Roles}); migrating them onto the office model.",
+                string.Join(", ", presentLegacyRoles));
 
             // 1. Former Managers become the kurin's Зв'язковий (KV office).
             if (presentLegacyRoles.Contains(LegacyManager))

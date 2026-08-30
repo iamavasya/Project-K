@@ -11,7 +11,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterManager;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
@@ -44,7 +44,7 @@ namespace ProjectK.API.Tests.Controllers
         }
 
         [Fact]
-        public async Task RegisterManager_ShouldReturnOk_WhenMediatorReturnsSuccess()
+        public async Task RegisterKurin_ShouldReturnOk_WhenMediatorReturnsSuccess()
         {
             // Arrange
             var request = new RegisterUserRequest
@@ -54,11 +54,11 @@ namespace ProjectK.API.Tests.Controllers
             };
 
             var serviceResult = new ServiceResult<RegisterUserResponse>(ResultType.Success, new RegisterUserResponse());
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterManagerCommand>(), default))
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterKurinCommand>(), default))
                 .ReturnsAsync(serviceResult);
 
             // Act
-            var result = await _controller.RegisterManager(request);
+            var result = await _controller.RegisterKurin(request);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
