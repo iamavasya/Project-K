@@ -394,7 +394,7 @@ export class UpsertMemberComponent implements OnInit {
   }
 
   canDeleteMember(): boolean {
-    return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.isManager());
+    return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin());
   }
 
   private isWarningActive(warning: MemberWarningDto, now: Date): boolean {

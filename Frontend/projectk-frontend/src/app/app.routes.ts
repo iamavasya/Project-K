@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
-import { roleGuard } from './features/authModule/guards/role.guard';
+import { capabilityGuard } from './features/authModule/guards/capability.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
@@ -79,7 +79,7 @@ export const routes: Routes = [
   },
   {
     path: 'users',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/users-list/users-list')
       .then(m => m.UsersListComponent),
     title: 'Користувачі',
@@ -87,7 +87,7 @@ export const routes: Routes = [
   },
   {
     path: 'waitlist',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/waitlist-management/waitlist-management')
       .then(m => m.WaitlistManagementComponent),
     title: 'Заявки',
@@ -95,7 +95,7 @@ export const routes: Routes = [
   },
   {
     path: 'announcements',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/public-announcements/public-announcements')
       .then(m => m.PublicAnnouncementsComponent),
     title: 'Оголошення',
@@ -103,7 +103,7 @@ export const routes: Routes = [
   },
   {
     path: 'system-settings',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/system-settings/system-settings')
       .then(m => m.SystemSettingsComponent),
     title: 'Системні налаштування',
@@ -111,7 +111,7 @@ export const routes: Routes = [
   },
   {
     path: 'panel',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')], 
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')], 
     loadComponent: () => import('./features/kurinModule/admin-panel/admin-panel')
       .then(m => m.AdminPanelComponent),
     title: 'Адміністрація',
@@ -240,7 +240,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), roleGuard('Admin', 'Manager'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/kurin-settings/kurin-settings')
       .then(m => m.KurinSettingsComponent),
     title: 'Налаштування куреня',

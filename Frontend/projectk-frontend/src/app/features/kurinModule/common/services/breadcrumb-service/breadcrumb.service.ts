@@ -393,8 +393,8 @@ export class BreadcrumbService {
       }
       switch (role.trim().toLowerCase()) {
         case 'admin': return this.permissionService.isAdmin();
-        case 'manager': return this.permissionService.isManager();
-        case 'mentor': return this.permissionService.isMentor();
+        case 'manager': return this.permissionService.canManageWholeKurin();
+        case 'mentor': return this.permissionService.canLeadGroups();
         default: return false;
       }
     });

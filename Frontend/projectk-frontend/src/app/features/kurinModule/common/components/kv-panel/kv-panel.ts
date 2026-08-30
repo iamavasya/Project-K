@@ -353,7 +353,7 @@ export class KvPanelComponent implements OnChanges {
 
   private refreshCurrentUserRoleAfterTransfer(): void {
     const currentState = this.authService.getAuthStateValue();
-    if (!currentState || currentState.userKey === this.selectedManagerUserKey || !this.permissionService.isManager()) {
+    if (!currentState || currentState.userKey === this.selectedManagerUserKey || !this.permissionService.canManageWholeKurin()) {
       return;
     }
 

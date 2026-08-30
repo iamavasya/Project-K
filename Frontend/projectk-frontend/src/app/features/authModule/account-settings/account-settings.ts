@@ -80,7 +80,7 @@ export class AccountSettingsComponent implements OnInit {
   }
 
   get isPrivileged(): boolean {
-    return this.permissionService.isAdmin() || this.permissionService.isManager();
+    return this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin();
   }
 
   get isEmailChanged(): boolean {

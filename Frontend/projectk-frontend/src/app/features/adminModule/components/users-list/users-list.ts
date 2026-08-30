@@ -13,6 +13,7 @@ import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { SystemUserRole } from '../../models/userDto';
 
 @Component({
   selector: 'app-users-list',
@@ -31,9 +32,10 @@ export class UsersListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
 
   // System-level roles only. Kurin offices are managed on the Leadership screen.
-  roles = [
-    { label: 'Admin', value: 0 },
-    { label: 'Member', value: 1 }
+  // Posted by name, so the backend enum's order is not part of the contract.
+  roles: { label: string; value: SystemUserRole }[] = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Member', value: 'Member' }
   ];
 
   ngOnInit() {

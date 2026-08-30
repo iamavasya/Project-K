@@ -25,21 +25,21 @@ export class PermissionService {
   }
 
   /** Whole-kurin managers: Зв'язковий and admin. */
-  isManager(): boolean {
+  canManageWholeKurin(): boolean {
     return this.isAdmin() || this.has('Group:Manage:KurinWide');
   }
 
   /** Runs a гурток: Виховник and above. Провід offices are not included — they lead, they do not moderate. */
-  isMentor(): boolean {
+  canLeadGroups(): boolean {
     return this.has('Group:Update');
   }
 
   isReviewer(): boolean {
-    return this.isMentor() || this.isManager();
+    return this.canLeadGroups() || this.canManageWholeKurin();
   }
 
   canManageGroups(): boolean {
-    return this.isManager();
+    return this.canManageWholeKurin();
   }
 
   canManageMembers(): boolean {
@@ -47,7 +47,7 @@ export class PermissionService {
   }
 
   canManageMentors(): boolean {
-    return this.isManager();
+    return this.canManageWholeKurin();
   }
 
   canManageWarnings(): boolean {
@@ -88,10 +88,10 @@ export class PermissionService {
     if (this.isAdmin()) {
       return 'danger';
     }
-    if (this.isManager()) {
+    if (this.canManageWholeKurin()) {
       return 'warn';
     }
-    if (this.isMentor()) {
+    if (this.canLeadGroups()) {
       return 'success';
     }
     return 'info';

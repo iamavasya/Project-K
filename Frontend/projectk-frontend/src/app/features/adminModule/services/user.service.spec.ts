@@ -273,7 +273,7 @@ describe('UserService', () => {
     it('changeUserRole should invalidate role-sensitive caches', () => {
       spyOn(cache, 'invalidateByPrefix').and.callThrough();
 
-      service.changeUserRole('user-1', 1).subscribe();
+      service.changeUserRole('user-1', 'Member').subscribe();
 
       const req = httpMock.expectOne(`${apiUrl}/user/user-1/role`);
       expect(req.request.method).toBe('POST');

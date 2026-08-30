@@ -53,7 +53,7 @@ export class MfaEnforcerService {
       return;
     }
 
-    const isPrivileged = this.permissionService.isAdmin() || this.permissionService.isManager();
+    const isPrivileged = this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin();
     if (!isPrivileged) {
       return;
     }

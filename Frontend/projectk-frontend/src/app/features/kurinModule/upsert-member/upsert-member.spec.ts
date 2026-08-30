@@ -61,7 +61,7 @@ describe('UpsertMemberComponent', () => {
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
-    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'isManager', 'isReviewer']);
+    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'canManageWholeKurin', 'isReviewer']);
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
 
     memberServiceSpy.getByKey.and.returnValue(of(loadedMember));
@@ -83,7 +83,7 @@ describe('UpsertMemberComponent', () => {
     }));
     permissionServiceSpy.canManageWarnings.and.returnValue(false);
     permissionServiceSpy.isAdmin.and.returnValue(false);
-    permissionServiceSpy.isManager.and.returnValue(false);
+    permissionServiceSpy.canManageWholeKurin.and.returnValue(false);
     permissionServiceSpy.isReviewer.and.returnValue(false);
     authServiceSpy.getAuthStateValue.and.returnValue({
       userKey: 'current-user',

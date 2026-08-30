@@ -84,7 +84,7 @@ describe('BreadcrumbService', () => {
   });
 
   beforeEach(() => {
-    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['isAdmin', 'isManager', 'isMentor']);
+    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['isAdmin', 'canManageWholeKurin', 'canLeadGroups']);
     permissionService.isAdmin.and.returnValue(true);
     permissionService.isAdmin.and.returnValue(false);
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
@@ -360,7 +360,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should omit an admin-only breadcrumb parent for a manager', (done) => {
-    permissionService.isManager.and.returnValue(true);
+    permissionService.canManageWholeKurin.and.returnValue(true);
     mockRouter = createMockRouter('/group/group-42', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } },
@@ -504,7 +504,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should fall back to kurin for a member without groupKey', (done) => {
-    permissionService.isManager.and.returnValue(true);
+    permissionService.canManageWholeKurin.and.returnValue(true);
     mockRouter = createMockRouter('/member/mentor-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -551,7 +551,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should not reuse a previous member groupKey for a groupless mentor', () => {
-    permissionService.isManager.and.returnValue(true);
+    permissionService.canManageWholeKurin.and.returnValue(true);
     mockRouter = createMockRouter('/member/mentor-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -701,7 +701,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should omit an admin-only parent of the page the user is standing on', (done) => {
-    permissionService.isManager.and.returnValue(true);
+    permissionService.canManageWholeKurin.and.returnValue(true);
     authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'member-7' }));
     mockRouter = createMockRouter('/kurin', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
@@ -810,7 +810,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should label a kurin crumb from the route parameter', () => {
-    permissionService.isManager.and.returnValue(true);
+    permissionService.canManageWholeKurin.and.returnValue(true);
     authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'member-7' }));
     mockRouter = createMockRouter('/kurin/kurin-1/settings', [
       { path: 'kurin', data: { breadcrumb: 'Курінь', breadcrumbEntity: 'kurin' } },
@@ -873,7 +873,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should ignore an empty guid pushed through setParam', () => {
-    permissionService.isMentor.and.returnValue(true);
+    permissionService.canLeadGroups.and.returnValue(true);
     authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'mentor-1' }));
     mockRouter = createMockRouter('/member/member-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
@@ -909,7 +909,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should not build a parent crumb from an empty guid in the url', () => {
-    permissionService.isMentor.and.returnValue(true);
+    permissionService.canLeadGroups.and.returnValue(true);
     authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'mentor-1' }));
     const url = '/group/00000000-0000-0000-0000-000000000000/member/upsert';
     mockRouter = createMockRouter(url, [

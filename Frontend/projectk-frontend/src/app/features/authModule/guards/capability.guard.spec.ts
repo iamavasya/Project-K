@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { AuthService } from '../services/authService/auth.service';
-import { roleGuard } from './role.guard';
+import { capabilityGuard } from './capability.guard';
 
-describe('roleGuard', () => {
+describe('capabilityGuard', () => {
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
   let forbiddenTree: UrlTree;
@@ -23,8 +23,8 @@ describe('roleGuard', () => {
     });
   });
 
-  function runGuard(resultRoles: Parameters<typeof roleGuard>): Observable<boolean | UrlTree> {
-    return roleGuard(...resultRoles)(
+  function runGuard(capabilities: Parameters<typeof capabilityGuard>): Observable<boolean | UrlTree> {
+    return capabilityGuard(...capabilities)(
       {} as ActivatedRouteSnapshot,
       {} as RouterStateSnapshot
     ) as Observable<boolean | UrlTree>;
@@ -42,7 +42,7 @@ describe('roleGuard', () => {
     authService.getAuthStateValue.and.returnValue({ userKey: 'user-1', memberKey: null, email: 'admin@example.com', isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-1', accessToken: 'token' } as never);
 
     TestBed.runInInjectionContext(() => {
-      const result$ = runGuard(['Admin', 'Manager']);
+      const result$ = runGuard(['admin', 'kurinManagement']);
 
       result$.subscribe(result => {
         expect(result).toBeTrue();
@@ -63,7 +63,7 @@ describe('roleGuard', () => {
     authService.getAuthStateValue.and.returnValue({ userKey: 'user-1', memberKey: null, email: 'mentor@example.com', isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'], kurinKey: 'kurin-1', accessToken: 'token' } as never);
 
     TestBed.runInInjectionContext(() => {
-      const result$ = runGuard(['Admin', 'Manager']);
+      const result$ = runGuard(['admin', 'kurinManagement']);
 
       result$.subscribe(result => {
         expect(result).toBe(forbiddenTree);

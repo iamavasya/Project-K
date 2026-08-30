@@ -253,10 +253,10 @@ export class SidebarMenuComponent implements OnChanges {
     if (this.permissionService.isAdmin()) {
       return 'Адміністратор';
     }
-    if (this.permissionService.isManager()) {
+    if (this.permissionService.canManageWholeKurin()) {
       return 'Провід куреня';
     }
-    if (this.permissionService.isMentor()) {
+    if (this.permissionService.canLeadGroups()) {
       return 'Гуртковий провід';
     }
     return 'Учасник';

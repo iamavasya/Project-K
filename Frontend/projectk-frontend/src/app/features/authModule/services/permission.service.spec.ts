@@ -51,7 +51,7 @@ describe('PermissionService', () => {
 
   it('treats a Зв\'язковий (steward) as a whole-kurin manager', () => {
     setState(stewardPerms);
-    expect(service.isManager()).toBeTrue();
+    expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageGroups()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeTrue();
     expect(service.canSetupLeadership()).toBeTrue();
@@ -60,7 +60,7 @@ describe('PermissionService', () => {
 
   it('treats a Курінний (lead) as a manager without kurin settings or office assignment', () => {
     setState(leadPerms);
-    expect(service.isManager()).toBeTrue();
+    expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageGroups()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeFalse();
     expect(service.canSetupLeadership()).toBeFalse();
@@ -68,8 +68,8 @@ describe('PermissionService', () => {
 
   it('treats a Виховник as a group leader but not a whole-kurin manager', () => {
     setState(vykhovnykPerms);
-    expect(service.isManager()).toBeFalse();
-    expect(service.isMentor()).toBeTrue();
+    expect(service.canManageWholeKurin()).toBeFalse();
+    expect(service.canLeadGroups()).toBeTrue();
     expect(service.isReviewer()).toBeTrue();
     expect(service.canManageAgenda()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeFalse();
@@ -77,8 +77,8 @@ describe('PermissionService', () => {
 
   it('lets a провід office raise agenda and planning without touching groups', () => {
     setState(providPerms);
-    expect(service.isManager()).toBeFalse();
-    expect(service.isMentor()).toBeFalse();
+    expect(service.canManageWholeKurin()).toBeFalse();
+    expect(service.canLeadGroups()).toBeFalse();
     expect(service.canManageGroups()).toBeFalse();
     expect(service.canManageAgenda()).toBeTrue();
     expect(service.canCreatePlanning()).toBeTrue();
@@ -89,15 +89,15 @@ describe('PermissionService', () => {
   it('lets a Курінний seat offices but not moderate members', () => {
     setState(kurinnyyPerms);
     expect(service.canSetupLeadership()).toBeTrue();
-    expect(service.isMentor()).toBeFalse();
+    expect(service.canLeadGroups()).toBeFalse();
     expect(service.canManageMembers()).toBeFalse();
   });
 
   it('treats a bare member as read-only', () => {
     setState(memberPerms);
     expect(service.isAdmin()).toBeFalse();
-    expect(service.isManager()).toBeFalse();
-    expect(service.isMentor()).toBeFalse();
+    expect(service.canManageWholeKurin()).toBeFalse();
+    expect(service.canLeadGroups()).toBeFalse();
     expect(service.isReviewer()).toBeFalse();
     expect(service.canManageAgenda()).toBeFalse();
     expect(service.canManageKurinSettings()).toBeFalse();
@@ -106,7 +106,7 @@ describe('PermissionService', () => {
   it('treats an admin as able to do everything', () => {
     setState([], true);
     expect(service.isAdmin()).toBeTrue();
-    expect(service.isManager()).toBeTrue();
+    expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeTrue();
     expect(service.canSetupLeadership()).toBeTrue();
   });
@@ -114,7 +114,7 @@ describe('PermissionService', () => {
   it('defaults to no access when there is no auth state', () => {
     authService.getAuthStateValue.and.returnValue(null);
     expect(service.isAdmin()).toBeFalse();
-    expect(service.isManager()).toBeFalse();
+    expect(service.canManageWholeKurin()).toBeFalse();
     expect(service.canManageAgenda()).toBeFalse();
   });
 });

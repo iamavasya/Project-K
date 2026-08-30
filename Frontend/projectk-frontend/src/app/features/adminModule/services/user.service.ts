@@ -5,6 +5,7 @@ import { UserDto } from "../models/userDto";
 import { tap } from "rxjs";
 import { ClientCacheService } from "../../kurinModule/common/services/client-cache/client-cache.service";
 import { GROUP_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from "../../kurinModule/common/services/client-cache/cache-policy";
+import { SystemUserRole } from '../models/userDto';
 
 @Injectable({
     providedIn: 'root'
@@ -21,7 +22,7 @@ export class UserService {
         );
     }
 
-    changeUserRole(userId: string, newRole: number) {
+    changeUserRole(userId: string, newRole: SystemUserRole) {
         return this.http.post<boolean>(
             `${this.apiUrl}/user/${userId}/role`,
             newRole,
