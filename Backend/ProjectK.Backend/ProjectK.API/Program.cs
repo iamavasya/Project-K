@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.API.Helpers;
+using ProjectK.API.Swagger;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -212,6 +213,24 @@ namespace ProjectK.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "ProjectK API",
+                    Version = builder.Configuration["ReleaseInfo:Version"] ?? "v1",
+                    Description = "Management API for a Plast kurin: membership, leadership offices, "
+                        + "agenda and planning, probes and badges, announcements and onboarding. "
+                        + "Every failure answers with { error, message }; access is decided by the "
+                        + "office a member holds, not by an account-level role."
+                });
+
+                var xmlDocumentation = Path.Combine(AppContext.BaseDirectory, "ProjectK.API.xml");
+                if (File.Exists(xmlDocumentation))
+                {
+                    options.IncludeXmlComments(xmlDocumentation, includeControllerXmlComments: true);
+                }
+
+                options.OperationFilter<UnifiedErrorResponsesFilter>();
+
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.Http,
@@ -252,10 +271,12 @@ namespace ProjectK.API
 
             await RunStartupTasksAsync(app);
 
-            if (app.Environment.IsDevelopment())
+            // Staging too: the spec is the only description of the contract that stays in step with the
+            // code, and staging is where the frontend is pointed while a release is being checked.
+            if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "ProjectK API"));
             }
 
             app.UseRouting();
