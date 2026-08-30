@@ -68,12 +68,6 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             _context.Leaderships.Update(leadership);
         }
 
-        public async Task CloseLeadershipAsync(Guid leadershipKey, DateOnly endDate, CancellationToken cancellationToken = default)
-        {
-            // Closing is handled in business logic via Update; not supported at the repository level.
-            throw new NotSupportedException();
-        }
-
         public async Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default)
         {
             return await _context.LeadershipHistories

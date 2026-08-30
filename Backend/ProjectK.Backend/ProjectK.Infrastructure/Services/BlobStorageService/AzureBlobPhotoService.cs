@@ -259,38 +259,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             }
         }
 
-        public async Task<IEnumerable<string>> GetOrphanFilesAsync(CancellationToken cancellationToken)
-        {
-            if (_referenceProvider is null)
-                return Array.Empty<string>();
-
-            await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
-
-            var referenced = await _referenceProvider.GetAllReferencedBlobNamesAsync(cancellationToken).ConfigureAwait(false);
-            var referencedSet = new HashSet<string>(referenced, StringComparer.Ordinal);
-
-            var allBlobs = new List<BlobItem>();
-            foreach (var prefix in GetCleanupPrefixes())
-            {
-                await foreach (var item in _container.GetBlobsAsync(
-                                   traits: BlobTraits.None,
-                                   states: BlobStates.None,
-                                   prefix: prefix,
-                                   cancellationToken))
-                {
-                    allBlobs.Add(item);
-                }
-            }
-
-            var orphans = allBlobs
-                .DistinctBy(item => item.Name)
-                .Where(item => !referencedSet.Contains(item.Name))
-                .Select(item => BuildPublicUrl(_container.GetBlobClient(item.Name)))
-                .ToList();
-
-            return orphans;
-        }
-
         // Helper that could be invoked externally (not part of interface) to mark a blob as in-use again.
         public async Task MarkInUseAsync(string photoUrl, bool inUse, CancellationToken cancellationToken)
         {

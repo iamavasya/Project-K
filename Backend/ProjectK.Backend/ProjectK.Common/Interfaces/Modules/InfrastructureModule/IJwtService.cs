@@ -12,6 +12,5 @@ namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
     {
         string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey);
         RefreshToken GenerateRefreshToken();
-        ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     }
 }

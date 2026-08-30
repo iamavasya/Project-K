@@ -74,38 +74,5 @@ namespace ProjectK.Infrastructure.Services.JwtService
             };
         }
 
-        /// <summary>
-        /// Декодує прострочений токен (для refresh flow)
-        /// </summary>
-        public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = false, // Ігноруємо термін життя
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = _config["Jwt:Issuer"],
-                ValidAudience = _config["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])),
-                RoleClaimType = ClaimTypes.Role,
-                NameClaimType = JwtRegisteredClaimNames.Sub
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            try
-            {
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
-                if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-                    !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                    throw new SecurityTokenException("Invalid token");
-
-                return principal;
-            }
-            catch
-            {
-                return null;
-            }
-        }
     }
 }

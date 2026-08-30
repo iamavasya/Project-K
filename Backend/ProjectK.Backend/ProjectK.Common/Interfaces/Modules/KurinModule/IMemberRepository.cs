@@ -25,18 +25,9 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
         #region PlastLevelHistory Methods
-        Task AddPlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory history, CancellationToken cancellationToken = default);
-        Task UpdatePlastLevelHistoryAsync(Guid memberKey, PlastLevelHistory updatedHistory, CancellationToken cancellationToken = default);
-        Task RemovePlastLevelHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken = default);
-        Task<IEnumerable<PlastLevelHistory>> GetPlastLevelHistoryAsync(Guid memberKey, CancellationToken cancellationToken = default);
         #endregion
 
         #region LeadershipHistory Methods
-
-        Task AddLeadershipHistoryAsync(Guid memberKey, LeadershipHistory history, CancellationToken cancellationToken);
-        Task EndLeadershipAsync(Guid memberKey, Guid historyKey, DateOnly endDate, CancellationToken cancellationToken);
-        Task RemoveLeadershipHistoryAsync(Guid memberKey, Guid historyKey, CancellationToken cancellationToken);
-        Task UpdateLeadershipHistoryAsync(Guid memberKey, LeadershipHistory updatedHistory, CancellationToken cancellationToken);
 
         #endregion
     }
