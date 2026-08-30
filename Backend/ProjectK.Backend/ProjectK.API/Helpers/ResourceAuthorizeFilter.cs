@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -13,6 +13,8 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
     private readonly string _resourceTypeSelector;
     private readonly ResourceAction _action;
     private readonly string _resourceKeySelector;
+    private readonly bool _useScopeOverride;
+    private readonly ResourceType _scopeResourceType;
     private readonly IResourceAccessService _resourceAccessService;
     private readonly IOptions<SecurityPatchOptions> _securityPatchOptions;
 
@@ -22,6 +24,8 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         string resourceTypeSelector,
         ResourceAction action,
         string resourceKeySelector,
+        bool useScopeOverride,
+        ResourceType scopeResourceType,
         IResourceAccessService resourceAccessService,
         IOptions<SecurityPatchOptions> securityPatchOptions)
     {
@@ -30,6 +34,8 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         _resourceTypeSelector = resourceTypeSelector;
         _action = action;
         _resourceKeySelector = resourceKeySelector;
+        _useScopeOverride = useScopeOverride;
+        _scopeResourceType = scopeResourceType;
         _resourceAccessService = resourceAccessService;
         _securityPatchOptions = securityPatchOptions;
     }
@@ -50,25 +56,26 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
 
         if (!TryResolveResourceType(context, out var resourceType, out var resourceTypeError))
         {
-            context.Result = new BadRequestObjectResult(new { message = resourceTypeError });
+            context.Result = new BadRequestObjectResult(new { error = "InvalidResourceType", message = resourceTypeError });
             return;
         }
 
         if (!TryResolveGuid(context, _resourceKeySelector, out var resourceKey, out var resourceKeyError))
         {
-            context.Result = new BadRequestObjectResult(new { message = resourceKeyError });
+            context.Result = new BadRequestObjectResult(new { error = "InvalidResourceKey", message = resourceKeyError });
             return;
         }
 
         var decision = await _resourceAccessService.CheckAccessAsync(
             resourceType,
             _action,
+            _useScopeOverride ? _scopeResourceType : resourceType,
             resourceKey,
             context.HttpContext.RequestAborted);
 
         if (!decision.IsAllowed)
         {
-            context.Result = new ObjectResult(new { message = decision.Reason })
+            context.Result = new ObjectResult(new { error = "ResourceAccessDenied", message = decision.Reason })
             {
                 StatusCode = StatusCodes.Status403Forbidden
             };

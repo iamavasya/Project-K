@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces;
+﻿using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -27,10 +27,18 @@ public class ResourceAccessService : IResourceAccessService
         _cache = cache;
     }
 
-    public async Task<ResourceAccessDecision> CheckAccessAsync(
+    public Task<ResourceAccessDecision> CheckAccessAsync(
         ResourceType resourceType,
         ResourceAction action,
         Guid resourceKey,
+        CancellationToken cancellationToken = default)
+        => CheckAccessAsync(resourceType, action, resourceType, resourceKey, cancellationToken);
+
+    public async Task<ResourceAccessDecision> CheckAccessAsync(
+        ResourceType resourceType,
+        ResourceAction action,
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
         CancellationToken cancellationToken = default)
     {
         if (!_currentUserContext.IsAuthenticated)
@@ -59,7 +67,7 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Current user does not have kurin scope claim.");
         }
 
-        var scope = await _scopeReader.GetScopeAsync(resourceType, resourceKey, cancellationToken);
+        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, cancellationToken);
         if (scope is null)
         {
             return ResourceAccessDecision.Deny("Resource was not found or has no resolvable scope.");

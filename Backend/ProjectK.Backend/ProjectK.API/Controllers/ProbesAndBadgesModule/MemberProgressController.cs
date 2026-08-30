@@ -31,7 +31,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("badges/progress")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBadgeProgresses(Guid memberKey)
@@ -42,7 +42,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/submit")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,7 +55,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPost("badges/{badgeId}/review")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -68,7 +68,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/{probeId}/progress")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -80,7 +80,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/progress/status")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -96,7 +96,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -112,7 +112,7 @@ public class MemberProgressController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

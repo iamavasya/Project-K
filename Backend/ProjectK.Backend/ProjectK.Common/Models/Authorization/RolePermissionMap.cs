@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+﻿using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Authorization;
 
@@ -214,6 +214,9 @@ public static class RolePermissionMap
         grants.Add(new Permission(ResourceType.Member, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Create, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.Own));
+        grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Create, AccessScope.Own));
+        grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Update, AccessScope.Own));
+        grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Delete, AccessScope.Own));
         return grants;
     }
 
@@ -242,7 +245,8 @@ public static class RolePermissionMap
         var grants = new List<Permission>(GroupProvidGrants);
         var scopedResources = new[]
         {
-            ResourceType.Group, ResourceType.Member, ResourceType.BadgeProgress, ResourceType.ProbeProgress
+            ResourceType.Group, ResourceType.Member, ResourceType.BadgeProgress, ResourceType.ProbeProgress,
+            ResourceType.MemberWarning, ResourceType.MemberAward
         };
 
         foreach (var resource in scopedResources)
@@ -263,7 +267,8 @@ public static class RolePermissionMap
         var managedResources = new[]
         {
             ResourceType.Group, ResourceType.Member, ResourceType.PlanningSession, ResourceType.AgendaItem,
-            ResourceType.BadgeProgress, ResourceType.ProbeProgress, ResourceType.Leadership
+            ResourceType.BadgeProgress, ResourceType.ProbeProgress, ResourceType.Leadership,
+            ResourceType.MemberWarning, ResourceType.MemberAward
         };
         var manageActions = new[]
         {

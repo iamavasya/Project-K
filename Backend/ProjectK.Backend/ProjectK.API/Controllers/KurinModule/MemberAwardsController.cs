@@ -34,7 +34,7 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [HttpPost]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
         public async Task<IActionResult> UpsertAward(Guid memberKey, [FromBody] UpsertMemberAward command)
         {
             command.MemberKey = memberKey;
@@ -44,7 +44,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         [HttpPost("{awardKey:guid}/review")]
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
         public async Task<IActionResult> ReviewAward(Guid memberKey, Guid awardKey, [FromBody] ReviewBadgeProgressRequest request)
         {
             var result = await _mediator.Send(new ReviewMemberAward
@@ -56,7 +56,7 @@ namespace ProjectK.API.Controllers.KurinModule
         }
 
         [HttpDelete("{awardKey:guid}")]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Delete, "route:memberKey", ResourceType.Member)]
         public async Task<IActionResult> DeleteAward(Guid memberKey, Guid awardKey)
         {
             var result = await _mediator.Send(new DeleteMemberAward { MemberAwardKey = awardKey });

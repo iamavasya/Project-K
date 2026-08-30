@@ -30,7 +30,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
         [ProducesResponseType(typeof(IEnumerable<MemberWarningDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetWarnings(Guid memberKey)
@@ -41,7 +41,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,7 +54,7 @@ namespace ProjectK.API.Controllers.KurinModule
 
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{warningKey:guid}")]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -25,6 +25,8 @@ public class ResourceAuthorizeFilterTests
             string.Empty,
             ResourceAction.Read,
             "route:memberKey",
+            useScopeOverride: false,
+            scopeResourceType: default,
             resourceAccessService.Object,
             Options.Create(new SecurityPatchOptions { EnableResourceGuard = false }));
 
@@ -39,7 +41,7 @@ public class ResourceAuthorizeFilterTests
 
         Assert.True(executed);
         resourceAccessService.Verify(
-            service => service.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            service => service.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -49,7 +51,7 @@ public class ResourceAuthorizeFilterTests
         var memberKey = Guid.NewGuid();
         var resourceAccessService = new Mock<IResourceAccessService>();
         resourceAccessService
-            .Setup(service => service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey, It.IsAny<CancellationToken>()))
+            .Setup(service => service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
         var filter = new ResourceAuthorizeFilter(
@@ -58,6 +60,8 @@ public class ResourceAuthorizeFilterTests
             string.Empty,
             ResourceAction.Read,
             "route:memberKey",
+            useScopeOverride: false,
+            scopeResourceType: default,
             resourceAccessService.Object,
             Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
 
@@ -81,7 +85,7 @@ public class ResourceAuthorizeFilterTests
         var memberKey = Guid.NewGuid();
         var resourceAccessService = new Mock<IResourceAccessService>();
         resourceAccessService
-            .Setup(service => service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey, It.IsAny<CancellationToken>()))
+            .Setup(service => service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("Access denied."));
 
         var filter = new ResourceAuthorizeFilter(
@@ -90,6 +94,8 @@ public class ResourceAuthorizeFilterTests
             string.Empty,
             ResourceAction.Update,
             "route:memberKey",
+            useScopeOverride: false,
+            scopeResourceType: default,
             resourceAccessService.Object,
             Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
 
@@ -111,7 +117,7 @@ public class ResourceAuthorizeFilterTests
         var groupKey = Guid.NewGuid();
         var resourceAccessService = new Mock<IResourceAccessService>();
         resourceAccessService
-            .Setup(service => service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey, It.IsAny<CancellationToken>()))
+            .Setup(service => service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, ResourceType.Group, groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
         var filter = new ResourceAuthorizeFilter(
@@ -120,6 +126,8 @@ public class ResourceAuthorizeFilterTests
             "route:leadershipType",
             ResourceAction.Read,
             "route:typeKey",
+            useScopeOverride: false,
+            scopeResourceType: default,
             resourceAccessService.Object,
             Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
 
@@ -136,7 +144,7 @@ public class ResourceAuthorizeFilterTests
 
         Assert.True(executed);
         resourceAccessService.Verify(
-            service => service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey, It.IsAny<CancellationToken>()),
+            service => service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, ResourceType.Group, groupKey, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -150,6 +158,8 @@ public class ResourceAuthorizeFilterTests
             string.Empty,
             ResourceAction.Read,
             "route:memberKey",
+            useScopeOverride: false,
+            scopeResourceType: default,
             resourceAccessService.Object,
             Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
 
