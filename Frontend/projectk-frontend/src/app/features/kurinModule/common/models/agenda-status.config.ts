@@ -33,4 +33,3 @@ export const AGENDA_BOARD_COLUMNS: AgendaItemStatus[] = (Object.keys(AGENDA_STAT
  * вимога погодинного відображення; БД уже зберігає повний час, тож міграція не потрібна — лише інший
  * шаблон сітки.
  */
-export const AGENDA_CALENDAR_MODE: 'day' | 'hour' = 'day';

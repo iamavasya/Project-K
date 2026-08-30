@@ -197,13 +197,6 @@ export const routes: Routes = [
     }
   },
   {
-    path: 'toolbar',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/kurinModule/common/components/toolbar-header/toolbar-header')
-      .then(m => m.ToolbarHeaderComponent),
-    data: { breadcrumb: 'Тулбар' }
-  },
-  {
     path: 'leadership/create/:type/:entityKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), leadershipAccessGuard, EntityGuard],
     loadComponent: () => import('./features/kurinModule/common/components/leadership/leadership/leadership')

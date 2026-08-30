@@ -30,14 +30,6 @@ export class LeadershipService {
     );
   }
 
-  getLeadershipHistories(leadershipKey: string) {
-    return this.cache.get(
-      `${LEADERSHIP_CACHE_PREFIX}histories:${leadershipKey}`,
-      ENTITY_CACHE_TTL_MS,
-      () => this.http.get(`${this.apiUrl}/histories/${leadershipKey}`)
-    );
-  }
-
   create(payload: LeadershipDto): Observable<LeadershipDto> {
     return this.http.post<LeadershipDto>(this.apiUrl, payload).pipe(
       tap(() => this.invalidateLeadershipData())
