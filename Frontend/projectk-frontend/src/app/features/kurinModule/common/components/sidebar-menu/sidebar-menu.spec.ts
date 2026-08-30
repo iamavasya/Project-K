@@ -522,9 +522,9 @@ describe('SidebarMenuComponent', () => {
       expect(component.getSeverityOnRole(null)).toBe('danger');
     });
 
-    it('should return "warning" for a whole-kurin manager', () => {
+    it('should return "warn" for a whole-kurin manager', () => {
       withState({ permissions: ['Group:Manage:KurinWide'] });
-      expect(component.getSeverityOnRole(null)).toBe('warning');
+      expect(component.getSeverityOnRole(null)).toBe('warn');
     });
 
     it('should return "success" for a group leader', () => {

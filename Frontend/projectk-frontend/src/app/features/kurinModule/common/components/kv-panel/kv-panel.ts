@@ -25,6 +25,7 @@ import { holdsOffice } from '../../functions/systemRole.function';
 import { toDateOnlyString } from '../../functions/toDateOnlyString.function';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { memberDisplayName } from '../../functions/leadershipRoleDisplay.function';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -94,7 +95,7 @@ export class KvPanelComponent implements OnChanges {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey)
       .map(candidate => ({
-        label: this.getMemberName(candidate),
+        label: memberDisplayName(candidate),
         value: candidate.userKey as string
       }));
   }
@@ -107,7 +108,7 @@ export class KvPanelComponent implements OnChanges {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey && candidate.userKey !== this.manager?.userKey)
       .map(candidate => ({
-        label: this.getMemberName(candidate),
+        label: memberDisplayName(candidate),
         value: candidate.userKey as string
       }));
   }
@@ -245,11 +246,6 @@ export class KvPanelComponent implements OnChanges {
       }
     });
   }
-
-  getMemberName(member: MemberLookupDto): string {
-    return `${member.lastName} ${member.firstName}${member.middleName ? ` ${member.middleName}` : ''}`;
-  }
-
   getStatusLabel(member: MemberLookupDto): string {
     if (this.isUserRole(member, 'Manager')) {
       return "Зв'язковий";
@@ -312,7 +308,7 @@ export class KvPanelComponent implements OnChanges {
         }
       });
 
-    this.mentorRows = [...rowMap.values()].sort((a, b) => this.getMemberName(a.mentor).localeCompare(this.getMemberName(b.mentor)));
+    this.mentorRows = [...rowMap.values()].sort((a, b) => memberDisplayName(a.mentor).localeCompare(memberDisplayName(b.mentor)));
   }
 
   get archivedAssignments(): MentorAssignmentDto[] {
@@ -325,7 +321,7 @@ export class KvPanelComponent implements OnChanges {
   }
 
   getAssignmentMemberName(assignment: MentorAssignmentDto): string {
-    return assignment.member ? this.getMemberName(assignment.member) : 'Невідомий учасник';
+    return assignment.member ? memberDisplayName(assignment.member) : 'Невідомий учасник';
   }
 
   private getGroupsForUser(userKey: string): GroupDto[] {
@@ -365,5 +361,10 @@ export class KvPanelComponent implements OnChanges {
     this.authService.refreshToken().subscribe({
       error: (err) => console.error('Error refreshing token after manager transfer:', err)
     });
+  }
+
+  /** Template adapter — the format lives in leadershipRoleDisplay.function.ts. */
+  getMemberName(member: MemberLookupDto): string {
+    return memberDisplayName(member);
   }
 }

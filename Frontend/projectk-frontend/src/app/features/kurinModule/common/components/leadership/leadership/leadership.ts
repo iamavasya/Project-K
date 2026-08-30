@@ -22,8 +22,8 @@ import { InputIconModule } from '@openng/optimus-ui/inputicon';
 
 import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
 import { toDateOnlyString } from '../../../functions/toDateOnlyString.function';
-import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
 import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
+import { leadershipRoleDisplayName } from '../../../functions/leadershipRoleDisplay.function';
 
 const COMMON_ROLES: LeadershipRole[] = [
   LeadershipRole.Suddya,
@@ -212,7 +212,7 @@ export class LeadershipComponent implements OnInit {
     // 2. Пошук
     if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase();
-        const roleName = this.getRoleDisplayName(val.role).toLowerCase();
+        const roleName = leadershipRoleDisplayName(val.role).toLowerCase();
         const memberName = val.member 
             ? `${val.member.lastName} ${val.member.firstName}`.toLowerCase() 
             : '';
@@ -308,8 +308,8 @@ export class LeadershipComponent implements OnInit {
     ).length;
   }
 
+  /** Template adapter — the map lives in leadershipRoleDisplay.function.ts. */
   public getRoleDisplayName(role: LeadershipRole): string {
-     return ROLE_DISPLAY_NAMES[role] || role;
+    return leadershipRoleDisplayName(role);
   }
-
 }

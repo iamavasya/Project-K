@@ -12,12 +12,11 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { PermissionService } from '../../../../../authModule/services/permission.service';
 import { LeadershipDto, LeadershipHistoryDto } from '../../../models/requests/leadership/leadershipDto';
-import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
-import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
 import { LeadershipService } from '../../../services/leadership-service/leadership.service';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
 import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
 import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
+import { leadershipRoleSeverity, leadershipRoleDisplayName, memberDisplayName } from '../../../functions/leadershipRoleDisplay.function';
 
 @Component({
   selector: 'app-leadership-panel',
@@ -77,8 +76,8 @@ export class LeadershipPanelComponent implements OnChanges {
           return true;
         }
 
-        const name = this.getMemberName(history.member).toLowerCase();
-        const role = this.getRoleDisplayName(history.role).toLowerCase();
+        const name = memberDisplayName(history.member).toLowerCase();
+        const role = leadershipRoleDisplayName(history.role).toLowerCase();
         return name.includes(search) || role.includes(search);
       })
       .sort(compareLeadershipHistoriesByDefault);
@@ -115,29 +114,16 @@ export class LeadershipPanelComponent implements OnChanges {
     }
   }
 
-  getMemberName(member: MemberLookupDto): string {
-    return `${member.lastName} ${member.firstName}${member.middleName ? ` ${member.middleName}` : ''}`;
+  /** Template adapters — the rules live in leadershipRoleDisplay.function.ts. */
+  getRoleSeverity(history: LeadershipHistoryDto) {
+    return leadershipRoleSeverity(history);
   }
 
   getRoleDisplayName(role: string): string {
-    return ROLE_DISPLAY_NAMES[role as LeadershipRole] || role;
+    return leadershipRoleDisplayName(role);
   }
 
-  getRoleSeverity(history: LeadershipHistoryDto): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null {
-    if (history.endDate) {
-      return 'secondary';
-    }
-
-    switch (history.role as LeadershipRole) {
-      case LeadershipRole.Kurinnuy:
-      case LeadershipRole.Hurtkoviy:
-        return 'danger';
-      case LeadershipRole.Suddya:
-        return 'warn';
-      case LeadershipRole.Skarbnyk:
-        return 'success';
-      default:
-        return 'info';
-    }
+  getMemberName(member: MemberLookupDto): string {
+    return memberDisplayName(member);
   }
 }

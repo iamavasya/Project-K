@@ -89,7 +89,7 @@ export class PermissionService {
       return 'danger';
     }
     if (this.isManager()) {
-      return 'warning';
+      return 'warn';
     }
     if (this.isMentor()) {
       return 'success';

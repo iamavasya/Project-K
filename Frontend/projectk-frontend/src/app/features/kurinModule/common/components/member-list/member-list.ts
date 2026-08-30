@@ -13,7 +13,6 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { DatePipe } from '@angular/common';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
-import { ROLE_DISPLAY_NAMES } from '../../models/roleDisplayName';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { FormsModule } from '@angular/forms';
 import { MiniMemberCardComponent } from '../mini-member-card/mini-member-card';
@@ -26,6 +25,7 @@ import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-sta
 
 import { AuthService } from '../../../../authModule/services/authService/auth.service';
 import { PermissionService } from '../../../../authModule/services/permission.service';
+import { leadershipRoleSeverity, leadershipRoleDisplayName } from '../../functions/leadershipRoleDisplay.function';
 
 @Component({
   selector: 'app-member-list',
@@ -231,8 +231,9 @@ export class MemberListComponent implements OnInit {
     }
   }
 
+  /** Template adapter — the map lives in leadershipRoleDisplay.function.ts. */
   getRoleDisplayName(role: string): string {
-    return ROLE_DISPLAY_NAMES[role as LeadershipRole] || role;
+    return leadershipRoleDisplayName(role);
   }
 
   getMemberRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null }[] {
@@ -243,7 +244,7 @@ export class MemberListComponent implements OnInit {
       .sort(compareLeadershipHistoriesByDefault)
       .map(history => ({
         label: this.getMemberRoleLabel(history),
-        severity: this.getRoleSeverity(history)
+        severity: leadershipRoleSeverity(history)
       }))
     ];
   }
@@ -292,21 +293,9 @@ export class MemberListComponent implements OnInit {
     return roleName;
   }
 
-  getRoleSeverity(history: LeadershipHistoryDto): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null {
-    if (history.endDate) {
-        return 'secondary'; 
-    }
-
-    const role = history.role as LeadershipRole;
-    switch (role) {
-        case LeadershipRole.Kurinnuy:
-        case LeadershipRole.Hurtkoviy:
-        case LeadershipRole.Zvyazkovyi:
-            return 'danger';
-        case LeadershipRole.Suddya:
-            return 'warn';
-        default:
-            return 'info';
-    }
+  /** Template adapter — the rule itself lives in leadershipRoleDisplay.function.ts. */
+  getRoleSeverity(history: LeadershipHistoryDto) {
+    return leadershipRoleSeverity(history);
   }
+
 }
