@@ -27,18 +27,22 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Validate
 
             if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
             {
-                return new ServiceResult<InvitationValidationResponse>(
+                // The placeholder response carried no information; the message is what the activation
+                // page shows, and it was being dropped into CreatedAtActionName.
+                return ServiceResult<InvitationValidationResponse>.Failure(
                     ResultType.NotFound,
-                    new InvitationValidationResponse("", "", "", false),
+                    "InvalidInvitationToken",
                     "Invalid or expired invitation token.");
             }
 
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
             if (entry == null)
             {
-                return new ServiceResult<InvitationValidationResponse>(
+                // The placeholder response carried no information; the message is what the activation
+                // page shows, and it was being dropped into CreatedAtActionName.
+                return ServiceResult<InvitationValidationResponse>.Failure(
                     ResultType.NotFound,
-                    new InvitationValidationResponse("", "", "", false),
+                    "WaitlistEntryNotFound",
                     "Associated waitlist entry not found.");
             }
 
