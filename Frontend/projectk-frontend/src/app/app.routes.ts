@@ -31,6 +31,19 @@ export const routes: Routes = [
     data: { breadcrumb: 'Вітання' }
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/authModule/onboarding/forgot-password/forgot-password')
+      .then(m => m.ForgotPasswordComponent),
+    title: 'Відновлення пароля'
+  },
+  {
+    // Where the link in the reset email lands; it carries token and email as query parameters.
+    path: 'reset-password',
+    loadComponent: () => import('./features/authModule/onboarding/reset-password/reset-password')
+      .then(m => m.ResetPasswordComponent),
+    title: 'Новий пароль'
+  },
+  {
     path: 'join',
     canActivate: [publicAuthRedirectGuard],
     loadComponent: () => import('./features/authModule/onboarding/waitlist-registration/waitlist-registration')
