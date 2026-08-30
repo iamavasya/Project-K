@@ -87,6 +87,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateAccountProfile([FromBody] UpdateAccountProfileRequestDto request)
         {
             if (!TryGetCurrentUserKey(out var userKey))
@@ -107,6 +108,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> ConfirmAccountEmailChange([FromBody] ConfirmAccountEmailChangeRequestDto request)
         {
             if (!TryGetCurrentUserKey(out var userKey))
@@ -124,7 +126,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/password")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
@@ -144,7 +146,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/reset")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequestDto request)
@@ -167,7 +169,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/disable")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequestDto request)
@@ -224,7 +226,7 @@ namespace ProjectK.API.Controllers.UsersModule
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("me/layouts/{boardKey}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ResetTileLayout(string boardKey)
         {
@@ -247,7 +249,7 @@ namespace ProjectK.API.Controllers.UsersModule
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("{userId}/mfa/reset")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ResetUserMfa(Guid userId)
         {
@@ -279,7 +281,7 @@ namespace ProjectK.API.Controllers.UsersModule
         /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPost("{userId}/role")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] UserRole newRole)

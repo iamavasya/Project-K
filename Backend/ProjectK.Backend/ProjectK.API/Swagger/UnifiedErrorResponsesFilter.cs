@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -37,7 +37,11 @@ public sealed class UnifiedErrorResponsesFilter : IOperationFilter
     private static void AddError(OpenApiOperation operation, string statusCode, string description)
     {
         operation.Responses ??= new OpenApiResponses();
-        if (operation.Responses.ContainsKey(statusCode))
+
+        // Overwrites a bare [ProducesResponseType(400)] rather than yielding to it: those declare the
+        // status without a body, so the reader learns nothing about what comes back. An action that
+        // documents an error body of its own keeps it.
+        if (operation.Responses.TryGetValue(statusCode, out var existing) && existing?.Content?.Count > 0)
         {
             return;
         }

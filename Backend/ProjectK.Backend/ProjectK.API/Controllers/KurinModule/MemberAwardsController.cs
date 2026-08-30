@@ -83,12 +83,12 @@ namespace ProjectK.API.Controllers.KurinModule
             return result.ToActionResult(this);
         }
 
-        [AllowAnonymous] // or keep Authorize if needed
         /// <summary>
         /// Serves the illustration for an award level, coloured or plain.
         /// </summary>
+        [AllowAnonymous]
         [HttpGet("/api/awards/images/{level}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "image/png")]
         public IActionResult GetAwardImage(int level, [FromQuery] bool colored = true)
         {
             var stream = _awardImagesStore.GetAwardImageStream(level, colored);

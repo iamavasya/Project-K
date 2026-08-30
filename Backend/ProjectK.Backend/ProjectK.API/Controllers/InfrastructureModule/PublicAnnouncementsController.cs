@@ -21,6 +21,7 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnounc
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Publish;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Transition;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement.Update;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 
@@ -116,12 +117,14 @@ public class PublicAnnouncementsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("image")]
     [RequestSizeLimit(8 * 1024 * 1024)]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(PublicAnnouncementImageUploadDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadImage(
-        [FromForm] IFormFile file,
+        [FromForm] UploadImageRequest form,
         [FromServices] IPublicAnnouncementImageStore imageStore,
         CancellationToken cancellationToken)
     {
+        var file = form.File;
         if (file == null || file.Length == 0)
         {
             return this.Failure(ResultType.BadRequest, "ImageRequired", "Image file is required.");
@@ -167,7 +170,7 @@ public class PublicAnnouncementsController : ControllerBase
     /// </remarks>
     [HttpGet("image/{*imageKey}")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/octet-stream")]
     public async Task<IActionResult> GetImage(
         string imageKey,
         [FromServices] IPublicAnnouncementImageStore imageStore,

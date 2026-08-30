@@ -14,6 +14,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -258,6 +259,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("members/kv/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
         {
             var request = new GetKurinKvMembers(kurinKey);
@@ -271,6 +273,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("members/mentor-candidates/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
         {
             var request = new GetKurinMentorCandidates(kurinKey);

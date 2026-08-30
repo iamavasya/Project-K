@@ -118,7 +118,7 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
             return client.DeleteAsync(route);
         }
 
-        if (IsMultipartMemberEndpoint(method, route))
+        if (IsMultipartEndpoint(method, route))
         {
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(Guid.NewGuid().ToString()), "GroupKey");
@@ -145,7 +145,12 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         return client.SendAsync(request);
     }
 
-    private static bool IsMultipartMemberEndpoint(string method, string route)
+    /// <summary>
+    /// Endpoints that bind a multipart form. They answer 415 to a request that is not multipart, and
+    /// that check runs before authentication — so probing them with a JSON body would measure the
+    /// content type, not the authorization this test is about.
+    /// </summary>
+    private static bool IsMultipartEndpoint(string method, string route)
     {
         var isMethod = string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase)
             || string.Equals(method, "PUT", StringComparison.OrdinalIgnoreCase);
@@ -153,6 +158,11 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         if (!isMethod)
         {
             return false;
+        }
+
+        if (route.EndsWith("/silhouette", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
         }
 
         if (!route.StartsWith("/api/member", StringComparison.OrdinalIgnoreCase))

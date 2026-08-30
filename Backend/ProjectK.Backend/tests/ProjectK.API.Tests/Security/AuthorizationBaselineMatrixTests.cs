@@ -126,7 +126,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAll), "RequireUser");
         yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<GroupController, Guid, IFormFile, CancellationToken>>(nameof(GroupController.UploadSilhouette), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<GroupController, Guid, UploadImageRequest, CancellationToken>>(nameof(GroupController.UploadSilhouette), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");

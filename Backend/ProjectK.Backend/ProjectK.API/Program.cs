@@ -306,9 +306,12 @@ namespace ProjectK.API
                 version = config["ReleaseInfo:Version"] ?? UnknownValue,
                 codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? UnknownValue,
                 utc = DateTimeOffset.UtcNow
-            }));
+            }))
+            .WithSummary("Reports that the API is up, and which release is running.")
+            .WithDescription("What the container health check and the deployment pipeline read. Answers without touching the database, so it says the process is serving — not that everything behind it is well.");
 
-            app.MapGet("/", () => "Backend Started");
+            app.MapGet("/", () => "Backend Started")
+                .WithSummary("A plain sign of life at the root, for anyone who opens the API in a browser.");
 
             await app.RunAsync();
         }

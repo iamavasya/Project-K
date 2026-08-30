@@ -19,6 +19,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revok
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -65,7 +66,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("exists/{groupKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Exists(Guid groupKey)
         {
@@ -129,11 +130,13 @@ namespace ProjectK.API.Controllers.KurinModule
         [HttpPost("{groupKey:guid}/silhouette")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
         [RequestSizeLimit(MaxSilhouetteFileSizeBytes)]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] IFormFile? file, CancellationToken cancellationToken)
+        public async Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken)
         {
+            var file = form.File;
             if (file == null || file.Length == 0)
             {
                 return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
@@ -225,6 +228,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPost("{groupKey}/mentors/{mentorUserKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> AssignMentor(Guid groupKey, Guid mentorUserKey)
         {
             var command = new AssignMentorCommand(mentorUserKey, groupKey);
@@ -238,6 +242,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpDelete("{groupKey}/mentors/{mentorUserKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> RevokeMentor(Guid groupKey, Guid mentorUserKey)
         {
             var command = new RevokeMentorCommand(mentorUserKey, groupKey);
