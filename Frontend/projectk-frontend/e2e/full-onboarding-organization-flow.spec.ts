@@ -20,6 +20,11 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('Full onboarding organization workflow', () => {
   test('leader joins, activates a manager account, builds groups and assigned mentor scope', async ({ page, request }, testInfo) => {
+    // One project only. Mid-flow this signs in as the shared admin through the UI, and an account
+    // holds exactly one refresh token at a time (`AppUser.RefreshToken` is a single column), so the
+    // second project's sign-in invalidates the first project's session and its next navigation lands
+    // back on the login screen. The workflow is viewport-independent, so the second run proved nothing.
+    test.skip(testInfo.project.name !== 'chromium', 'Signs in as the shared admin.');
     test.setTimeout(90_000);
 
     const suffix = scenarioSuffix(testInfo);
