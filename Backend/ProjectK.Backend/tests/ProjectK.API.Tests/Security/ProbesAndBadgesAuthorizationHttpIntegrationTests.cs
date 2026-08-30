@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using ProjectK.Common.Models.Authorization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -19,6 +19,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -49,16 +50,22 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    /// <summary>
+    /// The catalogues are reference data behind <c>RequireUser</c>, which means "authenticated" —
+    /// the role is not consulted. This asserted 403 while the test host defined its own, stricter
+    /// <c>RequireUser</c> that listed known roles; production never behaved that way, so the test was
+    /// green about a rule the system did not have. Anonymous access is still refused, above.
+    /// </summary>
     [Theory]
     [InlineData("/api/catalog/badges/meta")]
     [InlineData("/api/catalog/probes")]
-    public async Task AuthenticatedUnknownRole_Request_ShouldReturn403(string route)
+    public async Task AuthenticatedWithUnknownRole_CanReadTheCatalogue(string route)
     {
         await using var host = await CatalogSecurityTestHost.StartAsync(roleClaim: "Guest");
 
         var response = await host.Client.GetAsync(route);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -157,28 +164,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 })
                 .AddScheme<AuthenticationSchemeOptions, CatalogAuthHandler>(CatalogAuthHandler.SchemeName, _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole("Admin"));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireAgendaAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequirePlanningAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddSingleton(badgesCatalogService.Object);
             builder.Services.AddSingleton(probesCatalogService.Object);

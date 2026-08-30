@@ -6,6 +6,7 @@ using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Extensions;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -68,13 +69,9 @@ public sealed class AgendaAccess : IAgendaAccess
         var userKey = _currentUser.UserId;
 
         // Whole-kurin leadership can manage groups anywhere; a гуртковий leader manages only its
-        // groups. Both are derived from permissions so the agenda shares one authorization model.
-        var permissions = RolePermissionMap.Resolve(_currentUser.Roles);
-        var canSeeWholeKurin =
-            RolePermissionMap.WidestScope(permissions, ResourceType.Group, ResourceAction.Manage) == AccessScope.KurinWide;
-        var isLeadership =
-            canSeeWholeKurin ||
-            RolePermissionMap.WidestScope(permissions, ResourceType.Group, ResourceAction.Update) is not null;
+        // groups. Both questions are asked through the same extensions every other handler uses.
+        var canSeeWholeKurin = _currentUser.CanManageWholeKurin();
+        var isLeadership = _currentUser.IsLeadership();
 
         Guid? memberKey = null;
         Guid? ownGroupKey = null;

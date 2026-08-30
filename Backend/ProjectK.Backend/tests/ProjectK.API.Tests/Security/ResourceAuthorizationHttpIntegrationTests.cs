@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Services.Caching;
+﻿using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Models.Authorization;
 using System.Net;
 using System.Security.Claims;
@@ -23,6 +23,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -89,28 +90,7 @@ public class ResourceAuthorizationHttpIntegrationTests
                     ResourceGuardAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole("Admin"));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireAgendaAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequirePlanningAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.Configure<SecurityPatchOptions>(options =>
             {

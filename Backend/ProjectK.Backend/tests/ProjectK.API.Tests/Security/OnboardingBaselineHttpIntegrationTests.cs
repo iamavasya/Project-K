@@ -29,6 +29,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -238,28 +239,7 @@ public class OnboardingBaselineHttpIntegrationTests
                     OnboardingBaselineAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole("Admin"));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole("KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole("Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-
-                options.AddPolicy("RequireAgendaAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequirePlanningAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole("Member", "Group.Hurtkoviy", "KV.Zvyazkovyi", "Admin"));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(AuthController).Assembly)

@@ -124,35 +124,7 @@ namespace ProjectK.API
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(SystemRole.Admin));
-
-                options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
-                    policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
-
-                // These coarse gates are expressed as permissions so nothing checks role names; the
-                // fine-grained ResourceAccessService still applies scope on top per request.
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsWholeKurinManagement(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsGroupLeadership(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireAgendaAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequirePlanningAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireAssertion(ctx => ctx.User.Identity?.IsAuthenticated == true));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddCors(options =>
             {

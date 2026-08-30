@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -15,6 +15,7 @@ using ProjectK.API.Controllers.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -81,30 +82,7 @@ public class AuthorizationHttpIntegrationTests
                     TestAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(SystemRole.Admin));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsWholeKurinManagement(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsGroupLeadership(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireAgendaAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsAgendaAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequirePlanningAuthor",
-                    policy => policy.RequireAssertion(ctx =>
-                        RolePermissionMap.GrantsPlanningAuthoring(ctx.User.FindAll(ClaimTypes.Role).Select(c => c.Value))));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireAssertion(ctx => ctx.User.Identity?.IsAuthenticated == true));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(AuthController).Assembly);

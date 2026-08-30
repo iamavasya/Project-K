@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+﻿using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
@@ -17,11 +17,11 @@ public static class CurrentUserPermissionExtensions
 
     /// <summary>True for the whole-kurin managers (Зв'язковий, Курінний, admin).</summary>
     public static bool CanManageWholeKurin(this ICurrentUserContext user) =>
-        RolePermissionMap.WidestScope(user.Permissions(), ResourceType.Group, ResourceAction.Manage) == AccessScope.KurinWide;
+        RolePermissionMap.GrantsWholeKurinManagement(user.Roles ?? Array.Empty<string>());
 
     /// <summary>True for anyone who leads groups (гуртковий leaders plus whole-kurin managers).</summary>
     public static bool CanLeadGroups(this ICurrentUserContext user) =>
-        RolePermissionMap.WidestScope(user.Permissions(), ResourceType.Group, ResourceAction.Update) is not null;
+        RolePermissionMap.GrantsGroupLeadership(user.Roles ?? Array.Empty<string>());
 
     /// <summary>Whole-kurin managers or group leaders — the historic "leadership" set.</summary>
     public static bool IsLeadership(this ICurrentUserContext user) =>
