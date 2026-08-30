@@ -29,14 +29,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWa
             var existingEntry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
             if (existingEntry != null)
             {
-                return new ServiceResult<Guid>(ResultType.Conflict, Guid.Empty, "Waitlist entry with this email already exists.");
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryExists", "Waitlist entry with this email already exists.");
             }
 
             // Also check existing members just in case
             var memberByEmail = await _unitOfWork.Members.GetByEmailAsync(request.Email, cancellationToken);
             if (memberByEmail != null)
             {
-                return new ServiceResult<Guid>(ResultType.Conflict, Guid.Empty, "A member with this email already exists in the system.");
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, "MemberEmailExists", "A member with this email already exists in the system.");
             }
 
             var entry = new WaitlistEntry

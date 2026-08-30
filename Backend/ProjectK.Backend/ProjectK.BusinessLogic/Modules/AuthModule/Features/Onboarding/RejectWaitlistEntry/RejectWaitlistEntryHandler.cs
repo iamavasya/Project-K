@@ -26,7 +26,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWa
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
             if (entry == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Waitlist entry not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
             }
 
             entry.VerificationStatus = WaitlistVerificationStatus.Rejected;

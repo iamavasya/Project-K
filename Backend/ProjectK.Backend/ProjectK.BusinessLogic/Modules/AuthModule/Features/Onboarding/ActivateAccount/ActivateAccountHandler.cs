@@ -39,19 +39,19 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
 
             if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
             {
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, "Invalid or expired invitation token.");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "InvalidInvitationToken", "Invalid or expired invitation token.");
             }
 
             // 2. Get User
             if (!invitation.TargetUserKey.HasValue)
             {
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, "Invitation is not linked to a user.");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "InvitationHasNoUser", "Invitation is not linked to a user.");
             }
 
             var user = await _userManager.FindByIdAsync(invitation.TargetUserKey.Value.ToString());
             if (user == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Target user not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
             }
 
             // 3. Set Password and Activate
@@ -59,7 +59,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
             if (!addPasswordResult.Succeeded)
             {
                 var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"Failed to set password: {errors}");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "PasswordNotSet", $"Failed to set password: {errors}");
             }
 
             user.OnboardingStatus = OnboardingStatus.Active;
@@ -69,7 +69,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
             if (!updateResult.Succeeded)
             {
                 var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"Failed to update user status: {errors}");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "UserNotUpdated", $"Failed to update user status: {errors}");
             }
 
             // 3.5. Assign the baseline system role. Kurin authority comes from a діловодський office,

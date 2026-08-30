@@ -29,14 +29,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
             if (entry == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Waitlist entry not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
             }
 
             var invitation = await _unitOfWork.Invitations.GetActiveByWaitlistEntryKeyAsync(request.WaitlistEntryKey, cancellationToken);
 
             if (invitation == null)
             {
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, "No active invitation found for this entry.");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "NoActiveInvitation", "No active invitation found for this entry.");
             }
 
             // Revoke old invitation and create a new one to refresh the token and expiry

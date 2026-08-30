@@ -29,24 +29,29 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
             if (group == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Group not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "GroupNotFound", "Group not found.");
             }
 
             var mentorMember = await _unitOfWork.Members.GetByUserKeyAsync(request.MentorUserKey, cancellationToken);
             if (mentorMember == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Mentor member profile not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "MentorNotFound", "Mentor member profile not found.");
             }
 
             if (mentorMember.KurinKey != group.KurinKey)
             {
-                return new ServiceResult<Guid>(ResultType.Forbidden, Guid.Empty, "Mentor must belong to the same Kurin as the Group.");
+                return ServiceResult<Guid>.Failure(ResultType.Forbidden, "MentorFromAnotherKurin", "Mentor must belong to the same Kurin as the Group.");
             }
 
             var existingAssignment = await _unitOfWork.MentorAssignments.GetSpecificAssignmentAsync(request.MentorUserKey, request.GroupKey, cancellationToken);
             if (existingAssignment != null && existingAssignment.RevokedAtUtc == null)
             {
-                return new ServiceResult<Guid>(ResultType.Conflict, existingAssignment.MentorAssignmentKey, "Mentor is already assigned to this group.");
+                // The existing key used to ride along as Data, but it landed in CreatedAtActionName and the
+                // client never read it; the message is what the caller needs.
+                return ServiceResult<Guid>.Failure(
+                    ResultType.Conflict,
+                    "MentorAlreadyAssigned",
+                    "Mentor is already assigned to this group.");
             }
 
             var assignment = new ProjectK.Common.Entities.KurinModule.MentorAssignment

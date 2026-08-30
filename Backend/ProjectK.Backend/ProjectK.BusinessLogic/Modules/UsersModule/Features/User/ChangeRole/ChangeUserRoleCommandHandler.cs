@@ -42,14 +42,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole
             var targetUser = await _userManager.FindByIdAsync(request.TargetUserId.ToString());
             if (targetUser == null)
             {
-                return new ServiceResult<bool>(ResultType.NotFound, false, "Target user not found.");
+                return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
             }
 
             // Only admins manage the system Admin role. Kurin-level roles come from діловодські
             // offices (the Leadership screen) and are synced automatically, not set here.
             if (!_currentUserContext.IsAdmin())
             {
-                return new ServiceResult<bool>(ResultType.Forbidden, false, "Only admins can change system roles.");
+                return ServiceResult<bool>.Failure(ResultType.Forbidden, "AdminOnly", "Only admins can change system roles.");
             }
 
             var currentRoles = await _userManager.GetRolesAsync(targetUser);
@@ -65,7 +65,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole
                 var addResult = await _userManager.AddToRoleAsync(targetUser, SystemRole.Admin);
                 if (!addResult.Succeeded)
                 {
-                    return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to grant admin role.");
+                    return ServiceResult<bool>.Failure(ResultType.BadRequest, "AdminRoleNotGranted", "Failed to grant admin role.");
                 }
             }
             else
@@ -75,7 +75,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole
                     var removeResult = await _userManager.RemoveFromRoleAsync(targetUser, SystemRole.Admin);
                     if (!removeResult.Succeeded)
                     {
-                        return new ServiceResult<bool>(ResultType.BadRequest, false, "Failed to revoke admin role.");
+                        return ServiceResult<bool>.Failure(ResultType.BadRequest, "AdminRoleNotRevoked", "Failed to revoke admin role.");
                     }
                 }
 

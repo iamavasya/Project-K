@@ -44,12 +44,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
             var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
             if (entry == null)
             {
-                return new ServiceResult<Guid>(ResultType.NotFound, Guid.Empty, "Waitlist entry not found.");
+                return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
             }
 
             if (entry.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation)
             {
-                return new ServiceResult<Guid>(ResultType.Conflict, Guid.Empty, "Waitlist entry is already approved.");
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryAlreadyApproved", "Waitlist entry is already approved.");
             }
 
             var isClosedBeta = _configuration.GetValue<bool>("Onboarding:IsClosedBeta", true);
@@ -67,7 +67,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
 
                         if (activeUsersCount >= existingKurin.ZbtUserCap)
                         {
-                            return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"ZBT Cap reached for kurin {num}. Hard cap is {existingKurin.ZbtUserCap}.");
+                            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "BetaCapReached", $"ZBT Cap reached for kurin {num}. Hard cap is {existingKurin.ZbtUserCap}.");
                         }
                     }
                 }
@@ -89,7 +89,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
             if (!createResult.Succeeded)
             {
                 var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                return new ServiceResult<Guid>(ResultType.BadRequest, Guid.Empty, $"Failed to create user: {errors}");
+                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "UserNotCreated", $"Failed to create user: {errors}");
             }
 
             // 2. Create Kurin Placeholder if leader candidate

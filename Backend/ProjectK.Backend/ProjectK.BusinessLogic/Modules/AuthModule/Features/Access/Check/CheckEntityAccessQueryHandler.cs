@@ -23,12 +23,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check
         {
             if (!Guid.TryParse(request.EntityKey, out var parsedEntityKey))
             {
-                return new ServiceResult<bool>(ResultType.BadRequest, false, "Invalid entity key.");
+                return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidEntityKey", "Invalid entity key.");
             }
 
             if (!TryMapResourceType(request.EntityType, out var resourceType))
             {
-                return new ServiceResult<bool>(ResultType.BadRequest, false, "Invalid entity type.");
+                return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidEntityType", "Invalid entity type.");
             }
 
             if (!TryResolveResourceAction(request.Action, out var action, out var actionError))

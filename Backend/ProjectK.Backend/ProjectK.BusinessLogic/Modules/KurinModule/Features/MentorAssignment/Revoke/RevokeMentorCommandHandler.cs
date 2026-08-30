@@ -30,7 +30,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.R
 
             if (existingAssignment == null)
             {
-                return new ServiceResult<bool>(ResultType.NotFound, false, "Mentor assignment not found.");
+                return ServiceResult<bool>.Failure(ResultType.NotFound, "MentorAssignmentNotFound", "Mentor assignment not found.");
             }
 
             if (existingAssignment.RevokedAtUtc != null)

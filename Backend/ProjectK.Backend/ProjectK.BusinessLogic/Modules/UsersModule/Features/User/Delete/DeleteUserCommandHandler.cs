@@ -27,7 +27,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete
             var user = await _userManager.FindByIdAsync(request.UserId.ToString());
             if (user == null)
             {
-                return new ServiceResult<bool>(ResultType.NotFound, false, "User not found.");
+                return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "User not found.");
             }
 
             // Clean up MentorAssignments
@@ -51,7 +51,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return new ServiceResult<bool>(ResultType.InternalServerError, false, $"Failed to delete user: {errors}");
+                return ServiceResult<bool>.Failure(ResultType.InternalServerError, "UserNotDeleted", $"Failed to delete user: {errors}");
             }
 
             return new ServiceResult<bool>(ResultType.Success, true);
