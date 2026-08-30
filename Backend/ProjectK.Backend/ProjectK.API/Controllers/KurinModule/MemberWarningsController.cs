@@ -17,6 +17,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
+    /// <summary>
+    /// Warnings recorded against a member. Assigning and cancelling are leadership decisions; the member
+    /// may read their own.
+    /// </summary>
     [ApiController]
     [Route("api/member/{memberKey:guid}/warnings")]
     public class MemberWarningsController : ControllerBase
@@ -28,6 +32,9 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Lists the warnings recorded against a member.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet]
         [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
@@ -39,6 +46,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Records a warning.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
@@ -52,6 +62,12 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Cancels a warning.
+        /// </summary>
+        /// <remarks>
+        /// Cancelling rather than deleting: the record stays, so the history remains readable.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{warningKey:guid}")]
         [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Update, "route:memberKey", ResourceType.Member)]

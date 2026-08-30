@@ -18,6 +18,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
+/// <summary>
+/// One member's progress through probes and badges: what they have submitted, what has been signed off,
+/// and by whom.
+/// </summary>
 [ApiController]
 [Route("api/member/{memberKey:guid}")]
 public class MemberProgressController : ControllerBase
@@ -29,6 +33,9 @@ public class MemberProgressController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Returns the member's progress on every badge they have started.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("badges/progress")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
@@ -40,6 +47,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Submits a badge for review.
+    /// </summary>
+    /// <remarks>
+    /// Members submit their own; submitting for somebody else needs rights over that member.
+    /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/submit")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
@@ -53,6 +66,9 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Accepts or refuses a submitted badge. Leadership only.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPost("badges/{badgeId}/review")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
@@ -66,6 +82,9 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Returns the member's progress through one probe, point by point.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/{probeId}/progress")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
@@ -78,6 +97,9 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Moves a probe between statuses.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/progress/status")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
@@ -94,6 +116,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Signs off one point of a probe.
+    /// </summary>
+    /// <remarks>
+    /// The signature records who signed and when, which is what the member's book is built from.
+    /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
@@ -110,6 +138,9 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Withdraws a signature from one point of a probe.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]

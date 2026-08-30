@@ -22,6 +22,9 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
+    /// <summary>
+    /// The kurin itself: its record, its badge review queue, and its report.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class KurinController : ControllerBase
@@ -40,6 +43,9 @@ namespace ProjectK.API.Controllers.KurinModule
             _kurinReportPdfRenderer = kurinReportPdfRenderer;
         }
 
+        /// <summary>
+        /// Lists badge submissions across the kurin that are waiting on a decision.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpGet("{kurinKey:guid}/badges/review")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -50,6 +56,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns one kurin.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -62,6 +71,13 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Renders the kurin's report as a PDF.
+        /// </summary>
+        /// <remarks>
+        /// The heaviest read in the API — it walks membership, offices, probes and badges to compose one
+        /// document.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("{kurinKey:guid}/report/pdf")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -81,6 +97,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return File(bytes, "application/pdf", fileName);
         }
 
+        /// <summary>
+        /// Lists every kurin. Administrators only, since nobody else works above one kurin.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("kurins")]
         [ProducesResponseType(typeof(IEnumerable<KurinResponse>), StatusCodes.Status200OK)]
@@ -92,6 +111,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Creates a kurin from its number alone.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
@@ -104,6 +126,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Rewrites a kurin's record.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPut("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
@@ -125,6 +150,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Deletes a kurin.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpDelete("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Delete, "route:kurinKey")]

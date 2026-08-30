@@ -24,6 +24,10 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnounc
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 
+/// <summary>
+/// Announcements published outside the app — drafted, reviewed, approved and only then published.
+/// Administrators, or a service token for the bot that drafts them.
+/// </summary>
 [ApiController]
 [Route("api/admin/public-announcements")]
 [Authorize(Policy = AdminOrServiceTokenRequirement.PolicyName)]
@@ -36,31 +40,51 @@ public class PublicAnnouncementsController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Lists drafts, optionally narrowed to one status.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyCollection<PublicAnnouncementDraftDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] PublicAnnouncementStatus? status)
     {
         var response = await _mediator.Send(new GetPublicAnnouncementDraftsQuery(status));
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Returns one draft.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("{draftKey:guid}", Name = "GetPublicAnnouncementDraftByKey")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByKey(Guid draftKey)
     {
         var response = await _mediator.Send(new GetPublicAnnouncementDraftQuery(draftKey));
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Reports which uploaded images no draft references any more.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("cleanup-status")]
+    [ProducesResponseType(typeof(PublicAnnouncementCleanupStatusDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCleanupStatus()
     {
         var response = await _mediator.Send(new GetPublicAnnouncementCleanupStatusQuery());
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Creates a draft.
+    /// </summary>
+    /// <remarks>
+    /// The one action here that also accepts a service token rather than an administrator: it is how the
+    /// announcement bot files what it has written for a human to review.
+    /// </remarks>
     [HttpPost]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreatePublicAnnouncementDraftRequestDto request)
     {
         var response = await _mediator.Send(new CreatePublicAnnouncementDraftCommand(
@@ -83,9 +107,16 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Stores an image for use in a draft and returns its key and URL.
+    /// </summary>
+    /// <remarks>
+    /// Capped at 8 MB and refused unless the content type is an image.
+    /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("image")]
     [RequestSizeLimit(8 * 1024 * 1024)]
+    [ProducesResponseType(typeof(PublicAnnouncementImageUploadDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadImage(
         [FromForm] IFormFile file,
         [FromServices] IPublicAnnouncementImageStore imageStore,
@@ -120,7 +151,7 @@ public class PublicAnnouncementsController : ControllerBase
                 controller: null,
                 values: new { imageKey = result.ImageKey });
 
-            return Ok(new { imageBlobKey = result.ImageKey, imageUrl });
+            return Ok(new PublicAnnouncementImageUploadDto(result.ImageKey, imageUrl));
         }
         catch (InvalidOperationException)
         {
@@ -128,8 +159,15 @@ public class PublicAnnouncementsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Serves a stored announcement image.
+    /// </summary>
+    /// <remarks>
+    /// Anonymous, because a published announcement is read outside the app by people who have no account.
+    /// </remarks>
     [HttpGet("image/{*imageKey}")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetImage(
         string imageKey,
         [FromServices] IPublicAnnouncementImageStore imageStore,
@@ -144,8 +182,12 @@ public class PublicAnnouncementsController : ControllerBase
         return File(image.Content, image.ContentType, enableRangeProcessing: true);
     }
 
+    /// <summary>
+    /// Permanently removes a stored image.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("image/{*imageKey}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteImage(
         string imageKey,
         [FromServices] IPublicAnnouncementImageStore imageStore,
@@ -155,8 +197,12 @@ public class PublicAnnouncementsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Rewrites a draft that has not been published.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPut("{draftKey:guid}")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(Guid draftKey, [FromBody] UpdatePublicAnnouncementDraftRequestDto request)
     {
         var response = await _mediator.Send(new UpdatePublicAnnouncementDraftCommand(
@@ -174,16 +220,24 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Renders the draft exactly as it would be published, without publishing it.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/preview")]
+    [ProducesResponseType(typeof(PublicAnnouncementPreviewDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Preview(Guid draftKey)
     {
         var response = await _mediator.Send(new PreviewPublicAnnouncementDraftQuery(draftKey));
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Moves a draft into review.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/submit")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SubmitForApproval(Guid draftKey)
     {
         var response = await _mediator.Send(new TransitionPublicAnnouncementDraftCommand(
@@ -192,8 +246,12 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Approves a draft for publication. Approving does not publish it.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/approve")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Approve(Guid draftKey)
     {
         var response = await _mediator.Send(new TransitionPublicAnnouncementDraftCommand(
@@ -202,8 +260,12 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Sends a draft back from review.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/reject")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Reject(Guid draftKey)
     {
         var response = await _mediator.Send(new TransitionPublicAnnouncementDraftCommand(
@@ -212,16 +274,24 @@ public class PublicAnnouncementsController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Publishes an approved draft.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{draftKey:guid}/publish")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Publish(Guid draftKey)
     {
         var response = await _mediator.Send(new PublishPublicAnnouncementDraftCommand(draftKey));
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Deletes a draft.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("{draftKey:guid}")]
+    [ProducesResponseType(typeof(PublicAnnouncementDraftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Delete(Guid draftKey)
     {
         var response = await _mediator.Send(new TransitionPublicAnnouncementDraftCommand(

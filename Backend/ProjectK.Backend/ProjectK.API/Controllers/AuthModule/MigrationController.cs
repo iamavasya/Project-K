@@ -6,9 +6,13 @@ using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport;
 using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
+    /// <summary>
+    /// Read-only reporting on data that predates the office-based role model. Admin only.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [Route("api/auth/migration")]
     [ApiController]
@@ -21,7 +25,11 @@ namespace ProjectK.API.Controllers.AuthModule
             this._mediator = _mediator;
         }
 
+        /// <summary>
+        /// Reports what the legacy role migration would change, without changing anything.
+        /// </summary>
         [HttpGet("preflight")]
+        [ProducesResponseType(typeof(MigrationPreflightReport), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPreflightReport()
         {
             var query = new GetMigrationPreflightReportQuery();

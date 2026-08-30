@@ -27,6 +27,11 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.UsersModule
 {
+    /// <summary>
+    /// Accounts as opposed to members: sign-in identity, account security, and the per-account settings the
+    /// app remembers. A member is a person in the kurin; a user is a way of signing in, and one may exist
+    /// without the other.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -37,6 +42,9 @@ namespace ProjectK.API.Controllers.UsersModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Lists every account. Administrators only.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpGet("users")]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
@@ -47,6 +55,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns the caller's own account settings.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("me")]
@@ -63,6 +74,13 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Changes the caller's own account details.
+        /// </summary>
+        /// <remarks>
+        /// Changing the email address does not take effect here — it is confirmed from the address itself at
+        /// <see cref="ConfirmAccountEmailChange"/>.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPut("me")]
@@ -80,6 +98,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Completes an email change using the token sent to the new address.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/email/confirm")]
@@ -97,6 +118,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Changes the caller's own password, given the current one.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/password")]
@@ -114,6 +138,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Replaces the caller's own second factor, given a recovery code.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/reset")]
@@ -131,6 +158,12 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Turns the caller's own second factor off.
+        /// </summary>
+        /// <remarks>
+        /// Refused while an office the caller holds requires it.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("me/mfa/disable")]
@@ -148,6 +181,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns the caller's saved dashboard layouts.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("me/layouts")]
         [ProducesResponseType(typeof(IReadOnlyList<TileLayoutDto>), StatusCodes.Status200OK)]
@@ -163,6 +199,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Saves the caller's layout for one board.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("me/layouts/{boardKey}")]
         [ProducesResponseType(typeof(TileLayoutDto), StatusCodes.Status200OK)]
@@ -180,6 +219,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Discards the caller's layout for one board, restoring the default.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("me/layouts/{boardKey}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -195,6 +237,13 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Clears somebody else's second factor so they can enrol again.
+        /// </summary>
+        /// <remarks>
+        /// For the case the recovery codes are gone too. Refused when the account holds an office that requires
+        /// the second factor, so the requirement cannot be lifted by asking for help.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("{userId}/mfa/reset")]
@@ -206,6 +255,9 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Deletes an account. Administrators only.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpDelete("{userId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -217,6 +269,14 @@ namespace ProjectK.API.Controllers.UsersModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Changes an account's role.
+        /// </summary>
+        /// <remarks>
+        /// Only the account-level distinction between an administrator and everyone else. What a person may do
+        /// inside a kurin follows from the offices they hold, which are changed through the leadership
+        /// endpoints, not here.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpPost("{userId}/role")]
         [ProducesResponseType(StatusCodes.Status200OK)]

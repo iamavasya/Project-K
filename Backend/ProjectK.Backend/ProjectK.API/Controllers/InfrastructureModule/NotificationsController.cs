@@ -11,6 +11,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.InfrastructureModule
 {
+    /// <summary>
+    /// The caller's own notification inbox. Every action is scoped to the signed-in account; there is no
+    /// way to read somebody else's.
+    /// </summary>
     [ApiController]
     [Route("api/notifications")]
     public class NotificationsController : ControllerBase
@@ -22,6 +26,9 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Returns the caller's notifications, newest first.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet]
         [ProducesResponseType(typeof(IReadOnlyList<AppNotificationDto>), StatusCodes.Status200OK)]
@@ -38,6 +45,9 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns how many of the caller's notifications are unread.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("unread-count")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
@@ -48,6 +58,9 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Marks one notification read.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{notificationKey:guid}/read")]
         [ProducesResponseType(typeof(AppNotificationDto), StatusCodes.Status200OK)]
@@ -64,6 +77,9 @@ namespace ProjectK.API.Controllers.InfrastructureModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Marks every unread notification read.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("read-all")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]

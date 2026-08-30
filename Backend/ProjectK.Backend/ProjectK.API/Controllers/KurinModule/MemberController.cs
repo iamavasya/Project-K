@@ -17,6 +17,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
+    /// <summary>
+    /// Members: their records, the groups they belong to, and whether their profile has been checked by
+    /// leadership.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class MemberController : ControllerBase
@@ -28,6 +32,9 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Returns one member.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{memberKey}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
@@ -40,6 +47,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists the members of one group.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("groups/{groupKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
@@ -52,6 +62,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists the members of one kurin.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -64,6 +77,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Creates a member in a group, with an optional photo.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Create, "arg:request.GroupKey")]
@@ -99,6 +115,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Creates a member against a kurin rather than a specific group.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPost("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
@@ -131,6 +150,12 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Rewrites a member's record.
+        /// </summary>
+        /// <remarks>
+        /// Members may edit their own profile; editing somebody else's needs rights over that member.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
@@ -166,6 +191,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Marks a member's profile checked by leadership.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpPut("{memberKey:guid}/profile-verification")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
@@ -186,6 +214,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Withdraws that check, sending the profile back for review.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{memberKey:guid}/profile-verification")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
@@ -205,6 +236,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Deletes a member.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
         [HttpDelete("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Delete, "route:memberKey")]
@@ -218,6 +252,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists the members who sit in the kurin's governing body.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("members/kv/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -228,6 +265,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists the members eligible to be assigned as mentors.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("members/mentor-candidates/{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]

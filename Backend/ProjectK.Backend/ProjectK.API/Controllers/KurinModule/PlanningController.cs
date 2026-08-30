@@ -9,9 +9,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
+/// <summary>
+/// Planning sessions — the working documents behind what later becomes the agenda.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class PlanningController : ControllerBase
@@ -22,18 +26,26 @@ public class PlanningController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Creates a planning session.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequirePlanningAuthor)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSession request)
     {
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Returns one planning session.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpGet("session/{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Read, "route:planningSessionKey")]
+    [ProducesResponseType(typeof(PlanningSessionResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
     {
         var request = new GetPlanningSessionByKey(planningSessionKey);
@@ -41,9 +53,13 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Lists the planning sessions of one kurin.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<PlanningSessionResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)
     {
         var request = new GetPlanningSessions(kurinKey);
@@ -51,9 +67,13 @@ public class PlanningController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>
+    /// Deletes a planning session.
+    /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpDelete("{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Delete, "route:planningSessionKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeletePlanningSession(Guid planningSessionKey)
     {
         var request = new DeletePlanningSession(planningSessionKey);

@@ -9,6 +9,10 @@ using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.API.Controllers.TestModule;
 
+/// <summary>
+/// Fixtures for the end-to-end suite. Registered only when the E2E environment switch is on; the
+/// controller does not exist in a normal deployment.
+/// </summary>
 [ApiController]
 [AllowAnonymous]
 [Route("api/test/e2e")]
@@ -36,6 +40,14 @@ public sealed class E2ETestController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Returns the database to the seeded fixture state.
+    /// </summary>
+    /// <remarks>
+    /// The suite calls this between runs. Without it the run inherits whatever the previous one left behind
+    /// — accumulated accounts eventually hit the beta cap and the suite starts failing in ways that look
+    /// like flakes.
+    /// </remarks>
     [AllowAnonymous]
     [HttpPost("reset")]
     public async Task<IActionResult> Reset(CancellationToken cancellationToken)
@@ -64,6 +76,9 @@ public sealed class E2ETestController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Returns the newest invitation token for an address, standing in for reading the email.
+    /// </summary>
     [AllowAnonymous]
     [HttpGet("invitations/by-email")]
     public async Task<IActionResult> GetLatestInvitationByEmail([FromQuery] string email, CancellationToken cancellationToken)

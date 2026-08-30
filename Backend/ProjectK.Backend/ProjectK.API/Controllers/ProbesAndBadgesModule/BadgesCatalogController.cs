@@ -7,6 +7,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule
 {
+    /// <summary>
+    /// The badge catalogue — the definitions themselves, identical for every kurin. Read-only: the
+    /// catalogue ships with the application rather than being edited through it.
+    /// </summary>
     [Route("api/catalog/badges")]
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [ApiController]
@@ -19,6 +23,9 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule
             _badgesCatalogService = badgesCatalogService;
         }
 
+        /// <summary>
+        /// Returns the catalogue's categories and levels, for building filters.
+        /// </summary>
         [HttpGet("meta")]
         [ProducesResponseType(typeof(BadgesMetadata), StatusCodes.Status200OK)]
         public IActionResult GetMetadata()
@@ -26,6 +33,9 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule
             return Ok(_badgesCatalogService.GetBadgesMetadata());
         }
 
+        /// <summary>
+        /// Lists badge definitions.
+        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Badge>), StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] int take = 200)
@@ -33,6 +43,9 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule
             return Ok(_badgesCatalogService.GetBadges(take));
         }
 
+        /// <summary>
+        /// Returns one badge definition.
+        /// </summary>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Badge), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

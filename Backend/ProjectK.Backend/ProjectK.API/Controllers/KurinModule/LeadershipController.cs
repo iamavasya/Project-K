@@ -9,9 +9,15 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
+    /// <summary>
+    /// Offices — who holds which post in a kurin or a group. Seating somebody in an office is what grants
+    /// them their access, so these are the calls that change what a person may do.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class LeadershipController : ControllerBase
@@ -23,9 +29,16 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Returns the offices of one kurin or one group.
+        /// </summary>
+        /// <remarks>
+        /// The resource being checked comes from the route, since the same endpoint serves both.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("type/{leadershipType}/{typeKey:guid}")]
         [ResourceAuthorize("route:leadershipType", ResourceAction.Read, "route:typeKey")]
+        [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
         {
             var request = new GetLeadershipByType(leadershipType, typeKey);
@@ -33,9 +46,13 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns one office record.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
+        [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
         {
             var request = new GetLeadershipByKey(leadershipKey);
@@ -43,9 +60,17 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Seats a member in an office.
+        /// </summary>
+        /// <remarks>
+        /// The system role that decides access is derived from the office, so this call changes what that
+        /// member may do everywhere.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize("arg:dto.Type", ResourceAction.Create, "arg:dto.EntityKey")]
+        [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
         {
             var request = new UpsertLeadership(dto);
@@ -53,9 +78,13 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Rewrites an office record, including who holds it.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Update, "route:leadershipKey")]
+        [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
         {
             var request = new UpsertLeadership(dto, leadershipKey);
@@ -63,9 +92,13 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns who has held an office over time.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [HttpGet("histories/{leadershipKey}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
+        [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)
         {
             var request = new GetLeadershipHistories(leadershipKey);

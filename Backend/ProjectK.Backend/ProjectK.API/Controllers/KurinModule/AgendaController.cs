@@ -18,6 +18,10 @@ using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
+    /// <summary>
+    /// The kurin's agenda: items, the categories they are filed under, and who has answered that they are
+    /// coming. What a caller sees is decided by the assignments on each item, not by the item's author.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class AgendaController : ControllerBase
@@ -29,6 +33,13 @@ namespace ProjectK.API.Controllers.KurinModule
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Returns agenda items in a date range, narrowed to what the caller may see.
+        /// </summary>
+        /// <remarks>
+        /// Whole-kurin viewers see everything; everyone else sees only items assigned to them, their groups or
+        /// their offices.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -39,6 +50,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Returns the agenda grouped for the board view rather than by date.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/board")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -49,6 +63,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists what an item can be assigned to — the kurin, its groups, its offices and its members.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
         [HttpGet("{kurinKey:guid}/assign-targets")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -59,6 +76,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Creates an agenda item together with its assignments.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
@@ -71,6 +91,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Rewrites an agenda item.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}")]
         [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Update, "route:agendaItemKey")]
@@ -85,6 +108,12 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Moves an item between statuses.
+        /// </summary>
+        /// <remarks>
+        /// Separate from <see cref="Update"/> because who may change a status is not who may rewrite the item.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}/status")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -96,6 +125,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Deletes an agenda item.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{agendaItemKey:guid}")]
         [ResourceAuthorize(ResourceType.AgendaItem, ResourceAction.Delete, "route:agendaItemKey")]
@@ -110,6 +142,9 @@ namespace ProjectK.API.Controllers.KurinModule
 
         // ---- Event groups (categories) ----
 
+        /// <summary>
+        /// Lists the categories available when filing an item.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/categories")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
@@ -120,6 +155,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Lists categories with the detail needed to edit them, which requires rights over the kurin.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{kurinKey:guid}/categories/manage")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
@@ -130,6 +168,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Creates a category, or rewrites one matched by key.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("categories")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
@@ -142,6 +183,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Rewrites one category.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("categories/{categoryKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
@@ -156,6 +200,9 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Deletes a category.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{kurinKey:guid}/categories/{categoryKey:guid}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
@@ -170,6 +217,9 @@ namespace ProjectK.API.Controllers.KurinModule
 
         // ---- RSVP ----
 
+        /// <summary>
+        /// Returns who has answered an item and how.
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{agendaItemKey:guid}/responses")]
         [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
@@ -181,6 +231,13 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Records the caller's own answer to an item.
+        /// </summary>
+        /// <remarks>
+        /// Refused on items the caller cannot see, using the same visibility rule as the feed — the two are one
+        /// definition, so the list and what may be answered cannot drift apart.
+        /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{agendaItemKey:guid}/response")]
         [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
