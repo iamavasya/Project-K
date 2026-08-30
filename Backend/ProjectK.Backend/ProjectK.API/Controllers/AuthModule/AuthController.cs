@@ -118,7 +118,10 @@ namespace ProjectK.API.Controllers.AuthModule
             [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
             [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService)
         {
-            var expectedKey = config["RateLimitBypassKey"];
+            // Its own secret, not the rate limiter's: the two used to share one value, so setting the
+            // bypass key to let a monitor through would also have opened a login as the load-test
+            // account. Empty means the endpoint is off, which is how it ships.
+            var expectedKey = config["LoadTestLoginKey"];
             if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
             {
                 return this.Failure(ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");

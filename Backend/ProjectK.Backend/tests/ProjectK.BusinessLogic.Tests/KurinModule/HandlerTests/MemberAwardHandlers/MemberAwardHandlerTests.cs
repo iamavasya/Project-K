@@ -20,6 +20,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 
@@ -71,7 +72,7 @@ public class MemberAwardHandlerTests
             _currentUserContextMock.Object,
             _notificationServiceMock.Object,
             _mapperMock.Object);
-        _deleteHandler = new DeleteMemberAwardHandler(_unitOfWorkMock.Object);
+        _deleteHandler = new DeleteMemberAwardHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object);
     }
 
     [Fact]
@@ -310,20 +311,59 @@ public class MemberAwardHandlerTests
     }
 
     [Fact]
-    public async Task Delete_ShouldDeleteAward_WhenItExists()
+    public async Task Delete_ShouldWithdrawOwnSubmission_WithoutLeadership()
     {
         var awardKey = Guid.NewGuid();
-        var existingAward = new MemberAward { MemberAwardKey = awardKey };
+        var submitted = new MemberAward { MemberAwardKey = awardKey, Status = BadgeProgressStatus.Submitted };
 
         _memberAwardRepositoryMock
             .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingAward);
+            .ReturnsAsync(submitted);
 
         var result = await _deleteHandler.Handle(new DeleteMemberAward { MemberAwardKey = awardKey }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        _memberAwardRepositoryMock.Verify(x => x.Delete(existingAward, It.IsAny<CancellationToken>()), Times.Once);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(submitted, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Confirming an award requires leadership, so removing a confirmed one does too — otherwise a
+    /// member could erase a confirmed award with the Member:Update they hold over themselves.
+    /// </summary>
+    [Fact]
+    public async Task Delete_ShouldRefuseConfirmedAward_WithoutLeadership()
+    {
+        var awardKey = Guid.NewGuid();
+        var confirmed = new MemberAward { MemberAwardKey = awardKey, Status = BadgeProgressStatus.Confirmed };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(confirmed);
+
+        var result = await _deleteHandler.Handle(new DeleteMemberAward { MemberAwardKey = awardKey }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldRemoveConfirmedAward_ForLeadership()
+    {
+        var awardKey = Guid.NewGuid();
+        var confirmed = new MemberAward { MemberAwardKey = awardKey, Status = BadgeProgressStatus.Confirmed };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(confirmed);
+        _currentUserContextMock
+            .SetupGet(x => x.Roles)
+            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
+
+        var result = await _deleteHandler.Handle(new DeleteMemberAward { MemberAwardKey = awardKey }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(confirmed, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

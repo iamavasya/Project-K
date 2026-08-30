@@ -20,6 +20,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+using Microsoft.Extensions.Configuration;
 
 namespace ProjectK.API.Tests.Controllers
 {
@@ -388,5 +389,44 @@ namespace ProjectK.API.Tests.Controllers
                 }
             };
         }
-    }
+    
+        /// <summary>
+        /// The endpoint mints a token for the seeded load-test account, so the only thing between it
+        /// and an anonymous caller is the configured key. Empty means off, which is how it ships:
+        /// appsettings.json leaves LoadTestLoginKey blank.
+        /// </summary>
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task LoadTestLogin_ShouldRefuse_WhenNoKeyIsConfigured(string? configuredKey)
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = configuredKey })
+                .Build();
+
+            var result = await _controller.LoadTestLogin(
+                new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
+                configuration,
+                userManager: null!,
+                jwtService: null!);
+
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+        }
+
+        [Fact]
+        public async Task LoadTestLogin_ShouldRefuse_WhenTheKeyDoesNotMatch()
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = "the-real-key" })
+                .Build();
+
+            var result = await _controller.LoadTestLogin(
+                new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
+                configuration,
+                userManager: null!,
+                jwtService: null!);
+
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+        }
+}
 }
