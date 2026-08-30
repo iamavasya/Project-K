@@ -41,16 +41,12 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin
                 // Step 1: Create the new Kurin
                 var kurinResult = await _mediator.Send(new UpsertKurin(request.KurinNumber), cancellationToken);
 
-                // Step 2: Register the user
-
-                // TODO:
-                // Check if the user is created
-                // True:
-                //      Skip, add new kurinKey to user. (Need to make an array for this)
-                // False:
-                //      Register
-
-                // BEST PRACTICE: Make a transaction for kurin, not for manager.
+                // Step 2: Register the user.
+                //
+                // An address that already has an account fails here, because AppUser.KurinKey holds a
+                // single kurin. Letting one person lead two kurins means making that a collection and
+                // reworking the kurin-scope claim with it, so it is a feature rather than something to
+                // patch in on this path.
                 var userResult = await _mediator.Send(new RegisterUserCommand
                 {
                     Email = request.Email,
