@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,7 +49,13 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Returns one office record.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        /// <remarks>
+        /// Gated by the resource check alone rather than by a management tier. Курінний may seat the
+        /// offices below him, so requiring whole-kurin management to read made reading stricter than
+        /// writing — <see cref="UpdateLeadership"/> has always been open to him — and the edit page
+        /// died on its first request.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("{leadershipKey:guid}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
         [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
@@ -95,7 +101,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Returns who has held an office over time.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpGet("histories/{leadershipKey}")]
         [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
         [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
