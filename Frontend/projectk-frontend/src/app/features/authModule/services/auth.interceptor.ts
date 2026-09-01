@@ -49,23 +49,13 @@ export class AuthInterceptor implements HttpInterceptor {
             return this.tryRefreshAndRepeat(req, next);
         }
 
-        if (error instanceof HttpErrorResponse && error.status === 403 && !this.isMfaRequiredError(error)) {
-            this.router.navigate(['/forbidden']);
-        }
-
+        // 403 is passed through, not navigated on. Navigation belongs to the router's guards:
+        // EntityGuard already turns a refusal on the page's own resource into /forbidden. Bouncing
+        // the whole app from here meant any secondary request — a widget, a moderation action —
+        // could yank the user off a page they legitimately hold, and it overrode the components
+        // that deliberately answer 403 inline (member-card, skills-review-page), whose messages
+        // were never seen.
         return throwError(() => error);
-    }
-
-    private isMfaRequiredError(error: HttpErrorResponse): boolean {
-        const errorBody = error.error;
-        if (!errorBody) return false;
-
-        const message = typeof errorBody === 'string'
-            ? errorBody
-            : (errorBody.message || errorBody.Message || errorBody.detail || errorBody.title);
-
-        return typeof message === 'string'
-            && message.toLowerCase().includes('mfa is required');
     }
 
     private shouldSkipRefreshOnUnauthorized(req: HttpRequest<any>): boolean {

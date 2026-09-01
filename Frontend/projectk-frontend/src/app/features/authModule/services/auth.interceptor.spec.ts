@@ -34,6 +34,25 @@ describe('AuthInterceptor', () => {
     httpMock.verify();
   });
 
+  it('should hand a 403 to the caller without navigating', () => {
+    // Navigating from here bounced the whole app off a page the user legitimately held whenever any
+    // secondary request was refused, and it fired before the components that answer 403 inline could
+    // show their message. Refusing a page is the router guards' job.
+    mockAuthService.getAccessToken.and.returnValue('valid-token');
+    const seen: number[] = [];
+
+    httpClient.get('/api/leadership/some-key').subscribe({
+      next: () => fail('should have failed with 403'),
+      error: (error) => seen.push(error.status)
+    });
+
+    httpMock.expectOne('/api/leadership/some-key')
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(seen).toEqual([403]);
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
   it('should not try to refresh token if 401 occurs on /api/auth/logout', () => {
     mockAuthService.getAccessToken.and.returnValue('valid-token');
 
