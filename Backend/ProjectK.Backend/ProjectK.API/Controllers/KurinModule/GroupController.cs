@@ -93,7 +93,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Creates a group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "arg:request.KurinKey")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status201Created)]
@@ -109,7 +109,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Rewrites a group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{groupKey:guid}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
@@ -126,7 +126,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Stores the group's silhouette image.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("{groupKey:guid}/silhouette")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
         [RequestSizeLimit(MaxSilhouetteFileSizeBytes)]
@@ -166,7 +166,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Removes the group's silhouette image.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{groupKey:guid}/silhouette")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
@@ -181,7 +181,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Deletes a group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{groupKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Delete, "route:groupKey")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -225,7 +225,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Assigns a mentor to a group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("{groupKey}/mentors/{mentorUserKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
@@ -239,7 +239,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Removes a mentor's assignment to a group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{groupKey}/mentors/{mentorUserKey}")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]

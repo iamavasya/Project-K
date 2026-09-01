@@ -100,7 +100,7 @@ public class MemberProgressController : ControllerBase
     /// <summary>
     /// Moves a probe between statuses.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/progress/status")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
@@ -122,7 +122,7 @@ public class MemberProgressController : ControllerBase
     /// <remarks>
     /// The signature records who signed and when, which is what the member's book is built from.
     /// </remarks>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
@@ -141,7 +141,7 @@ public class MemberProgressController : ControllerBase
     /// <summary>
     /// Withdraws a signature from one point of a probe.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]

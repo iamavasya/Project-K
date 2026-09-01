@@ -116,27 +116,27 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
-        yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<MemberController, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Create), "RequireUser");
         yield return Row<Action<MemberController, Guid, UpsertMemberRequest, CancellationToken>>(nameof(MemberController.Update), "RequireUser");
-        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<MemberController, Guid>>(nameof(MemberController.Delete), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetKurinKvMembers), "RequireUser");
 
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetByKey), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Exists), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAll), "RequireUser");
-        yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<GroupController, Guid, UploadImageRequest, CancellationToken>>(nameof(GroupController.UploadSilhouette), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), "RequireUser");
+        yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), "RequireUser");
+        yield return Row<Action<GroupController, Guid, UploadImageRequest, CancellationToken>>(nameof(GroupController.UploadSilhouette), "RequireUser");
+        yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), "RequireUser");
+        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireUser");
 
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
         yield return Row<Action<KurinController, int>>(nameof(KurinController.Create), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireUser");
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireUser");
 
         yield return Row<Action<LeadershipController, string, Guid, CancellationToken>>(nameof(LeadershipController.GetLeadershipByType), "RequireUser");
         yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipByKey), "RequireUser");
@@ -160,7 +160,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireGroupLeadership);
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
-        yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireUser");
 
         // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
         // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
@@ -180,21 +180,21 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
 
         yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), AuthorizationPolicies.RequireKurinManagement);
-        yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), "RequireUser");
+        yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), "RequireUser");
         yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.VerifyProfile), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.UnsignProbePoint), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.AssignWarning), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.CancelWarning), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), "RequireUser");
+        yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.UnsignProbePoint), "RequireUser");
+        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.AssignWarning), "RequireUser");
+        yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.CancelWarning), "RequireUser");
         yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.GetWarnings), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MigrationController>(nameof(MigrationController.GetPreflightReport), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.GetInbox), AuthorizationPolicies.RequireUser);

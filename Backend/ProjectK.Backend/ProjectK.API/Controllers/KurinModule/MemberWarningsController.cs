@@ -49,7 +49,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Records a warning.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status201Created)]
@@ -68,7 +68,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <remarks>
         /// Cancelling rather than deleting: the record stays, so the history remains readable.
         /// </remarks>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{warningKey:guid}")]
         [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
         [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status200OK)]

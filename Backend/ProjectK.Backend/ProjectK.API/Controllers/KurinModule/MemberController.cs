@@ -81,7 +81,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Creates a member in a group, with an optional photo.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Create, "arg:request.GroupKey")]
         [Consumes("multipart/form-data")]
@@ -119,7 +119,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Creates a member against a kurin rather than a specific group.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
         [Consumes("multipart/form-data")]
@@ -240,7 +240,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Deletes a member.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Delete, "route:memberKey")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

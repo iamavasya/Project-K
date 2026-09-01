@@ -129,7 +129,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Rewrites a kurin's record.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
         [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
@@ -153,7 +153,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// <summary>
         /// Deletes a kurin.
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpDelete("{kurinKey}")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Delete, "route:kurinKey")]
         [ProducesResponseType(StatusCodes.Status200OK)]
