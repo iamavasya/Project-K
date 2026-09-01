@@ -35,7 +35,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
                     $"Group with key {request.GroupKey} not found.");
             }
 
-            // Delete all members with GroupKey
+            // Everything the гурток holds goes first: its провід is Restrict, its members are
+            // NoAction, so the database refuses to delete a гурток that still has either. Mentor
+            // assignments and the members' own history cascade on their own.
+            await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
+
             var members = await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken);
 
             foreach (var member in members)

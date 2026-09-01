@@ -45,20 +45,22 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
         }
 
+        /// <summary>
+        /// The members of one гурток as tracked entities.
+        /// <para>
+        /// Deliberately bare. It used to eager-load the whole graph <c>AsNoTracking</c>, which made
+        /// every member carry its own detached <see cref="Group"/>; removing such a member attached
+        /// that copy beside the already-tracked гурток and EF refused the second instance with the
+        /// same key, so deleting a гурток answered 500. Nothing is lost: the dependants cascade in
+        /// the database, and screens that need the graph read it through
+        /// <see cref="GetListItemsByGroupKeyAsync"/>.
+        /// </para>
+        /// </summary>
         public async Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members.Where(m => m.GroupKey == groupKey)
-                                         .Include(m => m.Group)
-                                         .Include(m => m.Kurin)
-                                         .Include(m => m.PlastLevelHistory)
-                                         .Include(m => m.LeadershipHistories)
-                                            .ThenInclude(h => h.Leadership)
-                                                .ThenInclude(l => l.Group)
-                                         .Include(m => m.MemberWarnings)
-                                         .Include(m => m.MemberAwards)
-                                         .AsSplitQuery()
-                                         .AsNoTracking()
-                                         .ToListAsync(cancellationToken);
+            return await Context.Members
+                                .Where(m => m.GroupKey == groupKey)
+                                .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)

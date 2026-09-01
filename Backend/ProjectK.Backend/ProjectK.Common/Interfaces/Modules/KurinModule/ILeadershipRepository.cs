@@ -19,6 +19,15 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         void Add(Leadership leadership, CancellationToken cancellationToken = default);
         void Update(Leadership leadership, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Marks the office record a гурток carries for deletion; its history cascades in the database.
+        /// <para>
+        /// Needed because <c>Leadership.Group</c> is <c>Restrict</c>: a гурток that still carries a
+        /// провід cannot be deleted, and the database refuses it rather than cascading.
+        /// </para>
+        /// </summary>
+        Task DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
+
         Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
         void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories);
 

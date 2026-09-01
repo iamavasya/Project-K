@@ -157,5 +157,56 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 await uow.Groups.GetAllAsync();
             });
         }
+
+        /// <summary>
+        /// The sequence <c>DeleteGroupHandler</c> runs, against a real change tracker.
+        /// <para>
+        /// Members used to arrive <c>AsNoTracking</c> with their own detached <see cref="Group"/>
+        /// attached; removing one then put a second instance of the already-tracked гурток in front
+        /// of EF, which threw and the endpoint answered 500. Mocked handler tests cannot see this —
+        /// only a real context can.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public async Task DeletingAGroupWithMembers_ShouldNotConflictOverTheTrackedGroup()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(12);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var group = new Group("Ведмеді", kurin.KurinKey);
+            uow.Groups.Create(group);
+            await uow.SaveChangesAsync();
+
+            context.Members.Add(new Member
+            {
+                MemberKey = Guid.NewGuid(),
+                FirstName = "Тест",
+                LastName = "Учасник",
+                Email = "test@projectk.com",
+                PhoneNumber = "0500000000",
+                GroupKey = group.GroupKey,
+                KurinKey = kurin.KurinKey
+            });
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var tracked = await uow.Groups.GetByKeyAsync(group.GroupKey);
+            var members = await uow.Members.GetAllAsync(group.GroupKey);
+
+            foreach (var member in members)
+            {
+                uow.Members.Delete(member);
+            }
+
+            uow.Groups.Delete(tracked!);
+            await uow.SaveChangesAsync();
+
+            Assert.False(await uow.Groups.ExistsAsync(group.GroupKey));
+            Assert.Empty(context.Members.Where(m => m.GroupKey == group.GroupKey));
+        }
     }
 }

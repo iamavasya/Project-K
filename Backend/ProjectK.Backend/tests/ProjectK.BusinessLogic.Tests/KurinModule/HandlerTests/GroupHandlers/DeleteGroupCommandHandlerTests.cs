@@ -18,19 +18,40 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly DeleteGroupHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
         private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteGroupHandlerTests()
         {
             _groupRepositoryMock = new Mock<IGroupRepository>();
             _memberRepositoryMock = new Mock<IMemberRepository>();
+            _leadershipRepositoryMock = new Mock<ILeadershipRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepositoryMock.Object);
 
             _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldRemoveTheGroupsOfficeFirst()
+        {
+            // Leadership.Group is Restrict: a гурток that still carries a провід cannot be deleted,
+            // and the database refuses it rather than cascading — the delete answered 500.
+            var groupKey = Guid.NewGuid();
+            var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
+
+            _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(group);
+            _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default)).ReturnsAsync([]);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+            var result = await _handler.Handle(new DeleteGroup(groupKey), default);
+
+            result.Type.Should().Be(ResultType.Success);
+            _leadershipRepositoryMock.Verify(r => r.DeleteForGroupAsync(groupKey, default), Times.Once);
         }
 
         [Fact]
