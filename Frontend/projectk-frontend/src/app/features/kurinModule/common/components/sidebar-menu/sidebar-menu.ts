@@ -106,7 +106,6 @@ export class SidebarMenuComponent implements OnChanges {
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
     const canReviewSkills = this.permissionService.canReviewSkills();
-    const canManageMembers = this.permissionService.canManageMembers();
     const canManageKurinSettings = this.permissionService.canManageKurinSettings();
     const disabled = !kurinKey;
 
@@ -160,17 +159,15 @@ export class SidebarMenuComponent implements OnChanges {
         }
       });
 
-      if (canManageMembers) {
-        items.push({
-          label: 'Планування',
-          icon: 'pi pi-clock',
-          routerLink: ['/planning', kurinKey],
-          command: () => {
-            this.close();
-            this.router.navigate(['/planning', kurinKey]);
-          }
-        });
-      }
+      items.push({
+        label: 'Планування',
+        icon: 'pi pi-clock',
+        routerLink: ['/planning', kurinKey],
+        command: () => {
+          this.close();
+          this.router.navigate(['/planning', kurinKey]);
+        }
+      });
 
       // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
       // сторінки, разом із іконками pi-sitemap і pi-address-book.

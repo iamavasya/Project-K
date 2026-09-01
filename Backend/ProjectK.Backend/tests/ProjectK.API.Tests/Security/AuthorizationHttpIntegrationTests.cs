@@ -35,9 +35,17 @@ public class AuthorizationHttpIntegrationTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    /// <summary>
+    /// Endpoints a plain member is refused by the <b>policy</b>, before any record is looked at.
+    /// <para>
+    /// Planning used to be listed here. It is no longer decided by a policy: every member carries
+    /// <c>PlanningSession:Read:KurinWide</c>, so reading is now settled by the resource check, which
+    /// keeps a member inside their own kurin. That planning still requires authentication is pinned
+    /// by <see cref="ProtectedEndpointsAnonymousHttpIntegrationTests"/>.
+    /// </para>
+    /// </summary>
     [Theory]
     [InlineData(SystemRole.Member, "/api/user/users")]
-    [InlineData(SystemRole.Member, "/api/planning/{0}")]
     public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(string roleClaim, string routeTemplate)
     {
         await using var host = await SecurityTestHost.StartAsync(roleClaim);

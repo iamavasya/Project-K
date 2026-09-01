@@ -13,8 +13,7 @@ describe('kurinAccessGuard', () => {
   beforeEach(() => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', [
-      'isAdmin',
-      'canManagePlanning'
+      'isAdmin'
     ]);
     router = jasmine.createSpyObj<Router>('Router', ['createUrlTree']);
 

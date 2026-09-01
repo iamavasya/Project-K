@@ -55,7 +55,6 @@ describe('PermissionService', () => {
     expect(service.canManageGroups()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeTrue();
     expect(service.canSetupLeadership()).toBeTrue();
-    expect(service.canManagePlanning()).toBeTrue();
   });
 
   it('treats a Курінний (lead) as a manager without kurin settings or office assignment', () => {
@@ -82,7 +81,6 @@ describe('PermissionService', () => {
     expect(service.canManageGroups()).toBeFalse();
     expect(service.canManageAgenda()).toBeTrue();
     expect(service.canCreatePlanning()).toBeTrue();
-    expect(service.canManagePlanning()).toBeFalse();
     expect(service.canSetupLeadership()).toBeFalse();
   });
 

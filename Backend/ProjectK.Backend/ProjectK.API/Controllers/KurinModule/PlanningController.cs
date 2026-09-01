@@ -42,7 +42,12 @@ public class PlanningController : ControllerBase
     /// <summary>
     /// Returns one planning session.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    /// <remarks>
+    /// Readable by anyone in the kurin. Planning is the kurin's own working record, and every member
+    /// already carries <c>PlanningSession:Read:KurinWide</c> — a leadership gate on top only meant
+    /// the map promised a read the endpoint refused.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("session/{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Read, "route:planningSessionKey")]
     [ProducesResponseType(typeof(PlanningSessionResponse), StatusCodes.Status200OK)]
@@ -56,7 +61,8 @@ public class PlanningController : ControllerBase
     /// <summary>
     /// Lists the planning sessions of one kurin.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    /// <remarks>Readable by anyone in the kurin, like the single session below it.</remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<PlanningSessionResponse>), StatusCodes.Status200OK)]
@@ -70,7 +76,12 @@ public class PlanningController : ControllerBase
     /// <summary>
     /// Deletes a planning session.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    /// <remarks>
+    /// Its author, or whole-kurin management. The провід holds
+    /// <c>PlanningSession:Delete:Own</c> — <c>Own</c> here means the account that opened the session
+    /// — so requiring whole-kurin management left an author unable to withdraw their own draft.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Delete, "route:planningSessionKey")]
     [ProducesResponseType(StatusCodes.Status200OK)]

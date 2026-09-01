@@ -64,11 +64,6 @@ export class PermissionService {
     return this.isReviewer();
   }
 
-  /** Kurin-wide planning control (Зв'язковий, admin) — the destructive row actions. */
-  canManagePlanning(): boolean {
-    return this.isAdmin() || this.has('PlanningSession:Manage:KurinWide');
-  }
-
   /** Opening a planning session: the whole провід, each within their own scope. */
   canCreatePlanning(): boolean {
     return this.isAdmin() || this.has('PlanningSession:Create');

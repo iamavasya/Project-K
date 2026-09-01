@@ -25,6 +25,9 @@ public record PlanningSessionResponse
     public DateTime? OptimalEndDate { get; set; }
     public double ConflictScore { get; set; }
 
+    /// <summary>Whether the caller may withdraw this session — its author, or whole-kurin management.</summary>
+    public bool CanDelete { get; set; }
+
     // Вкладені дані
     public List<PlanningParticipantDto> Participants { get; set; } = [];
 }

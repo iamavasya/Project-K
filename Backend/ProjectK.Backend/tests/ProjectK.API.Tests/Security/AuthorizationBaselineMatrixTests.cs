@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -145,9 +145,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipHistories), "RequireUser");
 
         yield return Row<Action<PlanningController, CreatePlanningSession>>(nameof(PlanningController.CreatePlanningSession), "RequirePlanningAuthor");
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), "RequireUser");
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), "RequireUser");
+        yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), "RequireUser");
 
         yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata), "RequireUser");
         yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll), "RequireUser");

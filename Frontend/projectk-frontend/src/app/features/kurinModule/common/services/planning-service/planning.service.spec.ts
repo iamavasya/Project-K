@@ -25,6 +25,7 @@ describe('PlanningService', () => {
     optimalStartDate: null,
     optimalEndDate: null,
     conflictScore: 0,
+    canDelete: false,
     participants: []
   };
 

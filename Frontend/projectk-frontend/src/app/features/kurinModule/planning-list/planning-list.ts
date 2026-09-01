@@ -50,7 +50,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
               <td class="planning-actions-col" data-mobile-label="Дії">
                 <div class="planning-actions">
                   <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
-                  @if (canManagePlanning) {
+                  @if (session.canDelete) {
                     <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
                   }
                 </div>
@@ -189,10 +189,6 @@ export class PlanningListComponent implements OnInit {
   selectedSessionId: string | null = null;
 
   kurinKey = '';
-
-  get canManagePlanning(): boolean {
-    return this.permissionService.canManagePlanning();
-  }
 
   get canCreatePlanning(): boolean {
     return this.permissionService.canCreatePlanning();

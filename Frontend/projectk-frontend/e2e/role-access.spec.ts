@@ -73,7 +73,7 @@ describeRole('mentor', 'Mentor role access', ({ user }) => {
 });
 
 describeRole('member', 'Member role access', ({ user }) => {
-  test('member can access kurin but not planning list, planning create, or admin pages', async ({ page, request }) => {
+  test('member can access kurin and read planning, but not create it or reach admin pages', async ({ page, request }) => {
     await page.goto('/kurin');
     await expect(page).toHaveURL(/\/kurin/);
     await expect(page.locator('body')).not.toContainText('Forbidden');
@@ -87,9 +87,13 @@ describeRole('member', 'Member role access', ({ user }) => {
       await expect(page).toHaveURL(/\/kurin/);
     }
 
+    // Planning is the kurin's own record and every member may read it; opening a session stays
+    // with the провід, so the list is reachable and the create page is not.
     const kurinKey = await getSeededKurinKey(request, user);
     await page.goto(`/planning/${kurinKey}`);
-    await expect(page).toHaveURL(/\/kurin/);
+    await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
+    await expect(page.getByText('Планування таборів')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Створити нове' })).toBeHidden();
 
     await page.goto(`/planning/create/${kurinKey}`);
     await expect(page).toHaveURL(/\/forbidden/);
