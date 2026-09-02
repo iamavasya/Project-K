@@ -23,7 +23,10 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
     await expect(page.locator('.group-actions').getByRole('button')).toBeVisible();
     await openGroupActionMenu(page);
 
-    expect(await visibleMenuItems(page).count()).toBeGreaterThanOrEqual(4);
+    // expect.poll, not expect(await …count()): the latter reads the count once, and openGroupActionMenu
+    // only waits for the first item, so the rest of the menu may still be rendering. Under the load of
+    // a full parallel run that snapshot caught two items instead of four.
+    await expect.poll(() => visibleMenuItems(page).count()).toBeGreaterThanOrEqual(4);
   });
 
   test('manager planning list exposes create and destructive row controls', async ({ page, request }) => {
