@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { describeRole } from './support/role-test';
+import { fillDatePicker } from './support/ui';
 
 test.describe('Public onboarding', () => {
   test('join form gates submission and sanitizes kurin number', async ({ page }) => {
@@ -16,13 +17,7 @@ test.describe('Public onboarding', () => {
     const phoneInput = page.locator('#phone input, input#phone');
     await phoneInput.click();
     await phoneInput.pressSequentially('+380501112233', { delay: 30 });
-    const dateOfBirth = page.locator('#dob input');
-    await dateOfBirth.click();
-    await dateOfBirth.fill('01.01.2000');
-    await dateOfBirth.fill('');
-    await dateOfBirth.pressSequentially('01.01.2000', { delay: 30 });
-    await dateOfBirth.press('Enter');
-    await dateOfBirth.press('Tab');
+    await fillDatePicker(page.locator('#dob input'), '01.01.2000');
     await expect(submit).toBeDisabled();
 
     await page.locator('#leader').check();

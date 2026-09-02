@@ -14,6 +14,7 @@ import {
 } from './support/api-client';
 import { e2eUsers } from './support/test-users';
 import { loginThroughUi } from './support/login';
+import { fillDatePicker } from './support/ui';
 import { createActivatedMemberAccount, memberFullName, scenarioEmail, scenarioSuffix } from './support/scenarios';
 
 test.describe.configure({ mode: 'serial' });
@@ -51,10 +52,7 @@ test.describe('Full onboarding organization workflow', () => {
       await expect(phoneInput).toHaveValue('+38 (050) 111-22-33');
 
       const dateOfBirth = page.locator('#dob input');
-      await dateOfBirth.click();
-      await dateOfBirth.pressSequentially('01.01.2000', { delay: 10 });
-      await dateOfBirth.press('Enter');
-      await dateOfBirth.press('Tab');
+      await fillDatePicker(dateOfBirth, '01.01.2000');
       await expect(dateOfBirth).toHaveValue('01.01.2000');
 
       await page.locator('#leader').check();
