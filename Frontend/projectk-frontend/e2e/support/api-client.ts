@@ -378,10 +378,19 @@ export async function getFirstSeededGroupMemberKey(
 
   expect(response.ok(), `Failed to load group members: ${response.status()} ${await response.text()}`).toBe(true);
   const members = await response.json() as MemberResponse[];
-  const member = members.find(item => !!item.memberKey);
-  expect(member, `Seeded group ${groupName} has no members.`).toBeTruthy();
 
-  return member!.memberKey;
+  // Seeded members only, and always the same one. "First in the response" used to be enough until you
+  // notice that manager-crud creates, edits and deletes a member in this very group while four other
+  // specs read from it: whenever the new member happened to come back first, whoever picked it found
+  // it deleted mid-test and landed on /forbidden. Seeded accounts live on @projectk.com; anything a
+  // test makes for itself uses @example.com.
+  const seeded = members
+    .filter(item => !!item.memberKey && (item.email ?? '').endsWith('@projectk.com'))
+    .sort((left, right) => (left.email ?? '').localeCompare(right.email ?? ''));
+
+  expect(seeded[0], `Seeded group ${groupName} has no seeded members.`).toBeTruthy();
+
+  return seeded[0].memberKey;
 }
 
 export async function getPlanningSessions(
