@@ -19,6 +19,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
         private readonly DeleteGroupHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
         private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
+        private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock;
         private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteGroupHandlerTests()
@@ -26,12 +27,17 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             _groupRepositoryMock = new Mock<IGroupRepository>();
             _memberRepositoryMock = new Mock<IMemberRepository>();
             _leadershipRepositoryMock = new Mock<ILeadershipRepository>();
+            _agendaItemRepositoryMock = new Mock<IAgendaItemRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.AgendaItems).Returns(_agendaItemRepositoryMock.Object);
+            _leadershipRepositoryMock
+                .Setup(r => r.DeleteForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
 
             _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }

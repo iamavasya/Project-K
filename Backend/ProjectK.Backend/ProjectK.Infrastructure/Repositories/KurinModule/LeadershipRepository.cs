@@ -73,13 +73,15 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         /// reads <c>AsNoTracking</c> with the members attached, and re-attaching that graph for a
         /// delete would put a second copy of an already-tracked member in front of EF.
         /// </summary>
-        public async Task DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Guid>> DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default)
         {
             var leaderships = await _context.Leaderships
                 .Where(leadership => leadership.GroupKey == groupKey)
                 .ToListAsync(cancellationToken);
 
             _context.Leaderships.RemoveRange(leaderships);
+
+            return leaderships.Select(leadership => leadership.LeadershipKey).ToList();
         }
 
         public async Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default)

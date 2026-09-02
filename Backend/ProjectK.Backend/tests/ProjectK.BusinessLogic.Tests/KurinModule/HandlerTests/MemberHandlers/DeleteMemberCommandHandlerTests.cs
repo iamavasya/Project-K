@@ -16,14 +16,17 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock;
         private readonly DeleteMemberHandler _handler;
 
         public DeleteMemberHandlerTests()
         {
             _memberRepositoryMock = new Mock<IMemberRepository>();
+            _agendaItemRepositoryMock = new Mock<IAgendaItemRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
 
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.AgendaItems).Returns(_agendaItemRepositoryMock.Object);
 
             _handler = new DeleteMemberHandler(_unitOfWorkMock.Object);
         }

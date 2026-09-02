@@ -39,6 +39,26 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.AgendaCategoryKey, (Guid?)null), cancellationToken);
         }
 
+        public async Task RemoveAssignmentsForTargetsAsync(
+            IEnumerable<Guid> targetKeys,
+            CancellationToken cancellationToken = default)
+        {
+            var keys = targetKeys.Distinct().ToList();
+            if (keys.Count == 0)
+            {
+                return;
+            }
+
+            // Through the tracker rather than ExecuteDelete: callers run this as one step of a larger
+            // delete, and ExecuteDelete would commit on its own, ahead of the SaveChanges that
+            // removes the target. A failure after it would leave the assignments already gone.
+            var assignments = await Context.AgendaAssignments
+                .Where(assignment => keys.Contains(assignment.TargetKey))
+                .ToListAsync(cancellationToken);
+
+            Context.AgendaAssignments.RemoveRange(assignments);
+        }
+
         public override Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Use GetForViewerAsync instead.");

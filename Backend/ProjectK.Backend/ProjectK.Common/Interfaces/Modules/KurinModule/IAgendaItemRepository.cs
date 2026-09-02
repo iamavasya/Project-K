@@ -19,6 +19,18 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     Task ClearCategoryAsync(Guid agendaCategoryKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Drops every assignment pointing at one of <paramref name="targetKeys"/> — run before deleting
+    /// the гурток, member or провід they name.
+    /// <para>
+    /// <c>AgendaAssignment.TargetKey</c> is polymorphic across four tables, so no foreign key can
+    /// clean up after a delete. Left behind, the row names something that no longer exists: it
+    /// reaches nobody, yet still counts as the item's assignment, so an item assigned only to a
+    /// deleted гурток quietly stops appearing for everyone below whole-kurin scope.
+    /// </para>
+    /// </summary>
+    Task RemoveAssignmentsForTargetsAsync(IEnumerable<Guid> targetKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Items visible to <paramref name="viewer"/>. <paramref name="onlyDated"/> keeps the calendar to
     /// placed items; <paramref name="fromUtc"/>/<paramref name="toUtc"/> narrow to a window;
     /// <paramref name="kind"/> narrows the board to tasks. Assignments are included.

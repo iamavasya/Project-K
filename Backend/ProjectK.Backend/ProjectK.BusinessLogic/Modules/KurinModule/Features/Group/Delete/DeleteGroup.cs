@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
@@ -38,9 +38,15 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
             // Everything the гурток holds goes first: its провід is Restrict, its members are
             // NoAction, so the database refuses to delete a гурток that still has either. Mentor
             // assignments and the members' own history cascade on their own.
-            await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
+            var leadershipKeys = await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
 
-            var members = await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken);
+            var members = (await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken)).ToList();
+
+            // Agenda assignments name their target by a bare key, so nothing in the database clears
+            // them: the гурток, the offices and the members about to disappear are all valid targets.
+            await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(
+                [request.GroupKey, .. leadershipKeys, .. members.Select(member => member.MemberKey)],
+                cancellationToken);
 
             foreach (var member in members)
             {

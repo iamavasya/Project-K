@@ -44,6 +44,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
                     "MemberNotFound",
                     $"Member with key {request.MemberKey} not found.");
             }
+            await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
             _unitOfWork.Members.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
