@@ -16,36 +16,6 @@ namespace ProjectK.API.Tests.Security;
 public class ResourceAuthorizeFilterTests
 {
     [Fact]
-    public async Task DisabledGuard_ShouldSkipAccessCheckAndContinue()
-    {
-        var resourceAccessService = new Mock<IResourceAccessService>();
-        var filter = new ResourceAuthorizeFilter(
-            true,
-            ResourceType.Member,
-            string.Empty,
-            ResourceAction.Read,
-            "route:memberKey",
-            useScopeOverride: false,
-            scopeResourceType: default,
-            resourceAccessService.Object,
-            Options.Create(new SecurityPatchOptions { EnableResourceGuard = false }));
-
-        var context = CreateContext(isAuthenticated: true);
-        var executed = false;
-
-        await filter.OnActionExecutionAsync(context, () =>
-        {
-            executed = true;
-            return Task.FromResult(new ActionExecutedContext(context, [], new object()));
-        });
-
-        Assert.True(executed);
-        resourceAccessService.Verify(
-            service => service.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
     public async Task AllowedDecision_ShouldExecuteAction()
     {
         var memberKey = Guid.NewGuid();
@@ -62,8 +32,7 @@ public class ResourceAuthorizeFilterTests
             "route:memberKey",
             useScopeOverride: false,
             scopeResourceType: default,
-            resourceAccessService.Object,
-            Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
+            resourceAccessService.Object);
 
         var context = CreateContext(isAuthenticated: true);
         context.RouteData.Values["memberKey"] = memberKey;
@@ -96,8 +65,7 @@ public class ResourceAuthorizeFilterTests
             "route:memberKey",
             useScopeOverride: false,
             scopeResourceType: default,
-            resourceAccessService.Object,
-            Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
+            resourceAccessService.Object);
 
         var context = CreateContext(isAuthenticated: true);
         context.RouteData.Values["memberKey"] = memberKey;
@@ -128,8 +96,7 @@ public class ResourceAuthorizeFilterTests
             "route:typeKey",
             useScopeOverride: false,
             scopeResourceType: default,
-            resourceAccessService.Object,
-            Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
+            resourceAccessService.Object);
 
         var context = CreateContext(isAuthenticated: true);
         context.RouteData.Values["leadershipType"] = "group";
@@ -160,8 +127,7 @@ public class ResourceAuthorizeFilterTests
             "route:memberKey",
             useScopeOverride: false,
             scopeResourceType: default,
-            resourceAccessService.Object,
-            Options.Create(new SecurityPatchOptions { EnableResourceGuard = true }));
+            resourceAccessService.Object);
 
         var context = CreateContext(isAuthenticated: true);
 

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
@@ -16,7 +15,6 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
     private readonly bool _useScopeOverride;
     private readonly ResourceType _scopeResourceType;
     private readonly IResourceAccessService _resourceAccessService;
-    private readonly IOptions<SecurityPatchOptions> _securityPatchOptions;
 
     public ResourceAuthorizeFilter(
         bool useStaticResourceType,
@@ -26,8 +24,7 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         string resourceKeySelector,
         bool useScopeOverride,
         ResourceType scopeResourceType,
-        IResourceAccessService resourceAccessService,
-        IOptions<SecurityPatchOptions> securityPatchOptions)
+        IResourceAccessService resourceAccessService)
     {
         _useStaticResourceType = useStaticResourceType;
         _staticResourceType = staticResourceType;
@@ -37,17 +34,10 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         _useScopeOverride = useScopeOverride;
         _scopeResourceType = scopeResourceType;
         _resourceAccessService = resourceAccessService;
-        _securityPatchOptions = securityPatchOptions;
     }
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (!_securityPatchOptions.Value.EnableResourceGuard)
-        {
-            await next();
-            return;
-        }
-
         if (context.HttpContext.User.Identity?.IsAuthenticated != true)
         {
             context.Result = new UnauthorizedResult();

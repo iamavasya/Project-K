@@ -211,11 +211,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
-
             builder.Services.AddSingleton<IBadgesAssetsStore>(new TestBadgesAssetsStore(assetsDirectory));
             builder.Services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
 

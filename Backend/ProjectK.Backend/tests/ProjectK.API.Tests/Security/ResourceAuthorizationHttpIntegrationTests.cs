@@ -92,11 +92,6 @@ public class ResourceAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
-
             var scopeReader = new Mock<IResourceScopeReader>();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
