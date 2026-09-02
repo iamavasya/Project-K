@@ -71,6 +71,30 @@ export function submitButton(scope: Locator): Locator {
  * So: one spelling, the overlay dismissed before blurring, and the result checked — a rejected value
  * blanks the field, which is exactly the case worth retrying rather than reporting as a failure.
  */
+/**
+ * Types into a masked input and makes sure the mask filled up.
+ *
+ * `fill` sets the value in one shot, which the mask sometimes takes and sometimes leaves as its
+ * placeholder — the flaky onboarding run failed with "+38 (0__) ___-__-__" still in the field. Typing
+ * drives the mask the way a person does; the check catches the run where it did not take.
+ *
+ * Pass the bare digits the mask has slots for, not the formatted string: its fixed parts (the "+38 "
+ * prefix) are already on screen, and retyping them pushes real digits out of place.
+ */
+export async function fillMaskedInput(input: Locator, value: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await input.click();
+    await input.fill('');
+    await input.pressSequentially(value, { delay: 40 });
+
+    if (!(await input.inputValue()).includes('_')) {
+      return;
+    }
+  }
+
+  await expect(input).not.toHaveValue(/_/);
+}
+
 export async function fillDatePicker(input: Locator, value: string): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt++) {
     await input.click();
@@ -100,9 +124,7 @@ export async function fillMemberRequiredFields(page: Page, data: {
   await page.locator('input[name="lastName"]').fill(data.lastName);
   await page.locator('input[name="email"]').fill(data.email);
 
-  const phoneInput = page.locator('input[name="phoneNumber"]');
-  await phoneInput.click();
-  await phoneInput.pressSequentially(data.phone ?? '1234567890', { delay: 50 });
+  await fillMaskedInput(page.locator('input[name="phoneNumber"]'), data.phone ?? '1234567890');
 
   await fillDatePicker(page.locator('input[name="dateOfBirth"]'), data.dateOfBirth ?? '2000-12-12');
 }
