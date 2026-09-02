@@ -130,7 +130,9 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             CreateMap<DateRangeDto, ParticipantBusyRange>(MemberList.None);
 
             // Entity -> Response DTO
-            CreateMap<PlanningSession, PlanningSessionResponse>();
+            // CanDelete is about the caller, not the record, so the handlers set it after mapping.
+            CreateMap<PlanningSession, PlanningSessionResponse>()
+                .ForMember(response => response.CanDelete, options => options.Ignore());
             CreateMap<PlanningParticipant, PlanningParticipantDto>();
             CreateMap<ParticipantBusyRange, DateRangeDto>();
         }
