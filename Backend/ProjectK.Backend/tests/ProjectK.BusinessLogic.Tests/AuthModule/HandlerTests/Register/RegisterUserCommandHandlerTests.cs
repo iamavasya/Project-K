@@ -7,12 +7,14 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
 {
     public class RegisterUserCommandHandlerTests
     {
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<RoleManager<AppRole>> _roleManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
@@ -31,12 +33,14 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 roleStoreMock.Object, null, null, null, null);
 
             _jwtServiceMock = new Mock<IJwtService>();
+            _refreshTokensMock = new Mock<IRefreshTokenStore>();
 
             _handler = new RegisterUserCommandHandler(
                 _mapperMock.Object,
                 _userManagerMock.Object,
                 _roleManagerMock.Object,
-                _jwtServiceMock.Object);
+                _jwtServiceMock.Object,
+                _refreshTokensMock.Object);
         }
 
         [Fact]
@@ -103,10 +107,11 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
             Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
             Assert.Equal(refreshToken, result.Data.Tokens.RefreshToken);
 
-            // Verify user was updated with refresh token
             Assert.Equal(command.Email, user.UserName);
-            Assert.Equal(refreshToken.Token, user.RefreshToken);
-            Assert.Equal(refreshToken.Expires, user.RefreshTokenExpiryTime);
+            // The new account starts with one session, recorded like any other.
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(user.Id, refreshToken.Token, refreshToken.Expires, It.IsAny<CancellationToken>()),
+                Times.Once);
 
             // Verify all calls
             _mapperMock.Verify(x => x.Map<AppUser>(command), Times.Once);
@@ -114,7 +119,6 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
             _roleManagerMock.Verify(x => x.RoleExistsAsync(command.Role), Times.Once);
             _userManagerMock.Verify(x => x.AddToRoleAsync(user, command.Role), Times.Once);
             _userManagerMock.Verify(x => x.GetRolesAsync(user), Times.Once);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString()), Times.Once);
             _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
         }
@@ -455,9 +459,9 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
             await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            Assert.Equal(refreshToken.Token, user.RefreshToken);
-            Assert.Equal(refreshToken.Expires, user.RefreshTokenExpiryTime);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(user.Id, refreshToken.Token, refreshToken.Expires, It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -519,7 +523,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 _mapperMock.Object,
                 _userManagerMock.Object,
                 _roleManagerMock.Object,
-                _jwtServiceMock.Object);
+                _jwtServiceMock.Object,
+                _refreshTokensMock.Object);
 
             // Assert
             Assert.NotNull(handler);

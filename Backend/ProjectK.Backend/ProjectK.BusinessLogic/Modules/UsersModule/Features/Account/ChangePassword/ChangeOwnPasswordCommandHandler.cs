@@ -6,23 +6,27 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword
 {
     public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<bool>>
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly IRefreshTokenStore _refreshTokens;
         private readonly ILogger<ChangeOwnPasswordCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
 
         public ChangeOwnPasswordCommandHandler(
             UserManager<AppUser> userManager,
             ILogger<ChangeOwnPasswordCommandHandler> logger,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _logger = logger;
             _activityLogger = activityLogger;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<bool>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
@@ -39,7 +43,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePass
                 return ServiceResult<bool>.Failure(ResultType.BadRequest, "PasswordChangeFailed", "Failed to change password. Please check your current password and try again.");
             }
 
-            RefreshTokenInvalidation.RevokeRefreshToken(user);
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
             var updateResult = await _userManager.UpdateAsync(user);
 
             if (updateResult.Succeeded)

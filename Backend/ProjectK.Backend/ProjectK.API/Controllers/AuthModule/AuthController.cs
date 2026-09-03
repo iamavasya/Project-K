@@ -227,9 +227,9 @@ namespace ProjectK.API.Controllers.AuthModule
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout()
         {
-            var command = new LogoutUserCommand(this.UserKey()?.ToString());
-            var response = await _mediator.Send(command);
             var refreshToken = Request.Cookies[refreshTokenCookieName];
+            var command = new LogoutUserCommand(this.UserKey()?.ToString(), refreshToken);
+            var response = await _mediator.Send(command);
             if (refreshToken != null)
             {
                 DeleteRefreshTokenCookie();

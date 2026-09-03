@@ -11,22 +11,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register
 {
     public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, ServiceResult<RegisterUserResponse>>
     {
         private readonly IMapper _mapper;
+        private readonly IRefreshTokenStore _refreshTokens;
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
         private readonly RoleManager<AppRole> _roleManager;
 
-        public RegisterUserCommandHandler(IMapper mapper, UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, IJwtService jwtService)
+        public RegisterUserCommandHandler(IMapper mapper, UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, IJwtService jwtService,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _mapper = mapper;
             _jwtService = jwtService;
             _roleManager = roleManager;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -64,10 +68,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 
-            user.RefreshToken = jwt.RefreshToken.Token;
-            user.RefreshTokenExpiryTime = jwt.RefreshToken.Expires;
-
-            await _userManager.UpdateAsync(user);
+            await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
 
             var response = new RegisterUserResponse
             {

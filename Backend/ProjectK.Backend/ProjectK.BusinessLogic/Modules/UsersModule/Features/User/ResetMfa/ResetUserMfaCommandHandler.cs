@@ -8,12 +8,14 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
 {
     public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<bool>>
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly IRefreshTokenStore _refreshTokens;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ResetUserMfaCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
@@ -22,12 +24,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
             UserManager<AppUser> userManager,
             ICurrentUserContext currentUserContext,
             ILogger<ResetUserMfaCommandHandler> logger,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
             _activityLogger = activityLogger;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<bool>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
@@ -74,7 +78,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
                 return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
             }
 
-            RefreshTokenInvalidation.RevokeRefreshToken(targetUser);
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, targetUser, cancellationToken);
             var updateResult = await _userManager.UpdateAsync(targetUser);
 
             if (updateResult.Succeeded)

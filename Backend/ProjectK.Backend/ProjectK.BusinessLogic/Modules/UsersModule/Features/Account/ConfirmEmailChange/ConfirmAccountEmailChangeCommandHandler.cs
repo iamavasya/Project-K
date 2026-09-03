@@ -10,12 +10,14 @@ using ProjectK.Common.Models.Records;
 using System.Net.Mail;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
 using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange
 {
     public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly IRefreshTokenStore _refreshTokens;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMediator _mediator;
         private readonly IActivityLogger _activityLogger;
@@ -24,12 +26,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
             UserManager<AppUser> userManager,
             IUnitOfWork unitOfWork,
             IMediator mediator,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _mediator = mediator;
             _activityLogger = activityLogger;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<AccountSettingsDto>> Handle(ConfirmAccountEmailChangeCommand request, CancellationToken cancellationToken)
@@ -60,7 +64,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
 
             user.UserName = email;
             user.NormalizedUserName = _userManager.NormalizeName(email);
-            RefreshTokenInvalidation.RevokeRefreshToken(user);
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)

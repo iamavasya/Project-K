@@ -1,16 +1,12 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh
 {
@@ -18,40 +14,48 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
-        private readonly TimeProvider _timeProvider;
-        public RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtService jwtService, TimeProvider timeProvider)
+        private readonly IRefreshTokenStore _refreshTokens;
+
+        public RefreshTokenCommandHandler(
+            UserManager<AppUser> userManager,
+            IJwtService jwtService,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _jwtService = jwtService;
-            _timeProvider = timeProvider;
+            _refreshTokens = refreshTokens;
         }
+
         public async Task<ServiceResult<JwtResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
-            var user = _userManager.Users.FirstOrDefault(u => u.RefreshToken == request.RefreshToken);
-            if (user == null || user.RefreshTokenExpiryTime <= _timeProvider.GetUtcNow().UtcDateTime)
+            var session = await _refreshTokens.FindActiveAsync(request.RefreshToken, cancellationToken);
+            if (session is null)
             {
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
-            string? kurinKey = user.ResolveScopeKurinKeyString();
+            var user = await _userManager.FindByIdAsync(session.UserId.ToString());
+            if (user is null)
+            {
+                return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
+            }
 
             var jwt = new JwtResponse
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, await _userManager.GetRolesAsync(user), kurinKey),
+                AccessToken = _jwtService.GenerateAccessToken(
+                    user.Id.ToString(),
+                    user.Email,
+                    await _userManager.GetRolesAsync(user),
+                    user.ResolveScopeKurinKeyString()),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
-            user.RefreshToken = jwt.RefreshToken.Token;
-            user.RefreshTokenExpiryTime = jwt.RefreshToken.Expires;
-            await _userManager.UpdateAsync(user);
 
-            return new ServiceResult<JwtResponse>(
-                ResultType.Success,
-                new JwtResponse
-                {
-                    AccessToken = jwt.AccessToken,
-                    RefreshToken = jwt.RefreshToken
-                }
-            );
+            // Rotation, one session at a time: this token is spent and its replacement takes its
+            // place, while the account's other sessions carry on untouched.
+            await _refreshTokens.RevokeAsync(session.Token, cancellationToken);
+            await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
+
+            return new ServiceResult<JwtResponse>(ResultType.Success, jwt);
         }
     }
 }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
@@ -41,6 +41,7 @@ namespace ProjectK.Infrastructure.DbContexts
 
         // Auth module DbSet
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
+        public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
         public DbSet<Invitation> Invitations { get; set; }
         public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
         public DbSet<AppNotification> AppNotifications { get; set; }
@@ -364,6 +365,21 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
                 entity.HasIndex(e => e.MentorUserKey)
                     .HasFilter("[RevokedAtUtc] IS NULL");
+            });
+
+            builder.Entity<UserRefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.UserRefreshTokenKey);
+                entity.Property(e => e.Token)
+                    .HasMaxLength(512)
+                    .IsRequired();
+                // Looked up by token on every refresh, and swept per user on a password change.
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<WaitlistEntry>(entity =>

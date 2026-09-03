@@ -16,12 +16,14 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
     public class AccountEmailConfirmationHandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IRefreshTokenStore> _refreshTokensMock = new();
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<IMemberRepository> _memberRepositoryMock = new();
         private readonly Mock<IMediator> _mediatorMock = new();
@@ -222,8 +224,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 NormalizedUserName = "OLD@EXAMPLE.COM",
                 FirstName = "John",
                 LastName = "Doe",
-                RefreshToken = "existing-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
             };
             var member = new Member
             {
@@ -258,8 +258,10 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(newEmail, user.Email);
             Assert.Equal(newEmail, user.UserName);
             Assert.Equal("NEW@EXAMPLE.COM", user.NormalizedUserName);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            // A confirmed email change must not leave an older session alive.
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(user.Id, It.IsAny<CancellationToken>()),
+                Times.Once);
             Assert.Equal(newEmail, member.Email);
             _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -278,8 +280,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 UserName = oldEmail,
                 FirstName = "John",
                 LastName = "Doe",
-                RefreshToken = "existing-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
@@ -296,8 +296,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(ResultType.BadRequest, result.Type);
             Assert.Equal(oldEmail, user.Email);
             Assert.Equal(oldEmail, user.UserName);
-            Assert.Equal("existing-refresh-token", user.RefreshToken);
-            Assert.NotNull(user.RefreshTokenExpiryTime);
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
             _memberRepositoryMock.Verify(x => x.GetTrackedByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
             _mediatorMock.Verify(x => x.Send(It.IsAny<GetAccountSettingsQuery>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -320,7 +321,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 _userManagerMock.Object,
                 _unitOfWorkMock.Object,
                 _mediatorMock.Object,
-                new Mock<IActivityLogger>().Object);
+                new Mock<IActivityLogger>().Object,
+                _refreshTokensMock.Object);
         }
     }
 }

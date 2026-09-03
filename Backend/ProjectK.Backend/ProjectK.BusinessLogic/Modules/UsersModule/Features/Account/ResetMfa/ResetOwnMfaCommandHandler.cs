@@ -6,23 +6,27 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa
 {
     public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, ServiceResult<bool>>
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly IRefreshTokenStore _refreshTokens;
         private readonly ILogger<ResetOwnMfaCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
 
         public ResetOwnMfaCommandHandler(
             UserManager<AppUser> userManager,
             ILogger<ResetOwnMfaCommandHandler> logger,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _logger = logger;
             _activityLogger = activityLogger;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<bool>> Handle(ResetOwnMfaCommand request, CancellationToken cancellationToken)
@@ -56,7 +60,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa
                 return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
             }
 
-            RefreshTokenInvalidation.RevokeRefreshToken(user);
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
             var updateResult = await _userManager.UpdateAsync(user);
 
             if (updateResult.Succeeded)

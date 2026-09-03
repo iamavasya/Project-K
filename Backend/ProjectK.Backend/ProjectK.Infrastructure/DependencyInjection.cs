@@ -16,6 +16,7 @@ using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
 
         services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<IMfaService, MfaService>();
 
         services.AddHostedService<AuditCleanupBackgroundService>();

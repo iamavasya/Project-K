@@ -10,15 +10,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout
 {
     public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, ServiceResult<object>>
     {
         private readonly UserManager<AppUser> _userManager;
-        public LogoutUserCommandHandler(UserManager<AppUser> userManager)
+        private readonly IRefreshTokenStore _refreshTokens;
+
+        public LogoutUserCommandHandler(UserManager<AppUser> userManager, IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
+            _refreshTokens = refreshTokens;
         }
 
         public async Task<ServiceResult<object>> Handle(LogoutUserCommand request, CancellationToken cancellationToken)
@@ -38,8 +42,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout
                     "UserNotFound",
                     "User not found.");
             }
-            user.RefreshToken = null;
-            user.RefreshTokenExpiryTime = null;
+            // Only this session. Signing out on one device leaves the others signed in — the whole
+            // point of a row per session.
+            if (!string.IsNullOrEmpty(request.RefreshToken))
+            {
+                await _refreshTokens.RevokeAsync(request.RefreshToken, cancellationToken);
+            }
+
             // Otherwise the next sign-in lands the admin inside the kurin they last
             // stepped into, and /panel bounces them straight back out of it.
             user.ActiveKurinKey = null;
