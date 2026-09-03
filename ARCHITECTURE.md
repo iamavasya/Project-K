@@ -71,6 +71,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 HTTP
   ↓  Serilog request logging, forwarded headers, rate limiting
   ↓  автентифікація JWT (access у заголовку, refresh у httpOnly-cookie)
+  ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
   ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
   ↓  контролер: жодних рішень, лише _mediator.Send(...)
@@ -119,6 +120,7 @@ Permission                           напр. Group:Manage:KurinWide
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля — усі | `Infrastructure/Repositories/AuthModule` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
