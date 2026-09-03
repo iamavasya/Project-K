@@ -13,6 +13,16 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
     {
         Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default);
         Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// The kurin's members as tracked entities, without their graph — for deleting them.
+        /// <para>
+        /// <see cref="GetAllByKurinKeyAsync"/> eager-loads <c>AsNoTracking</c> for the screens that read
+        /// it, which is poison for a delete: every member carries its own detached kurin, and removing
+        /// one puts a second copy of the already-tracked kurin in front of EF.
+        /// </para>
+        /// </summary>
+        Task<IEnumerable<Member>> GetTrackedByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
         Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default);
         Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default);
         Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default);

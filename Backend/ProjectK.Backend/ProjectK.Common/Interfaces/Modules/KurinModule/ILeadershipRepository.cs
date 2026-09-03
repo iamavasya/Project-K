@@ -30,6 +30,16 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         /// </summary>
         Task<IReadOnlyList<Guid>> DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Marks every office in a kurin for deletion — its own and its гуртки's — and reports the keys.
+        /// <para>
+        /// Both <c>Leadership.Kurin</c> and <c>Leadership.Group</c> are <c>NO ACTION</c>. Гуртки cascade
+        /// with the kurin, but that cascade is itself refused while an office still points at one, so
+        /// the гурток offices have to go too.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyList<Guid>> DeleteForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
         Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
         void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories);
 

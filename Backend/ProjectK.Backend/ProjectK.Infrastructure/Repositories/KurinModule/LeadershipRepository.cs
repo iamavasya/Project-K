@@ -84,6 +84,24 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             return leaderships.Select(leadership => leadership.LeadershipKey).ToList();
         }
 
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<Guid>> DeleteForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            var groupKeys = await _context.Groups
+                .Where(group => group.KurinKey == kurinKey)
+                .Select(group => group.GroupKey)
+                .ToListAsync(cancellationToken);
+
+            var leaderships = await _context.Leaderships
+                .Where(leadership => leadership.KurinKey == kurinKey
+                    || (leadership.GroupKey != null && groupKeys.Contains(leadership.GroupKey.Value)))
+                .ToListAsync(cancellationToken);
+
+            _context.Leaderships.RemoveRange(leaderships);
+
+            return leaderships.Select(leadership => leadership.LeadershipKey).ToList();
+        }
+
         public async Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default)
         {
             return await _context.LeadershipHistories

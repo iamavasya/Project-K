@@ -63,6 +63,13 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IEnumerable<Member>> GetTrackedByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        {
+            return await Context.Members
+                                .Where(m => m.KurinKey == kurinKey)
+                                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
             return await Context.Members.Where(m => m.KurinKey == kurinKey)

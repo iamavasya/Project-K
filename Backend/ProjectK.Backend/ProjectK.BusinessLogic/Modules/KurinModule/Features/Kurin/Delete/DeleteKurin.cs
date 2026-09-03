@@ -51,13 +51,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
-            // Delete all members with KurinKey
-            var members = await _unitOfWork.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
+            // What the database will not clear itself: offices and members are NO ACTION against both
+            // the kurin and its гуртки, and the гуртки's own cascade is refused while an office still
+            // points at one. Everything else — гуртки, agenda with its assignments, planning sessions,
+            // mentor assignments, the members' histories — cascades.
+            await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
+
+            var members = await _unitOfWork.Members.GetTrackedByKurinKeyAsync(request.KurinKey, cancellationToken);
 
             foreach (var member in members)
             {
-                member.Group = null;
-                member.Kurin = null!;
                 _unitOfWork.Members.Delete(member, cancellationToken);
             }
 
