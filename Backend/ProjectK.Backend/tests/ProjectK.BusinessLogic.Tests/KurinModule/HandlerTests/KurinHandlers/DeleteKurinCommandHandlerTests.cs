@@ -50,7 +50,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(1);
-            _memberRepositoryMock.Setup(r => r.GetTrackedByKurinKeyAsync(kurinKey, default))
+            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
                 .ReturnsAsync([]);
             _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
@@ -113,7 +113,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(0);
-            _memberRepositoryMock.Setup(r => r.GetTrackedByKurinKeyAsync(kurinKey, default))
+            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
                 .ReturnsAsync([]);
             _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
@@ -140,7 +140,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _kurinRepositoryMock.Setup(r => r.Delete(kurin, default))
                 .Throws(expectedException);
-            _memberRepositoryMock.Setup(r => r.GetTrackedByKurinKeyAsync(kurinKey, default))
+            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
                 .ReturnsAsync([]);
             _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 

@@ -16,6 +16,13 @@ namespace ProjectK.Infrastructure.BackgroundServices
         private const int ReadNotificationRetentionDays = 7;
         private const int UnreadNotificationRetentionDays = 30;
 
+        /// <summary>
+        /// How long a dead session is kept. Long enough to answer "when did this session end", short
+        /// enough that the table does not grow forever: refresh rotates on every call, so an active
+        /// account leaves a spent row behind several times a day.
+        /// </summary>
+        private const int EndedSessionRetentionDays = 30;
+
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AuditCleanupBackgroundService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
@@ -112,6 +119,18 @@ namespace ProjectK.Infrastructure.BackgroundServices
 
             if (deletedUnreadNotifications > 0)
                 _logger.LogInformation("Cleaned up {Count} old unread AppNotifications.", deletedUnreadNotifications);
+
+            // 7. Cleanup ended sessions: revoked a while ago, or expired on their own. A live session
+            // is never touched — only rows that can no longer authenticate anyone.
+            var sessionRetentionDate = now.AddDays(-EndedSessionRetentionDays);
+            var deletedSessions = await dbContext.UserRefreshTokens
+                .Where(session =>
+                    (session.RevokedAtUtc.HasValue && session.RevokedAtUtc < sessionRetentionDate) ||
+                    session.ExpiresAtUtc < sessionRetentionDate)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (deletedSessions > 0)
+                _logger.LogInformation("Cleaned up {Count} ended UserRefreshTokens.", deletedSessions);
         }
     }
 }

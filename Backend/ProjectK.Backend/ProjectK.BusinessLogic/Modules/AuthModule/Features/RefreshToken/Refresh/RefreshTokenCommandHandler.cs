@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
@@ -40,6 +40,15 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
+            // Spend the token first, and only continue if this call is the one that spent it. Two
+            // refreshes racing on the same cookie both find it active a moment earlier; without this
+            // both would mint a session, and the one whose response the browser discarded would stay
+            // alive, unreachable and beyond the reach of logout.
+            if (!await _refreshTokens.RevokeAsync(session.Token, cancellationToken))
+            {
+                return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
+            }
+
             var jwt = new JwtResponse
             {
                 AccessToken = _jwtService.GenerateAccessToken(
@@ -50,9 +59,6 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 
-            // Rotation, one session at a time: this token is spent and its replacement takes its
-            // place, while the account's other sessions carry on untouched.
-            await _refreshTokens.RevokeAsync(session.Token, cancellationToken);
             await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
 
             return new ServiceResult<JwtResponse>(ResultType.Success, jwt);

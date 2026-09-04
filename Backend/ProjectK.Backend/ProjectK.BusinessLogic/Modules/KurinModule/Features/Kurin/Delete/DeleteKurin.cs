@@ -57,7 +57,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
             // mentor assignments, the members' histories — cascades.
             await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
 
-            var members = await _unitOfWork.Members.GetTrackedByKurinKeyAsync(request.KurinKey, cancellationToken);
+            var members = await _unitOfWork.Members.GetTrackedForKurinDeletionAsync(request.KurinKey, cancellationToken);
 
             foreach (var member in members)
             {

@@ -78,11 +78,13 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
                 return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
             }
 
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, targetUser, cancellationToken);
             var updateResult = await _userManager.UpdateAsync(targetUser);
-
             if (updateResult.Succeeded)
             {
+                // Only once the change is stored. RevokeAllAsync commits on its own, so ending
+                // the sessions first signed every device out even when this update failed.
+                await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, targetUser, cancellationToken);
+
                 _activityLogger.LogAudit(
                     action: "Admin.UserMfaReset",
                     actorUserId: _currentUserContext.UserId,

@@ -54,12 +54,15 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa
                 return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "MfaSetupFailed", "Failed to enable MFA.");
             }
 
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
                 return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "MfaSetupFailed", "Failed to enable MFA.");
             }
+
+            // Only once the change is stored. RevokeAllAsync commits on its own, so ending the
+            // sessions first signed every device out even when this update failed.
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Account.MfaEnabled",

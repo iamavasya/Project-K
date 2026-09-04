@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.Common.Entities.AuthModule;
@@ -97,6 +97,26 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
         }
 
         [Fact]
+        public async Task Handle_ShouldReturnUnauthorized_WhenAnotherRefreshAlreadySpentTheToken()
+        {
+            // Two refreshes race on the same cookie: both find it active, only one revokes it. The
+            // loser must not mint a second session that nobody holds and logout cannot reach.
+            var user = CreateUser(kurinKey: Guid.NewGuid());
+            var session = GivenActiveSession("contested", user);
+            GivenIssuedTokens(user, "access", "rotated");
+            _refreshTokensMock
+                .Setup(store => store.RevokeAsync(session.Token, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+            Assert.Equal(ResultType.Unauthorized, result.Type);
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task Handle_ShouldReturnUnauthorized_WhenTheAccountIsGone()
         {
             var session = new UserRefreshToken { UserId = Guid.NewGuid(), Token = "orphan" };
@@ -129,6 +149,9 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
             _refreshTokensMock
                 .Setup(store => store.FindActiveAsync(token, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(session);
+            _refreshTokensMock
+                .Setup(store => store.RevokeAsync(token, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
             _userManagerMock.Setup(manager => manager.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             return session;
         }

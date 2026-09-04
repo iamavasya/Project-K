@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Infrastructure.DbContexts;
@@ -9,28 +9,44 @@ namespace ProjectK.Infrastructure.Repositories.AuthModule;
 public sealed class RefreshTokenStore : IRefreshTokenStore
 {
     private readonly AppDbContext _context;
+    private readonly DbContextOptions<AppDbContext> _options;
     private readonly TimeProvider _timeProvider;
 
-    public RefreshTokenStore(AppDbContext context, TimeProvider timeProvider)
+    public RefreshTokenStore(
+        AppDbContext context,
+        DbContextOptions<AppDbContext> options,
+        TimeProvider timeProvider)
     {
         _context = context;
+        _options = options;
         _timeProvider = timeProvider;
     }
 
+    /// <summary>
+    /// Written through a context of its own.
+    /// <para>
+    /// Handing out a session is its own fact, not part of whatever the caller is composing — and the
+    /// scoped <see cref="AppDbContext"/> is shared with <c>IUnitOfWork</c>, so saving through it here
+    /// would commit a half-built unit of work that the caller had not finished and could no longer
+    /// roll back. The other operations only ever touch session rows, so they can use the shared one.
+    /// </para>
+    /// </summary>
     public async Task IssueAsync(
         Guid userId,
         string token,
         DateTime expiresAtUtc,
         CancellationToken cancellationToken = default)
     {
-        _context.UserRefreshTokens.Add(new UserRefreshToken
+        await using var context = new AppDbContext(_options);
+
+        context.UserRefreshTokens.Add(new UserRefreshToken
         {
             UserId = userId,
             Token = token,
             ExpiresAtUtc = expiresAtUtc
         });
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public Task<UserRefreshToken?> FindActiveAsync(string token, CancellationToken cancellationToken = default)
@@ -45,15 +61,19 @@ public sealed class RefreshTokenStore : IRefreshTokenStore
                 cancellationToken);
     }
 
-    public async Task RevokeAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<bool> RevokeAsync(string token, CancellationToken cancellationToken = default)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
-        await _context.UserRefreshTokens
+        // One statement, so the "still active?" test and the write cannot be separated: whoever the
+        // database counts as having updated the row is the one that spent the token.
+        var revoked = await _context.UserRefreshTokens
             .Where(session => session.Token == token && session.RevokedAtUtc == null)
             .ExecuteUpdateAsync(
                 session => session.SetProperty(row => row.RevokedAtUtc, now),
                 cancellationToken);
+
+        return revoked > 0;
     }
 
     public async Task RevokeAllAsync(Guid userId, CancellationToken cancellationToken = default)

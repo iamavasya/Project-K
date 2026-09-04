@@ -42,11 +42,19 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout
                     "UserNotFound",
                     "User not found.");
             }
-            // Only this session. Signing out on one device leaves the others signed in — the whole
-            // point of a row per session.
-            if (!string.IsNullOrEmpty(request.RefreshToken))
+            // Only this browser's sessions. Signing out on one device leaves the others signed in —
+            // the whole point of a row per session.
+            foreach (var refreshToken in request.RefreshTokens.Distinct(StringComparer.Ordinal))
             {
-                await _refreshTokens.RevokeAsync(request.RefreshToken, cancellationToken);
+                await _refreshTokens.RevokeAsync(refreshToken, cancellationToken);
+            }
+
+            if (request.RefreshTokens.Count == 0)
+            {
+                // Nothing named the session, so nothing can be ended precisely. Ending all of them is
+                // what logout meant before sessions were rows, and it is the safe way to be wrong:
+                // the alternative is answering "logged out" while leaving the session usable.
+                await _refreshTokens.RevokeAllAsync(user.Id, cancellationToken);
             }
 
             // Otherwise the next sign-in lands the admin inside the kurin they last

@@ -64,13 +64,15 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
 
             user.UserName = email;
             user.NormalizedUserName = _userManager.NormalizeName(email);
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
-
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
                 return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "UpdateFailed", "Failed to update profile.");
             }
+
+            // Only once the change is stored. RevokeAllAsync commits on its own, so ending the
+            // sessions first signed every device out even when this update failed.
+            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Account.EmailChangeConfirmed",

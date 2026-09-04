@@ -202,7 +202,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
 
             var tracked = await uow.Kurins.GetByKeyAsync(kurin.KurinKey);
             var offices = await uow.Leaderships.DeleteForKurinAsync(kurin.KurinKey);
-            var members = await uow.Members.GetTrackedByKurinKeyAsync(kurin.KurinKey);
+            var members = await uow.Members.GetTrackedForKurinDeletionAsync(kurin.KurinKey);
 
             foreach (var member in members)
             {
