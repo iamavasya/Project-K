@@ -1,0 +1,143 @@
+using FluentAssertions;
+using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using Xunit;
+
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
+{
+    public class ProvisionMemberAccountCommandHandlerTests
+    {
+        private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberRepository> _memberRepoMock = new();
+        private readonly Mock<IWaitlistRepository> _waitlistRepoMock = new();
+        private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
+        private readonly Mock<IEmailService> _emailServiceMock = new();
+        private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
+        private readonly ProvisionMemberAccountCommandHandler _handler;
+
+        public ProvisionMemberAccountCommandHandlerTests()
+        {
+            _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
+            _uowMock.Setup(u => u.WaitlistEntries).Returns(_waitlistRepoMock.Object);
+            _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.Available);
+            _accountProvisioningMock
+                .Setup(x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<AccountProvisioningResult>(
+                    ResultType.Success,
+                    new AccountProvisioningResult(Guid.NewGuid(), Guid.NewGuid(), "invitation-token")));
+
+            _handler = new ProvisionMemberAccountCommandHandler(
+                _uowMock.Object,
+                _accountProvisioningMock.Object,
+                _emailServiceMock.Object,
+                _currentUserContextMock.Object);
+        }
+
+        private Member GivenMember(Guid? userKey = null)
+        {
+            var member = new Member
+            {
+                MemberKey = Guid.NewGuid(),
+                KurinKey = Guid.NewGuid(),
+                FirstName = "Olena",
+                LastName = "Invite",
+                Email = "olena.invite@example.com",
+                PhoneNumber = "123",
+                DateOfBirth = new DateOnly(2003, 3, 3),
+                UserKey = userKey
+            };
+
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(member);
+
+            return member;
+        }
+
+        [Fact]
+        public async Task Handle_ShouldQueueAnApprovedWaitlistEntry_LinkTheAccount_AndSendTheInvitation()
+        {
+            var member = GivenMember();
+
+            var result = await _handler.Handle(
+                new ProvisionMemberAccountCommand(member.MemberKey),
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            member.UserKey.Should().Be(result.Data);
+            _waitlistRepoMock.Verify(
+                r => r.Create(
+                    It.Is<WaitlistEntry>(e =>
+                        e.Email == member.Email
+                        && e.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            _accountProvisioningMock.Verify(
+                x => x.ProvisionAsync(
+                    It.Is<AccountProvisioningRequest>(r => r.Email == member.Email && r.KurinKey == member.KurinKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            _emailServiceMock.Verify(
+                x => x.SendInvitationEmailAsync(member.Email, "invitation-token", It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTheMemberAlreadyHasAnAccount_ShouldConflict()
+        {
+            var member = GivenMember(userKey: Guid.NewGuid());
+
+            var result = await _handler.Handle(
+                new ProvisionMemberAccountCommand(member.MemberKey),
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Conflict);
+            _accountProvisioningMock.Verify(
+                x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTheAddressIsTaken_ShouldConflict()
+        {
+            var member = GivenMember();
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(member.Email, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.WaitlistPending);
+
+            var result = await _handler.Handle(
+                new ProvisionMemberAccountCommand(member.MemberKey),
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Conflict);
+            _waitlistRepoMock.Verify(
+                r => r.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_UnknownMember_ShouldReturnNotFound()
+        {
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Member)null!);
+
+            var result = await _handler.Handle(
+                new ProvisionMemberAccountCommand(Guid.NewGuid()),
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.NotFound);
+        }
+    }
+}

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
@@ -37,6 +38,13 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         // Include graph of GetByKeyAsync just to read a single key. Null means no such member.
         Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
         Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Whether the member exists and which account it is linked to. The account flow asks this
+        /// before it writes anything, and would otherwise load the whole graph for two fields.
+        /// Null means no such member.
+        /// </summary>
+        Task<MemberAccountLink?> GetAccountLinkAsync(Guid memberKey, CancellationToken cancellationToken = default);
         Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 

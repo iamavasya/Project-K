@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule
 {
@@ -182,6 +183,12 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             => Context.Members
                 .Where(m => m.MemberKey == memberKey)
                 .Select(m => m.UserKey)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public Task<MemberAccountLink?> GetAccountLinkAsync(Guid memberKey, CancellationToken cancellationToken = default)
+            => Context.Members
+                .Where(m => m.MemberKey == memberKey)
+                .Select(m => new MemberAccountLink(m.MemberKey, m.UserKey))
                 .FirstOrDefaultAsync(cancellationToken);
 
         public Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)

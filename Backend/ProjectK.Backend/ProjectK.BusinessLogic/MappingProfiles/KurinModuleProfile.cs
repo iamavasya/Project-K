@@ -43,7 +43,7 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping
-            CreateMap<UpsertMember, Member>(MemberList.None)
+            CreateMap<UpsertMemberProfileCommand, Member>(MemberList.None)
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UserKey, opt => opt.Ignore())
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
