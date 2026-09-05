@@ -84,10 +84,17 @@ jobs:
             | awk '{printf "| %s | %s |\n", $2, $1}'
         } >> "$GITHUB_STEP_SUMMARY"
 
+    # One project at a time. Handing the whole solution to `dotnet test` starts a VSTest task per
+    # test project on separate MSBuild nodes, and when two start together one of them rejects its own
+    # assembly ("The argument ...dll is invalid") and the run fails without a failing test. Serialised
+    # like this the race cannot happen, and a failure names the project it came from.
     - name: Test
-      run: >-
-        dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal
-        --collect:"XPlat Code Coverage" --results-directory TestResults
+      shell: bash
+      run: |
+        for project in Backend/ProjectK.Backend/tests/*.Tests/*.csproj; do
+          dotnet test "$project" --configuration Release --no-build --verbosity normal \
+            --collect:"XPlat Code Coverage" --results-directory TestResults
+        done
 
     - name: Upload coverage
       if: always()
