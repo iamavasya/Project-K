@@ -47,14 +47,14 @@ describeRole('manager', 'Manager role access', ({ user }) => {
 });
 
 describeRole('mentor', 'Mentor role access', ({ user }) => {
-  test('mentor can access kurin and planning list but not create planning or admin pages', async ({ page, request }) => {
+  test('mentor can access kurin, planning list and planning creation but not admin pages', async ({ page, request }) => {
     await page.goto('/kurin');
     await expect(page).toHaveURL(/\/kurin/);
     await expect(page.locator('body')).not.toContainText('Forbidden');
 
-    await expect(page.getByRole('button', { name: 'Р РµРґР°РіСѓРІР°С‚Рё' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'РЎС‚РІРѕСЂРёС‚Рё' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Р”РѕРґР°С‚Рё СѓС‡Р°СЃРЅРёРєР° РєСѓСЂРµРЅСЏ' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Редагувати' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
 
     for (const adminPage of ['/waitlist', '/users', '/announcements', '/panel']) {
       await page.goto(adminPage);
@@ -66,29 +66,34 @@ describeRole('mentor', 'Mentor role access', ({ user }) => {
     await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
     await expect(page.locator('body')).not.toContainText('Forbidden');
 
+    // Виховник планує у своєму гуртку, тож форма створення йому відкрита; бекенд звужує scope при збереженні.
     await page.goto(`/planning/create/${kurinKey}`);
-    await expect(page).toHaveURL(/\/forbidden/);
+    await expect(page).toHaveURL(new RegExp(`/planning/create/${kurinKey}`));
   });
 });
 
 describeRole('member', 'Member role access', ({ user }) => {
-  test('member can access kurin but not planning list, planning create, or admin pages', async ({ page, request }) => {
+  test('member can access kurin and read planning, but not create it or reach admin pages', async ({ page, request }) => {
     await page.goto('/kurin');
     await expect(page).toHaveURL(/\/kurin/);
     await expect(page.locator('body')).not.toContainText('Forbidden');
 
-    await expect(page.getByRole('button', { name: 'Р РµРґР°РіСѓРІР°С‚Рё' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'РЎС‚РІРѕСЂРёС‚Рё' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Р”РѕРґР°С‚Рё СѓС‡Р°СЃРЅРёРєР° РєСѓСЂРµРЅСЏ' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Редагувати' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
 
     for (const adminPage of ['/panel', '/waitlist', '/users', '/announcements']) {
       await page.goto(adminPage);
       await expect(page).toHaveURL(/\/kurin/);
     }
 
+    // Planning is the kurin's own record and every member may read it; opening a session stays
+    // with the провід, so the list is reachable and the create page is not.
     const kurinKey = await getSeededKurinKey(request, user);
     await page.goto(`/planning/${kurinKey}`);
-    await expect(page).toHaveURL(/\/kurin/);
+    await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
+    await expect(page.getByText('Планування таборів')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Створити нове' })).toBeHidden();
 
     await page.goto(`/planning/create/${kurinKey}`);
     await expect(page).toHaveURL(/\/forbidden/);

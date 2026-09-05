@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -8,6 +8,7 @@ using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
 

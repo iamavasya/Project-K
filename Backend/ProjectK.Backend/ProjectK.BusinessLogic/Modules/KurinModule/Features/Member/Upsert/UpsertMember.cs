@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +13,8 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Records;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 {
@@ -68,14 +70,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
         private bool CanEditRestrictedFields()
         {
-            return _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) ||
-                   _currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()) ||
-                   _currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue());
+            return _currentUserContext.IsLeadership();
         }
 
         private bool IsAdmin()
         {
-            return _currentUserContext.IsInRole(UserRole.Admin.ToClaimValue());
+            return _currentUserContext.IsAdmin();
         }
 
         private bool IsCurrentUserOwner(MemberEntity member)

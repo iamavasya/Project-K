@@ -49,6 +49,15 @@ public static class AgendaNotificationRecipients
                     var target = members.FirstOrDefault(m => m.MemberKey == assignment.TargetKey);
                     AddIfLinked(recipients, target?.UserKey);
                     break;
+
+                case AgendaTargetType.Leadership:
+                    var officeUserKeys = await uow.Leaderships
+                        .GetActiveMemberUserKeysForLeadershipAsync(assignment.TargetKey, cancellationToken);
+                    foreach (var userKey in officeUserKeys)
+                    {
+                        AddIfLinked(recipients, userKey);
+                    }
+                    break;
             }
         }
 

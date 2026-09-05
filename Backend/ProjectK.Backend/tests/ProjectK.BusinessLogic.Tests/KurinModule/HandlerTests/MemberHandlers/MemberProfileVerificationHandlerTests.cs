@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Xunit;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
@@ -28,6 +29,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly Mock<INotificationService> _notificationServiceMock;
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<IResourceScopeReader> _scopeReaderMock;
         private readonly MemberProfileVerificationService _service;
 
         public MemberProfileVerificationHandlerTests()
@@ -41,12 +43,17 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _notificationServiceMock = new Mock<INotificationService>();
             _mapperMock = new Mock<IMapper>();
+            _scopeReaderMock = new Mock<IResourceScopeReader>();
+            _scopeReaderMock
+                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<Guid>());
 
             _service = new MemberProfileVerificationService(
                 _uowMock.Object,
                 _currentUserContextMock.Object,
                 _notificationServiceMock.Object,
-                _mapperMock.Object);
+                _mapperMock.Object,
+                _scopeReaderMock.Object);
         }
 
         [Fact]
@@ -56,7 +63,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var kurinKey = Guid.NewGuid();
             var member = CreateMember(kurinKey);
 
-            SetupCurrentUser(actorUserKey, kurinKey, UserRole.Manager);
+            SetupCurrentUser(actorUserKey, kurinKey, "KV.Zvyazkovyi");
             SetupMember(member);
             _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -85,7 +92,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = CreateMember(kurinKey);
             member.UserKey = memberUserKey;
 
-            SetupCurrentUser(actorUserKey, kurinKey, UserRole.Manager);
+            SetupCurrentUser(actorUserKey, kurinKey, "KV.Zvyazkovyi");
             SetupMember(member);
             _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -110,7 +117,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             var kurinKey = Guid.NewGuid();
             var member = CreateMember(kurinKey, profileVerificationEnabled: false);
-            SetupCurrentUser(Guid.NewGuid(), kurinKey, UserRole.Manager);
+            SetupCurrentUser(Guid.NewGuid(), kurinKey, "KV.Zvyazkovyi");
             _memberRepoMock
                 .Setup(x => x.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member);
@@ -131,7 +138,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = CreateMember(kurinKey);
             member.UserKey = userKey;
 
-            SetupCurrentUser(userKey, kurinKey, UserRole.Manager);
+            SetupCurrentUser(userKey, kurinKey, "KV.Zvyazkovyi");
             _memberRepoMock
                 .Setup(x => x.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member);
@@ -154,7 +161,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             member.ProfileVerifiedByUserKey = Guid.NewGuid();
             member.ProfileVerificationNote = "existing";
 
-            SetupCurrentUser(actorUserKey, kurinKey, UserRole.Manager);
+            SetupCurrentUser(actorUserKey, kurinKey, "KV.Zvyazkovyi");
             SetupMember(member);
             _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -178,8 +185,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var groupKey = Guid.NewGuid();
             var member = CreateMember(kurinKey, groupKey: groupKey);
 
-            SetupCurrentUser(mentorUserKey, kurinKey, UserRole.Mentor);
+            SetupCurrentUser(mentorUserKey, kurinKey, "KV.Vykhovnyk");
             SetupMember(member);
+            _scopeReaderMock.Setup(x => x.GetLedGroupKeysAsync(mentorUserKey, kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new[] { groupKey });
             _mentorAssignmentRepoMock
                 .Setup(x => x.GetByMentorUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<MentorAssignmentEntity>
@@ -201,7 +209,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var kurinKey = Guid.NewGuid();
             var member = CreateMember(kurinKey, groupKey: Guid.NewGuid());
 
-            SetupCurrentUser(mentorUserKey, kurinKey, UserRole.Mentor);
+            SetupCurrentUser(mentorUserKey, kurinKey, "KV.Vykhovnyk");
             _memberRepoMock
                 .Setup(x => x.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member);
@@ -216,13 +224,14 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _uowMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
-        private void SetupCurrentUser(Guid userKey, Guid kurinKey, UserRole role)
+        private void SetupCurrentUser(Guid userKey, Guid kurinKey, string role)
         {
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(userKey);
             _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(kurinKey);
+            _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { role });
             _currentUserContextMock
                 .Setup(x => x.IsInRole(It.IsAny<string>()))
-                .Returns<string>(requestedRole => requestedRole == role.ToClaimValue());
+                .Returns<string>(requestedRole => string.Equals(requestedRole, role, StringComparison.OrdinalIgnoreCase));
         }
 
         private void SetupMember(Member member)

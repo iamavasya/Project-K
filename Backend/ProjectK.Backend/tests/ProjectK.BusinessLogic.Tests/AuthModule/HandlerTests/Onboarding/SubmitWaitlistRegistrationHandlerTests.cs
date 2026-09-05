@@ -1,13 +1,12 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 

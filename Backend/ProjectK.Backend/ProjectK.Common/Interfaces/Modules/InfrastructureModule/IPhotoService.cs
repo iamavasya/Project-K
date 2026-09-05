@@ -17,6 +17,5 @@ namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
         Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken);
         Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, BlobUploadContext uploadContext, CancellationToken cancellationToken);
         Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken);
-        Task<IEnumerable<string>> GetOrphanFilesAsync(CancellationToken cancellationToken);
     }
 }

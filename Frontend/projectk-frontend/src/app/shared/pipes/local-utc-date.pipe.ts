@@ -3,8 +3,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { parseUtcDateTime } from '../functions/utcDateTime.function';
 
 @Pipe({
-  name: 'localUtcDate',
-  standalone: true
+  name: 'localUtcDate'
 })
 export class LocalUtcDatePipe implements PipeTransform {
   transform(

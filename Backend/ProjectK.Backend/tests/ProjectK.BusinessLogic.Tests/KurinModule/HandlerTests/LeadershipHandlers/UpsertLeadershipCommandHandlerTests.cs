@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -6,7 +6,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -15,6 +14,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers
 {
@@ -23,12 +25,23 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
         private readonly Mock<IMapper> _mapperMock = new();
+        private readonly Mock<ProjectK.Common.Interfaces.Modules.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
         private readonly UpsertLeadershipHandler _handler;
 
         public UpsertLeadershipHandlerTests()
         {
             _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-            _handler = new UpsertLeadershipHandler(_unitOfWorkMock.Object, _mapperMock.Object);
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
+            {
+                ProjectK.Common.Models.Authorization.SystemRole.ForOffice(
+                    ProjectK.Common.Models.Enums.LeadershipType.KV,
+                    ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi)
+            });
+            _handler = new UpsertLeadershipHandler(
+                _unitOfWorkMock.Object,
+                _mapperMock.Object,
+                new Mock<ILeadershipRoleSyncService>().Object,
+                _currentUserContextMock.Object);
         }
 
         private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()
@@ -230,6 +243,88 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
 
             _leadershipRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
             _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_SeatedBySystem_ShouldSucceedWithoutAnAssigner()
+        {
+            // Account activation seats the new kurin leader while the caller is still anonymous.
+            _currentUserContextMock.Setup(x => x.Roles).Returns(Array.Empty<string>());
+
+            var existing = BuildLeadershipEntity();
+            existing.Type = LeadershipType.KV;
+            existing.KurinKey = Guid.NewGuid();
+
+            var requestDto = BuildRequest("kv");
+            requestDto.EntityKey = existing.KurinKey;
+            requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+            {
+                new()
+                {
+                    Role = LeadershipRole.Zvyazkovyi.ToString(),
+                    Member = new MemberLookupDto
+                    {
+                        MemberKey = Guid.NewGuid(),
+                        FirstName = "New",
+                        LastName = "Leader"
+                    }
+                }
+            };
+            var command = new UpsertLeadership(requestDto, existing.LeadershipKey) { SeatedBySystem = true };
+
+            _leadershipRepoMock
+                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+
+            SetupUpdateMapping(command, existing);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.Equal(ResultType.Success, result.Type);
+            Assert.Contains(existing.LeadershipHistories, h => h.Role == LeadershipRole.Zvyazkovyi && h.EndDate == null);
+        }
+
+        [Theory]
+        [InlineData("Kurin.Pysar", ResultType.Forbidden)]
+        [InlineData("Kurin.Kurinnuy", ResultType.Success)]
+        public async Task Handle_SeatingSkarbnyk_ShouldDependOnWhetherTheCallerHeadsTheProvid(
+            string callerRole,
+            ResultType expected)
+        {
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { callerRole });
+
+            var existing = BuildLeadershipEntity();
+            existing.Type = LeadershipType.Kurin;
+            existing.KurinKey = Guid.NewGuid();
+
+            var requestDto = BuildRequest("kurin");
+            requestDto.EntityKey = existing.KurinKey;
+            requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+            {
+                new()
+                {
+                    Role = LeadershipRole.Skarbnyk.ToString(),
+                    Member = new MemberLookupDto
+                    {
+                        MemberKey = Guid.NewGuid(),
+                        FirstName = "Seated",
+                        LastName = "Member"
+                    }
+                }
+            };
+            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
+
+            _leadershipRepoMock
+                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+
+            SetupUpdateMapping(command, existing);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.Equal(expected, result.Type);
         }
 
         [Fact]

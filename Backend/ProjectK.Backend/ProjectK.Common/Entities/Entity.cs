@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjectK.Infrastructure.Entities
+namespace ProjectK.Common.Entities
 {
     public abstract class Entity
     {

@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -17,10 +18,17 @@ namespace ProjectK.API.Tests.Security;
 
 public class ResourceAccessServiceTests
 {
+    // System roles that reproduce the historic tiers: Зв'язковий = whole-kurin manager,
+    // Гуртковий = group leader, Member = plain user.
+    private static readonly string AdminRole = SystemRole.Admin;
+    private static readonly string ManagerRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string MentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string MemberRole = SystemRole.Member;
+
     [Fact]
     public async Task UnauthenticatedUser_ShouldBeDenied()
     {
-        var fixture = CreateFixture(false, Guid.NewGuid(), null, UserRole.User);
+        var fixture = CreateFixture(false, Guid.NewGuid(), null, MemberRole);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, Guid.NewGuid());
 
@@ -31,7 +39,7 @@ public class ResourceAccessServiceTests
     [Fact]
     public async Task Admin_ShouldBypassChecks()
     {
-        var fixture = CreateFixture(true, null, null, UserRole.Admin);
+        var fixture = CreateFixture(true, null, null, AdminRole);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Manage, Guid.NewGuid());
 
@@ -46,7 +54,7 @@ public class ResourceAccessServiceTests
         var otherKurinKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
+        var fixture = CreateFixture(true, scopedKurinKey, null, AdminRole);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(otherKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
@@ -61,7 +69,7 @@ public class ResourceAccessServiceTests
         var scopedKurinKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, scopedKurinKey, null, UserRole.Admin);
+        var fixture = CreateFixture(true, scopedKurinKey, null, AdminRole);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(scopedKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Manage, memberKey);
@@ -75,7 +83,7 @@ public class ResourceAccessServiceTests
         var kurinKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, kurinKey, null, ManagerRole);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Delete, memberKey);
@@ -90,7 +98,7 @@ public class ResourceAccessServiceTests
         var resourceKurinKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, userKurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, userKurinKey, null, ManagerRole);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(resourceKurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
@@ -102,19 +110,19 @@ public class ResourceAccessServiceTests
     [Fact]
     public async Task Manager_ShouldBeDeniedForIrreversibleKurinActions()
     {
-        var fixture = CreateFixture(true, Guid.NewGuid(), null, UserRole.Manager);
+        var fixture = CreateFixture(true, Guid.NewGuid(), null, ManagerRole);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Delete, Guid.NewGuid());
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("irreversible kurin actions", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("No permission", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public async Task Manager_ShouldBeAllowedToUpdateOwnKurin()
     {
         var kurinKey = Guid.NewGuid();
-        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, kurinKey, null, ManagerRole);
         fixture.Scope(ResourceType.Kurin, kurinKey, new ResourceScope(kurinKey, null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Update, kurinKey);
@@ -127,7 +135,7 @@ public class ResourceAccessServiceTests
     {
         var kurinKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
-        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, kurinKey, null, ManagerRole);
         fixture.Scope(ResourceType.Group, groupKey, new ResourceScope(kurinKey, groupKey, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey);
@@ -138,23 +146,23 @@ public class ResourceAccessServiceTests
     [Fact]
     public async Task Mentor_ShouldBeDeniedForGroupDeleteAction()
     {
-        var fixture = CreateFixture(true, Guid.NewGuid(), Guid.NewGuid(), UserRole.Mentor);
+        var fixture = CreateFixture(true, Guid.NewGuid(), Guid.NewGuid(), MentorRole);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Group, ResourceAction.Delete, Guid.NewGuid());
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("Mentor", decision.Reason);
+        Assert.Contains("No permission", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public async Task User_ShouldBeDeniedForNonReadAction()
     {
-        var fixture = CreateFixture(true, Guid.NewGuid(), Guid.NewGuid(), UserRole.User);
+        var fixture = CreateFixture(true, Guid.NewGuid(), Guid.NewGuid(), MemberRole);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Group, ResourceAction.Create, Guid.NewGuid());
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("limited to read", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("No permission", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -164,7 +172,7 @@ public class ResourceAccessServiceTests
         var userId = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, null, new[] { UserRole.User }, userId);
+        var fixture = CreateFixture(true, kurinKey, null, new[] { MemberRole }, userId);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, userId));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
@@ -179,13 +187,13 @@ public class ResourceAccessServiceTests
         var userId = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, null, new[] { UserRole.User }, userId);
+        var fixture = CreateFixture(true, kurinKey, null, new[] { MemberRole }, userId);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, null, Guid.NewGuid()));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("only own member profile", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("own resources", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -196,7 +204,7 @@ public class ResourceAccessServiceTests
         var mentorGroupKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { UserRole.Mentor }, mentorUserId);
+        var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { MentorRole }, mentorUserId);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, mentorGroupKey, null));
 
 
@@ -214,14 +222,14 @@ public class ResourceAccessServiceTests
         var foreignGroupKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { UserRole.Mentor }, mentorUserId);
+        var fixture = CreateFixture(true, kurinKey, mentorGroupKey, new[] { MentorRole }, mentorUserId);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, foreignGroupKey, null));
 
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         Assert.False(decision.IsAllowed);
-        Assert.Contains("assigned groups", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("led groups", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -233,7 +241,7 @@ public class ResourceAccessServiceTests
         var assignedSecondaryGroupKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, mentorPrimaryGroupKey, new[] { UserRole.Mentor }, mentorUserId);
+        var fixture = CreateFixture(true, kurinKey, mentorPrimaryGroupKey, new[] { MentorRole }, mentorUserId);
 
         fixture.MentorGroups(assignedSecondaryGroupKey);
 
@@ -251,7 +259,7 @@ public class ResourceAccessServiceTests
         var leadershipKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, null, UserRole.User);
+        var fixture = CreateFixture(true, kurinKey, null, MemberRole);
         fixture.Scope(ResourceType.Leadership, leadershipKey, new ResourceScope(kurinKey, groupKey, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Leadership, ResourceAction.Read, leadershipKey);
@@ -263,7 +271,7 @@ public class ResourceAccessServiceTests
     public async Task MissingUserKurinScopeClaim_ShouldBeDenied()
     {
         var memberKey = Guid.NewGuid();
-        var fixture = CreateFixture(true, null, null, UserRole.Manager);
+        var fixture = CreateFixture(true, null, null, ManagerRole);
         fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(Guid.NewGuid(), null, null));
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
@@ -276,7 +284,7 @@ public class ResourceAccessServiceTests
     public async Task ResourceNotFound_ShouldBeDenied()
     {
         var memberKey = Guid.NewGuid();
-        var fixture = CreateFixture(true, Guid.NewGuid(), null, UserRole.Manager);
+        var fixture = CreateFixture(true, Guid.NewGuid(), null, ManagerRole);
         fixture.Scope(ResourceType.Member, memberKey, null);
 
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
@@ -292,7 +300,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
         var probeProgressKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, kurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, kurinKey, null, ManagerRole);
 
         fixture.Scope(ResourceType.ProbeProgress, probeProgressKey, new ResourceScope(kurinKey, null, null));
 
@@ -309,7 +317,7 @@ public class ResourceAccessServiceTests
         var memberKey = Guid.NewGuid();
         var badgeProgressKey = Guid.NewGuid();
 
-        var fixture = CreateFixture(true, userKurinKey, null, UserRole.Manager);
+        var fixture = CreateFixture(true, userKurinKey, null, ManagerRole);
 
         fixture.Scope(ResourceType.BadgeProgress, badgeProgressKey, new ResourceScope(foreignKurinKey, null, null));
 
@@ -336,7 +344,7 @@ public class ResourceAccessServiceTests
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetMentorGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -358,7 +366,7 @@ public class ResourceAccessServiceTests
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetMentorGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
 
@@ -367,7 +375,7 @@ public class ResourceAccessServiceTests
         Guid groupKey,
         Guid mentorUserId)
     {
-        var roleValues = new[] { UserRole.Mentor.ToClaimValue() };
+        var roleValues = new[] { MentorRole };
 
         var currentUserContext = new Mock<ICurrentUserContext>();
         currentUserContext.SetupGet(x => x.IsAuthenticated).Returns(true);
@@ -380,7 +388,7 @@ public class ResourceAccessServiceTests
 
         var scopeReader = new Mock<IResourceScopeReader>();
         scopeReader
-            .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { groupKey });
 
         var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
@@ -392,7 +400,7 @@ public class ResourceAccessServiceTests
         bool isAuthenticated,
         Guid? kurinKey,
         Guid? groupKey,
-        params UserRole[] roles)
+        params string[] roles)
     {
         return CreateFixture(isAuthenticated, kurinKey, groupKey, roles, Guid.NewGuid());
     }
@@ -401,10 +409,10 @@ public class ResourceAccessServiceTests
         bool isAuthenticated,
         Guid? kurinKey,
         Guid? groupKey,
-        UserRole[] roles,
+        string[] roles,
         Guid userId)
     {
-        var roleValues = roles.Select(role => role.ToClaimValue()).ToArray();
+        var roleValues = roles;
 
         var currentUserContext = new Mock<ICurrentUserContext>();
         currentUserContext.SetupGet(x => x.IsAuthenticated).Returns(isAuthenticated);
@@ -422,7 +430,7 @@ public class ResourceAccessServiceTests
 
         // A mentor covers the group they belong to unless a test says otherwise.
         scopeReader
-            .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
 
         var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache());
@@ -455,7 +463,7 @@ public class ResourceAccessServiceTests
         public void MentorGroups(params Guid[] groupKeys)
         {
             ScopeReader
-                .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(groupKeys);
         }
     }

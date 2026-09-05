@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -12,12 +10,15 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
 {
     public class LoginUserCommandHandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
@@ -51,7 +52,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _uowMock = new Mock<IUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(memberRepoMock.Object);
 
-            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object);
+            _refreshTokensMock = new Mock<IRefreshTokenStore>();
+            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object, _refreshTokensMock.Object);
             _handler = new LoginUserCommandHandler(
                 _userManagerMock.Object,
                 _signInManagerMock.Object,
@@ -114,14 +116,16 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             Assert.Equal(userId, result.Data.UserKey);
             Assert.Equal(memberKey, result.Data.MemberKey);
             Assert.Equal(email, result.Data.Email);
-            Assert.Equal("User", result.Data.Role);
+            Assert.False(result.Data.IsAdmin);
             Assert.Equal(kurinKey.ToString(), result.Data.KurinKey);
             Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
             Assert.Equal(refreshToken.Token, result.Data.Tokens.RefreshToken.Token);
 
             // Verify user was updated with new refresh token
-            Assert.Equal(refreshToken.Token, user.RefreshToken);
-            Assert.Equal(refreshToken.Expires, user.RefreshTokenExpiryTime);
+            // Recorded as a new session rather than replacing whatever the account already had.
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(user.Id, refreshToken.Token, refreshToken.Expires, It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -172,7 +176,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             Assert.NotNull(result.Data);
             Assert.Equal(userId, result.Data.UserKey);
             Assert.Equal(email, result.Data.Email);
-            Assert.Equal("Admin", result.Data.Role);
+            Assert.True(result.Data.IsAdmin);
             Assert.Null(result.Data.KurinKey);
 
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, null), Times.Once);
@@ -362,14 +366,14 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.NotNull(result.Data);
-            Assert.Equal("Admin", result.Data.Role); // Should return first role
+            Assert.True(result.Data.IsAdmin);
             Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
 
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ShouldUpdateUserRefreshTokenAndExpiryTime()
+        public async Task Handle_ShouldRecordANewSession()
         {
             // Arrange
             var email = "update@example.com";
@@ -384,8 +388,6 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 KurinKey = Guid.NewGuid(),
                 FirstName = "Update",
                 LastName = "Test",
-                RefreshToken = "old-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1) // Old expired token
             };
 
             var roles = new List<string> { "User" };
@@ -413,9 +415,14 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            Assert.Equal(newRefreshToken.Token, user.RefreshToken);
-            Assert.Equal(newRefreshToken.Expires, user.RefreshTokenExpiryTime);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
+            // Recorded as a new session. Nothing the account already held is touched — signing in here
+            // must not sign the same person out on another device.
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(userId, newRefreshToken.Token, newRefreshToken.Expires, It.IsAny<CancellationToken>()),
+                Times.Once);
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
     }
 }

@@ -25,5 +25,3 @@ export const TILE_BOARD_KEYS = {
   kurinPanel: 'kurin-panel',
   groupPanel: 'group-panel'
 } as const;
-
-export type TileBoardKey = (typeof TILE_BOARD_KEYS)[keyof typeof TILE_BOARD_KEYS];

@@ -1,0 +1,53 @@
+﻿using MediatR;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.UsersModule.Models;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
+{
+    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, ServiceResult<IEnumerable<UserDto>>>
+    {
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IUnitOfWork _unitOfWork;
+        public GetAllUsersQueryHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork)
+        {
+            _userManager = userManager;
+            _unitOfWork = unitOfWork;
+        }
+        public async Task<ServiceResult<IEnumerable<UserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        {
+            var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
+            var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
+                .ToDictionary(k => k.KurinKey, k => k.Number);
+            
+            List<UserDto> result = [];
+            foreach (var user in users)
+            {
+                var role = await _userManager.GetRolesAsync(user);
+                UserDto userDto = new()
+                {
+                    UserId = user.Id,
+                    KurinKey = user.KurinKey,
+                    KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
+                    Email = user.Email!,
+                    // Admin panel manages the system role only; offices are shown elsewhere.
+                    Role = role.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
+                    FirstName = user.FirstName!,
+                    LastName = user.LastName!
+                };
+                result.Add(userDto);
+            }
+            return new ServiceResult<IEnumerable<UserDto>>(ResultType.Success, result);
+        }
+    }
+}

@@ -15,11 +15,13 @@ public sealed class GetBadgeReviewQueueHandler : IRequestHandler<GetBadgeReviewQ
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
+    private readonly IResourceScopeReader _scopeReader;
 
-    public GetBadgeReviewQueueHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext)
+    public GetBadgeReviewQueueHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
+        _scopeReader = scopeReader;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeReviewQueue request, CancellationToken cancellationToken)
@@ -28,16 +30,14 @@ public sealed class GetBadgeReviewQueueHandler : IRequestHandler<GetBadgeReviewQ
         var membersDict = (membersInKurin ?? Enumerable.Empty<Member>()).ToDictionary(m => m.MemberKey);
 
         IEnumerable<Guid>? allowedGroupKeys = null;
-        if (!_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()) && 
-            !_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
+        if (!_currentUserContext.CanManageWholeKurin())
         {
-            // If mentor, filter by assigned groups
+            // Group leaders only review their led groups.
             if (_currentUserContext.UserId == null)
             {
                 return new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Unauthorized, null);
             }
-            var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(_currentUserContext.UserId.Value, cancellationToken);
-            allowedGroupKeys = assignments.Where(a => a.RevokedAtUtc == null).Select(a => a.GroupKey).ToList();
+            allowedGroupKeys = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, request.KurinKey, cancellationToken);
         }
 
         var filteredMembers = allowedGroupKeys != null 

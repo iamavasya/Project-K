@@ -57,6 +57,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
                     ViewerMemberKey: viewerMemberKey,
                     ViewerOwnGroupKey: null,
                     VisibilityGroupKeys: Array.Empty<Guid>(),
+                    ViewerLeadershipKeys: Array.Empty<Guid>(),
                     CanSeeWholeKurin: canSeeWholeKurin,
                     IsLeadership: isLeadership));
         }

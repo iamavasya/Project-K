@@ -3,13 +3,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.UsersModule;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
+using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
 {
@@ -116,7 +124,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -124,7 +132,6 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
         public async Task GetAllUsers_ShouldReturnConflict_WhenConflict()
         {
             // Arrange
-            var conflictData = "Conflict occurred";
             var serviceResult = new ServiceResult<IEnumerable<UserDto>>(ResultType.Conflict, null);
 
             _mediatorMock
@@ -135,8 +142,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            var conflictResult = Assert.IsType<ConflictObjectResult>(result);
-            Assert.IsType<object[]>(conflictResult.Value);
+            ApiErrorAssert.HasError(result, StatusCodes.Status409Conflict);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -154,9 +160,7 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             var result = await _controller.GetAllUsers();
 
             // Assert
-            var objectResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, objectResult.StatusCode);
-            Assert.Equal("An unexpected error occurred.", objectResult.Value);
+            ApiErrorAssert.HasError(result, StatusCodes.Status500InternalServerError);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetAllUsersQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 

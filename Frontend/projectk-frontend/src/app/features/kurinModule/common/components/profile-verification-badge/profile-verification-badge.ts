@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
@@ -6,22 +6,23 @@ import { MemberProfileVerificationStatus } from '../../models/enums/member-profi
   selector: 'app-profile-verification-badge',
   imports: [TooltipModule],
   templateUrl: './profile-verification-badge.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-verification-badge.css'
 })
 export class ProfileVerificationBadgeComponent {
-  @Input() status: MemberProfileVerificationStatus | string | null | undefined;
-  @Input() enabled = true;
+  readonly status = input<MemberProfileVerificationStatus | string | null>();
+  readonly enabled = input(true);
 
   get isVisible(): boolean {
-    return this.enabled && (this.isCurrent || this.isStale);
+    return this.enabled() && (this.isCurrent || this.isStale);
   }
 
   get isCurrent(): boolean {
-    return this.status === MemberProfileVerificationStatus.VerifiedCurrent;
+    return this.status() === MemberProfileVerificationStatus.VerifiedCurrent;
   }
 
   get isStale(): boolean {
-    return this.status === MemberProfileVerificationStatus.VerifiedStale;
+    return this.status() === MemberProfileVerificationStatus.VerifiedStale;
   }
 
   get tooltip(): string | undefined {

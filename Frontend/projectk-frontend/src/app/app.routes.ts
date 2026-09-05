@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
-import { roleGuard } from './features/authModule/guards/role.guard';
+import { capabilityGuard } from './features/authModule/guards/capability.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
@@ -18,7 +18,7 @@ export const routes: Routes = [
   {
     path: 'setup',
     canActivate: [setupGuard],
-    loadComponent: () => import('./features/authModule/setup-component/setup.component')
+    loadComponent: () => import('./features/authModule/setup/setup')
       .then(m => m.SetupComponent),
     title: 'Початкове налаштування',
     data: { breadcrumb: 'Налаштування' }
@@ -29,6 +29,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/systemModule/components/welcome-page/welcome-page')
       .then(m => m.WelcomePageComponent),
     data: { breadcrumb: 'Вітання' }
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/authModule/onboarding/forgot-password/forgot-password')
+      .then(m => m.ForgotPasswordComponent),
+    title: 'Відновлення пароля'
+  },
+  {
+    // Where the link in the reset email lands; it carries token and email as query parameters.
+    path: 'reset-password',
+    loadComponent: () => import('./features/authModule/onboarding/reset-password/reset-password')
+      .then(m => m.ResetPasswordComponent),
+    title: 'Новий пароль'
   },
   {
     path: 'join',
@@ -49,7 +62,7 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [publicAuthRedirectGuard],
-    loadComponent: () => import('./features/authModule/login-component/login-component')
+    loadComponent: () => import('./features/authModule/login/login')
       .then(m => m.LoginComponent),
     title: 'Вхід',
     data: { breadcrumb: 'Вхід' }
@@ -57,7 +70,7 @@ export const routes: Routes = [
   {
     path: 'logout',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/authModule/logout-component/logout-component')
+    loadComponent: () => import('./features/authModule/logout/logout')
       .then(m => m.LogoutComponent),
     title: 'Вихід',
     data: { breadcrumb: 'Вихід' }
@@ -65,21 +78,21 @@ export const routes: Routes = [
   {
     path: 'settings/account',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/authModule/account-settings/account-settings.component')
+    loadComponent: () => import('./features/authModule/account-settings/account-settings')
       .then(m => m.AccountSettingsComponent),
     title: 'Налаштування акаунта',
     data: { breadcrumb: 'Акаунт' }
   },
   {
     path: 'forbidden',
-    loadComponent: () => import('./features/authModule/forbidden-component/forbidden-component')
+    loadComponent: () => import('./features/authModule/forbidden/forbidden')
       .then(m => m.ForbiddenComponent),
     title: 'Немає доступу',
     data: { breadcrumb: 'Немає доступу' }
   },
   {
     path: 'users',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/users-list/users-list')
       .then(m => m.UsersListComponent),
     title: 'Користувачі',
@@ -87,7 +100,7 @@ export const routes: Routes = [
   },
   {
     path: 'waitlist',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/waitlist-management/waitlist-management')
       .then(m => m.WaitlistManagementComponent),
     title: 'Заявки',
@@ -95,7 +108,7 @@ export const routes: Routes = [
   },
   {
     path: 'announcements',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/public-announcements/public-announcements')
       .then(m => m.PublicAnnouncementsComponent),
     title: 'Оголошення',
@@ -103,16 +116,16 @@ export const routes: Routes = [
   },
   {
     path: 'system-settings',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')],
-    loadComponent: () => import('./features/adminModule/components/system-settings/system-settings.component')
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
+    loadComponent: () => import('./features/adminModule/components/system-settings/system-settings')
       .then(m => m.SystemSettingsComponent),
     title: 'Системні налаштування',
     data: { breadcrumb: 'Системні налаштування', parent: '/panel' }
   },
   {
     path: 'panel',
-    canActivate: [authGuard, kurinAccessGuard('panel'), roleGuard('Admin')], 
-    loadComponent: () => import('./features/kurinModule/admin-panel/admin-panel.component')
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')], 
+    loadComponent: () => import('./features/kurinModule/admin-panel/admin-panel')
       .then(m => m.AdminPanelComponent),
     title: 'Адміністрація',
     data: { breadcrumb: 'Адміністрація' }
@@ -120,7 +133,7 @@ export const routes: Routes = [
   { 
     path: 'kurin',
     canActivate: [authGuard, kurinAccessGuard('kurin')],
-    loadComponent: () => import('./features/kurinModule/kurin-panel/kurin-panel.component')
+    loadComponent: () => import('./features/kurinModule/kurin-panel/kurin-panel')
       .then(m => m.KurinPanelComponent),
     title: 'Курінь',
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
@@ -128,7 +141,7 @@ export const routes: Routes = [
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/group-panel/group-panel.component')
+    loadComponent: () => import('./features/kurinModule/group-panel/group-panel')
       .then(m => m.GroupPanelComponent),
     title: 'Гурток',
     data: { breadcrumb: 'Гурток', parent: '/kurin', entityType: 'group', titleContext: 'group', breadcrumbEntity: 'group' }
@@ -136,7 +149,7 @@ export const routes: Routes = [
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member.component')
+    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Редагування учасника',
     data: { breadcrumb: 'Редагування учасника', parent: '/group/:groupKey', entityType: 'member', entityAction: 'Update', titleContext: 'member' }
@@ -144,7 +157,7 @@ export const routes: Routes = [
   { 
     path: 'group/:groupKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member.component')
+    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Новий учасник',
     data: { breadcrumb: 'Новий учасник', parent: '/group/:groupKey', entityType: 'group', entityAction: 'Create', titleContext: 'group' }
@@ -154,7 +167,7 @@ export const routes: Routes = [
     // used, its :groupKey would be Guid.Empty.
     path: 'kurin/:kurinKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member.component')
+    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Редагування учасника',
     data: {
@@ -168,7 +181,7 @@ export const routes: Routes = [
   {
     path: 'kurin/:kurinKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member.component')
+    loadComponent: () => import('./features/kurinModule/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Новий учасник',
     data: { breadcrumb: 'Новий учасник', parent: '/kurin', entityType: 'kurin', entityAction: 'Create', titleContext: 'kurin' }
@@ -176,7 +189,7 @@ export const routes: Routes = [
   { 
     path: 'member/:memberKey/probe/:probeId',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/member-probe-page/member-probe-page.component')
+    loadComponent: () => import('./features/kurinModule/member-probe-page/member-probe-page')
       .then(m => m.MemberProbePageComponent),
     title: 'Проба',
     data: { breadcrumb: 'Проба', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member' }
@@ -184,7 +197,7 @@ export const routes: Routes = [
   {
     path: 'member/:memberKey', 
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/member-card/member-card.component')
+    loadComponent: () => import('./features/kurinModule/member-card/member-card')
       .then(m => m.MemberCardComponent),
     title: 'Картка учасника',
     data: {
@@ -197,16 +210,9 @@ export const routes: Routes = [
     }
   },
   {
-    path: 'toolbar',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/kurinModule/common/components/toolbar-header/toolbar-header')
-      .then(m => m.ToolbarHeader),
-    data: { breadcrumb: 'Тулбар' }
-  },
-  {
     path: 'leadership/create/:type/:entityKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), leadershipAccessGuard, EntityGuard],
-    loadComponent: () => import('./features/kurinModule/common/components/leadership/leadership-component/leadership-component')
+    loadComponent: () => import('./features/kurinModule/common/components/leadership/leadership/leadership')
       .then(m => m.LeadershipComponent),
     title: 'Новий провід',
     data: {
@@ -220,7 +226,7 @@ export const routes: Routes = [
   {
     path: 'leadership/:leadershipKey/:type/:entityKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), leadershipAccessGuard, EntityGuard],
-    loadComponent: () => import('./features/kurinModule/common/components/leadership/leadership-component/leadership-component')
+    loadComponent: () => import('./features/kurinModule/common/components/leadership/leadership/leadership')
       .then(m => m.LeadershipComponent),
     title: 'Провід',
     data: {
@@ -233,15 +239,15 @@ export const routes: Routes = [
   {
     path: 'kurin/:kurinKey/review/skills',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/skills-review-page/skills-review-page.component')
+    loadComponent: () => import('./features/kurinModule/skills-review-page/skills-review-page')
       .then(m => m.SkillsReviewPageComponent),
     title: 'Перевірка вмінь',
     data: { breadcrumb: 'Модерація вмілостей', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
   },
   {
     path: 'kurin/:kurinKey/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), roleGuard('Admin', 'Manager'), EntityGuard],
-    loadComponent: () => import('./features/kurinModule/kurin-settings/kurin-settings.component')
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/kurin-settings/kurin-settings')
       .then(m => m.KurinSettingsComponent),
     title: 'Налаштування куреня',
     data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'kurin', entityAction: 'Update', titleContext: 'kurin' }

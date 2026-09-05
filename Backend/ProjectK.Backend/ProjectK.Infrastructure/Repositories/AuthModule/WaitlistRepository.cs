@@ -1,0 +1,25 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Infrastructure.DbContexts;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProjectK.Infrastructure.Repositories.AuthModule
+{
+    public class WaitlistRepository : BaseEntityRepository<WaitlistEntry>, IWaitlistRepository
+    {
+
+        public WaitlistRepository(AppDbContext context) : base(context)
+        {
+        }
+
+        public async Task<WaitlistEntry?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await Context.WaitlistEntries.FirstOrDefaultAsync(e => e.Email == email, cancellationToken);
+        }
+
+    }
+}

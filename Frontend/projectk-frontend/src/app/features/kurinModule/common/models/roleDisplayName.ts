@@ -12,4 +12,6 @@ export const ROLE_DISPLAY_NAMES: Record<LeadershipRole, string> = {
     [LeadershipRole.Instruktor]: 'Інструктор',
     [LeadershipRole.Zvyazkovyi]: 'Зв\'язковий',
     [LeadershipRole.Vykhovnyk]: 'Впорядник',
+    [LeadershipRole.OtherKurin]: 'Інша курінна роль',
+    [LeadershipRole.OtherGroup]: 'Інша гурткова роль',
 };

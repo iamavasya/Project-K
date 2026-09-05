@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UserService } from '../../services/user.service';
 import { UserDto } from '../../models/userDto';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -6,20 +6,21 @@ import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { SelectModule } from "@openng/optimus-ui/select";
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { SystemUserRole } from '../../models/userDto';
 
 @Component({
   selector: 'app-users-list',
-  standalone: true,
-  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, CommonModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
+  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './users-list.css'
 })
 export class UsersListComponent implements OnInit {
@@ -30,11 +31,11 @@ export class UsersListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  roles = [
-    { label: 'Admin', value: 0 },
-    { label: 'Manager', value: 1 },
-    { label: 'Mentor', value: 2 },
-    { label: 'User', value: 3 }
+  // System-level roles only. Kurin offices are managed on the Leadership screen.
+  // Posted by name, so the backend enum's order is not part of the contract.
+  roles: { label: string; value: SystemUserRole }[] = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Member', value: 'Member' }
   ];
 
   ngOnInit() {

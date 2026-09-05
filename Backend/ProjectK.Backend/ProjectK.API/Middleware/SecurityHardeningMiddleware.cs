@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -6,8 +6,8 @@ using ProjectK.API.Helpers;
 using ProjectK.Common.Models.Enums;
 using System.Security.Claims;
 using ProjectK.Common.Extensions;
-using ProjectK.API.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Infrastructure.Services.GeoIP;
 
 namespace ProjectK.API.Middleware;
 

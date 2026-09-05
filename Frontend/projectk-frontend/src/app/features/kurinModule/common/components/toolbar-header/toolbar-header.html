@@ -10,7 +10,7 @@
 
         <ng-template #end>
             <div class="toolbar-actions">
-                @if (state.kurinKey && isAdmin(state.role)) {
+                @if (state.kurinKey && isAdmin()) {
                     <p-button (onClick)="backToKurinPanel()" label="До адміністрації" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
                 }
                 <p-button
@@ -22,13 +22,13 @@
                     severity="secondary"
                     (onClick)="themeService.toggle()" />
                 @if (state.accessToken) {
-                    <app-notification-bell></app-notification-bell>
-                    <app-logout-component></app-logout-component>
+                    <app-notification-bell />
+                    <app-logout-component />
                 }
             </div>
         </ng-template>
     </p-toolbar>
 
-    <app-sidebar-menu [visible]="sidebarVisible" [state$]="state$" (visibleChange)="sidebarVisible = $event"></app-sidebar-menu>
+    <app-sidebar-menu [visible]="sidebarVisible" [state$]="state$" (visibleChange)="sidebarVisible = $event" />
     }
 }

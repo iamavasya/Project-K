@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
@@ -8,6 +8,7 @@ using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification
 {
@@ -54,17 +55,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
         private readonly ICurrentUserContext _currentUserContext;
         private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
+        private readonly IResourceScopeReader _scopeReader;
 
         public MemberProfileVerificationService(
             IUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
             INotificationService notificationService,
-            IMapper mapper)
+            IMapper mapper,
+            IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
             _notificationService = notificationService;
             _mapper = mapper;
+            _scopeReader = scopeReader;
         }
 
         public async Task<ServiceResult<MemberResponse>> VerifyAsync(
@@ -149,30 +153,31 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
 
         private async Task<bool> CanVerifyAsync(MemberEntity member, CancellationToken cancellationToken)
         {
-            if (_currentUserContext.IsInRole(UserRole.Admin.ToClaimValue()))
+            if (_currentUserContext.IsAdmin())
             {
                 return true;
             }
 
-            if (_currentUserContext.IsInRole(UserRole.Manager.ToClaimValue()))
+            if (_currentUserContext.CanManageWholeKurin())
             {
                 return _currentUserContext.KurinKey.HasValue
                        && _currentUserContext.KurinKey.Value == member.KurinKey;
             }
 
-            if (!_currentUserContext.IsInRole(UserRole.Mentor.ToClaimValue())
-                || !member.GroupKey.HasValue)
+            if (!_currentUserContext.CanLeadGroups()
+                || !member.GroupKey.HasValue
+                || !_currentUserContext.UserId.HasValue
+                || !_currentUserContext.KurinKey.HasValue)
             {
                 return false;
             }
 
-            var assignments = await _unitOfWork.MentorAssignments.GetByMentorUserKeyAsync(
-                _currentUserContext.UserId!.Value,
+            var ledGroups = await _scopeReader.GetLedGroupKeysAsync(
+                _currentUserContext.UserId.Value,
+                _currentUserContext.KurinKey.Value,
                 cancellationToken);
 
-            return assignments.Any(assignment =>
-                assignment.RevokedAtUtc is null
-                && assignment.GroupKey == member.GroupKey.Value);
+            return ledGroups.Contains(member.GroupKey.Value);
         }
 
         private async Task<ServiceResult<MemberResponse>> SaveAsync(MemberEntity member, CancellationToken cancellationToken)

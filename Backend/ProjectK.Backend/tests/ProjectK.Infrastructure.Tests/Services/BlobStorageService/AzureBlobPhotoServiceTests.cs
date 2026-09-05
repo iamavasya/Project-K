@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -11,6 +11,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService
 {

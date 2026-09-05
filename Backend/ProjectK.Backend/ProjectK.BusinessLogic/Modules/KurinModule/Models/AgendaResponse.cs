@@ -22,6 +22,27 @@ public record AgendaItemResponse
     public string? CreatedByName { get; set; }
     public bool CanEdit { get; set; }
     public bool CanChangeStatus { get; set; }
+
+    /// <summary>Event group, resolved for display; null when the item is uncategorised.</summary>
+    public Guid? CategoryKey { get; set; }
+    public string? CategoryName { get; set; }
+    public string? CategoryColorHex { get; set; }
+    public string? CategoryIcon { get; set; }
+
+    /// <summary>Recurrence rule echoed back so the edit dialog can repopulate the series settings.</summary>
+    public RecurrenceFrequency RecurrenceFrequency { get; set; }
+    public int RecurrenceInterval { get; set; } = 1;
+    public int RecurrenceByWeekday { get; set; }
+    public DateTime? RecurrenceEndUtc { get; set; }
+    public int? RecurrenceCount { get; set; }
+
+    /// <summary>True when this row is one expanded occurrence of a series (its dates differ from the stored item).</summary>
+    public bool IsRecurrenceInstance { get; set; }
+
+    /// <summary>The series' stored (unshifted) start/end, so a dragged occurrence can move the whole series by its delta.</summary>
+    public DateTime? SeriesStartUtc { get; set; }
+    public DateTime? SeriesEndUtc { get; set; }
+
     public List<AgendaAssignmentDto> Assignments { get; set; } = [];
 }
 
@@ -43,6 +64,9 @@ public record AgendaAssignTargetsResponse
     public bool CanTargetKurin { get; set; }
     public Guid KurinKey { get; set; }
     public string KurinLabel { get; set; } = string.Empty;
+
+    /// <summary>Kurin-level проводи the viewer may target: КВ and Курінний провід.</summary>
+    public List<AgendaLeadershipTargetDto> KurinLeaderships { get; set; } = [];
     public List<AgendaGroupTargetDto> Groups { get; set; } = [];
 }
 
@@ -53,7 +77,17 @@ public record AgendaGroupTargetDto
 
     /// <summary>False when the group is shown only as a container for its members (no group-level target right).</summary>
     public bool CanTargetGroup { get; set; }
+
+    /// <summary>The group's Гуртковий провід, when it has an active office; null otherwise.</summary>
+    public AgendaLeadershipTargetDto? Leadership { get; set; }
     public List<AgendaMemberTargetDto> Members { get; set; } = [];
+}
+
+public record AgendaLeadershipTargetDto
+{
+    public Guid LeadershipKey { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public bool CanTarget { get; set; }
 }
 
 public record AgendaMemberTargetDto

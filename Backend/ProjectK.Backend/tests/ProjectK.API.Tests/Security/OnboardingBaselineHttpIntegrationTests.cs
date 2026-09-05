@@ -1,4 +1,5 @@
-using System.Net;
+﻿using System.Net;
+using ProjectK.Common.Models.Authorization;
 using System.Security.Claims;
 using FluentValidation;
 using ProjectK.BusinessLogic.Behaviors;
@@ -27,7 +28,8 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -59,7 +61,7 @@ public class OnboardingBaselineHttpIntegrationTests
     [Fact]
     public async Task AdminApproveWaitlist_ShouldReturnOk_WhenBootstrapApprovalFlowIsImplemented()
     {
-        await using var host = await OnboardingBaselineTestHost.StartAsync(UserRole.Admin);
+        await using var host = await OnboardingBaselineTestHost.StartAsync("Admin");
 
         var response = await host.Client.PostAsync($"/api/auth/onboarding/waitlist/{Guid.NewGuid():D}/approve", content: null);
 
@@ -87,7 +89,7 @@ public class OnboardingBaselineHttpIntegrationTests
     {
         // This test represents the target behavior where a mentor can access a group they are explicitly assigned to,
         // even if it's not their primary group.
-        await using var host = await OnboardingBaselineTestHost.StartAsync(UserRole.Mentor);
+        await using var host = await OnboardingBaselineTestHost.StartAsync("Group.Hurtkoviy");
 
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -143,7 +145,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
         public HttpClient Client { get; }
 
-        public static async Task<OnboardingBaselineTestHost> StartAsync(UserRole? role = null)
+        public static async Task<OnboardingBaselineTestHost> StartAsync(string? role = null)
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions
             {
@@ -237,20 +239,7 @@ public class OnboardingBaselineHttpIntegrationTests
                     OnboardingBaselineAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(AuthController).Assembly)
@@ -281,7 +270,7 @@ public class OnboardingBaselineHttpIntegrationTests
         }
     }
 
-    private sealed record OnboardingBaselineAuthState(UserRole? Role);
+    private sealed record OnboardingBaselineAuthState(string? Role);
 
     private sealed class OnboardingBaselineAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -298,7 +287,7 @@ public class OnboardingBaselineHttpIntegrationTests
         public bool IsAuthenticated => _authState.Role != null;
         public Guid? UserId => IsAuthenticated ? _userId : null;
         public Guid? KurinKey => null;
-        public IReadOnlyCollection<string> Roles => _authState.Role != null ? [_authState.Role.Value.ToString()] : [];
+        public IReadOnlyCollection<string> Roles => _authState.Role != null ? [_authState.Role] : [];
         public bool IsInRole(string role) => Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -311,7 +300,7 @@ public class OnboardingBaselineHttpIntegrationTests
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

@@ -7,13 +7,13 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ControllerTests
 {

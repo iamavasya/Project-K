@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -8,6 +8,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

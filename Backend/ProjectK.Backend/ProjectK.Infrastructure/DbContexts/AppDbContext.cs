@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
@@ -28,6 +28,8 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
         public DbSet<AgendaItem> AgendaItems { get; set; }
         public DbSet<AgendaAssignment> AgendaAssignments { get; set; }
+        public DbSet<AgendaCategory> AgendaCategories { get; set; }
+        public DbSet<AgendaResponse> AgendaResponses { get; set; }
         public DbSet<BadgeProgress> BadgeProgresses { get; set; }
         public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
         public DbSet<ProbeProgress> ProbeProgresses { get; set; }
@@ -39,6 +41,7 @@ namespace ProjectK.Infrastructure.DbContexts
 
         // Auth module DbSet
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
+        public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
         public DbSet<Invitation> Invitations { get; set; }
         public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
         public DbSet<AppNotification> AppNotifications { get; set; }
@@ -201,6 +204,7 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasKey(e => e.AgendaItemKey);
                 entity.Property(e => e.Kind).HasConversion<int>();
                 entity.Property(e => e.Status).HasConversion<int>();
+                entity.Property(e => e.RecurrenceFrequency).HasConversion<int>();
                 entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.HasOne(e => e.Kurin)
@@ -209,6 +213,42 @@ namespace ProjectK.Infrastructure.DbContexts
                       .OnDelete(DeleteBehavior.Cascade);
                 // The calendar queries by kurin and date window, so index both.
                 entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
+                // NoAction (not SetNull) so Kurin keeps a single cascade path to AgendaItems: Category→Kurin
+                // is Cascade, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
+                // DeleteAgendaCategory nulls out referencing items itself before removing the group.
+                entity.HasOne(e => e.Category)
+                      .WithMany()
+                      .HasForeignKey(e => e.AgendaCategoryKey)
+                      .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            builder.Entity<AgendaCategory>(entity =>
+            {
+                entity.HasKey(e => e.AgendaCategoryKey);
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.ColorHex).HasMaxLength(32).IsRequired();
+                entity.Property(e => e.Icon).HasMaxLength(64);
+                entity.Property(e => e.DefaultDescription).HasMaxLength(2000);
+                // Cascade: an event group belongs to its kurin and dies with it (so the seeder's kurin reset
+                // and any kurin delete clear categories automatically). The item→category side is NoAction to
+                // keep this the only cascade path to AgendaItems.
+                entity.HasOne(e => e.Kurin)
+                      .WithMany()
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
+            });
+
+            builder.Entity<AgendaResponse>(entity =>
+            {
+                entity.HasKey(e => e.AgendaResponseKey);
+                entity.Property(e => e.Status).HasConversion<int>();
+                entity.HasOne(e => e.AgendaItem)
+                      .WithMany(a => a.Responses)
+                      .HasForeignKey(e => e.AgendaItemKey)
+                      .OnDelete(DeleteBehavior.Cascade);
+                // One answer per user per item; the RSVP list also queries by item.
+                entity.HasIndex(e => new { e.AgendaItemKey, e.UserKey }).IsUnique();
             });
 
             builder.Entity<AgendaAssignment>(entity =>
@@ -325,6 +365,21 @@ namespace ProjectK.Infrastructure.DbContexts
                 entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
                 entity.HasIndex(e => e.MentorUserKey)
                     .HasFilter("[RevokedAtUtc] IS NULL");
+            });
+
+            builder.Entity<UserRefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.UserRefreshTokenKey);
+                entity.Property(e => e.Token)
+                    .HasMaxLength(512)
+                    .IsRequired();
+                // Looked up by token on every refresh, and swept per user on a password change.
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<WaitlistEntry>(entity =>

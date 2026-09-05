@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
@@ -13,8 +12,9 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
     private readonly string _resourceTypeSelector;
     private readonly ResourceAction _action;
     private readonly string _resourceKeySelector;
+    private readonly bool _useScopeOverride;
+    private readonly ResourceType _scopeResourceType;
     private readonly IResourceAccessService _resourceAccessService;
-    private readonly IOptions<SecurityPatchOptions> _securityPatchOptions;
 
     public ResourceAuthorizeFilter(
         bool useStaticResourceType,
@@ -22,26 +22,22 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
         string resourceTypeSelector,
         ResourceAction action,
         string resourceKeySelector,
-        IResourceAccessService resourceAccessService,
-        IOptions<SecurityPatchOptions> securityPatchOptions)
+        bool useScopeOverride,
+        ResourceType scopeResourceType,
+        IResourceAccessService resourceAccessService)
     {
         _useStaticResourceType = useStaticResourceType;
         _staticResourceType = staticResourceType;
         _resourceTypeSelector = resourceTypeSelector;
         _action = action;
         _resourceKeySelector = resourceKeySelector;
+        _useScopeOverride = useScopeOverride;
+        _scopeResourceType = scopeResourceType;
         _resourceAccessService = resourceAccessService;
-        _securityPatchOptions = securityPatchOptions;
     }
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (!_securityPatchOptions.Value.EnableResourceGuard)
-        {
-            await next();
-            return;
-        }
-
         if (context.HttpContext.User.Identity?.IsAuthenticated != true)
         {
             context.Result = new UnauthorizedResult();
@@ -50,25 +46,26 @@ public sealed class ResourceAuthorizeFilter : IAsyncActionFilter
 
         if (!TryResolveResourceType(context, out var resourceType, out var resourceTypeError))
         {
-            context.Result = new BadRequestObjectResult(new { message = resourceTypeError });
+            context.Result = new BadRequestObjectResult(new { error = "InvalidResourceType", message = resourceTypeError });
             return;
         }
 
         if (!TryResolveGuid(context, _resourceKeySelector, out var resourceKey, out var resourceKeyError))
         {
-            context.Result = new BadRequestObjectResult(new { message = resourceKeyError });
+            context.Result = new BadRequestObjectResult(new { error = "InvalidResourceKey", message = resourceKeyError });
             return;
         }
 
         var decision = await _resourceAccessService.CheckAccessAsync(
             resourceType,
             _action,
+            _useScopeOverride ? _scopeResourceType : resourceType,
             resourceKey,
             context.HttpContext.RequestAborted);
 
         if (!decision.IsAllowed)
         {
-            context.Result = new ObjectResult(new { message = decision.Reason })
+            context.Result = new ObjectResult(new { error = "ResourceAccessDenied", message = decision.Reason })
             {
                 StatusCode = StatusCodes.Status403Forbidden
             };

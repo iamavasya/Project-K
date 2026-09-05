@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ProjectK.Common.Models.Enums;
+﻿using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;

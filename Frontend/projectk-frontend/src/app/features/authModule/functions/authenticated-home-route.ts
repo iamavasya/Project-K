@@ -6,7 +6,7 @@ export function authenticatedHomeRoute(state: AuthState | null | undefined): unk
     return ['/kurin'];
   }
 
-  if (state?.role?.trim().toLowerCase() === 'admin') {
+  if (state?.isAdmin) {
     return ['/panel'];
   }
 

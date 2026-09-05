@@ -16,14 +16,17 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock;
         private readonly DeleteMemberHandler _handler;
 
         public DeleteMemberHandlerTests()
         {
             _memberRepositoryMock = new Mock<IMemberRepository>();
+            _agendaItemRepositoryMock = new Mock<IAgendaItemRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
 
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.AgendaItems).Returns(_agendaItemRepositoryMock.Object);
 
             _handler = new DeleteMemberHandler(_unitOfWorkMock.Object);
         }
@@ -39,7 +42,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.BadRequest);
-            result.Data.Should().Be("MemberKey cannot be empty.");
+            result.ErrorMessage.Should().Be("MemberKey cannot be empty.");
             _memberRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
             _memberRepositoryMock.Verify(r => r.Delete(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -61,7 +64,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.NotFound);
-            result.Data.Should().Be($"Member with key {memberKey} not found.");
+            result.ErrorMessage.Should().Be($"Member with key {memberKey} not found.");
             _memberRepositoryMock.Verify(r => r.Delete(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -111,7 +114,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             // Assert
             result.Type.Should().Be(ResultType.InternalServerError);
-            result.Data.Should().Be("Failed to delete Member due to internal error.");
+            result.ErrorMessage.Should().Be("Failed to delete Member due to internal error.");
             _memberRepositoryMock.Verify(r => r.Delete(member, It.IsAny<CancellationToken>()), Times.Once);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }

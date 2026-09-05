@@ -1,8 +1,8 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+
+import { Component, OnChanges, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MultiSelectModule } from '@openng/optimus-ui/multiselect';
@@ -21,6 +21,11 @@ import { UserService } from '../../../../adminModule/services/user.service';
 import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.function';
 import { LocalUtcDatePipe } from '../../../../../shared/pipes/local-utc-date.pipe';
 import { EmptyStateComponent } from '../../../../../shared/empty-state/empty-state';
+import { holdsOffice } from '../../functions/systemRole.function';
+import { toDateOnlyString } from '../../functions/toDateOnlyString.function';
+import { LeadershipService } from '../../services/leadership-service/leadership.service';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { memberDisplayName } from '../../functions/leadershipRoleDisplay.function';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -31,7 +36,6 @@ interface MentorAssignmentRow {
 @Component({
   selector: 'app-kv-panel',
   imports: [
-    CommonModule,
     FormsModule,
     ButtonModule,
     DialogModule,
@@ -43,18 +47,20 @@ interface MentorAssignmentRow {
     TooltipModule,
     LocalUtcDatePipe,
     EmptyStateComponent
-  ],
+],
   templateUrl: './kv-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './kv-panel.css'
 })
 export class KvPanelComponent implements OnChanges {
-  @Input() kurinKey = '';
+  readonly kurinKey = input('');
 
   private readonly groupService = inject(GroupService);
   private readonly memberService = inject(MemberService);
   private readonly permissionService = inject(PermissionService);
   private readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
+  private readonly leadershipService = inject(LeadershipService);
   private readonly router = inject(Router);
 
   groups: GroupDto[] = [];
@@ -76,7 +82,7 @@ export class KvPanelComponent implements OnChanges {
   transferInProgress = false;
 
   ngOnChanges(): void {
-    if (this.kurinKey) {
+    if (this.kurinKey()) {
       this.loadData();
     }
   }
@@ -89,7 +95,7 @@ export class KvPanelComponent implements OnChanges {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey)
       .map(candidate => ({
-        label: this.getMemberName(candidate),
+        label: memberDisplayName(candidate),
         value: candidate.userKey as string
       }));
   }
@@ -102,7 +108,7 @@ export class KvPanelComponent implements OnChanges {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey && candidate.userKey !== this.manager?.userKey)
       .map(candidate => ({
-        label: this.getMemberName(candidate),
+        label: memberDisplayName(candidate),
         value: candidate.userKey as string
       }));
   }
@@ -119,10 +125,10 @@ export class KvPanelComponent implements OnChanges {
     this.isLoading = true;
 
     forkJoin({
-      groups: this.groupService.getAllByKurinKey(this.kurinKey),
-      kvMembers: this.memberService.getKVMembers(this.kurinKey),
-      mentorAssignments: this.groupService.getMentorAssignments(this.kurinKey),
-      mentorCandidates: this.canManageKv ? this.memberService.getMentorCandidates(this.kurinKey) : of([] as MemberLookupDto[])
+      groups: this.groupService.getAllByKurinKey(this.kurinKey()),
+      kvMembers: this.memberService.getKVMembers(this.kurinKey()),
+      mentorAssignments: this.groupService.getMentorAssignments(this.kurinKey()),
+      mentorCandidates: this.canManageKv ? this.memberService.getMentorCandidates(this.kurinKey()) : of([] as MemberLookupDto[])
     }).subscribe({
       next: ({ groups, kvMembers, mentorAssignments, mentorCandidates }) => {
         this.groups = groups;
@@ -192,13 +198,42 @@ export class KvPanelComponent implements OnChanges {
     this.transferDialogVisible = true;
   }
 
+  // Transferring means moving the Зв'язковий office, not changing a system role: access is derived
+  // from the офіс. The upsert endpoint diffs the провід, so sending the roster with the new holder
+  // ends the outgoing one and seats the incoming one in a single call.
   transferManagerRole(): void {
     if (!this.selectedManagerUserKey || this.transferInProgress) {
       return;
     }
 
+    const incoming = this.kvMembers.find(member => member.userKey === this.selectedManagerUserKey);
+    if (!incoming) {
+      return;
+    }
+
     this.transferInProgress = true;
-    this.userService.changeUserRole(this.selectedManagerUserKey, 1).subscribe({
+    this.leadershipService.getLeadershipByTypeAndKey('kv', this.kurinKey()).pipe(
+      switchMap(leadership => {
+        const today = toDateOnlyString(new Date()) ?? '';
+        const retained = (leadership.leadershipHistories ?? [])
+          .filter(history => !history.endDate && history.role !== LeadershipRole.Zvyazkovyi);
+
+        return this.leadershipService.update(leadership.leadershipKey!, {
+          ...leadership,
+          leadershipHistories: [
+            ...retained,
+            {
+              leadershipHistoryKey: '',
+              leadershipKey: leadership.leadershipKey!,
+              role: LeadershipRole.Zvyazkovyi,
+              startDate: today,
+              endDate: null,
+              member: incoming
+            }
+          ]
+        });
+      })
+    ).subscribe({
       next: () => {
         this.refreshCurrentUserRoleAfterTransfer();
         this.transferInProgress = false;
@@ -211,11 +246,6 @@ export class KvPanelComponent implements OnChanges {
       }
     });
   }
-
-  getMemberName(member: MemberLookupDto): string {
-    return `${member.lastName} ${member.firstName}${member.middleName ? ` ${member.middleName}` : ''}`;
-  }
-
   getStatusLabel(member: MemberLookupDto): string {
     if (this.isUserRole(member, 'Manager')) {
       return "Зв'язковий";
@@ -278,7 +308,7 @@ export class KvPanelComponent implements OnChanges {
         }
       });
 
-    this.mentorRows = [...rowMap.values()].sort((a, b) => this.getMemberName(a.mentor).localeCompare(this.getMemberName(b.mentor)));
+    this.mentorRows = [...rowMap.values()].sort((a, b) => memberDisplayName(a.mentor).localeCompare(memberDisplayName(b.mentor)));
   }
 
   get archivedAssignments(): MentorAssignmentDto[] {
@@ -291,7 +321,7 @@ export class KvPanelComponent implements OnChanges {
   }
 
   getAssignmentMemberName(assignment: MentorAssignmentDto): string {
-    return assignment.member ? this.getMemberName(assignment.member) : 'Невідомий учасник';
+    return assignment.member ? memberDisplayName(assignment.member) : 'Невідомий учасник';
   }
 
   private getGroupsForUser(userKey: string): GroupDto[] {
@@ -313,18 +343,28 @@ export class KvPanelComponent implements OnChanges {
   }
 
   private isUserRole(member: MemberLookupDto, role: 'Manager' | 'Mentor'): boolean {
-    return (member.userRole ?? '').toLowerCase() === role.toLowerCase();
+    if (role === 'Manager') {
+      return holdsOffice(member.userRole, LeadershipRole.Zvyazkovyi);
+    }
+
+    return holdsOffice(member.userRole, LeadershipRole.Hurtkoviy)
+      || holdsOffice(member.userRole, LeadershipRole.Vykhovnyk);
   }
 
   private refreshCurrentUserRoleAfterTransfer(): void {
     const currentState = this.authService.getAuthStateValue();
-    if (!currentState || currentState.userKey === this.selectedManagerUserKey || !this.permissionService.isManager()) {
+    if (!currentState || currentState.userKey === this.selectedManagerUserKey || !this.permissionService.canManageWholeKurin()) {
       return;
     }
 
-    this.authService.updateRole('Mentor');
+    // Permissions are re-derived from offices on the next token; refresh to pick them up.
     this.authService.refreshToken().subscribe({
       error: (err) => console.error('Error refreshing token after manager transfer:', err)
     });
+  }
+
+  /** Template adapter — the format lives in leadershipRoleDisplay.function.ts. */
+  getMemberName(member: MemberLookupDto): string {
+    return memberDisplayName(member);
   }
 }

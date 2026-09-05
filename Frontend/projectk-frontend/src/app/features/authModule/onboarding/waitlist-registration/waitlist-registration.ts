@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OnboardingService } from '../../services/onboarding.service';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -14,9 +14,7 @@ import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-waitlist-registration',
-  standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     InputTextModule,
     CheckboxModule,
@@ -26,10 +24,11 @@ import { RouterLink } from '@angular/router';
     CardModule,
     ToastModule,
     RouterLink
-  ],
+],
   providers: [MessageService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast></p-toast>
+    <p-toast />
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card
         header="Приєднатися до списку очікування"
@@ -55,23 +54,21 @@ import { RouterLink } from '@angular/router';
 
           <div class="flex flex-col gap-2">
             <label for="phone">Номер телефону</label>
-            <p-inputMask
-              id="phone"
+            <p-inputMask id="phone"
               formControlName="phoneNumber"
               mask="+38 (099) 999-99-99"
               placeholder="+38 (0XX) XXX-XX-XX"
-            ></p-inputMask>
+             />
           </div>
 
           <div class="flex flex-col gap-2">
             <label for="dob">Дата народження</label>
-            <p-datePicker
-              id="dob"
+            <p-datePicker id="dob"
               formControlName="dateOfBirth"
               [showIcon]="true"
               dateFormat="dd.mm.yy"
               [maxDate]="maxDate"
-            ></p-datePicker>
+             />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -86,7 +83,7 @@ import { RouterLink } from '@angular/router';
           </div>
 
           <div class="flex items-center gap-2 mt-2">
-            <p-checkbox formControlName="isKurinLeaderCandidate" [binary]="true" inputId="leader"></p-checkbox>
+            <p-checkbox formControlName="isKurinLeaderCandidate" [binary]="true" inputId="leader" />
             <label for="leader">Я є зв'язковим куреня</label>
           </div>
 
@@ -104,13 +101,12 @@ import { RouterLink } from '@angular/router';
             </div>
           }
 
-          <p-button
-            label="Подати заявку"
+          <p-button label="Подати заявку"
             type="submit"
             [disabled]="form.invalid || loading"
             [loading]="loading"
             styleClass="w-full"
-          ></p-button>
+           />
 
           @if (submitted) {
             <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">

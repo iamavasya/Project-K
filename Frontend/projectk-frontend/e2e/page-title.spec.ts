@@ -11,7 +11,7 @@ const GROUP_TITLE = new RegExp(`^г\\. .+ · ${APP_NAME}$`);
 const MEMBER_TITLE = new RegExp(`^\\S+ \\S+ · ${APP_NAME}$`);
 
 test.describe('Browser tab title', () => {
-  describeRole('admin', 'Admin', ({ user }) => {
+  describeRole('admin', 'Admin', () => {
     test('admin pages are titled after the administration area', async ({ page }) => {
       await page.goto('/panel');
       await expect(page).toHaveTitle(PANEL_TITLE);

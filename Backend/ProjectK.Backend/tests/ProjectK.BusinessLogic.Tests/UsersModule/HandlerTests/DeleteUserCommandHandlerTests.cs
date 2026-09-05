@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -13,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {

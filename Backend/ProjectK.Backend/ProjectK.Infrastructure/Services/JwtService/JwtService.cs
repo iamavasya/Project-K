@@ -16,10 +16,12 @@ namespace ProjectK.Infrastructure.Services.JwtService
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
+        private readonly TimeProvider _timeProvider;
 
-        public JwtService(IConfiguration config)
+        public JwtService(IConfiguration config, TimeProvider timeProvider)
         {
             _config = config;
+            _timeProvider = timeProvider;
         }
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
+                expires: _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
                 signingCredentials: creds
             );
 
@@ -67,43 +69,10 @@ namespace ProjectK.Infrastructure.Services.JwtService
             return new RefreshToken
             {
                 Token = Convert.ToBase64String(randomBytes),
-                Expires = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:RefreshTokenExpiresInDays"])),
+                Expires = _timeProvider.GetUtcNow().UtcDateTime.AddDays(int.Parse(_config["Jwt:RefreshTokenExpiresInDays"])),
                 Created = DateTime.UtcNow
             };
         }
 
-        /// <summary>
-        /// Декодує прострочений токен (для refresh flow)
-        /// </summary>
-        public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = false, // Ігноруємо термін життя
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = _config["Jwt:Issuer"],
-                ValidAudience = _config["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])),
-                RoleClaimType = ClaimTypes.Role,
-                NameClaimType = JwtRegisteredClaimNames.Sub
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            try
-            {
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
-                if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-                    !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                    throw new SecurityTokenException("Invalid token");
-
-                return principal;
-            }
-            catch
-            {
-                return null;
-            }
-        }
     }
 }

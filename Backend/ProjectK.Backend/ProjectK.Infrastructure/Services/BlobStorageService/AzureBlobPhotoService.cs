@@ -19,23 +19,10 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService
 {
-    // Options used for both Azure Blob Storage and Azurite emulator.
-    public sealed class BlobStorageOptions
-    {
-        // Full connection string. For Azurite you can use:
-        // "UseDevelopmentStorage=true"
-        // or explicit:
-        // "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vd...==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
-        public string ConnectionString { get; init; } = string.Empty;
-        public string ContainerName { get; init; } = "photos";
-        public string? PublicBaseUrl { get; init; }
-        public bool AutoCreateContainer { get; init; } = true;
-        public bool PublicAccess { get; init; } = true;
-        public string UsageMetadataKey { get; init; } = "inUse";
-    }
 
     public interface IPhotoReferenceProvider
     {
@@ -272,38 +259,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             }
         }
 
-        public async Task<IEnumerable<string>> GetOrphanFilesAsync(CancellationToken cancellationToken)
-        {
-            if (_referenceProvider is null)
-                return Array.Empty<string>();
-
-            await EnsureContainerAsync(cancellationToken).ConfigureAwait(false);
-
-            var referenced = await _referenceProvider.GetAllReferencedBlobNamesAsync(cancellationToken).ConfigureAwait(false);
-            var referencedSet = new HashSet<string>(referenced, StringComparer.Ordinal);
-
-            var allBlobs = new List<BlobItem>();
-            foreach (var prefix in GetCleanupPrefixes())
-            {
-                await foreach (var item in _container.GetBlobsAsync(
-                                   traits: BlobTraits.None,
-                                   states: BlobStates.None,
-                                   prefix: prefix,
-                                   cancellationToken))
-                {
-                    allBlobs.Add(item);
-                }
-            }
-
-            var orphans = allBlobs
-                .DistinctBy(item => item.Name)
-                .Where(item => !referencedSet.Contains(item.Name))
-                .Select(item => BuildPublicUrl(_container.GetBlobClient(item.Name)))
-                .ToList();
-
-            return orphans;
-        }
-
         // Helper that could be invoked externally (not part of interface) to mark a blob as in-use again.
         public async Task MarkInUseAsync(string photoUrl, bool inUse, CancellationToken cancellationToken)
         {
@@ -383,11 +338,7 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
         }
 
         private string BuildPublicUrl(BlobClient client)
-        {
-            if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
-                return $"{_options.PublicBaseUrl.TrimEnd('/')}/{Uri.EscapeDataString(client.Name)}";
-            return client.Uri.ToString();
-        }
+            => BlobPublicUrl.Build(_options.PublicBaseUrl, client.Name, client.Uri.ToString())!;
 
         private string? ResolveContentType(string fileName, string extension)
         {

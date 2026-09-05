@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 using System;
@@ -156,6 +158,117 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             {
                 await uow.Groups.GetAllAsync();
             });
+        }
+
+        /// <summary>
+        /// The sequence <c>DeleteGroupHandler</c> runs, against a real change tracker.
+        /// <para>
+        /// Members used to arrive <c>AsNoTracking</c> with their own detached <see cref="Group"/>
+        /// attached; removing one then put a second instance of the already-tracked гурток in front
+        /// of EF, which threw and the endpoint answered 500. Mocked handler tests cannot see this —
+        /// only a real context can.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public async Task DeletingAGroupWithMembers_ShouldNotConflictOverTheTrackedGroup()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(12);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var group = new Group("Ведмеді", kurin.KurinKey);
+            uow.Groups.Create(group);
+            await uow.SaveChangesAsync();
+
+            context.Members.Add(new Member
+            {
+                MemberKey = Guid.NewGuid(),
+                FirstName = "Тест",
+                LastName = "Учасник",
+                Email = "test@projectk.com",
+                PhoneNumber = "0500000000",
+                GroupKey = group.GroupKey,
+                KurinKey = kurin.KurinKey
+            });
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var tracked = await uow.Groups.GetByKeyAsync(group.GroupKey);
+            var members = await uow.Members.GetAllAsync(group.GroupKey);
+
+            foreach (var member in members)
+            {
+                uow.Members.Delete(member);
+            }
+
+            uow.Groups.Delete(tracked!);
+            await uow.SaveChangesAsync();
+
+            Assert.False(await uow.Groups.ExistsAsync(group.GroupKey));
+            Assert.Empty(context.Members.Where(m => m.GroupKey == group.GroupKey));
+        }
+
+        /// <summary>
+        /// Deleting a гурток must take its agenda assignments with it.
+        /// <para>
+        /// <c>AgendaAssignment.TargetKey</c> names a kurin, гурток, member or провід with a bare key
+        /// and no foreign key, so nothing in the database clears it. A row left pointing at a deleted
+        /// гурток reaches nobody, yet still counts as the item's assignment — an item assigned only
+        /// there quietly stops appearing for everyone below whole-kurin scope.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public async Task DeletingAGroup_ShouldTakeItsAgendaAssignmentsWithIt()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(13);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var group = new Group("Соколи", kurin.KurinKey);
+            uow.Groups.Create(group);
+            await uow.SaveChangesAsync();
+
+            var memberKey = Guid.NewGuid();
+            context.Members.Add(new Member
+            {
+                MemberKey = memberKey,
+                FirstName = "Тест",
+                LastName = "Учасник",
+                Email = "assignments@projectk.com",
+                PhoneNumber = "0500000000",
+                GroupKey = group.GroupKey,
+                KurinKey = kurin.KurinKey
+            });
+
+            var item = new AgendaItem { KurinKey = kurin.KurinKey, Title = "Сходина" };
+            context.AgendaItems.Add(item);
+            context.AgendaAssignments.AddRange(
+                new AgendaAssignment { AgendaItemKey = item.AgendaItemKey, TargetType = AgendaTargetType.Group, TargetKey = group.GroupKey },
+                new AgendaAssignment { AgendaItemKey = item.AgendaItemKey, TargetType = AgendaTargetType.Member, TargetKey = memberKey },
+                new AgendaAssignment { AgendaItemKey = item.AgendaItemKey, TargetType = AgendaTargetType.Kurin, TargetKey = kurin.KurinKey });
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var members = (await uow.Members.GetAllAsync(group.GroupKey)).ToList();
+            await uow.AgendaItems.RemoveAssignmentsForTargetsAsync(
+                [group.GroupKey, .. members.Select(member => member.MemberKey)]);
+            foreach (var member in members)
+            {
+                uow.Members.Delete(member);
+            }
+
+            uow.Groups.Delete((await uow.Groups.GetByKeyAsync(group.GroupKey))!);
+            await uow.SaveChangesAsync();
+
+            var left = context.AgendaAssignments.Where(a => a.AgendaItemKey == item.AgendaItemKey).ToList();
+            Assert.Single(left);
+            Assert.Equal(AgendaTargetType.Kurin, left[0].TargetType);
         }
     }
 }

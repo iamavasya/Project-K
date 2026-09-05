@@ -1,13 +1,19 @@
-using MediatR;
+﻿using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
 using ProjectK.Common.Extensions;
 using System.Threading.Tasks;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport;
+using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
-    [Authorize(Policy = "RequireAdmin")]
+    /// <summary>
+    /// Read-only reporting on data that predates the office-based role model. Admin only.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [Route("api/auth/migration")]
     [ApiController]
     public class MigrationController : ControllerBase
@@ -19,7 +25,11 @@ namespace ProjectK.API.Controllers.AuthModule
             this._mediator = _mediator;
         }
 
+        /// <summary>
+        /// Reports what the legacy role migration would change, without changing anything.
+        /// </summary>
         [HttpGet("preflight")]
+        [ProducesResponseType(typeof(MigrationPreflightReport), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPreflightReport()
         {
             var query = new GetMigrationPreflightReportQuery();

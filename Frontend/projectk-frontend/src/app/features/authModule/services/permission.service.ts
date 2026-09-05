@@ -1,87 +1,94 @@
 import { inject, Injectable } from '@angular/core';
 import { AuthService } from './authService/auth.service';
 
+/**
+ * Central UI gate. Every predicate is derived from the current user's backend permission strings
+ * (format `Resource:Action:Scope`, e.g. `Group:Manage:KurinWide`), so nothing here inspects role
+ * names. The backend enforces the same permissions with scope on every request.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionService {
   private readonly authService = inject(AuthService);
 
-  getRole(providedRole?: string | null): string {
-    if (providedRole !== undefined && providedRole !== null) {
-      return providedRole.trim().toLowerCase();
+  private permissions(): string[] {
+    return this.authService.getAuthStateValue?.()?.permissions ?? [];
+  }
+
+  private has(prefix: string): boolean {
+    return this.permissions().some(permission => permission.startsWith(prefix));
+  }
+
+  isAdmin(): boolean {
+    return this.authService.getAuthStateValue?.()?.isAdmin ?? false;
+  }
+
+  /** Whole-kurin managers: Зв'язковий and admin. */
+  canManageWholeKurin(): boolean {
+    return this.isAdmin() || this.has('Group:Manage:KurinWide');
+  }
+
+  /** Runs a гурток: Виховник and above. Провід offices are not included — they lead, they do not moderate. */
+  canLeadGroups(): boolean {
+    return this.has('Group:Update');
+  }
+
+  isReviewer(): boolean {
+    return this.canLeadGroups() || this.canManageWholeKurin();
+  }
+
+  canManageGroups(): boolean {
+    return this.canManageWholeKurin();
+  }
+
+  canManageMembers(): boolean {
+    return this.isReviewer();
+  }
+
+  canManageMentors(): boolean {
+    return this.canManageWholeKurin();
+  }
+
+  canManageWarnings(): boolean {
+    return this.isReviewer();
+  }
+
+  // Зв'язковий manages every провід; Курінний and Гуртковий seat the offices below them, which the
+  // backend narrows to their own body.
+  canSetupLeadership(): boolean {
+    return this.isAdmin() || this.has('Leadership:Manage:KurinWide') || this.has('Leadership:Update');
+  }
+
+  canReviewSkills(): boolean {
+    return this.isReviewer();
+  }
+
+  /** Opening a planning session: the whole провід, each within their own scope. */
+  canCreatePlanning(): boolean {
+    return this.isAdmin() || this.has('PlanningSession:Create');
+  }
+
+  // The whole провід raises agenda items; the backend decides who may edit one afterwards
+  // (its author, or the Виховник of a гурток it targets).
+  canManageAgenda(): boolean {
+    return this.isAdmin() || this.has('AgendaItem:Create');
+  }
+
+  canManageKurinSettings(): boolean {
+    return this.isAdmin() || this.has('Kurin:Update:KurinWide');
+  }
+
+  getRoleSeverity(): string {
+    if (this.isAdmin()) {
+      return 'danger';
     }
-    return (this.authService.getAuthStateValue?.()?.role ?? '').trim().toLowerCase();
-  }
-
-  isAdmin(role?: string | null): boolean {
-    return this.getRole(role) === 'admin';
-  }
-
-  isManager(role?: string | null): boolean {
-    return this.getRole(role) === 'manager';
-  }
-
-  isMentor(role?: string | null): boolean {
-    return this.getRole(role) === 'mentor';
-  }
-
-  isReviewer(role?: string | null): boolean {
-    const r = this.getRole(role);
-    return r === 'mentor' || r === 'manager' || r === 'admin';
-  }
-
-  canManageGroups(role?: string | null): boolean {
-    return this.isAdmin(role) || this.isManager(role);
-  }
-
-  canManageMembers(role?: string | null): boolean {
-    const r = this.getRole(role);
-    return r !== '' && r !== 'user';
-  }
-
-  canManageMentors(role?: string | null): boolean {
-    return this.isAdmin(role) || this.isManager(role);
-  }
-
-  canManageWarnings(role?: string | null): boolean {
-    return this.isReviewer(role);
-  }
-
-  canSetupLeadership(role?: string | null): boolean {
-    return this.isAdmin(role) || this.isManager(role);
-  }
-
-  canReviewSkills(role?: string | null): boolean {
-    return this.isReviewer(role);
-  }
-
-  canManagePlanning(role?: string | null): boolean {
-    return this.isAdmin(role) || this.isManager(role);
-  }
-
-  // Anyone above plain "user" (mentor, manager, admin) may create/assign agenda items;
-  // the backend narrows a mentor to their assigned groups per target.
-  canManageAgenda(role?: string | null): boolean {
-    const r = this.getRole(role);
-    return r !== '' && r !== 'user';
-  }
-
-  canManageKurinSettings(role?: string | null): boolean {
-    return this.isAdmin(role) || this.isManager(role);
-  }
-
-  getRoleSeverity(role?: string | null): string {
-    const normalized = this.getRole(role);
-    switch (normalized) {
-      case 'admin':
-        return 'danger';
-      case 'manager':
-        return 'warning';
-      case 'mentor':
-        return 'success';
-      default:
-        return 'info';
+    if (this.canManageWholeKurin()) {
+      return 'warn';
     }
+    if (this.canLeadGroups()) {
+      return 'success';
+    }
+    return 'info';
   }
 }

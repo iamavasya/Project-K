@@ -1,14 +1,17 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
@@ -16,22 +19,33 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IActivityLogger> _activityLoggerMock;
+        private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
 
         public SensitiveChangeRefreshTokenInvalidationTests()
         {
             _userManagerMock = CreateUserManagerMock();
             _activityLoggerMock = new Mock<IActivityLogger>();
+            _refreshTokensMock = new Mock<IRefreshTokenStore>();
+        }
+
+        /// <summary>Every session the account holds was ended — not just the one that made the change.</summary>
+        private void AssertEverySessionRevoked(AppUser user, Times times)
+        {
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(user.Id, It.IsAny<CancellationToken>()),
+                times);
         }
 
         [Fact]
         public async Task ChangeOwnPassword_ShouldRevokeRefreshToken_WhenPasswordChangeSucceeds()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new ChangeOwnPasswordCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old-password", "new-password"))
@@ -44,8 +58,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.True(result.Data);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Once());
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
@@ -53,11 +66,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task ChangeOwnPassword_ShouldKeepRefreshToken_WhenPasswordChangeFails()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new ChangeOwnPasswordCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "wrong-password", "new-password"))
@@ -69,8 +83,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.BadRequest, result.Type);
             Assert.False(result.Data);
-            Assert.Equal("existing-refresh-token", user.RefreshToken);
-            Assert.NotNull(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Never());
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
 
@@ -78,11 +91,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task ResetOwnMfa_ShouldRevokeRefreshToken_WhenResetSucceeds()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new ResetOwnMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -99,8 +113,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.True(result.Data);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Once());
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
@@ -108,11 +121,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task ResetOwnMfa_ShouldReturnUnauthorizedAndKeepRefreshToken_WhenCurrentPasswordIsWrong()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new ResetOwnMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "wrong-password"))
@@ -124,8 +138,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Unauthorized, result.Type);
             Assert.False(result.Data);
-            Assert.Equal("existing-refresh-token", user.RefreshToken);
-            Assert.NotNull(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Never());
             _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
             _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(It.IsAny<AppUser>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -135,11 +148,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task EnableMfa_ShouldRevokeRefreshToken_WhenVerificationSucceeds()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new EnableMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<EnableMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
             var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -158,8 +172,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(ResultType.Success, result.Type);
             Assert.True(result.Data?.Enabled);
             Assert.Equal(new[] { "code-1", "code-2" }, result.Data.RecoveryCodes);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Once());
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
@@ -167,11 +180,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task EnableMfa_ShouldKeepRefreshToken_WhenVerificationFails()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             var handler = new EnableMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<EnableMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
             var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -184,8 +198,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.BadRequest, result.Type);
             Assert.Null(result.Data);
-            Assert.Equal("existing-refresh-token", user.RefreshToken);
-            Assert.NotNull(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Never());
             _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
@@ -194,18 +207,19 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         public async Task DisableOwnMfa_ShouldRevokeRefreshToken_WhenUserIsNotPrivileged()
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             user.TwoFactorEnabled = true;
             var handler = new DisableOwnMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(new[] { UserRole.User.ToString() });
+                .ReturnsAsync(new[] { "Member" });
             _userManagerMock.Setup(x => x.SetTwoFactorEnabledAsync(user, false))
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
@@ -216,30 +230,30 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.True(result.Data);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Once());
             _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(user, false), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
         [Theory]
-        [InlineData(UserRole.Admin)]
-        [InlineData(UserRole.Manager)]
-        public async Task DisableOwnMfa_ShouldReturnForbiddenAndKeepMfa_WhenUserIsPrivileged(UserRole role)
+        [InlineData("Admin")]
+        [InlineData("KV.Zvyazkovyi")]
+        public async Task DisableOwnMfa_ShouldReturnForbiddenAndKeepMfa_WhenUserIsPrivileged(string role)
         {
             // Arrange
-            var user = CreateUserWithRefreshToken();
+            var user = CreateSignedInUser();
             user.TwoFactorEnabled = true;
             var handler = new DisableOwnMfaCommandHandler(
                 _userManagerMock.Object,
                 new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(new[] { role.ToString() });
+                .ReturnsAsync(new[] { role });
 
             // Act
             var result = await handler.Handle(new DisableOwnMfaCommand(user.Id, "current-password"), CancellationToken.None);
@@ -247,8 +261,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Forbidden, result.Type);
             Assert.False(result.Data);
-            Assert.Equal("existing-refresh-token", user.RefreshToken);
-            Assert.NotNull(user.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(user, Times.Never());
             _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
@@ -258,22 +271,23 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var targetUser = CreateUserWithRefreshToken();
+            var targetUser = CreateSignedInUser();
             targetUser.KurinKey = kurinKey;
             targetUser.TwoFactorEnabled = true;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
             var handler = new ResetUserMfaCommandHandler(
                 _userManagerMock.Object,
                 currentUserContextMock.Object,
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
-                .ReturnsAsync(new[] { UserRole.User.ToString() });
+                .ReturnsAsync(new[] { "Member" });
             _userManagerMock.Setup(x => x.SetTwoFactorEnabledAsync(targetUser, false))
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.ResetAuthenticatorKeyAsync(targetUser))
@@ -286,8 +300,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.True(result.Data);
-            Assert.Null(targetUser.RefreshToken);
-            Assert.Null(targetUser.RefreshTokenExpiryTime);
+            AssertEverySessionRevoked(targetUser, Times.Once());
             _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(targetUser), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(targetUser), Times.Once);
         }
@@ -297,21 +310,22 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             // Arrange
             var kurinKey = Guid.NewGuid();
-            var targetUser = CreateUserWithRefreshToken();
+            var targetUser = CreateSignedInUser();
             targetUser.KurinKey = kurinKey;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            currentUserContextMock.Setup(x => x.IsInRole(UserRole.Manager.ToString())).Returns(true);
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.IsInRole("KV.Zvyazkovyi")).Returns(true);
             currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
             var handler = new ResetUserMfaCommandHandler(
                 _userManagerMock.Object,
                 currentUserContextMock.Object,
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
-                _activityLoggerMock.Object);
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
-                .ReturnsAsync(new[] { UserRole.Manager.ToString() });
+                .ReturnsAsync(new[] { "KV.Zvyazkovyi" });
 
             // Act
             var result = await handler.Handle(new ResetUserMfaCommand(targetUser.Id), CancellationToken.None);
@@ -323,7 +337,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
 
-        private static AppUser CreateUserWithRefreshToken()
+        private static AppUser CreateSignedInUser()
         {
             return new AppUser
             {
@@ -331,9 +345,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 Email = "user@example.com",
                 UserName = "user@example.com",
                 FirstName = "John",
-                LastName = "Doe",
-                RefreshToken = "existing-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
+                LastName = "Doe"
             };
         }
 

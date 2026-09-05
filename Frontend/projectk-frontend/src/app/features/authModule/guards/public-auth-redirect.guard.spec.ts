@@ -36,7 +36,7 @@ describe('publicAuthRedirectGuard', () => {
 
   it('redirects authenticated admins with active kurin to kurin page', async () => {
     const tree = { target: '/kurin' };
-    const state = createAuthState({ role: 'Admin', kurinKey: 'kurin-123' });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-123' });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
     authService.ensureAccessToken.and.returnValue(of(true));
@@ -50,7 +50,7 @@ describe('publicAuthRedirectGuard', () => {
 
   it('redirects authenticated admins without active kurin to admin panel', async () => {
     const tree = { target: '/panel' };
-    const state = createAuthState({ role: 'Admin', kurinKey: null });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
     authService.ensureAccessToken.and.returnValue(of(true));
@@ -64,7 +64,7 @@ describe('publicAuthRedirectGuard', () => {
 
   it('redirects authenticated non-admin users to their kurin page', async () => {
     const tree = { target: '/kurin' };
-    const state = createAuthState({ role: 'Manager', kurinKey: 'kurin-123' });
+    const state = createAuthState({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'], kurinKey: 'kurin-123' });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
     authService.ensureAccessToken.and.returnValue(of(true));
@@ -98,7 +98,7 @@ describe('publicAuthRedirectGuard', () => {
       userKey: 'user-123',
       memberKey: 'member-123',
       email: 'test@example.com',
-      role: 'Manager',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-123',
       accessToken: 'token-123',
       ...overrides

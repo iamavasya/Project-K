@@ -1,15 +1,10 @@
-namespace ProjectK.API.Helpers;
+﻿namespace ProjectK.API.Helpers;
 
 /// <summary>
 /// Optional security-hardening settings, bound from the "SecurityPatch" configuration section.
 /// </summary>
 public sealed class SecurityPatchOptions
 {
-    /// <summary>
-    /// Rollout toggle for the server-side resource authorization filter.
-    /// </summary>
-    public bool EnableResourceGuard { get; set; }
-
     /// <summary>
     /// Enables geo-blocking of requests originating from <see cref="BlockedCountries"/>.
     /// </summary>

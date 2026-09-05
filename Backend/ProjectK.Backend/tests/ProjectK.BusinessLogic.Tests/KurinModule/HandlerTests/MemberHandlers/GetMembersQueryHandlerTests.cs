@@ -1,8 +1,8 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.API.MappingProfiles;
-using ProjectK.API.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -18,6 +18,8 @@ using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
@@ -58,7 +60,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             }, loggerFactory);
             _mapper = mapperConfig.CreateMapper();
 
-            _handler = new GetMembersHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object);
+            _handler = new GetMembersHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
         }
 
         private static MemberListItemDto MakeItem(Guid groupKey, Guid kurinKey, string first, string last,
@@ -141,7 +143,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             var kurinKey = Guid.NewGuid();
             var userKey = Guid.NewGuid();
-            var member = MakeItem(Guid.NewGuid(), kurinKey, "Lead", "Mentor", userKey: userKey, role: UserRole.Mentor.ToString());
+            var member = MakeItem(Guid.NewGuid(), kurinKey, "Lead", "Mentor", userKey: userKey, role: "Group.Hurtkoviy");
 
             _memberRepoMock
                 .Setup(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
@@ -150,7 +152,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var result = await _handler.Handle(new GetMembers(Guid.Empty, kurinKey), CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Success);
-            result.Data!.Single().UserRole.Should().Be(UserRole.Mentor.ToString());
+            result.Data!.Single().UserRole.Should().Be("Group.Hurtkoviy");
         }
 
         [Fact]

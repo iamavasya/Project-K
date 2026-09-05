@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './auth.interceptor';
 import { AuthService } from './authService/auth.service';
 import { Router } from '@angular/router';
@@ -17,8 +17,9 @@ describe('AuthInterceptor', () => {
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
@@ -31,6 +32,25 @@ describe('AuthInterceptor', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  it('should hand a 403 to the caller without navigating', () => {
+    // Navigating from here bounced the whole app off a page the user legitimately held whenever any
+    // secondary request was refused, and it fired before the components that answer 403 inline could
+    // show their message. Refusing a page is the router guards' job.
+    mockAuthService.getAccessToken.and.returnValue('valid-token');
+    const seen: number[] = [];
+
+    httpClient.get('/api/leadership/some-key').subscribe({
+      next: () => fail('should have failed with 403'),
+      error: (error) => seen.push(error.status)
+    });
+
+    httpMock.expectOne('/api/leadership/some-key')
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(seen).toEqual([403]);
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
 
   it('should not try to refresh token if 401 occurs on /api/auth/logout', () => {

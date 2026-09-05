@@ -1,4 +1,5 @@
-using MediatR;
+﻿using MediatR;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +12,16 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Update
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
+/// <summary>
+/// One member's progress through probes and badges: what they have submitted, what has been signed off,
+/// and by whom.
+/// </summary>
 [ApiController]
 [Route("api/member/{memberKey:guid}")]
 public class MemberProgressController : ControllerBase
@@ -27,9 +33,12 @@ public class MemberProgressController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize(Policy = "RequireUser")]
+    /// <summary>
+    /// Returns the member's progress on every badge they have started.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("badges/progress")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBadgeProgresses(Guid memberKey)
@@ -38,9 +47,15 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireUser")]
+    /// <summary>
+    /// Submits a badge for review.
+    /// </summary>
+    /// <remarks>
+    /// Members submit their own; submitting for somebody else needs rights over that member.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/submit")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -51,9 +66,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    /// <summary>
+    /// Accepts or refuses a submitted badge. Leadership only.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPost("badges/{badgeId}/review")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -64,9 +82,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireUser")]
+    /// <summary>
+    /// Returns the member's progress through one probe, point by point.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/{probeId}/progress")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -76,9 +97,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    /// <summary>
+    /// Moves a probe between statuses.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/progress/status")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -92,9 +116,15 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    /// <summary>
+    /// Signs off one point of a probe.
+    /// </summary>
+    /// <remarks>
+    /// The signature records who signed and when, which is what the member's book is built from.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -108,9 +138,12 @@ public class MemberProgressController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    [Authorize(Policy = "RequireMentor")]
+    /// <summary>
+    /// Withdraws a signature from one point of a probe.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

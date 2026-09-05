@@ -1,10 +1,12 @@
 ﻿using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
@@ -16,9 +18,60 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
 
         void Add(Leadership leadership, CancellationToken cancellationToken = default);
         void Update(Leadership leadership, CancellationToken cancellationToken = default);
-        Task CloseLeadershipAsync(Guid leadershipKey, DateOnly endDate, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Marks the office record a гурток carries for deletion and reports its keys; the history
+        /// cascades in the database.
+        /// <para>
+        /// Needed because <c>Leadership.Group</c> is <c>Restrict</c>: a гурток that still carries a
+        /// провід cannot be deleted, and the database refuses it rather than cascading. The keys come
+        /// back so the caller can clear what still points at those offices.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyList<Guid>> DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Marks every office in a kurin for deletion — its own and its гуртки's — and reports the keys.
+        /// <para>
+        /// Both <c>Leadership.Kurin</c> and <c>Leadership.Group</c> are <c>NO ACTION</c>. Гуртки cascade
+        /// with the kurin, but that cascade is itself refused while an office still points at one, so
+        /// the гурток offices have to go too.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyList<Guid>> DeleteForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
         Task<IEnumerable<LeadershipHistory>> GetLeadershipHistoriesAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
         void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories);
+
+        /// <summary>The offices a member currently holds (active <see cref="LeadershipHistory"/>), each with its провід.</summary>
+        Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Member keys holding an active office in one of <paramref name="roles"/>, optionally scoped to a
+        /// kurin (курінний/КВ offices) or a specific group (гуртковий offices).
+        /// </summary>
+        Task<IReadOnlyList<Guid>> GetActiveOfficeMemberKeysAsync(
+            IReadOnlyCollection<LeadershipRole> roles,
+            Guid? kurinKey = null,
+            Guid? groupKey = null,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Members currently holding a kurin- or КВ-scoped office in the kurin, one lookup row per office,
+        /// with <c>UserRole</c> set to the office role name. Used to render the КВ / провід tables.
+        /// </summary>
+        Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
+            Guid kurinKey,
+            LeadershipType type,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>Every провід/КВ that belongs to the kurin (курінь/КВ by kurin, гуртковий by its group).</summary>
+        Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+        /// <summary>User keys of the members who currently hold an office in the given провід (active history).</summary>
+        Task<IReadOnlyList<Guid>> GetActiveMemberUserKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
+
+        /// <summary>The провід keys a member currently belongs to (active <see cref="LeadershipHistory"/>).</summary>
+        Task<IReadOnlyList<Guid>> GetActiveLeadershipKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
     }
 }

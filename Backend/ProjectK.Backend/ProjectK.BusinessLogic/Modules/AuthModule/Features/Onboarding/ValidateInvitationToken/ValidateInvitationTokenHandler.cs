@@ -1,0 +1,54 @@
+﻿using MediatR;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken
+{
+    public class ValidateInvitationTokenHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationResponse>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly TimeProvider _timeProvider;
+
+        public ValidateInvitationTokenHandler(IUnitOfWork unitOfWork, TimeProvider timeProvider)
+        {
+            _unitOfWork = unitOfWork;
+            _timeProvider = timeProvider;
+        }
+
+        public async Task<ServiceResult<InvitationValidationResponse>> Handle(ValidateInvitationTokenQuery request, CancellationToken cancellationToken)
+        {
+            var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
+
+            if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
+            {
+                // The placeholder response carried no information; the message is what the activation
+                // page shows, and it was being dropped into CreatedAtActionName.
+                return ServiceResult<InvitationValidationResponse>.Failure(
+                    ResultType.NotFound,
+                    "InvalidInvitationToken",
+                    "Invalid or expired invitation token.");
+            }
+
+            var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
+            if (entry == null)
+            {
+                // The placeholder response carried no information; the message is what the activation
+                // page shows, and it was being dropped into CreatedAtActionName.
+                return ServiceResult<InvitationValidationResponse>.Failure(
+                    ResultType.NotFound,
+                    "WaitlistEntryNotFound",
+                    "Associated waitlist entry not found.");
+            }
+
+            return new ServiceResult<InvitationValidationResponse>(
+                ResultType.Success,
+                new InvitationValidationResponse(entry.Email, entry.FirstName, entry.LastName, true));
+        }
+    }
+}

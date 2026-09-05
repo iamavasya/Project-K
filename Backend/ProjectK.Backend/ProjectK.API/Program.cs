@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ProjectK.BusinessLogic.Behaviors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -9,9 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.API.Helpers;
-using ProjectK.API.MappingProfiles;
+using ProjectK.API.Swagger;
+using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -30,11 +32,18 @@ using Serilog;
 using Serilog.Enrichers.Sensitive;
 using Serilog.Filters.Expressions;
 using Microsoft.OpenApi;
-using ProjectK.API.Services.TelegramDevAlerts;
+using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using ProjectK.Common.Models.Settings;
-using ProjectK.API.Services.Authorization;
-using ProjectK.API.Services.Reports;
+using ProjectK.API.Authorization;
 using QuestPDF.Infrastructure;
+using ProjectK.API.Serialization;
+using ProjectK.Infrastructure.Services.GeoIP;
+using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+using ProjectK.Infrastructure.Reports;
+using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.API
 {
@@ -116,23 +125,7 @@ namespace ProjectK.API
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
-                    policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddCors(options =>
             {
@@ -198,10 +191,6 @@ namespace ProjectK.API
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient();
-            builder.Services.AddScoped<ProjectK.API.Services.GeoIPService>();
-            builder.Services.AddScoped<KurinReportDataService>();
-            builder.Services.AddScoped<KurinReportMediaService>();
-            builder.Services.AddSingleton<KurinReportPdfRenderer>();
             builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
             builder.Services.AddMediatR(cfg =>
             {
@@ -218,10 +207,30 @@ namespace ProjectK.API
                 .AddJsonOptions(opt =>
                 {
                     opt.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeConverter());
                 });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "ProjectK API",
+                    Version = builder.Configuration["ReleaseInfo:Version"] ?? "v1",
+                    Description = "Management API for a Plast kurin: membership, leadership offices, "
+                        + "agenda and planning, probes and badges, announcements and onboarding. "
+                        + "Every failure answers with { error, message }; access is decided by the "
+                        + "office a member holds, not by an account-level role."
+                });
+
+                var xmlDocumentation = Path.Combine(AppContext.BaseDirectory, "ProjectK.API.xml");
+                if (File.Exists(xmlDocumentation))
+                {
+                    options.IncludeXmlComments(xmlDocumentation, includeControllerXmlComments: true);
+                }
+
+                options.OperationFilter<UnifiedErrorResponsesFilter>();
+
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.Http,
@@ -262,10 +271,12 @@ namespace ProjectK.API
 
             await RunStartupTasksAsync(app);
 
-            if (app.Environment.IsDevelopment())
+            // Staging too: the spec is the only description of the contract that stays in step with the
+            // code, and staging is where the frontend is pointed while a release is being checked.
+            if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "ProjectK API"));
             }
 
             app.UseRouting();
@@ -295,9 +306,12 @@ namespace ProjectK.API
                 version = config["ReleaseInfo:Version"] ?? UnknownValue,
                 codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? UnknownValue,
                 utc = DateTimeOffset.UtcNow
-            }));
+            }))
+            .WithSummary("Reports that the API is up, and which release is running.")
+            .WithDescription("What the container health check and the deployment pipeline read. Answers without touching the database, so it says the process is serving — not that everything behind it is well.");
 
-            app.MapGet("/", () => "Backend Started");
+            app.MapGet("/", () => "Backend Started")
+                .WithSummary("A plain sign of life at the root, for anyone who opens the API in a browser.");
 
             await app.RunAsync();
         }
@@ -399,6 +413,9 @@ namespace ProjectK.API
                     ctx.Status("Planting heroic seed data...");
                     await DataSeeder.SeedAsync(scope.ServiceProvider);
 
+                    ctx.Status("Migrating legacy roles to offices...");
+                    await LegacyRoleMigrationSeeder.MigrateAsync(scope.ServiceProvider);
+
                     ctx.Status("Waking the badges archive...");
                     _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();
 
@@ -436,7 +453,7 @@ namespace ProjectK.API
                     }
 
                     return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        partitionKey: httpContext.User.GetUserKeyValue()
                             ?? httpContext.Connection.RemoteIpAddress?.ToString()
                             ?? httpContext.Request.Headers.Host.ToString(),
                         factory: partition => new FixedWindowRateLimiterOptions
@@ -475,7 +492,7 @@ namespace ProjectK.API
                         return bypassPartition.Value;
                     }
 
-                    var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    var partitionKey = httpContext.User.GetUserKeyValue()
                         ?? httpContext.Connection.RemoteIpAddress?.ToString()
                         ?? "anonymous";
 

@@ -5,7 +5,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { AgendaService } from '../common/services/agenda-service/agenda-service';
+import { AgendaService } from '../common/services/agenda-service/agenda.service';
 import { PermissionService } from '../../authModule/services/permission.service';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 import { AgendaItemDialogComponent } from '../common/components/agenda-item-dialog/agenda-item-dialog';

@@ -1,11 +1,11 @@
-using System.IO;
+﻿using System.IO;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.MappingProfiles;
-using ProjectK.API.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -18,6 +18,8 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using Xunit;
+using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
@@ -402,7 +404,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 DateOfBirth = new DateOnly(1995, 5, 5)
             };
 
-            _currentUserContextMock.Setup(x => x.IsInRole(UserRole.Mentor.ToString())).Returns(true);
+            _currentUserContextMock.Setup(x => x.IsInRole("KV.Vykhovnyk")).Returns(true);
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
             _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
             _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
@@ -435,7 +438,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 DateOfBirth = new DateOnly(1995, 5, 5)
             };
 
-            _currentUserContextMock.Setup(x => x.IsInRole(UserRole.Admin.ToString())).Returns(true);
+            _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(true);
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
             _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
             _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))

@@ -28,7 +28,7 @@ planning, and skills tracking. Built by scouts, for scouts.
 ## Tech stack
 
 - **Backend:** .NET 10, ASP.NET Core, EF Core (SQL Server), MediatR pipeline, Serilog → Application Insights.
-- **Frontend:** Angular (standalone), PrimeNG + Tailwind, custom "Лілейка" theme.
+- **Frontend:** Angular 22 (standalone, signals), optimus-ui 2 + Tailwind, custom "Лілейка" theme.
 - **Storage:** Azure Blob Storage (Azurite locally) for photos/media.
 - **Hosting:** Azure App Service (API) + Azure Static Web Apps (web); Cloudflare in front.
 

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Entities.KurinModule;
@@ -7,6 +7,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHandlers;
 
@@ -20,6 +24,7 @@ public class MemberWarningHandlerTests
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
 
     private readonly AssignMemberWarningHandler _assignHandler;
+    private readonly FixedTimeProvider _clock;
     private readonly CancelMemberWarningHandler _cancelHandler;
 
     public MemberWarningHandlerTests()
@@ -42,7 +47,8 @@ public class MemberWarningHandlerTests
             _currentUserContextMock.Object,
             _notificationServiceMock.Object,
             _mapperMock.Object);
-        _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
+        _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
+        _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock);
     }
 
     [Fact]
@@ -177,6 +183,34 @@ public class MemberWarningHandlerTests
                 && request.DeduplicationKey == $"member-warning:{created.MemberWarningKey}"),
             It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Cancel_ShouldRefuse_WhenTheWarningHasAlreadyExpired()
+    {
+        // The clock is fixed, so the expiry branch is reachable without dating the fixture
+        // relative to the real "now".
+        var memberKey = Guid.NewGuid();
+        var warningKey = Guid.NewGuid();
+        var userKey = _currentUserContextMock.Object.UserId!.Value;
+        var now = _clock.GetUtcNow().UtcDateTime;
+
+        _memberWarningRepositoryMock
+            .Setup(x => x.GetByKeyAsync(warningKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberWarning
+            {
+                MemberWarningKey = warningKey,
+                MemberKey = memberKey,
+                Level = MemberWarningLevel.Level1,
+                IssuedAtUtc = now.AddMonths(-4),
+                ExpiresAtUtc = now.AddMinutes(-1),
+                IssuedByUserKey = userKey
+            });
+
+        var result = await _cancelHandler.Handle(new CancelMemberWarning(memberKey, warningKey), CancellationToken.None);
+
+        result.Type.Should().NotBe(ResultType.Success);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

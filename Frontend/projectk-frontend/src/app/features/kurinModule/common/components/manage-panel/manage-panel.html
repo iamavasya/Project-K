@@ -11,7 +11,7 @@
     <div class="delete-confirm">
       <p>
         Ви впевнені, що хочете видалити
-        <strong>{{ config.entityType | titlecase }}</strong>
+        <strong>{{ config().entityType | titlecase }}</strong>
         @if (entityDisplayName()) {
           <strong>"{{ entityDisplayName() }}"</strong>
         }
@@ -20,13 +20,13 @@
       <p class="delete-confirm__warning">Цю дію неможливо скасувати.</p>
     </div>
     <div class="actions">
-      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
-      <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()"></p-button>
+      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />
+      <p-button severity="danger" [label]="actionLabel()" (onClick)="submit()" />
     </div>
   } @else {
     @if (ready) {
       <form class="manage-panel-form" [formGroup]="form" (ngSubmit)="submit()">
-        @for (f of config.fields; track f) {
+        @for (f of config().fields; track f) {
           @if (!isHidden(f)) {
             <div class="field">
               <span class="field-label">{{ f.label }} @if (f.required) {
@@ -71,12 +71,10 @@
           </div>
         }
         <div class="actions">
-          <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()"></p-button>
-          <p-button
-            type="submit"
+          <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />
+          <p-button type="submit"
             [label]="actionLabel()"
-            [disabled]="parameter !== 'delete' && form.invalid">
-          </p-button>
+            [disabled]="parameter() !== 'delete' && form.invalid" />
         </div>
       </form>
     }

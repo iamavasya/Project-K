@@ -35,8 +35,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
         {
             if (request.KurinKey == Guid.Empty)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.BadRequest,
+                    "KurinKeyRequired",
                     "KurinKey cannot be empty.");
             }
 
@@ -44,18 +45,22 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
 
             if (existing is null)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.NotFound,
+                    "KurinNotFound",
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
-            // Delete all members with KurinKey
-            var members = await _unitOfWork.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
+            // What the database will not clear itself: offices and members are NO ACTION against both
+            // the kurin and its гуртки, and the гуртки's own cascade is refused while an office still
+            // points at one. Everything else — гуртки, agenda with its assignments, planning sessions,
+            // mentor assignments, the members' histories — cascades.
+            await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
+
+            var members = await _unitOfWork.Members.GetTrackedForKurinDeletionAsync(request.KurinKey, cancellationToken);
 
             foreach (var member in members)
             {
-                member.Group = null;
-                member.Kurin = null!;
                 _unitOfWork.Members.Delete(member, cancellationToken);
             }
 
@@ -65,8 +70,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
 
             if (changes <= 0)
             {
-                return new ServiceResult<object>(
+                return ServiceResult<object>.Failure(
                     ResultType.InternalServerError,
+                    "KurinDeleteFailed",
                     "Failed to delete Kurin due to internal error.");
             }
 

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -13,7 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -33,12 +35,20 @@ public class AuthorizationHttpIntegrationTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    /// <summary>
+    /// Endpoints a plain member is refused by the <b>policy</b>, before any record is looked at.
+    /// <para>
+    /// Planning used to be listed here. It is no longer decided by a policy: every member carries
+    /// <c>PlanningSession:Read:KurinWide</c>, so reading is now settled by the resource check, which
+    /// keeps a member inside their own kurin. That planning still requires authentication is pinned
+    /// by <see cref="ProtectedEndpointsAnonymousHttpIntegrationTests"/>.
+    /// </para>
+    /// </summary>
     [Theory]
-    [InlineData(UserRole.User, "/api/user/users")]
-    [InlineData(UserRole.User, "/api/planning/{0}")]
-    public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(UserRole role, string routeTemplate)
+    [InlineData(SystemRole.Member, "/api/user/users")]
+    public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(string roleClaim, string routeTemplate)
     {
-        await using var host = await SecurityTestHost.StartAsync(role);
+        await using var host = await SecurityTestHost.StartAsync(roleClaim);
         var route = routeTemplate.Contains("{0}")
             ? string.Format(routeTemplate, Guid.NewGuid())
             : routeTemplate;
@@ -60,7 +70,7 @@ public class AuthorizationHttpIntegrationTests
 
         public HttpClient Client { get; }
 
-        public static async Task<SecurityTestHost> StartAsync(UserRole? role = null)
+        public static async Task<SecurityTestHost> StartAsync(string? roleClaim = null)
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions
             {
@@ -68,7 +78,7 @@ public class AuthorizationHttpIntegrationTests
             });
 
             builder.WebHost.UseTestServer();
-            builder.Services.AddSingleton(new TestAuthState(role));
+            builder.Services.AddSingleton(new TestAuthState(roleClaim));
 
             builder.Services
                 .AddAuthentication(options =>
@@ -80,20 +90,7 @@ public class AuthorizationHttpIntegrationTests
                     TestAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(AuthController).Assembly);
@@ -116,7 +113,7 @@ public class AuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record TestAuthState(UserRole? Role);
+    private sealed record TestAuthState(string? RoleClaim);
 
     private sealed class TestAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -131,7 +128,7 @@ public class AuthorizationHttpIntegrationTests
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (_authState.Role is null)
+            if (_authState.RoleClaim is null)
             {
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
@@ -139,7 +136,7 @@ public class AuthorizationHttpIntegrationTests
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.RoleClaim)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

@@ -1,4 +1,5 @@
-using ProjectK.BusinessLogic.Services.Caching;
+﻿using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Models.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -22,6 +23,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -76,7 +78,7 @@ public class ResourceAuthorizationHttpIntegrationTests
             builder.WebHost.UseTestServer();
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddSingleton(new ResourceGuardAuthState(UserRole.User, Guid.NewGuid(), userKurinKey));
+            builder.Services.AddSingleton(new ResourceGuardAuthState("Member", Guid.NewGuid(), userKurinKey));
 
             builder.Services
                 .AddAuthentication(options =>
@@ -88,25 +90,7 @@ public class ResourceAuthorizationHttpIntegrationTests
                     ResourceGuardAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
-
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             var scopeReader = new Mock<IResourceScopeReader>();
             scopeReader
@@ -140,7 +124,7 @@ public class ResourceAuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record ResourceGuardAuthState(UserRole Role, Guid UserId, Guid KurinKey);
+    private sealed record ResourceGuardAuthState(string Role, Guid UserId, Guid KurinKey);
 
     private sealed class ResourceGuardAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -160,7 +144,7 @@ public class ResourceAuthorizationHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, _authState.UserId.ToString()),
                 new("sub", _authState.UserId.ToString()),
                 new("kurinKey", _authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, _authState.Role.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);
@@ -189,7 +173,7 @@ public class ResourceAuthorizationHttpIntegrationTests
 [Route("api/test-resource")]
 public class ResourceGuardProbeController : ControllerBase
 {
-    [Authorize(Policy = "RequireUser")]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("member/{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     public IActionResult GetMember(Guid memberKey)

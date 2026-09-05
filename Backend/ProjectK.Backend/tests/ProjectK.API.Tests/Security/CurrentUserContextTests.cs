@@ -30,8 +30,8 @@ public class CurrentUserContextTests
         {
             new("sub", userId.ToString()),
             new("kurinKey", kurinKey.ToString()),
-            new(ClaimTypes.Role, UserRole.Mentor.ToClaimValue()),
-            new(ClaimTypes.Role, UserRole.Manager.ToClaimValue())
+            new(ClaimTypes.Role, "Group.Hurtkoviy"),
+            new(ClaimTypes.Role, "KV.Zvyazkovyi")
         };
 
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
@@ -43,10 +43,10 @@ public class CurrentUserContextTests
         Assert.True(context.IsAuthenticated);
         Assert.Equal(userId, context.UserId);
         Assert.Equal(kurinKey, context.KurinKey);
-        Assert.Contains(UserRole.Mentor.ToClaimValue(), context.Roles);
-        Assert.Contains(UserRole.Manager.ToClaimValue(), context.Roles);
-        Assert.True(context.IsInRole(UserRole.Mentor.ToClaimValue()));
-        Assert.False(context.IsInRole(UserRole.Admin.ToClaimValue()));
+        Assert.Contains("Group.Hurtkoviy", context.Roles);
+        Assert.Contains("KV.Zvyazkovyi", context.Roles);
+        Assert.True(context.IsInRole("Group.Hurtkoviy"));
+        Assert.False(context.IsInRole("Admin"));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class CurrentUserContextTests
         {
             new("sub", "not-a-guid"),
             new("kurinKey", "also-not-a-guid"),
-            new(ClaimTypes.Role, UserRole.User.ToClaimValue())
+            new(ClaimTypes.Role, "Member")
         };
 
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));

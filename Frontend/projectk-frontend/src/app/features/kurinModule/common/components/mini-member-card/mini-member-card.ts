@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, ChangeDetectionStrategy, output, input } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
@@ -11,13 +11,14 @@ import { parseUtcDateTime } from '../../../../../shared/functions/utcDateTime.fu
 
 @Component({
   selector: 'app-mini-member-card',
-  imports: [CommonModule, ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent],
+  imports: [ButtonModule, TagModule, TooltipModule, ProfileVerificationBadgeComponent, DatePipe],
   templateUrl: './mini-member-card.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './mini-member-card.css'
 })
 export class MiniMemberCardComponent {
-  @Input({ required: true }) member!: MemberLookupDto;
-  @Output() navigate = new EventEmitter<MemberLookupDto>();
+  readonly member = input.required<MemberLookupDto>();
+  readonly navigate = output<MemberLookupDto>();
 
   readonly warningLevels = [
     MemberWarningLevel.Level1,
@@ -26,7 +27,7 @@ export class MiniMemberCardComponent {
   ];
 
   onNavigate(): void {
-    this.navigate.emit(this.member);
+    this.navigate.emit(this.member());
   }
 
   get hasActiveWarnings(): boolean {
@@ -66,7 +67,7 @@ export class MiniMemberCardComponent {
   }
 
   private getActiveWarnings(): MemberWarningDto[] {
-    const warnings = this.member?.warnings ?? [];
+    const warnings = this.member()?.warnings ?? [];
     const now = Date.now();
     return warnings.filter(warning =>
       !warning.revokedAtUtc && this.parseUtcDate(warning.expiresAtUtc) > now

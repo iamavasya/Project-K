@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Enums;
+﻿namespace ProjectK.Common.Models.Enums;
 
 public enum ResourceType
 {
@@ -7,6 +7,9 @@ public enum ResourceType
     Kurin,
     PlanningSession,
     Leadership,
+    MemberWarning,
+    MemberAward,
     ProbeProgress,
-    BadgeProgress
+    BadgeProgress,
+    AgendaItem
 }

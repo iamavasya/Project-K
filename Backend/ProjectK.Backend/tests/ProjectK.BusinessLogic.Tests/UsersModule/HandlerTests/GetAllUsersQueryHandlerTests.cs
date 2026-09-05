@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System.Linq.Expressions;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 {
@@ -16,6 +16,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly GetAllUsersQueryHandler _handler;
 
@@ -28,6 +29,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _kurinRepositoryMock = new Mock<IKurinRepository>();
             _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
+            _unitOfWorkMock.Setup(u => u.Users).Returns(_appUserRepositoryMock.Object);
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Kurin>());
 
@@ -153,7 +155,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Single(result.Data);
-            Assert.Null(result.Data.First().Role); // FirstOrDefault on empty list returns null
+            Assert.Equal("Member", result.Data.First().Role);
         }
 
         [Fact]
@@ -242,8 +244,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
             var userList = result.Data.ToList();
             Assert.Equal("Admin", userList[0].Role);
-            Assert.Equal("Manager", userList[1].Role);
-            Assert.Equal("User", userList[2].Role);
+            Assert.Equal("Member", userList[1].Role);
+            Assert.Equal("Member", userList[2].Role);
         }
 
         [Fact]
@@ -283,7 +285,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal("test@example.com", userDto.Email);
             Assert.Equal("Test", userDto.FirstName);
             Assert.Equal("User", userDto.LastName);
-            Assert.Equal("TestRole", userDto.Role);
+            Assert.Equal("Member", userDto.Role);
         }
 
         [Fact]
@@ -372,7 +374,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
 
         private void SetupUserManagerUsers(IQueryable<AppUser> users)
         {
-            _userManagerMock.Setup(x => x.Users).Returns(users);
+            _appUserRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(users.ToList());
         }
     }
 }

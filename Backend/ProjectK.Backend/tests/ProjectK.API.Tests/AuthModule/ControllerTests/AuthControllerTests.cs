@@ -4,16 +4,23 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System.Security.Claims;
+using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+using Microsoft.Extensions.Configuration;
 
 namespace ProjectK.API.Tests.Controllers
 {
@@ -38,7 +45,7 @@ namespace ProjectK.API.Tests.Controllers
         }
 
         [Fact]
-        public async Task RegisterManager_ShouldReturnOk_WhenMediatorReturnsSuccess()
+        public async Task RegisterKurin_ShouldReturnOk_WhenMediatorReturnsSuccess()
         {
             // Arrange
             var request = new RegisterUserRequest
@@ -48,11 +55,11 @@ namespace ProjectK.API.Tests.Controllers
             };
 
             var serviceResult = new ServiceResult<RegisterUserResponse>(ResultType.Success, new RegisterUserResponse());
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterManagerCommand>(), default))
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterKurinCommand>(), default))
                 .ReturnsAsync(serviceResult);
 
             // Act
-            var result = await _controller.RegisterManager(request);
+            var result = await _controller.RegisterKurin(request);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -146,7 +153,7 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Login(request);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
         }
 
         [Fact]
@@ -159,7 +166,9 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Refresh();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            // Every failure now carries { error, message }; assert the contract, not the result type.
+            var unauthorized = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
         }
 
         [Fact]
@@ -174,7 +183,9 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.Refresh();
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            // Every failure now carries { error, message }; assert the contract, not the result type.
+            var unauthorized = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
             Assert.Contains("refreshToken=", _controller.Response.Headers["Set-Cookie"].ToString());
             _mediatorMock.Verify(m => m.Send(It.IsAny<LogoutUserCommand>(), default), Times.Never);
         }
@@ -363,7 +374,7 @@ namespace ProjectK.API.Tests.Controllers
             var result = await _controller.VerifyMfaLogin(request);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
             Assert.DoesNotContain("refreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
         }
 
@@ -378,5 +389,44 @@ namespace ProjectK.API.Tests.Controllers
                 }
             };
         }
-    }
+    
+        /// <summary>
+        /// The endpoint mints a token for the seeded load-test account, so the only thing between it
+        /// and an anonymous caller is the configured key. Empty means off, which is how it ships:
+        /// appsettings.json leaves LoadTestLoginKey blank.
+        /// </summary>
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task LoadTestLogin_ShouldRefuse_WhenNoKeyIsConfigured(string? configuredKey)
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = configuredKey })
+                .Build();
+
+            var result = await _controller.LoadTestLogin(
+                new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
+                configuration,
+                userManager: null!,
+                jwtService: null!);
+
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+        }
+
+        [Fact]
+        public async Task LoadTestLogin_ShouldRefuse_WhenTheKeyDoesNotMatch()
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = "the-real-key" })
+                .Build();
+
+            var result = await _controller.LoadTestLogin(
+                new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
+                configuration,
+                userManager: null!,
+                jwtService: null!);
+
+            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+        }
+}
 }

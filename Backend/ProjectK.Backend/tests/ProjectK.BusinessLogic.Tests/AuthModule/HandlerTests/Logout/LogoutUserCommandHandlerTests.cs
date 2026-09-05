@@ -1,15 +1,17 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User.Handlers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 {
     public class LogoutUserCommandHandlerTests
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
         private readonly LogoutUserCommandHandler _handler;
 
         public LogoutUserCommandHandlerTests()
@@ -17,23 +19,70 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
             var userStoreMock = new Mock<IUserStore<AppUser>>();
             _userManagerMock = new Mock<UserManager<AppUser>>(
                 userStoreMock.Object, null, null, null, null, null, null, null, null);
-            _handler = new LogoutUserCommandHandler(_userManagerMock.Object);
+            _refreshTokensMock = new Mock<IRefreshTokenStore>();
+            _handler = new LogoutUserCommandHandler(_userManagerMock.Object, _refreshTokensMock.Object);
         }
+
+        [Fact]
+        public async Task Handle_ShouldRevokeEveryCookieTheBrowserSent()
+        {
+            // A browser can carry more than one refreshToken cookie — a stale one shadowing the live
+            // one. Revoking only the first left the session actually in use valid on the server while
+            // telling the person they had signed out.
+            var userKey = Guid.NewGuid().ToString();
+            var user = CreateUser(userKey);
+            _userManagerMock.Setup(x => x.FindByIdAsync(userKey)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var result = await _handler.Handle(
+                new LogoutUserCommand(userKey, ["stale-cookie", "live-cookie"]), CancellationToken.None);
+
+            Assert.Equal(ResultType.Success, result.Type);
+            _refreshTokensMock.Verify(store => store.RevokeAsync("stale-cookie", It.IsAny<CancellationToken>()), Times.Once);
+            _refreshTokensMock.Verify(store => store.RevokeAsync("live-cookie", It.IsAny<CancellationToken>()), Times.Once);
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldEndEverySession_WhenNothingNamesTheOneToEnd()
+        {
+            // Nothing identifies the session, so it cannot be ended precisely. Ending them all is the
+            // safe way to be wrong; answering "logged out" while leaving the session usable is not.
+            var userKey = Guid.NewGuid().ToString();
+            var user = CreateUser(userKey);
+            _userManagerMock.Setup(x => x.FindByIdAsync(userKey)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var result = await _handler.Handle(new LogoutUserCommand(userKey), CancellationToken.None);
+
+            Assert.Equal(ResultType.Success, result.Type);
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(user.Id, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        private static AppUser CreateUser(string userKey) => new()
+        {
+            Id = Guid.Parse(userKey),
+            Email = "test@example.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
 
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenValidUserKey()
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
             var user = new AppUser
             {
                 Id = Guid.Parse(userKey),
                 Email = "test@example.com",
                 FirstName = "John",
                 LastName = "Doe",
-                RefreshToken = "existing-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
@@ -47,8 +96,10 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Equal("User logged out successfully.", result.Data);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            // Signing out ends this session only — the account may be signed in elsewhere.
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(userKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
@@ -64,15 +115,13 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
                 Email = "admin@projectk.com",
                 FirstName = "System",
                 LastName = "Admin",
-                RefreshToken = "existing-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
                 ActiveKurinKey = Guid.NewGuid()
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey)).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
-            var result = await _handler.Handle(new LogoutUserCommand(userKey), CancellationToken.None);
+            var result = await _handler.Handle(new LogoutUserCommand(userKey, ["this-browser"]), CancellationToken.None);
 
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Null(user.ActiveKurinKey);
@@ -89,7 +138,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Equal("Access token is missing or invalid.", result.Data);
+            Assert.Equal("Access token is missing or invalid.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -106,7 +155,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Equal("Access token is missing or invalid.", result.Data);
+            Assert.Equal("Access token is missing or invalid.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -117,7 +166,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
                 .ReturnsAsync((AppUser?)null);
@@ -127,26 +176,24 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.NotFound, result.Type);
-            Assert.Equal("User not found.", result.Data);
+            Assert.Equal("User not found.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(userKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
 
         [Fact]
-        public async Task Handle_ShouldClearRefreshTokenAndExpiryTime_WhenUserHasActiveToken()
+        public async Task Handle_ShouldEndOnlyTheSessionItWasGiven()
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
             var user = new AppUser
             {
                 Id = Guid.Parse(userKey),
                 Email = "active@example.com",
                 FirstName = "Active",
                 LastName = "User",
-                RefreshToken = "active-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30)
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
@@ -159,8 +206,10 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            // Signing out ends this session only — the account may be signed in elsewhere.
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
@@ -169,15 +218,13 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
             var user = new AppUser
             {
                 Id = Guid.Parse(userKey),
                 Email = "already@example.com",
                 FirstName = "Already",
-                LastName = "LoggedOut",
-                RefreshToken = null,
-                RefreshTokenExpiryTime = null
+                LastName = "LoggedOut"
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
@@ -191,8 +238,10 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Equal("User logged out successfully.", result.Data);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            // Signing out ends this session only — the account may be signed in elsewhere.
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(userKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
@@ -203,15 +252,13 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
             var user = new AppUser
             {
                 Id = Guid.Parse(userKey),
                 Email = "expired@example.com",
                 FirstName = "Expired",
-                LastName = "Token",
-                RefreshToken = "expired-refresh-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1) // Expired yesterday
+                LastName = "Token"
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
@@ -224,8 +271,10 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
-            Assert.Null(user.RefreshToken);
-            Assert.Null(user.RefreshTokenExpiryTime);
+            // Signing out ends this session only — the account may be signed in elsewhere.
+            _refreshTokensMock.Verify(
+                store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
         }
 
@@ -234,7 +283,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         {
             // Arrange
             var invalidUserKey = "invalid-guid-format";
-            var command = new LogoutUserCommand(invalidUserKey);
+            var command = new LogoutUserCommand(invalidUserKey, ["this-browser"]);
 
             _userManagerMock.Setup(x => x.FindByIdAsync(invalidUserKey))
                 .ReturnsAsync((AppUser?)null);
@@ -244,7 +293,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
 
             // Assert
             Assert.Equal(ResultType.NotFound, result.Type);
-            Assert.Equal("User not found.", result.Data);
+            Assert.Equal("User not found.", result.ErrorMessage);
 
             _userManagerMock.Verify(x => x.FindByIdAsync(invalidUserKey), Times.Once);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -255,15 +304,13 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         {
             // Arrange
             var userKey = Guid.NewGuid().ToString();
-            var command = new LogoutUserCommand(userKey);
+            var command = new LogoutUserCommand(userKey, ["this-browser"]);
             var user = new AppUser
             {
                 Id = Guid.Parse(userKey),
                 Email = "update@example.com",
                 FirstName = "Update",
                 LastName = "Test",
-                RefreshToken = "some-token",
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddHours(1)
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(userKey))
@@ -283,7 +330,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout
         public void Constructor_ShouldInitializeUserManagerCorrectly()
         {
             // Arrange & Act
-            var handler = new LogoutUserCommandHandler(_userManagerMock.Object);
+            var handler = new LogoutUserCommandHandler(_userManagerMock.Object, new Mock<IRefreshTokenStore>().Object);
 
             // Assert
             Assert.NotNull(handler);

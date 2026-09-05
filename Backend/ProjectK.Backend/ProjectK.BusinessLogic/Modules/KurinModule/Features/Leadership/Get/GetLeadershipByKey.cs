@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -38,17 +38,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get
             {
                 return new ServiceResult<LeadershipResponse>(ResultType.NotFound);
             }
-            var LeadershipResponse = _mapper.Map<LeadershipResponse>(leadership);
-            switch (LeadershipResponse.Type)
-            {
-                case LeadershipType.Kurin or LeadershipType.KV:
-                    LeadershipResponse.EntityKey = LeadershipResponse.KurinKey ?? Guid.Empty;
-                    break;
-                case LeadershipType.Group:
-                    LeadershipResponse.EntityKey = LeadershipResponse.GroupKey ?? Guid.Empty;
-                    break;
-            }
-            return new ServiceResult<LeadershipResponse>(ResultType.Success, LeadershipResponse);
+            var response = _mapper.Map<LeadershipResponse>(leadership);
+            return new ServiceResult<LeadershipResponse>(ResultType.Success, response);
         }
     }
 }

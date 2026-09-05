@@ -1,9 +1,10 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 namespace ProjectK.API.Middleware
 {
@@ -30,9 +31,7 @@ namespace ProjectK.API.Middleware
                 return;
             }
 
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (!Guid.TryParse(userId, out var userKey))
+            if (context.User.GetUserKey() is not { } userKey)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return;
@@ -63,8 +62,10 @@ namespace ProjectK.API.Middleware
                 return false;
             }
 
-            return context.User.IsInRole(UserRole.Admin.ToString())
-                || context.User.IsInRole(UserRole.Manager.ToString());
+            // Privileged = whole-kurin managers: Зв'язковий and admin. Курінний leads the провід but
+            // holds nothing on members, so he is not privileged here.
+            return RolePermissionMap.GrantsWholeKurinManagement(
+                context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
         }
 
         private static bool IsExemptPath(PathString path)

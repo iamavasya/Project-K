@@ -23,7 +23,10 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
     await expect(page.locator('.group-actions').getByRole('button')).toBeVisible();
     await openGroupActionMenu(page);
 
-    expect(await visibleMenuItems(page).count()).toBeGreaterThanOrEqual(4);
+    // expect.poll, not expect(await …count()): the latter reads the count once, and openGroupActionMenu
+    // only waits for the first item, so the rest of the menu may still be rendering. Under the load of
+    // a full parallel run that snapshot caught two items instead of four.
+    await expect.poll(() => visibleMenuItems(page).count()).toBeGreaterThanOrEqual(4);
   });
 
   test('manager planning list exposes create and destructive row controls', async ({ page, request }) => {
@@ -50,15 +53,18 @@ describeRole('mentor', 'Mentor conditional organization UI', ({ user }) => {
     await expect(page.locator('app-leadership-panel .leadership-caption__actions button:has(.pi-cog)').first()).toBeHidden();
   });
 
-  test('mentor group action menu only allows adding members in an assigned group', async ({ page, request }) => {
+  // Виховник керує всім своїм гуртком, тож у призначеному гуртку меню дає повний набір дій.
+  test('mentor manages an assigned group through the action menu', async ({ page, request }) => {
     const groupKey = await getSeededGroupKey(request, user, 'Gurtok 1');
 
     await page.goto(`/group/${groupKey}`);
     await expect(page.locator('body')).toContainText('Gurtok 1');
     await openGroupActionMenu(page);
-    await expect(visibleMenuItems(page)).toHaveCount(1);
+    await expect(page.getByRole('menuitem', { name: 'Редагувати профіль' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Додати учасника' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Завантажити сильветку' })).toBeVisible();
 
-    await visibleMenuItems(page).first().click();
+    await page.getByRole('menuitem', { name: 'Додати учасника' }).click();
     await expect(page).toHaveURL(new RegExp(`/group/${groupKey}/member/upsert`));
   });
 

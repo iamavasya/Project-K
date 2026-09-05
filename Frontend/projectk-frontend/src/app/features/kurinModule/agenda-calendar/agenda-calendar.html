@@ -8,64 +8,38 @@
     </div>
 
     <div class="agenda-toolbar">
-      <p-button icon="pi pi-chevron-left" severity="secondary" [text]="true" [rounded]="true" (click)="previousMonth()" ariaLabel="Попередній місяць" />
-      <span class="agenda-month">{{ monthLabel() }}</span>
-      <p-button icon="pi pi-chevron-right" severity="secondary" [text]="true" [rounded]="true" (click)="nextMonth()" ariaLabel="Наступний місяць" />
-      <p-button label="Сьогодні" severity="secondary" [text]="true" (click)="goToday()" />
+      <div class="agenda-toolbar__nav">
+        <p-button icon="pi pi-chevron-left" severity="secondary" [text]="true" [rounded]="true" (click)="prev()" ariaLabel="Назад" />
+        <p-button label="Сьогодні" severity="secondary" [outlined]="true" size="small" (click)="today()" />
+        <p-button icon="pi pi-chevron-right" severity="secondary" [text]="true" [rounded]="true" (click)="next()" ariaLabel="Далі" />
+        <span class="agenda-toolbar__title">{{ viewTitle() }}</span>
+      </div>
+      <p-selectButton
+        [options]="viewOptions"
+        [ngModel]="currentView()"
+        (onChange)="changeView($event.value)"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false" />
     </div>
 
-    <div class="cal-month" role="grid">
-      <div class="cal-weekdays" role="row">
-        @for (weekday of weekdays; track weekday) {
-          <div class="cal-weekday" role="columnheader">{{ weekday }}</div>
-        }
-      </div>
-
-      @for (week of weeks(); track $index) {
-        <div class="cal-week" [style.--lanes]="week.laneCount" role="row">
-          <div class="cal-week__days">
-            @for (day of week.days; track day.col) {
-              <div
-                class="cal-day"
-                [class.cal-day--muted]="!day.inMonth"
-                [class.cal-day--today]="day.isToday"
-                role="gridcell">
-                <span class="cal-day__num">{{ day.dayNumber }}</span>
-              </div>
-            }
-          </div>
-
-          @if (week.segments.length) {
-            <div class="cal-week__events">
-              @for (seg of week.segments; track seg.item.agendaItemKey + ':' + seg.lane) {
-                <button
-                  type="button"
-                  class="cal-seg"
-                  [class.cal-seg--cont-l]="seg.continuesLeft"
-                  [class.cal-seg--cont-r]="seg.continuesRight"
-                  [style.grid-column]="seg.startCol + ' / span ' + seg.span"
-                  [style.grid-row]="seg.lane + 1"
-                  (click)="openItem(seg.item)"
-                  [attr.aria-label]="seg.item.title">
-                  <p-tag [severity]="tagSeverity(seg.item)" [styleClass]="tagStyleClass(seg.item)" [value]="seg.item.title" />
-                </button>
-              }
-            </div>
-          }
-        </div>
-      }
+    <div class="agenda-calendar-host" #calHost>
+      <full-calendar [options]="calendarOptions()" />
     </div>
   </section>
 </div>
 
-<!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
-     assign-targets) for plain users would 403 and bounce them to /forbidden. -->
-@if (canManage()) {
-  <app-agenda-item-dialog
-    [visible]="dialogVisible()"
-    (visibleChange)="dialogVisible.set($event)"
-    [kurinKey]="kurinKey()"
-    [item]="editing()"
-    [defaultKind]="'Event'"
-    (saved)="loadData()" />
-}
+<!-- Rendered for everyone: managers get the edit form, plain members a read-only view with RSVP. The
+     dialog only mounts the mentor-only assign-select in edit mode, so viewers never hit its 403. -->
+<app-agenda-item-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [kurinKey]="kurinKey()"
+  [item]="editing()"
+  [defaultKind]="'Event'"
+  [canManage]="canManage()"
+  [presetStart]="presetStart()"
+  [presetEnd]="presetEnd()"
+  [presetAllDay]="presetAllDay()"
+  (saved)="onSaved()" />
+

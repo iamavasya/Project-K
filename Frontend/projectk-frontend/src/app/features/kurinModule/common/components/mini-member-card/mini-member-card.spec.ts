@@ -23,7 +23,7 @@ describe('MiniMemberCardComponent', () => {
 
     fixture = TestBed.createComponent(MiniMemberCardComponent);
     component = fixture.componentInstance;
-    component.member = member;
+    fixture.componentRef.setInput('member', member);
     fixture.detectChanges();
   });
 

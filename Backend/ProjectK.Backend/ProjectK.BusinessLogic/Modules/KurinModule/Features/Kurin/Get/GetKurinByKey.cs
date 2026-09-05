@@ -13,7 +13,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
@@ -57,8 +56,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get
                         return new ServiceResult<KurinResponse>(ResultType.NotFound);
                     }
 
-                    var activeBetaUsersCount = _userManager.Users
-                        .Count(u => u.KurinKey == request.KurinKey && u.IsBetaParticipant && u.OnboardingStatus == OnboardingStatus.Active);
+                    var activeBetaUsersCount = await _unitOfWork.Users
+                        .CountActiveBetaAsync(request.KurinKey, cancellationToken);
 
                     var kurinResponse = _mapper.Map<KurinResponse>(kurin);
                     kurinResponse.CurrentUserCount = activeBetaUsersCount;

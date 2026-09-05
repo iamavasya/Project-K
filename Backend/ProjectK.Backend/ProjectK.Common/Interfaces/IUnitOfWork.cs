@@ -1,5 +1,4 @@
-using Microsoft.EntityFrameworkCore.Storage;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
+﻿using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
@@ -19,6 +18,8 @@ namespace ProjectK.Common.Interfaces
         ILeadershipRepository Leaderships { get; }
         IPlanningSessionRepository PlanningSessions { get; }
         IAgendaItemRepository AgendaItems { get; }
+        IAgendaCategoryRepository AgendaCategories { get; }
+        IAgendaResponseRepository AgendaResponses { get; }
         IBadgeProgressRepository BadgeProgresses { get; }
         IProbeProgressRepository ProbeProgresses { get; }
         IProbePointProgressRepository ProbePointProgresses { get; }
@@ -31,8 +32,8 @@ namespace ProjectK.Common.Interfaces
         IAppNotificationRepository AppNotifications { get; }
         ISystemSettingRepository SystemSettings { get; }
         IUserTileLayoutRepository UserTileLayouts { get; }
+        IAppUserRepository Users { get; }
         Task<int> SaveChangesAsync(CancellationToken token = default);
-        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default);
-        void DetectChanges();
+        Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default);
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -16,6 +16,7 @@ using ProjectK.Common.Models.Enums;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 {
@@ -24,6 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly IMapper _mapper;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
 
         private readonly GetKurinByKeyHandler _handler;
@@ -42,7 +44,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-            _userManagerMock.Setup(x => x.Users).Returns(new List<AppUser>().AsQueryable());
+            _appUserRepositoryMock
+                .Setup(x => x.CountActiveBetaAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+            _unitOfWorkMock.Setup(uow => uow.Users).Returns(_appUserRepositoryMock.Object);
 
             _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
         }

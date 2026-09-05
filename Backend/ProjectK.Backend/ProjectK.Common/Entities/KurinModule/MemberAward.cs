@@ -1,6 +1,6 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Infrastructure.Entities;
+﻿using ProjectK.Common.Models.Enums;
 using System;
+using ProjectK.Common.Entities;
 
 namespace ProjectK.Common.Entities.KurinModule
 {

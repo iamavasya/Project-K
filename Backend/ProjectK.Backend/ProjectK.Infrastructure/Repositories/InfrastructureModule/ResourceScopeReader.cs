@@ -39,10 +39,12 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 
                 ResourceType.PlanningSession => await _context.PlanningSessions
                     .Where(p => p.PlanningSessionKey == resourceKey)
-                    .Select(p => new ResourceScope(p.KurinKey, null, null))
+                    .Select(p => new ResourceScope(p.KurinKey, null, p.CreatedByUserKey))
                     .FirstOrDefaultAsync(cancellationToken),
 
                 ResourceType.Leadership => await GetLeadershipScopeAsync(resourceKey, cancellationToken),
+
+                ResourceType.AgendaItem => await GetAgendaItemScopeAsync(resourceKey, cancellationToken),
 
                 // Progress records carry the kurin already, but the group and owning user
                 // come from the member the rules are actually about.
@@ -62,28 +64,70 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
             };
         }
 
-        public async Task<IReadOnlyCollection<Guid>> GetMentorGroupKeysAsync(
+        public async Task<IReadOnlyCollection<Guid>> GetLedGroupKeysAsync(
             Guid userKey,
             Guid kurinKey,
             CancellationToken cancellationToken = default)
         {
+            // Primary source: groups where the user currently holds a гуртковий-провід office.
+            var officeGroups = await _context.LeadershipHistories
+                .Where(h => h.EndDate == null)
+                .Join(
+                    _context.Leaderships.Where(l => l.Type == LeadershipType.Group && l.GroupKey != null),
+                    h => h.LeadershipKey,
+                    l => l.LeadershipKey,
+                    (h, l) => new { h.MemberKey, GroupKey = l.GroupKey!.Value })
+                .Join(
+                    _context.Members.Where(m => m.UserKey == userKey && m.KurinKey == kurinKey),
+                    x => x.MemberKey,
+                    m => m.MemberKey,
+                    (x, m) => x.GroupKey)
+                .ToListAsync(cancellationToken);
+
+            // Legacy source: explicit mentor assignments, kept until fully migrated to offices.
             var assigned = await _context.MentorAssignments
                 .Where(a => a.MentorUserKey == userKey && a.RevokedAtUtc == null)
                 .Select(a => a.GroupKey)
                 .ToListAsync(cancellationToken);
 
-            // Compatibility fallback: a mentor also covers the group they are a member of.
+            // Compatibility fallback: a group leader also covers the group they are a member of.
             var ownGroupKey = await _context.Members
                 .Where(m => m.KurinKey == kurinKey && m.UserKey == userKey && m.GroupKey != null)
                 .Select(m => m.GroupKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
+            var ledGroups = officeGroups.Concat(assigned);
             if (ownGroupKey.HasValue)
             {
-                assigned.Add(ownGroupKey.Value);
+                ledGroups = ledGroups.Append(ownGroupKey.Value);
             }
 
-            return assigned.Distinct().ToArray();
+            return ledGroups.Distinct().ToArray();
+        }
+
+        /// <summary>
+        /// An agenda item is owned by its author and reaches every гурток it is assigned to, so a
+        /// Виховник moderates anything targeting a group he leads.
+        /// </summary>
+        private async Task<ResourceScope?> GetAgendaItemScopeAsync(Guid agendaItemKey, CancellationToken cancellationToken)
+        {
+            var item = await _context.AgendaItems
+                .Where(a => a.AgendaItemKey == agendaItemKey)
+                .Select(a => new { a.KurinKey, a.CreatedByUserKey })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (item is null)
+            {
+                return null;
+            }
+
+            var groupKeys = await _context.AgendaAssignments
+                .Where(a => a.AgendaItemKey == agendaItemKey && a.TargetType == AgendaTargetType.Group)
+                .Select(a => a.TargetKey)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            return new ResourceScope(item.KurinKey, null, item.CreatedByUserKey, groupKeys);
         }
 
         private async Task<ResourceScope?> GetLeadershipScopeAsync(Guid leadershipKey, CancellationToken cancellationToken)

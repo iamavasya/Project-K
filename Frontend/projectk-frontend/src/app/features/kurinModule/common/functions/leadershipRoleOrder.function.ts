@@ -12,7 +12,9 @@ export const LEADERSHIP_ROLE_ORDER: readonly LeadershipRole[] = [
   LeadershipRole.Gospodar,
   LeadershipRole.Hronikar,
   LeadershipRole.Instruktor,
-  LeadershipRole.Vykhovnyk
+  LeadershipRole.Vykhovnyk,
+  LeadershipRole.OtherKurin,
+  LeadershipRole.OtherGroup
 ];
 
 const LEADERSHIP_ROLE_WEIGHTS = new Map<string, number>(

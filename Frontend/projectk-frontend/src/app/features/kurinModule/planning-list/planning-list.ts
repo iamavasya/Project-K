@@ -1,10 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PlanningService } from '../common/services/planning-service/planning.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { PlanningSessionDto } from '../common/models/planningSessionDto';
 import { PlanningDetailComponent } from '../common/components/planning-detail/planning-detail';
@@ -13,14 +13,13 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-planning-list',
-  standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent],
+  imports: [TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
   template: `
     <div class="planning-page">
       <section class="kurin-tile">
         <div class="planning-header">
           <h1 class="planning-title">Планування таборів</h1>
-          @if (canManagePlanning && sessions().length) {
+          @if (canCreatePlanning && sessions().length) {
             <p-button
               label="Створити нове"
               icon="pi pi-plus"
@@ -51,7 +50,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
               <td class="planning-actions-col" data-mobile-label="Дії">
                 <div class="planning-actions">
                   <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
-                  @if (canManagePlanning) {
+                  @if (session.canDelete) {
                     <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
                   }
                 </div>
@@ -65,7 +64,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
                   art="calendar"
                   title="Календар ще спить"
                   body="Перша сходина в плані — і він прокинеться.">
-                  @if (canManagePlanning) {
+                  @if (canCreatePlanning) {
                     <p-button label="Створити планування" icon="pi pi-plus" (click)="createNew()" />
                   }
                 </app-empty-state>
@@ -76,13 +75,12 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
       </section>
 
       @if (detailsVisible) {
-        <app-planning-detail
-          [(visible)]="detailsVisible"
-          [sessionId]="selectedSessionId">
-        </app-planning-detail>
+        <app-planning-detail [(visible)]="detailsVisible"
+          [sessionId]="selectedSessionId" />
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .planning-page {
       margin-inline: auto;
@@ -192,8 +190,8 @@ export class PlanningListComponent implements OnInit {
 
   kurinKey = '';
 
-  get canManagePlanning(): boolean {
-    return this.permissionService.canManagePlanning();
+  get canCreatePlanning(): boolean {
+    return this.permissionService.canCreatePlanning();
   }
 
   ngOnInit() {

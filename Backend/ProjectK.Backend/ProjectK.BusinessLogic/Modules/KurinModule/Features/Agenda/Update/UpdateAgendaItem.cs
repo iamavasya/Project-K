@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
@@ -6,6 +6,8 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 
@@ -18,6 +20,12 @@ public sealed record UpdateAgendaItem : IRequest<ServiceResult<object>>
     public DateTime? StartUtc { get; init; }
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
+    public Guid? AgendaCategoryKey { get; init; }
+    public RecurrenceFrequency RecurrenceFrequency { get; init; } = RecurrenceFrequency.None;
+    public int RecurrenceInterval { get; init; } = 1;
+    public int RecurrenceByWeekday { get; init; }
+    public DateTime? RecurrenceEndUtc { get; init; }
+    public int? RecurrenceCount { get; init; }
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
@@ -74,6 +82,12 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
         item.StartUtc = request.StartUtc;
         item.EndUtc = request.EndUtc;
         item.IsAllDay = request.IsAllDay;
+        item.AgendaCategoryKey = request.AgendaCategoryKey;
+        item.RecurrenceFrequency = request.RecurrenceFrequency;
+        item.RecurrenceInterval = Math.Max(1, request.RecurrenceInterval);
+        item.RecurrenceByWeekday = request.RecurrenceByWeekday;
+        item.RecurrenceEndUtc = request.RecurrenceEndUtc;
+        item.RecurrenceCount = request.RecurrenceCount;
         item.UpdatedDate = DateTime.UtcNow;
 
         // Reconcile targets: keep unchanged rows, delete removed ones, insert new ones — via explicit

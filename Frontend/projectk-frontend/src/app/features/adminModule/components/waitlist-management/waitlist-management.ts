@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { OnboardingService, WaitlistEntry, ZbtStats } from '../../../authModule/services/onboarding.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -24,26 +24,24 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 
 @Component({
   selector: 'app-waitlist-management',
-  standalone: true,
   imports: [
-    CommonModule, 
-    TableModule, 
-    ButtonModule, 
-    TagModule, 
-    TooltipModule, 
-    ToastModule, 
-    ProgressBarModule, 
-    ConfirmDialogModule, 
-    DialogModule, 
-    TextareaModule, 
+    TableModule,
+    ButtonModule,
+    TagModule,
+    TooltipModule,
+    ToastModule,
+    ProgressBarModule,
+    ConfirmDialogModule,
+    DialogModule,
+    TextareaModule,
     FormsModule,
     LocalUtcDatePipe,
     EmptyStateComponent
-  ],
+],
   providers: [MessageService, ConfirmationService],
   template: `
-    <p-toast></p-toast>
-    <p-confirmDialog></p-confirmDialog>
+    <p-toast />
+    <p-confirmDialog />
 
     <p-dialog [(visible)]="rejectionDialogVisible" header="Відхилити заявку" [modal]="true" [style]="{width: '450px'}">
         <div class="flex flex-col gap-4">
@@ -54,8 +52,8 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
             </div>
         </div>
         <ng-template pTemplate="footer">
-            <p-button label="Скасувати" icon="pi pi-times" text (onClick)="rejectionDialogVisible = false"></p-button>
-            <p-button label="Відхилити" icon="pi pi-check" severity="danger" (onClick)="confirmReject()"></p-button>
+            <p-button label="Скасувати" icon="pi pi-times" text (onClick)="rejectionDialogVisible = false" />
+            <p-button label="Відхилити" icon="pi pi-check" severity="danger" (onClick)="confirmReject()" />
         </ng-template>
     </p-dialog>
 
@@ -74,12 +72,12 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
                 }
               </span>
               <p-tag [severity]="stats.isCapReached ? 'danger' : 'info'"
-                     [value]="stats.currentActiveUsers + ' / ' + stats.betaCap"></p-tag>
+                     [value]="stats.currentActiveUsers + ' / ' + stats.betaCap" />
             </div>
             <p-progressBar [value]="(stats.currentActiveUsers / stats.betaCap) * 100" 
                            [showValue]="false" 
                            class="w-64 h-2"
-                           [color]="stats.isCapReached ? '#ef4444' : '#3b82f6'"></p-progressBar>
+                           [color]="stats.isCapReached ? '#ef4444' : '#3b82f6'" />
           </div>
         }
       </div>
@@ -105,26 +103,26 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
             <td>{{ entry.regionOrCountry || '-' }}</td>
             <td>
               @if (entry.isKurinLeaderCandidate) {
-                <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber"></p-tag>
+                <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber" />
               } @else {
                 <span class="text-gray-400 text-sm italic">Звичайний учасник</span>
               }
             </td>
             <td>
-              <p-tag [severity]="getStatusSeverity(entry.verificationStatus)" [value]="getStatusLabel(entry.verificationStatus)"></p-tag>
+              <p-tag [severity]="getStatusSeverity(entry.verificationStatus)" [value]="getStatusLabel(entry.verificationStatus)" />
             </td>
             <td>{{ entry.requestedAtUtc | localUtcDate:'short' }}</td>
             <td>
               <div class="flex gap-2">
                 @if (isInitial(entry.verificationStatus)) {
                   <p-button icon="pi pi-check" severity="success" rounded text
-                            (onClick)="approve(entry)" pTooltip="Схвалити й надіслати запрошення"></p-button>
+                            (onClick)="approve(entry)" pTooltip="Схвалити й надіслати запрошення" />
                   <p-button icon="pi pi-times" severity="danger" rounded text
-                            (onClick)="reject(entry)" pTooltip="Відхилити"></p-button>
+                            (onClick)="reject(entry)" pTooltip="Відхилити" />
                 }
                 @if (isApproved(entry.verificationStatus)) {
                   <p-button icon="pi pi-refresh" severity="secondary" rounded text
-                            (onClick)="resend(entry)" pTooltip="Надіслати запрошення ще раз"></p-button>
+                            (onClick)="resend(entry)" pTooltip="Надіслати запрошення ще раз" />
                 }
               </div>
             </td>
@@ -143,6 +141,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
       </p-table>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .waitlist-empty-cell {
       border: 0 !important;

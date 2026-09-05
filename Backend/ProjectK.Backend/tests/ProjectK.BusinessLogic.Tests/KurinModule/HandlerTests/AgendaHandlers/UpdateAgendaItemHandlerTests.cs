@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -11,6 +11,7 @@ using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using Xunit;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
 {
@@ -34,7 +35,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
                 .ReturnsAsync(Array.Empty<Member>());
             _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
             _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), true, true));
+                .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));
             _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ResourceAccessDecision.Allow());
             _handler = new UpdateAgendaItemHandler(_uow.Object, _access.Object, _currentUser.Object, _notifications.Object);

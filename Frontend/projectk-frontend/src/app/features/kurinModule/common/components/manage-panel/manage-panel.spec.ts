@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ManagePanel, ManagePanelConfig, ManagePanelField } from './manage-panel';
+import { ManagePanelComponent, ManagePanelConfig, ManagePanelField } from './manage-panel';
 import { SimpleChange } from '@angular/core';
 import { Validators } from '@angular/forms';
 
-describe('ManagePanel', () => {
-  let component: ManagePanel;
-  let fixture: ComponentFixture<ManagePanel>;
+describe('ManagePanelComponent', () => {
+  let component: ManagePanelComponent;
+  let fixture: ComponentFixture<ManagePanelComponent>;
 
   const mockConfig: ManagePanelConfig = {
     entityType: 'TestEntity',
@@ -52,11 +52,11 @@ describe('ManagePanel', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ManagePanel]
+      imports: [ManagePanelComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ManagePanel);
+    fixture = TestBed.createComponent(ManagePanelComponent);
     component = fixture.componentInstance;
   });
 
@@ -66,14 +66,14 @@ describe('ManagePanel', () => {
 
   describe('Component initialization', () => {
     it('should initialize with default values', () => {
-      expect(component.visible).toBeFalse();
-      expect(component.parameter).toBe('undef');
-      expect(component.entity).toBeNull();
+      expect(component.visible()).toBeFalse();
+      expect(component.parameter()).toBe('undef');
+      expect(component.entity()).toBeNull();
       expect(component.ready).toBeFalse();
     });
 
     it('should build form when config is provided', () => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -86,7 +86,7 @@ describe('ManagePanel', () => {
 
   describe('ngOnChanges', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -95,7 +95,7 @@ describe('ManagePanel', () => {
     it('should rebuild form when config changes', () => {
       const newConfig = { ...mockConfig, entityType: 'NewEntity' };
       
-      component.config = newConfig;
+      fixture.componentRef.setInput('config', newConfig);
       component.ngOnChanges({
         config: new SimpleChange(mockConfig, newConfig, false)
       });
@@ -105,7 +105,7 @@ describe('ManagePanel', () => {
     });
 
     it('should patch entity when entity changes', () => {
-      component.entity = mockEntity;
+      fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
         entity: new SimpleChange(null, mockEntity, false)
       });
@@ -116,7 +116,7 @@ describe('ManagePanel', () => {
     });
 
     it('should apply state when parameter changes', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'create', false)
       });
@@ -125,8 +125,8 @@ describe('ManagePanel', () => {
     });
 
     it('should reset form when creating new entity', () => {
-      component.parameter = 'create';
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'create');
+      fixture.componentRef.setInput('visible', true);
       
       component.ngOnChanges({
         visible: new SimpleChange(false, true, false),
@@ -138,9 +138,9 @@ describe('ManagePanel', () => {
     });
 
     it('should patch entity when visible for update', () => {
-      component.parameter = 'update';
-      component.entity = mockEntity;
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'update');
+      fixture.componentRef.setInput('entity', mockEntity);
+      fixture.componentRef.setInput('visible', true);
 
       component.ngOnChanges({
         visible: new SimpleChange(false, true, false)
@@ -152,7 +152,7 @@ describe('ManagePanel', () => {
 
   describe('buildForm', () => {
     it('should create form controls for all fields', () => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -164,7 +164,7 @@ describe('ManagePanel', () => {
     });
 
     it('should add required validators to required fields', () => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -177,8 +177,8 @@ describe('ManagePanel', () => {
     });
 
     it('should use createFactory when no entity provided', () => {
-      component.config = mockConfig;
-      component.entity = null;
+      fixture.componentRef.setInput('config', mockConfig);
+      fixture.componentRef.setInput('entity', null);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -188,8 +188,8 @@ describe('ManagePanel', () => {
     });
 
     it('should use entity values when provided', () => {
-      component.config = mockConfig;
-      component.entity = mockEntity;
+      fixture.componentRef.setInput('config', mockConfig);
+      fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -201,14 +201,14 @@ describe('ManagePanel', () => {
 
   describe('applyStatePerAction', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
     });
 
     it('should disable all fields for delete action', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'delete', false)
       });
@@ -220,7 +220,7 @@ describe('ManagePanel', () => {
     });
 
     it('should disable fields based on disabledOn configuration for update', () => {
-      component.parameter = 'update';
+      fixture.componentRef.setInput('parameter', 'update');
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'update', false)
       });
@@ -230,7 +230,7 @@ describe('ManagePanel', () => {
     });
 
     it('should enable all non-restricted fields for create', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'create', false)
       });
@@ -242,7 +242,7 @@ describe('ManagePanel', () => {
     });
 
     it('should disable hidden fields', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'delete', false)
       });
@@ -253,22 +253,23 @@ describe('ManagePanel', () => {
 
   describe('hide', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
-      component.visible = true;
+      fixture.componentRef.setInput('visible', true);
     });
 
     it('should set visible to false', () => {
       component.hide();
-      expect(component.visible).toBeFalse();
+      expect(component.visible()).toBeFalse();
     });
 
     it('should emit visibleChange event', () => {
-      spyOn(component.visibleChange, 'emit');
+      let emitted: boolean | undefined;
+      component.visible.subscribe(v => emitted = v);
       component.hide();
-      expect(component.visibleChange.emit).toHaveBeenCalledWith(false);
+      expect(emitted).toBeFalse();
     });
 
     it('should reset form', () => {
@@ -292,23 +293,23 @@ describe('ManagePanel', () => {
 
   describe('submit', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
-      component.visible = true;
+      fixture.componentRef.setInput('visible', true);
     });
 
     it('should not submit when parameter is undef', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'undef';
+      fixture.componentRef.setInput('parameter', 'undef');
       component.submit();
       expect(component.actionPerformed.emit).not.toHaveBeenCalled();
     });
 
     it('should emit actionPerformed for create action', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       component.form.patchValue({ name: 'New Item', value: 50 });
 
       component.submit();
@@ -326,8 +327,8 @@ describe('ManagePanel', () => {
 
     it('should emit actionPerformed for update action', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'update';
-      component.entity = mockEntity;
+      fixture.componentRef.setInput('parameter', 'update');
+      fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
         entity: new SimpleChange(null, mockEntity, false)
       });
@@ -348,8 +349,8 @@ describe('ManagePanel', () => {
 
     it('should emit actionPerformed for delete action', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'delete';
-      component.entity = mockEntity;
+      fixture.componentRef.setInput('parameter', 'delete');
+      fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
         entity: new SimpleChange(null, mockEntity, false)
       });
@@ -368,7 +369,7 @@ describe('ManagePanel', () => {
 
     it('should apply mapOut function when provided', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       component.form.patchValue({ name: 'Test', value: 10 });
 
       component.submit();
@@ -379,17 +380,17 @@ describe('ManagePanel', () => {
 
     it('should hide panel after submit', () => {
       spyOn(component, 'hide');
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       component.submit();
       expect(component.hide).toHaveBeenCalled();
     });
 
     it('should merge entity with form values', () => {
       spyOn(component.actionPerformed, 'emit');
-      component.parameter = 'update';
-      component.entity = { id: 1, name: 'Old', value: 100, extra: 'data' };
+      fixture.componentRef.setInput('parameter', 'update');
+      fixture.componentRef.setInput('entity', { id: 1, name: 'Old', value: 100, extra: 'data' });
       component.ngOnChanges({
-        entity: new SimpleChange(null, component.entity, false)
+        entity: new SimpleChange(null, component.entity(), false)
       });
       component.form.patchValue({ name: 'New' });
 
@@ -411,12 +412,12 @@ describe('ManagePanel', () => {
     };
 
     it('should return true when field is hidden for current action', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       expect(component.isHidden(testField)).toBeTrue();
     });
 
     it('should return false when field is not hidden for current action', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       expect(component.isHidden(testField)).toBeFalse();
     });
 
@@ -426,103 +427,103 @@ describe('ManagePanel', () => {
         label: 'Test',
         type: 'text'
       };
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       expect(component.isHidden(fieldWithoutHidden)).toBeFalse();
     });
   });
 
   describe('actionLabel', () => {
     it('should return "Створити" for create action', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       expect(component.actionLabel()).toBe('Створити');
     });
 
     it('should return "Оновити" for update action', () => {
-      component.parameter = 'update';
+      fixture.componentRef.setInput('parameter', 'update');
       expect(component.actionLabel()).toBe('Оновити');
     });
 
     it('should return "Видалити" for delete action', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       expect(component.actionLabel()).toBe('Видалити');
     });
 
     it('should return "OK" for undefined action', () => {
-      component.parameter = 'undef';
+      fixture.componentRef.setInput('parameter', 'undef');
       expect(component.actionLabel()).toBe('OK');
     });
   });
 
   describe('header', () => {
     it('should return config title when provided', () => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       expect(component.header()).toBe('Test Entity Management');
     });
 
     it('should return entityType when title is not provided', () => {
       const configWithoutTitle = { ...mockConfig, title: undefined };
-      component.config = configWithoutTitle;
+      fixture.componentRef.setInput('config', configWithoutTitle);
       expect(component.header()).toBe('TestEntity');
     });
 
     it('should return empty string when config is not set', () => {
-      component.config = undefined as unknown as ManagePanelConfig;
+      fixture.componentRef.setInput('config', undefined as unknown as ManagePanelConfig);
       expect(component.header()).toBe('');
     });
   });
 
   describe('isDeleteMode', () => {
     it('should return true when parameter is delete', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       expect(component.isDeleteMode()).toBeTrue();
     });
 
     it('should return false when parameter is not delete', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       expect(component.isDeleteMode()).toBeFalse();
 
-      component.parameter = 'update';
+      fixture.componentRef.setInput('parameter', 'update');
       expect(component.isDeleteMode()).toBeFalse();
 
-      component.parameter = 'undef';
+      fixture.componentRef.setInput('parameter', 'undef');
       expect(component.isDeleteMode()).toBeFalse();
     });
   });
 
   describe('visibleFields', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
     });
 
     it('should return all fields when no fields are hidden', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       const visible = component.visibleFields();
       expect(visible.length).toBe(4);
     });
 
     it('should filter out hidden fields', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       const visible = component.visibleFields();
       expect(visible.length).toBe(3);
       expect(visible.find(f => f.name === 'description')).toBeUndefined();
     });
 
     it('should return empty array when config is not set', () => {
-      component.config = undefined as unknown as ManagePanelConfig;
+      fixture.componentRef.setInput('config', undefined as unknown as ManagePanelConfig);
       expect(component.visibleFields().length).toBe(0);
     });
   });
 
   describe('onDialogShow', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
     });
 
     it('should not focus input in delete mode', () => {
-      component.parameter = 'delete';
+      fixture.componentRef.setInput('parameter', 'delete');
       spyOn(component as unknown as { focusFirstInput: () => void }, 'focusFirstInput');
       
       component.onDialogShow();
@@ -531,7 +532,7 @@ describe('ManagePanel', () => {
     });
 
     it('should focus first input in non-delete modes', () => {
-      component.parameter = 'create';
+      fixture.componentRef.setInput('parameter', 'create');
       spyOn(component as unknown as { focusFirstInput: () => void }, 'focusFirstInput');
       
       component.onDialogShow();
@@ -542,7 +543,7 @@ describe('ManagePanel', () => {
 
   describe('Integration scenarios', () => {
     beforeEach(() => {
-      component.config = mockConfig;
+      fixture.componentRef.setInput('config', mockConfig);
       component.ngOnChanges({
         config: new SimpleChange(null, mockConfig, true)
       });
@@ -551,8 +552,8 @@ describe('ManagePanel', () => {
     it('should handle complete create flow', () => {
       spyOn(component.actionPerformed, 'emit');
       
-      component.parameter = 'create';
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'create');
+      fixture.componentRef.setInput('visible', true);
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'create', false),
         visible: new SimpleChange(false, true, false)
@@ -575,15 +576,15 @@ describe('ManagePanel', () => {
         }),
         entityType: 'TestEntity'
       });
-      expect(component.visible).toBeFalse();
+      expect(component.visible()).toBeFalse();
     });
 
     it('should handle complete update flow', () => {
       spyOn(component.actionPerformed, 'emit');
       
-      component.parameter = 'update';
-      component.entity = mockEntity;
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'update');
+      fixture.componentRef.setInput('entity', mockEntity);
+      fixture.componentRef.setInput('visible', true);
       
       component.ngOnChanges({
         entity: new SimpleChange(null, mockEntity, false),
@@ -607,9 +608,9 @@ describe('ManagePanel', () => {
     it('should handle complete delete flow', () => {
       spyOn(component.actionPerformed, 'emit');
       
-      component.parameter = 'delete';
-      component.entity = mockEntity;
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'delete');
+      fixture.componentRef.setInput('entity', mockEntity);
+      fixture.componentRef.setInput('visible', true);
       
       component.ngOnChanges({
         entity: new SimpleChange(null, mockEntity, false),
@@ -627,8 +628,8 @@ describe('ManagePanel', () => {
     });
 
     it('should validate required fields on submit', () => {
-      component.parameter = 'create';
-      component.visible = true;
+      fixture.componentRef.setInput('parameter', 'create');
+      fixture.componentRef.setInput('visible', true);
       
       component.ngOnChanges({
         parameter: new SimpleChange('undef', 'create', false),

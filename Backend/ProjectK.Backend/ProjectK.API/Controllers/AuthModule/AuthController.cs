@@ -1,4 +1,5 @@
-using AutoMapper;
+﻿using AutoMapper;
+using ProjectK.API.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -6,23 +7,36 @@ using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.User;
 using Microsoft.AspNetCore.Identity.Data;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.KurinScope;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
+using ProjectK.Common.Models.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.Common.Models.Enums;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Queries;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
-using ProjectK.API.Services;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
+    /// <summary>
+    /// Signing in, signing out, and the second factor. Account creation for people who are already known to
+    /// the kurin lives here; strangers apply through the waitlist on <c>api/auth/onboarding</c> instead.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -37,11 +51,19 @@ namespace ProjectK.API.Controllers.AuthModule
             _mapper = mapper;
         }
 
-        [Authorize(Policy = "RequireAdmin")]
-        [HttpPost("register/manager")]
-        public async Task<IActionResult> RegisterManager([FromBody] RegisterUserRequest request)
+        /// <summary>
+        /// Creates a kurin together with its first account, which becomes that kurin's Kurinnyi.
+        /// </summary>
+        /// <remarks>
+        /// Admin only, because it is the one call that brings a new kurin into being. Every other registration
+        /// attaches a person to a kurin that already exists.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+        [HttpPost("register/kurin")]
+        [ProducesResponseType(typeof(RegisterUserResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> RegisterKurin([FromBody] RegisterUserRequest request)
         {
-            var command = new RegisterManagerCommand
+            var command = new RegisterKurinCommand
             {
                 Email = request.Email,
                 Password = request.Password ?? "tempManagerPass1!",
@@ -54,9 +76,17 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireManager")]
+        /// <summary>
+        /// Creates an account inside the caller's own kurin.
+        /// </summary>
+        /// <remarks>
+        /// Restricted to kurin management and rate-limited: it is the path an attacker would use to mint
+        /// accounts if a management token leaked.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
         [EnableRateLimiting("StrictAuthLimit")]
         [HttpPost("register")]
+        [ProducesResponseType(typeof(RegisterUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
         {
             var command = _mapper.Map<RegisterUserCommand>(request);
@@ -64,9 +94,18 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Exchanges an email and password for an access token, and sets the refresh cookie.
+        /// </summary>
+        /// <remarks>
+        /// Answers identically for an unknown address and a wrong password, so the response cannot be used to
+        /// discover which addresses are registered. When the account has a second factor, the answer carries no
+        /// tokens — finish at <c>mfa/login-verify</c>.
+        /// </remarks>
         [AllowAnonymous]
         [EnableRateLimiting("StrictAuthLimit")]
         [HttpPost("login")]
+        [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest request)
         {
             var command = _mapper.Map<LoginUserCommand>(request);
@@ -80,14 +119,21 @@ namespace ProjectK.API.Controllers.AuthModule
 
         public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
 
-        [Authorize(Policy = "RequireAdmin")]
+        /// <summary>
+        /// Points an administrator's session at a particular kurin and issues tokens scoped to it.
+        /// </summary>
+        /// <remarks>
+        /// Administrators are the only accounts that exist above a single kurin, so their token has to say
+        /// which one they are currently acting inside.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("kurin-scope")]
+        [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userKeyClaim, out var userKey))
+            if (this.UserKey() is not { } userKey)
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             var command = new SetKurinScopeCommand(userKey, request.KurinKey);
@@ -102,24 +148,36 @@ namespace ProjectK.API.Controllers.AuthModule
 
         public class LoadTestLoginRequest { public string ApiKey { get; set; } = string.Empty; }
 
+        /// <summary>
+        /// Mints a token for the load-test account without a password.
+        /// </summary>
+        /// <remarks>
+        /// Guarded by <c>LoadTestLoginKey</c>, which ships blank — a blank key disables the endpoint outright.
+        /// It has its own secret rather than sharing the rate limiter's bypass key, so letting a monitor past
+        /// the limiter cannot also open a login.
+        /// </remarks>
         [AllowAnonymous]
         [HttpPost("loadtest-login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> LoadTestLogin(
             [FromBody] LoadTestLoginRequest request,
             [FromServices] Microsoft.Extensions.Configuration.IConfiguration config,
             [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
             [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService)
         {
-            var expectedKey = config["RateLimitBypassKey"];
+            // Its own secret, not the rate limiter's: the two used to share one value, so setting the
+            // bypass key to let a monitor through would also have opened a login as the load-test
+            // account. Empty means the endpoint is off, which is how it ships.
+            var expectedKey = config["LoadTestLoginKey"];
             if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
             {
-                return Unauthorized(new { message = "Invalid or disabled load test API key." });
+                return this.Failure(ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");
             }
 
             var user = await userManager.FindByEmailAsync("loadtest@projectk.com");
             if (user == null) 
             {
-                return NotFound(new { message = "Load test user not found." });
+                return this.Failure(ResultType.NotFound, "UserNotFound", "Load test user not found.");
             }
 
             var roles = await userManager.GetRolesAsync(user);
@@ -128,14 +186,22 @@ namespace ProjectK.API.Controllers.AuthModule
             return Ok(new { data = new { accessToken = token } });
         }
 
+        /// <summary>
+        /// Trades the refresh cookie for a fresh access token and rotates the cookie.
+        /// </summary>
+        /// <remarks>
+        /// Walks every refresh cookie the browser sent: a stale cookie from an earlier session otherwise
+        /// shadows the current one and logs the user out on reload.
+        /// </remarks>
         [AllowAnonymous]
         [HttpPost("refresh")]
+        [ProducesResponseType(typeof(JwtResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> Refresh()
         {
             var refreshTokens = GetRefreshTokenCookieValues();
             if (refreshTokens.Count == 0)
             {
-                return Unauthorized();
+                return this.UnreadableIdentity();
             }
 
             foreach (var refreshToken in refreshTokens.Distinct(StringComparer.Ordinal))
@@ -150,26 +216,37 @@ namespace ProjectK.API.Controllers.AuthModule
             }
 
             DeleteRefreshTokenCookie();
-            return Unauthorized();
+            return this.UnreadableIdentity();
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Revokes the caller's refresh token and clears the cookie.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout()
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new LogoutUserCommand(userKeyClaim!);
+            var refreshTokens = GetRefreshTokenCookieValues();
+            var command = new LogoutUserCommand(this.UserKey()?.ToString(), refreshTokens);
             var response = await _mediator.Send(command);
-            var refreshToken = Request.Cookies[refreshTokenCookieName];
-            if (refreshToken != null)
+            if (refreshTokens.Count > 0)
             {
                 DeleteRefreshTokenCookie();
             }
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Answers whether the caller may act on one named resource, without performing the action.
+        /// </summary>
+        /// <remarks>
+        /// Lets the frontend hide controls the caller cannot use, using the same decision the endpoint itself
+        /// would make rather than a second copy of the rules.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("check-access")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckAccess([FromBody] CheckEntityAccessRequest request)
         {
             var query = new CheckEntityAccessQuery
@@ -182,42 +259,80 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Returns the shared secret and QR payload for enrolling an authenticator app.
+        /// </summary>
+        /// <remarks>
+        /// Enrolment is not finished until <c>mfa/enable</c> confirms a code from that app.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("mfa/setup")]
+        [ProducesResponseType(typeof(MfaSetupResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMfaSetup()
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var query = new GetMfaSetupQuery(Guid.Parse(userKeyClaim!));
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var query = new GetMfaSetupQuery(userKey);
             var response = await _mediator.Send(query);
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Confirms a code from the authenticator app and turns the second factor on.
+        /// </summary>
+        /// <remarks>
+        /// Answers with the recovery codes, which are shown once and never returned again.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("mfa/enable")]
+        [ProducesResponseType(typeof(MfaEnableResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequestDto request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new EnableMfaCommand(Guid.Parse(userKeyClaim!), request.Code);
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var command = new EnableMfaCommand(userKey, request.Code);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Issues a new set of recovery codes and invalidates the previous set.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("mfa/recovery-codes")]
+        [ProducesResponseType(typeof(MfaRecoveryCodesResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequestDto request)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var command = new GenerateMfaRecoveryCodesCommand(Guid.Parse(userKeyClaim!), request.CurrentPassword);
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var command = new GenerateMfaRecoveryCodesCommand(userKey, request.CurrentPassword);
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
         }
 
+        /// <summary>
+        /// Completes a sign-in that stopped for the second factor, accepting a code or a recovery code.
+        /// </summary>
+        /// <remarks>
+        /// Anonymous by necessity: the caller has proved the password but has no token yet. Carries the
+        /// account-security rate limit, since it is the point where codes could be guessed.
+        /// </remarks>
         [AllowAnonymous]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("mfa/login-verify")]
+        [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request)
         {
             var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe);
@@ -229,14 +344,27 @@ namespace ProjectK.API.Controllers.AuthModule
             return response.ToActionResult(this);
         }
 
-        [Authorize(Policy = "RequireUser")]
+        /// <summary>
+        /// Reports whether the caller has a second factor, and whether their offices require one.
+        /// </summary>
+        /// <remarks>
+        /// Enforcement is a policy decision, not an account setting: holding a privileged office can make the
+        /// second factor mandatory for an account that had it switched off.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpGet("mfa/status")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMfaStatus([FromServices] IMfaEnforcementPolicy mfaEnforcementPolicy)
         {
-            var userKeyClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _mediator.Send(new GetUserQuery(Guid.Parse(userKeyClaim!)));
-            var isPrivileged = User.IsInRole(UserRole.Admin.ToString()) || User.IsInRole(UserRole.Manager.ToString());
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var user = await _mediator.Send(new GetUserQuery(userKey));
+            var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(
+                User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
             var isMfaRequired = isPrivileged && await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(HttpContext.RequestAborted);
             return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled, isMfaRequired });
         }

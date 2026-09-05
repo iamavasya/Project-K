@@ -1,11 +1,18 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.API.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.API.Helpers;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.API.Controllers.TestModule;
 
+/// <summary>
+/// Fixtures for the end-to-end suite. Registered only when the E2E environment switch is on; the
+/// controller does not exist in a normal deployment.
+/// </summary>
 [ApiController]
 [AllowAnonymous]
 [Route("api/test/e2e")]
@@ -33,6 +40,15 @@ public sealed class E2ETestController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Returns the database to the seeded fixture state.
+    /// </summary>
+    /// <remarks>
+    /// The suite calls this between runs. Without it the run inherits whatever the previous one left behind
+    /// — accumulated accounts eventually hit the beta cap and the suite starts failing in ways that look
+    /// like flakes.
+    /// </remarks>
+    [AllowAnonymous]
     [HttpPost("reset")]
     public async Task<IActionResult> Reset(CancellationToken cancellationToken)
     {
@@ -60,6 +76,10 @@ public sealed class E2ETestController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Returns the newest invitation token for an address, standing in for reading the email.
+    /// </summary>
+    [AllowAnonymous]
     [HttpGet("invitations/by-email")]
     public async Task<IActionResult> GetLatestInvitationByEmail([FromQuery] string email, CancellationToken cancellationToken)
     {
@@ -71,7 +91,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            return BadRequest(new { message = "Email is required." });
+            return this.Failure(ResultType.BadRequest, "EmailRequired", "Email is required.");
         }
 
         var normalizedEmail = email.Trim().ToUpperInvariant();
@@ -88,7 +108,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (invitation == null)
         {
-            return NotFound(new { message = "Invitation was not found." });
+            return this.Failure(ResultType.NotFound, "InvitationNotFound", "Invitation was not found.");
         }
 
         return Ok(new
@@ -108,6 +128,7 @@ public sealed class E2ETestController : ControllerBase
     {
         if (!_environment.IsEnvironment("E2E"))
         {
+            // Deliberately bare: a structured error would confirm the endpoint exists outside E2E.
             return NotFound();
         }
 
@@ -120,7 +141,7 @@ public sealed class E2ETestController : ControllerBase
 
         if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken) || providedToken != expectedToken)
         {
-            return Unauthorized(new { message = "Invalid E2E reset token." });
+            return this.Failure(ResultType.Unauthorized, "InvalidResetToken", "Invalid E2E reset token.");
         }
 
         return null;

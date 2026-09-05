@@ -1,10 +1,14 @@
 name: Backend CI/CD
 
 on:
+  # Every branch gets built, tested and analysed. Pull requests are not a gate here: the project has
+  # a single maintainer who reviews their own PRs, so waiting for one adds nothing.
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "**" ]
     paths:
       - 'Backend/**'
+      # A change to the pipeline is a change that has to run through it.
+      - '.github/workflows/dotnet.yml'
   release:
     types: [published]
   workflow_dispatch:
@@ -53,11 +57,50 @@ jobs:
       env: 
         NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
       
+    # `shell: bash` for the pipefail it brings: without it `| tee` reports the exit code of tee, and
+    # a build that failed to compile was reported as a green step for weeks.
     - name: Build
-      run: dotnet build Backend/ProjectK.Backend --configuration Release --no-restore
-    
+      shell: bash
+      run: dotnet build Backend/ProjectK.Backend --configuration Release --no-restore 2>&1 | tee build.log
+
+    # Advisory only. The analyzer backlog is tracked in docs/quality-baseline.md and driven down
+    # deliberately; a red build on day one would just get ignored.
+    - name: Report analyzer warnings
+      if: always()
+      continue-on-error: true
+      shell: bash
+      run: |
+        grep -E ': warning ' build.log | sed -E 's/ \[[^]]*\]$//' | sort -u > warnings.txt || true
+        TOTAL=$(wc -l < warnings.txt)
+        {
+          echo "## Analyzer warnings: $TOTAL"
+          echo "_Baseline 652 — see docs/quality-baseline.md_"
+          echo
+          echo "| Project | Count |"
+          echo "|---|---:|"
+          grep -oE 'ProjectK\.Backend./[A-Za-z.]+' warnings.txt \
+            | sed -E 's|.*ProjectK\.Backend./||' | sort | uniq -c | sort -rn \
+            | awk '{printf "| %s | %s |\n", $2, $1}'
+          echo
+          echo "| Rule | Count |"
+          echo "|---|---:|"
+          grep -oE 'warning [A-Z]+[0-9]+' warnings.txt | sed 's/warning //' \
+            | sort | uniq -c | sort -rn | head -15 \
+            | awk '{printf "| %s | %s |\n", $2, $1}'
+        } >> "$GITHUB_STEP_SUMMARY"
+
     - name: Test
-      run: dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal
+      run: >-
+        dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal
+        --collect:"XPlat Code Coverage" --results-directory TestResults
+
+    - name: Upload coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-coverage
+        path: TestResults/**/coverage.cobertura.xml
+        if-no-files-found: warn
 
     - name: Notify dev Telegram on backend failure
       if: failure()
@@ -83,7 +126,13 @@ jobs:
         path: ./publish/
 
   deploy:
-    if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    # Only the long-lived branches and releases deploy. The push trigger above now covers every
+    # branch, so without this a feature branch would ship straight to staging.
+    if: >-
+      github.event_name == 'release'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push'
+          && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: 

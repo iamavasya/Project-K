@@ -6,7 +6,6 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.Requests;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -18,6 +17,10 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests
 {
@@ -197,7 +200,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
 
             var file = CreateFormFile("silhouette.png", "image/png", [1, 2, 3, 4]);
 
-            var result = await _controller.UploadSilhouette(groupKey, file, CancellationToken.None);
+            var result = await _controller.UploadSilhouette(groupKey, new UploadImageRequest { File = file }, CancellationToken.None);
 
             var ok = Assert.IsType<OkObjectResult>(result);
             var data = Assert.IsType<GroupResponse>(ok.Value);
@@ -210,7 +213,7 @@ namespace ProjectK.API.Tests.KurinModule.ControllerTests
             var groupKey = Guid.NewGuid();
             var file = CreateFormFile("silhouette.gif", "image/gif", [1, 2, 3, 4]);
 
-            var result = await _controller.UploadSilhouette(groupKey, file, CancellationToken.None);
+            var result = await _controller.UploadSilhouette(groupKey, new UploadImageRequest { File = file }, CancellationToken.None);
 
             Assert.IsType<BadRequestObjectResult>(result);
             _mediatorMock.Verify(m => m.Send(It.IsAny<UploadGroupSilhouette>(), It.IsAny<CancellationToken>()), Times.Never);

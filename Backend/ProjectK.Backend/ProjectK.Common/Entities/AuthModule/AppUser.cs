@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.Common.Entities.AuthModule
 {
@@ -18,8 +19,6 @@ namespace ProjectK.Common.Entities.AuthModule
         /// Null means unscoped, which for an admin means system-wide access.
         /// </summary>
         public Guid? ActiveKurinKey { get; set; }
-        public string? RefreshToken { get; set; }
-        public DateTime? RefreshTokenExpiryTime { get; set; }
         public OnboardingStatus OnboardingStatus { get; set; }
         public bool IsBetaParticipant { get; set; }
     }

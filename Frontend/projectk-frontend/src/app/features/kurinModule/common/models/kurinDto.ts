@@ -2,7 +2,6 @@ export interface KurinDto {
   kurinKey: string;
   number: number;
   managerEmail?: string;
-  name?: string;
   stanytsia?: string | null;
   regionOrCountry?: string | null;
   namedAfter?: string | null;

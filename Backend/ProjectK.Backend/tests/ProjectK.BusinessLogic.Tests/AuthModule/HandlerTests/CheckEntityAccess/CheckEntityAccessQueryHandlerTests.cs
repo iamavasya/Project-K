@@ -1,9 +1,8 @@
 ﻿using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.CheckEntityAccess
 {

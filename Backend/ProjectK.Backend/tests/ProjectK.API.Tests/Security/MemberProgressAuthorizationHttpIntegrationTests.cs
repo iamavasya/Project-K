@@ -1,4 +1,5 @@
-using ProjectK.BusinessLogic.Services.Caching;
+﻿using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Models.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -30,6 +31,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -67,7 +69,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -85,7 +87,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var memberKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: Guid.NewGuid(),
             targetMemberKey: memberKey,
             targetMemberKurinKey: Guid.NewGuid(),
@@ -105,7 +107,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -125,7 +127,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -148,7 +150,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var kurinKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -193,7 +195,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         public HttpClient Client { get; }
 
         public static async Task<MemberProgressSecurityTestHost> StartAsync(
-            UserRole? role,
+            string? role,
             Guid userKurinKey,
             Guid targetMemberKey,
             Guid targetMemberKurinKey,
@@ -221,25 +223,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     MemberProgressAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
-
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             var scopeReader = new Mock<IResourceScopeReader>();
             scopeReader
@@ -247,7 +231,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
             scopeReader
-                .Setup(x => x.GetMentorGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new[] { currentUserGroupKey });
 
             var mediator = new Mock<IMediator>();
@@ -328,7 +312,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record MemberProgressAuthState(UserRole? Role, Guid UserId, Guid KurinKey);
+    private sealed record MemberProgressAuthState(string? Role, Guid UserId, Guid KurinKey);
 
     private sealed class MemberProgressAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -353,7 +337,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, _authState.UserId.ToString()),
                 new("sub", _authState.UserId.ToString()),
                 new("kurinKey", _authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

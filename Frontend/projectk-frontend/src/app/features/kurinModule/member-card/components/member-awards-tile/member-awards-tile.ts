@@ -1,5 +1,5 @@
-﻿import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+﻿import { Component, inject, ChangeDetectionStrategy, output, input } from '@angular/core';
+
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService } from '@openng/optimus-ui/api';
@@ -20,25 +20,27 @@ interface AwardGroup {
 
 @Component({
   selector: 'app-member-awards-tile',
-  standalone: true,
   imports: [
-    CommonModule,
     ButtonModule,
     ConfirmDialogModule,
     MemberAwardsDialogComponent
-  ],
+],
   providers: [ConfirmationService],
   templateUrl: './member-awards-tile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-awards-tile.css'
 })
 export class MemberAwardsTileComponent {
-  @Input() awards: MemberAwardDto[] = [];
-  @Input() canEdit = false;
-  @Input() canReview = false;
+  readonly awards = input<MemberAwardDto[]>([]);
+  readonly canEdit = input(false);
+  readonly canReview = input(false);
 
-  @Output() saveAward = new EventEmitter<UpsertMemberAwardRequest>();
-  @Output() deleteAward = new EventEmitter<string>();
-  @Output() reviewAward = new EventEmitter<{ awardKey: string, isApproved: boolean }>();
+  readonly saveAward = output<UpsertMemberAwardRequest>();
+  readonly deleteAward = output<string>();
+  readonly reviewAward = output<{
+    awardKey: string;
+    isApproved: boolean;
+}>();
 
   dialogVisible = false;
   selectedAward: MemberAwardDto | null = null;
@@ -58,7 +60,7 @@ export class MemberAwardsTileComponent {
 
   get groupedAwards() {
     const map = new Map<string, AwardGroup>();
-    for (const award of this.awards.filter(item => this.isVisibleAward(item))) {
+    for (const award of this.awards().filter(item => this.isVisibleAward(item))) {
       const existing = map.get(award.level);
       if (existing) {
         existing.count++;
@@ -99,7 +101,7 @@ export class MemberAwardsTileComponent {
   }
 
   openDialog(award?: MemberAwardDto): void {
-    if (!this.canEdit) return;
+    if (!this.canEdit()) return;
     this.selectedAward = award || null;
     this.dialogVisible = true;
   }

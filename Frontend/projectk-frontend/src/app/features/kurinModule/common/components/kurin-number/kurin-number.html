@@ -1,3 +1,3 @@
 <div class="kurin-number-square">
-    <span class="kurin-number" [ngClass]="{'kurin-number-short': number! > 99}">{{number}}</span>
+    <span class="kurin-number" [class.kurin-number-short]="number()! > 99">{{number()}}</span>
 </div>

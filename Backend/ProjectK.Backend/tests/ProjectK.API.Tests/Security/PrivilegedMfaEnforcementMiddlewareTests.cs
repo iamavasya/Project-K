@@ -1,11 +1,11 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.API.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -16,7 +16,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, UserRole.Manager);
+        var context = CreateContext("/api/user/users", userKey, "KV.Zvyazkovyi");
         context.Request.Method = HttpMethods.Get;
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
@@ -39,7 +39,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, UserRole.Admin);
+        var context = CreateContext("/api/user/users", userKey, "Admin");
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
         {
@@ -62,7 +62,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/auth/mfa/setup", userKey, UserRole.Manager);
+        var context = CreateContext("/api/auth/mfa/setup", userKey, "KV.Zvyazkovyi");
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
         {
@@ -84,7 +84,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
+        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
         context.Request.Method = HttpMethods.Get;
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
@@ -107,7 +107,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/auth/check-access", userKey, UserRole.Manager);
+        var context = CreateContext("/api/auth/check-access", userKey, "KV.Zvyazkovyi");
         context.Request.Method = HttpMethods.Post;
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
@@ -130,7 +130,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
+        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
         context.Request.Method = HttpMethods.Put;
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
@@ -155,7 +155,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, UserRole.User);
+        var context = CreateContext("/api/user/users", userKey, "Member");
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
         {
@@ -177,7 +177,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     {
         // Arrange (e.g. self-host with enforcement disabled, or Development)
         var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, UserRole.Manager);
+        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
         context.Request.Method = HttpMethods.Put;
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
@@ -195,7 +195,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
-    private static DefaultHttpContext CreateContext(string path, Guid userKey, UserRole role)
+    private static DefaultHttpContext CreateContext(string path, Guid userKey, string role)
     {
         var context = new DefaultHttpContext();
         context.Request.Path = path;
@@ -203,7 +203,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         context.User = new ClaimsPrincipal(new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.NameIdentifier, userKey.ToString()),
-                new Claim(ClaimTypes.Role, role.ToString())
+                new Claim(ClaimTypes.Role, role)
             ],
             "Test"));
 

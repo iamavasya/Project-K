@@ -1,4 +1,5 @@
-using System.Net;
+﻿using System.Net;
+using ProjectK.Common.Models.Authorization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -15,6 +16,7 @@ using ProjectK.API.Helpers;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
+using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -38,7 +40,7 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         // Auth module
         yield return Row("POST", "/api/auth/logout");
         yield return Row("POST", "/api/auth/register", "{}");
-        yield return Row("POST", "/api/auth/register/manager", "{}");
+        yield return Row("POST", "/api/auth/register/kurin", "{}");
         yield return Row("POST", "/api/auth/check-access", "{}");
 
         // Users module
@@ -116,7 +118,7 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
             return client.DeleteAsync(route);
         }
 
-        if (IsMultipartMemberEndpoint(method, route))
+        if (IsMultipartEndpoint(method, route))
         {
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(Guid.NewGuid().ToString()), "GroupKey");
@@ -143,7 +145,12 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         return client.SendAsync(request);
     }
 
-    private static bool IsMultipartMemberEndpoint(string method, string route)
+    /// <summary>
+    /// Endpoints that bind a multipart form. They answer 415 to a request that is not multipart, and
+    /// that check runs before authentication — so probing them with a JSON body would measure the
+    /// content type, not the authorization this test is about.
+    /// </summary>
+    private static bool IsMultipartEndpoint(string method, string route)
     {
         var isMethod = string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase)
             || string.Equals(method, "PUT", StringComparison.OrdinalIgnoreCase);
@@ -151,6 +158,11 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         if (!isMethod)
         {
             return false;
+        }
+
+        if (route.EndsWith("/silhouette", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
         }
 
         if (!route.StartsWith("/api/member", StringComparison.OrdinalIgnoreCase))
@@ -197,25 +209,7 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
                 })
                 .AddScheme<AuthenticationSchemeOptions, AnonymousAuthHandler>(AnonymousAuthHandler.SchemeName, _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
-
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddSingleton<IBadgesAssetsStore>(new TestBadgesAssetsStore(assetsDirectory));
             builder.Services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);

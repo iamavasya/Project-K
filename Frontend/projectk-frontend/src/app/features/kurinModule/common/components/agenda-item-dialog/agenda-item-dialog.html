@@ -4,9 +4,29 @@
   [modal]="true"
   [style]="{ width: '34rem' }"
   [draggable]="false"
-  [header]="item() ? 'Редагувати' : 'Нове призначення'"
+  [header]="viewOnly() ? 'Подія' : (item() ? 'Редагувати' : 'Нове призначення')"
   (onHide)="onHide()">
   <div class="agenda-form">
+    @if (viewOnly()) {
+      <div class="agenda-view">
+        <h3 class="agenda-view__title">{{ item()?.title }}</h3>
+        @if (item()?.categoryName) {
+          <span class="agenda-view__badge" [style.background]="item()?.categoryColorHex">{{ item()?.categoryName }}</span>
+        }
+        <div class="agenda-view__when">
+          <i class="pi pi-calendar"></i>
+          @if (item()?.isAllDay) {
+            {{ item()?.startUtc | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'dd.MM.yyyy' }} }
+          } @else {
+            {{ item()?.startUtc | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'HH:mm' }} }
+          }
+        </div>
+        @if (item()?.description) {
+          <p class="agenda-view__desc">{{ item()?.description }}</p>
+        }
+      </div>
+    } @else {
+
     <div class="agenda-field">
       <span class="agenda-label">Тип</span>
       <p-selectButton [options]="kindOptions" [(ngModel)]="kind" optionLabel="label" optionValue="value" [allowEmpty]="false" />
@@ -22,32 +42,146 @@
       <textarea id="agenda-desc" pTextarea [(ngModel)]="description" rows="3" maxlength="2000" placeholder="Деталі (необовʼязково)"></textarea>
     </div>
 
+    @if (kind === 'Event') {
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-category">Група подій</label>
+        <p-select
+          id="agenda-category"
+          [options]="categories()"
+          [(ngModel)]="categoryKey"
+          (onChange)="onCategoryChange()"
+          optionLabel="name"
+          optionValue="agendaCategoryKey"
+          [showClear]="true"
+          appendTo="body"
+          placeholder="Без групи">
+          <ng-template let-group pTemplate="item">
+            <span class="agenda-category-option">
+              <i class="agenda-category-dot" [style.background]="group.colorHex"></i>
+              @if (group.icon) { <i [class]="group.icon"></i> }
+              {{ group.name }}
+            </span>
+          </ng-template>
+        </p-select>
+      </div>
+    }
+
+    <div class="agenda-allday">
+      <label for="agenda-allday">Весь день</label>
+      <p-toggleswitch inputId="agenda-allday" [(ngModel)]="allDay" />
+    </div>
+
     <div class="agenda-dates">
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-start">Початок</label>
-        <p-datePicker id="agenda-start" [(ngModel)]="startDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+        <p-datePicker id="agenda-start" [(ngModel)]="startDate" [dateFormat]="'dd.mm.yy'" [showTime]="!allDay" [showIcon]="true" appendTo="body" />
       </div>
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-end">Кінець</label>
-        <p-datePicker id="agenda-end" [(ngModel)]="endDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" />
+        <p-datePicker id="agenda-end" [(ngModel)]="endDate" [dateFormat]="'dd.mm.yy'" [showTime]="!allDay" [showIcon]="true" appendTo="body" />
       </div>
     </div>
+
+    <div class="agenda-field">
+      <label class="agenda-label" for="agenda-recur">Повторення</label>
+      <p-select
+        id="agenda-recur"
+        [options]="frequencyOptions"
+        [(ngModel)]="recurrenceFrequency"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body" />
+    </div>
+
+    @if (recurrenceFrequency !== 'None') {
+      <div class="agenda-recur-detail">
+        <div class="agenda-field agenda-recur-interval">
+          <label class="agenda-label" for="agenda-interval">Кожні</label>
+          <input id="agenda-interval" pInputText type="number" min="1" [(ngModel)]="recurrenceInterval" />
+          <span class="agenda-recur-unit">
+            {{ recurrenceFrequency === 'Weekly' ? 'тижн.' : recurrenceFrequency === 'Monthly' ? 'міс.' : 'р.' }}
+          </span>
+        </div>
+
+        @if (recurrenceFrequency === 'Weekly') {
+          <div class="agenda-field">
+            <span class="agenda-label">Дні тижня</span>
+            <div class="agenda-weekdays">
+              @for (day of weekdays; track day.bit) {
+                <button
+                  type="button"
+                  class="agenda-weekday"
+                  [class.is-active]="isWeekdaySelected(day.bit)"
+                  (click)="toggleWeekday(day.bit)">{{ day.label }}</button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="agenda-field">
+          <label class="agenda-label" for="agenda-recur-end">Повторювати до</label>
+          <p-datePicker id="agenda-recur-end" [(ngModel)]="recurrenceEndDate" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" placeholder="Без кінця" />
+        </div>
+      </div>
+    }
 
     <div class="agenda-field">
       <span class="agenda-label">Призначити для</span>
       <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
     </div>
 
+    }
+
     @if (item()?.createdByName) {
       <div class="agenda-meta"><i class="pi pi-user"></i> Автор: {{ item()!.createdByName }}</div>
+    }
+
+    @if (rsvp(); as picture) {
+      <div class="agenda-rsvp">
+        <span class="agenda-label">Твоя відповідь</span>
+        <p-selectButton
+          [options]="rsvpOptions"
+          [ngModel]="picture.myStatus"
+          (onChange)="setRsvp($event.value)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [disabled]="rsvpSaving()" />
+
+        <div class="agenda-rsvp__summary">
+          <span><i class="pi pi-check-circle"></i> Йдуть: {{ picture.goingConfirmedCount }}</span>
+          @if (picture.goingWaitlistCount > 0) {
+            <span><i class="pi pi-clock"></i> Черга: {{ picture.goingWaitlistCount }}</span>
+          }
+          <span><i class="pi pi-question-circle"></i> Можливо: {{ picture.maybeCount }}</span>
+          <span><i class="pi pi-times-circle"></i> Не йдуть: {{ picture.notGoingCount }}</span>
+        </div>
+
+        @if (picture.responses.length > 0) {
+          <ul class="agenda-rsvp__list">
+            @for (r of picture.responses; track r.userKey) {
+              <li [class.is-waitlisted]="r.isWaitlisted">
+                <span class="agenda-rsvp__name">{{ r.displayName }}</span>
+                <span class="agenda-rsvp__badge" [attr.data-status]="r.status">
+                  {{ r.status === 'Going' ? (r.isWaitlisted ? 'у черзі' : 'йде') : r.status === 'Maybe' ? 'можливо' : 'не йде' }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
     }
   </div>
 
   <ng-template pTemplate="footer">
-    @if (item() && item()!.canEdit) {
-      <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+    @if (viewOnly()) {
+      <p-button label="Закрити" severity="secondary" variant="text" (click)="close()" />
+    } @else {
+      @if (item() && item()!.canEdit) {
+        <p-button label="Видалити" icon="pi pi-trash" severity="danger" variant="text" styleClass="agenda-footer__delete" [disabled]="deleting()" (click)="remove()" />
+      }
+      <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
+      <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
     }
-    <p-button label="Скасувати" severity="secondary" variant="text" (click)="close()" />
-    <p-button label="Зберегти" icon="pi pi-check" [disabled]="!canSave() || saving()" (click)="save()" />
   </ng-template>
 </p-dialog>

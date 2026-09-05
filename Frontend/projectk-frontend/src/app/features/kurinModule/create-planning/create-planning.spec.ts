@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { MemberService } from '../common/services/member-service/member.service';
-import { PlanningService } from '../common/services/planning-service/planning-service';
+import { PlanningService } from '../common/services/planning-service/planning.service';
 
 import { CreatePlanningComponent } from './create-planning';
 

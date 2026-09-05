@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { PlanningService } from '../../services/planning-service/planning-service';
-import { AgendaService } from '../../services/agenda-service/agenda-service';
+import { Component, inject, signal, OnChanges, SimpleChanges, ChangeDetectionStrategy, input, model } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { PlanningService } from '../../services/planning-service/planning.service';
+import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { PlanningSessionDto } from '../../models/planningSessionDto';
 
 // Optimus UI Imports
@@ -17,16 +17,16 @@ import 'chartjs-adapter-date-fns';
 
 @Component({
   selector: 'app-planning-detail',
-  standalone: true,
   imports: [
-    CommonModule, 
-    DialogModule, 
-    ChartModule, 
-    SkeletonModule, 
-    ButtonModule, 
+    DialogModule,
+    ChartModule,
+    SkeletonModule,
+    ButtonModule,
     TagModule,
-    DividerModule
-  ],
+    DividerModule,
+    DatePipe
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
 <p-dialog
   [(visible)]="visible"
@@ -72,13 +72,11 @@ import 'chartjs-adapter-date-fns';
             <h3 class="font-bold text-color mb-4 ml-2">Графік зайнятості</h3>
             @if (chartData) {
               <div class="relative w-full">
-                <p-chart
-                  type="bar"
+                <p-chart type="bar"
                   [data]="chartData"
                   [options]="chartOptions"
                   [height]="calculateHeight()"
-                  [responsive]="true">
-                </p-chart>
+                  [responsive]="true" />
               </div>
             }
             @if (!chartData) {
@@ -101,9 +99,8 @@ import 'chartjs-adapter-date-fns';
 `
 })
 export class PlanningDetailComponent implements OnChanges {
-  @Input() visible = false;
-  @Input() sessionId: string | null = null;
-  @Output() visibleChange = new EventEmitter<boolean>();
+  readonly visible = model(false);
+  readonly sessionId = input<string | null>(null);
 
   private readonly service = inject(PlanningService);
   private readonly agendaService = inject(AgendaService);
@@ -128,8 +125,9 @@ export class PlanningDetailComponent implements OnChanges {
   chartOptions: Record<string, unknown> | null = null;
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['visible'] && this.visible && this.sessionId) {
-      this.loadData(this.sessionId);
+    const sessionId = this.sessionId();
+    if (changes['visible'] && this.visible() && sessionId) {
+      this.loadData(sessionId);
     }
   }
 
@@ -146,8 +144,7 @@ export class PlanningDetailComponent implements OnChanges {
   }
 
   close() {
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.visible.set(false);
   }
 
   /** Turn this calculated planning into a kurin-wide calendar event (name + optimal dates). */
@@ -165,6 +162,12 @@ export class PlanningDetailComponent implements OnChanges {
       startUtc: s.optimalStartDate,
       endUtc: s.optimalEndDate ?? null,
       isAllDay: true,
+      agendaCategoryKey: null,
+      recurrenceFrequency: 'None',
+      recurrenceInterval: 1,
+      recurrenceByWeekday: 0,
+      recurrenceEndUtc: null,
+      recurrenceCount: null,
       targets: [{ targetType: 'Kurin', targetKey: s.kurinKey }]
     }).subscribe({
       next: () => {

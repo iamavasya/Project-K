@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, OnChanges, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -12,17 +12,15 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { PermissionService } from '../../../../../authModule/services/permission.service';
 import { LeadershipDto, LeadershipHistoryDto } from '../../../models/requests/leadership/leadershipDto';
-import { LeadershipRole } from '../../../models/enums/leadership-role.enum';
-import { ROLE_DISPLAY_NAMES } from '../../../models/roleDisplayName';
-import { LeadershipService } from '../../../services/leadership-service/leadership-service';
+import { LeadershipService } from '../../../services/leadership-service/leadership.service';
 import { MemberLookupDto } from '../../../models/requests/member/memberLookupDto';
 import { compareLeadershipHistoriesByDefault } from '../../../functions/leadershipRoleOrder.function';
 import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
+import { leadershipRoleSeverity, leadershipRoleDisplayName, memberDisplayName } from '../../../functions/leadershipRoleDisplay.function';
 
 @Component({
   selector: 'app-leadership-panel',
   imports: [
-    CommonModule,
     FormsModule,
     ButtonModule,
     IconFieldModule,
@@ -32,16 +30,18 @@ import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-
     TagModule,
     ToggleSwitchModule,
     TooltipModule,
-    EmptyStateComponent
-  ],
+    EmptyStateComponent,
+    DatePipe
+],
   templateUrl: './leadership-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leadership-panel.css'
 })
 export class LeadershipPanelComponent implements OnChanges {
   readonly archiveScrollHeight = '27.5rem';
 
-  @Input() leadershipType: 'kurin' | 'group' = 'group';
-  @Input() typeKey = '';
+  readonly leadershipType = input<'kurin' | 'group'>('group');
+  readonly typeKey = input('');
 
   private readonly leadershipService = inject(LeadershipService);
   private readonly permissionService = inject(PermissionService);
@@ -54,7 +54,7 @@ export class LeadershipPanelComponent implements OnChanges {
   isLoading = false;
 
   ngOnChanges(): void {
-    if (this.typeKey) {
+    if (this.typeKey()) {
       this.loadLeadership();
     }
   }
@@ -64,7 +64,7 @@ export class LeadershipPanelComponent implements OnChanges {
   }
 
   get title(): string {
-    return this.leadershipType === 'kurin' ? 'Провід куреня' : 'Провід гуртка';
+    return this.leadershipType() === 'kurin' ? 'Провід куреня' : 'Провід гуртка';
   }
 
   get visibleHistories(): LeadershipHistoryDto[] {
@@ -76,8 +76,8 @@ export class LeadershipPanelComponent implements OnChanges {
           return true;
         }
 
-        const name = this.getMemberName(history.member).toLowerCase();
-        const role = this.getRoleDisplayName(history.role).toLowerCase();
+        const name = memberDisplayName(history.member).toLowerCase();
+        const role = leadershipRoleDisplayName(history.role).toLowerCase();
         return name.includes(search) || role.includes(search);
       })
       .sort(compareLeadershipHistoriesByDefault);
@@ -85,7 +85,7 @@ export class LeadershipPanelComponent implements OnChanges {
 
   loadLeadership(): void {
     this.isLoading = true;
-    this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType, this.typeKey).subscribe({
+    this.leadershipService.getLeadershipByTypeAndKey(this.leadershipType(), this.typeKey()).subscribe({
       next: (leadership) => {
         this.leadership = leadership;
         this.histories = leadership?.leadershipHistories ?? [];
@@ -101,11 +101,11 @@ export class LeadershipPanelComponent implements OnChanges {
 
   onSettingsSelect(): void {
     if (this.leadership) {
-      this.router.navigate(['/leadership', this.leadership.leadershipKey, this.leadershipType, this.typeKey]);
+      this.router.navigate(['/leadership', this.leadership.leadershipKey, this.leadershipType(), this.typeKey()]);
       return;
     }
 
-    this.router.navigate(['/leadership/create', this.leadershipType, this.typeKey]);
+    this.router.navigate(['/leadership/create', this.leadershipType(), this.typeKey()]);
   }
 
   onMemberSelect(member: MemberLookupDto): void {
@@ -114,29 +114,16 @@ export class LeadershipPanelComponent implements OnChanges {
     }
   }
 
-  getMemberName(member: MemberLookupDto): string {
-    return `${member.lastName} ${member.firstName}${member.middleName ? ` ${member.middleName}` : ''}`;
+  /** Template adapters — the rules live in leadershipRoleDisplay.function.ts. */
+  getRoleSeverity(history: LeadershipHistoryDto) {
+    return leadershipRoleSeverity(history);
   }
 
   getRoleDisplayName(role: string): string {
-    return ROLE_DISPLAY_NAMES[role as LeadershipRole] || role;
+    return leadershipRoleDisplayName(role);
   }
 
-  getRoleSeverity(history: LeadershipHistoryDto): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null {
-    if (history.endDate) {
-      return 'secondary';
-    }
-
-    switch (history.role as LeadershipRole) {
-      case LeadershipRole.Kurinnuy:
-      case LeadershipRole.Hurtkoviy:
-        return 'danger';
-      case LeadershipRole.Suddya:
-        return 'warn';
-      case LeadershipRole.Skarbnyk:
-        return 'success';
-      default:
-        return 'info';
-    }
+  getMemberName(member: MemberLookupDto): string {
+    return memberDisplayName(member);
   }
 }

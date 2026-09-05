@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -12,6 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork
 {
@@ -30,6 +33,8 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private ILeadershipRepository _leaderships;
         private IPlanningSessionRepository _planningSessions;
         private IAgendaItemRepository _agendaItems;
+        private IAgendaCategoryRepository _agendaCategories;
+        private IAgendaResponseRepository _agendaResponses;
         private IBadgeProgressRepository _badgeProgresses;
         private IProbeProgressRepository _probeProgresses;
         private IProbePointProgressRepository _probePointProgresses;
@@ -41,14 +46,18 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private IPublicAnnouncementRepository _publicAnnouncements;
         private IAppNotificationRepository _appNotifications;
         private ISystemSettingRepository _systemSettings;
+        private IAppUserRepository _users;
         private IUserTileLayoutRepository _userTileLayouts;
 
         public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
         public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
         public IMemberRepository Members => _members ??= new MemberRepository(_context);
+        public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
         public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
         public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
         public IAgendaItemRepository AgendaItems => _agendaItems ??= new AgendaItemRepository(_context);
+        public IAgendaCategoryRepository AgendaCategories => _agendaCategories ??= new AgendaCategoryRepository(_context);
+        public IAgendaResponseRepository AgendaResponses => _agendaResponses ??= new AgendaResponseRepository(_context);
         public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
         public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);
         public IProbePointProgressRepository ProbePointProgresses => _probePointProgresses ??= new ProbePointProgressRepository(_context);
@@ -72,14 +81,9 @@ namespace ProjectK.Infrastructure.UnitOfWork
             return _context.SaveChangesAsync(token);
         }
 
-        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken token = default)
+        public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default)
         {
-            return _context.Database.BeginTransactionAsync(token);
-        }
-
-        public void DetectChanges()
-        {
-            _context.ChangeTracker.DetectChanges();
+            return new EfCoreUnitOfWorkTransaction(await _context.Database.BeginTransactionAsync(token));
         }
     }
 }

@@ -1,0 +1,278 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService } from '@openng/optimus-ui/api';
+import { of, throwError } from 'rxjs';
+import { LoginComponent } from './login';
+import { AuthState } from '../models/auth-state.model';
+import { LoginResponse } from '../models/login-response.model';
+import { AuthService } from '../services/authService/auth.service';
+
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let router: jasmine.SpyObj<Router>;
+  let messageService: jasmine.SpyObj<MessageService>;
+
+  beforeEach(async () => {
+    authService = jasmine.createSpyObj('AuthService', [
+      'login',
+      'verifyMfaLogin',
+      'getAuthStateValue',
+      'getSetupStatus'
+    ]);
+    // ngOnInit calls it on every fixture, so it has to emit before detectChanges.
+    authService.getSetupStatus.and.returnValue(of({ isInitialized: true }));
+    router = jasmine.createSpyObj('Router', ['navigate']);
+    messageService = jasmine.createSpyObj('MessageService', ['add']);
+
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideHttpClient(),
+        { provide: AuthService, useValue: authService },
+        { provide: Router, useValue: router },
+        { provide: ActivatedRoute, useValue: {} },
+        { provide: MessageService, useValue: messageService }
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(LoginComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should send an uninitialized system to setup', () => {
+    authService.getSetupStatus.and.returnValue(of({ isInitialized: false }));
+
+    TestBed.createComponent(LoginComponent).detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/setup']);
+  });
+
+  it('should stay on login when the setup status cannot be read', () => {
+    authService.getSetupStatus.and.returnValue(throwError(() => new Error('offline')));
+
+    TestBed.createComponent(LoginComponent).detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should submit credentials to auth service', () => {
+    const state = createAuthState();
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'test@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(authService.login).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password123'
+    });
+  });
+
+  it('should show otp input when login requires mfa', () => {
+    authService.login.and.returnValue(of(createLoginResponse({ requiresMfa: true, tokens: null })));
+
+    component.email = 'mfa@example.com';
+    component.password = 'password123';
+    component.otpValue = '123456';
+    component.useRecoveryCode = true;
+
+    component.onSubmit();
+
+    expect(component.showOtpInput).toBeTrue();
+    expect(component.otpValue).toBe('');
+    expect(component.useRecoveryCode).toBeFalse();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should verify otp and navigate after mfa succeeds', () => {
+    const state = createAuthState({ memberKey: 'member-123' });
+    authService.verifyMfaLogin.and.returnValue(of(state));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'mfa@example.com';
+    component.showOtpInput = true;
+    component.otpValue = '123456';
+
+    component.onSubmit();
+
+    expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456');
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to active kurin for admin role with selected kurin', () => {
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: 'kurin-123' });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'admin@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to admin panel for admin role without selected kurin', () => {
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: null });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'admin@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/panel']);
+  });
+
+  it('should navigate to kurin page when kurin key is present', () => {
+    const state = createAuthState({ memberKey: 'member-123' });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'manager@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to member page when member key is the only available destination', () => {
+    const state = createAuthState({ memberKey: 'member-123', kurinKey: null });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'manager@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/member', 'member-123']);
+  });
+
+  it('should navigate to kurin page when only kurin key is present', () => {
+    const state = createAuthState({ memberKey: null, kurinKey: 'kurin-123' });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'manager@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+  });
+
+  it('should navigate to login when authenticated state has no destination keys', () => {
+    const state = createAuthState({ memberKey: null, kurinKey: null });
+    authService.login.and.returnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.and.returnValue(state);
+
+    component.email = 'user@example.com';
+    component.password = 'password123';
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('should show our own wording for a known error code, not the English message from the API', () => {
+    authService.login.and.returnValue(throwError(() => ({
+      error: { error: 'InvalidCredentials', message: 'Email or password is incorrect.' }
+    })));
+
+    component.email = 'user@example.com';
+    component.password = 'wrong-password';
+
+    component.onSubmit();
+
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      detail: 'Невірний email або пароль.'
+    }));
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to our text rather than the transport message on an unmapped error', () => {
+    // HttpErrorResponse.message is always populated with something like "Http failure response
+    // for ...", so using it as a fallback would render that string to the user.
+    authService.login.and.returnValue(throwError(() => ({
+      message: 'Http failure response for http://localhost/api/auth/login: 500 Internal Server Error',
+      error: { error: 'SomethingElse', message: 'An unexpected error occurred.' }
+    })));
+
+    component.email = 'user@example.com';
+    component.password = 'wrong-password';
+
+    component.onSubmit();
+
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      detail: 'Не вдалося увійти.'
+    }));
+  });
+
+  it('should sanitize otp input to six digits', () => {
+    component.onOtpChange('12a-34567');
+
+    expect(component.otpValue).toBe('123456');
+  });
+
+  it('should switch between password and recovery code modes', () => {
+    component.otpValue = '123456';
+
+    component.toggleRecoveryCode();
+
+    expect(component.useRecoveryCode).toBeTrue();
+    expect(component.otpValue).toBe('');
+  });
+
+  it('should return to password step from otp step', () => {
+    component.showOtpInput = true;
+    component.otpValue = '123456';
+    component.useRecoveryCode = true;
+
+    component.backToPassword();
+
+    expect(component.showOtpInput).toBeFalse();
+    expect(component.otpValue).toBe('');
+    expect(component.useRecoveryCode).toBeFalse();
+  });
+
+  function createAuthState(overrides: Partial<AuthState> = {}): AuthState {
+    return {
+      userKey: 'user-123',
+      memberKey: 'member-123',
+      email: 'test@example.com',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+      kurinKey: 'kurin-123',
+      accessToken: 'token-123',
+      ...overrides
+    };
+  }
+
+  function createLoginResponse(overrides: Partial<LoginResponse> = {}): LoginResponse {
+    return {
+      userKey: 'user-123',
+      memberKey: 'member-123',
+      email: 'test@example.com',
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+      kurinKey: 'kurin-123',
+      requiresMfa: false,
+      tokens: { accessToken: 'token-123' },
+      ...overrides
+    };
+  }
+});

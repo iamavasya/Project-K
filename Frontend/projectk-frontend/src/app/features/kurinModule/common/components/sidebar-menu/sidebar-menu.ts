@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, inject, OnChanges, SimpleChanges, ChangeDetectionStrategy, model, input } from '@angular/core';
 import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
@@ -11,21 +11,25 @@ import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { environment } from '../../../../../../environments/environment';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { parseOfficeRole } from '../../functions/systemRole.function';
+import { getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
+import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadershipRoleDisplay.function';
 
 @Component({
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
-export class SidebarMenu implements OnChanges {
+export class SidebarMenuComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly permissionService = inject(PermissionService);
-  @Input() visible = false;
-  @Input() state$: Observable<AuthState | null> = of(null);
-  @Output() visibleChange: EventEmitter<boolean> = new EventEmitter<boolean>();
+  readonly visible = model(false);
+  readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
-  role$: Observable<string | null> = of(null);
+  roleTag$: Observable<{ label: string; severity: RoleSeverity }> = of(GENERIC_MEMBER_TAG);
 
   kurinKey: string | null = null;
 
@@ -48,14 +52,14 @@ export class SidebarMenu implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
-      this.items$ = combineLatest([this.state$, this.currentUrl$]).pipe(
+      this.items$ = combineLatest([this.state$(), this.currentUrl$]).pipe(
         map(([state, url]) => this.markCurrent(this.buildItems(state), url))
       );
-      this.email$ = this.state$.pipe(
+      this.email$ = this.state$().pipe(
         map(state => state?.email ?? null)
       );
-      this.role$ = this.state$.pipe(
-        map(state => state?.role ?? null)
+      this.roleTag$ = this.state$().pipe(
+        map(state => this.currentRoleTag(state))
       );
     }
   }
@@ -100,11 +104,9 @@ export class SidebarMenu implements OnChanges {
   private buildItems(state: AuthState | null): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
-    const role = state?.role ?? '';
-    const isAdmin = this.permissionService.isAdmin(role);
-    const canReviewSkills = this.permissionService.canReviewSkills(role);
-    const canManageMembers = this.permissionService.canManageMembers(role);
-    const canManageKurinSettings = this.permissionService.canManageKurinSettings(role);
+    const isAdmin = this.permissionService.isAdmin();
+    const canReviewSkills = this.permissionService.canReviewSkills();
+    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
     const disabled = !kurinKey;
 
     const items: MenuItem[] = [];
@@ -157,17 +159,15 @@ export class SidebarMenu implements OnChanges {
         }
       });
 
-      if (canManageMembers) {
-        items.push({
-          label: 'Планування',
-          icon: 'pi pi-clock',
-          routerLink: ['/planning', kurinKey],
-          command: () => {
-            this.close();
-            this.router.navigate(['/planning', kurinKey]);
-          }
-        });
-      }
+      items.push({
+        label: 'Планування',
+        icon: 'pi pi-clock',
+        routerLink: ['/planning', kurinKey],
+        command: () => {
+          this.close();
+          this.router.navigate(['/planning', kurinKey]);
+        }
+      });
 
       // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
       // сторінки, разом із іконками pi-sitemap і pi-address-book.
@@ -243,11 +243,51 @@ export class SidebarMenu implements OnChanges {
   }
 
   close() {
-    this.visible = false;
-    this.visibleChange.emit(this.visible);
+    this.visible.set(false);
   }
 
-  getSeverityOnRole(role: string | null): string {
-    return this.permissionService.getRoleSeverity(role);
+  /**
+   * What the viewer is called in the footer.
+   *
+   * The office comes first, so a Зв'язковий reads "Зв'язковий" rather than the tier "Провід
+   * куреня" — the tier is what the office grants, not what the person is called, and it lumps
+   * Зв'язковий together with Курінний. Colour follows the same rule the member list uses, so an
+   * office is not one colour here and another there. The tiers stay as the fallback for accounts
+   * that hold no office at all.
+   */
+  private currentRoleTag(state: AuthState | null): { label: string; severity: RoleSeverity } {
+    if (this.permissionService.isAdmin()) {
+      return { label: 'Адміністратор', severity: 'danger' };
+    }
+
+    const office = mostSeniorOffice(state?.roles ?? []);
+    if (office) {
+      return {
+        label: leadershipRoleDisplayName(office),
+        severity: leadershipRoleSeverityForRole(office)
+      };
+    }
+
+    if (this.permissionService.canManageWholeKurin()) {
+      return { label: 'Провід куреня', severity: 'warn' };
+    }
+    if (this.permissionService.canLeadGroups()) {
+      return { label: 'Гуртковий провід', severity: 'success' };
+    }
+    return GENERIC_MEMBER_TAG;
   }
+}
+
+const GENERIC_MEMBER_TAG: { label: string; severity: RoleSeverity } = { label: 'Учасник', severity: 'info' };
+
+/**
+ * The office to show when an account holds several. Ordered by the same weights the member list
+ * sorts by, so "most senior" means one thing across the app.
+ */
+function mostSeniorOffice(systemRoles: string[]): LeadershipRole | null {
+  return systemRoles
+    .map(parseOfficeRole)
+    .filter((office): office is NonNullable<ReturnType<typeof parseOfficeRole>> => office !== null)
+    .map(office => office.role)
+    .sort((left, right) => getLeadershipRoleSortWeight(left) - getLeadershipRoleSortWeight(right))[0] ?? null;
 }
