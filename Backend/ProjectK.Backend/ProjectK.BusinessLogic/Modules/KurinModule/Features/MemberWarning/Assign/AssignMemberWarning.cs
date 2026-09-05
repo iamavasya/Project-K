@@ -38,13 +38,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assi
                 [MemberWarningLevel.Level3] = 12
             };
 
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public AssignMemberWarningHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
             IDomainEventPublisher events,
             IMapper mapper)

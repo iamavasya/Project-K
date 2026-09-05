@@ -1,7 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -14,12 +15,14 @@ public sealed record GetAgendaResponses(Guid AgendaItemKey) : IRequest<ServiceRe
 public sealed class GetAgendaResponsesHandler : IRequestHandler<GetAgendaResponses, ServiceResult<AgendaResponsesResponse>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
 
-    public GetAgendaResponsesHandler(IUnitOfWork uow, IAgendaAccess access, ICurrentUserContext currentUser)
+    public GetAgendaResponsesHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _currentUser = currentUser;
     }
@@ -68,7 +71,7 @@ public sealed class GetAgendaResponsesHandler : IRequestHandler<GetAgendaRespons
 
     private async Task<IReadOnlyDictionary<Guid, string>> ResolveNamesAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
-        var members = await _uow.Members.GetAllByKurinKeyAsync(kurinKey, cancellationToken);
+        var members = await _members.GetByKurinAsync(kurinKey, cancellationToken);
         return members
             .Where(m => m.UserKey.HasValue && m.UserKey.Value != Guid.Empty)
             .GroupBy(m => m.UserKey!.Value)

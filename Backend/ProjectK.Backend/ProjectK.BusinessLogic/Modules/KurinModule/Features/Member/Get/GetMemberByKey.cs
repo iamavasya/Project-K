@@ -26,12 +26,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
 
     public class GetMemberByKeyHandler : IRequestHandler<GetMemberByKey, ServiceResult<MemberResponse>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IResourceScopeReader _scopeReader;
 
-        public GetMemberByKeyHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
+        public GetMemberByKeyHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;

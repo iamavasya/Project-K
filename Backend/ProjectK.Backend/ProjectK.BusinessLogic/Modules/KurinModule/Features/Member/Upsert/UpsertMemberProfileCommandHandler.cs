@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
@@ -15,16 +15,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
     public class UpsertMemberProfileCommandHandler
         : IRequestHandler<UpsertMemberProfileCommand, ServiceResult<MemberProfileWriteResult>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
+        // A member still stores where they are placed, so writing one means reading a гурток. When
+        // placement moves to Membership this dependency goes with it.
+        private readonly IUnitOfWork _kurinData;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
 
         public UpsertMemberProfileCommandHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
+            IUnitOfWork kurinData,
             IMapper mapper,
             ICurrentUserContext currentUserContext)
         {
             _unitOfWork = unitOfWork;
+            _kurinData = kurinData;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
         }
@@ -46,7 +51,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             GroupEntity? group = null;
             if (request.GroupKey.HasValue && request.GroupKey.Value != Guid.Empty)
             {
-                group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
+                group = await _kurinData.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
             }
 
             if (group == null && (!request.KurinKey.HasValue || request.KurinKey.Value == Guid.Empty))

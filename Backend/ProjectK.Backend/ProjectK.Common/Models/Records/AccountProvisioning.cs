@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Records;
+﻿namespace ProjectK.Common.Models.Records;
 
 /// <summary>
 /// The rules both onboarding paths share. The lifetime lives here rather than in either handler
@@ -24,16 +24,19 @@ public enum AccountAvailability
 }
 
 /// <summary>
-/// The account to issue. <paramref name="WaitlistEntryKey"/> is the entry the invitation hangs off —
-/// an existing one for an approved registration, or the one the caller just created for a member.
+/// The account to issue. <paramref name="WaitlistEntryKey"/> is the entry the invitation hangs off:
+/// an approved registration names the entry it came from, while a member being given an account has
+/// none — passing null opens one, already approved, on their behalf.
 /// </summary>
 public sealed record AccountProvisioningRequest(
     string Email,
     string FirstName,
     string LastName,
-    Guid WaitlistEntryKey,
+    Guid? WaitlistEntryKey,
     Guid? KurinKey,
-    bool IsBetaParticipant);
+    bool IsBetaParticipant,
+    string? PhoneNumber = null,
+    DateOnly? DateOfBirth = null);
 
 /// <summary>The account that was created and the invitation that lets its owner claim it.</summary>
 public sealed record AccountProvisioningResult(Guid UserKey, Guid InvitationKey, string InvitationToken);

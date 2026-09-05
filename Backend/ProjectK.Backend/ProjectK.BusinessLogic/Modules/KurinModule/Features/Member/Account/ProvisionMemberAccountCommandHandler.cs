@@ -1,5 +1,4 @@
-using MediatR;
-using ProjectK.Common.Entities.AuthModule;
+﻿using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -11,13 +10,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
     public class ProvisionMemberAccountCommandHandler
         : IRequestHandler<ProvisionMemberAccountCommand, ServiceResult<Guid>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IAccountProvisioningService _accountProvisioning;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
 
         public ProvisionMemberAccountCommandHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             IAccountProvisioningService accountProvisioning,
             IEmailService emailService,
             ICurrentUserContext currentUserContext)
@@ -49,35 +48,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
                 return new ServiceResult<Guid>(ResultType.Conflict);
             }
 
-            var now = DateTime.UtcNow;
-            var waitlistEntry = new WaitlistEntry
-            {
-                WaitlistEntryKey = Guid.NewGuid(),
-                FirstName = member.FirstName,
-                LastName = member.LastName,
-                Email = member.Email,
-                PhoneNumber = member.PhoneNumber,
-                DateOfBirth = member.DateOfBirth.ToDateTime(TimeOnly.MinValue),
-                IsKurinLeaderCandidate = false,
-                VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
-                IsBetaParticipant = true,
-                RequestedAtUtc = now,
-                ReviewedAtUtc = now,
-                ApprovedAtUtc = now,
-                ReviewedByUserKey = _currentUserContext.UserId,
-                InvitationSentAtUtc = now
-            };
-
-            _unitOfWork.WaitlistEntries.Create(waitlistEntry, cancellationToken);
-
             var provisioned = await _accountProvisioning.ProvisionAsync(
                 new AccountProvisioningRequest(
                     member.Email,
                     member.FirstName,
                     member.LastName,
-                    waitlistEntry.WaitlistEntryKey,
+                    WaitlistEntryKey: null,
                     member.KurinKey,
-                    IsBetaParticipant: true),
+                    IsBetaParticipant: true,
+                    member.PhoneNumber,
+                    member.DateOfBirth),
                 cancellationToken);
 
             if (provisioned.Type != ResultType.Success || provisioned.Data is null)

@@ -45,7 +45,6 @@ public class ActivateAccountHandlerTests
 
         _unitOfWork.SetupGet(x => x.Invitations).Returns(_invitations.Object);
         _unitOfWork.SetupGet(x => x.WaitlistEntries).Returns(_waitlistEntries.Object);
-        _unitOfWork.SetupGet(x => x.Members).Returns(_members.Object);
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _userManager.Setup(x => x.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()))

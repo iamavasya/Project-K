@@ -30,12 +30,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
 
     public class GetMembersHandler : IRequestHandler<GetMembers, ServiceResult<IEnumerable<MemberResponse>>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IResourceScopeReader _scopeReader;
 
-        public GetMembersHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
+        public GetMembersHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;

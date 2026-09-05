@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,7 +17,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class UpsertMemberProfileCommandHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IMemberUnitOfWork> _uowMock;
+        private readonly Mock<IUnitOfWork> _kurinDataMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IGroupRepository> _groupRepoMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -34,18 +35,20 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 cfg.AddProfile(new KurinModuleProfile());
             }, loggerFactory);
 
-            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock = new Mock<IMemberUnitOfWork>();
+            _kurinDataMock = new Mock<IUnitOfWork>();
             _memberRepoMock = new Mock<IMemberRepository>();
             _groupRepoMock = new Mock<IGroupRepository>();
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
 
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
+            _kurinDataMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
             _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             _handler = new UpsertMemberProfileCommandHandler(
                 _uowMock.Object,
+                _kurinDataMock.Object,
                 mapperConfig.CreateMapper(),
                 _currentUserContextMock.Object);
         }

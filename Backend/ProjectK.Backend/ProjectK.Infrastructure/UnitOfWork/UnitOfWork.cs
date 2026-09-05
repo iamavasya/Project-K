@@ -18,7 +18,7 @@ using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     {
         private readonly AppDbContext _context;
 

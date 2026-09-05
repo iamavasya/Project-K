@@ -14,7 +14,8 @@ namespace ProjectK.Common.Interfaces
     {
         IKurinRepository Kurins { get; }
         IGroupRepository Groups { get; }
-        IMemberRepository Members { get; }
+        // Members, MemberAwards and MemberWarnings are deliberately absent: it lives on IMemberUnitOfWork so that reaching a person
+        // from another module is a contract call (IMemberDirectory) rather than a property access.
         ILeadershipRepository Leaderships { get; }
         IPlanningSessionRepository PlanningSessions { get; }
         IAgendaItemRepository AgendaItems { get; }
@@ -24,8 +25,6 @@ namespace ProjectK.Common.Interfaces
         IProbeProgressRepository ProbeProgresses { get; }
         IProbePointProgressRepository ProbePointProgresses { get; }
         IMentorAssignmentRepository MentorAssignments { get; }
-        IMemberWarningRepository MemberWarnings { get; }
-        IMemberAwardRepository MemberAwards { get; }
         IWaitlistRepository WaitlistEntries { get; }
         IInvitationRepository Invitations { get; }
         IPublicAnnouncementRepository PublicAnnouncements { get; }

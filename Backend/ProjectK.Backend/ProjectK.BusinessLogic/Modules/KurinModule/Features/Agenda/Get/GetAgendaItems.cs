@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -17,13 +18,16 @@ public sealed class GetAgendaItemsHandler
     : IRequestHandler<GetAgendaItems, ServiceResult<IEnumerable<AgendaItemResponse>>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly UserManager<AppUser> _userManager;
     private readonly TimeProvider _timeProvider;
 
-    public GetAgendaItemsHandler(IUnitOfWork uow, IAgendaAccess access, UserManager<AppUser> userManager, TimeProvider timeProvider)
+    public GetAgendaItemsHandler(IUnitOfWork uow,
+        IMemberDirectory members, IAgendaAccess access, UserManager<AppUser> userManager, TimeProvider timeProvider)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _userManager = userManager;
         _timeProvider = timeProvider;
@@ -41,7 +45,7 @@ public sealed class GetAgendaItemsHandler
             kind: null,
             cancellationToken)).ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, request.KurinKey, cancellationToken);
+        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         // Recurring items are expanded into one row per occurrence inside the query window; one-offs pass

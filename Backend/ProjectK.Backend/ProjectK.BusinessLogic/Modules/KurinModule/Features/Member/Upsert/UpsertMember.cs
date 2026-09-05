@@ -46,7 +46,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
     public class UpsertMemberHandler : IRequestHandler<UpsertMember, ServiceResult<MemberResponse>>
     {
         private readonly IMediator _mediator;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IAccountProvisioningService _accountProvisioning;
         private readonly ICurrentUserContext _currentUserContext;
@@ -54,7 +54,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
         public UpsertMemberHandler(
             IMediator mediator,
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             IMapper mapper,
             IAccountProvisioningService accountProvisioning,
             ICurrentUserContext currentUserContext,

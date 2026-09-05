@@ -4,6 +4,8 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -17,6 +19,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment
 public class AssignMentorCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IGroupRepository> _groupRepoMock = new();
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
@@ -26,7 +29,6 @@ public class AssignMentorCommandHandlerTests
     public AssignMentorCommandHandlerTests()
     {
         _uowMock.SetupGet(x => x.Groups).Returns(_groupRepoMock.Object);
-        _uowMock.SetupGet(x => x.Members).Returns(_memberRepoMock.Object);
         _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
         _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }
@@ -47,10 +49,12 @@ public class AssignMentorCommandHandlerTests
         var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
 
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        _memberRepoMock.Setup(x => x.GetByUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
+        
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
-
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _roleSyncMock.Object, _cacheMock.Object);
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _roleSyncMock.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -68,11 +72,13 @@ public class AssignMentorCommandHandlerTests
         var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
 
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        _memberRepoMock.Setup(x => x.GetByUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
+        
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MentorAssignmentEntity { MentorAssignmentKey = Guid.NewGuid(), MentorUserKey = mentorUserKey, GroupKey = groupKey, AssignedAtUtc = DateTime.UtcNow });
-
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _roleSyncMock.Object, _cacheMock.Object);
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _roleSyncMock.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);

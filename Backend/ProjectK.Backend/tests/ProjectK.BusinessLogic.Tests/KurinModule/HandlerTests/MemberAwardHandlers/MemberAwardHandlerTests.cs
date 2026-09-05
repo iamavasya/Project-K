@@ -5,6 +5,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -27,7 +28,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandl
 
 public class MemberAwardHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberAwardRepository> _memberAwardRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -40,7 +42,7 @@ public class MemberAwardHandlerTests
 
     public MemberAwardHandlerTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _unitOfWorkMock = new Mock<IMemberUnitOfWork>();
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberAwardRepositoryMock = new Mock<IMemberAwardRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
@@ -59,7 +61,7 @@ public class MemberAwardHandlerTests
             _eventsMock.Object,
             _mapperMock.Object);
         _reviewHandler = new ReviewMemberAwardHandler(
-            _unitOfWorkMock.Object,
+            _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
             _mapperMock.Object);
@@ -258,8 +260,8 @@ public class MemberAwardHandlerTests
         _memberAwardRepositoryMock
             .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(award);
-        _memberRepositoryMock
-            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectory
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(memberUserKey);
         _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 

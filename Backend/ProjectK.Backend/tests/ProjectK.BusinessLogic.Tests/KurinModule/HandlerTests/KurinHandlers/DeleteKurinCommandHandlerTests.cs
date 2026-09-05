@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
@@ -15,6 +16,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
     public class DeleteKurinHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
         private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
         private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
@@ -33,7 +35,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
-            _unitOfWorkMock.Setup(uow => uow.Members).Returns(_memberRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Leaderships).Returns(_leadershipRepositoryMock.Object);
             _leadershipRepositoryMock
                 .Setup(r => r.DeleteForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -46,7 +47,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
-            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _memberDirectory.Object, _cacheMock.Object);
         }
 
         [Fact]

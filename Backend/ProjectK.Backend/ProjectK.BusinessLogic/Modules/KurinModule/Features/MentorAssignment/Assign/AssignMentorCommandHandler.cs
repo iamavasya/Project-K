@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -14,12 +15,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
     public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly ILeadershipRoleSyncService _roleSync;
         private readonly IBackendCache _cache;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, ILeadershipRoleSyncService roleSync, IBackendCache cache)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ILeadershipRoleSyncService roleSync, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _roleSync = roleSync;
             _cache = cache;
         }
@@ -32,7 +35,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
                 return ServiceResult<Guid>.Failure(ResultType.NotFound, "GroupNotFound", "Group not found.");
             }
 
-            var mentorMember = await _unitOfWork.Members.GetByUserKeyAsync(request.MentorUserKey, cancellationToken);
+            var mentorMember = await _members.FindByAccountAsync(request.MentorUserKey, cancellationToken);
             if (mentorMember == null)
             {
                 return ServiceResult<Guid>.Failure(ResultType.NotFound, "MentorNotFound", "Mentor member profile not found.");

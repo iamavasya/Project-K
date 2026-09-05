@@ -27,13 +27,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
 
     public sealed class UpsertMemberAwardHandler : IRequestHandler<UpsertMemberAward, ServiceResult<MemberAwardDto>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public UpsertMemberAwardHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
             IDomainEventPublisher events,
             IMapper mapper)

@@ -44,7 +44,7 @@ namespace ProjectK.Infrastructure.BackgroundServices
         private async Task ExpireWarningsAsync(CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IMemberUnitOfWork>();
 
             var now = DateTime.UtcNow;
 

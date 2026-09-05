@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.Common.Entities.AuthModule;
@@ -15,9 +15,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class ProvisionMemberAccountCommandHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberUnitOfWork> _uowMock = new();
         private readonly Mock<IMemberRepository> _memberRepoMock = new();
-        private readonly Mock<IWaitlistRepository> _waitlistRepoMock = new();
         private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
         private readonly Mock<IEmailService> _emailServiceMock = new();
         private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
@@ -26,7 +25,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         public ProvisionMemberAccountCommandHandlerTests()
         {
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.WaitlistEntries).Returns(_waitlistRepoMock.Object);
             _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
@@ -67,7 +65,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         }
 
         [Fact]
-        public async Task Handle_ShouldQueueAnApprovedWaitlistEntry_LinkTheAccount_AndSendTheInvitation()
+        public async Task Handle_ShouldLinkTheAccount_AndSendTheInvitation()
         {
             var member = GivenMember();
 
@@ -77,13 +75,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             result.Type.Should().Be(ResultType.Success);
             member.UserKey.Should().Be(result.Data);
-            _waitlistRepoMock.Verify(
-                r => r.Create(
-                    It.Is<WaitlistEntry>(e =>
-                        e.Email == member.Email
-                        && e.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation),
-                    It.IsAny<CancellationToken>()),
-                Times.Once);
             _accountProvisioningMock.Verify(
                 x => x.ProvisionAsync(
                     It.Is<AccountProvisioningRequest>(r => r.Email == member.Email && r.KurinKey == member.KurinKey),
@@ -122,9 +113,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Conflict);
-            _waitlistRepoMock.Verify(
-                r => r.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()),
-                Times.Never);
         }
 
         [Fact]

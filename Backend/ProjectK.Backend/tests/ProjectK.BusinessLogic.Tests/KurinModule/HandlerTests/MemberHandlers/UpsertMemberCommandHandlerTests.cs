@@ -29,7 +29,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     public class UpsertMemberHandlerTests
     {
         private readonly Mock<IMediator> _mediatorMock = new();
-        private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberUnitOfWork> _uowMock = new();
         private readonly Mock<IMemberRepository> _memberRepoMock = new();
         private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
         private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();

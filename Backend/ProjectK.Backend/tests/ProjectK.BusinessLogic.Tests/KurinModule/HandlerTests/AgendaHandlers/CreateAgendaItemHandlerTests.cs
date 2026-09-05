@@ -31,7 +31,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         public CreateAgendaItemHandlerTests()
         {
             _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-            _uow.Setup(u => u.Members).Returns(_memberRepo.Object);
             _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<MemberSummary>());
             _handler = new CreateAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);

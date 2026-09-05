@@ -43,9 +43,9 @@ public static class DependencyInjection
         // Domain events. The in-process delivery is the only thing a broker would replace.
         services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
 
+        services.AddMemberModule();
+
         // Kurin module
-        services.AddScoped<IMemberDirectory, MemberDirectory>();
-        services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<KurinReportDataService>();
 
@@ -66,6 +66,18 @@ public static class DependencyInjection
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// The member module registers itself. Everything a person is made of is behind this one call —
+    /// deleting the line takes the module out and breaks nothing else at compile time except the
+    /// contract other modules hold, which is the point.
+    /// </summary>
+    private static IServiceCollection AddMemberModule(this IServiceCollection services)
+    {
+        services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
         return services;
     }
 }

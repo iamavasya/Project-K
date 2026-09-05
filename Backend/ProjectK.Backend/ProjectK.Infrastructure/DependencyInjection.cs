@@ -34,7 +34,11 @@ public static class DependencyInjection
     {
         // Data access. Repositories are reached only through IUnitOfWork, which owns their lifetime
         // and shares the request DbContext, so they are deliberately not registered individually.
-        services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddScoped<UnitOfWork.UnitOfWork>();
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
+        // The member module's facade is the same instance, so its writes still commit with the rest
+        // of the request. What it buys is that no one else can reach the member table at all.
+        services.AddScoped<IMemberUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
 
         services.AddScoped<IJwtService, JwtService>();

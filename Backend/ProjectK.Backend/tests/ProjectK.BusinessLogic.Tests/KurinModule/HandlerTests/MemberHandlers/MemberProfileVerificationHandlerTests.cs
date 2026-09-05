@@ -24,7 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class MemberProfileVerificationHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IMemberUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -37,9 +37,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _mentorAssignmentRepoMock = new Mock<IMentorAssignmentRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock = new Mock<IMemberUnitOfWork>();
             _uowMock.SetupGet(x => x.Members).Returns(_memberRepoMock.Object);
-            _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
 
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _eventsMock = new Mock<IDomainEventPublisher>();

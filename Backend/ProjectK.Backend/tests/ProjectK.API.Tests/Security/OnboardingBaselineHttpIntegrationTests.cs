@@ -32,6 +32,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
@@ -209,7 +210,6 @@ public class OnboardingBaselineHttpIntegrationTests
                 .ReturnsAsync((Guid key, CancellationToken _) => new Group("Test", Guid.NewGuid()) { GroupKey = key });
 
             mockUnitOfWork.Setup(u => u.WaitlistEntries).Returns(mockWaitlistRepo.Object);
-            mockUnitOfWork.Setup(u => u.Members).Returns(mockMemberRepo.Object);
             mockUnitOfWork.Setup(u => u.Invitations).Returns(mockInvitationRepo.Object);
             mockUnitOfWork.Setup(u => u.Kurins).Returns(mockKurinRepo.Object);
             mockUnitOfWork.Setup(u => u.Groups).Returns(mockGroupRepo.Object);
@@ -221,11 +221,15 @@ public class OnboardingBaselineHttpIntegrationTests
             mockUserManager.Setup(m => m.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
             mockUserManager.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(new AppUser { Id = dummyInvitation.TargetUserKey.Value, Email = "test@example.com" });
             mockUserManager.Setup(m => m.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
+            var mockMemberUnitOfWork = new Mock<IMemberUnitOfWork>();
+            mockMemberUnitOfWork.Setup(u => u.Members).Returns(mockMemberRepo.Object);
+            builder.Services.AddSingleton(mockMemberUnitOfWork.Object);
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
+            builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
             builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();
 
             builder.Services.AddMediatR(cfg =>

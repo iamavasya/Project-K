@@ -1,9 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -17,12 +18,15 @@ public sealed class GetAgendaBoardHandler
     : IRequestHandler<GetAgendaBoard, ServiceResult<IEnumerable<AgendaItemResponse>>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly UserManager<AppUser> _userManager;
 
-    public GetAgendaBoardHandler(IUnitOfWork uow, IAgendaAccess access, UserManager<AppUser> userManager)
+    public GetAgendaBoardHandler(IUnitOfWork uow,
+        IMemberDirectory members, IAgendaAccess access, UserManager<AppUser> userManager)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _userManager = userManager;
     }
@@ -39,7 +43,7 @@ public sealed class GetAgendaBoardHandler
             kind: AgendaItemKind.Task,
             cancellationToken)).ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, request.KurinKey, cancellationToken);
+        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var responses = items

@@ -1,5 +1,6 @@
 ﻿using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
@@ -49,17 +50,20 @@ public sealed class AgendaAccess : IAgendaAccess
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
 
     public AgendaAccess(
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
+        IMemberDirectory members,
         IResourceScopeReader scopeReader,
         IResourceAccessService resourceAccess)
     {
         _currentUser = currentUser;
         _uow = uow;
+        _members = members;
         _scopeReader = scopeReader;
         _resourceAccess = resourceAccess;
     }
@@ -77,7 +81,7 @@ public sealed class AgendaAccess : IAgendaAccess
         Guid? ownGroupKey = null;
         if (userKey.HasValue)
         {
-            var member = await _uow.Members.GetByUserKeyAsync(userKey.Value, cancellationToken);
+            var member = await _members.FindByAccountAsync(userKey.Value, cancellationToken);
             if (member is not null && member.KurinKey == kurinKey)
             {
                 memberKey = member.MemberKey;

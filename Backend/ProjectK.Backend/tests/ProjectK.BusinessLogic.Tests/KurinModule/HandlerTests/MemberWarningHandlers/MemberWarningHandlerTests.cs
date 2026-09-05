@@ -17,7 +17,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHan
 
 public class MemberWarningHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -30,7 +30,7 @@ public class MemberWarningHandlerTests
 
     public MemberWarningHandlerTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _unitOfWorkMock = new Mock<IMemberUnitOfWork>();
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();

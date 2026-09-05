@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -11,10 +12,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
     public sealed class DeleteGroupHandler : IRequestHandler<DeleteGroup, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly IBackendCache _cache;
-        public DeleteGroupHandler(IUnitOfWork unitOfWork, IBackendCache cache)
+        public DeleteGroupHandler(IUnitOfWork unitOfWork,
+            IMemberDirectory members, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _cache = cache;
         }
         public async Task<ServiceResult<object>> Handle(DeleteGroup request, CancellationToken cancellationToken)
@@ -40,18 +44,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
             // assignments and the members' own history cascade on their own.
             var leadershipKeys = await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
 
-            var members = (await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken)).ToList();
+            var removedMemberKeys = await _members.RemoveForGroupAsync(request.GroupKey, cancellationToken);
 
             // Agenda assignments name their target by a bare key, so nothing in the database clears
             // them: the гурток, the offices and the members about to disappear are all valid targets.
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(
-                [request.GroupKey, .. leadershipKeys, .. members.Select(member => member.MemberKey)],
+                [request.GroupKey, .. leadershipKeys, .. removedMemberKeys],
                 cancellationToken);
-
-            foreach (var member in members)
-            {
-                _unitOfWork.Members.Delete(member, cancellationToken);
-            }
 
             _unitOfWork.Groups.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

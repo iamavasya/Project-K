@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
+﻿using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -50,6 +50,18 @@ public interface IMemberDirectory
     /// about the whole table; nothing else should need it.
     /// </summary>
     Task<IReadOnlyCollection<MemberSummary>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes everyone in a гурток and answers with who was removed, so the caller can clear what it
+    /// keeps keyed by them. Everything the member module itself owns is cleared here.
+    /// </summary>
+    Task<IReadOnlyCollection<Guid>> RemoveForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The same for a whole kurin, used when the kurin itself is being deleted.</summary>
+    Task<IReadOnlyCollection<Guid>> RemoveForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes one person and answers whether there was one to remove.</summary>
+    Task<bool> RemoveAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Makes sure an activated account has a member, and answers with its key: links the existing

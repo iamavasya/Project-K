@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
 using ProjectK.Common.Entities.KurinModule;
@@ -13,7 +13,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class SetMemberPhotoCommandHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberUnitOfWork> _uowMock = new();
         private readonly Mock<IMemberRepository> _memberRepoMock = new();
         private readonly Mock<IPhotoService> _photoServiceMock = new();
         private readonly SetMemberPhotoCommandHandler _handler;

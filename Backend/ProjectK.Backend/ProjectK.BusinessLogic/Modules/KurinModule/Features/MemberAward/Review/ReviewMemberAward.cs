@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -21,18 +22,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
 
     public sealed class ReviewMemberAwardHandler : IRequestHandler<ReviewMemberAward, ServiceResult<MemberAwardDto>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public ReviewMemberAwardHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
+            IMemberDirectory members,
             ICurrentUserContext currentUserContext,
             IDomainEventPublisher events,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _currentUserContext = currentUserContext;
             _events = events;
             _mapper = mapper;
@@ -70,7 +74,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
             bool isApproved,
             CancellationToken cancellationToken)
         {
-            var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(award.MemberKey, cancellationToken);
+            var ownerUserKey = await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken);
             if (ownerUserKey is null)
             {
                 return;

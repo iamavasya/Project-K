@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -9,10 +9,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo
     public class SetMemberPhotoCommandHandler
         : IRequestHandler<SetMemberPhotoCommand, ServiceResult<string?>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IPhotoService _photoService;
 
-        public SetMemberPhotoCommandHandler(IUnitOfWork unitOfWork, IPhotoService photoService)
+        public SetMemberPhotoCommandHandler(IMemberUnitOfWork unitOfWork, IPhotoService photoService)
         {
             _unitOfWork = unitOfWork;
             _photoService = photoService;

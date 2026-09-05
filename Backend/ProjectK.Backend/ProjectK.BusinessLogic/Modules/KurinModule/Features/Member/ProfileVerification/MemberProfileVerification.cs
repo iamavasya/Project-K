@@ -51,14 +51,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
 
     public sealed class MemberProfileVerificationService : IMemberProfileVerificationService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
         private readonly IResourceScopeReader _scopeReader;
 
         public MemberProfileVerificationService(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
             IDomainEventPublisher events,
             IMapper mapper,

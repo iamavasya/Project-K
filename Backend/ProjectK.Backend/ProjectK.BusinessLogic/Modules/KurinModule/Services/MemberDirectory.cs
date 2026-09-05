@@ -1,7 +1,8 @@
-using ProjectK.Common.Entities.KurinModule;
+﻿using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -9,11 +10,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// <inheritdoc />
 public sealed class MemberDirectory : IMemberDirectory
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberUnitOfWork _unitOfWork;
+    private readonly IDomainEventPublisher _events;
 
-    public MemberDirectory(IUnitOfWork unitOfWork)
+    public MemberDirectory(IMemberUnitOfWork unitOfWork, IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
+        _events = events;
     }
 
     public Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default)
@@ -104,4 +107,51 @@ public sealed class MemberDirectory : IMemberDirectory
         member.PhoneNumber = phoneNumber;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<IReadOnlyCollection<Guid>> RemoveForGroupAsync(
+        Guid groupKey,
+        CancellationToken cancellationToken = default)
+        => RemoveAllAsync(
+            _unitOfWork.Members.GetAllAsync(groupKey, cancellationToken),
+            cancellationToken);
+
+    public Task<IReadOnlyCollection<Guid>> RemoveForKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => RemoveAllAsync(
+            _unitOfWork.Members.GetTrackedForKurinDeletionAsync(kurinKey, cancellationToken),
+            cancellationToken);
+
+    public async Task<bool> RemoveAsync(Guid memberKey, CancellationToken cancellationToken = default)
+    {
+        var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
+        if (member is null)
+        {
+            return false;
+        }
+
+        _unitOfWork.Members.Delete(member, cancellationToken);
+        await AnnounceRemovalAsync([memberKey], cancellationToken);
+        return true;
+    }
+
+    private async Task<IReadOnlyCollection<Guid>> RemoveAllAsync(
+        Task<IEnumerable<Member>> loading,
+        CancellationToken cancellationToken)
+    {
+        var members = (await loading).ToList();
+        foreach (var member in members)
+        {
+            _unitOfWork.Members.Delete(member, cancellationToken);
+        }
+
+        var memberKeys = members.Select(member => member.MemberKey).ToArray();
+        await AnnounceRemovalAsync(memberKeys, cancellationToken);
+        return memberKeys;
+    }
+
+    private Task AnnounceRemovalAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken)
+        => memberKeys.Count == 0
+            ? Task.CompletedTask
+            : _events.PublishAsync(new MembersRemoved(memberKeys), cancellationToken);
 }

@@ -31,7 +31,7 @@ namespace ProjectK.Infrastructure.Seeding
             using var scope = services.CreateScope();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IMemberUnitOfWork>();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var roleSync = scope.ServiceProvider.GetRequiredService<ILeadershipRoleSyncService>();
 

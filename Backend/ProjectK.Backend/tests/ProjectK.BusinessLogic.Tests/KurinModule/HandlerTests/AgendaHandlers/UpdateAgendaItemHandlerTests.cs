@@ -33,7 +33,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         public UpdateAgendaItemHandlerTests()
         {
             _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-            _uow.Setup(u => u.Members).Returns(_memberRepo.Object);
             _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<MemberSummary>());
             _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
