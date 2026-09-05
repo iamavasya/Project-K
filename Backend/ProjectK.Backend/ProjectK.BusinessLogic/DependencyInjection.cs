@@ -26,6 +26,7 @@ public static class DependencyInjection
     {
         // Auth and access control
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+        services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ILeadershipRoleSyncService, LeadershipRoleSyncService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();

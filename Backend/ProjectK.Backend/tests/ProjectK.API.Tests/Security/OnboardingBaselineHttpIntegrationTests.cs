@@ -29,6 +29,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
@@ -221,6 +222,8 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
+            builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
 
             builder.Services.AddMediatR(cfg =>
             {

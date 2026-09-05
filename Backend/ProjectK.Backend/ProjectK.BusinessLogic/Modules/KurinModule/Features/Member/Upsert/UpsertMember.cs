@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using AutoMapper;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -45,7 +45,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IPhotoService _photoService;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly IAccountProvisioningService _accountProvisioning;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly INotificationService _notificationService;
@@ -54,7 +54,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IPhotoService photoService,
-            UserManager<AppUser> userManager,
+            IAccountProvisioningService accountProvisioning,
             IEmailService emailService,
             ICurrentUserContext currentUserContext,
             INotificationService notificationService)
@@ -62,7 +62,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _photoService = photoService;
-            _userManager = userManager;
+            _accountProvisioning = accountProvisioning;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
             _notificationService = notificationService;
@@ -113,14 +113,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                     return new ServiceResult<MemberResponse>(ResultType.Conflict);
                 }
 
-                var userByEmail = await _userManager.FindByEmailAsync(request.Email);
-                if (userByEmail != null)
-                {
-                    return new ServiceResult<MemberResponse>(ResultType.Conflict);
-                }
-
-                var waitlistByEmail = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
-                if (waitlistByEmail != null)
+                var availability = await _accountProvisioning.CheckAvailabilityAsync(request.Email, cancellationToken);
+                if (availability != AccountAvailability.Available)
                 {
                     return new ServiceResult<MemberResponse>(ResultType.Conflict);
                 }
@@ -247,26 +241,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private async Task<string> ProvisionUserAccountAndInvitationAsync(MemberEntity member, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            var user = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = member.Email,
-                Email = member.Email,
-                FirstName = member.FirstName,
-                LastName = member.LastName,
-                KurinKey = member.KurinKey,
-                OnboardingStatus = OnboardingStatus.PendingActivation,
-                IsBetaParticipant = true
-            };
-
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-            {
-                throw new InvalidOperationException("Failed to create user account for member.");
-            }
-
-            member.UserKey = user.Id;
-            _unitOfWork.Members.Update(member, cancellationToken);
 
             var waitlistEntry = new WaitlistEntry
             {
@@ -286,17 +260,26 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 InvitationSentAtUtc = now
             };
 
-            var invitation = new Invitation
-            {
-                InvitationKey = Guid.NewGuid(),
-                Token = Guid.NewGuid().ToString("N"),
-                WaitlistEntryKey = waitlistEntry.WaitlistEntryKey,
-                TargetUserKey = user.Id,
-                ExpiresAtUtc = now.AddDays(7)
-            };
-
             _unitOfWork.WaitlistEntries.Create(waitlistEntry, cancellationToken);
-            _unitOfWork.Invitations.Create(invitation, cancellationToken);
+
+            var provisioned = await _accountProvisioning.ProvisionAsync(
+                new AccountProvisioningRequest(
+                    member.Email,
+                    member.FirstName,
+                    member.LastName,
+                    waitlistEntry.WaitlistEntryKey,
+                    member.KurinKey,
+                    IsBetaParticipant: true),
+                cancellationToken);
+
+            if (provisioned.Type != ResultType.Success || provisioned.Data is null)
+            {
+                throw new InvalidOperationException(
+                    provisioned.ErrorMessage ?? "Failed to create user account for member.");
+            }
+
+            member.UserKey = provisioned.Data.UserKey;
+            _unitOfWork.Members.Update(member, cancellationToken);
 
             var accountChanges = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (accountChanges <= 0)
@@ -304,7 +287,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 throw new InvalidOperationException("Failed to persist invitation for member account.");
             }
 
-            return invitation.Token;
+            return provisioned.Data.InvitationToken;
         }
 
         private static void UpdatePlastLevelHistory(

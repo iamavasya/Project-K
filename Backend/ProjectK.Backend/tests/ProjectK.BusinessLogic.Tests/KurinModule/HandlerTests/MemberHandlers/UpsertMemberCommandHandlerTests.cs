@@ -32,7 +32,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<IWaitlistRepository> _waitlistRepoMock;
         private readonly Mock<IInvitationRepository> _invitationRepoMock;
         private readonly Mock<IPhotoService> _photoServiceMock;
-        private readonly Mock<UserManager<AppUser>> _userManagerMock;
+        private readonly Mock<IAccountProvisioningService> _accountProvisioningMock;
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly Mock<INotificationService> _notificationServiceMock;
@@ -67,20 +67,15 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
             _notificationServiceMock = new Mock<INotificationService>();
 
-            var userStoreMock = new Mock<IUserStore<AppUser>>();
-            _userManagerMock = new Mock<UserManager<AppUser>>(
-                userStoreMock.Object,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!);
-
-            _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((AppUser?)null);
-            _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<AppUser>())).ReturnsAsync(IdentityResult.Success);
+            _accountProvisioningMock = new Mock<IAccountProvisioningService>();
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.Available);
+            _accountProvisioningMock
+                .Setup(x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<AccountProvisioningResult>(
+                    ResultType.Success,
+                    new AccountProvisioningResult(Guid.NewGuid(), Guid.NewGuid(), "invitation-token")));
 
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
             _uowMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
@@ -92,7 +87,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 _uowMock.Object,
                 _mapper,
                 _photoServiceMock.Object,
-                _userManagerMock.Object,
+                _accountProvisioningMock.Object,
                 _emailServiceMock.Object,
                 _currentUserContextMock.Object,
                 _notificationServiceMock.Object);
@@ -200,9 +195,12 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var result = await _handler.Handle(cmd, CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Created);
-            _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>()), Times.Once);
+            _accountProvisioningMock.Verify(
+                x => x.ProvisionAsync(
+                    It.Is<AccountProvisioningRequest>(r => r.Email == cmd.Email && r.KurinKey == kurinKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
             _waitlistRepoMock.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Once);
-            _invitationRepoMock.Verify(x => x.Create(It.IsAny<Invitation>(), It.IsAny<CancellationToken>()), Times.Once);
             _emailServiceMock.Verify(x => x.SendInvitationEmailAsync(cmd.Email, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             _uowMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
@@ -222,8 +220,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Member)null!);
-            _userManagerMock.Setup(x => x.FindByEmailAsync(cmd.Email))
-                .ReturnsAsync(new AppUser { Id = Guid.NewGuid(), Email = cmd.Email, UserName = cmd.Email, FirstName = "X", LastName = "Y" });
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(cmd.Email, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.EmailTaken);
 
             var result = await _handler.Handle(cmd, CancellationToken.None);
 
