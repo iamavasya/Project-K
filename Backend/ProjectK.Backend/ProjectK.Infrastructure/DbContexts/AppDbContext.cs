@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<Kurin> Kurins { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<Member> Members { get; set; }
+        public DbSet<Membership> Memberships { get; set; }
         public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
         public DbSet<Leadership> Leaderships { get; set; }
         public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -52,6 +54,24 @@ namespace ProjectK.Infrastructure.DbContexts
         {
         }
 
+        /// <summary>
+        /// Stamps a new member's public code before it is written. It sits here rather than in a use
+        /// case because a member is also opened by the seeders and by account activation, and a person
+        /// without a code cannot be found by the one thing another kurin can ask for.
+        /// </summary>
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            foreach (var entry in ChangeTracker.Entries<Member>())
+            {
+                if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
+                {
+                    entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -59,6 +79,7 @@ namespace ProjectK.Infrastructure.DbContexts
             // Kurin module entity configuration
             builder.Entity<Kurin>(entity =>
             {
+                entity.Property(e => e.Branch).HasConversion<int>();
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
                 entity.Property(e => e.Stanytsia)
@@ -87,6 +108,11 @@ namespace ProjectK.Infrastructure.DbContexts
             builder.Entity<Member>(entity =>
             {
                 entity.HasKey(e => e.MemberKey);
+                entity.Property(e => e.PublicId)
+                      .HasMaxLength(20)
+                      .IsRequired();
+                entity.HasIndex(e => e.PublicId)
+                      .IsUnique();
                 entity.HasOne(entity => entity.Group)
                       .WithMany(g => g.Members)
                       .HasForeignKey(e => e.GroupKey)
@@ -99,6 +125,32 @@ namespace ProjectK.Infrastructure.DbContexts
                       .WithOne()
                       .HasForeignKey<Member>(e => e.UserKey)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<Membership>(entity =>
+            {
+                entity.HasKey(e => e.MembershipKey);
+                entity.Property(e => e.Kind).HasConversion<int>();
+                entity.HasOne(e => e.Kurin)
+                      .WithMany(k => k.Memberships)
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(e => e.Group)
+                      .WithMany()
+                      .HasForeignKey(e => e.GroupKey)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                // The reads this table exists for: everyone in a kurin, every kurin of one person,
+                // and the scope of the account making a request.
+                entity.HasIndex(e => new { e.KurinKey, e.LeftAtUtc });
+                entity.HasIndex(e => new { e.MemberKey, e.LeftAtUtc });
+                entity.HasIndex(e => new { e.UserKey, e.LeftAtUtc });
+
+                // A person belongs to a kurin once at a time. Past memberships are excluded, so
+                // rejoining after leaving is allowed and being in it twice at once is not.
+                entity.HasIndex(e => new { e.MemberKey, e.KurinKey })
+                      .IsUnique()
+                      .HasFilter("[LeftAtUtc] IS NULL");
             });
 
             builder.Entity<MemberWarning>(entity =>

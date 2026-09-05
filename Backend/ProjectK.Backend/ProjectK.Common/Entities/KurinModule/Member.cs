@@ -14,6 +14,12 @@ namespace ProjectK.Common.Entities.KurinModule
     public class Member : Entity
     {
         public Guid MemberKey { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// The code this person shares so another kurin can find them. Derived from
+        /// <see cref="MemberKey"/> — see <c>MemberPublicId</c>.
+        /// </summary>
+        public string PublicId { get; set; } = string.Empty;
         public Guid? GroupKey { get; set; }
         public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }
