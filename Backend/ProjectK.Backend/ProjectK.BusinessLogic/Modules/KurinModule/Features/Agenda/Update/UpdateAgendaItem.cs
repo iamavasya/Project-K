@@ -2,6 +2,8 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -32,20 +34,23 @@ public sealed record UpdateAgendaItem : IRequest<ServiceResult<object>>
 public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, ServiceResult<object>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly INotificationService _notifications;
+    private readonly IDomainEventPublisher _events;
 
     public UpdateAgendaItemHandler(
         IUnitOfWork uow,
+        IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        INotificationService notifications)
+        IDomainEventPublisher events)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _currentUser = currentUser;
-        _notifications = notifications;
+        _events = events;
     }
 
     public async Task<ServiceResult<object>> Handle(UpdateAgendaItem request, CancellationToken cancellationToken)
@@ -130,33 +135,23 @@ public sealed class UpdateAgendaItemHandler : IRequestHandler<UpdateAgendaItem, 
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await NotifyUpdatedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
+        await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
 
         return new ServiceResult<object>(ResultType.Success);
     }
 
-    private async Task NotifyUpdatedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
+    private async Task PublishChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, item, actorUserKey, cancellationToken);
-        if (recipients.Count == 0)
-        {
-            return;
-        }
+        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
 
-        var requests = recipients.Select(userKey => new NotificationRequest
-        {
-            RecipientUserKey = userKey,
-            Type = AppNotificationType.AgendaItemUpdated,
-            Severity = AppNotificationSeverity.Info,
-            Title = "Оновлено призначення",
-            Body = item.Title,
-            EntityType = "AgendaItem",
-            EntityKey = item.AgendaItemKey,
-            Route = AgendaRoutes.For(item),
-            ActorUserKey = actorUserKey,
-            DeduplicationKey = $"agenda-updated:{item.AgendaItemKey}:{userKey}"
-        });
-
-        await _notifications.NotifyManyAsync(requests, cancellationToken);
+        await _events.PublishAsync(
+            new AgendaItemChanged(
+                item.AgendaItemKey,
+                item.KurinKey,
+                item.Kind,
+                item.Title,
+                recipients,
+                actorUserKey),
+            cancellationToken);
     }
 }

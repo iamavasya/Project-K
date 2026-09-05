@@ -2,6 +2,8 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -32,20 +34,23 @@ public sealed record CreateAgendaItem : IRequest<ServiceResult<Guid>>
 public sealed class CreateAgendaItemHandler : IRequestHandler<CreateAgendaItem, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly INotificationService _notifications;
+    private readonly IDomainEventPublisher _events;
 
     public CreateAgendaItemHandler(
         IUnitOfWork uow,
+        IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        INotificationService notifications)
+        IDomainEventPublisher events)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _currentUser = currentUser;
-        _notifications = notifications;
+        _events = events;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreateAgendaItem request, CancellationToken cancellationToken)
@@ -92,34 +97,23 @@ public sealed class CreateAgendaItemHandler : IRequestHandler<CreateAgendaItem, 
         _uow.AgendaItems.Create(item, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await NotifyAssignedAsync(item, actorUserKey.Value, cancellationToken);
+        await PublishAssignedAsync(item, actorUserKey.Value, cancellationToken);
 
         return new ServiceResult<Guid>(ResultType.Created, item.AgendaItemKey);
     }
 
-    private async Task NotifyAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
+    private async Task PublishAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, item, actorUserKey, cancellationToken);
-        if (recipients.Count == 0)
-        {
-            return;
-        }
+        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
 
-        var kindWord = item.Kind == AgendaItemKind.Task ? "Задачу" : "Подію";
-        var requests = recipients.Select(userKey => new NotificationRequest
-        {
-            RecipientUserKey = userKey,
-            Type = AppNotificationType.AgendaItemAssigned,
-            Severity = AppNotificationSeverity.Info,
-            Title = $"{kindWord} призначено вам",
-            Body = item.Title,
-            EntityType = "AgendaItem",
-            EntityKey = item.AgendaItemKey,
-            Route = AgendaRoutes.For(item),
-            ActorUserKey = actorUserKey,
-            DeduplicationKey = $"agenda-assigned:{item.AgendaItemKey}:{userKey}"
-        });
-
-        await _notifications.NotifyManyAsync(requests, cancellationToken);
+        await _events.PublishAsync(
+            new AgendaItemAssigned(
+                item.AgendaItemKey,
+                item.KurinKey,
+                item.Kind,
+                item.Title,
+                recipients,
+                actorUserKey),
+            cancellationToken);
     }
 }

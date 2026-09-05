@@ -71,4 +71,16 @@ public class MemberBoundaryRules
             AuthorizationStillKnowsAboutMember,
             "who may act is decided from Membership and offices, never from the person's own record");
     }
+
+    [Fact]
+    public void Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox()
+    {
+        var rule = Types()
+            .That().ResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.(KurinModule|ProbesAndBadgesModule)(\..*)?")
+            .Should().NotDependOnAny(typeof(INotificationService));
+
+        ProjectKArchitecture.Violations(rule).Should().BeEmpty(
+            "a module states that something happened and lets whoever cares react; "
+            + "writing the inbox entry itself is what made the wording travel with the domain");
+    }
 }
