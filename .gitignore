@@ -176,8 +176,10 @@ DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
 
-# Click-Once directory
-publish/
+# Click-Once directory, and the folder `dotnet publish -o ./publish` writes in CI.
+# Anchored: unanchored, it also swallowed a feature folder named Publish/ (Windows ignores case),
+# so a whole vertical slice was never committed and only this machine could build the solution.
+/publish/
 
 # Publish Web Output
 *.[Pp]ublish.xml
