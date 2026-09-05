@@ -57,7 +57,10 @@ jobs:
       env: 
         NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
       
+    # `shell: bash` for the pipefail it brings: without it `| tee` reports the exit code of tee, and
+    # a build that failed to compile was reported as a green step for weeks.
     - name: Build
+      shell: bash
       run: dotnet build Backend/ProjectK.Backend --configuration Release --no-restore 2>&1 | tee build.log
 
     # Advisory only. The analyzer backlog is tracked in docs/quality-baseline.md and driven down
@@ -86,17 +89,10 @@ jobs:
             | awk '{printf "| %s | %s |\n", $2, $1}'
         } >> "$GITHUB_STEP_SUMMARY"
 
-    # One project at a time. Handing the whole solution to `dotnet test` starts a VSTest task per
-    # test project on separate MSBuild nodes, and when two start together one of them rejects its own
-    # assembly ("The argument ...dll is invalid") and the run fails without a failing test. Serialised
-    # like this the race cannot happen, and a failure names the project it came from.
     - name: Test
-      shell: bash
-      run: |
-        for project in Backend/ProjectK.Backend/tests/*.Tests/*.csproj; do
-          dotnet test "$project" --configuration Release --no-build --verbosity normal \
-            --collect:"XPlat Code Coverage" --results-directory TestResults
-        done
+      run: >-
+        dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal
+        --collect:"XPlat Code Coverage" --results-directory TestResults
 
     - name: Upload coverage
       if: always()
