@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -12,12 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get
     public class GetAccountSettingsQueryHandler : IRequestHandler<GetAccountSettingsQuery, ServiceResult<AccountSettingsDto>>
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
 
-        public GetAccountSettingsQueryHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork)
+        public GetAccountSettingsQueryHandler(UserManager<AppUser> userManager, IMemberDirectory members)
         {
             _userManager = userManager;
-            _unitOfWork = unitOfWork;
+            _members = members;
         }
 
         public async Task<ServiceResult<AccountSettingsDto>> Handle(GetAccountSettingsQuery request, CancellationToken cancellationToken)
@@ -29,7 +30,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get
             }
 
             var roles = await _userManager.GetRolesAsync(user);
-            var member = await _unitOfWork.Members.GetByUserKeyAsync(user.Id, cancellationToken);
+            var member = await _members.FindByAccountAsync(user.Id, cancellationToken);
 
             var dto = new AccountSettingsDto(
                 user.Id,

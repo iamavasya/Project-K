@@ -22,37 +22,18 @@ public class MemberBoundaryRules
 {
     /// <summary>
     /// Everyone outside the member's own module who still reads member data directly. Emptied by
-    /// MM-03 (contracts replace the calls) and MM-06 (<c>Members</c> leaves <c>IUnitOfWork</c>).
+    /// MM-03: every one of them now asks <c>IMemberDirectory</c>. It stays empty — MM-06 removes the
+    /// last way back in by taking <c>Members</c> off <c>IUnitOfWork</c>.
     /// </summary>
-    private static readonly string[] ReachesMemberDataDirectly =
-    [
-        "ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport.GetMigrationPreflightReportHandler",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount.ActivateAccountHandler",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration.SubmitWaitlistRegistrationHandler",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.LeadershipRoleSyncService",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.LoginResponseFactory",
-        "ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications.ReviewNotificationRecipientResolver",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get.GetBadgeProgressesHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get.GetBadgeReviewQueueHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review.ReviewBadgeProgressHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit.SubmitBadgeProgressHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get.GetProbeProgressHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature.UpdateProbePointSignatureHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus.UpdateProbeProgressStatusHandler",
-        "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models.BadgeProgressResponse",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange.ConfirmAccountEmailChangeCommandHandler",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get.GetAccountSettingsQueryHandler",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile.UpdateAccountProfileCommandHandler",
-    ];
+    private static readonly string[] ReachesMemberDataDirectly = [];
 
     /// <summary>
-    /// The authorization types that still decide from the member record. Emptied by stage D, when the
-    /// scope comes from <c>Membership</c> and the offices hang off it.
+    /// What is left of authorization reading the member record: the scope reader, which still asks the
+    /// member row which kurin and гурток it belongs to. Emptied by MM-11, when the scope comes from
+    /// <c>Membership</c> instead.
     /// </summary>
     private static readonly string[] AuthorizationStillKnowsAboutMember =
     [
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.LeadershipRoleSyncService",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.LoginResponseFactory",
         "ProjectK.Infrastructure.Repositories.InfrastructureModule.ResourceScopeReader",
     ];
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
@@ -18,19 +19,19 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IRefreshTokenStore _refreshTokens;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly IMediator _mediator;
         private readonly IActivityLogger _activityLogger;
 
         public ConfirmAccountEmailChangeCommandHandler(
             UserManager<AppUser> userManager,
-            IUnitOfWork unitOfWork,
+            IMemberDirectory members,
             IMediator mediator,
             IActivityLogger activityLogger,
             IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
-            _unitOfWork = unitOfWork;
+            _members = members;
             _mediator = mediator;
             _activityLogger = activityLogger;
             _refreshTokens = refreshTokens;
@@ -80,12 +81,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
                 newEmail: email,
                 reason: "Email change confirmed.");
 
-            var member = await _unitOfWork.Members.GetTrackedByUserKeyAsync(user.Id, cancellationToken);
-            if (member != null)
-            {
-                member.Email = email;
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
+            await _members.SetEmailFromAccountAsync(user.Id, email, cancellationToken);
 
             return await _mediator.Send(new GetAccountSettingsQuery(user.Id), cancellationToken);
         }

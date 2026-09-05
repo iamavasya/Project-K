@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -21,10 +22,12 @@ public sealed class GetProbeProgress : IRequest<ServiceResult<ProbeProgressRespo
 public sealed class GetProbeProgressHandler : IRequestHandler<GetProbeProgress, ServiceResult<ProbeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
 
-    public GetProbeProgressHandler(IUnitOfWork unitOfWork)
+    public GetProbeProgressHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
     }
 
     public async Task<ServiceResult<ProbeProgressResponse>> Handle(GetProbeProgress request, CancellationToken cancellationToken)
@@ -34,7 +37,7 @@ public sealed class GetProbeProgressHandler : IRequestHandler<GetProbeProgress, 
             return new ServiceResult<ProbeProgressResponse>(ResultType.BadRequest);
         }
 
-        var memberKurinKey = await _unitOfWork.Members.GetKurinKeyByMemberAsync(request.MemberKey, cancellationToken);
+        var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
             return new ServiceResult<ProbeProgressResponse>(ResultType.NotFound);

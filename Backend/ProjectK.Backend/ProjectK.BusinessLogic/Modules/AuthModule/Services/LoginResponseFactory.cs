@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
@@ -19,18 +20,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly IRefreshTokenStore _refreshTokens;
 
         public LoginResponseFactory(
             UserManager<AppUser> userManager,
             IJwtService jwtService,
-            IUnitOfWork unitOfWork,
+            IMemberDirectory members,
             IRefreshTokenStore refreshTokens)
         {
             _userManager = userManager;
             _jwtService = jwtService;
-            _unitOfWork = unitOfWork;
+            _members = members;
             _refreshTokens = refreshTokens;
         }
 
@@ -49,7 +50,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
             // sign the same person out somewhere else.
             await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
 
-            var member = await _unitOfWork.Members.GetByUserKeyAsync(user.Id, cancellationToken);
+            var member = await _members.FindByAccountAsync(user.Id, cancellationToken);
 
             return new LoginUserResponse
             {

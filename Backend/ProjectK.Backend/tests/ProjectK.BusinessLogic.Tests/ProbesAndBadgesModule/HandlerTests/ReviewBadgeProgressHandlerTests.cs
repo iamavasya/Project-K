@@ -5,6 +5,8 @@ using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -15,7 +17,7 @@ namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 public class ReviewBadgeProgressHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IMemberRepository> _memberRepositoryMock;
+    private readonly Mock<IMemberDirectory> _memberDirectoryMock;
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<INotificationService> _notificationServiceMock;
@@ -24,12 +26,10 @@ public class ReviewBadgeProgressHandlerTests
     public ReviewBadgeProgressHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _memberRepositoryMock = new Mock<IMemberRepository>();
+        _memberDirectoryMock = new Mock<IMemberDirectory>();
         _badgeProgressRepositoryMock = new Mock<IBadgeProgressRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _notificationServiceMock = new Mock<INotificationService>();
-
-        _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -41,6 +41,7 @@ public class ReviewBadgeProgressHandlerTests
 
         _handler = new ReviewBadgeProgressHandler(
             _unitOfWorkMock.Object,
+            _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
             _notificationServiceMock.Object);
     }
@@ -88,8 +89,8 @@ public class ReviewBadgeProgressHandlerTests
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
-        _memberRepositoryMock
-            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ownerUserKey);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
@@ -156,8 +157,8 @@ public class ReviewBadgeProgressHandlerTests
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
-        _memberRepositoryMock
-            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ownerUserKey);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "remove");
@@ -189,8 +190,8 @@ public class ReviewBadgeProgressHandlerTests
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
-        _memberRepositoryMock
-            .Setup(x => x.GetUserKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid?)null);
 
         var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "reject");

@@ -12,6 +12,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement;
 
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
         // Kurin module
+        services.AddScoped<IMemberDirectory, MemberDirectory>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<KurinReportDataService>();

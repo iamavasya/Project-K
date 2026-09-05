@@ -1,9 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -29,15 +30,18 @@ public sealed class UpdateProbeProgressStatus : IRequest<ServiceResult<ProbeProg
 public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdateProbeProgressStatus, ServiceResult<ProbeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IProbesCatalogService _probesCatalogService;
 
     public UpdateProbeProgressStatusHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IProbesCatalogService probesCatalogService)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
         _probesCatalogService = probesCatalogService;
     }
@@ -49,7 +53,7 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             return new ServiceResult<ProbeProgressResponse>(ResultType.BadRequest);
         }
 
-        var memberKurinKey = await _unitOfWork.Members.GetKurinKeyByMemberAsync(request.MemberKey, cancellationToken);
+        var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
             return new ServiceResult<ProbeProgressResponse>(ResultType.NotFound);
@@ -194,7 +198,7 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             return null;
         }
 
-        var actorMember = await _unitOfWork.Members.GetByUserKeyAsync(actorUserKey.Value, cancellationToken);
+        var actorMember = await _members.FindByAccountAsync(actorUserKey.Value, cancellationToken);
         if (actorMember is not null)
         {
             var fullName = $"{actorMember.FirstName} {actorMember.LastName}".Trim();

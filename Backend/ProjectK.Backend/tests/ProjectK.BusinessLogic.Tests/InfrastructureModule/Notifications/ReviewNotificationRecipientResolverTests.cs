@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -17,10 +18,10 @@ public class ReviewNotificationRecipientResolverTests
     public async Task ResolveAsync_ShouldReturnDistinctManagersAndActiveGroupMentorsExceptActor()
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var memberRepositoryMock = new Mock<IMemberRepository>();
+        var memberDirectoryMock = new Mock<IMemberDirectory>();
         var leadershipRepositoryMock = new Mock<ILeadershipRepository>();
         var mentorAssignmentRepositoryMock = new Mock<IMentorAssignmentRepository>();
-        var resolver = new ReviewNotificationRecipientResolver(unitOfWorkMock.Object);
+        var resolver = new ReviewNotificationRecipientResolver(unitOfWorkMock.Object, memberDirectoryMock.Object);
 
         var kurinKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
@@ -33,13 +34,12 @@ public class ReviewNotificationRecipientResolverTests
         var actorMemberKey = Guid.NewGuid();
         var mentorMemberKey = Guid.NewGuid();
 
-        unitOfWorkMock.SetupGet(x => x.Members).Returns(memberRepositoryMock.Object);
         unitOfWorkMock.SetupGet(x => x.Leaderships).Returns(leadershipRepositoryMock.Object);
         unitOfWorkMock.SetupGet(x => x.MentorAssignments).Returns(mentorAssignmentRepositoryMock.Object);
 
-        memberRepositoryMock
-            .Setup(x => x.GetMentorCandidatesLookupAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
+        memberDirectoryMock
+            .Setup(x => x.GetLookupByKurinAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberLookupDto[]
             {
                 new MemberLookupDto { MemberKey = managerMemberKey, UserKey = managerUserKey },
                 new MemberLookupDto { MemberKey = actorMemberKey, UserKey = actorUserKey },
@@ -79,20 +79,19 @@ public class ReviewNotificationRecipientResolverTests
     public async Task ResolveAsync_ShouldReturnKurinManagers_WhenGroupIsNotSpecified()
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var memberRepositoryMock = new Mock<IMemberRepository>();
+        var memberDirectoryMock = new Mock<IMemberDirectory>();
         var leadershipRepositoryMock = new Mock<ILeadershipRepository>();
-        var resolver = new ReviewNotificationRecipientResolver(unitOfWorkMock.Object);
+        var resolver = new ReviewNotificationRecipientResolver(unitOfWorkMock.Object, memberDirectoryMock.Object);
 
         var kurinKey = Guid.NewGuid();
         var managerUserKey = Guid.NewGuid();
         var managerMemberKey = Guid.NewGuid();
 
-        unitOfWorkMock.SetupGet(x => x.Members).Returns(memberRepositoryMock.Object);
         unitOfWorkMock.SetupGet(x => x.Leaderships).Returns(leadershipRepositoryMock.Object);
 
-        memberRepositoryMock
-            .Setup(x => x.GetMentorCandidatesLookupAsync(kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
+        memberDirectoryMock
+            .Setup(x => x.GetLookupByKurinAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberLookupDto[]
             {
                 new MemberLookupDto { MemberKey = managerMemberKey, UserKey = managerUserKey }
             });

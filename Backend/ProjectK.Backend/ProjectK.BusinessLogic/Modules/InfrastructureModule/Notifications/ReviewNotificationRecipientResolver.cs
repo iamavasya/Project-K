@@ -1,4 +1,5 @@
-using ProjectK.Common.Interfaces;
+﻿using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -22,10 +23,12 @@ public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRec
         .ToArray();
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
 
-    public ReviewNotificationRecipientResolver(IUnitOfWork unitOfWork)
+    public ReviewNotificationRecipientResolver(IUnitOfWork unitOfWork, IMemberDirectory members)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
     }
 
     public async Task<IReadOnlyCollection<Guid>> ResolveAsync(
@@ -35,7 +38,7 @@ public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRec
         CancellationToken cancellationToken = default)
     {
         // Map member -> user once; reviewers are addressed as users.
-        var memberToUser = (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, cancellationToken))
+        var memberToUser = (await _members.GetLookupByKurinAsync(kurinKey, cancellationToken))
             .Where(candidate => candidate.UserKey.HasValue)
             .GroupBy(candidate => candidate.MemberKey)
             .ToDictionary(group => group.Key, group => group.First().UserKey!.Value);

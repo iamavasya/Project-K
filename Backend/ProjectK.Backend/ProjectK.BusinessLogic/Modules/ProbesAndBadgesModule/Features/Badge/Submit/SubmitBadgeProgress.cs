@@ -3,11 +3,11 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
@@ -29,17 +29,20 @@ public sealed class SubmitBadgeProgress : IRequest<ServiceResult<BadgeProgressRe
 public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProgress, ServiceResult<BadgeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly INotificationService _notificationService;
     private readonly IReviewNotificationRecipientResolver _recipientResolver;
 
     public SubmitBadgeProgressHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         INotificationService notificationService,
         IReviewNotificationRecipientResolver recipientResolver)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
         _notificationService = notificationService;
         _recipientResolver = recipientResolver;
@@ -52,7 +55,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.BadRequest);
         }
 
-        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
+        var member = await _members.FindAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.NotFound);
@@ -138,7 +141,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
     }
 
     private async Task NotifyReviewersAsync(
-        MemberEntity member,
+        MemberSummary member,
         BadgeProgress progress,
         CancellationToken cancellationToken)
     {
@@ -153,7 +156,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
             return;
         }
 
-        var memberName = $"{member.FirstName} {member.LastName}".Trim();
+        var memberName = member.FullName;
         var requests = recipientUserKeys.Select(userKey => new NotificationRequest
         {
             RecipientUserKey = userKey,

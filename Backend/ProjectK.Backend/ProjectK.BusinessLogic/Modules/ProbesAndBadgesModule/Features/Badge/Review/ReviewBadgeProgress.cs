@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -30,15 +31,18 @@ public sealed class ReviewBadgeProgress : IRequest<ServiceResult<BadgeProgressRe
 public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProgress, ServiceResult<BadgeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly INotificationService _notificationService;
 
     public ReviewBadgeProgressHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
         _notificationService = notificationService;
     }
@@ -119,7 +123,7 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         string action,
         CancellationToken cancellationToken)
     {
-        var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(progress.MemberKey, cancellationToken);
+        var ownerUserKey = await _members.FindAccountKeyAsync(progress.MemberKey, cancellationToken);
         if (ownerUserKey is null)
         {
             return;

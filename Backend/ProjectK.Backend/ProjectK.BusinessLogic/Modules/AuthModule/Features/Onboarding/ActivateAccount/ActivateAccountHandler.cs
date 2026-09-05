@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -20,13 +21,15 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
     public class ActivateAccountHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMediator _mediator;
         private readonly TimeProvider _timeProvider;
 
-        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
+        public ActivateAccountHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _userManager = userManager;
             _mediator = mediator;
             _timeProvider = timeProvider;
@@ -83,31 +86,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
             invitation.UsedAtUtc = DateTime.UtcNow;
             _unitOfWork.Invitations.Update(invitation, cancellationToken);
 
-            // 5. Create Member record if it doesn't exist
-            var existingMember = await _unitOfWork.Members.GetByEmailAsync(user.Email!, cancellationToken);
-            Guid memberKey;
-            if (existingMember == null)
-            {
-                var member = new Member
-                {
-                    MemberKey = Guid.NewGuid(),
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email!,
-                    PhoneNumber = entry?.PhoneNumber ?? "0000000000",
-                    DateOfBirth = entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
-                    UserKey = user.Id,
-                    KurinKey = user.KurinKey ?? Guid.Empty
-                };
-                _unitOfWork.Members.Create(member, cancellationToken);
-                memberKey = member.MemberKey;
-            }
-            else
-            {
-                existingMember.UserKey = user.Id;
-                _unitOfWork.Members.Update(existingMember, cancellationToken);
-                memberKey = existingMember.MemberKey;
-            }
+            // 5. Make sure the account has a member, linking an existing one when the address is known
+            var memberKey = await _members.EnsureForAccountAsync(
+                new MemberForAccount(
+                    user.Id,
+                    user.Email!,
+                    user.FirstName,
+                    user.LastName,
+                    entry?.PhoneNumber ?? "0000000000",
+                    entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
+                    user.KurinKey ?? Guid.Empty),
+                cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

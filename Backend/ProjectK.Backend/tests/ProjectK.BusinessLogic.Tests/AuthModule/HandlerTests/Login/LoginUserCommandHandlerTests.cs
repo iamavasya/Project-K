@@ -9,6 +9,8 @@ using ProjectK.Common.Models.Enums;
 
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -22,6 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
+        private Mock<IMemberDirectory> _memberDirectoryMock;
         private readonly ILoginResponseFactory _loginResponseFactory;
         private readonly Mock<IActivityLogger> _activityLoggerMock;
         private readonly Mock<IConfiguration> _configurationMock;
@@ -46,14 +49,13 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             sectionMock.Setup(s => s.Value).Returns((string?)null);
             _configurationMock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(sectionMock.Object);
 
-            var memberRepoMock = new Mock<IMemberRepository>();
-            memberRepoMock.Setup(r => r.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member?)null);
+            _memberDirectoryMock = new Mock<IMemberDirectory>();
+            _memberDirectoryMock.Setup(r => r.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((MemberSummary?)null);
             _uowMock = new Mock<IUnitOfWork>();
-            _uowMock.Setup(u => u.Members).Returns(memberRepoMock.Object);
 
             _refreshTokensMock = new Mock<IRefreshTokenStore>();
-            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _uowMock.Object, _refreshTokensMock.Object);
+            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object);
             _handler = new LoginUserCommandHandler(
                 _userManagerMock.Object,
                 _signInManagerMock.Object,
@@ -104,8 +106,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
                 .Returns(refreshToken);
 
-            _uowMock.Setup(x => x.Members.GetByUserKeyAsync(userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = userId });
+            _memberDirectoryMock.Setup(x => x.FindByAccountAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MemberSummary(memberKey, userId, Guid.Empty, null, "A", "B", "a@example.com", null));
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);

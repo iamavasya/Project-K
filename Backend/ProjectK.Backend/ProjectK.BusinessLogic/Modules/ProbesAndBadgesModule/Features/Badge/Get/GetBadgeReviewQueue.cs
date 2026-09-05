@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -14,20 +15,22 @@ public sealed record GetBadgeReviewQueue(Guid KurinKey) : IRequest<ServiceResult
 public sealed class GetBadgeReviewQueueHandler : IRequestHandler<GetBadgeReviewQueue, ServiceResult<IEnumerable<BadgeProgressResponse>>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IResourceScopeReader _scopeReader;
 
-    public GetBadgeReviewQueueHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
+    public GetBadgeReviewQueueHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
         _scopeReader = scopeReader;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeReviewQueue request, CancellationToken cancellationToken)
     {
-        var membersInKurin = await _unitOfWork.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken);
-        var membersDict = (membersInKurin ?? Enumerable.Empty<Member>()).ToDictionary(m => m.MemberKey);
+        var membersInKurin = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
+        var membersDict = membersInKurin.ToDictionary(m => m.MemberKey);
 
         IEnumerable<Guid>? allowedGroupKeys = null;
         if (!_currentUserContext.CanManageWholeKurin())

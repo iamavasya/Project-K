@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using System.Linq.Expressions;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule
@@ -184,6 +185,43 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .Where(m => m.MemberKey == memberKey)
                 .Select(m => m.UserKey)
                 .FirstOrDefaultAsync(cancellationToken);
+
+        private static readonly Expression<Func<Member, MemberSummary>> ToSummary =
+            m => new MemberSummary(
+                m.MemberKey,
+                m.UserKey,
+                m.KurinKey,
+                m.GroupKey,
+                m.FirstName,
+                m.LastName,
+                m.Email,
+                m.ProfilePhotoBlobName);
+
+        public Task<MemberSummary?> GetSummaryByKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
+            => Context.Members
+                .Where(m => m.MemberKey == memberKey)
+                .Select(ToSummary)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public Task<MemberSummary?> GetSummaryByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+            => Context.Members
+                .Where(m => m.UserKey == userKey)
+                .Select(ToSummary)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+            => await Context.Members
+                .Where(m => m.KurinKey == kurinKey)
+                .Select(ToSummary)
+                .ToListAsync(cancellationToken);
+
+        public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
+            => await Context.Members
+                .Select(ToSummary)
+                .ToListAsync(cancellationToken);
+
+        public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
+            => Context.Members.AnyAsync(m => m.Email == email, cancellationToken);
 
         public Task<MemberAccountLink?> GetAccountLinkAsync(Guid memberKey, CancellationToken cancellationToken = default)
             => Context.Members

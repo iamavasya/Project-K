@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -18,18 +19,20 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.Preflight
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
 
-        public GetMigrationPreflightReportHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork)
+        public GetMigrationPreflightReportHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork, IMemberDirectory members)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _members = members;
         }
 
         public async Task<ServiceResult<MigrationPreflightReport>> Handle(GetMigrationPreflightReportQuery request, CancellationToken cancellationToken)
         {
             var report = new MigrationPreflightReport();
 
-            var members = (await _unitOfWork.Members.GetAllAsync(cancellationToken)).ToList();
+            var members = (await _members.GetAllAsync(cancellationToken)).ToList();
             var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
 
             report.TotalMembers = members.Count;
@@ -56,7 +59,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.Preflight
                 {
                     report.OrphanMembers.Add(new OrphanMemberInfo(
                         member.MemberKey,
-                        $"{member.FirstName} {member.LastName}",
+                        member.FullName,
                         member.Email,
                         member.UserKey));
                 }

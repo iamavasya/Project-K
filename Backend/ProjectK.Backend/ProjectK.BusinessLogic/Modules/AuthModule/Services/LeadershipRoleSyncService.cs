@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -14,11 +15,13 @@ public sealed class LeadershipRoleSyncService : ILeadershipRoleSyncService
         SystemRole.All().Where(role => role != SystemRole.Admin).ToArray();
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly UserManager<AppUser> _userManager;
 
-    public LeadershipRoleSyncService(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
+    public LeadershipRoleSyncService(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _userManager = userManager;
     }
 
@@ -32,7 +35,7 @@ public sealed class LeadershipRoleSyncService : ILeadershipRoleSyncService
 
     public async Task SyncMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
-        var userKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(memberKey, cancellationToken);
+        var userKey = await _members.FindAccountKeyAsync(memberKey, cancellationToken);
         if (userKey is null)
         {
             // No linked account yet — nothing to grant. Sync runs again when the account is linked.

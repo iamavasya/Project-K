@@ -39,6 +39,14 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
         Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+        // Summary projections for IMemberDirectory: other modules read people through the contract,
+        // and none of them needs the entity graph these narrow reads replace.
+        Task<MemberSummary?> GetSummaryByKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
+        Task<MemberSummary?> GetSummaryByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default);
+        Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Whether the member exists and which account it is linked to. The account flow asks this
         /// before it writes anything, and would otherwise load the whole graph for two fields.

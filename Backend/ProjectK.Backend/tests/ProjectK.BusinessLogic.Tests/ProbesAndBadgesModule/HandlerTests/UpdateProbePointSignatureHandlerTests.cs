@@ -1,10 +1,12 @@
-using Moq;
+﻿using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
@@ -13,7 +15,7 @@ namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 public class UpdateProbePointSignatureHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IMemberRepository> _memberRepositoryMock;
+    private readonly Mock<IMemberDirectory> _memberDirectoryMock;
     private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -22,12 +24,10 @@ public class UpdateProbePointSignatureHandlerTests
     public UpdateProbePointSignatureHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _memberRepositoryMock = new Mock<IMemberRepository>();
+        _memberDirectoryMock = new Mock<IMemberDirectory>();
         _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
         _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-
-        _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.ProbeProgresses).Returns(_probeProgressRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -41,6 +41,7 @@ public class UpdateProbePointSignatureHandlerTests
 
         _handler = new UpdateProbePointSignatureHandler(
             _unitOfWorkMock.Object,
+            _memberDirectoryMock.Object,
             _currentUserContextMock.Object);
     }
 
@@ -51,13 +52,13 @@ public class UpdateProbePointSignatureHandlerTests
         var memberKey = Guid.NewGuid();
         var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
 
-        _memberRepositoryMock
-            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Guid.NewGuid());
 
-        _memberRepositoryMock
-            .Setup(x => x.GetByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Member?)null);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemberSummary?)null);
 
         _probePointProgressRepositoryMock
             .Setup(x => x.GetByMemberProbePointAsync(memberKey, "probe-1", "point-1", It.IsAny<CancellationToken>()))
@@ -104,13 +105,13 @@ public class UpdateProbePointSignatureHandlerTests
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
         var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
 
-        _memberRepositoryMock
-            .Setup(x => x.GetKurinKeyByMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Guid.NewGuid());
 
-        _memberRepositoryMock
-            .Setup(x => x.GetByUserKeyAsync(actorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Member?)null);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemberSummary?)null);
 
         var pointProgress = new ProbePointProgress
         {
