@@ -28,14 +28,11 @@ public class MemberBoundaryRules
     private static readonly string[] ReachesMemberDataDirectly = [];
 
     /// <summary>
-    /// What is left of authorization reading the member record: the scope reader, which still asks the
-    /// member row which kurin and гурток it belongs to. Emptied by MM-11, when the scope comes from
-    /// <c>Membership</c> instead.
+    /// Empty, and the release's point: who may act on whom is decided from membership and offices.
+    /// The member record is not read anywhere on the way to that decision, and this list going
+    /// non-empty means it is again.
     /// </summary>
-    private static readonly string[] AuthorizationStillKnowsAboutMember =
-    [
-        "ProjectK.Infrastructure.Repositories.InfrastructureModule.ResourceScopeReader",
-    ];
+    private static readonly string[] AuthorizationStillKnowsAboutMember = [];
 
     [Fact]
     public void MemberData_ShouldBeReachedOnlyFromItsOwnModule()

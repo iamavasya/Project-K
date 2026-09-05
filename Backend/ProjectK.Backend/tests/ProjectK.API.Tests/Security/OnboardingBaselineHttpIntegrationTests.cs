@@ -211,6 +211,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
             mockUnitOfWork.Setup(u => u.WaitlistEntries).Returns(mockWaitlistRepo.Object);
             mockUnitOfWork.Setup(u => u.Invitations).Returns(mockInvitationRepo.Object);
+            mockUnitOfWork.Setup(u => u.Memberships).Returns(new Mock<IMembershipRepository>().Object);
             mockUnitOfWork.Setup(u => u.Kurins).Returns(mockKurinRepo.Object);
             mockUnitOfWork.Setup(u => u.Groups).Returns(mockGroupRepo.Object);
 

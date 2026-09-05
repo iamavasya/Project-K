@@ -29,6 +29,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         // and used single-threaded, so no synchronisation is needed.
         private IKurinRepository _kurins;
         private IGroupRepository _groups;
+        private IMembershipRepository _memberships;
         private IMemberRepository _members;
         private ILeadershipRepository _leaderships;
         private IPlanningSessionRepository _planningSessions;
@@ -51,6 +52,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
 
         public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
         public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
+        public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
         public IMemberRepository Members => _members ??= new MemberRepository(_context);
         public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
         public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);

@@ -67,7 +67,7 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Current user does not have kurin scope claim.");
         }
 
-        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, cancellationToken);
+        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey.Value, cancellationToken);
         if (scope is null)
         {
             return ResourceAccessDecision.Deny("Resource was not found or has no resolvable scope.");

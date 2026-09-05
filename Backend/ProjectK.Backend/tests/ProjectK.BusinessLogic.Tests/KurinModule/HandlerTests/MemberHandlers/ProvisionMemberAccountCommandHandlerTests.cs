@@ -40,6 +40,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _handler = new ProvisionMemberAccountCommandHandler(
                 _uowMock.Object,
                 _accountProvisioningMock.Object,
+                new Mock<IDomainEventPublisher>().Object,
                 _emailServiceMock.Object,
                 _currentUserContextMock.Object);
         }

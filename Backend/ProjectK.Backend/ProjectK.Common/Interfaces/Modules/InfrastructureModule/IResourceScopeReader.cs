@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+﻿using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
@@ -10,9 +10,16 @@ namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
     /// </summary>
     public interface IResourceScopeReader
     {
+        /// <summary>
+        /// The scope of a resource <b>as seen from</b> <paramref name="inKurinKey"/>. The caller's
+        /// kurin is part of the question because a person can belong to several: their гурток, and
+        /// whether they are reachable at all, is only meaningful within one of them. Null means the
+        /// resource does not exist there, which is the same answer as it not existing.
+        /// </summary>
         Task<ResourceScope?> GetScopeAsync(
             ResourceType resourceType,
             Guid resourceKey,
+            Guid inKurinKey,
             CancellationToken cancellationToken = default);
 
         /// <summary>

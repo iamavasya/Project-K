@@ -155,6 +155,7 @@ namespace ProjectK.Infrastructure.DbContexts
 
             builder.Entity<MemberWarning>(entity =>
             {
+                entity.HasIndex(e => new { e.KurinKey, e.RevokedAtUtc });
                 entity.HasKey(e => e.MemberWarningKey);
                 entity.Property(e => e.Level)
                     .HasConversion<int>();

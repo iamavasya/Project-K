@@ -12,6 +12,12 @@ namespace ProjectK.Common.Entities.KurinModule
         public Guid PlastLevelHistoryKey { get; set; }
 
         public Guid MemberKey { get; set; }
+
+        /// <summary>
+        /// Where the level was reached. Nullable because entries recorded before memberships existed
+        /// carry no such context — the level is the person's either way.
+        /// </summary>
+        public Guid? KurinKey { get; set; }
         public Member Member { get; set; }
 
         public PlastLevel PlastLevel { get; set; }

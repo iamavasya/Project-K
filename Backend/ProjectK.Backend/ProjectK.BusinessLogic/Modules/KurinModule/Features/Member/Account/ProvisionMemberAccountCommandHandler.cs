@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -12,17 +13,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
     {
         private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IAccountProvisioningService _accountProvisioning;
+        private readonly IDomainEventPublisher _events;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
 
         public ProvisionMemberAccountCommandHandler(
             IMemberUnitOfWork unitOfWork,
             IAccountProvisioningService accountProvisioning,
+            IDomainEventPublisher events,
             IEmailService emailService,
             ICurrentUserContext currentUserContext)
         {
             _unitOfWork = unitOfWork;
             _accountProvisioning = accountProvisioning;
+            _events = events;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
         }
@@ -70,6 +74,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
 
             member.UserKey = provisioned.Data.UserKey;
             _unitOfWork.Members.Update(member, cancellationToken);
+            await _events.PublishAsync(
+                new MemberAccountLinked(member.MemberKey, provisioned.Data.UserKey),
+                cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)

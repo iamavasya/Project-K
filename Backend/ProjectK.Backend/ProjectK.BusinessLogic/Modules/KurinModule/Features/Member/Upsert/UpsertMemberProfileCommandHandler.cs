@@ -119,7 +119,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
                 if (CanEditRestrictedFields())
                 {
-                    UpdatePlastLevelHistory(existing.MemberKey, request.PlastLevelHistories, existing.PlastLevelHistory);
+                    UpdatePlastLevelHistory(existing.MemberKey, existing.KurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
                     existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
                 }
 
@@ -155,6 +155,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
         private static void UpdatePlastLevelHistory(
             Guid memberKey,
+            Guid? kurinKey,
             ICollection<PlastLevelHistoryDto> plastLevelHistoryDto,
             ICollection<PlastLevelHistory> plastLevelHistory)
         {
@@ -184,6 +185,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                     plastLevelHistory.Add(new PlastLevelHistory
                     {
                         MemberKey = memberKey,
+                        KurinKey = kurinKey,
                         PlastLevel = dto.PlastLevel,
                         DateAchieved = dto.DateAchieved
                     });

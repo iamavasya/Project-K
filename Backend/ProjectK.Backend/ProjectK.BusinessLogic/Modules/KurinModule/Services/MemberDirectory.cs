@@ -59,6 +59,9 @@ public sealed class MemberDirectory : IMemberDirectory
         {
             existing.UserKey = details.UserKey;
             _unitOfWork.Members.Update(existing, cancellationToken);
+            await _events.PublishAsync(
+                new MemberAccountLinked(existing.MemberKey, details.UserKey),
+                cancellationToken);
             return existing.MemberKey;
         }
 
@@ -75,6 +78,9 @@ public sealed class MemberDirectory : IMemberDirectory
         };
 
         _unitOfWork.Members.Create(member, cancellationToken);
+        await _events.PublishAsync(
+            new MemberAccountLinked(member.MemberKey, details.UserKey),
+            cancellationToken);
         return member.MemberKey;
     }
 
