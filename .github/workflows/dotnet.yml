@@ -7,6 +7,8 @@ on:
     branches: [ "**" ]
     paths:
       - 'Backend/**'
+      # A change to the pipeline is a change that has to run through it.
+      - '.github/workflows/dotnet.yml'
   release:
     types: [published]
   workflow_dispatch:

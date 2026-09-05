@@ -7,6 +7,8 @@ on:
     branches: [ "**" ]
     paths:
       - 'Frontend/**'
+      # A change to the pipeline is a change that has to run through it.
+      - '.github/workflows/angular.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches: [ "main", "dev" ]
