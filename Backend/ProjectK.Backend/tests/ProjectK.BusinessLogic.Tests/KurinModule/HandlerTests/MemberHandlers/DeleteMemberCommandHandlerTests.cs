@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Threading;
@@ -15,6 +16,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     public class DeleteMemberHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
+        private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
+        private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
         private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock;
         private readonly DeleteMemberHandler _handler;
@@ -27,6 +31,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             _unitOfWorkMock.Setup(u => u.Members).Returns(_memberRepositoryMock.Object);
             _unitOfWorkMock.Setup(u => u.AgendaItems).Returns(_agendaItemRepositoryMock.Object);
+
+            _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
+            _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
+            _badgeProgressRepositoryMock = new Mock<IBadgeProgressRepository>();
+            _unitOfWorkMock.Setup(uow => uow.ProbeProgresses).Returns(_probeProgressRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
             _handler = new DeleteMemberHandler(_unitOfWorkMock.Object);
         }
@@ -142,5 +153,35 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             ex.Should().BeSameAs(expected);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
-    }
+    
+        [Fact]
+        public async Task Handle_ShouldClearProbeAndBadgeProgress_BecauseNoForeignKeyCascadesItAnymore()
+        {
+            var memberKey = Guid.NewGuid();
+            _memberRepositoryMock
+                .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Member { MemberKey = memberKey });
+            _unitOfWorkMock
+                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+
+            await _handler.Handle(new DeleteMember(memberKey), CancellationToken.None);
+
+            _probeProgressRepositoryMock.Verify(
+                r => r.DeleteForMembersAsync(
+                    It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == memberKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            _probePointProgressRepositoryMock.Verify(
+                r => r.DeleteForMembersAsync(
+                    It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == memberKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            _badgeProgressRepositoryMock.Verify(
+                r => r.DeleteForMembersAsync(
+                    It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == memberKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+}
 }

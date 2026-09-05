@@ -55,4 +55,20 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
     }
 
     public override void Update(ProbePointProgress entity, CancellationToken cancellationToken = default) => MarkModified(entity);
+
+    public async Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        if (memberKeys.Count == 0)
+        {
+            return;
+        }
+
+        // Through the tracker rather than ExecuteDelete: this runs inside a use case whose
+        // SaveChanges has not happened yet, and an out-of-band delete would commit ahead of it.
+        var rows = await Context.ProbePointProgresses
+            .Where(row => memberKeys.Contains(row.MemberKey))
+            .ToListAsync(cancellationToken);
+
+        Context.ProbePointProgresses.RemoveRange(rows);
+    }
 }

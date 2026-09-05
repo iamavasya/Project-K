@@ -1,5 +1,7 @@
-using ProjectK.Common.Entities.AuthModule;
+﻿using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule;
 
@@ -12,7 +14,10 @@ public sealed record KurinReportSourceData(
     IReadOnlyList<MentorAssignment> MentorAssignments,
     IReadOnlyList<Member> Members,
     IReadOnlyDictionary<Guid, AppUser> UsersByKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<string>> RolesByUserKey);
+    IReadOnlyDictionary<Guid, IReadOnlyList<string>> RolesByUserKey,
+    IReadOnlyDictionary<Guid, IReadOnlyList<ProbeProgress>> ProbeProgressByMemberKey,
+    IReadOnlyDictionary<Guid, IReadOnlyList<ProbePointProgress>> ProbePointProgressByMemberKey,
+    IReadOnlyDictionary<Guid, IReadOnlyList<BadgeProgress>> BadgeProgressByMemberKey);
 
 /// <summary>
 /// The report's read side. Splitting it out is what let the report itself move out of the API

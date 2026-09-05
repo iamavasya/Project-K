@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using System;
 using System.Threading.Tasks;
@@ -14,6 +15,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
     public class DeleteKurinHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
+        private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
+        private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly DeleteKurinHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
@@ -34,6 +38,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _leadershipRepositoryMock
                 .Setup(r => r.DeleteForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
+
+            _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
+            _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
+            _badgeProgressRepositoryMock = new Mock<IBadgeProgressRepository>();
+            _unitOfWorkMock.Setup(uow => uow.ProbeProgresses).Returns(_probeProgressRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
             _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }

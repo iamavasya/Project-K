@@ -45,6 +45,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
                     $"Member with key {request.MemberKey} not found.");
             }
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
+
+            // Progress rows point at the member by key alone, with no foreign key to cascade from,
+            // so they are cleared here or they outlive the person they belong to.
+            Guid[] memberKeys = [request.MemberKey];
+            await _unitOfWork.ProbeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
+            await _unitOfWork.ProbePointProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
+            await _unitOfWork.BadgeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
             _unitOfWork.Members.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)

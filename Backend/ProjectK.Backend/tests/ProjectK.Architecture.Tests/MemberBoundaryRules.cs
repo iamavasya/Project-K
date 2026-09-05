@@ -41,9 +41,12 @@ public class MemberBoundaryRules
     public void MemberData_ShouldBeReachedOnlyFromItsOwnModule()
     {
         var rule = Types()
-            .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API)\..*")
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.KurinModule\..*")
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.KurinModule\..*")
+            .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API|Common\.Entities)\..*")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.KurinModule(\..*)?")
+            // Another module's entity may hold a MemberKey, never a Member navigation: that would be
+            // a foreign key across the boundary, and the join it promises disappears with the module.
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.KurinModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.KurinModule(\..*)?")
             // AutoMapper profiles translate between an entity and its response, so naming both sides
             // is what they are for; they are not one module reading another's data.
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")

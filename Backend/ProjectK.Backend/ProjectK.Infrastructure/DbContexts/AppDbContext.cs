@@ -274,10 +274,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasConversion<int>();
                 entity.HasIndex(e => new { e.MemberKey, e.BadgeId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.BadgeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<BadgeProgressAuditEvent>(entity =>
@@ -310,10 +306,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasConversion<int>();
                 entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<ProbeProgressAuditEvent>(entity =>
@@ -349,10 +341,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasMaxLength(50);
                 entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbePointProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<MentorAssignment>(entity =>

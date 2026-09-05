@@ -49,7 +49,7 @@ public sealed class KurinReportDataService
             return null;
         }
 
-        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey) = source;
+        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey, _, _, _) = source;
 
         var groupNamesByKey = groups.ToDictionary(group => group.GroupKey, group => group.Name);
         var memberByUserKey = members
@@ -60,7 +60,7 @@ public sealed class KurinReportDataService
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
         {
-            reportMembers.Add(await BuildMemberReportAsync(member, groupNamesByKey, rolesByUserKey, cancellationToken));
+            reportMembers.Add(await BuildMemberReportAsync(member, source, groupNamesByKey, rolesByUserKey, cancellationToken));
         }
 
         var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
@@ -134,6 +134,7 @@ public sealed class KurinReportDataService
 
     private async Task<KurinReportMember> BuildMemberReportAsync(
         Member member,
+        KurinReportSourceData source,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> rolesByUserKey,
         CancellationToken cancellationToken)
@@ -141,6 +142,10 @@ public sealed class KurinReportDataService
         var roles = member.UserKey is Guid userKey && rolesByUserKey.TryGetValue(userKey, out var userRoles)
             ? userRoles
             : [];
+
+        var probeProgress = ProgressOf(source.ProbeProgressByMemberKey, member.MemberKey);
+        var probePointProgress = ProgressOf(source.ProbePointProgressByMemberKey, member.MemberKey);
+        var badgeProgress = ProgressOf(source.BadgeProgressByMemberKey, member.MemberKey);
 
         return new KurinReportMember(
             member.MemberKey,
@@ -164,7 +169,7 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.DateAchieved)
                 .Select(item => new KurinReportPlastLevel(item.PlastLevel, item.DateAchieved))
                 .ToArray(),
-            member.ProbeProgresses
+            probeProgress
                 .OrderBy(item => item.ProbeId)
                 .Select(item =>
                 {
@@ -180,7 +185,7 @@ public sealed class KurinReportDataService
                         item.VerifiedByName);
                 })
                 .ToArray(),
-            member.ProbePointProgresses
+            probePointProgress
                 .Where(item => item.IsSigned)
                 .OrderBy(item => item.ProbeId)
                 .ThenBy(item => item.PointId)
@@ -197,7 +202,7 @@ public sealed class KurinReportDataService
                         item.SignedByRole);
                 })
                 .ToArray(),
-            member.BadgeProgresses
+            badgeProgress
                 .Where(item => item.Status == BadgeProgressStatus.Confirmed)
                 .OrderBy(item => item.BadgeId)
                 .Select(item =>
@@ -370,4 +375,9 @@ public sealed class KurinReportDataService
 
         return pointId;
     }
+
+    private static IReadOnlyList<T> ProgressOf<T>(
+        IReadOnlyDictionary<Guid, IReadOnlyList<T>> byMemberKey,
+        Guid memberKey)
+        => byMemberKey.TryGetValue(memberKey, out var rows) ? rows : [];
 }

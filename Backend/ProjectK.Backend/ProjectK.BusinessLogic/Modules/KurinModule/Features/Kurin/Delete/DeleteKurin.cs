@@ -54,10 +54,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
             // What the database will not clear itself: offices and members are NO ACTION against both
             // the kurin and its гуртки, and the гуртки's own cascade is refused while an office still
             // points at one. Everything else — гуртки, agenda with its assignments, planning sessions,
-            // mentor assignments, the members' histories — cascades.
+            // mentor assignments, the members' own histories — cascades. Probe and badge progress
+            // does not: it points at the member by key alone, so it is cleared explicitly below.
             await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
 
             var members = await _unitOfWork.Members.GetTrackedForKurinDeletionAsync(request.KurinKey, cancellationToken);
+
+            var memberKeys = members.Select(member => member.MemberKey).ToArray();
+            await _unitOfWork.ProbeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
+            await _unitOfWork.ProbePointProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
+            await _unitOfWork.BadgeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
 
             foreach (var member in members)
             {

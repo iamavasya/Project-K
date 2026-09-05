@@ -1,6 +1,5 @@
 ﻿using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using System;
@@ -36,9 +35,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public PlastLevel? LatestPlastLevel { get; set; }
         public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
         public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
-        public ICollection<BadgeProgress> BadgeProgresses { get; set; } = new List<BadgeProgress>();
-        public ICollection<ProbeProgress> ProbeProgresses { get; set; } = new List<ProbeProgress>();
-        public ICollection<ProbePointProgress> ProbePointProgresses { get; set; } = new List<ProbePointProgress>();
         public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();
         public ICollection<MemberAward> MemberAwards { get; set; } = new List<MemberAward>();
         public AppUser? User { get; set; }
