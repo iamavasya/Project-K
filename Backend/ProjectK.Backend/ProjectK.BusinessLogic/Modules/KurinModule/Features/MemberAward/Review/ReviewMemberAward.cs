@@ -8,7 +8,7 @@ using ProjectK.Common.Models.Records;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
@@ -23,18 +23,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public ReviewMemberAwardHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
+            IDomainEventPublisher events,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
             _mapper = mapper;
         }
 
@@ -76,22 +76,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = ownerUserKey.Value,
-                    Type = AppNotificationType.MemberAwardReviewed,
-                    Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
-                    Title = isApproved ? "Відзначення затверджено" : "Відзначення не затверджено",
-                    Body = isApproved
-                        ? "Ваше відзначення затверджено."
-                        : "Ваше відзначення не затверджено. Перегляньте зауваження.",
-                    EntityType = "MemberAward",
-                    EntityKey = award.MemberAwardKey,
-                    Route = $"/member/{award.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"award-review:{award.MemberAwardKey}"
-                },
+            await _events.PublishAsync(
+                new MemberAwardReviewed(
+                    award.MemberAwardKey,
+                    award.MemberKey,
+                    ownerUserKey.Value,
+                    isApproved,
+                    _currentUserContext.UserId),
                 cancellationToken);
         }
     }

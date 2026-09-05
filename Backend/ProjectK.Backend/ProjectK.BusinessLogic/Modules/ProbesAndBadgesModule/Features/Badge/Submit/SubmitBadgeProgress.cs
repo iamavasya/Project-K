@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
@@ -31,21 +32,18 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly INotificationService _notificationService;
-    private readonly IReviewNotificationRecipientResolver _recipientResolver;
+    private readonly IDomainEventPublisher _events;
 
     public SubmitBadgeProgressHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        INotificationService notificationService,
-        IReviewNotificationRecipientResolver recipientResolver)
+        IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
-        _notificationService = notificationService;
-        _recipientResolver = recipientResolver;
+        _events = events;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(SubmitBadgeProgress request, CancellationToken cancellationToken)
@@ -135,44 +133,25 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.InternalServerError);
         }
 
-        await NotifyReviewersAsync(member, progress, cancellationToken);
+        await PublishSubmittedAsync(member, progress, cancellationToken);
 
         return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
     }
 
-    private async Task NotifyReviewersAsync(
+    private async Task PublishSubmittedAsync(
         MemberSummary member,
         BadgeProgress progress,
         CancellationToken cancellationToken)
     {
-        var recipientUserKeys = await _recipientResolver.ResolveAsync(
-            member.KurinKey,
-            member.GroupKey,
-            _currentUserContext.UserId,
+        await _events.PublishAsync(
+            new BadgeProgressSubmitted(
+                progress.BadgeProgressKey,
+                progress.BadgeId,
+                member.MemberKey,
+                member.FullName,
+                member.KurinKey,
+                member.GroupKey,
+                _currentUserContext.UserId),
             cancellationToken);
-
-        if (recipientUserKeys.Count == 0)
-        {
-            return;
-        }
-
-        var memberName = member.FullName;
-        var requests = recipientUserKeys.Select(userKey => new NotificationRequest
-        {
-            RecipientUserKey = userKey,
-            Type = AppNotificationType.MemberSkillSubmittedForReview,
-            Severity = AppNotificationSeverity.Info,
-            Title = "Вмілість подано на перевірку",
-            Body = string.IsNullOrWhiteSpace(memberName)
-                ? "Надійшла вмілість на перевірку."
-                : $"Надійшла вмілість від {memberName} на перевірку.",
-            EntityType = "BadgeProgress",
-            EntityKey = member.MemberKey,
-            Route = $"/kurin/{member.KurinKey}/review/skills",
-            ActorUserKey = _currentUserContext.UserId,
-            DeduplicationKey = $"skill-review:{member.MemberKey}:{progress.BadgeId}"
-        });
-
-        await _notificationService.NotifyManyAsync(requests, cancellationToken);
     }
 }

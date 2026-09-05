@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -22,8 +23,7 @@ public class SubmitBadgeProgressHandlerTests
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepositoryMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
-    private readonly Mock<INotificationService> _notificationServiceMock = new();
-    private readonly Mock<IReviewNotificationRecipientResolver> _recipientResolverMock = new();
+    private readonly Mock<IDomainEventPublisher> _eventsMock = new();
     private readonly SubmitBadgeProgressHandler _handler;
 
     public SubmitBadgeProgressHandlerTests()
@@ -39,8 +39,7 @@ public class SubmitBadgeProgressHandlerTests
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
-            _notificationServiceMock.Object,
-            _recipientResolverMock.Object);
+            _eventsMock.Object);
     }
 
     [Fact]
@@ -61,31 +60,19 @@ public class SubmitBadgeProgressHandlerTests
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BadgeProgress?)null);
-        _recipientResolverMock
-            .Setup(x => x.ResolveAsync(kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { mentorUserKey });
 
         var result = await _handler.Handle(new SubmitBadgeProgress(memberKey, badgeId, null), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        _notificationServiceMock.Verify(x => x.NotifyManyAsync(
-            It.Is<IEnumerable<NotificationRequest>>(requests =>
-                requests.Count() == 1
-                && requests.Single().RecipientUserKey == mentorUserKey
-                && requests.Single().Type == AppNotificationType.MemberSkillSubmittedForReview
-                && requests.Single().Severity == AppNotificationSeverity.Info
-                && requests.Single().EntityType == "BadgeProgress"
-                && requests.Single().EntityKey == memberKey
-                && requests.Single().Route == $"/kurin/{kurinKey}/review/skills"
-                && requests.Single().ActorUserKey == actorUserKey
-                && requests.Single().DeduplicationKey == $"skill-review:{memberKey}:{badgeId}"),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<BadgeProgressSubmitted>(raised =>
+                raised.BadgeId == badgeId
+                && raised.MemberKey == memberKey
+                && raised.KurinKey == kurinKey
+                && raised.GroupKey == groupKey
+                && raised.ActorUserKey == actorUserKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
-        _recipientResolverMock.Verify(x => x.ResolveAsync(
-            kurinKey,
-            groupKey,
-            actorUserKey,
-            It.IsAny<CancellationToken>()),
-            Times.Once);
+
     }
 }

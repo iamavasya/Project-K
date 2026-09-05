@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -27,7 +28,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-        private readonly Mock<INotificationService> _notificationServiceMock;
+        private readonly Mock<IDomainEventPublisher> _eventsMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IResourceScopeReader> _scopeReaderMock;
         private readonly MemberProfileVerificationService _service;
@@ -41,7 +42,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
 
             _currentUserContextMock = new Mock<ICurrentUserContext>();
-            _notificationServiceMock = new Mock<INotificationService>();
+            _eventsMock = new Mock<IDomainEventPublisher>();
             _mapperMock = new Mock<IMapper>();
             _scopeReaderMock = new Mock<IResourceScopeReader>();
             _scopeReaderMock
@@ -51,7 +52,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _service = new MemberProfileVerificationService(
                 _uowMock.Object,
                 _currentUserContextMock.Object,
-                _notificationServiceMock.Object,
+                _eventsMock.Object,
                 _mapperMock.Object,
                 _scopeReaderMock.Object);
         }
@@ -99,15 +100,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var result = await _service.VerifyAsync(member.MemberKey, null, CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Success);
-            _notificationServiceMock.Verify(x => x.NotifyAsync(
-                It.Is<NotificationRequest>(request =>
-                    request.RecipientUserKey == memberUserKey
-                    && request.Type == AppNotificationType.MemberProfileVerified
-                    && request.Severity == AppNotificationSeverity.Success
-                    && request.EntityKey == member.MemberKey
-                    && request.Route == $"/member/{member.MemberKey}"
-                    && request.ActorUserKey == actorUserKey
-                    && request.DeduplicationKey == $"member-profile-verified:{member.MemberKey}"),
+            _eventsMock.Verify(x => x.PublishAsync(
+                It.Is<MemberProfileVerified>(raised =>
+                    raised.MemberKey == member.MemberKey
+                    && raised.MemberUserKey == memberUserKey
+                    && raised.ActorUserKey == actorUserKey),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
         }

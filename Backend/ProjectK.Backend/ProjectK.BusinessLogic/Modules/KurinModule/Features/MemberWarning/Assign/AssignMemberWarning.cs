@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign
@@ -40,18 +40,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assi
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public AssignMemberWarningHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
+            IDomainEventPublisher events,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
             _mapper = mapper;
         }
 
@@ -131,20 +131,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assi
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = member.UserKey.Value,
-                    Type = AppNotificationType.MemberWarningAssigned,
-                    Severity = AppNotificationSeverity.Warn,
-                    Title = "Пересторогу призначено",
-                    Body = $"До вашого профілю додано {GetWarningLevelName(warning.Level)}.",
-                    EntityType = "MemberWarning",
-                    EntityKey = warning.MemberWarningKey,
-                    Route = $"/member/{member.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"member-warning:{warning.MemberWarningKey}"
-                },
+            await _events.PublishAsync(
+                new MemberWarningAssigned(
+                    warning.MemberWarningKey,
+                    member.MemberKey,
+                    member.UserKey.Value,
+                    warning.Level,
+                    _currentUserContext.UserId),
                 cancellationToken);
         }
 

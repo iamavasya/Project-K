@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -20,7 +21,7 @@ public class MemberWarningHandlerTests
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
 
     private readonly AssignMemberWarningHandler _assignHandler;
@@ -33,7 +34,7 @@ public class MemberWarningHandlerTests
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-        _notificationServiceMock = new Mock<INotificationService>();
+        _eventsMock = new Mock<IDomainEventPublisher>();
         _mapperMock = new Mock<AutoMapper.IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
@@ -45,7 +46,7 @@ public class MemberWarningHandlerTests
         _assignHandler = new AssignMemberWarningHandler(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
-            _notificationServiceMock.Object,
+            _eventsMock.Object,
             _mapperMock.Object);
         _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
         _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock);
@@ -172,15 +173,13 @@ public class MemberWarningHandlerTests
 
         result.Type.Should().Be(ResultType.Created);
         created.Should().NotBeNull();
-        _notificationServiceMock.Verify(x => x.NotifyAsync(
-            It.Is<NotificationRequest>(request =>
-                request.RecipientUserKey == memberUserKey
-                && request.Type == AppNotificationType.MemberWarningAssigned
-                && request.Severity == AppNotificationSeverity.Warn
-                && request.EntityKey == created!.MemberWarningKey
-                && request.Route == $"/member/{memberKey}"
-                && request.ActorUserKey == actorUserKey
-                && request.DeduplicationKey == $"member-warning:{created.MemberWarningKey}"),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<MemberWarningAssigned>(raised =>
+                raised.MemberWarningKey == created!.MemberWarningKey
+                && raised.MemberKey == memberKey
+                && raised.MemberUserKey == memberUserKey
+                && raised.Level == MemberWarningLevel.Level1
+                && raised.ActorUserKey == actorUserKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

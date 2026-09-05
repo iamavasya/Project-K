@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -38,6 +39,9 @@ public static class DependencyInjection
                 sp.GetRequiredService<ILogger<ResourceAccessServiceInstrumentationDecorator>>()));
 
         services.AddSingleton<IBackendCache, MemoryBackendCache>();
+
+        // Domain events. The in-process delivery is the only thing a broker would replace.
+        services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
 
         // Kurin module
         services.AddScoped<IMemberDirectory, MemberDirectory>();

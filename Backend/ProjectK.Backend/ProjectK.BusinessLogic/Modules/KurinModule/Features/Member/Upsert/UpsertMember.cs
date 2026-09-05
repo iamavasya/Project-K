@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
@@ -8,7 +8,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -50,7 +50,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private readonly IMapper _mapper;
         private readonly IAccountProvisioningService _accountProvisioning;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
 
         public UpsertMemberHandler(
             IMediator mediator,
@@ -58,14 +58,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             IMapper mapper,
             IAccountProvisioningService accountProvisioning,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService)
+            IDomainEventPublisher events)
         {
             _mediator = mediator;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _accountProvisioning = accountProvisioning;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
         }
 
         public async Task<ServiceResult<MemberResponse>> Handle(
@@ -138,7 +138,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 && profile.Data.WasProfileVerifiedCurrent
                 && member.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedStale)
             {
-                await NotifyProfileChangedAfterVerificationAsync(member, cancellationToken);
+                await PublishProfileWentStaleAsync(member, cancellationToken);
             }
 
             var response = _mapper.Map<MemberResponse>(member);
@@ -173,7 +173,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 ? new ServiceResult<MemberResponse>(step.Type)
                 : ServiceResult<MemberResponse>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
 
-        private async Task NotifyProfileChangedAfterVerificationAsync(
+        private async Task PublishProfileWentStaleAsync(
             MemberEntity member,
             CancellationToken cancellationToken)
         {
@@ -182,21 +182,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = member.UserKey.Value,
-                    Type = AppNotificationType.MemberProfileChangedAfterVerification,
-                    Severity = AppNotificationSeverity.Warn,
-                    Title = "Профіль потребує повторної перевірки",
-                    Body = "Після підтвердження профільні дані змінилися. Потрібно перевірити їх повторно.",
-                    EntityType = "Member",
-                    EntityKey = member.MemberKey,
-                    Route = $"/member/{member.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"member-profile-stale:{member.MemberKey}"
-                },
+            await _events.PublishAsync(
+                new MemberProfileWentStale(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
                 cancellationToken);
         }
+
     }
 }

@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -20,7 +21,7 @@ public class ReviewBadgeProgressHandlerTests
     private readonly Mock<IMemberDirectory> _memberDirectoryMock;
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly ReviewBadgeProgressHandler _handler;
 
     public ReviewBadgeProgressHandlerTests()
@@ -29,7 +30,7 @@ public class ReviewBadgeProgressHandlerTests
         _memberDirectoryMock = new Mock<IMemberDirectory>();
         _badgeProgressRepositoryMock = new Mock<IBadgeProgressRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-        _notificationServiceMock = new Mock<INotificationService>();
+        _eventsMock = new Mock<IDomainEventPublisher>();
         _unitOfWorkMock.SetupGet(x => x.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -43,7 +44,7 @@ public class ReviewBadgeProgressHandlerTests
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
-            _notificationServiceMock.Object);
+            _eventsMock.Object);
     }
 
     [Fact]
@@ -100,17 +101,15 @@ public class ReviewBadgeProgressHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        _notificationServiceMock.Verify(x => x.NotifyAsync(
-            It.Is<NotificationRequest>(notification =>
-                notification.RecipientUserKey == ownerUserKey
-                && notification.Type == AppNotificationType.MemberSkillReviewed
-                && notification.Severity == AppNotificationSeverity.Success
-                && notification.Title == "Вмілість зараховано"
-                && notification.EntityType == "BadgeProgress"
-                && notification.EntityKey == progress.BadgeProgressKey
-                && notification.Route == $"/member/{memberKey}"
-                && notification.ActorUserKey == actorUserKey
-                && notification.DeduplicationKey == $"skill-review-result:{memberKey}:{badgeId}"),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<BadgeProgressReviewed>(raised =>
+                raised.BadgeProgressKey == progress.BadgeProgressKey
+                && raised.BadgeId == badgeId
+                && raised.MemberKey == memberKey
+                && raised.MemberUserKey == ownerUserKey
+                && raised.IsApproved
+                && !raised.ConfirmationWithdrawn
+                && raised.ActorUserKey == actorUserKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -168,13 +167,11 @@ public class ReviewBadgeProgressHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        _notificationServiceMock.Verify(x => x.NotifyAsync(
-            It.Is<NotificationRequest>(notification =>
-                notification.RecipientUserKey == ownerUserKey
-                && notification.Type == AppNotificationType.MemberSkillReviewed
-                && notification.Severity == AppNotificationSeverity.Warn
-                && notification.Title == "Підтвердження вмілості скасовано"
-                && notification.DeduplicationKey == $"skill-review-result:{memberKey}:{badgeId}"),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<BadgeProgressReviewed>(raised =>
+                raised.MemberUserKey == ownerUserKey
+                && !raised.IsApproved
+                && raised.ConfirmationWithdrawn),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -201,8 +198,8 @@ public class ReviewBadgeProgressHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        _notificationServiceMock.Verify(x => x.NotifyAsync(
-            It.IsAny<NotificationRequest>(),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.IsAny<BadgeProgressReviewed>(),
             It.IsAny<CancellationToken>()),
             Times.Never);
     }

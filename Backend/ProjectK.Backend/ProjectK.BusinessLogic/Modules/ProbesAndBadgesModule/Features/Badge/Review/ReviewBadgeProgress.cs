@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
@@ -33,18 +34,18 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly INotificationService _notificationService;
+    private readonly IDomainEventPublisher _events;
 
     public ReviewBadgeProgressHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        INotificationService notificationService)
+        IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
-        _notificationService = notificationService;
+        _events = events;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(ReviewBadgeProgress request, CancellationToken cancellationToken)
@@ -129,32 +130,15 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             return;
         }
 
-        var wasRemoved = string.Equals(action, "RemovedConfirmed", StringComparison.Ordinal);
-        var title = isApproved
-            ? "Вмілість зараховано"
-            : wasRemoved
-                ? "Підтвердження вмілості скасовано"
-                : "Вмілість потребує доопрацювання";
-        var body = isApproved
-            ? "Вашу вмілість зараховано."
-            : wasRemoved
-                ? "Раніше зараховану вмілість вилучено."
-                : "Вашу вмілість не зараховано. Перегляньте зауваження та подайте її повторно.";
-
-        await _notificationService.NotifyAsync(
-            new NotificationRequest
-            {
-                RecipientUserKey = ownerUserKey.Value,
-                Type = AppNotificationType.MemberSkillReviewed,
-                Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
-                Title = title,
-                Body = body,
-                EntityType = "BadgeProgress",
-                EntityKey = progress.BadgeProgressKey,
-                Route = $"/member/{progress.MemberKey}",
-                ActorUserKey = _currentUserContext.UserId,
-                DeduplicationKey = $"skill-review-result:{progress.MemberKey}:{progress.BadgeId}"
-            },
+        await _events.PublishAsync(
+            new BadgeProgressReviewed(
+                progress.BadgeProgressKey,
+                progress.BadgeId,
+                progress.MemberKey,
+                ownerUserKey.Value,
+                isApproved,
+                string.Equals(action, "RemovedConfirmed", StringComparison.Ordinal),
+                _currentUserContext.UserId),
             cancellationToken);
     }
 }

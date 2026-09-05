@@ -8,7 +8,7 @@ using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification
 {
@@ -53,20 +53,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
         private readonly IResourceScopeReader _scopeReader;
 
         public MemberProfileVerificationService(
             IUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
+            IDomainEventPublisher events,
             IMapper mapper,
             IResourceScopeReader scopeReader)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
             _mapper = mapper;
             _scopeReader = scopeReader;
         }
@@ -92,7 +92,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             var result = await SaveAsync(member, cancellationToken);
             if (result.Type == ResultType.Success)
             {
-                await NotifyProfileVerifiedAsync(member, cancellationToken);
+                await PublishProfileVerifiedAsync(member, cancellationToken);
             }
 
             return result;
@@ -192,27 +192,15 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member));
         }
 
-        private async Task NotifyProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)
+        private async Task PublishProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)
         {
             if (!member.UserKey.HasValue)
             {
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = member.UserKey.Value,
-                    Type = AppNotificationType.MemberProfileVerified,
-                    Severity = AppNotificationSeverity.Success,
-                    Title = "Профільні дані підтверджено",
-                    Body = "Ваші профільні дані підтверджено як актуальні.",
-                    EntityType = "Member",
-                    EntityKey = member.MemberKey,
-                    Route = $"/member/{member.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"member-profile-verified:{member.MemberKey}"
-                },
+            await _events.PublishAsync(
+                new MemberProfileVerified(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
                 cancellationToken);
         }
 

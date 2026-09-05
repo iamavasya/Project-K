@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -32,7 +33,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<IMemberRepository> _memberRepoMock = new();
         private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
         private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
-        private readonly Mock<INotificationService> _notificationServiceMock = new();
+        private readonly Mock<IDomainEventPublisher> _eventsMock = new();
         private readonly UpsertMemberHandler _handler;
 
         public UpsertMemberHandlerTests()
@@ -58,7 +59,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 mapperConfig.CreateMapper(),
                 _accountProvisioningMock.Object,
                 _currentUserContextMock.Object,
-                _notificationServiceMock.Object);
+                _eventsMock.Object);
         }
 
         private Member GivenWrittenMember(bool isCreated, Guid? userKey = null)
@@ -273,15 +274,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 new UpsertMember { MemberKey = member.MemberKey, KurinKey = member.KurinKey, FirstName = "Changed" },
                 CancellationToken.None);
 
-            _notificationServiceMock.Verify(x => x.NotifyAsync(
-                It.Is<NotificationRequest>(request =>
-                    request.RecipientUserKey == memberUserKey
-                    && request.Type == AppNotificationType.MemberProfileChangedAfterVerification
-                    && request.Severity == AppNotificationSeverity.Warn
-                    && request.EntityKey == member.MemberKey
-                    && request.Route == $"/member/{member.MemberKey}"
-                    && request.ActorUserKey == actorUserKey
-                    && request.DeduplicationKey == $"member-profile-stale:{member.MemberKey}"),
+            _eventsMock.Verify(x => x.PublishAsync(
+                It.Is<MemberProfileWentStale>(raised =>
+                    raised.MemberKey == member.MemberKey
+                    && raised.MemberUserKey == memberUserKey
+                    && raised.ActorUserKey == actorUserKey),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
         }

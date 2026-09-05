@@ -2,6 +2,7 @@
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -28,21 +29,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
-        private readonly IReviewNotificationRecipientResolver _recipientResolver;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public UpsertMemberAwardHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
-            IReviewNotificationRecipientResolver recipientResolver,
+            IDomainEventPublisher events,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
-            _recipientResolver = recipientResolver;
+            _events = events;
             _mapper = mapper;
         }
 
@@ -96,46 +94,26 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await NotifyReviewersAsync(member, existingAward, cancellationToken);
+            await PublishAwardSubmittedAsync(member, existingAward, cancellationToken);
 
             var response = _mapper.Map<MemberAwardDto>(existingAward);
             return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
         }
 
-        private async Task NotifyReviewersAsync(
+        private async Task PublishAwardSubmittedAsync(
             MemberEntity member,
             ProjectK.Common.Entities.KurinModule.MemberAward award,
             CancellationToken cancellationToken)
         {
-            var recipientUserKeys = await _recipientResolver.ResolveAsync(
-                member.KurinKey,
-                member.GroupKey,
-                _currentUserContext.UserId,
+            await _events.PublishAsync(
+                new MemberAwardSubmitted(
+                    award.MemberAwardKey,
+                    member.MemberKey,
+                    $"{member.FirstName} {member.LastName}".Trim(),
+                    member.KurinKey,
+                    member.GroupKey,
+                    _currentUserContext.UserId),
                 cancellationToken);
-
-            if (recipientUserKeys.Count == 0)
-            {
-                return;
-            }
-
-            var memberName = $"{member.FirstName} {member.LastName}".Trim();
-            var requests = recipientUserKeys.Select(userKey => new NotificationRequest
-            {
-                RecipientUserKey = userKey,
-                Type = AppNotificationType.MemberAwardSubmitted,
-                Severity = AppNotificationSeverity.Info,
-                Title = "Відзначення подано на розгляд",
-                Body = string.IsNullOrWhiteSpace(memberName)
-                    ? "Надійшло відзначення на розгляд."
-                    : $"Надійшло відзначення від {memberName} на розгляд.",
-                EntityType = "MemberAward",
-                EntityKey = award.MemberAwardKey,
-                Route = $"/member/{member.MemberKey}",
-                ActorUserKey = _currentUserContext.UserId,
-                DeduplicationKey = $"award-submitted:{award.MemberAwardKey}"
-            });
-
-            await _notificationService.NotifyManyAsync(requests, cancellationToken);
         }
     }
 }
