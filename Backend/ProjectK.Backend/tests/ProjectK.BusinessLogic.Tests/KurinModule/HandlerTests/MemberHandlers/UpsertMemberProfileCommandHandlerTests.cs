@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+using ProjectK.Common.Models.Events;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -21,6 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<IUnitOfWork> _kurinDataMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IGroupRepository> _groupRepoMock;
+        private readonly Mock<IMembershipRepository> _membershipsMock = new();
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
         private readonly Mock<IDomainEventPublisher> _eventsMock;
         private readonly UpsertMemberProfileCommandHandler _handler;
@@ -46,6 +48,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
             _kurinDataMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
+            _kurinDataMock.Setup(u => u.Memberships).Returns(_membershipsMock.Object);
+            _membershipsMock
+                .Setup(m => m.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
             _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             _handler = new UpsertMemberProfileCommandHandler(
@@ -66,8 +72,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             new()
             {
                 MemberKey = Guid.NewGuid(),
-                GroupKey = groupKey,
-                KurinKey = kurinKey,
                 FirstName = "Old",
                 MiddleName = "M",
                 LastName = "Name",
@@ -80,6 +84,21 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private void ExistingMemberIs(Member? member, Guid memberKey) =>
             _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member!);
+
+        /// <summary>
+        /// Says where the person already stands. Nothing on their record answers that any more, so a
+        /// fixture that omits this is describing someone who belongs nowhere.
+        /// </summary>
+        private void AlreadyPlacedIn(Guid memberKey, Guid kurinKey, Guid? groupKey) =>
+            _membershipsMock
+                .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Membership
+                {
+                    MemberKey = memberKey,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    JoinedAtUtc = DateTime.UtcNow.AddYears(-1)
+                }]);
 
         private void GroupIs(Group group) =>
             _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
@@ -141,8 +160,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 
             result.Type.Should().Be(ResultType.Success);
             created.Should().NotBeNull();
-            created!.GroupKey.Should().BeNull();
-            created.KurinKey.Should().Be(kurinKey);
+            // Placement is announced, not written on the record: what the kurin does with it is its own.
+            _eventsMock.Verify(x => x.PublishAsync(
+                It.Is<MemberPlaced>(e => e.KurinKey == kurinKey && e.GroupKey == null),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -191,6 +212,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var cmd = ProfileCommandFor(existing, group);
 
             ExistingMemberIs(existing, existing.MemberKey);
+            AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
             GroupIs(group);
 
             var result = await _handler.Handle(cmd, CancellationToken.None);

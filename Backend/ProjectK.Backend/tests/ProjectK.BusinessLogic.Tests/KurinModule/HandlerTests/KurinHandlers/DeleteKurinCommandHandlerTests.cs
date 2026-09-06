@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
@@ -16,7 +15,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
     public class DeleteKurinHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
         private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
         private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
@@ -49,7 +47,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
-            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _memberDirectory.Object, _cacheMock.Object);
+            _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }
 
         [Fact]
@@ -64,9 +62,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(1);
-            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
-                .ReturnsAsync([]);
-            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -127,9 +122,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
                 .ReturnsAsync(0);
-            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
-                .ReturnsAsync([]);
-            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act
             var result = await _handler.Handle(command, default);
@@ -154,9 +146,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
                 .ReturnsAsync(kurin);
             _kurinRepositoryMock.Setup(r => r.Delete(kurin, default))
                 .Throws(expectedException);
-            _memberRepositoryMock.Setup(r => r.GetTrackedForKurinDeletionAsync(kurinKey, default))
-                .ReturnsAsync([]);
-            _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));

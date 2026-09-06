@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Moq;
@@ -35,6 +35,8 @@ public class MemberAwardHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<IUnitOfWork> _kurinDataMock = new();
+    private readonly Mock<IMembershipRepository> _membershipsMock = new();
 
     private readonly UpsertMemberAwardHandler _upsertHandler;
     private readonly ReviewMemberAwardHandler _reviewHandler;
@@ -54,12 +56,17 @@ public class MemberAwardHandlerTests
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+        _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
+        _membershipsMock
+            .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
 
         _upsertHandler = new UpsertMemberAwardHandler(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _kurinDataMock.Object);
         _reviewHandler = new ReviewMemberAwardHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,
@@ -76,6 +83,7 @@ public class MemberAwardHandlerTests
         var mentorUserKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(kurinKey);
         var groupKey = Guid.NewGuid();
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
@@ -84,8 +92,6 @@ public class MemberAwardHandlerTests
             .ReturnsAsync(new Member
             {
                 MemberKey = memberKey,
-                KurinKey = kurinKey,
-                GroupKey = groupKey,
                 FirstName = "Ivan",
                 LastName = "Petrenko"
             });
@@ -120,12 +126,13 @@ public class MemberAwardHandlerTests
     {
         var memberKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(kurinKey);
         var userKey = _currentUserContextMock.Object.UserId!.Value;
         var dateAcquired = DateTime.UtcNow.AddDays(-1);
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+            .ReturnsAsync(new Member { MemberKey = memberKey });
 
         MemberAward? created = null;
         _memberAwardRepositoryMock
@@ -163,13 +170,14 @@ public class MemberAwardHandlerTests
     {
         var memberKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(kurinKey);
         var awardKey = Guid.NewGuid();
         var userKey = _currentUserContextMock.Object.UserId!.Value;
         var dateAcquired = DateTime.UtcNow.AddDays(-1);
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = kurinKey });
+            .ReturnsAsync(new Member { MemberKey = memberKey });
 
         var existingAward = new MemberAward 
         {

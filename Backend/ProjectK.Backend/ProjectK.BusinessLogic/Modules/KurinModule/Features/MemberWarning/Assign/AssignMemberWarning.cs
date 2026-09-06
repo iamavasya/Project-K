@@ -89,7 +89,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assi
             var warningEntity = new Common.Entities.KurinModule.MemberWarning
             {
                 MemberKey = request.MemberKey,
-                KurinKey = member.KurinKey,
+                KurinKey = _currentUserContext.KurinKey ?? Guid.Empty,
                 Level = request.Level,
                 IssuedAtUtc = now,
                 ExpiresAtUtc = expiresAtUtc,

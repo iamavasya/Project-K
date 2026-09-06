@@ -28,7 +28,7 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             // Kurin Mapping
             CreateMap<Kurin, KurinResponse>()
                 .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
-                .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Members.Count));
+                .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)));
             CreateMap<UpsertKurin, Kurin>(MemberList.None)
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
@@ -39,14 +39,12 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
             CreateMap<UpsertGroup, Group>(MemberList.None)
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping
             CreateMap<UpsertMemberProfileCommand, Member>(MemberList.None)
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UserKey, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore());
 
@@ -62,7 +60,12 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>())
                 // Offices live in LeadershipHistories, not on Member, so the entity cannot answer
                 // this. The repository projections fill it; mapping from the entity leaves it null.
-                .ForMember(dest => dest.UserRole, opt => opt.Ignore());
+                .ForMember(dest => dest.UserRole, opt => opt.Ignore())
+                // Where the person stands is said by their membership, which is a different table in
+                // a different aggregate. The caller fills these from it — the response keeps carrying
+                // them so the frontend does not have to change in the same release.
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupKey, opt => opt.Ignore());
 
             // Lean list read model -> same response shape as the full card. Level,
             // active leadership and active warnings are already resolved in the
@@ -118,7 +121,6 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             CreateMap<UpsertLeadership, Leadership>(MemberList.None)
                 .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Type, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
 

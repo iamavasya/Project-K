@@ -73,8 +73,7 @@ public sealed class MemberDirectory : IMemberDirectory
             Email = details.Email,
             PhoneNumber = details.PhoneNumber,
             DateOfBirth = details.DateOfBirth,
-            UserKey = details.UserKey,
-            KurinKey = details.KurinKey
+            UserKey = details.UserKey
         };
 
         _unitOfWork.Members.Create(member, cancellationToken);
@@ -124,20 +123,6 @@ public sealed class MemberDirectory : IMemberDirectory
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<IReadOnlyCollection<Guid>> RemoveForGroupAsync(
-        Guid groupKey,
-        CancellationToken cancellationToken = default)
-        => RemoveAllAsync(
-            _unitOfWork.Members.GetAllAsync(groupKey, cancellationToken),
-            cancellationToken);
-
-    public Task<IReadOnlyCollection<Guid>> RemoveForKurinAsync(
-        Guid kurinKey,
-        CancellationToken cancellationToken = default)
-        => RemoveAllAsync(
-            _unitOfWork.Members.GetTrackedForKurinDeletionAsync(kurinKey, cancellationToken),
-            cancellationToken);
-
     public async Task<bool> RemoveAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
@@ -149,21 +134,6 @@ public sealed class MemberDirectory : IMemberDirectory
         _unitOfWork.Members.Delete(member, cancellationToken);
         await AnnounceRemovalAsync([memberKey], cancellationToken);
         return true;
-    }
-
-    private async Task<IReadOnlyCollection<Guid>> RemoveAllAsync(
-        Task<IEnumerable<Member>> loading,
-        CancellationToken cancellationToken)
-    {
-        var members = (await loading).ToList();
-        foreach (var member in members)
-        {
-            _unitOfWork.Members.Delete(member, cancellationToken);
-        }
-
-        var memberKeys = members.Select(member => member.MemberKey).ToArray();
-        await AnnounceRemovalAsync(memberKeys, cancellationToken);
-        return memberKeys;
     }
 
     private Task AnnounceRemovalAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken)

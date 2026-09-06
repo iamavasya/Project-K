@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
@@ -189,28 +189,26 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 FirstName = "Тест",
                 LastName = "Учасник",
                 Email = "test@projectk.com",
-                PhoneNumber = "0500000000",
-                GroupKey = group.GroupKey,
-                KurinKey = kurin.KurinKey
+                PhoneNumber = "0500000000"
             };
             context.Members.Add(seeded);
-            context.Memberships.Add(Placing.Of(seeded));
+            context.Memberships.Add(Placing.Of(seeded, kurin.KurinKey, group.GroupKey));
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
             var tracked = await uow.Groups.GetByKeyAsync(group.GroupKey);
-            var members = await uow.Members.GetAllAsync(group.GroupKey);
-
-            foreach (var member in members)
-            {
-                uow.Members.Delete(member);
-            }
+            await uow.Memberships.DetachFromGroupAsync(group.GroupKey);
 
             uow.Groups.Delete(tracked!);
             await uow.SaveChangesAsync();
 
             Assert.False(await uow.Groups.ExistsAsync(group.GroupKey));
-            Assert.Empty(context.Members.Where(m => m.GroupKey == group.GroupKey));
+
+            // The гурток is gone; the person is not, and neither is their place in the kurin.
+            var membership = Assert.Single(context.Memberships);
+            Assert.Null(membership.GroupKey);
+            Assert.Equal(kurin.KurinKey, membership.KurinKey);
+            Assert.Single(context.Members);
         }
 
         /// <summary>
@@ -243,12 +241,10 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 FirstName = "Тест",
                 LastName = "Учасник",
                 Email = "assignments@projectk.com",
-                PhoneNumber = "0500000000",
-                GroupKey = group.GroupKey,
-                KurinKey = kurin.KurinKey
+                PhoneNumber = "0500000000"
             };
             context.Members.Add(seeded);
-            context.Memberships.Add(Placing.Of(seeded));
+            context.Memberships.Add(Placing.Of(seeded, kurin.KurinKey, group.GroupKey));
 
             var item = new AgendaItem { KurinKey = kurin.KurinKey, Title = "Сходина" };
             context.AgendaItems.Add(item);
@@ -259,20 +255,20 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
-            var members = (await uow.Members.GetAllAsync(group.GroupKey)).ToList();
-            await uow.AgendaItems.RemoveAssignmentsForTargetsAsync(
-                [group.GroupKey, .. members.Select(member => member.MemberKey)]);
-            foreach (var member in members)
-            {
-                uow.Members.Delete(member);
-            }
+            await uow.AgendaItems.RemoveAssignmentsForTargetsAsync([group.GroupKey]);
+            await uow.Memberships.DetachFromGroupAsync(group.GroupKey);
 
             uow.Groups.Delete((await uow.Groups.GetByKeyAsync(group.GroupKey))!);
             await uow.SaveChangesAsync();
 
-            var left = context.AgendaAssignments.Where(a => a.AgendaItemKey == item.AgendaItemKey).ToList();
-            Assert.Single(left);
-            Assert.Equal(AgendaTargetType.Kurin, left[0].TargetType);
+            // The гурток's own assignment goes; the person keeps theirs, because the person stays.
+            var left = context.AgendaAssignments
+                .Where(a => a.AgendaItemKey == item.AgendaItemKey)
+                .OrderBy(a => a.TargetType)
+                .ToList();
+            Assert.Equal(2, left.Count);
+            Assert.Contains(left, a => a.TargetType == AgendaTargetType.Member && a.TargetKey == memberKey);
+            Assert.Contains(left, a => a.TargetType == AgendaTargetType.Kurin);
         }
     }
 }

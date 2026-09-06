@@ -63,7 +63,14 @@ namespace ProjectK.Infrastructure.Seeding
                     var member = await unitOfWork.Members.GetByUserKeyAsync(user.Id);
                     if (member is not null)
                     {
-                        await EnsureKvZvyazkovyiOfficeAsync(dbContext, member.MemberKey, member.KurinKey);
+                        var kurinKey = await dbContext.Memberships
+                            .Where(ms => ms.MemberKey == member.MemberKey && ms.LeftAtUtc == null)
+                            .Select(ms => (Guid?)ms.KurinKey)
+                            .FirstOrDefaultAsync();
+                        if (kurinKey is not null)
+                        {
+                            await EnsureKvZvyazkovyiOfficeAsync(dbContext, member.MemberKey, kurinKey.Value);
+                        }
                     }
                 }
             }

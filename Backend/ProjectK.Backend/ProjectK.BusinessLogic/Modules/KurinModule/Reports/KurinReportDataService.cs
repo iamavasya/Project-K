@@ -49,7 +49,7 @@ public sealed class KurinReportDataService
             return null;
         }
 
-        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey, _, _, _) = source;
+        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey, _, _, _, _) = source;
 
         var groupNamesByKey = groups.ToDictionary(group => group.GroupKey, group => group.Name);
         var memberByUserKey = members
@@ -76,7 +76,7 @@ public sealed class KurinReportDataService
                 await _media.TryDownloadAsync(group.SilhouetteBlobName, cancellationToken),
                 ResolveMentorNames(group.GroupKey, mentorAssignments, memberByUserKey, usersByKey),
                 members
-                    .Where(member => member.GroupKey == group.GroupKey)
+                    .Where(member => GroupOf(source, member.MemberKey) == group.GroupKey)
                     .OrderBy(member => member.LastName)
                     .ThenBy(member => member.FirstName)
                     .Select(member => new KurinReportGroupMember(
@@ -150,8 +150,8 @@ public sealed class KurinReportDataService
         return new KurinReportMember(
             member.MemberKey,
             member.UserKey,
-            member.GroupKey,
-            member.GroupKey is Guid groupKey && groupNamesByKey.TryGetValue(groupKey, out var groupName)
+            GroupOf(source, member.MemberKey),
+            GroupOf(source, member.MemberKey) is Guid groupKey && groupNamesByKey.TryGetValue(groupKey, out var groupName)
                 ? groupName
                 : null,
             BuildFullName(member),
@@ -313,6 +313,10 @@ public sealed class KurinReportDataService
 
         return "unknown";
     }
+    /// <summary>Which гурток of this kurin the person is in — their membership says, not their record.</summary>
+    private static Guid? GroupOf(KurinReportSourceData source, Guid memberKey)
+        => source.MembershipByMemberKey.TryGetValue(memberKey, out var membership) ? membership.GroupKey : null;
+
 
     private static string BuildFullName(Member member)
         => string.Join(" ", new[] { member.FirstName, member.MiddleName, member.LastName }

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
@@ -35,7 +35,7 @@ public class AssignMentorCommandHandlerTests
     private static (Group group, Member member) BuildFixture(Guid groupKey, Guid kurinKey, Guid mentorUserKey)
     {
         var group = new Group("G", kurinKey) { GroupKey = groupKey, KurinKey = kurinKey };
-        var member = new Member { MemberKey = Guid.NewGuid(), UserKey = mentorUserKey, KurinKey = kurinKey, FirstName = "A", LastName = "B", Email = "a@b.com", PhoneNumber = "1", DateOfBirth = new DateOnly(2000, 1, 1) };
+        var member = new Member { MemberKey = Guid.NewGuid(), UserKey = mentorUserKey, FirstName = "A", LastName = "B", Email = "a@b.com", PhoneNumber = "1", DateOfBirth = new DateOnly(2000, 1, 1) };
         return (group, member);
     }
 
@@ -52,7 +52,7 @@ public class AssignMentorCommandHandlerTests
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
@@ -76,7 +76,7 @@ public class AssignMentorCommandHandlerTests
             .ReturnsAsync(new MentorAssignmentEntity { MentorAssignmentKey = Guid.NewGuid(), MentorUserKey = mentorUserKey, GroupKey = groupKey, AssignedAtUtc = DateTime.UtcNow });
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 

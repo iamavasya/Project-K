@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System;
@@ -16,7 +15,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
     public class DeleteGroupHandlerTests
     {
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly DeleteGroupHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
@@ -42,11 +40,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
                 .Setup(r => r.DeleteForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
 
-            _memberDirectory
-                .Setup(d => d.RemoveForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Array.Empty<Guid>());
-
-            _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _memberDirectory.Object, _cacheMock.Object);
+            _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _cacheMock.Object);
         }
 
         [Fact]

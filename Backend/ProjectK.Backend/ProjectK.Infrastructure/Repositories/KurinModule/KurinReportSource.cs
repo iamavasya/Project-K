@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -41,10 +42,19 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(assignment => groupKeys.Contains(assignment.GroupKey) && assignment.RevokedAtUtc == null)
             .ToListAsync(cancellationToken);
 
+        // Who the report is about is decided by membership, and the membership is also what says
+        // which гурток each of them is in — the person's own record no longer carries either.
+        var memberships = await _context.Memberships
+            .AsNoTracking()
+            .Where(membership => membership.KurinKey == kurinKey && membership.LeftAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        var memberKeysHere = memberships.Select(membership => membership.MemberKey).ToArray();
+
         var members = await _context.Members
             .AsNoTracking()
             .AsSplitQuery()
-            .Where(member => member.KurinKey == kurinKey)
+            .Where(member => memberKeysHere.Contains(member.MemberKey))
             .Include(member => member.PlastLevelHistory)
             .Include(member => member.MemberWarnings)
             .Include(member => member.MemberAwards)
@@ -85,21 +95,31 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(user => userKeys.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, cancellationToken);
 
-        var roleRows = await (
-                from userRole in _context.UserRoles.AsNoTracking()
-                join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
-                where userKeys.Contains(userRole.UserId)
-                select new { userRole.UserId, role.Name })
+        // The offices held here, not what the identity store says a person is anywhere — an office
+        // belongs to a kurin, and this report is about one.
+        var officeRows = await (
+                from history in _context.LeadershipHistories.AsNoTracking()
+                where history.EndDate == null && memberKeysHere.Contains(history.MemberKey)
+                join office in _context.Leaderships.AsNoTracking()
+                    on history.LeadershipKey equals office.LeadershipKey
+                where office.EndDate == null
+                    && (office.KurinKey == kurinKey
+                        || (office.GroupKey != null && office.Group!.KurinKey == kurinKey))
+                select new { history.MemberKey, office.Type, history.Role })
             .ToListAsync(cancellationToken);
 
-        var rolesByUserKey = roleRows
-            .GroupBy(row => row.UserId)
+        var userKeyByMemberKey = members
+            .Where(member => member.UserKey.HasValue)
+            .ToDictionary(member => member.MemberKey, member => member.UserKey!.Value);
+
+        var rolesByUserKey = officeRows
+            .Where(row => userKeyByMemberKey.ContainsKey(row.MemberKey))
+            .GroupBy(row => userKeyByMemberKey[row.MemberKey])
             .ToDictionary(
                 group => group.Key,
                 group => group
-                    .Select(row => row.Name)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Cast<string>()
+                    .Select(row => SystemRole.ForOffice(row.Type, row.Role))
+                    .Append(SystemRole.Member)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(name => name)
                     .ToArray() as IReadOnlyList<string>);
@@ -113,7 +133,8 @@ public sealed class KurinReportSource : IKurinReportSource
             rolesByUserKey,
             GroupByMember(probeProgress, progress => progress.MemberKey),
             GroupByMember(probePointProgress, progress => progress.MemberKey),
-            GroupByMember(badgeProgress, progress => progress.MemberKey));
+            GroupByMember(badgeProgress, progress => progress.MemberKey),
+            memberships.ToDictionary(membership => membership.MemberKey));
     }
 
     private static IReadOnlyDictionary<Guid, IReadOnlyList<T>> GroupByMember<T>(

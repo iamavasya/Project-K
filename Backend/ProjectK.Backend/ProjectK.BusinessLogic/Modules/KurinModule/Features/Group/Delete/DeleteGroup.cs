@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -12,13 +11,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
     public sealed class DeleteGroupHandler : IRequestHandler<DeleteGroup, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMemberDirectory _members;
         private readonly IBackendCache _cache;
         public DeleteGroupHandler(IUnitOfWork unitOfWork,
-            IMemberDirectory members, IBackendCache cache)
+            IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
-            _members = members;
             _cache = cache;
         }
         public async Task<ServiceResult<object>> Handle(DeleteGroup request, CancellationToken cancellationToken)
@@ -39,22 +36,19 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
                     $"Group with key {request.GroupKey} not found.");
             }
 
-            // Everything the гурток holds goes first: its провід is Restrict, its members are
-            // NoAction, so the database refuses to delete a гурток that still has either. Mentor
-            // assignments and the members' own history cascade on their own.
+            // Its провід goes first — that one is Restrict, so the database refuses to delete a
+            // гурток that still carries one. Mentor assignments cascade on their own.
             var leadershipKeys = await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
 
-            var removedMemberKeys = await _members.RemoveForGroupAsync(request.GroupKey, cancellationToken);
-
-            // A membership left over from someone who has since moved on still names this гурток and
-            // would refuse its deletion. Being in no гурток is a legitimate state, so it is forgotten
-            // rather than closed.
+            // The people stay, and stay in the kurin — they are simply no longer in a гурток, which
+            // is a state a membership is allowed to be in. Dissolving a гурток is not a reason for
+            // anyone to leave.
             await _unitOfWork.Memberships.DetachFromGroupAsync(request.GroupKey, cancellationToken);
 
             // Agenda assignments name their target by a bare key, so nothing in the database clears
-            // them: the гурток, the offices and the members about to disappear are all valid targets.
+            // them: both the гурток and its offices are valid targets and are about to disappear.
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(
-                [request.GroupKey, .. leadershipKeys, .. removedMemberKeys],
+                [request.GroupKey, .. leadershipKeys],
                 cancellationToken);
 
             _unitOfWork.Groups.Delete(existing, cancellationToken);

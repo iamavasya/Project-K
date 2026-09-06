@@ -115,6 +115,9 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<MemberController, Guid, string?>>(nameof(MemberController.GetDossier), "RequireUser");
         yield return Row<Action<MemberController, Guid, string>>(nameof(MemberController.GetDossierFolder), "RequireUser");
+        yield return Row<Action<KurinController, Guid, KurinController.JoinKurinRequest>>(nameof(KurinController.Join), "RequireUser");
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), "RequireUser");
+        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

@@ -80,9 +80,10 @@ namespace ProjectK.Infrastructure.Seeding
                 .Select(g => g.GroupKey)
                 .ToListAsync();
 
-            var memberKeys = await dbContext.Members
-                .Where(m => m.KurinKey == kurinKey)
-                .Select(m => m.MemberKey)
+            var memberKeys = await dbContext.Memberships
+                .Where(ms => ms.KurinKey == kurinKey)
+                .Select(ms => ms.MemberKey)
+                .Distinct()
                 .ToListAsync();
 
             var usersToDelete = await userManager.Users
@@ -204,8 +205,15 @@ namespace ProjectK.Infrastructure.Seeding
                 .ToListAsync();
             dbContext.MentorAssignments.RemoveRange(mentorAssignments);
 
+            // The seeder wipes its own demo kurin outright, people included — the reset exists to
+            // give every run the same starting point, and these are not real people.
+            var memberships = await dbContext.Memberships
+                .Where(ms => ms.KurinKey == kurinKey)
+                .ToListAsync();
+            dbContext.Memberships.RemoveRange(memberships);
+
             var members = await dbContext.Members
-                .Where(m => m.KurinKey == kurinKey)
+                .Where(m => memberKeys.Contains(m.MemberKey))
                 .ToListAsync();
             dbContext.Members.RemoveRange(members);
 
@@ -231,7 +239,6 @@ namespace ProjectK.Infrastructure.Seeding
                     EmailConfirmed = true,
                     FirstName = firstName,
                     LastName = lastName,
-                    KurinKey = kurinKey,
                     OnboardingStatus = OnboardingStatus.Active
                 };
 
@@ -305,8 +312,6 @@ namespace ProjectK.Infrastructure.Seeding
                     Email = email,
                     PhoneNumber = phoneNumber,
                     DateOfBirth = dateOfBirth,
-                    KurinKey = kurinKey,
-                    GroupKey = groupKey,
                     UserKey = user!.Id
                 };
                 dbContext.Members.Add(member);
@@ -364,7 +369,6 @@ namespace ProjectK.Infrastructure.Seeding
                     EmailConfirmed = true,
                     FirstName = firstName,
                     LastName = lastName,
-                    KurinKey = kurinKey,
                     OnboardingStatus = OnboardingStatus.Active
                 };
 

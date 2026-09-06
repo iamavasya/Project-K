@@ -25,7 +25,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public bool IsZbtKurin { get; set; }
         public bool ProfileVerificationEnabled { get; set; }
         public ICollection<Group> Groups { get; set; } = new List<Group>();
-        public ICollection<Member> Members { get; set; } = new List<Member>();
         public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
         public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();
         public ICollection<PlanningSession> PlanningSessions { get; set; } = new List<PlanningSession>();

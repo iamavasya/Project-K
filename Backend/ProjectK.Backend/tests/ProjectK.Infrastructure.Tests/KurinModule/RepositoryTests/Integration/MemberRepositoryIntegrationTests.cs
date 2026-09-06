@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -27,18 +27,16 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             return new AppDbContext(options);
         }
 
-        private static Member Placed(InfraUnitOfWork uow, Member member)
+        private static Member Placed(InfraUnitOfWork uow, Member member, Guid kurinKey, Guid? groupKey = null)
         {
             uow.Members.Create(member);
-            uow.Memberships.Create(Placing.Of(member));
+            uow.Memberships.Create(Placing.Of(member, kurinKey, groupKey));
             return member;
         }
 
-        private static Member BuildMember(Group group, Kurin kurin, string firstName = "Ivan", string lastName = "Petrenko", string middle = "I.")
+        private static Member BuildMember(Group _, Kurin __, string firstName = "Ivan", string lastName = "Petrenko", string middle = "I.")
             => new Member
             {
-                GroupKey = group.GroupKey,
-                KurinKey = kurin.KurinKey,
                 FirstName = firstName,
                 LastName = lastName,
                 MiddleName = middle,
@@ -62,19 +60,13 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Oleh", "Shevchenko");
-            Placed(uow, member);
+            Placed(uow, member, kurin.KurinKey, group.GroupKey);
             await uow.SaveChangesAsync();
 
             var fetched = await uow.Members.GetByKeyAsync(member.MemberKey);
 
             Assert.NotNull(fetched);
             Assert.Equal(member.MemberKey, fetched!.MemberKey);
-            Assert.Equal(member.GroupKey, fetched.GroupKey);
-            Assert.Equal(member.KurinKey, fetched.KurinKey);
-            Assert.NotNull(fetched.Group);
-            Assert.NotNull(fetched.Kurin);
-            Assert.Equal(group.Name, fetched.Group.Name);
-            Assert.Equal(kurin.Number, fetched.Kurin.Number);
         }
 
         [Fact]
@@ -93,17 +85,15 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(group2);
             await uow.SaveChangesAsync();
 
-            Placed(uow, BuildMember(group1, kurin, "A1", "L1"));
-            Placed(uow, BuildMember(group1, kurin, "A2", "L2"));
-            Placed(uow, BuildMember(group2, kurin, "B1", "L3"));
+            Placed(uow, BuildMember(group1, kurin, "A1", "L1"), kurin.KurinKey, group1.GroupKey);
+            Placed(uow, BuildMember(group1, kurin, "A2", "L2"), kurin.KurinKey, group1.GroupKey);
+            Placed(uow, BuildMember(group2, kurin, "B1", "L3"), kurin.KurinKey, group2.GroupKey);
             await uow.SaveChangesAsync();
 
             var group1Members = (await uow.Members.GetAllAsync(group1.GroupKey)).ToList();
 
             Assert.Equal(2, group1Members.Count);
-            Assert.All(group1Members, m => Assert.Equal(group1.GroupKey, m.GroupKey));
-            Assert.All(group1Members, m => Assert.NotNull(m.Group));
-            Assert.All(group1Members, m => Assert.NotNull(m.Kurin));
+            Assert.All(group1Members, m => Assert.Contains(context.Memberships, ms => ms.MemberKey == m.MemberKey && ms.GroupKey == group1.GroupKey));
         }
 
         [Fact]
@@ -126,15 +116,15 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(g2a);
             await uow.SaveChangesAsync();
 
-            Placed(uow, BuildMember(g1a, kurin1, "M1", "L1"));
-            Placed(uow, BuildMember(g1b, kurin1, "M2", "L2"));
-            Placed(uow, BuildMember(g2a, kurin2, "M3", "L3"));
+            Placed(uow, BuildMember(g1a, kurin1, "M1", "L1"), kurin1.KurinKey, g1a.GroupKey);
+            Placed(uow, BuildMember(g1b, kurin1, "M2", "L2"), kurin1.KurinKey, g1b.GroupKey);
+            Placed(uow, BuildMember(g2a, kurin2, "M3", "L3"), kurin2.KurinKey, g2a.GroupKey);
             await uow.SaveChangesAsync();
 
             var kurin1Members = (await uow.Members.GetAllByKurinKeyAsync(kurin1.KurinKey)).ToList();
 
             Assert.Equal(2, kurin1Members.Count);
-            Assert.All(kurin1Members, m => Assert.Equal(kurin1.KurinKey, m.KurinKey));
+            Assert.All(kurin1Members, m => Assert.Contains(context.Memberships, ms => ms.MemberKey == m.MemberKey && ms.KurinKey == kurin1.KurinKey));
         }
 
         [Fact]
@@ -152,7 +142,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Exist", "Test");
-            Placed(uow, member);
+            Placed(uow, member, kurin.KurinKey, group.GroupKey);
             await uow.SaveChangesAsync();
 
             var exists = await uow.Members.ExistsAsync(member.MemberKey);
@@ -177,7 +167,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Old", "Name");
-            Placed(uow, member);
+            Placed(uow, member, kurin.KurinKey, group.GroupKey);
             await uow.SaveChangesAsync();
 
             member.FirstName = "New";
@@ -206,7 +196,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Del", "User");
-            Placed(uow, member);
+            Placed(uow, member, kurin.KurinKey, group.GroupKey);
             await uow.SaveChangesAsync();
 
             uow.Members.Delete(member);
@@ -231,14 +221,13 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Active", "Roles");
-            Placed(uow, member);
+            Placed(uow, member, kurin.KurinKey, group.GroupKey);
             await uow.SaveChangesAsync();
 
             var leadership = new Leadership
             {
                 LeadershipKey = Guid.NewGuid(),
                 Type = LeadershipType.Group,
-                GroupKey = group.GroupKey,
                 Group = group,
                 Name = "Alpha leadership",
                 StartDate = new DateOnly(2024, 1, 1)
@@ -326,9 +315,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             var hidden = BuildMember(hiddenGroup, kurin, "In", "HiddenGroup");
             hidden.Address = "Hidden St";
             hidden.School = "Hidden School";
-            Placed(uow, owner);
-            Placed(uow, inVisibleGroup);
-            Placed(uow, hidden);
+            Placed(uow, owner, kurin.KurinKey, ownGroup.GroupKey);
+            Placed(uow, inVisibleGroup, kurin.KurinKey, visibleGroup.GroupKey);
+            Placed(uow, hidden, kurin.KurinKey, hiddenGroup.GroupKey);
             await uow.SaveChangesAsync();
 
             // Caller is a mentor: not admin/manager, owns `owner`'s account, assigned to visibleGroup only.

@@ -9,9 +9,8 @@ using Xunit;
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 
 /// <summary>
-/// Who a kurin's people are is answered by its memberships, not by the kurin written on a person's
-/// own record. The two still agree in normal use, so each test here deliberately makes them
-/// disagree — that is the only way to see which one the reads actually follow.
+/// Who a kurin''s people are is answered by its memberships, and by nothing else — a person''s own
+/// record no longer says where they are at all. These read the lists from both sides of that.
 /// </summary>
 public class MemberReadsFollowMembershipTests
 {
@@ -22,16 +21,14 @@ public class MemberReadsFollowMembershipTests
 
     private static readonly MemberFieldVisibility SeesEverything = new(true, Guid.NewGuid(), []);
 
-    private static Member Person(Guid kurinKey, Guid? groupKey = null, string firstName = "Оксана") => new()
+    private static Member Person(string firstName = "Оксана") => new()
     {
         MemberKey = Guid.NewGuid(),
         FirstName = firstName,
         LastName = "Тестова",
         Email = $"{Guid.NewGuid():N}@example.com",
         PhoneNumber = "0500000000",
-        DateOfBirth = new DateOnly(2005, 4, 1),
-        KurinKey = kurinKey,
-        GroupKey = groupKey
+        DateOfBirth = new DateOnly(2005, 4, 1)
     };
 
     private static Membership Joining(Guid memberKey, Guid kurinKey, Guid? groupKey = null) => new()
@@ -44,26 +41,6 @@ public class MemberReadsFollowMembershipTests
     };
 
     [Fact]
-    public async Task KurinList_ShouldFollowTheMembership_NotTheKurinOnTheMemberRecord()
-    {
-        await using var context = NewContext();
-        var uow = new InfraUnitOfWork(context);
-
-        var wroteOnTheRecord = Guid.NewGuid();
-        var whereTheyActuallyAre = Guid.NewGuid();
-        var person = Person(wroteOnTheRecord);
-        context.Members.Add(person);
-        context.Memberships.Add(Joining(person.MemberKey, whereTheyActuallyAre));
-        await context.SaveChangesAsync();
-
-        var byRecord = await uow.Members.GetListItemsByKurinKeyAsync(wroteOnTheRecord, SeesEverything);
-        var byMembership = await uow.Members.GetListItemsByKurinKeyAsync(whereTheyActuallyAre, SeesEverything);
-
-        Assert.Empty(byRecord);
-        Assert.Equal(person.MemberKey, Assert.Single(byMembership).MemberKey);
-    }
-
-    [Fact]
     public async Task KurinList_ShouldPlaceEveryoneByTheirOwnMembershipsOwnGroup()
     {
         await using var context = NewContext();
@@ -71,7 +48,7 @@ public class MemberReadsFollowMembershipTests
 
         var kurinKey = Guid.NewGuid();
         var onlyGroup = Guid.NewGuid();
-        var person = Person(kurinKey, groupKey: null);
+        var person = Person();
         context.Members.Add(person);
         context.Memberships.Add(Joining(person.MemberKey, kurinKey, onlyGroup));
         await context.SaveChangesAsync();
@@ -89,7 +66,7 @@ public class MemberReadsFollowMembershipTests
         var uow = new InfraUnitOfWork(context);
 
         var kurinKey = Guid.NewGuid();
-        var person = Person(kurinKey);
+        var person = Person();
         var left = Joining(person.MemberKey, kurinKey);
         left.LeftAtUtc = DateTime.UtcNow.AddDays(-2);
         context.Members.Add(person);
@@ -110,7 +87,7 @@ public class MemberReadsFollowMembershipTests
         var youthKurin = Guid.NewGuid();
         var youthGroup = Guid.NewGuid();
         var seniorKurin = Guid.NewGuid();
-        var person = Person(youthKurin, youthGroup);
+        var person = Person();
 
         context.Members.Add(person);
         context.Memberships.AddRange(
@@ -133,7 +110,7 @@ public class MemberReadsFollowMembershipTests
         await using var context = NewContext();
         var uow = new InfraUnitOfWork(context);
 
-        var person = Person(Guid.NewGuid());
+        var person = Person();
         context.Members.Add(person);
         await context.SaveChangesAsync();
 
@@ -154,7 +131,7 @@ public class MemberReadsFollowMembershipTests
         var wasIn = Guid.NewGuid();
         var movesTo = Guid.NewGuid();
         var newGroup = Guid.NewGuid();
-        var person = Person(wasIn);
+        var person = Person();
         context.Members.Add(person);
         context.Memberships.Add(Joining(person.MemberKey, wasIn));
         await context.SaveChangesAsync();
@@ -181,7 +158,7 @@ public class MemberReadsFollowMembershipTests
         var from = Guid.NewGuid();
         var to = Guid.NewGuid();
         var account = Guid.NewGuid();
-        var person = Person(kurinKey, from);
+        var person = Person();
         context.Members.Add(person);
         context.Memberships.Add(Joining(person.MemberKey, kurinKey, from));
         await context.SaveChangesAsync();
@@ -202,7 +179,7 @@ public class MemberReadsFollowMembershipTests
         var uow = new InfraUnitOfWork(context);
 
         var kurinKey = Guid.NewGuid();
-        var person = Person(kurinKey);
+        var person = Person();
         uow.Members.Create(person);
 
         // Both of these land before anything is saved — the second must find what the first opened.
@@ -220,8 +197,8 @@ public class MemberReadsFollowMembershipTests
         var uow = new InfraUnitOfWork(context);
 
         var kurinKey = Guid.NewGuid();
-        var goes = Person(kurinKey);
-        var stays = Person(kurinKey, firstName: "Марта");
+        var goes = Person();
+        var stays = Person("Марта");
         context.Members.AddRange(goes, stays);
         context.Memberships.AddRange(
             Joining(goes.MemberKey, kurinKey),

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.UnitOfWork;
@@ -162,16 +162,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
         }
 
         /// <summary>
-        /// The sequence <c>DeleteKurinHandler</c> runs, against a real change tracker.
-        /// <para>
-        /// Members used to arrive <c>AsNoTracking</c> carrying their own detached kurin, which the
-        /// handler papered over by nulling <c>member.Kurin</c> before removing each one. That hid the
-        /// conflict instead of removing it, and left the offices — <c>NO ACTION</c> against both the
-        /// kurin and its гуртки — for the database to refuse.
-        /// </para>
+        /// The sequence <c>DeleteKurinHandler</c> runs, against a real change tracker — and the claim
+        /// this release exists to make: a kurin closing is something that happens to the kurin. The
+        /// person who belonged to it is still there afterwards, belonging nowhere, with everything
+        /// they earned still theirs.
         /// </summary>
         [Fact]
-        public async Task DeletingAKurin_ShouldClearItsOfficesAndMembersWithoutTrackingConflicts()
+        public async Task DeletingAKurin_ShouldTakeItsOfficesAndMemberships_ButNotThePeople()
         {
             using var context = CreateInMemoryDbContext();
             var uow = new UnitOfWork(context);
@@ -190,12 +187,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
                 FirstName = "Тест",
                 LastName = "Учасник",
                 Email = "kurin-delete@projectk.com",
-                PhoneNumber = "0500000000",
-                GroupKey = group.GroupKey,
-                KurinKey = kurin.KurinKey
+                PhoneNumber = "0500000000"
             };
             context.Members.Add(seeded);
-            context.Memberships.Add(Infrastructure.Tests.KurinModule.RepositoryTests.Integration.Placing.Of(seeded));
+            context.Memberships.Add(Infrastructure.Tests.KurinModule.RepositoryTests.Integration.Placing.Of(seeded, kurin.KurinKey, group.GroupKey));
             context.Leaderships.AddRange(
                 new Leadership { LeadershipKey = Guid.NewGuid(), KurinKey = kurin.KurinKey },
                 new Leadership { LeadershipKey = Guid.NewGuid(), GroupKey = group.GroupKey });
@@ -204,20 +199,18 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
 
             var tracked = await uow.Kurins.GetByKeyAsync(kurin.KurinKey);
             var offices = await uow.Leaderships.DeleteForKurinAsync(kurin.KurinKey);
-            var members = await uow.Members.GetTrackedForKurinDeletionAsync(kurin.KurinKey);
-
-            foreach (var member in members)
-            {
-                uow.Members.Delete(member);
-            }
+            await uow.Memberships.RemoveForKurinAsync(kurin.KurinKey);
 
             uow.Kurins.Delete(tracked!);
             await uow.SaveChangesAsync();
 
             Assert.Equal(2, offices.Count);
             Assert.Empty(context.Leaderships);
-            Assert.Empty(context.Members);
+            Assert.Empty(context.Memberships);
             Assert.False(await uow.Kurins.ExistsAsync(kurin.KurinKey));
+
+            var stillThere = Assert.Single(context.Members);
+            Assert.Equal(seeded.MemberKey, stillThere.MemberKey);
         }
     }
 }

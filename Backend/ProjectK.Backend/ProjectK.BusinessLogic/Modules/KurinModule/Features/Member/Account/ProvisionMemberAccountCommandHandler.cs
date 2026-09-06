@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -16,19 +17,22 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
         private readonly IDomainEventPublisher _events;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IMembershipRepository _memberships;
 
         public ProvisionMemberAccountCommandHandler(
             IMemberUnitOfWork unitOfWork,
             IAccountProvisioningService accountProvisioning,
             IDomainEventPublisher events,
             IEmailService emailService,
-            ICurrentUserContext currentUserContext)
+            ICurrentUserContext currentUserContext,
+            IUnitOfWork kurinData)
         {
             _unitOfWork = unitOfWork;
             _accountProvisioning = accountProvisioning;
             _events = events;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
+            _memberships = kurinData.Memberships;
         }
 
         public async Task<ServiceResult<Guid>> Handle(
@@ -52,13 +56,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account
                 return new ServiceResult<Guid>(ResultType.Conflict);
             }
 
+            // The account is opened for the kurin the person actually belongs to.
+            var placement = await _memberships.GetActiveForMemberAsync(member.MemberKey, cancellationToken);
+            var kurinKey = placement.FirstOrDefault()?.KurinKey ?? Guid.Empty;
+
             var provisioned = await _accountProvisioning.ProvisionAsync(
                 new AccountProvisioningRequest(
                     member.Email,
                     member.FirstName,
                     member.LastName,
                     WaitlistEntryKey: null,
-                    member.KurinKey,
+                    kurinKey,
                     IsBetaParticipant: true,
                     member.PhoneNumber,
                     member.DateOfBirth),

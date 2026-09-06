@@ -66,6 +66,16 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             }
         }
 
+        public Task<Membership?> GetActiveAsync(
+            Guid memberKey,
+            Guid kurinKey,
+            CancellationToken cancellationToken = default)
+            => Context.Memberships.FirstOrDefaultAsync(
+                m => m.MemberKey == memberKey && m.KurinKey == kurinKey && m.LeftAtUtc == null,
+                cancellationToken);
+
+        public void Open(Membership membership) => Context.Memberships.Add(membership);
+
         public async Task PlaceAsync(
             Guid memberKey,
             Guid? userKey,

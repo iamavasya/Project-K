@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Entities.KurinModule;
@@ -60,7 +60,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -93,7 +93,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -115,7 +115,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         var activeWarning = new MemberWarning
         {
@@ -159,7 +159,7 @@ public class MemberWarningHandlerTests
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid(), UserKey = memberUserKey });
+            .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = memberUserKey });
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);

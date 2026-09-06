@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.Common.Entities.AuthModule;
@@ -17,6 +17,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
     {
         private readonly Mock<IMemberUnitOfWork> _uowMock = new();
         private readonly Mock<IMemberRepository> _memberRepoMock = new();
+        private readonly Mock<IUnitOfWork> _kurinDataMock = new();
+        private readonly Mock<IMembershipRepository> _membershipsMock = new();
+        private readonly Mock<IKurinRepository> _kurinsMock = new();
         private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
         private readonly Mock<IEmailService> _emailServiceMock = new();
         private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
@@ -37,12 +40,18 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                     ResultType.Success,
                     new AccountProvisioningResult(Guid.NewGuid(), Guid.NewGuid(), "invitation-token")));
 
+            _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
+            _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurinsMock.Object);
+            _membershipsMock
+                .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
             _handler = new ProvisionMemberAccountCommandHandler(
                 _uowMock.Object,
                 _accountProvisioningMock.Object,
                 new Mock<IDomainEventPublisher>().Object,
                 _emailServiceMock.Object,
-                _currentUserContextMock.Object);
+                _currentUserContextMock.Object,
+                _kurinDataMock.Object);
         }
 
         private Member GivenMember(Guid? userKey = null)
@@ -50,7 +59,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = new Member
             {
                 MemberKey = Guid.NewGuid(),
-                KurinKey = Guid.NewGuid(),
                 FirstName = "Olena",
                 LastName = "Invite",
                 Email = "olena.invite@example.com",
@@ -78,7 +86,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             member.UserKey.Should().Be(result.Data);
             _accountProvisioningMock.Verify(
                 x => x.ProvisionAsync(
-                    It.Is<AccountProvisioningRequest>(r => r.Email == member.Email && r.KurinKey == member.KurinKey),
+                    It.Is<AccountProvisioningRequest>(r => r.Email == member.Email),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
             _emailServiceMock.Verify(

@@ -8,6 +8,9 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
@@ -164,6 +167,69 @@ namespace ProjectK.API.Controllers.KurinModule
         {
             var request = new DeleteKurin(kurinKey);
             var response = await _mediator.Send(request);
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>Body of <c>POST {kurinKey}/memberships</c>.</summary>
+        public sealed class JoinKurinRequest
+        {
+            public Guid MemberKey { get; set; }
+            public Guid? GroupKey { get; set; }
+            public MembershipKind Kind { get; set; } = MembershipKind.Youth;
+        }
+
+        /// <summary>Body of <c>PUT {kurinKey}/memberships/{memberKey}/group</c>.</summary>
+        public sealed class MoveToGroupRequest
+        {
+            public Guid? GroupKey { get; set; }
+        }
+
+        /// <summary>
+        /// Takes a person into this kurin. They keep every other kurin they belong to and everything
+        /// they have earned anywhere — this adds a membership, it does not move them.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpPost("{kurinKey:guid}/memberships")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> Join(Guid kurinKey, [FromBody] JoinKurinRequest request)
+        {
+            var response = await _mediator.Send(
+                new JoinKurin(request.MemberKey, kurinKey, request.GroupKey, request.Kind));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Ends a person's membership in this kurin. Their record and their history stay where they
+        /// are; only the belonging is closed.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpDelete("{kurinKey:guid}/memberships/{memberKey:guid}")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Delete, "route:memberKey")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Leave(Guid kurinKey, Guid memberKey)
+        {
+            var response = await _mediator.Send(new LeaveKurin(memberKey, kurinKey));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Moves a person between гуртки of this kurin, or out of one — a null гурток is allowed.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpPut("{kurinKey:guid}/memberships/{memberKey:guid}/group")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> MoveToGroup(Guid kurinKey, Guid memberKey, [FromBody] MoveToGroupRequest request)
+        {
+            var response = await _mediator.Send(new MoveToGroup(memberKey, kurinKey, request.GroupKey));
             return response.ToActionResult(this);
         }
     }

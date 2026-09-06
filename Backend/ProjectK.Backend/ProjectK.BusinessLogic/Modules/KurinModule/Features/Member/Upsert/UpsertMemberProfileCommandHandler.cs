@@ -5,11 +5,13 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 {
@@ -17,9 +19,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         : IRequestHandler<UpsertMemberProfileCommand, ServiceResult<MemberProfileWriteResult>>
     {
         private readonly IMemberUnitOfWork _unitOfWork;
-        // A member still stores where they are placed, so writing one means reading a гурток. When
-        // placement moves to Membership this dependency goes with it.
+        // Placement is the kurin's to record, so writing a member still means asking the kurin
+        // which гурток is meant and telling it where the person now stands.
         private readonly IUnitOfWork _kurinData;
+        private readonly IMembershipRepository _memberships;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
@@ -33,6 +36,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         {
             _unitOfWork = unitOfWork;
             _kurinData = kurinData;
+            _memberships = kurinData.Memberships;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
             _events = events;
@@ -44,12 +48,19 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         {
             var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
 
+            // Where they already stand. The record does not say any more, so it is read from the
+            // membership — and it is what the request is measured against.
+            var current = existing is null
+                ? null
+                : (await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken))
+                    .FirstOrDefault();
+
             // Someone without leadership may edit their own details but not move themselves between
-            // гуртки or куріні, so the placement is taken back from the stored row.
-            if (existing != null && !CanEditRestrictedFields())
+            // гуртки or куріні, so the placement is taken back from where they already are.
+            if (current is not null && !CanEditRestrictedFields())
             {
-                request.GroupKey = existing.GroupKey;
-                request.KurinKey = existing.KurinKey;
+                request.GroupKey = current.GroupKey;
+                request.KurinKey = current.KurinKey;
             }
 
             GroupEntity? group = null;
@@ -63,6 +74,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 return new ServiceResult<MemberProfileWriteResult>(ResultType.NotFound);
             }
 
+            // Where they are to stand once this is written.
+            var kurinKey = group?.KurinKey ?? request.KurinKey!.Value;
+            var groupKey = group?.GroupKey;
+
             var wasProfileVerifiedCurrent =
                 existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
 
@@ -72,8 +87,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             if (existing == null)
             {
                 existing = _mapper.Map<MemberEntity>(request);
-                existing.GroupKey = group?.GroupKey;
-                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
                 existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
 
                 _unitOfWork.Members.Create(existing, cancellationToken);
@@ -83,7 +96,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             {
                 isCreated = false;
                 var shouldMarkProfileStale = wasProfileVerifiedCurrent
-                    && HasSignificantProfileChange(request, existing, group);
+                    && HasSignificantProfileChange(request, existing, current, kurinKey, groupKey);
 
                 var preserveLinkedUserEmail = false;
                 string? linkedUserEmail = null;
@@ -113,8 +126,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                     existing.Email = linkedUserEmail!;
                 }
 
-                existing.GroupKey = group?.GroupKey;
-                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
 
                 if (shouldMarkProfileStale)
                 {
@@ -123,18 +134,18 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
                 if (CanEditRestrictedFields())
                 {
-                    UpdatePlastLevelHistory(existing.MemberKey, existing.KurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
+                    UpdatePlastLevelHistory(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
                     existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
                 }
 
                 _unitOfWork.Members.Update(existing, cancellationToken);
             }
 
-            // Where the person stands is the kurin's to record. Said out loud rather than written
-            // here, so that when placement stops living on the member record this line is the only
-            // thing that has to change.
+            // Where the person stands is the kurin's to record, and it is the only place it is
+            // written. The member module says who was put where; the kurin opens or moves the
+            // membership in response, inside this same unit of work.
             await _events.PublishAsync(
-                new MemberPlaced(existing.MemberKey, existing.UserKey, existing.KurinKey, existing.GroupKey),
+                new MemberPlaced(existing.MemberKey, existing.UserKey, kurinKey, groupKey),
                 cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -218,11 +229,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private bool HasSignificantProfileChange(
             UpsertMemberProfileCommand request,
             MemberEntity existing,
-            GroupEntity? targetGroup)
+            MembershipEntity? current,
+            Guid targetKurinKey,
+            Guid? targetGroupKey)
         {
-            var targetGroupKey = targetGroup?.GroupKey;
-            var targetKurinKey = targetGroup?.KurinKey ?? request.KurinKey;
-
             return !string.Equals(existing.FirstName, request.FirstName, StringComparison.Ordinal)
                    || !string.Equals(existing.MiddleName ?? string.Empty, request.MiddleName ?? string.Empty, StringComparison.Ordinal)
                    || !string.Equals(existing.LastName, request.LastName, StringComparison.Ordinal)
@@ -231,8 +241,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                    || existing.DateOfBirth != request.DateOfBirth
                    || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
                    || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
-                   || existing.GroupKey != targetGroupKey
-                   || existing.KurinKey != targetKurinKey
+                   || current?.GroupKey != targetGroupKey
+                   || current?.KurinKey != targetKurinKey
                    || (CanEditRestrictedFields() && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
         }
 

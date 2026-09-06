@@ -11,6 +11,12 @@ using ProjectK.Common.Entities;
 
 namespace ProjectK.Common.Entities.KurinModule
 {
+    /// <summary>
+    /// A person. Not a person <i>of</i> anywhere — where they belong is said by
+    /// <see cref="Membership"/>, one row per kurin, and a person may hold several at once or none at
+    /// all. Everything here is theirs and outlives any of those: leaving a kurin, or the kurin
+    /// itself being deleted, leaves this record and its history untouched.
+    /// </summary>
     public class Member : Entity
     {
         public Guid MemberKey { get; set; } = Guid.NewGuid();
@@ -20,8 +26,6 @@ namespace ProjectK.Common.Entities.KurinModule
         /// <see cref="MemberKey"/> — see <c>MemberPublicId</c>.
         /// </summary>
         public string PublicId { get; set; } = string.Empty;
-        public Guid? GroupKey { get; set; }
-        public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }
         public string FirstName { get; set; }
         public string? MiddleName { get; set; }
@@ -36,8 +40,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public DateTime? ProfileVerifiedAtUtc { get; set; }
         public Guid? ProfileVerifiedByUserKey { get; set; }
         public string? ProfileVerificationNote { get; set; }
-        public Kurin Kurin { get; set; }
-        public Group? Group { get; set; }
         public PlastLevel? LatestPlastLevel { get; set; }
         public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
         public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();

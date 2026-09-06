@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -31,17 +32,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
+        private readonly IMembershipRepository _memberships;
 
         public UpsertMemberAwardHandler(
             IMemberUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
             IDomainEventPublisher events,
-            IMapper mapper)
+            IMapper mapper,
+            IUnitOfWork kurinData)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
             _events = events;
             _mapper = mapper;
+            _memberships = kurinData.Memberships;
         }
 
         public async Task<ServiceResult<MemberAwardDto>> Handle(UpsertMemberAward request, CancellationToken cancellationToken)
@@ -52,6 +56,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
                 return new ServiceResult<MemberAwardDto>(ResultType.NotFound);
             }
 
+            // Where the award happened: the kurin the провід is acting in. Reaching this person at
+            // all already required a membership there, so it is also where they are.
+            var actingKurinKey = _currentUserContext.KurinKey ?? Guid.Empty;
+            var placement = await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
+            var groupKey = placement.FirstOrDefault(m => m.KurinKey == actingKurinKey)?.GroupKey;
+
             ProjectK.Common.Entities.KurinModule.MemberAward? existingAward = null;
             if (request.MemberAwardKey.HasValue)
             {
@@ -61,7 +71,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
             if (existingAward != null && existingAward.MemberKey == request.MemberKey)
             {
                 existingAward.Level = request.Level;
-                existingAward.KurinKey = member.KurinKey;
+                existingAward.KurinKey = actingKurinKey;
                 existingAward.DateAcquired = request.DateAcquired;
                 existingAward.Note = request.Note;
                 existingAward.Status = BadgeProgressStatus.Submitted;
@@ -78,7 +88,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
                 var newAward = new ProjectK.Common.Entities.KurinModule.MemberAward
                 {
                     MemberKey = request.MemberKey,
-                    KurinKey = member.KurinKey,
+                    KurinKey = actingKurinKey,
                     Level = request.Level,
                     DateAcquired = request.DateAcquired,
                     Note = request.Note,
@@ -94,7 +104,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await PublishAwardSubmittedAsync(member, existingAward, cancellationToken);
+            await PublishAwardSubmittedAsync(member, existingAward, actingKurinKey, groupKey, cancellationToken);
 
             var response = _mapper.Map<MemberAwardDto>(existingAward);
             return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
@@ -103,6 +113,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
         private async Task PublishAwardSubmittedAsync(
             MemberEntity member,
             ProjectK.Common.Entities.KurinModule.MemberAward award,
+            Guid kurinKey,
+            Guid? groupKey,
             CancellationToken cancellationToken)
         {
             await _events.PublishAsync(
@@ -110,8 +122,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert
                     award.MemberAwardKey,
                     member.MemberKey,
                     $"{member.FirstName} {member.LastName}".Trim(),
-                    member.KurinKey,
-                    member.GroupKey,
+                    kurinKey,
+                    groupKey,
                     _currentUserContext.UserId),
                 cancellationToken);
         }

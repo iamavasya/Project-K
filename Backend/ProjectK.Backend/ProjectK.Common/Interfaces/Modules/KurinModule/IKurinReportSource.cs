@@ -17,7 +17,8 @@ public sealed record KurinReportSourceData(
     IReadOnlyDictionary<Guid, IReadOnlyList<string>> RolesByUserKey,
     IReadOnlyDictionary<Guid, IReadOnlyList<ProbeProgress>> ProbeProgressByMemberKey,
     IReadOnlyDictionary<Guid, IReadOnlyList<ProbePointProgress>> ProbePointProgressByMemberKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<BadgeProgress>> BadgeProgressByMemberKey);
+    IReadOnlyDictionary<Guid, IReadOnlyList<BadgeProgress>> BadgeProgressByMemberKey,
+    IReadOnlyDictionary<Guid, Membership> MembershipByMemberKey);
 
 /// <summary>
 /// The report's read side. Splitting it out is what let the report itself move out of the API

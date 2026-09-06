@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -67,7 +67,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = new Member
             {
                 MemberKey = Guid.NewGuid(),
-                KurinKey = Guid.NewGuid(),
                 FirstName = "Ivan",
                 LastName = "Petrenko",
                 Email = "ivan@example.com",
@@ -98,7 +97,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = GivenWrittenMember(isCreated: true);
 
             var result = await _handler.Handle(
-                new UpsertMember { KurinKey = member.KurinKey, FirstName = "Ivan", LastName = "Petrenko" },
+                new UpsertMember { KurinKey = Guid.NewGuid(), FirstName = "Ivan", LastName = "Petrenko" },
                 CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Created);
@@ -137,7 +136,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var result = await _handler.Handle(
                 new UpsertMember
                 {
-                    KurinKey = member.KurinKey,
+                    KurinKey = Guid.NewGuid(),
                     CreateUserAccount = true,
                     FirstName = "Ivan",
                     Email = "ivan@example.com"
@@ -239,7 +238,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 new UpsertMember
                 {
                     MemberKey = member.MemberKey,
-                    KurinKey = member.KurinKey,
+                    KurinKey = Guid.NewGuid(),
                     FirstName = "Ivan",
                     BlobContent = content,
                     BlobFileName = "new.png"
@@ -271,7 +270,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                     new MemberProfileWriteResult(member.MemberKey, false, true, null)));
 
             await _handler.Handle(
-                new UpsertMember { MemberKey = member.MemberKey, KurinKey = member.KurinKey, FirstName = "Changed" },
+                new UpsertMember { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), FirstName = "Changed" },
                 CancellationToken.None);
 
             _eventsMock.Verify(x => x.PublishAsync(

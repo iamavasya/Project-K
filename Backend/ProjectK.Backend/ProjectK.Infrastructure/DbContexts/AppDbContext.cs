@@ -113,14 +113,6 @@ namespace ProjectK.Infrastructure.DbContexts
                       .IsRequired();
                 entity.HasIndex(e => e.PublicId)
                       .IsUnique();
-                entity.HasOne(entity => entity.Group)
-                      .WithMany(g => g.Members)
-                      .HasForeignKey(e => e.GroupKey)
-                      .OnDelete(DeleteBehavior.NoAction);
-                entity.HasOne(entity => entity.Kurin)
-                        .WithMany(k => k.Members)
-                        .HasForeignKey(e => e.KurinKey)
-                        .OnDelete(DeleteBehavior.NoAction);
                 entity.HasOne(entity => entity.User)
                       .WithOne()
                       .HasForeignKey<Member>(e => e.UserKey)

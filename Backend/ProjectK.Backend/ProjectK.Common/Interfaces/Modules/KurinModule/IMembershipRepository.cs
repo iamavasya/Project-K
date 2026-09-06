@@ -35,6 +35,21 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task SyncAccountAsync(Guid memberKey, Guid? userKey, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// The person's open membership in one kurin, as a tracked entity, or null when they do not
+        /// currently belong to it.
+        /// </summary>
+        Task<Membership?> GetActiveAsync(
+            Guid memberKey,
+            Guid kurinKey,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Opens a membership without touching any other. Joining a second kurin is the point of the
+        /// release, so unlike <see cref="PlaceAsync"/> this leaves everywhere else alone.
+        /// </summary>
+        void Open(Membership membership);
+
+        /// <summary>
         /// Puts a person in a kurin and гурток, opening the membership if it is not open yet.
         /// <para>
         /// One kurin at a time, deliberately: a member record still names a single kurin, so a

@@ -2,7 +2,6 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -26,12 +25,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
     public class DeleteKurinHandler : IRequestHandler<DeleteKurin, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMemberDirectory _members;
         private readonly IBackendCache _cache;
-        public DeleteKurinHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
+        public DeleteKurinHandler(IUnitOfWork unitOfWork, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
-            _members = members;
             _cache = cache;
         }
         public async Task<ServiceResult<object>> Handle(DeleteKurin request, CancellationToken cancellationToken)
@@ -54,18 +51,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
-            // What the database will not clear itself: offices and members are NO ACTION against both
-            // the kurin and its гуртки, and the гуртки's own cascade is refused while an office still
-            // points at one. Everything else — гуртки, agenda with its assignments, planning sessions,
-            // mentor assignments, the members' own histories — cascades. The people themselves are
-            // removed by their own module, which also clears what hangs off them.
+            // The people stay. This is what the release is for: a kurin closing is something that
+            // happens to a kurin, not to the person who belonged to it, and everything they earned —
+            // levels, вмілості, probes, awards, перестороги — is theirs and stays with them, stamped
+            // with the kurin it happened in. They simply end up belonging nowhere, until someone
+            // takes them into another kurin.
+            //
+            // What the database will not clear itself: offices are NO ACTION against both the kurin
+            // and its гуртки, and the гуртки's own cascade is refused while an office still points at
+            // one. Everything else — гуртки, agenda with its assignments, planning sessions, mentor
+            // assignments — cascades.
             await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
 
-            await _members.RemoveForKurinAsync(request.KurinKey, cancellationToken);
-
-            // Removing the people clears the memberships that placed them, but not one closed
-            // earlier by someone who has since left: that row still points here, and the kurin
-            // cannot go while it does.
+            // Membership rows are the kurin's own record of who was in it, and they name it by a
+            // foreign key, so they go with it. Nothing about the people goes with them.
             await _unitOfWork.Memberships.RemoveForKurinAsync(request.KurinKey, cancellationToken);
 
             _unitOfWork.Kurins.Delete(existing, cancellationToken);

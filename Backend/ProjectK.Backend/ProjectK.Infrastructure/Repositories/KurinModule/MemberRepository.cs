@@ -50,9 +50,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
 
         public override async Task<Member?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members.Include(m => m.Group)
-                                         .Include(m => m.Kurin)
-                                         .Include(m => m.PlastLevelHistory)
+            return await Context.Members.Include(m => m.PlastLevelHistory)
                                          .Include(m => m.LeadershipHistories)
                                             .ThenInclude(h => h.Leadership)
                                                 .ThenInclude(l => l.Group)
@@ -61,36 +59,16 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                          .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
         }
 
-        /// <summary>
-        /// The members of one гурток as tracked entities.
-        /// <para>
-        /// Deliberately bare. It used to eager-load the whole graph <c>AsNoTracking</c>, which made
-        /// every member carry its own detached <see cref="Group"/>; removing such a member attached
-        /// that copy beside the already-tracked гурток and EF refused the second instance with the
-        /// same key, so deleting a гурток answered 500. Nothing is lost: the dependants cascade in
-        /// the database, and screens that need the graph read it through
-        /// <see cref="GetListItemsByGroupKeyAsync"/>.
-        /// </para>
-        /// </summary>
+        /// <summary>The people currently placed in one гурток.</summary>
         public async Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default)
         {
             return await PeopleOf(ActiveMemberships.Where(ms => ms.GroupKey == groupKey))
                                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<Member>> GetTrackedForKurinDeletionAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-        {
-            return await PeopleOf(ActiveMemberships.Where(ms =>
-                                    ms.KurinKey == kurinKey
-                                    || (ms.GroupKey != null && ms.Group!.KurinKey == kurinKey)))
-                                .ToListAsync(cancellationToken);
-        }
-
         public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
             return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
-                                         .Include(m => m.Group)
-                                         .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
                                          .Include(m => m.LeadershipHistories)
                                             .ThenInclude(h => h.Leadership)
@@ -325,8 +303,6 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
         {
             return await Context.Members
-                .Include(m => m.Group)
-                .Include(m => m.Kurin)
                 .Include(m => m.MemberWarnings)
                 .Include(m => m.MemberAwards)
                 .AsNoTracking()
