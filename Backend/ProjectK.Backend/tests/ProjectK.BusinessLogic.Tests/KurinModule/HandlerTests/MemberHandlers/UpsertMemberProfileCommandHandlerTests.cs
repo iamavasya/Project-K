@@ -22,6 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IGroupRepository> _groupRepoMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+        private readonly Mock<IDomainEventPublisher> _eventsMock;
         private readonly UpsertMemberProfileCommandHandler _handler;
 
         public UpsertMemberProfileCommandHandlerTests()
@@ -40,6 +41,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             _memberRepoMock = new Mock<IMemberRepository>();
             _groupRepoMock = new Mock<IGroupRepository>();
             _currentUserContextMock = new Mock<ICurrentUserContext>();
+            _eventsMock = new Mock<IDomainEventPublisher>();
             _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
 
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
@@ -50,7 +52,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 _uowMock.Object,
                 _kurinDataMock.Object,
                 mapperConfig.CreateMapper(),
-                _currentUserContextMock.Object);
+                _currentUserContextMock.Object,
+                _eventsMock.Object);
         }
 
         private static Group MakeGroup(Guid? kurinKey = null)

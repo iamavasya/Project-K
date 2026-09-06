@@ -63,6 +63,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
 
             await _members.RemoveForKurinAsync(request.KurinKey, cancellationToken);
 
+            // Removing the people clears the memberships that placed them, but not one closed
+            // earlier by someone who has since left: that row still points here, and the kurin
+            // cannot go while it does.
+            await _unitOfWork.Memberships.RemoveForKurinAsync(request.KurinKey, cancellationToken);
+
             _unitOfWork.Kurins.Delete(existing, cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -184,7 +184,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(group);
             await uow.SaveChangesAsync();
 
-            context.Members.Add(new Member
+            var seeded = new Member
             {
                 MemberKey = Guid.NewGuid(),
                 FirstName = "Тест",
@@ -193,7 +193,9 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration
                 PhoneNumber = "0500000000",
                 GroupKey = group.GroupKey,
                 KurinKey = kurin.KurinKey
-            });
+            };
+            context.Members.Add(seeded);
+            context.Memberships.Add(Infrastructure.Tests.KurinModule.RepositoryTests.Integration.Placing.Of(seeded));
             context.Leaderships.AddRange(
                 new Leadership { LeadershipKey = Guid.NewGuid(), KurinKey = kurin.KurinKey },
                 new Leadership { LeadershipKey = Guid.NewGuid(), GroupKey = group.GroupKey });

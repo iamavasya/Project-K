@@ -24,6 +24,20 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         {
         }
 
+        /// <summary>
+        /// Every membership that is still open. Where a person stands in a kurin is said here and
+        /// nowhere else, so every read that means "the people of this kurin" or "of this гурток"
+        /// starts from this and not from the columns still left on the member record.
+        /// </summary>
+        private IQueryable<Membership> ActiveMemberships => Context.Memberships.Where(ms => ms.LeftAtUtc == null);
+
+        /// <summary>
+        /// The people behind a set of memberships, as a query still rooted in <c>Members</c> — a join
+        /// would project the entity out of its own query and take <c>Include</c> with it.
+        /// </summary>
+        private IQueryable<Member> PeopleOf(IQueryable<Membership> memberships)
+            => Context.Members.Where(m => memberships.Any(ms => ms.MemberKey == m.MemberKey));
+
         public override void Create(Member member, CancellationToken cancellationToken = default)
         {
             Context.Members.Add(member);
@@ -60,22 +74,21 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         /// </summary>
         public async Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members
-                                .Where(m => m.GroupKey == groupKey)
+            return await PeopleOf(ActiveMemberships.Where(ms => ms.GroupKey == groupKey))
                                 .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<Member>> GetTrackedForKurinDeletionAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members
-                                .Where(m => m.KurinKey == kurinKey
-                                    || (m.GroupKey != null && m.Group!.KurinKey == kurinKey))
+            return await PeopleOf(ActiveMemberships.Where(ms =>
+                                    ms.KurinKey == kurinKey
+                                    || (ms.GroupKey != null && ms.Group!.KurinKey == kurinKey)))
                                 .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members.Where(m => m.KurinKey == kurinKey)
+            return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
                                          .Include(m => m.Group)
                                          .Include(m => m.Kurin)
                                          .Include(m => m.PlastLevelHistory)
@@ -90,17 +103,20 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         }
 
         public Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-            => ProjectListItemsAsync(Context.Members.Where(m => m.KurinKey == kurinKey), visibility, cancellationToken);
+            => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey), visibility, cancellationToken);
 
         public Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-            => ProjectListItemsAsync(Context.Members.Where(m => m.GroupKey == groupKey), visibility, cancellationToken);
+            => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.GroupKey == groupKey), visibility, cancellationToken);
 
-        // Single projection shared by the kurin- and group-scoped list reads. No Include
+        // Single projection shared by the kurin- and group-scoped list reads. It reads a list of
+        // memberships and pulls the person behind each: the same member seen from two kurins is two
+        // entries, each placed by its own membership. Still one SQL — the join replaces the old
+        // WHERE on the member's own kurin, and nothing else about the shape changed. No Include
         // graph: scalars come from the root query, UserRole is a correlated subquery over
         // Identity (replacing the old per-list GroupJoin), Address/School are masked in SQL
         // from the caller's visibility, and only active leadership/warnings are pulled.
         private async Task<IEnumerable<MemberListItemDto>> ProjectListItemsAsync(
-            IQueryable<Member> source,
+            IQueryable<Membership> memberships,
             MemberFieldVisibility visibility,
             CancellationToken cancellationToken)
         {
@@ -108,48 +124,52 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             var currentUserId = visibility.CurrentUserId;
             var visibleGroupKeys = visibility.VisibleGroupKeys as IReadOnlyCollection<Guid> ?? visibility.VisibleGroupKeys.ToList();
 
+            var source = from ms in memberships
+                         join person in Context.Members on ms.MemberKey equals person.MemberKey
+                         select new { Placement = ms, Person = person };
+
             return await source
-                .Select(m => new MemberListItemDto
+                .Select(x => new MemberListItemDto
                 {
-                    MemberKey = m.MemberKey,
-                    GroupKey = m.GroupKey,
-                    KurinKey = m.KurinKey,
-                    UserKey = m.UserKey,
+                    MemberKey = x.Person.MemberKey,
+                    GroupKey = x.Placement.GroupKey,
+                    KurinKey = x.Placement.KurinKey,
+                    UserKey = x.Person.UserKey,
                     // Everyone carries the baseline Member role, so taking whatever the store returned
                     // first often hid the office. Skip the baseline and order so the result is stable.
                     // A single field still cannot express a member holding several offices — see the
                     // role-system unification work.
                     UserRole = (from ur in Context.UserRoles
-                                where m.UserKey != null && ur.UserId == m.UserKey
+                                where x.Person.UserKey != null && ur.UserId == x.Person.UserKey
                                 join r in Context.Roles on ur.RoleId equals r.Id
                                 where r.Name != SystemRole.Member
                                 orderby r.Name
                                 select r.Name).FirstOrDefault(),
-                    FirstName = m.FirstName,
-                    MiddleName = m.MiddleName,
-                    LastName = m.LastName,
-                    Email = m.Email,
-                    PhoneNumber = m.PhoneNumber,
-                    DateOfBirth = m.DateOfBirth,
+                    FirstName = x.Person.FirstName,
+                    MiddleName = x.Person.MiddleName,
+                    LastName = x.Person.LastName,
+                    Email = x.Person.Email,
+                    PhoneNumber = x.Person.PhoneNumber,
+                    DateOfBirth = x.Person.DateOfBirth,
                     Address = (canSeeAll
-                        || (m.UserKey != null && m.UserKey == currentUserId)
-                        || (m.GroupKey != null && visibleGroupKeys.Contains(m.GroupKey.Value)))
-                        ? m.Address : null,
+                        || (x.Person.UserKey != null && x.Person.UserKey == currentUserId)
+                        || (x.Placement.GroupKey != null && visibleGroupKeys.Contains(x.Placement.GroupKey.Value)))
+                        ? x.Person.Address : null,
                     School = (canSeeAll
-                        || (m.UserKey != null && m.UserKey == currentUserId)
-                        || (m.GroupKey != null && visibleGroupKeys.Contains(m.GroupKey.Value)))
-                        ? m.School : null,
+                        || (x.Person.UserKey != null && x.Person.UserKey == currentUserId)
+                        || (x.Placement.GroupKey != null && visibleGroupKeys.Contains(x.Placement.GroupKey.Value)))
+                        ? x.Person.School : null,
                     // Mirror the Member -> MemberResponse mapping: newest history level, else the stored one.
-                    LatestPlastLevel = m.PlastLevelHistory
+                    LatestPlastLevel = x.Person.PlastLevelHistory
                         .OrderByDescending(history => history.DateAchieved)
                         .Select(history => (PlastLevel?)history.PlastLevel)
-                        .FirstOrDefault() ?? m.LatestPlastLevel,
-                    ProfilePhotoBlobName = m.ProfilePhotoBlobName,
-                    ProfileVerificationStatus = m.ProfileVerificationStatus,
-                    ProfileVerifiedAtUtc = m.ProfileVerifiedAtUtc,
-                    ProfileVerifiedByUserKey = m.ProfileVerifiedByUserKey,
-                    ProfileVerificationNote = m.ProfileVerificationNote,
-                    LeadershipHistories = m.LeadershipHistories
+                        .FirstOrDefault() ?? x.Person.LatestPlastLevel,
+                    ProfilePhotoBlobName = x.Person.ProfilePhotoBlobName,
+                    ProfileVerificationStatus = x.Person.ProfileVerificationStatus,
+                    ProfileVerifiedAtUtc = x.Person.ProfileVerifiedAtUtc,
+                    ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
+                    ProfileVerificationNote = x.Person.ProfileVerificationNote,
+                    LeadershipHistories = x.Person.LeadershipHistories
                         .Where(h => h.EndDate == null)
                         .Select(h => new LeadershipHistoryDto
                         {
@@ -162,7 +182,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                             StartDate = h.StartDate,
                             EndDate = h.EndDate
                         }).ToList(),
-                    Warnings = m.MemberWarnings
+                    Warnings = x.Person.MemberWarnings
                         .Where(w => w.RevokedAtUtc == null)
                         .Select(w => new MemberWarningDto
                         {
@@ -186,39 +206,54 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .Select(m => m.UserKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        private static readonly Expression<Func<Member, MemberSummary>> ToSummary =
-            m => new MemberSummary(
-                m.MemberKey,
-                m.UserKey,
-                m.KurinKey,
-                m.GroupKey,
-                m.FirstName,
-                m.LastName,
-                m.Email,
-                m.ProfilePhotoBlobName);
+        /// <summary>
+        /// People as another module sees them, each placed by their most recent open membership.
+        /// Someone who belongs to no kurin — an account activated but not yet joined to anything —
+        /// still answers, with an empty kurin, because the caller asked about the person.
+        /// </summary>
+        private IQueryable<MemberSummary> SummariesOf(IQueryable<Member> people)
+            => from m in people
+               from ms in ActiveMemberships
+                   .Where(candidate => candidate.MemberKey == m.MemberKey)
+                   .OrderByDescending(candidate => candidate.JoinedAtUtc)
+                   .Take(1)
+                   .DefaultIfEmpty()
+               select new MemberSummary(
+                   m.MemberKey,
+                   m.UserKey,
+                   ms == null ? Guid.Empty : ms.KurinKey,
+                   ms == null ? (Guid?)null : ms.GroupKey,
+                   m.FirstName,
+                   m.LastName,
+                   m.Email,
+                   m.ProfilePhotoBlobName);
 
         public Task<MemberSummary?> GetSummaryByKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
-            => Context.Members
-                .Where(m => m.MemberKey == memberKey)
-                .Select(ToSummary)
+            => SummariesOf(Context.Members.Where(m => m.MemberKey == memberKey))
                 .FirstOrDefaultAsync(cancellationToken);
 
         public Task<MemberSummary?> GetSummaryByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
-            => Context.Members
-                .Where(m => m.UserKey == userKey)
-                .Select(ToSummary)
+            => SummariesOf(Context.Members.Where(m => m.UserKey == userKey))
                 .FirstOrDefaultAsync(cancellationToken);
 
+        // Asked with a kurin in hand, so the placement is that kurin's membership and not whichever
+        // one happens to be newest — the same person read from another kurin answers differently.
         public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-            => await Context.Members
-                .Where(m => m.KurinKey == kurinKey)
-                .Select(ToSummary)
+            => await (from ms in ActiveMemberships.Where(ms => ms.KurinKey == kurinKey)
+                      join m in Context.Members on ms.MemberKey equals m.MemberKey
+                      select new MemberSummary(
+                          m.MemberKey,
+                          m.UserKey,
+                          ms.KurinKey,
+                          ms.GroupKey,
+                          m.FirstName,
+                          m.LastName,
+                          m.Email,
+                          m.ProfilePhotoBlobName))
                 .ToListAsync(cancellationToken);
 
         public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
-            => await Context.Members
-                .Select(ToSummary)
-                .ToListAsync(cancellationToken);
+            => await SummariesOf(Context.Members).ToListAsync(cancellationToken);
 
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
             => Context.Members.AnyAsync(m => m.Email == email, cancellationToken);
@@ -230,17 +265,18 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .FirstOrDefaultAsync(cancellationToken);
 
         public Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
-            => Context.Members
-                .Where(m => m.MemberKey == memberKey)
-                .Select(m => (Guid?)m.KurinKey)
+            => ActiveMemberships
+                .Where(ms => ms.MemberKey == memberKey)
+                .OrderByDescending(ms => ms.JoinedAtUtc)
+                .Select(ms => (Guid?)ms.KurinKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
         public async Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
             // Join fans out to one row per (member, role); a member now holds several roles (Member plus
             // office roles), so collapse to one row per member and prefer a non-baseline role for display.
-            var rows = await Context.Members
-                .Where(m => m.KurinKey == kurinKey && m.UserKey != null)
+            var rows = await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
+                .Where(m => m.UserKey != null)
                 .GroupJoin(Context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
                 .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
                 .GroupJoin(Context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })

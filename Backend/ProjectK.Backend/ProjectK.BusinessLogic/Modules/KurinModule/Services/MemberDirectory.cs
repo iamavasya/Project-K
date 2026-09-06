@@ -81,6 +81,16 @@ public sealed class MemberDirectory : IMemberDirectory
         await _events.PublishAsync(
             new MemberAccountLinked(member.MemberKey, details.UserKey),
             cancellationToken);
+
+        // An account can arrive without a kurin behind it, and then there is no membership to open —
+        // the member record cannot name a kurin either, and that is where it fails.
+        if (details.KurinKey != Guid.Empty)
+        {
+            await _events.PublishAsync(
+                new MemberPlaced(member.MemberKey, details.UserKey, details.KurinKey, null),
+                cancellationToken);
+        }
+
         return member.MemberKey;
     }
 

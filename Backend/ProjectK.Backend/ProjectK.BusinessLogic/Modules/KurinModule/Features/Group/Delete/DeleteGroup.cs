@@ -46,6 +46,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
 
             var removedMemberKeys = await _members.RemoveForGroupAsync(request.GroupKey, cancellationToken);
 
+            // A membership left over from someone who has since moved on still names this гурток and
+            // would refuse its deletion. Being in no гурток is a legitimate state, so it is forgotten
+            // rather than closed.
+            await _unitOfWork.Memberships.DetachFromGroupAsync(request.GroupKey, cancellationToken);
+
             // Agenda assignments name their target by a bare key, so nothing in the database clears
             // them: the гурток, the offices and the members about to disappear are all valid targets.
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(

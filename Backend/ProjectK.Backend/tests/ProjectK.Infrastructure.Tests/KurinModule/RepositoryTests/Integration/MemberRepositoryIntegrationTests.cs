@@ -27,6 +27,13 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             return new AppDbContext(options);
         }
 
+        private static Member Placed(InfraUnitOfWork uow, Member member)
+        {
+            uow.Members.Create(member);
+            uow.Memberships.Create(Placing.Of(member));
+            return member;
+        }
+
         private static Member BuildMember(Group group, Kurin kurin, string firstName = "Ivan", string lastName = "Petrenko", string middle = "I.")
             => new Member
             {
@@ -55,7 +62,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Oleh", "Shevchenko");
-            uow.Members.Create(member);
+            Placed(uow, member);
             await uow.SaveChangesAsync();
 
             var fetched = await uow.Members.GetByKeyAsync(member.MemberKey);
@@ -86,9 +93,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(group2);
             await uow.SaveChangesAsync();
 
-            uow.Members.Create(BuildMember(group1, kurin, "A1", "L1"));
-            uow.Members.Create(BuildMember(group1, kurin, "A2", "L2"));
-            uow.Members.Create(BuildMember(group2, kurin, "B1", "L3"));
+            Placed(uow, BuildMember(group1, kurin, "A1", "L1"));
+            Placed(uow, BuildMember(group1, kurin, "A2", "L2"));
+            Placed(uow, BuildMember(group2, kurin, "B1", "L3"));
             await uow.SaveChangesAsync();
 
             var group1Members = (await uow.Members.GetAllAsync(group1.GroupKey)).ToList();
@@ -119,9 +126,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(g2a);
             await uow.SaveChangesAsync();
 
-            uow.Members.Create(BuildMember(g1a, kurin1, "M1", "L1"));
-            uow.Members.Create(BuildMember(g1b, kurin1, "M2", "L2"));
-            uow.Members.Create(BuildMember(g2a, kurin2, "M3", "L3"));
+            Placed(uow, BuildMember(g1a, kurin1, "M1", "L1"));
+            Placed(uow, BuildMember(g1b, kurin1, "M2", "L2"));
+            Placed(uow, BuildMember(g2a, kurin2, "M3", "L3"));
             await uow.SaveChangesAsync();
 
             var kurin1Members = (await uow.Members.GetAllByKurinKeyAsync(kurin1.KurinKey)).ToList();
@@ -145,7 +152,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Exist", "Test");
-            uow.Members.Create(member);
+            Placed(uow, member);
             await uow.SaveChangesAsync();
 
             var exists = await uow.Members.ExistsAsync(member.MemberKey);
@@ -170,7 +177,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Old", "Name");
-            uow.Members.Create(member);
+            Placed(uow, member);
             await uow.SaveChangesAsync();
 
             member.FirstName = "New";
@@ -199,7 +206,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Del", "User");
-            uow.Members.Create(member);
+            Placed(uow, member);
             await uow.SaveChangesAsync();
 
             uow.Members.Delete(member);
@@ -224,7 +231,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var member = BuildMember(group, kurin, "Active", "Roles");
-            uow.Members.Create(member);
+            Placed(uow, member);
             await uow.SaveChangesAsync();
 
             var leadership = new Leadership
@@ -319,9 +326,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             var hidden = BuildMember(hiddenGroup, kurin, "In", "HiddenGroup");
             hidden.Address = "Hidden St";
             hidden.School = "Hidden School";
-            uow.Members.Create(owner);
-            uow.Members.Create(inVisibleGroup);
-            uow.Members.Create(hidden);
+            Placed(uow, owner);
+            Placed(uow, inVisibleGroup);
+            Placed(uow, hidden);
             await uow.SaveChangesAsync();
 
             // Caller is a mentor: not admin/manager, owns `owner`'s account, assigned to visibleGroup only.

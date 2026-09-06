@@ -24,6 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly DeleteKurinHandler _handler;
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
         private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
+        private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
         private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteKurinHandlerTests()
@@ -35,6 +36,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _cacheMock = new Mock<IBackendCache>();
 
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Leaderships).Returns(_leadershipRepositoryMock.Object);
             _leadershipRepositoryMock
                 .Setup(r => r.DeleteForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))

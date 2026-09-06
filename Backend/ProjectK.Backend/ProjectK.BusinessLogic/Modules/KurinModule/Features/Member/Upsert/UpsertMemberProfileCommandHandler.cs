@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -21,17 +22,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         private readonly IUnitOfWork _kurinData;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IDomainEventPublisher _events;
 
         public UpsertMemberProfileCommandHandler(
             IMemberUnitOfWork unitOfWork,
             IUnitOfWork kurinData,
             IMapper mapper,
-            ICurrentUserContext currentUserContext)
+            ICurrentUserContext currentUserContext,
+            IDomainEventPublisher events)
         {
             _unitOfWork = unitOfWork;
             _kurinData = kurinData;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
+            _events = events;
         }
 
         public async Task<ServiceResult<MemberProfileWriteResult>> Handle(
@@ -125,6 +129,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 
                 _unitOfWork.Members.Update(existing, cancellationToken);
             }
+
+            // Where the person stands is the kurin's to record. Said out loud rather than written
+            // here, so that when placement stops living on the member record this line is the only
+            // thing that has to change.
+            await _events.PublishAsync(
+                new MemberPlaced(existing.MemberKey, existing.UserKey, existing.KurinKey, existing.GroupKey),
+                cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)

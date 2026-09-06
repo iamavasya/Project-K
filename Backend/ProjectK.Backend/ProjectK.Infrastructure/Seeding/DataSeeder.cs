@@ -311,6 +311,26 @@ namespace ProjectK.Infrastructure.Seeding
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
+            // Seeded people are written straight to the tables, so nothing announces where they were
+            // put. Without this row they exist and belong to no kurin, which is to say they are in
+            // no list and in nobody's reach.
+            var alreadyPlaced = await dbContext.Memberships.AnyAsync(
+                ms => ms.MemberKey == member.MemberKey && ms.LeftAtUtc == null,
+                cancellationToken);
+            if (!alreadyPlaced)
+            {
+                dbContext.Memberships.Add(new Membership
+                {
+                    MemberKey = member.MemberKey,
+                    UserKey = member.UserKey,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    Kind = MembershipKind.Youth,
+                    JoinedAtUtc = DateTime.UtcNow
+                });
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
             return member;
         }
 

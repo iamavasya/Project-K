@@ -183,7 +183,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             uow.Groups.Create(group);
             await uow.SaveChangesAsync();
 
-            context.Members.Add(new Member
+            var seeded = new Member
             {
                 MemberKey = Guid.NewGuid(),
                 FirstName = "Тест",
@@ -192,7 +192,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 PhoneNumber = "0500000000",
                 GroupKey = group.GroupKey,
                 KurinKey = kurin.KurinKey
-            });
+            };
+            context.Members.Add(seeded);
+            context.Memberships.Add(Placing.Of(seeded));
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
@@ -235,7 +237,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             await uow.SaveChangesAsync();
 
             var memberKey = Guid.NewGuid();
-            context.Members.Add(new Member
+            var seeded = new Member
             {
                 MemberKey = memberKey,
                 FirstName = "Тест",
@@ -244,7 +246,9 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
                 PhoneNumber = "0500000000",
                 GroupKey = group.GroupKey,
                 KurinKey = kurin.KurinKey
-            });
+            };
+            context.Members.Add(seeded);
+            context.Memberships.Add(Placing.Of(seeded));
 
             var item = new AgendaItem { KurinKey = kurin.KurinKey, Title = "Сходина" };
             context.AgendaItems.Add(item);
