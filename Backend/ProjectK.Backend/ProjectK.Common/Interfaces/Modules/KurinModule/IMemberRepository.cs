@@ -31,6 +31,9 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default);
         Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 
+        /// <summary>The person a public code names, with how many kurins they currently belong to.</summary>
+        Task<MemberCard?> GetCardByPublicIdAsync(string publicId, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Whether the member exists and which account it is linked to. The account flow asks this
         /// before it writes anything, and would otherwise load the whole graph for two fields.

@@ -11,11 +11,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join
     /// Takes an existing person into a kurin. Nothing about them changes — they keep every kurin they
     /// already belong to, and everything they have earned anywhere.
     /// </summary>
+    /// <param name="MemberKey">
+    /// Who to take in. May be empty when <paramref name="PublicId"/> names them instead — a провід
+    /// taking in someone from another kurin has their code, not their key.
+    /// </param>
     public sealed record JoinKurin(
         Guid MemberKey,
         Guid KurinKey,
         Guid? GroupKey,
-        MembershipKind Kind = MembershipKind.Youth) : IRequest<ServiceResult<Guid>>;
+        MembershipKind Kind = MembershipKind.Youth,
+        string? PublicId = null) : IRequest<ServiceResult<Guid>>;
 
     public sealed class JoinKurinHandler : IRequestHandler<JoinKurin, ServiceResult<Guid>>
     {
@@ -30,15 +35,29 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join
 
         public async Task<ServiceResult<Guid>> Handle(JoinKurin request, CancellationToken cancellationToken)
         {
-            if (request.MemberKey == Guid.Empty || request.KurinKey == Guid.Empty)
+            if (request.KurinKey == Guid.Empty
+                || (request.MemberKey == Guid.Empty && string.IsNullOrWhiteSpace(request.PublicId)))
             {
                 return ServiceResult<Guid>.Failure(
                     ResultType.BadRequest,
                     "MembershipKeysRequired",
-                    "Both a member and a kurin are required.");
+                    "A kurin and either a member or a public code are required.");
             }
 
-            var person = await _members.FindAsync(request.MemberKey, cancellationToken);
+            var memberKey = request.MemberKey;
+            if (memberKey == Guid.Empty)
+            {
+                var card = await _members.FindByPublicIdAsync(request.PublicId!, cancellationToken);
+                if (card is null)
+                {
+                    return ServiceResult<Guid>.Failure(
+                        ResultType.NotFound, "NoSuchCode", "No one has that code.");
+                }
+
+                memberKey = card.MemberKey;
+            }
+
+            var person = await _members.FindAsync(memberKey, cancellationToken);
             if (person is null)
             {
                 return ServiceResult<Guid>.Failure(
@@ -64,7 +83,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join
             }
 
             var already = await _unitOfWork.Memberships.GetActiveAsync(
-                request.MemberKey, request.KurinKey, cancellationToken);
+                memberKey, request.KurinKey, cancellationToken);
             if (already is not null)
             {
                 return ServiceResult<Guid>.Failure(
@@ -73,7 +92,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join
 
             var membership = new MembershipEntity
             {
-                MemberKey = request.MemberKey,
+                MemberKey = memberKey,
                 UserKey = person.UserKey,
                 KurinKey = request.KurinKey,
                 GroupKey = request.GroupKey,

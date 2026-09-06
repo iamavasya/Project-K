@@ -10,6 +10,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
@@ -170,10 +171,14 @@ namespace ProjectK.API.Controllers.KurinModule
             return response.ToActionResult(this);
         }
 
-        /// <summary>Body of <c>POST {kurinKey}/memberships</c>.</summary>
+        /// <summary>
+        /// Body of <c>POST {kurinKey}/memberships</c>. Name the person by key when they are already
+        /// on a screen in this kurin, or by their public code when they are not.
+        /// </summary>
         public sealed class JoinKurinRequest
         {
             public Guid MemberKey { get; set; }
+            public string? PublicId { get; set; }
             public Guid? GroupKey { get; set; }
             public MembershipKind Kind { get; set; } = MembershipKind.Youth;
         }
@@ -190,7 +195,7 @@ namespace ProjectK.API.Controllers.KurinModule
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("{kurinKey:guid}/memberships")]
-        [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey", ResourceType.Kurin)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -198,7 +203,27 @@ namespace ProjectK.API.Controllers.KurinModule
         public async Task<IActionResult> Join(Guid kurinKey, [FromBody] JoinKurinRequest request)
         {
             var response = await _mediator.Send(
-                new JoinKurin(request.MemberKey, kurinKey, request.GroupKey, request.Kind));
+                new JoinKurin(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Looks up the person a public code names, so the провід can be sure before taking them in.
+        /// </summary>
+        /// <remarks>
+        /// An exact match on a code someone handed over — not a search. The card carries no kurins
+        /// and no contact details: answering "where else is this person" to anyone holding a code
+        /// would tell more about them than they agreed to.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("{kurinKey:guid}/memberships/candidate")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey", ResourceType.Kurin)]
+        [ProducesResponseType(typeof(MembershipCandidate), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> FindCandidate(Guid kurinKey, [FromQuery] string publicId)
+        {
+            var response = await _mediator.Send(new FindMemberByPublicId(kurinKey, publicId));
             return response.ToActionResult(this);
         }
 

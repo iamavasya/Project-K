@@ -249,6 +249,20 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
             => Context.Members.AnyAsync(m => m.Email == email, cancellationToken);
 
+        public Task<MemberCard?> GetCardByPublicIdAsync(string publicId, CancellationToken cancellationToken = default)
+            => Context.Members
+                .Where(m => m.PublicId == publicId)
+                .Select(m => new MemberCard(
+                    m.MemberKey,
+                    m.PublicId,
+                    m.FirstName,
+                    m.LastName,
+                    m.ProfilePhotoBlobName,
+                    // How many, never which: the count says "this person is already somewhere", which
+                    // is enough to give a провід pause, without naming the kurins.
+                    ActiveMemberships.Count(ms => ms.MemberKey == m.MemberKey)))
+                .FirstOrDefaultAsync(cancellationToken);
+
         public Task<MemberAccountLink?> GetAccountLinkAsync(Guid memberKey, CancellationToken cancellationToken = default)
             => Context.Members
                 .Where(m => m.MemberKey == memberKey)

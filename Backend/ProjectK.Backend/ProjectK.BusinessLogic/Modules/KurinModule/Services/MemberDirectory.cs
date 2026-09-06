@@ -25,6 +25,12 @@ public sealed class MemberDirectory : IMemberDirectory
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         => _unitOfWork.Members.ExistsByEmailAsync(email, cancellationToken);
 
+    public Task<MemberCard?> FindByPublicIdAsync(string publicId, CancellationToken cancellationToken = default)
+        => string.IsNullOrWhiteSpace(publicId)
+            ? Task.FromResult<MemberCard?>(null)
+            : _unitOfWork.Members.GetCardByPublicIdAsync(
+                publicId.Trim().ToUpperInvariant(), cancellationToken);
+
     public Task<MemberSummary?> FindAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetSummaryByKeyAsync(memberKey, cancellationToken);
 

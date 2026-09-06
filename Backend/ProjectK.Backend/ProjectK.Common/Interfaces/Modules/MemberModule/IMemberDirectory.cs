@@ -17,6 +17,12 @@ public interface IMemberDirectory
     /// <summary>Whether such a member exists at all.</summary>
     Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The person a public code names, as a card to confirm against — or null when no code matches.
+    /// The match is exact: this is how someone is found when they hand over their code, not a search.
+    /// </summary>
+    Task<MemberCard?> FindByPublicIdAsync(string publicId, CancellationToken cancellationToken = default);
+
     /// <summary>Whether this address already belongs to someone. Guards registration.</summary>
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 
