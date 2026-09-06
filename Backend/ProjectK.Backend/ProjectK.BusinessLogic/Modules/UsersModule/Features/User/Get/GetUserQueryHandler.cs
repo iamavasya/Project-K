@@ -31,7 +31,8 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
             var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
                 .ToDictionary(k => k.KurinKey, k => k.Number);
             
-            var roles = await _userManager.GetRolesAsync(user);
+            // Only the system role is shown here; offices belong to a kurin and are asked for per kurin.
+            var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
             
             var userDto = new UserDto
             {
@@ -39,7 +40,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
                 KurinKey = user.KurinKey,
                 KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
                 Email = user.Email!,
-                Role = roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
+                Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                 TwoFactorEnabled = user.TwoFactorEnabled,
                 FirstName = user.FirstName!,
                 LastName = user.LastName!

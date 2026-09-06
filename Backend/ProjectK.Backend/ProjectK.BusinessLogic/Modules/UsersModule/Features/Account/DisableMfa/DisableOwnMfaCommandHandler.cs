@@ -17,17 +17,20 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa
         private readonly IRefreshTokenStore _refreshTokens;
         private readonly ILogger<DisableOwnMfaCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
+        private readonly IAccessContextResolver _access;
 
         public DisableOwnMfaCommandHandler(
             UserManager<AppUser> userManager,
             ILogger<DisableOwnMfaCommandHandler> logger,
             IActivityLogger activityLogger,
-            IRefreshTokenStore refreshTokens)
+            IRefreshTokenStore refreshTokens,
+            IAccessContextResolver access)
         {
             _userManager = userManager;
             _logger = logger;
             _activityLogger = activityLogger;
             _refreshTokens = refreshTokens;
+            _access = access;
         }
 
         public async Task<ServiceResult<bool>> Handle(DisableOwnMfaCommand request, CancellationToken cancellationToken)
@@ -44,7 +47,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa
                 return ServiceResult<bool>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid credentials.");
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = (await _access.ResolveAsync(user, cancellationToken)).Roles;
             if (RolePermissionMap.GrantsWholeKurinManagement(roles))
             {
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "MfaRequired", "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");

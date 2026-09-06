@@ -181,7 +181,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
 
-        yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), "RequireUser");
         yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), "RequireUser");
         yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);

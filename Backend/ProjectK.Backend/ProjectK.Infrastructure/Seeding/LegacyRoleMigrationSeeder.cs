@@ -33,7 +33,6 @@ namespace ProjectK.Infrastructure.Seeding
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IMemberUnitOfWork>();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var roleSync = scope.ServiceProvider.GetRequiredService<ILeadershipRoleSyncService>();
 
             var presentLegacyRoles = new List<string>();
             foreach (var role in LegacyRoles)
@@ -69,7 +68,8 @@ namespace ProjectK.Infrastructure.Seeding
                 }
             }
 
-            // 2. Sync every affected user: offices + mentor assignments become system roles.
+            // 2. Leave everyone on the baseline. What their office grants is worked out from the
+            // registry each time a token is minted, so there is nothing to write onto the account.
             var affectedUserIds = new HashSet<Guid>();
             foreach (var role in presentLegacyRoles)
             {
@@ -81,18 +81,10 @@ namespace ProjectK.Infrastructure.Seeding
 
             foreach (var userId in affectedUserIds)
             {
-                var member = await unitOfWork.Members.GetByUserKeyAsync(userId);
-                if (member is not null)
+                var user = await userManager.FindByIdAsync(userId.ToString());
+                if (user is not null && !await userManager.IsInRoleAsync(user, SystemRole.Member))
                 {
-                    await roleSync.SyncMemberAsync(member.MemberKey);
-                }
-                else
-                {
-                    var user = await userManager.FindByIdAsync(userId.ToString());
-                    if (user is not null && !await userManager.IsInRoleAsync(user, SystemRole.Member))
-                    {
-                        await userManager.AddToRoleAsync(user, SystemRole.Member);
-                    }
+                    await userManager.AddToRoleAsync(user, SystemRole.Member);
                 }
             }
 

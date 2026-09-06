@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -21,6 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
     {
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
+        private readonly Mock<IAccessContextResolver> _accessMock = FakeAccessContext.Resolver();
         private readonly Mock<SignInManager<AppUser>> _signInManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
         private readonly Mock<IUnitOfWork> _uowMock;
@@ -55,7 +59,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
             _uowMock = new Mock<IUnitOfWork>();
 
             _refreshTokensMock = new Mock<IRefreshTokenStore>();
-            _loginResponseFactory = new LoginResponseFactory(_userManagerMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object);
+            _loginResponseFactory = new LoginResponseFactory(_accessMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object);
             _handler = new LoginUserCommandHandler(
                 _userManagerMock.Object,
                 _signInManagerMock.Object,
@@ -97,8 +101,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
                 .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()))
@@ -161,8 +165,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
                 .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, null))
@@ -353,8 +357,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
                 .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()))
@@ -404,8 +408,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login
                 .ReturnsAsync(user);
             _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, password, false))
                 .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))

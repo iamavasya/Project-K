@@ -32,7 +32,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
             List<UserDto> result = [];
             foreach (var user in users)
             {
-                var role = await _userManager.GetRolesAsync(user);
+                var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
                 UserDto userDto = new()
                 {
                     UserId = user.Id,
@@ -40,7 +40,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
                     KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
                     Email = user.Email!,
                     // Admin panel manages the system role only; offices are shown elsewhere.
-                    Role = role.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
+                    Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                     TwoFactorEnabled = user.TwoFactorEnabled,
                     FirstName = user.FirstName!,
                     LastName = user.LastName!

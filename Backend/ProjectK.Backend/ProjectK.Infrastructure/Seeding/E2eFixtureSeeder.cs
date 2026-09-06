@@ -31,7 +31,6 @@ namespace ProjectK.Infrastructure.Seeding
         {
             var dbContext = services.GetRequiredService<AppDbContext>();
             var userManager = services.GetRequiredService<UserManager<AppUser>>();
-            var roleSync = services.GetRequiredService<ILeadershipRoleSyncService>();
 
             var kurin = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == KurinNumber, cancellationToken);
             if (kurin == null)
@@ -78,8 +77,6 @@ namespace ProjectK.Infrastructure.Seeding
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            await roleSync.SyncMembersAsync(
-                new HashSet<Guid> { manager.MemberKey, mentor.MemberKey, member.MemberKey, otherMember.MemberKey }, cancellationToken);
         }
 
         private static async Task<Leadership> EnsureKvLeadershipAsync(

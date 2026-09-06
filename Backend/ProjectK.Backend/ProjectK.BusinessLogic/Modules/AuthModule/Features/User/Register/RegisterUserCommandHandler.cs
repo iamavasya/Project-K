@@ -22,15 +22,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
         private readonly RoleManager<AppRole> _roleManager;
+        private readonly IAccessContextResolver _access;
 
         public RegisterUserCommandHandler(IMapper mapper, UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, IJwtService jwtService,
-            IRefreshTokenStore refreshTokens)
+            IRefreshTokenStore refreshTokens,
+            IAccessContextResolver access)
         {
             _userManager = userManager;
             _mapper = mapper;
             _jwtService = jwtService;
             _roleManager = roleManager;
             _refreshTokens = refreshTokens;
+            _access = access;
         }
 
         public async Task<ServiceResult<RegisterUserResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -57,14 +60,15 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register
 
             await _userManager.AddToRoleAsync(user, roleName);
 
-            var roles = await _userManager.GetRolesAsync(user);
-
+            // A freshly registered account holds no office yet, so this is the baseline every time —
+            // asked through the resolver anyway, so that a token is only ever minted from one answer.
+            var access = await _access.ResolveAsync(user, cancellationToken);
 
             string? kurinKey = request.KurinKey == Guid.Empty ? null : request.KurinKey.ToString();
 
             var jwt = new JwtResponse
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, roles, kurinKey),
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, access.Roles, kurinKey),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 

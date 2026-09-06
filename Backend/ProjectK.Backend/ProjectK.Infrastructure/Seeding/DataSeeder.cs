@@ -22,8 +22,10 @@ namespace ProjectK.Infrastructure.Seeding
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-            // 1. Seed Roles (Required for all environments): Admin, Member and every office role.
-            foreach (var roleName in SystemRole.All())
+            // 1. Seed the two roles the identity store still holds. Office roles are not among them:
+            // what an office grants is worked out from the registry for the kurin the account is in,
+            // and storing it on the account is what used to make it true everywhere at once.
+            foreach (var roleName in new[] { SystemRole.Admin, SystemRole.Member })
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {

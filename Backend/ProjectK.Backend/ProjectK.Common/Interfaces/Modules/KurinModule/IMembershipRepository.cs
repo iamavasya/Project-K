@@ -22,6 +22,11 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         /// <summary>How many memberships a person has held, current and past.</summary>
         Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+        /// <summary>The kurins an account currently belongs to, by the account key membership carries.</summary>
+        Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
+            Guid userKey,
+            CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Writes the account key onto every current membership of a person. The copy exists so that
         /// authorization never has to read the member record; keeping it correct is this method's job,

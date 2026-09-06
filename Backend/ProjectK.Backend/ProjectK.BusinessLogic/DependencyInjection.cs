@@ -27,9 +27,9 @@ public static class DependencyInjection
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services, IConfiguration configuration)
     {
         // Auth and access control
+        services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
-        services.AddScoped<ILeadershipRoleSyncService, LeadershipRoleSyncService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
         services.AddScoped<ResourceAccessService>();
@@ -68,6 +68,7 @@ public static class DependencyInjection
 
         // What each module will answer about a person on someone else's behalf.
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
 
         return services;

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -8,6 +9,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
@@ -17,6 +19,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IKurinRepository> _kurinsMock = new();
         private readonly Mock<ILoginResponseFactory> _loginResponseFactoryMock = new();
+        private readonly Mock<IMembershipDirectory> _membershipsMock = new();
         private readonly SetKurinScopeCommandHandler _handler;
 
         public SetKurinScopeCommandHandlerTests()
@@ -35,7 +38,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
             _handler = new SetKurinScopeCommandHandler(
                 _userManagerMock.Object,
                 unitOfWorkMock.Object,
-                _loginResponseFactoryMock.Object);
+                _loginResponseFactoryMock.Object,
+                _membershipsMock.Object);
         }
 
         private AppUser ArrangeUser(params string[] roles)
@@ -49,8 +53,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
             };
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles.ToList());
+            _userManagerMock.Setup(x => x.IsInRoleAsync(user, SystemRole.Admin))
+                .ReturnsAsync(roles.Contains(SystemRole.Admin));
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
             return user;
@@ -84,15 +88,49 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope
         }
 
         [Fact]
-        public async Task Handle_ShouldForbidNonAdmin()
+        public async Task Handle_ShouldLetAnyoneIntoAKurinTheyBelongTo()
         {
-            var user = ArrangeUser("KV.Zvyazkovyi");
+            var user = ArrangeUser(SystemRole.Member);
             var kurinKey = Guid.NewGuid();
+            _kurinsMock.Setup(x => x.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Kurin(12) { KurinKey = kurinKey });
+            _membershipsMock
+                .Setup(x => x.GetKurinKeysForAccountAsync(user.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([kurinKey]);
 
             var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, kurinKey), CancellationToken.None);
 
+            Assert.Equal(ResultType.Success, result.Type);
+            Assert.Equal(kurinKey, user.ActiveKurinKey);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldForbid_AKurinTheyDoNotBelongTo()
+        {
+            var user = ArrangeUser(SystemRole.Member);
+            var theirKurin = Guid.NewGuid();
+            var someoneElses = Guid.NewGuid();
+            _kurinsMock.Setup(x => x.GetByKeyAsync(someoneElses, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Kurin(12) { KurinKey = someoneElses });
+            _membershipsMock
+                .Setup(x => x.GetKurinKeysForAccountAsync(user.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([theirKurin]);
+
+            var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, someoneElses), CancellationToken.None);
+
             Assert.Equal(ResultType.Forbidden, result.Type);
             Assert.Null(user.ActiveKurinKey);
+            _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldForbidStandingOutsideEveryKurin_UnlessAdmin()
+        {
+            var user = ArrangeUser(SystemRole.Member);
+
+            var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, null), CancellationToken.None);
+
+            Assert.Equal(ResultType.Forbidden, result.Type);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
         }
 

@@ -16,14 +16,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMemberDirectory _members;
-        private readonly ILeadershipRoleSyncService _roleSync;
         private readonly IBackendCache _cache;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ILeadershipRoleSyncService roleSync, IBackendCache cache)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _members = members;
-            _roleSync = roleSync;
             _cache = cache;
         }
 
@@ -68,9 +66,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
             _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // The assignment grants гуртковий access; realign the member's roles and drop the cached
-            // scope set so the next authorization check reflects it immediately.
-            await _roleSync.SyncMemberAsync(mentorMember.MemberKey, cancellationToken);
+            // The assignment itself is what grants гуртковий access — it is read when access is
+            // decided. Only the cached scope set has to go, so the next check sees it at once.
             _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
             return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);

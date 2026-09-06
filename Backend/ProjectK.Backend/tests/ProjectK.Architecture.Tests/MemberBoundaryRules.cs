@@ -71,7 +71,6 @@ public class MemberBoundaryRules
         var rule = Types()
             .That().ImplementInterface(typeof(IResourceAccessService))
             .Or().ImplementInterface(typeof(IResourceScopeReader))
-            .Or().ImplementInterface(typeof(ILeadershipRoleSyncService))
             .Or().ImplementInterface(typeof(ILoginResponseFactory))
             .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
 

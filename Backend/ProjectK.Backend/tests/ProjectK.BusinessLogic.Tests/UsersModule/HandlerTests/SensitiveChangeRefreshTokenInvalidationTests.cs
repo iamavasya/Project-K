@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -213,7 +214,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 _userManagerMock.Object,
                 new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                FakeAccessContext.With("Member"));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -247,7 +249,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 _userManagerMock.Object,
                 new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                FakeAccessContext.With(role));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -283,7 +286,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 currentUserContextMock.Object,
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                FakeAccessContext.With("Member"));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
@@ -321,7 +325,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 currentUserContextMock.Object,
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                FakeAccessContext.With("KV.Zvyazkovyi"));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))

@@ -46,6 +46,15 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
             => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);
 
+        public async Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
+            Guid userKey,
+            CancellationToken cancellationToken = default)
+            => await Context.Memberships
+                .Where(m => m.UserKey == userKey && m.LeftAtUtc == null)
+                .Select(m => m.KurinKey)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
         public async Task SyncAccountAsync(
             Guid memberKey,
             Guid? userKey,

@@ -128,23 +128,28 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                          join person in Context.Members on ms.MemberKey equals person.MemberKey
                          select new { Placement = ms, Person = person };
 
-            return await source
-                .Select(x => new MemberListItemDto
+            var rows = await source
+                .Select(x => new
+                {
+                    // The office they hold *in this kurin*. It used to come from the identity store,
+                    // which said what someone was anywhere and so showed a виховник's office to a
+                    // kurin they are only a member of. Read as its two halves and named afterwards:
+                    // the enums are stored as numbers, so the name cannot be assembled in SQL.
+                    Office = (from history in Context.LeadershipHistories
+                              where history.MemberKey == x.Person.MemberKey && history.EndDate == null
+                              join office in Context.Leaderships
+                                  on history.LeadershipKey equals office.LeadershipKey
+                              where office.EndDate == null
+                                  && (office.KurinKey == x.Placement.KurinKey
+                                      || (office.GroupKey != null && office.Group!.KurinKey == x.Placement.KurinKey))
+                              orderby office.Type, history.Role
+                              select new { office.Type, history.Role }).FirstOrDefault(),
+                    Item = new MemberListItemDto
                 {
                     MemberKey = x.Person.MemberKey,
                     GroupKey = x.Placement.GroupKey,
                     KurinKey = x.Placement.KurinKey,
                     UserKey = x.Person.UserKey,
-                    // Everyone carries the baseline Member role, so taking whatever the store returned
-                    // first often hid the office. Skip the baseline and order so the result is stable.
-                    // A single field still cannot express a member holding several offices — see the
-                    // role-system unification work.
-                    UserRole = (from ur in Context.UserRoles
-                                where x.Person.UserKey != null && ur.UserId == x.Person.UserKey
-                                join r in Context.Roles on ur.RoleId equals r.Id
-                                where r.Name != SystemRole.Member
-                                orderby r.Name
-                                select r.Name).FirstOrDefault(),
                     FirstName = x.Person.FirstName,
                     MiddleName = x.Person.MiddleName,
                     LastName = x.Person.LastName,
@@ -195,9 +200,17 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                             RevokedByUserKey = w.RevokedByUserKey,
                             RevokedAtUtc = w.RevokedAtUtc
                         }).ToList()
+                    }
                 })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+
+            foreach (var row in rows.Where(row => row.Office is not null))
+            {
+                row.Item.UserRole = SystemRole.ForOffice(row.Office!.Type, row.Office.Role);
+            }
+
+            return [.. rows.Select(row => row.Item)];
         }
 
         public Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
@@ -273,33 +286,40 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
 
         public async Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         {
-            // Join fans out to one row per (member, role); a member now holds several roles (Member plus
-            // office roles), so collapse to one row per member and prefer a non-baseline role for display.
+            // One row per candidate, with whichever office they hold in this kurin. It used to fan out
+            // over the identity store's roles and collapse them again, which also meant showing an
+            // office earned in a different kurin.
             var rows = await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
                 .Where(m => m.UserKey != null)
-                .GroupJoin(Context.UserRoles, m => m.UserKey, ur => (Guid?)ur.UserId, (member, userRoles) => new { member, userRoles })
-                .SelectMany(x => x.userRoles.DefaultIfEmpty(), (x, userRole) => new { x.member, userRole })
-                .GroupJoin(Context.Roles, x => x.userRole != null ? (Guid?)x.userRole.RoleId : null, role => (Guid?)role.Id, (x, roles) => new { x.member, roles })
-                .SelectMany(x => x.roles.DefaultIfEmpty(), (x, role) => new { x.member, role })
-                .Select(m => new MemberLookupDto
+                .Select(m => new
                 {
-                    MemberKey = m.member.MemberKey,
-                    UserKey = m.member.UserKey,
-                    FirstName = m.member.FirstName,
-                    MiddleName = m.member.MiddleName,
-                    LastName = m.member.LastName,
-                    UserRole = m.role != null ? m.role.Name : null
+                    Office = (from history in Context.LeadershipHistories
+                              where history.MemberKey == m.MemberKey && history.EndDate == null
+                              join office in Context.Leaderships
+                                  on history.LeadershipKey equals office.LeadershipKey
+                              where office.EndDate == null
+                                  && (office.KurinKey == kurinKey
+                                      || (office.GroupKey != null && office.Group!.KurinKey == kurinKey))
+                              orderby office.Type, history.Role
+                              select new { office.Type, history.Role }).FirstOrDefault(),
+                    Item = new MemberLookupDto
+                    {
+                        MemberKey = m.MemberKey,
+                        UserKey = m.UserKey,
+                        FirstName = m.FirstName,
+                        MiddleName = m.MiddleName,
+                        LastName = m.LastName
+                    }
                 })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            return rows
-                .GroupBy(row => row.MemberKey)
-                .Select(group => group
-                    .OrderBy(row => string.IsNullOrEmpty(row.UserRole)
-                        || string.Equals(row.UserRole, SystemRole.Member, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
-                    .First())
-                .ToList();
+            foreach (var row in rows.Where(row => row.Office is not null))
+            {
+                row.Item.UserRole = SystemRole.ForOffice(row.Office!.Type, row.Office.Role);
+            }
+
+            return [.. rows.Select(row => row.Item)];
         }
 
         public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)

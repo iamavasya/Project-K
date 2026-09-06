@@ -416,6 +416,9 @@ namespace ProjectK.API
                     ctx.Status("Migrating legacy roles to offices...");
                     await LegacyRoleMigrationSeeder.MigrateAsync(scope.ServiceProvider);
 
+                    ctx.Status("Taking office roles off accounts...");
+                    await OfficeRoleCleanupSeeder.CleanAsync(scope.ServiceProvider);
+
                     ctx.Status("Waking the badges archive...");
                     _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();
 

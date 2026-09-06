@@ -19,19 +19,22 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ResetUserMfaCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
+        private readonly IAccessContextResolver _access;
 
         public ResetUserMfaCommandHandler(
             UserManager<AppUser> userManager,
             ICurrentUserContext currentUserContext,
             ILogger<ResetUserMfaCommandHandler> logger,
             IActivityLogger activityLogger,
-            IRefreshTokenStore refreshTokens)
+            IRefreshTokenStore refreshTokens,
+            IAccessContextResolver access)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
             _activityLogger = activityLogger;
             _refreshTokens = refreshTokens;
+            _access = access;
         }
 
         public async Task<ServiceResult<bool>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
@@ -49,7 +52,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "You do not have permission to perform this action.");
             }
 
-            var targetRoles = await _userManager.GetRolesAsync(targetUser);
+            var targetRoles = (await _access.ResolveAsync(targetUser, cancellationToken)).Roles;
             if (isKurinManager)
             {
                 if (targetUser.KurinKey != _currentUserContext.KurinKey)

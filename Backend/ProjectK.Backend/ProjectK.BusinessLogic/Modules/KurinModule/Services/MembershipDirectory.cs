@@ -21,4 +21,9 @@ public sealed class MembershipDirectory : IMembershipDirectory
 
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.CountForMemberAsync(memberKey, cancellationToken);
+
+    public Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
+        Guid userKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetKurinKeysForAccountAsync(userKey, cancellationToken);
 }

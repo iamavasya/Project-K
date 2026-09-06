@@ -24,7 +24,6 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
-    private readonly Mock<ILeadershipRoleSyncService> _roleSyncMock = new();
 
     public AssignMentorCommandHandlerTests()
     {
@@ -54,17 +53,17 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _roleSyncMock.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Once);
-        // Access comes from the synced role (Впорядник), not manual role manipulation.
-        _roleSyncMock.Verify(x => x.SyncMemberAsync(member.MemberKey, It.IsAny<CancellationToken>()), Times.Once);
+        // Access comes from the assignment itself, read when the next token is minted.
+        _cacheMock.Verify(x => x.Invalidate(It.IsAny<CachePolicy>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenAlreadyActivelyAssigned_ShouldReturnConflictAndNotSync()
+    public async Task Handle_WhenAlreadyActivelyAssigned_ShouldReturnConflictAndChangeNothing()
     {
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -78,11 +77,11 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, member.KurinKey, member.GroupKey, "A", "B", "a@example.com", null));
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _roleSyncMock.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);
         _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Never);
-        _roleSyncMock.Verify(x => x.SyncMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _cacheMock.Verify(x => x.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
     }
 }
