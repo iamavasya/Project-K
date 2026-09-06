@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
@@ -15,6 +16,7 @@ using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -46,6 +48,68 @@ namespace ProjectK.API.Controllers.KurinModule
             var request = new GetMemberByKey(memberKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Returns one person's archive box: who they are, what folders their history has, and the
+        /// contents of the folders named in <paramref name="include"/> — a comma-separated list of
+        /// <c>memberships</c>, <c>offices</c>, <c>levels</c>, <c>awards</c>, <c>warnings</c> and
+        /// <c>progress</c>. Without it, only the index comes back.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("{memberKey:guid}/dossier")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+        [ProducesResponseType(typeof(MemberDossierResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetDossier(Guid memberKey, [FromQuery] string? include)
+        {
+            var response = await _mediator.Send(new GetMemberDossier(memberKey, ParseInclude(include)));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Returns one folder of a person's dossier and nothing else.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("{memberKey:guid}/dossier/{folder}")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetDossierFolder(Guid memberKey, string folder)
+        {
+            var response = await _mediator.Send(new GetMemberDossier(memberKey, [folder]));
+            if (response.Type != ResultType.Success)
+            {
+                return response.ToActionResult(this);
+            }
+
+            var dossier = response.Data!;
+            return folder.ToLowerInvariant() switch
+            {
+                MemberDossierFolders.Memberships => Ok(dossier.Memberships),
+                MemberDossierFolders.Offices => Ok(dossier.Offices),
+                MemberDossierFolders.Levels => Ok(dossier.Levels),
+                MemberDossierFolders.Awards => Ok(dossier.Awards),
+                MemberDossierFolders.Warnings => Ok(dossier.Warnings),
+                MemberDossierFolders.Progress => Ok(dossier.Progress),
+                _ => Ok(dossier.Folders)
+            };
+        }
+
+        // "all" opens every folder; anything else is taken apart and checked by the use case, so an
+        // unknown name is answered the same way whichever route it arrived on.
+        private static IReadOnlyCollection<string> ParseInclude(string? include)
+        {
+            if (string.IsNullOrWhiteSpace(include))
+            {
+                return [];
+            }
+
+            return string.Equals(include.Trim(), "all", StringComparison.OrdinalIgnoreCase)
+                ? MemberDossierFolders.All
+                : [.. include.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
         }
 
         /// <summary>

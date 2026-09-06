@@ -66,6 +66,10 @@ public static class DependencyInjection
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
 
+        // What each module will answer about a person on someone else's behalf.
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
+
         return services;
     }
 

@@ -30,6 +30,9 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
                 cancellationToken);
     }
 
+    public Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => Context.BadgeProgresses.CountAsync(x => x.MemberKey == memberKey, cancellationToken);
+
     public async Task<IEnumerable<BadgeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return await Context.BadgeProgresses

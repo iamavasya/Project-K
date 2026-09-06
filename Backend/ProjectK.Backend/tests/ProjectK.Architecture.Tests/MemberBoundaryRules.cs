@@ -1,9 +1,11 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace ProjectK.Architecture.Tests;
@@ -33,6 +35,15 @@ public class MemberBoundaryRules
     /// non-empty means it is again.
     /// </summary>
     private static readonly string[] AuthorizationStillKnowsAboutMember = [];
+
+    /// <summary>
+    /// The kurin's report still reads probe and вмілість rows itself. It needs everyone's progress
+    /// at once, which the directory does not offer yet — MM-13a adds that read and empties this list.
+    /// </summary>
+    private static readonly string[] ReadsProgressDataDirectly =
+    [
+        "ProjectK.BusinessLogic.Modules.KurinModule.Reports.KurinReportDataService"
+    ];
 
     [Fact]
     public void MemberData_ShouldBeReachedOnlyFromItsOwnModule()
@@ -67,6 +78,31 @@ public class MemberBoundaryRules
         ProjectKArchitecture.Violations(rule).Should().BeEquivalentTo(
             AuthorizationStillKnowsAboutMember,
             "who may act is decided from Membership and offices, never from the person's own record");
+    }
+
+    /// <summary>
+    /// The other side of the same boundary. A person's dossier shows what they have taken and
+    /// earned, and it gets it by asking the probes and вмілості module rather than by reading its
+    /// tables — which is the only version of that read that still works once the module is elsewhere.
+    /// </summary>
+    [Fact]
+    public void ProgressData_ShouldBeReachedOnlyFromItsOwnModule()
+    {
+        var rule = Types()
+            .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API|Common\.Entities)\..*")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")
+            .Should().NotDependOnAny(
+                typeof(ProbeProgress),
+                typeof(BadgeProgress),
+                typeof(IProbeProgressRepository),
+                typeof(IBadgeProgressRepository));
+
+        ProjectKArchitecture.Violations(rule).Should().BeEquivalentTo(
+            ReadsProgressDataDirectly,
+            "what a person has earned is asked of the module that holds it, through IMemberProgressDirectory");
     }
 
     [Fact]

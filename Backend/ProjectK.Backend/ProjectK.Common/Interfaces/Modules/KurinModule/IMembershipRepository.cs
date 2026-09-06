@@ -1,4 +1,5 @@
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule
 {
@@ -8,6 +9,18 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<IReadOnlyCollection<Membership>> GetActiveForMemberAsync(
             Guid memberKey,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Everything a person's belonging amounts to — current and past, with the kurin and гурток
+        /// named rather than only keyed. Read for the dossier, which is composed across modules and
+        /// cannot join to the kurin's tables to fill the names in.
+        /// </summary>
+        Task<IReadOnlyCollection<MembershipRecord>> GetRecordsForMemberAsync(
+            Guid memberKey,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>How many memberships a person has held, current and past.</summary>
+        Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Writes the account key onto every current membership of a person. The copy exists so that

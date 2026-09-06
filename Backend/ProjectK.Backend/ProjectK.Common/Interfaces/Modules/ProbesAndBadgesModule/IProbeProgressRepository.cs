@@ -13,4 +13,7 @@ public interface IProbeProgressRepository : IBaseEntityRepository<ProbeProgress>
     /// so deleting a member — or a whole kurin of them — has to ask for this explicitly.
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>How many rows one person has here, without reading them.</summary>
+    Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }

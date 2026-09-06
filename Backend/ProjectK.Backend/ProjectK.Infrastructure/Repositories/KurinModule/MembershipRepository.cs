@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule
@@ -20,6 +21,30 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 .Where(m => m.MemberKey == memberKey && m.LeftAtUtc == null)
                 .OrderByDescending(m => m.JoinedAtUtc)
                 .ToListAsync(cancellationToken);
+
+        public async Task<IReadOnlyCollection<MembershipRecord>> GetRecordsForMemberAsync(
+            Guid memberKey,
+            CancellationToken cancellationToken = default)
+            => await Context.Memberships
+                .AsNoTracking()
+                .Where(m => m.MemberKey == memberKey)
+                .OrderBy(m => m.LeftAtUtc == null ? 0 : 1)
+                .ThenByDescending(m => m.JoinedAtUtc)
+                .Select(m => new MembershipRecord(
+                    m.MembershipKey,
+                    m.KurinKey,
+                    m.Kurin.Number,
+                    m.Kurin.Branch,
+                    m.Kurin.NamedAfter,
+                    m.GroupKey,
+                    m.Group != null ? m.Group.Name : null,
+                    m.Kind,
+                    m.JoinedAtUtc,
+                    m.LeftAtUtc))
+                .ToListAsync(cancellationToken);
+
+        public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+            => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);
 
         public async Task SyncAccountAsync(
             Guid memberKey,
