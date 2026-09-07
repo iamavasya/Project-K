@@ -22,6 +22,14 @@
           }
           <span class="membership-period">{{ period(membership) }}</span>
         </span>
+        @if (canAct(membership)) {
+          <span class="membership-actions">
+            <p-button label="Гурток" icon="pi pi-sitemap" variant="text" severity="secondary"
+              (onClick)="moveToGroup.emit(membership)" />
+            <p-button label="Вивести" icon="pi pi-sign-out" variant="text" severity="secondary"
+              (onClick)="leaveKurin.emit(membership)" />
+          </span>
+        }
       </li>
     }
   </ul>

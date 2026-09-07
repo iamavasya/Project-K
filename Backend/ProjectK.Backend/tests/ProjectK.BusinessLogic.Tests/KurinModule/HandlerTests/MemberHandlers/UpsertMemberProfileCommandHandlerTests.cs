@@ -335,6 +335,34 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             result.Type.Should().Be(ResultType.InternalServerError);
         }
 
+        [Fact]
+        public async Task Handle_Update_ShouldNotMoveThePersonEvenWhenLeadershipAsksItTo()
+        {
+            var here = MakeGroup();
+            var elsewhere = MakeGroup();
+            var existing = MakeExistingMember(here.GroupKey, here.KurinKey);
+
+            // The form was opened from another гурток, so the request names it. Editing a profile is
+            // not how someone is moved — the membership they already have has the last word.
+            var cmd = ProfileCommandFor(existing, elsewhere, firstName: "Changed");
+
+            ExistingMemberIs(existing, existing.MemberKey);
+            AlreadyPlacedIn(existing.MemberKey, here.KurinKey, here.GroupKey);
+            GroupIs(here);
+            GroupIs(elsewhere);
+            _currentUserContextMock.Setup(c => c.Roles).Returns(new[] { "KV.Vykhovnyk" });
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            _eventsMock.Verify(
+                e => e.PublishAsync(
+                    It.Is<MemberPlaced>(placed =>
+                        placed.KurinKey == here.KurinKey && placed.GroupKey == here.GroupKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
         private static UpsertMemberProfileCommand ProfileCommandFor(
             Member existing,
             Group group,

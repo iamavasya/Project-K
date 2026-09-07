@@ -1,0 +1,50 @@
+<p-dialog
+  header="Прийняти за кодом"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(92vw, 28rem)' }">
+
+  <p class="join-by-code-hint">
+    Код людина знаходить у власному профілі й передає проводу сама. Пошуку тут немає — лише точний збіг.
+  </p>
+
+  <div class="join-by-code-row">
+    <input
+      pInputText
+      class="w-full"
+      placeholder="PL-XXXXX-XXXXX"
+      [ngModel]="code()"
+      (ngModelChange)="code.set($event)"
+      (keyup.enter)="lookUp()" />
+    <p-button label="Знайти" [loading]="isLooking()" (onClick)="lookUp()" />
+  </div>
+
+  @if (errorMessage(); as message) {
+    <p class="join-by-code-error">{{ message }}</p>
+  }
+
+  @if (candidate(); as found) {
+    <div class="join-by-code-card">
+      <p class="join-by-code-name">{{ found.member.fullName }}</p>
+      <p class="join-by-code-meta">
+        Належить до куренів: {{ found.member.currentMembershipCount }}
+      </p>
+      @if (found.alreadyInThisKurin) {
+        <p class="join-by-code-meta">Ця людина вже в цьому курені.</p>
+      }
+    </div>
+  }
+
+  <ng-template #footer>
+    <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="close()" />
+    <p-button
+      label="Прийняти"
+      [disabled]="!candidate() || candidate()!.alreadyInThisKurin"
+      [loading]="isJoining()"
+      (onClick)="join()" />
+  </ng-template>
+</p-dialog>

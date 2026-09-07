@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/ro
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { MessageService } from '@openng/optimus-ui/api';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
 import { KurinBranch } from '../common/models/enums/kurin-branch.enum';
@@ -136,6 +137,7 @@ describe('MemberCardComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        MessageService,
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: KurinService, useValue: kurinServiceSpy },
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },

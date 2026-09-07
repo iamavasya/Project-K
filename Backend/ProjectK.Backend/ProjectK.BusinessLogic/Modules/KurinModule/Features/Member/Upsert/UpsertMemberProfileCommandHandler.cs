@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
@@ -55,9 +55,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 : (await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken))
                     .FirstOrDefault();
 
-            // Someone without leadership may edit their own details but not move themselves between
-            // гуртки or куріні, so the placement is taken back from where they already are.
-            if (current is not null && !CanEditRestrictedFields())
+            // Where a person stands is not a field of their profile. Editing an existing person takes
+            // the placement back from the membership they already have — whoever is editing, and
+            // whatever the request said. Moving someone is a membership action, with its own route
+            // and its own right; an edit form must not be able to do it by accident.
+            if (current is not null)
             {
                 request.GroupKey = current.GroupKey;
                 request.KurinKey = current.KurinKey;

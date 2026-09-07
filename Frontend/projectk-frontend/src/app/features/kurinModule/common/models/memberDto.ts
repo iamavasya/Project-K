@@ -6,6 +6,8 @@ import { MemberProfileVerificationStatus } from "./enums/member-profile-verifica
 
 export interface MemberDto {
     memberKey: string;
+    /** Код, який людина віддає проводу іншого куреня, щоб та прийняла її. Свій — бачить лише вона. */
+    publicId?: string;
     groupKey: string;
     kurinKey: string;
     userKey?: string | null;

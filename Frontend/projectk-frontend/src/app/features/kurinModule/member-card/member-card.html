@@ -81,6 +81,21 @@
                         </p>
                         }
 
+                        @if (ownPublicId; as code) {
+                        <p class="member-summary-line text-sm sm:col-span-2">
+                            <span class="member-summary-label">Твій код:</span>
+                            <span class="member-summary-value"> {{ code }}</span>
+                            <p-button
+                                [icon]="publicIdCopied ? 'pi pi-check' : 'pi pi-copy'"
+                                [attr.aria-label]="'Скопіювати код'"
+                                pTooltip="Цей код ти віддаєш проводу іншого куреня, щоб він прийняв тебе"
+                                tooltipPosition="top"
+                                variant="text"
+                                severity="secondary"
+                                (onClick)="copyPublicId()" />
+                        </p>
+                        }
+
                         @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
                         <p class="member-summary-line text-sm sm:col-span-2">
                             <span class="member-summary-label">Верифіковано:</span>
@@ -239,7 +254,11 @@
                 <app-member-memberships-tile
                     [memberships]="memberships"
                     [isLoading]="isMembershipsLoading"
-                    [loadFailed]="membershipsLoadFailed" />
+                    [loadFailed]="membershipsLoadFailed"
+                    [scopedKurinKey]="scopedKurinKey"
+                    [canManage]="canEditMember"
+                    (moveToGroup)="openMoveToGroup($event)"
+                    (leaveKurin)="confirmLeaveKurin($event)" />
             </section>
         </ng-template>
     </app-tile-board>
@@ -489,3 +508,30 @@
     </section>
     }
 </div>
+
+<p-dialog
+    header="Перевести в гурток"
+    [(visible)]="isMoveToGroupDialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(92vw, 26rem)' }">
+    <p class="mb-4 text-sm">
+        Курінь лишається той самий — міняється лише гурток усередині нього.
+    </p>
+
+    <p-select
+        [options]="groupOptions"
+        [(ngModel)]="selectedGroupKey"
+        optionLabel="name"
+        optionValue="groupKey"
+        placeholder="Поза гуртком"
+        [showClear]="true"
+        styleClass="w-full" />
+
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="isMoveToGroupDialogVisible = false" />
+        <p-button label="Перевести" [loading]="isMovingToGroup" (onClick)="saveMoveToGroup()" />
+    </ng-template>
+</p-dialog>

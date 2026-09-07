@@ -14,6 +14,8 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { MessageService } from '@openng/optimus-ui/api';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
@@ -46,6 +48,9 @@ import { PermissionService } from '../../authModule/services/permission.service'
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../common/functions/progress-status-labels.function';
 import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { GroupService } from '../common/services/group-service/group.service';
+import { MembershipService } from '../common/services/membership-service/membership.service';
+import { GroupDto } from '../common/models/groupDto';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 import { TileBoardComponent } from '../../../shared/tile-board/tile-board';
@@ -64,6 +69,7 @@ import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive'
     InputTextModule,
     IconFieldModule,
     InputIconModule,
+    SelectModule,
     TooltipModule,
     SkillMiniCardComponent,
     BentoTileSkeletonComponent,
@@ -90,6 +96,9 @@ export class MemberCardComponent implements OnInit {
   entityService = inject(EntityService);
   permissionService = inject(PermissionService);
   kurinService = inject(KurinService);
+  groupService = inject(GroupService);
+  membershipService = inject(MembershipService);
+  messageService = inject(MessageService);
   confirmationService = inject(ConfirmationService);
   breadcrumbService = inject(BreadcrumbService);
   memberAwardService = inject(MemberAwardService);
@@ -100,6 +109,11 @@ export class MemberCardComponent implements OnInit {
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
   memberships: MembershipDto[] = [];
+  groupOptions: GroupDto[] = [];
+  selectedGroupKey: string | null = null;
+  movingMembership: MembershipDto | null = null;
+  isMoveToGroupDialogVisible = false;
+  isMovingToGroup = false;
   badgeProgresses: BadgeProgressDto[] = [];
 
   isMembershipsLoading = false;
@@ -218,6 +232,101 @@ export class MemberCardComponent implements OnInit {
       stamps[membership.kurinKey] = `к. ч. ${membership.kurinNumber}`;
       return stamps;
     }, {});
+  }
+
+  publicIdCopied = false;
+
+  /**
+   * Свій код людина бачить у власному профілі й нікого більше про нього не питає. Чужий не
+   * показуємо навіть проводу: код — це те, що віддають, а не те, що про людину дізнаються.
+   */
+  get ownPublicId(): string | null {
+    const own = this.authService.getAuthStateValue()?.memberKey ?? null;
+    return own && own === this.member?.memberKey ? (this.member?.publicId ?? null) : null;
+  }
+
+  copyPublicId(): void {
+    const code = this.ownPublicId;
+    if (!code) {
+      return;
+    }
+
+    navigator.clipboard?.writeText(code).then(
+      () => this.publicIdCopied = true,
+      () => this.publicIdCopied = false
+    );
+  }
+
+  /** Курінь, у якому дивиться той, хто дивиться. Дії над членством можливі тільки в ньому. */
+  get scopedKurinKey(): string | null {
+    return this.authService.getAuthStateValue()?.kurinKey ?? null;
+  }
+
+  openMoveToGroup(membership: MembershipDto): void {
+    this.movingMembership = membership;
+    this.selectedGroupKey = membership.groupKey ?? null;
+    this.isMoveToGroupDialogVisible = true;
+    this.groupService.getAllByKurinKey(membership.kurinKey).subscribe({
+      next: groups => this.groupOptions = groups,
+      error: () => this.groupOptions = []
+    });
+  }
+
+  saveMoveToGroup(): void {
+    const membership = this.movingMembership;
+    if (!membership || !this.memberKey) {
+      return;
+    }
+
+    this.isMovingToGroup = true;
+    this.membershipService
+      .moveToGroup(membership.kurinKey, this.memberKey, this.selectedGroupKey)
+      .subscribe({
+        next: () => {
+          this.isMovingToGroup = false;
+          this.isMoveToGroupDialogVisible = false;
+          this.refreshData();
+        },
+        error: () => {
+          this.isMovingToGroup = false;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Не вдалося перевести',
+            detail: 'Спробуй ще раз.'
+          });
+        }
+      });
+  }
+
+  confirmLeaveKurin(membership: MembershipDto): void {
+    this.confirmationService.confirm({
+      header: 'Вивести з куреня',
+      // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
+      // змушував провід тримати в курені тих, хто давно пішов.
+      message: `Членство в курені ч. ${membership.kurinNumber} буде закрите. Людина, її проби, `
+        + 'вмілості й відзначення лишаються — вони належать їй, а не куреню.',
+      icon: 'pi pi-sign-out',
+      acceptLabel: 'Вивести',
+      rejectLabel: 'Скасувати',
+      acceptButtonProps: { label: 'Вивести', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      accept: () => this.leaveKurin(membership)
+    });
+  }
+
+  private leaveKurin(membership: MembershipDto): void {
+    if (!this.memberKey) {
+      return;
+    }
+
+    this.membershipService.leave(membership.kurinKey, this.memberKey).subscribe({
+      next: () => this.refreshData(),
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Не вдалося вивести',
+        detail: 'Спробуй ще раз.'
+      })
+    });
   }
 
   get hasAnySkills(): boolean {
