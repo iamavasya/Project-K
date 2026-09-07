@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using System;
@@ -13,6 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
     public class MemberResponse
     {
         public Guid MemberKey { get; set; }
+
+        /// <summary>
+        /// The code a person hands to another kurin's провід so it can take them in. Only ever filled
+        /// in for the person themselves — see <c>GetMemberByKey</c>, which clears it for everyone else.
+        /// </summary>
+        public string? PublicId { get; set; }
         public Guid GroupKey { get; set; }
         public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }

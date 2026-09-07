@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
@@ -57,6 +57,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get
             {
                 var ledGroups = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, kurinKey.Value, ct);
                 canViewPrivate = ledGroups.Contains(theirGroupKey.Value);
+            }
+
+            // The code is not a detail about a person, it is the thing they hand over. Leadership of
+            // their own kurin has no use for it — knowing it would let one kurin sign someone into
+            // another without ever asking them — so nobody but the person themselves is told it.
+            if (!isOwner)
+            {
+                response.PublicId = null;
             }
 
             if (!canViewPrivate)

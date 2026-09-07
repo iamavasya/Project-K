@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 
@@ -71,6 +71,9 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             // active leadership and active warnings are already resolved in the
             // projection; history and awards are card-only and stay empty here.
             CreateMap<MemberListItemDto, MemberResponse>()
+                // A list never carries anyone's public code: it is answered for a whole kurin, and
+                // the code is something one person hands over, not something a roster hands out.
+                .ForMember(dest => dest.PublicId, opt => opt.Ignore())
                 .ForMember(dest => dest.PlastLevelHistories, opt => opt.Ignore())
                 .ForMember(dest => dest.Awards, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
