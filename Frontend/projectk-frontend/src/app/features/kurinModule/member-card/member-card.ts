@@ -39,6 +39,7 @@ import { MemberWarningLevel } from '../common/models/enums/member-warning-level.
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../common/models/membershipDto';
+import { hasYouthProgram } from '../common/models/enums/kurin-branch.enum';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services/member-award-service/member-award.service';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
@@ -159,11 +160,12 @@ export class MemberCardComponent implements OnInit {
     });
 
     this.loadMemberships(this.memberKey);
-    this.loadSkills(this.memberKey);
-    this.loadProbes(this.memberKey);
   }
 
-  /** Одна тека — один запит. Профіль показується й без неї. */
+  /**
+   * Одна тека — один запит. Проби й вмілості чекають на неї: у курені УСП чи УПС цього вишколу
+   * немає, і питати про них не варто зовсім, а не лише ховати відповідь.
+   */
   private loadMemberships(memberKey: string): void {
     this.isMembershipsLoading = true;
     this.membershipsLoadFailed = false;
@@ -171,13 +173,36 @@ export class MemberCardComponent implements OnInit {
       next: memberships => {
         this.memberships = memberships;
         this.isMembershipsLoading = false;
+        this.loadYouthProgress(memberKey);
       },
       error: () => {
         this.memberships = [];
         this.membershipsLoadFailed = true;
         this.isMembershipsLoading = false;
+        // Не знаємо гілки — поводимось як із юнацьким куренем, бо він тут за замовчуванням.
+        this.loadYouthProgress(memberKey);
       }
     });
+  }
+
+  private loadYouthProgress(memberKey: string): void {
+    if (!this.hasYouthProgram) {
+      return;
+    }
+
+    this.loadSkills(memberKey);
+    this.loadProbes(memberKey);
+  }
+
+  /**
+   * Чи має курінь, у якому ми дивимось цю людину, юнацький вишкіл. Гілку бере членство саме тут:
+   * та сама людина може бути юнаком в одному курені й старшим пластуном у другому.
+   */
+  get hasYouthProgram(): boolean {
+    const here = this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
+      ?? this.memberships.find(m => m.isCurrent);
+
+    return hasYouthProgram(here?.branch);
   }
 
   /**

@@ -105,6 +105,7 @@
         </section>
         </ng-template>
 
+        @if (hasYouthProgram) {
         <ng-template [appTileDef]="{ key: 'skills', span: 'half', label: 'Здобуті вмілості' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -210,6 +211,8 @@
                 }
             </section>
         </ng-template>
+
+        }
 
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">

@@ -6,6 +6,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
+import { KurinBranch } from '../common/models/enums/kurin-branch.enum';
+import { MembershipKind } from '../common/models/enums/membership-kind.enum';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -634,6 +636,58 @@ describe('MemberCardComponent', () => {
     expect(memberProgressServiceSpy.reviewBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-2', {
       isApproved: false,
       note: null
+    });
+  });
+
+  describe('гілка куреня', () => {
+    const membershipIn = (branch: KurinBranch) => ({
+      membershipKey: 'ms-1',
+      kurinKey: member.kurinKey,
+      kurinNumber: 7,
+      branch,
+      kurinNamedAfter: null,
+      groupKey: null,
+      groupName: null,
+      kind: MembershipKind.Youth,
+      joinedAtUtc: '2022-09-01T00:00:00Z',
+      leftAtUtc: null,
+      isCurrent: true
+    });
+
+    it('у курені УСП проби й вмілості не показуються і навіть не запитуються', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.USP)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
+      expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
+    });
+
+    it('у юнацькому курені все на місці', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeTrue();
+      expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
+    });
+
+    it('гілку бере членство в тому курені, де ми дивимось людину', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([
+        { ...membershipIn(KurinBranch.UPYu), kurinKey: 'kurin-elsewhere', membershipKey: 'ms-2' },
+        membershipIn(KurinBranch.USP)
+      ]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
     });
   });
 });

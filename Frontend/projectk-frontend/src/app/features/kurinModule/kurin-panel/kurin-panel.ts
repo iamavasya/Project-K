@@ -20,6 +20,7 @@ import { AuthService } from '../../authModule/services/authService/auth.service'
 import { PermissionService } from '../../authModule/services/permission.service';
 import { MemberListComponent } from '../common/components/member-list/member-list';
 import { KurinDto } from '../common/models/kurinDto';
+import { KURIN_BRANCH_LABELS, KurinBranch } from '../common/models/enums/kurin-branch.enum';
 import { OnboardingService, ZbtStats } from '../../authModule/services/onboarding.service';
 import { KvPanelComponent } from '../common/components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../common/components/leadership/leadership-panel/leadership-panel';
@@ -125,6 +126,11 @@ export class KurinPanelComponent implements OnInit {
 
   get descriptionText(): string {
     return this.kurinData?.description?.trim() ?? '';
+  }
+
+  /** Гілка куреня. Курені, заведені до появи поділу, — УПЮ, і це не заглушка, а те, чим вони є. */
+  get branchLabel(): string {
+    return KURIN_BRANCH_LABELS[this.kurinData?.branch ?? KurinBranch.UPYu];
   }
 
   get isDescriptionLong(): boolean {

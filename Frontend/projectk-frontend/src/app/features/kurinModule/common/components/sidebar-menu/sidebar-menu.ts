@@ -6,7 +6,7 @@ import { MenuItem } from '@openng/optimus-ui/api';
 import { NavigationEnd, Router } from '@angular/router';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { PermissionService } from '../../../../authModule/services/permission.service';
-import { combineLatest, defer, filter, map, Observable, of, startWith } from 'rxjs';
+import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap } from 'rxjs';
 import { AuthState } from '../../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -15,6 +15,8 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { parseOfficeRole } from '../../functions/systemRole.function';
 import { getLeadershipRoleSortWeight } from '../../functions/leadershipRoleOrder.function';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadershipRoleDisplay.function';
+import { KurinService } from '../../services/kurin-service/kurin.service';
+import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -25,6 +27,7 @@ import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity 
 export class SidebarMenuComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly permissionService = inject(PermissionService);
+  private readonly kurinService = inject(KurinService);
   readonly visible = model(false);
   readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
@@ -53,7 +56,9 @@ export class SidebarMenuComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
       this.items$ = combineLatest([this.state$(), this.currentUrl$]).pipe(
-        map(([state, url]) => this.markCurrent(this.buildItems(state), url))
+        switchMap(([state, url]) => this.youthProgram$(state?.kurinKey ?? null).pipe(
+          map(isYouthKurin => this.markCurrent(this.buildItems(state, isYouthKurin), url))
+        ))
       );
       this.email$ = this.state$().pipe(
         map(state => state?.email ?? null)
@@ -101,7 +106,23 @@ export class SidebarMenuComponent implements OnChanges {
     return `/${routerLink.map(part => String(part)).join('/').replace(/^\/+/, '')}`;
   }
 
-  private buildItems(state: AuthState | null): MenuItem[] {
+  /**
+   * Чи веде цей курінь юнацький вишкіл. Курінь читається через кеш, який і так скидається при зміні
+   * скоупу, тож перемикання куреня саме собою приносить правильну відповідь.
+   */
+  private youthProgram$(kurinKey: string | null): Observable<boolean> {
+    if (!kurinKey) {
+      return of(true);
+    }
+
+    return this.kurinService.getByKey(kurinKey).pipe(
+      map(kurin => hasYouthProgram(kurin.branch)),
+      // Не змогли прочитати курінь — не привід ховати пункт меню, який людина має право бачити.
+      catchError(() => of(true))
+    );
+  }
+
+  private buildItems(state: AuthState | null, isYouthKurin = true): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
@@ -172,7 +193,7 @@ export class SidebarMenuComponent implements OnChanges {
       // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
       // сторінки, разом із іконками pi-sitemap і pi-address-book.
 
-      if (canReviewSkills) {
+      if (canReviewSkills && isYouthKurin) {
         items.push({
           label: 'Модерація вмілостей',
           icon: 'pi pi-verified',

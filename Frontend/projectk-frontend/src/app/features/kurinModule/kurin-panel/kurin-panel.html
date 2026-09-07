@@ -13,6 +13,7 @@
                             <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
                         }
                     </h1>
+                    <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
                     @if (kurinData?.isZbtEnabled && zbtStats?.isClosedBeta) {
                         <p-tag [severity]="(zbtStats.currentActiveUsers || 0) >= (zbtStats.betaCap || 15) ? 'danger' : 'info'"
                             [value]="'CBT active users: ' + (zbtStats.currentActiveUsers || 0) + ' / ' + (zbtStats.betaCap || 15)"
