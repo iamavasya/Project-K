@@ -13,10 +13,11 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { NotificationBellComponent } from '../../../../notificationsModule/components/notification-bell/notification-bell';
 import { ThemeService } from '../../../../systemModule/services/theme.service';
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb';
+import { KurinSwitcherComponent } from '../kurin-switcher/kurin-switcher';
 
 @Component({
   selector: 'app-toolbar-header',
-  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenuComponent, NotificationBellComponent, TooltipModule, BreadcrumbComponent],
+  imports: [ToolbarModule, ButtonModule, AvatarModule, LogoutComponent, AsyncPipe, SidebarMenuComponent, NotificationBellComponent, TooltipModule, BreadcrumbComponent, KurinSwitcherComponent],
   templateUrl: './toolbar-header.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './toolbar-header.css',

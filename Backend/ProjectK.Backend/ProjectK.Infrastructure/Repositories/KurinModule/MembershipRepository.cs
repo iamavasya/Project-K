@@ -25,9 +25,19 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
         public async Task<IReadOnlyCollection<MembershipRecord>> GetRecordsForMemberAsync(
             Guid memberKey,
             CancellationToken cancellationToken = default)
-            => await Context.Memberships
+            => await AsRecords(Context.Memberships.Where(m => m.MemberKey == memberKey))
+                .ToListAsync(cancellationToken);
+
+        public async Task<IReadOnlyCollection<MembershipRecord>> GetCurrentRecordsForAccountAsync(
+            Guid userKey,
+            CancellationToken cancellationToken = default)
+            => await AsRecords(Context.Memberships.Where(m => m.UserKey == userKey && m.LeftAtUtc == null))
+                .ToListAsync(cancellationToken);
+
+        /// <summary>Current memberships first, then the ones already closed, newest joined first.</summary>
+        private static IQueryable<MembershipRecord> AsRecords(IQueryable<Membership> memberships)
+            => memberships
                 .AsNoTracking()
-                .Where(m => m.MemberKey == memberKey)
                 .OrderBy(m => m.LeftAtUtc == null ? 0 : 1)
                 .ThenByDescending(m => m.JoinedAtUtc)
                 .Select(m => new MembershipRecord(
@@ -40,8 +50,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                     m.Group != null ? m.Group.Name : null,
                     m.Kind,
                     m.JoinedAtUtc,
-                    m.LeftAtUtc))
-                .ToListAsync(cancellationToken);
+                    m.LeftAtUtc));
 
         public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
             => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);

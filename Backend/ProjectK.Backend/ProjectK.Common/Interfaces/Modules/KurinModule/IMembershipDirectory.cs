@@ -27,4 +27,11 @@ public interface IMembershipDirectory
     Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
         Guid userKey,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same, named — what an account is shown when it has to choose which kurin to act in.
+    /// </summary>
+    Task<IReadOnlyCollection<MembershipRecord>> GetCurrentForAccountAsync(
+        Guid userKey,
+        CancellationToken cancellationToken = default);
 }

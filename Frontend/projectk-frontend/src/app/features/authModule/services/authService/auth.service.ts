@@ -6,6 +6,7 @@ import { LoginRequest } from "../../models/login-request.model";
 import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
 import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
+import { KurinScopeOption } from "../../../kurinModule/common/models/kurinScopeOption";
 import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
 import { ClientCacheService } from "../../../kurinModule/common/services/client-cache/client-cache.service";
@@ -229,6 +230,17 @@ export class AuthService {
         this.clearLocalState();
         return of(false);
       })
+    );
+  }
+
+  /**
+   * Курені, у яких цей акаунт може стояти зараз. Список приходить із сервера, а не збирається на
+   * фронті, щоб запропонований вибір збігався з тим, що сервер справді дозволить.
+   */
+  getKurinScopeOptions(): Observable<KurinScopeOption[]> {
+    return this.http.get<KurinScopeOption[]>(
+      `${this.apiUrl}/auth/kurin-scope/options`,
+      { withCredentials: true }
     );
   }
 

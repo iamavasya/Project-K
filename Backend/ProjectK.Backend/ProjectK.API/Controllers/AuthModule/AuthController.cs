@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ProjectK.API.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +19,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
@@ -144,6 +145,27 @@ namespace ProjectK.API.Controllers.AuthModule
                 SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
             }
 
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// The kurins this account may currently act in.
+        /// </summary>
+        /// <remarks>
+        /// Answered from the caller's own memberships and nothing else, so it says nothing about
+        /// anyone else and needs no permission beyond being signed in.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("kurin-scope/options")]
+        [ProducesResponseType(typeof(IEnumerable<KurinScopeOption>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetKurinScopeOptions()
+        {
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var response = await _mediator.Send(new GetKurinScopeOptions(userKey));
             return response.ToActionResult(this);
         }
 

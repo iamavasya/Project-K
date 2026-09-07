@@ -28,6 +28,14 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// The same kurins, named. Read when an account has to be shown where it may stand, which
+        /// takes more than a key: a person recognises their kurin by its number, not its guid.
+        /// </summary>
+        Task<IReadOnlyCollection<MembershipRecord>> GetCurrentRecordsForAccountAsync(
+            Guid userKey,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Writes the account key onto every current membership of a person. The copy exists so that
         /// authorization never has to read the member record; keeping it correct is this method's job,
         /// and it runs whenever an account is linked.

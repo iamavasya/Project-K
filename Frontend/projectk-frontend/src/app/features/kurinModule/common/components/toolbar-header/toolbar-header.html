@@ -10,6 +10,7 @@
 
         <ng-template #end>
             <div class="toolbar-actions">
+                <app-kurin-switcher />
                 @if (state.kurinKey && isAdmin()) {
                     <p-button (onClick)="backToKurinPanel()" label="До адміністрації" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
                 }
