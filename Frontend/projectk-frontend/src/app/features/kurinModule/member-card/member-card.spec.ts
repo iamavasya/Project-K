@@ -52,7 +52,7 @@ describe('MemberCardComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
@@ -126,6 +126,8 @@ describe('MemberCardComponent', () => {
       reviewNote: null,
       auditTrail: []
     }));
+
+    memberServiceSpy.getMemberships.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [MemberCardComponent],

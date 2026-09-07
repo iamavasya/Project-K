@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../../../../environments/environment';
 import { map, Observable, tap, throwError } from 'rxjs';
 import { MemberDto } from '../../models/memberDto';
+import { MembershipDto } from '../../models/membershipDto';
 import { UpsertMemberDto } from '../../models/requests/member/upsertMemberDto';
 import { MemberLookupDto } from '../../models/requests/member/memberLookupDto';
 import { mapMemberForView } from '../../functions/memberViewMapper.function';
@@ -25,6 +26,18 @@ export class MemberService {
       () => this.http.get<MemberDto>(`${this.apiUrl}/${id}`).pipe(
         map(member => mapMemberForView(member))
       )
+    );
+  }
+
+  /**
+   * Тека «Членства» з архівної коробки людини. Окремий запит, бо це фолдер чужого модуля: картка
+   * відкриває його тоді, коли він потрібен, а не разом із профілем.
+   */
+  getMemberships(memberKey: string): Observable<MembershipDto[]> {
+    return this.cache.get(
+      `${MEMBER_CACHE_PREFIX}memberships:${memberKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<MembershipDto[]>(`${this.apiUrl}/${memberKey}/dossier/memberships`)
     );
   }
 

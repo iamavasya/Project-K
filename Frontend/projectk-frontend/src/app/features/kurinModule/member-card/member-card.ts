@@ -37,6 +37,8 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberWarningDto } from '../common/models/memberWarningDto';
 import { MemberWarningLevel } from '../common/models/enums/member-warning-level.enum';
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
+import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
+import { MembershipDto } from '../common/models/membershipDto';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../common/services/member-award-service/member-award.service';
 import { EntityService } from '../../authModule/services/entity.service';
 import { PermissionService } from '../../authModule/services/permission.service';
@@ -65,6 +67,7 @@ import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive'
     SkillMiniCardComponent,
     BentoTileSkeletonComponent,
     MemberAwardsTileComponent,
+    MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
     TileBoardComponent,
     TileDefDirective
@@ -95,8 +98,11 @@ export class MemberCardComponent implements OnInit {
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
+  memberships: MembershipDto[] = [];
   badgeProgresses: BadgeProgressDto[] = [];
 
+  isMembershipsLoading = false;
+  membershipsLoadFailed = false;
   isSkillsLoading = false;
   skillsLoadFailed = false;
   isProbesLoading = false;
@@ -152,8 +158,41 @@ export class MemberCardComponent implements OnInit {
       }
     });
 
+    this.loadMemberships(this.memberKey);
     this.loadSkills(this.memberKey);
     this.loadProbes(this.memberKey);
+  }
+
+  /** Одна тека — один запит. Профіль показується й без неї. */
+  private loadMemberships(memberKey: string): void {
+    this.isMembershipsLoading = true;
+    this.membershipsLoadFailed = false;
+    this.memberService.getMemberships(memberKey).subscribe({
+      next: memberships => {
+        this.memberships = memberships;
+        this.isMembershipsLoading = false;
+      },
+      error: () => {
+        this.memberships = [];
+        this.membershipsLoadFailed = true;
+        this.isMembershipsLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Курінь, у якому здобуто, — за ключем. Порожньо, поки людина знає лише один курінь: підписувати
+   * кожну нагороду тим самим числом означало б додати шуму й нічого не пояснити.
+   */
+  get kurinStamps(): Record<string, string> {
+    if (this.memberships.length < 2) {
+      return {};
+    }
+
+    return this.memberships.reduce<Record<string, string>>((stamps, membership) => {
+      stamps[membership.kurinKey] = `к. ч. ${membership.kurinNumber}`;
+      return stamps;
+    }, {});
   }
 
   get hasAnySkills(): boolean {

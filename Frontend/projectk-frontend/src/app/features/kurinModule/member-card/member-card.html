@@ -214,6 +214,7 @@
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
             <app-member-awards-tile [awards]="member.awards || []"
+                [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
                 [canReview]="canInlineModerateSkills"
                 (saveAward)="onSaveAward($event)"
@@ -226,8 +227,17 @@
             <app-bento-tile-skeleton class="block h-full" variant="media" />
         </ng-template>
 
-        <ng-template [appTileDef]="{ key: 'placeholder-list', span: 'half', label: 'Список (скоро)' }">
-            <app-bento-tile-skeleton class="block h-full" variant="list" />
+        <ng-template [appTileDef]="{ key: 'memberships', span: 'half', label: 'Членства' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+                <div class="mb-4">
+                    <h2 class="member-section-title text-lg font-semibold">Членства</h2>
+                    <p class="member-section-subtitle text-sm">Де ця людина є і де була</p>
+                </div>
+                <app-member-memberships-tile
+                    [memberships]="memberships"
+                    [isLoading]="isMembershipsLoading"
+                    [loadFailed]="membershipsLoadFailed" />
+            </section>
         </ng-template>
     </app-tile-board>
 <p-dialog

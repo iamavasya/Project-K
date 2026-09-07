@@ -1,4 +1,4 @@
-﻿import { Component, inject, ChangeDetectionStrategy, output, input } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, output, input } from '@angular/core';
 
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
@@ -33,6 +33,11 @@ interface AwardGroup {
 export class MemberAwardsTileComponent {
   readonly awards = input<MemberAwardDto[]>([]);
   readonly canEdit = input(false);
+  /**
+   * Курінь, у якому відзначення здобуте, за його ключем. Порожня мапа, поки людина в одному курені:
+   * штамп потрібен тільки там, де курінь неочевидний.
+   */
+  readonly kurinStamps = input<Record<string, string>>({});
   readonly canReview = input(false);
 
   readonly saveAward = output<UpsertMemberAwardRequest>();
@@ -47,6 +52,10 @@ export class MemberAwardsTileComponent {
 
   private readonly confirmationService = inject(ConfirmationService);
   private readonly badgeImageBlobService = inject(BadgeImageBlobService);
+
+  awardStamp(award: MemberAwardDto): string | null {
+    return this.kurinStamps()[award.kurinKey] ?? null;
+  }
 
   getAwardTitle(level: MemberAwardLevel): string {
     switch (level) {

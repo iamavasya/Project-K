@@ -73,3 +73,10 @@
         height: 9.75rem;
     }
 }
+
+/* Де здобуто. Видно лише тим, хто був не в одному курені — решті це нічого не додає. */
+.award-preview-stamp {
+  color: var(--p-text-muted-color);
+  font-size: 0.6875rem;
+  margin: 0.125rem 0 0;
+}
