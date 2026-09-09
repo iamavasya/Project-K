@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.Common.Entities.AuthModule;
@@ -82,11 +82,21 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
 
             await _userManager.AddToRoleAsync(user, SystemRole.Member);
 
-            // 4. Mark Invitation as used
+            // 4. Mark Invitation as used, and the queue entry as one nobody is waiting on any more.
+            // The entry keeps the only record of how this account came to be; leaving it looking
+            // exactly like an entry still waiting is what let retention mistake the two.
             invitation.UsedAtUtc = DateTime.UtcNow;
             _unitOfWork.Invitations.Update(invitation, cancellationToken);
 
-            // 5. Make sure the account has a member, linking an existing one when the address is known
+            // The entry is marked accepted so retention can tell it from one still waiting.
+            if (entry is not null)
+            {
+                entry.InvitationAcceptedAtUtc = DateTime.UtcNow;
+                _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+            }
+
+            // 5. Make sure the account has a member, linking an existing one when the address is known.
+            // The member module owns that decision — this handler no longer writes Member rows itself.
             var memberKey = await _members.EnsureForAccountAsync(
                 new MemberForAccount(
                     user.Id,

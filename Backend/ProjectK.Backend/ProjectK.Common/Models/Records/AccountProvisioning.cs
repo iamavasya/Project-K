@@ -1,8 +1,9 @@
-﻿namespace ProjectK.Common.Models.Records;
+namespace ProjectK.Common.Models.Records;
 
 /// <summary>
-/// The rules both onboarding paths share. The lifetime lives here rather than in either handler
-/// because the invitation email quotes it too, and the two drifted apart once already.
+/// The rules every onboarding path shares. The lifetime lives here rather than in each handler
+/// because the invitation email quotes it too, and the two drifted apart once already: the letter
+/// promised thirty days for a token that died after seven.
 /// </summary>
 public static class OnboardingPolicy
 {

@@ -83,12 +83,8 @@ namespace ProjectK.Infrastructure.BackgroundServices
             if (deletedProbeAuditEvents > 0)
                 _logger.LogInformation("Cleaned up {Count} old ProbeProgressAuditEvents.", deletedProbeAuditEvents);
 
-            // 3. Cleanup Waitlist Entries (Terminal status and > 30 days)
-            var deletedWaitlistEntries = await dbContext.WaitlistEntries
-                .Where(e =>
-                    (e.VerificationStatus == WaitlistVerificationStatus.Rejected ||
-                     e.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation) &&
-                    (e.ReviewedAtUtc < onboardingRetentionDate || e.ApprovedAtUtc < onboardingRetentionDate))
+            // 3. Cleanup Waitlist Entries (finished with, and > 30 days)
+            var deletedWaitlistEntries = await SpentWaitlistEntries(dbContext, onboardingRetentionDate)
                 .ExecuteDeleteAsync(cancellationToken);
 
             if (deletedWaitlistEntries > 0)
@@ -132,5 +128,29 @@ namespace ProjectK.Infrastructure.BackgroundServices
             if (deletedSessions > 0)
                 _logger.LogInformation("Cleaned up {Count} ended UserRefreshTokens.", deletedSessions);
         }
+
+        /// <summary>
+        /// Queue entries nobody is still waiting on. Two things make this narrower than "old and in a
+        /// terminal status", and both were learned the hard way:
+        /// <list type="bullet">
+        /// <item><description><c>ApprovedForInvitation</c> is not terminal. Every invited person sits
+        /// there for good — activation never moves them off it — so age alone said nothing about
+        /// whether they were done.</description></item>
+        /// <item><description>Deleting an entry deletes the invitations hanging off it, live ones
+        /// included: the foreign key cascades in the database, and <c>ExecuteDelete</c> goes straight
+        /// there. Accounts still waiting to activate lost their way in, thirty days after approval,
+        /// with nothing left to resend and no record of them in the panel.</description></item>
+        /// </list>
+        /// So an approved entry survives for as long as an account is still waiting on it.
+        /// </summary>
+        internal static IQueryable<WaitlistEntry> SpentWaitlistEntries(AppDbContext dbContext, DateTime retentionDate)
+            => dbContext.WaitlistEntries.Where(entry =>
+                (entry.VerificationStatus == WaitlistVerificationStatus.Rejected
+                    && entry.ReviewedAtUtc < retentionDate)
+                || (entry.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation
+                    && entry.ApprovedAtUtc < retentionDate
+                    && !dbContext.Users.Any(user =>
+                        user.Email == entry.Email
+                        && user.OnboardingStatus == OnboardingStatus.PendingActivation)));
     }
 }

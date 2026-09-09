@@ -138,6 +138,80 @@ namespace ProjectK.API.Tests.Services
             }
         }
 
+        /// <summary>
+        /// The rule that cost real people their way in: an approved entry is not a finished one.
+        /// Everyone who was ever invited stays at <c>ApprovedForInvitation</c>, so deleting on age
+        /// alone took the entries of accounts still waiting to activate — and, because the key
+        /// cascades, the invitations hanging off them. An entry whose account has finished is still
+        /// swept up; an entry whose account is still waiting is not, however old.
+        /// </summary>
+        [Fact]
+        public async Task CleanupOldRecordsAsync_KeepsApprovedEntriesOfAccountsStillWaitingToActivate()
+        {
+            var services = new ServiceCollection();
+            services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection));
+            var serviceProvider = services.BuildServiceProvider();
+            var service = new AuditCleanupBackgroundService(serviceProvider, new Mock<ILogger<AuditCleanupBackgroundService>>().Object);
+
+            var longAgo = DateTime.UtcNow.AddDays(-31);
+            var waiting = CreateApprovedEntry("waiting@example.com", longAgo);
+            var finished = CreateApprovedEntry("finished@example.com", longAgo);
+
+            using (var context = new AppDbContext(_options))
+            {
+                context.WaitlistEntries.AddRange(waiting, finished);
+                context.Users.AddRange(
+                    CreateUser("waiting@example.com", OnboardingStatus.PendingActivation),
+                    CreateUser("finished@example.com", OnboardingStatus.Active));
+
+                context.Invitations.Add(new Invitation
+                {
+                    InvitationKey = Guid.NewGuid(),
+                    Token = "live",
+                    WaitlistEntryKey = waiting.WaitlistEntryKey,
+                    ExpiresAtUtc = DateTime.UtcNow.AddDays(7)
+                });
+
+                await context.SaveChangesAsync();
+            }
+
+            var method = typeof(AuditCleanupBackgroundService).GetMethod("CleanupOldRecordsAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            await (Task)method!.Invoke(service, new object[] { CancellationToken.None })!;
+
+            using (var context = new AppDbContext(_options))
+            {
+                var remaining = await context.WaitlistEntries.Select(entry => entry.Email).ToListAsync();
+                Assert.Contains("waiting@example.com", remaining);
+                Assert.DoesNotContain("finished@example.com", remaining);
+                Assert.Equal(1, await context.Invitations.CountAsync(invitation => invitation.Token == "live"));
+            }
+        }
+
+        private static WaitlistEntry CreateApprovedEntry(string email, DateTime approvedAtUtc) => new()
+        {
+            WaitlistEntryKey = Guid.NewGuid(),
+            FirstName = "Approved",
+            LastName = "Person",
+            Email = email,
+            PhoneNumber = "1234567890",
+            DateOfBirth = DateTime.UnixEpoch,
+            VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
+            ReviewedAtUtc = approvedAtUtc,
+            ApprovedAtUtc = approvedAtUtc
+        };
+
+        private static AppUser CreateUser(string email, OnboardingStatus status) => new()
+        {
+            Id = Guid.NewGuid(),
+            UserName = email,
+            NormalizedUserName = email.ToUpperInvariant(),
+            Email = email,
+            NormalizedEmail = email.ToUpperInvariant(),
+            FirstName = "Approved",
+            LastName = "Person",
+            OnboardingStatus = status
+        };
+
         private static AppNotification CreateNotification(string title, DateTime createdAtUtc, DateTime? readAtUtc)
         {
             return new AppNotification

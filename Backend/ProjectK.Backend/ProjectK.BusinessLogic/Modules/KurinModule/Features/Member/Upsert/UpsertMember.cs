@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;

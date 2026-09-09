@@ -18,6 +18,9 @@ public sealed class AppUserRepository : IAppUserRepository
     public async Task<IReadOnlyList<AppUser>> GetAllAsync(CancellationToken cancellationToken = default)
         => await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
 
+    public Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        => _context.Users.FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+
     public Task<int> CountActiveAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         => _context.Users.CountAsync(
             user => user.KurinKey == kurinKey && user.OnboardingStatus == OnboardingStatus.Active,
