@@ -34,33 +34,35 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
                 return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
             }
 
+            // Holding no live invitation is the normal state of someone who needs one resent: theirs
+            // expired, or retention swept it up. Refusing here left the panel unable to help exactly
+            // the people it exists for, so a resend now issues one whether or not it replaces.
             var invitation = await _unitOfWork.Invitations.GetActiveByWaitlistEntryKeyAsync(request.WaitlistEntryKey, cancellationToken);
-
-            if (invitation == null)
-            {
-                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "NoActiveInvitation", "No active invitation found for this entry.");
-            }
-
-            // Revoke old invitation and create a new one to refresh the token and expiry
-            invitation.IsRevoked = true;
-            _unitOfWork.Invitations.Update(invitation, cancellationToken);
+            var targetUser = await _unitOfWork.Users.GetByEmailAsync(entry.Email, cancellationToken);
 
             var newInvitation = new Invitation
             {
                 InvitationKey = Guid.NewGuid(),
                 Token = Guid.NewGuid().ToString("N"),
                 WaitlistEntryKey = entry.WaitlistEntryKey,
-                TargetUserKey = invitation.TargetUserKey,
-                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
+                TargetUserKey = invitation?.TargetUserKey ?? targetUser?.Id,
+                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingPolicy.InvitationLifetimeDays)
             };
+
+            await _emailService.SendInvitationEmailAsync(entry.Email, newInvitation.Token, cancellationToken);
+
+            if (invitation is not null)
+            {
+                invitation.IsRevoked = true;
+                _unitOfWork.Invitations.Update(invitation, cancellationToken);
+            }
+
             _unitOfWork.Invitations.Create(newInvitation, cancellationToken);
 
-            entry.InvitationSentAtUtc = DateTime.UtcNow;
+            entry.InvitationSentAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
             _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            await _emailService.SendInvitationEmailAsync(entry.Email, newInvitation.Token, cancellationToken);
 
             return new ServiceResult<Guid>(ResultType.Success, newInvitation.InvitationKey);
         }
@@ -92,21 +94,39 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             ResendInvitationByEmailCommand request,
             CancellationToken cancellationToken)
         {
+            // Every exit from here answers the same, so each one says in the log which it was. Without
+            // that, a request that quietly sent nothing reads exactly like one that sent a letter,
+            // which is how this endpoint looked healthy while helping nobody.
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user is null || user.OnboardingStatus != OnboardingStatus.PendingActivation)
+            if (user is null)
             {
+                _logger.LogInformation("An invitation resend was asked for an address no account holds; nothing was sent.");
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 
-            var entry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
-            if (entry is null)
+            if (user.OnboardingStatus != OnboardingStatus.PendingActivation)
             {
+                _logger.LogInformation(
+                    "An invitation resend was asked for account {UserKey}, which is {Status} and needs no invitation.",
+                    user.Id,
+                    user.OnboardingStatus);
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 
-            var invitation = await _unitOfWork.Invitations.GetActiveByWaitlistEntryKeyAsync(
-                entry.WaitlistEntryKey,
-                cancellationToken);
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var entry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(user.Email!, cancellationToken);
+            var entryIsNew = entry is null;
+
+            // An invitation hangs off a queue entry, and retention deleted that entry out from under
+            // accounts still waiting to activate — taking their invitations with it, since the key
+            // cascades. Rebuilding the entry is what lets such a person be invited at all.
+            entry ??= OpenApprovedWaitlistEntry(user, now);
+            if (entryIsNew)
+            {
+                _logger.LogWarning(
+                    "Account {UserKey} had no waitlist entry for an invitation to hang off; one was rebuilt from the account.",
+                    user.Id);
+            }
 
             var newInvitation = new Invitation
             {
@@ -114,8 +134,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
                 Token = Guid.NewGuid().ToString("N"),
                 WaitlistEntryKey = entry.WaitlistEntryKey,
                 TargetUserKey = user.Id,
-                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
+                ExpiresAtUtc = now.AddDays(OnboardingPolicy.InvitationLifetimeDays)
             };
+
             // The letter goes first, and nothing is written until it is away. A send that throws must
             // leave the account exactly as it was: the invitation they already hold keeps working, and
             // no second live token is left behind for the next resend to pick between.
@@ -129,24 +150,61 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
                 // the same thing an unknown address is told, and the failure is left in the log.
                 _logger.LogError(
                     exception,
-                    "Could not send a replacement invitation; nothing was changed for this account.");
+                    "Could not send a replacement invitation to account {UserKey}; nothing was changed for it.",
+                    user.Id);
 
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 
-            // One save: a person is never left holding two live invitations.
-            _unitOfWork.Invitations.Create(newInvitation, cancellationToken);
-            if (invitation is not null)
+            if (entryIsNew)
+            {
+                _unitOfWork.WaitlistEntries.Create(entry, cancellationToken);
+            }
+            else
+            {
+                entry.InvitationSentAtUtc = now;
+                _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+            }
+
+            // One save: a person is never left holding two live invitations. Revoking by account
+            // rather than by entry matters for anyone whose older tokens hang off an entry that is no
+            // longer the one their address finds.
+            var live = await _unitOfWork.Invitations.GetActiveForTargetUserAsync(user.Id, cancellationToken);
+            foreach (var invitation in live)
             {
                 invitation.IsRevoked = true;
                 _unitOfWork.Invitations.Update(invitation, cancellationToken);
             }
 
-            entry.InvitationSentAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
-            _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+            _unitOfWork.Invitations.Create(newInvitation, cancellationToken);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("A replacement invitation was sent to account {UserKey}.", user.Id);
 
             return new ServiceResult<bool>(ResultType.Success, true);
         }
+
+        /// <summary>
+        /// The queue entry an invitation has to hang off, rebuilt for an account whose own entry is
+        /// gone. It is written already approved because the account it describes was approved once:
+        /// this restores the record of that, and never creates an account.
+        /// </summary>
+        private static WaitlistEntry OpenApprovedWaitlistEntry(AppUser user, DateTime now) => new()
+        {
+            WaitlistEntryKey = Guid.NewGuid(),
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email!,
+            PhoneNumber = user.PhoneNumber ?? string.Empty,
+            DateOfBirth = DateTime.UnixEpoch,
+            IsKurinLeaderCandidate = false,
+            VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
+            IsBetaParticipant = user.IsBetaParticipant,
+            RequestedAtUtc = now,
+            ReviewedAtUtc = now,
+            ApprovedAtUtc = now,
+            InvitationSentAtUtc = now
+        };
     }
 }

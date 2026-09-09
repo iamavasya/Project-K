@@ -292,7 +292,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 Token = Guid.NewGuid().ToString("N"),
                 WaitlistEntryKey = waitlistEntry.WaitlistEntryKey,
                 TargetUserKey = user.Id,
-                ExpiresAtUtc = now.AddDays(7)
+                ExpiresAtUtc = now.AddDays(OnboardingPolicy.InvitationLifetimeDays)
             };
 
             _unitOfWork.WaitlistEntries.Create(waitlistEntry, cancellationToken);

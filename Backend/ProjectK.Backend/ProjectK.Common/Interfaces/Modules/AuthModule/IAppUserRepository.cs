@@ -14,6 +14,12 @@ public interface IAppUserRepository
 {
     Task<IReadOnlyList<AppUser>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The account holding an address, or <c>null</c>. Used where an onboarding record has to be
+    /// tied back to the account it belongs to and only the address is at hand.
+    /// </summary>
+    Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
     /// <summary>Accounts that finished onboarding in the kurin.</summary>
     Task<int> CountActiveAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 

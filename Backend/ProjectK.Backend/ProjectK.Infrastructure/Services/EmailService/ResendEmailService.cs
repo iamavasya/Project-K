@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Resend;
 
@@ -40,7 +41,7 @@ namespace ProjectK.Infrastructure.Services.EmailService
                     </div>
                     <p>If the button doesn't work, you can copy and paste this URL into your browser:</p>
                     <p>{activationUrl}</p>
-                    <p>This invitation will expire in 30 days.</p>
+                    <p>This invitation will expire in {OnboardingPolicy.InvitationLifetimeDays} days.</p>
                     <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
                     <p style='color: #888; font-size: 12px;'>If you didn't request this invitation, you can safely ignore this email.</p>
                 </div>";

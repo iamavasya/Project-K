@@ -30,8 +30,14 @@ import { ToastModule } from '@openng/optimus-ui/toast';
           <div class="text-center p-4">
             <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
             <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
-            <p class="text-muted-color mb-4">The activation link you followed is no longer valid.</p>
-            <p-button label="Back to Login" (onClick)="goToLogin()" />
+            <p class="text-muted-color mb-4">
+              Посилання вже не діє. Ми надішлемо нове запрошення на ту саму адресу — це та сама
+              форма, що й для забутого пароля.
+            </p>
+            <div class="flex flex-col gap-2">
+              <p-button label="Надіслати нове запрошення" (onClick)="goToRecovery()" />
+              <p-button label="Back to Login" [text]="true" (onClick)="goToLogin()" />
+            </div>
           </div>
         }
 
@@ -142,5 +148,9 @@ export class AccountActivationComponent implements OnInit {
 
   goToLogin() {
     this.router.navigate(['/login']);
+  }
+
+  goToRecovery() {
+    this.router.navigate(['/forgot-password']);
   }
 }
