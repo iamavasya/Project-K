@@ -56,6 +56,7 @@ namespace ProjectK.API
         {
             var builder = WebApplication.CreateBuilder(args);
             ConfigureQuestPdfLicense(builder.Configuration);
+            builder.Services.AddApplicationInsightsTelemetry();
 
             builder.Host.UseSerilog((context, services, configuration) =>
             {
@@ -266,6 +267,16 @@ namespace ProjectK.API
             var app = builder.Build();
 
             app.UseForwardedHeaders();
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                    diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+                    diagnosticContext.Set("TraceId", System.Diagnostics.Activity.Current?.TraceId.ToString());
+                };
+            });
 
             ValidateTelegramConfiguration(app);
 

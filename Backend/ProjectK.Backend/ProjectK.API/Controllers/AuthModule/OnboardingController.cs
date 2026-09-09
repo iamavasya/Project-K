@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvi
 using ProjectK.API.Authorization;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -77,6 +78,22 @@ namespace ProjectK.API.Controllers.AuthModule
         {
             var response = await _mediator.Send(new ResendInvitationCommand(key));
             return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Re-sends an activation invitation for an account that has not been activated yet.
+        /// The response is deliberately generic to avoid account enumeration.
+        /// </summary>
+        [AllowAnonymous]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpPost("invitation/resend")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status202Accepted)]
+        public async Task<IActionResult> ResendInvitationByEmail([FromBody] ResendInvitationByEmailCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return response.Type == ResultType.Success
+                ? Accepted(response.Data)
+                : response.ToActionResult(this);
         }
 
         /// <summary>

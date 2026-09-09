@@ -238,6 +238,7 @@ yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLog
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResetPassword));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.SubmitWaitlistRegistration));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ValidateInvitationToken));

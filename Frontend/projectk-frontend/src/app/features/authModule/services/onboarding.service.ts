@@ -100,6 +100,10 @@ export class OnboardingService {
     return this.http.post<boolean>(`${this.apiUrl}/password-reset/request`, { email });
   }
 
+  resendInvitationByEmail(email: string): Observable<boolean> {
+    return this.http.post<boolean>(`${this.apiUrl}/invitation/resend`, { email });
+  }
+
   resetPassword(payload: PasswordResetPayload): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/password-reset/reset`, payload);
   }
