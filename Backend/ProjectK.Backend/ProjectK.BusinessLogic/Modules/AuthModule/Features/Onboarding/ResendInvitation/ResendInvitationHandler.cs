@@ -97,6 +97,11 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             // Every exit from here answers the same, so each one says in the log which it was. Without
             // that, a request that quietly sent nothing reads exactly like one that sent a letter,
             // which is how this endpoint looked healthy while helping nobody.
+            //
+            // What none of these lines carry is who: no address, no account key, no status of one.
+            // This endpoint exists to refuse to tell a stranger whether an address is known, and
+            // writing that same answer into the log would only move the disclosure, not avoid it.
+            // The request's own trace id is what ties a line back to an attempt.
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user is null)
             {
@@ -106,10 +111,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
 
             if (user.OnboardingStatus != OnboardingStatus.PendingActivation)
             {
-                _logger.LogInformation(
-                    "An invitation resend was asked for account {UserKey}, which is {Status} and needs no invitation.",
-                    user.Id,
-                    user.OnboardingStatus);
+                _logger.LogInformation("An invitation resend was asked for an account that is not awaiting activation; nothing was sent.");
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
 
@@ -124,8 +126,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             if (entryIsNew)
             {
                 _logger.LogWarning(
-                    "Account {UserKey} had no waitlist entry for an invitation to hang off; one was rebuilt from the account.",
-                    user.Id);
+                    "An account awaiting activation had no waitlist entry for an invitation to hang off; one was rebuilt from the account.");
             }
 
             var newInvitation = new Invitation
@@ -148,10 +149,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             {
                 // Answering differently here would say the address is one we know. The caller is told
                 // the same thing an unknown address is told, and the failure is left in the log.
-                _logger.LogError(
-                    exception,
-                    "Could not send a replacement invitation to account {UserKey}; nothing was changed for it.",
-                    user.Id);
+                _logger.LogError(exception, "Could not send a replacement invitation; nothing was changed for the account.");
 
                 return new ServiceResult<bool>(ResultType.Success, true);
             }
@@ -180,7 +178,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("A replacement invitation was sent to account {UserKey}.", user.Id);
+            _logger.LogInformation("A replacement invitation was sent.");
 
             return new ServiceResult<bool>(ResultType.Success, true);
         }
