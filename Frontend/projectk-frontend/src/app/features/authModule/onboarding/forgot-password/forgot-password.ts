@@ -6,7 +6,7 @@ import { CardModule } from '@openng/optimus-ui/card';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { OnboardingService } from '../../services/onboarding.service';
 
 /**
@@ -78,9 +78,13 @@ export class ForgotPasswordComponent {
 
     this.loading = true;
     const email = this.form.value.email!;
+
+    // Two independent asks: reset a password, and re-send an invitation to someone who never
+    // activated. Neither may cancel the other — forkJoin aborts its siblings on the first error,
+    // and an aborted request can leave a token sent by email that was never written down.
     forkJoin({
-      reset: this.onboardingService.requestPasswordReset(email),
-      invitation: this.onboardingService.resendInvitationByEmail(email)
+      reset: this.onboardingService.requestPasswordReset(email).pipe(catchError(() => of(null))),
+      invitation: this.onboardingService.resendInvitationByEmail(email).pipe(catchError(() => of(null)))
     }).subscribe({
       next: () => {
         this.loading = false;

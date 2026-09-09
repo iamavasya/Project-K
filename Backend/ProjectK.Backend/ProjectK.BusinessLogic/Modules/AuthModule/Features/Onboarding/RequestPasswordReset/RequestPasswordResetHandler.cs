@@ -1,9 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,15 +16,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestP
         private readonly UserManager<AppUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly IActivityLogger _activityLogger;
+        private readonly ILogger<RequestPasswordResetHandler> _logger;
 
         public RequestPasswordResetHandler(
             UserManager<AppUser> userManager,
             IEmailService emailService,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            ILogger<RequestPasswordResetHandler> logger)
         {
             _userManager = userManager;
             _emailService = emailService;
             _activityLogger = activityLogger;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<bool>> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
@@ -40,7 +45,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestP
                     targetUserId: user.Id,
                     email: user.Email,
                     reason: "Password reset email requested.");
-                await _emailService.SendPasswordResetEmailAsync(user.Email!, token, cancellationToken);
+                // The promise above only holds if a failure looks the same as an unknown address. A
+                // send that throws would answer 500 for addresses we know and 200 for the rest, which
+                // tells apart exactly what this endpoint refuses to tell apart.
+                try
+                {
+                    await _emailService.SendPasswordResetEmailAsync(user.Email!, token, cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Could not send a password reset email.");
+                }
             }
 
             return new ServiceResult<bool>(ResultType.Success, true);
