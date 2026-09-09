@@ -13,6 +13,22 @@ interface LoginResponse {
   userKey?: string;
 }
 
+export interface KurinScopeOption {
+  kurinKey: string;
+  kurinNumber: number;
+  branch: string;
+  namedAfter?: string | null;
+  kind: string;
+}
+
+export interface MembershipRecord {
+  membershipKey: string;
+  kurinKey: string;
+  kurinNumber: number;
+  branch: string;
+  isCurrent: boolean;
+}
+
 interface GroupResponse {
   groupKey: string;
   name: string;
@@ -163,6 +179,57 @@ export async function getKurinByKey(request: APIRequestContext, user: E2eUser, k
 
   expect(response.ok(), `Failed to load kurin ${kurinKey}: ${response.status()} ${await response.text()}`).toBe(true);
   return await response.json() as KurinResponse;
+}
+
+/**
+ * Signs in and returns both the token and the kurins that account may act in. The two come from one
+ * login on purpose: the suite then asserts against the same session the switcher would be using.
+ */
+export async function getKurinScopeOptions(
+  request: APIRequestContext,
+  user: E2eUser
+): Promise<{ accessToken: string; memberKey: string; options: KurinScopeOption[] }> {
+  const login = await loginViaApi(request, user);
+  expect(login.tokens?.accessToken, `API login for ${user.email} did not return an access token.`).toBeTruthy();
+
+  const accessToken = login.tokens!.accessToken!;
+  const response = await request.get(`${e2eApiUrl}/auth/kurin-scope/options`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  expect(response.ok(), `Failed to read kurin scope options: ${response.status()} ${await response.text()}`).toBe(true);
+  expect(login.memberKey, `API login for ${user.email} did not return a memberKey.`).toBeTruthy();
+  return { accessToken, memberKey: login.memberKey!, options: await response.json() as KurinScopeOption[] };
+}
+
+/** Steps the session into one kurin and returns the roles the server hands back for it. */
+export async function setKurinScopeViaApi(
+  request: APIRequestContext,
+  accessToken: string,
+  kurinKey: string
+): Promise<{ accessToken: string; roles: string[] }> {
+  const response = await request.post(`${e2eApiUrl}/auth/kurin-scope`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    data: { kurinKey }
+  });
+
+  expect(response.ok(), `Failed to scope into ${kurinKey}: ${response.status()} ${await response.text()}`).toBe(true);
+  const body = await response.json() as LoginResponse & { roles?: string[] };
+  return { accessToken: body.tokens!.accessToken!, roles: body.roles ?? [] };
+}
+
+/** The "Членства" folder of someone's dossier — every kurin they belong to or have belonged to. */
+export async function getMembershipsViaApi(
+  request: APIRequestContext,
+  accessToken: string,
+  memberKey: string
+): Promise<MembershipRecord[]> {
+  const response = await request.get(`${e2eApiUrl}/member/${memberKey}/dossier/memberships`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  expect(response.ok(), `Failed to read memberships: ${response.status()} ${await response.text()}`).toBe(true);
+  return await response.json() as MembershipRecord[];
 }
 
 export async function createGroupViaApi(

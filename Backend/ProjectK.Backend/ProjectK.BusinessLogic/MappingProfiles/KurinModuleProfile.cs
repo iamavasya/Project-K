@@ -39,6 +39,9 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
             CreateMap<UpsertGroup, Group>(MemberList.None)
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
+                // A гурток does not change kurin by being renamed. The update path builds the command
+                // without a KurinKey, so mapping it would write Guid.Empty over a live foreign key.
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping

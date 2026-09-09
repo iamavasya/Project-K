@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -253,5 +253,35 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
             var mapped = _mapper.Map<GroupResponse>(saved);
             result.Data.Should().BeEquivalentTo(mapped);
         }
+        /// <summary>
+        /// Renaming a гурток must not move it. The update command carries no kurin at all, so a
+        /// mapping that copied it would write Guid.Empty over the foreign key — which the database
+        /// rejects, turning every group edit into a 500.
+        /// </summary>
+        [Fact]
+        public async Task Handle_WhenUpdatingAGroup_ShouldLeaveItsKurinAlone()
+        {
+            var kurinKey = Guid.NewGuid();
+            var existing = new Group("Before", kurinKey, "old")
+            {
+                GroupKey = Guid.NewGuid()
+            };
+
+            _groupRepositoryMock
+                .Setup(r => r.GetByKeyAsync(existing.GroupKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing);
+            _unitOfWorkMock
+                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+
+            var result = await _handler.Handle(
+                new UpsertGroup(existing.GroupKey, "After", "new"),
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Success);
+            existing.Name.Should().Be("After");
+            existing.KurinKey.Should().Be(kurinKey);
+        }
+
     }
 }

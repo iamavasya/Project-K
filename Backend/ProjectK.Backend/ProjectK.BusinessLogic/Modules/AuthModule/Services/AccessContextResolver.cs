@@ -12,11 +12,16 @@ public sealed class AccessContextResolver : IAccessContextResolver
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IOfficeDirectory _offices;
+    private readonly IMembershipDirectory _memberships;
 
-    public AccessContextResolver(UserManager<AppUser> userManager, IOfficeDirectory offices)
+    public AccessContextResolver(
+        UserManager<AppUser> userManager,
+        IOfficeDirectory offices,
+        IMembershipDirectory memberships)
     {
         _userManager = userManager;
         _offices = offices;
+        _memberships = memberships;
     }
 
     public async Task<AccessContext> ResolveAsync(Guid userKey, CancellationToken cancellationToken = default)
@@ -42,15 +47,55 @@ public sealed class AccessContextResolver : IAccessContextResolver
             roles.Add(SystemRole.Admin);
         }
 
-        var kurinKey = user.ResolveScopeKurinKey();
-        if (kurinKey.HasValue)
+        var chosen = user.ResolveScopeKurinKey();
+        var (kurinKey, offices) = chosen.HasValue
+            ? (chosen, await _offices.GetForAccountInKurinAsync(user.Id, chosen.Value, cancellationToken))
+            : await WhereTheyStandAsync(user.Id, cancellationToken);
+
+        foreach (var office in offices)
         {
-            foreach (var office in await _offices.GetForAccountInKurinAsync(user.Id, kurinKey.Value, cancellationToken))
-            {
-                roles.Add(SystemRole.ForOffice(office.Type, office.Role));
-            }
+            roles.Add(SystemRole.ForOffice(office.Type, office.Role));
         }
 
         return new AccessContext(user.Id, kurinKey, [.. roles]);
+    }
+
+    /// <summary>
+    /// Where an account stands when it has never said. The record used to answer this itself
+    /// (<c>AppUser.KurinKey</c>); since belonging moved to membership, nothing writes that field any
+    /// more, and without this a person who has simply never used the switcher signs in belonging
+    /// nowhere — no kurin, and none of the rights their office gives them there.
+    /// <para>
+    /// With one membership there is nothing to choose. With several, the kurin where they actually
+    /// hold an office wins: a виховник of one kurin and a plain member of another is put among the
+    /// people they answer for, not wherever they happened to join last. Failing that, the newest —
+    /// somewhere real, with the switcher one click away, beats nowhere. An explicit choice is
+    /// remembered on the account and never reaches this method again.
+    /// </para>
+    /// </summary>
+    private async Task<(Guid? KurinKey, IReadOnlyCollection<MemberOffice> Offices)> WhereTheyStandAsync(
+        Guid userKey,
+        CancellationToken cancellationToken)
+    {
+        var memberships = await _memberships.GetCurrentForAccountAsync(userKey, cancellationToken);
+        var newestFirst = memberships
+            .OrderByDescending(membership => membership.JoinedAtUtc)
+            .ToList();
+
+        if (newestFirst.Count == 0)
+        {
+            return (null, []);
+        }
+
+        foreach (var membership in newestFirst)
+        {
+            var offices = await _offices.GetForAccountInKurinAsync(userKey, membership.KurinKey, cancellationToken);
+            if (offices.Count > 0)
+            {
+                return (membership.KurinKey, offices);
+            }
+        }
+
+        return (newestFirst[0].KurinKey, []);
     }
 }

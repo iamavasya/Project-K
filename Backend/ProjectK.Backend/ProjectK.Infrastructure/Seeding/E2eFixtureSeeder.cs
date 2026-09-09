@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
@@ -21,6 +21,12 @@ namespace ProjectK.Infrastructure.Seeding
     public static class E2eFixtureSeeder
     {
         private const int KurinNumber = 2;
+
+        /// <summary>
+        /// A second kurin the mentor also belongs to — and holds no office in. It exists so the suite
+        /// can watch one account be a виховник in one kurin and nobody in particular in the other.
+        /// </summary>
+        private const int SecondKurinNumber = 3;
         /// <summary>Every fixture body shares one birthday; the suite never asserts on it.</summary>
         private static readonly DateOnly SeededDateOfBirth = new(2004, 1, 1);
 
@@ -62,6 +68,8 @@ namespace ProjectK.Infrastructure.Seeding
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
+            await EnsureSecondMembershipAsync(dbContext, mentor, cancellationToken);
+
             // Scopes the mentor to Gurtok 1 only; the suite asserts they are refused on Gurtok 2.
             var mentorUserKey = mentor.UserKey!.Value;
             var alreadyAssigned = await dbContext.MentorAssignments
@@ -77,6 +85,47 @@ namespace ProjectK.Infrastructure.Seeding
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
+        }
+
+        /// <summary>
+        /// Puts the mentor in a second kurin as a plain member, without touching the first. Their
+        /// office stays where it was seated — which is the whole point: rights belong to a membership,
+        /// not to the account, and this fixture is what lets the suite prove it.
+        /// </summary>
+        private static async Task EnsureSecondMembershipAsync(
+            AppDbContext dbContext,
+            Member mentor,
+            CancellationToken cancellationToken)
+        {
+            var secondKurin = await dbContext.Kurins
+                .FirstOrDefaultAsync(k => k.Number == SecondKurinNumber, cancellationToken);
+            if (secondKurin == null)
+            {
+                secondKurin = new Kurin(SecondKurinNumber);
+                dbContext.Kurins.Add(secondKurin);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var alreadyThere = await dbContext.Memberships.AnyAsync(
+                ms => ms.MemberKey == mentor.MemberKey
+                    && ms.KurinKey == secondKurin.KurinKey
+                    && ms.LeftAtUtc == null,
+                cancellationToken);
+            if (alreadyThere)
+            {
+                return;
+            }
+
+            dbContext.Memberships.Add(new Membership
+            {
+                MemberKey = mentor.MemberKey,
+                UserKey = mentor.UserKey,
+                KurinKey = secondKurin.KurinKey,
+                GroupKey = null,
+                Kind = MembershipKind.Youth,
+                JoinedAtUtc = DateTime.UtcNow
+            });
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         private static async Task<Leadership> EnsureKvLeadershipAsync(
