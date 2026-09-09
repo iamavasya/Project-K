@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvi
 using ProjectK.API.Authorization;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.AuthModule
 {
@@ -86,11 +87,13 @@ namespace ProjectK.API.Controllers.AuthModule
         [AllowAnonymous]
         [EnableRateLimiting("AccountSecurityLimit")]
         [HttpPost("invitation/resend")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status202Accepted)]
         public async Task<IActionResult> ResendInvitationByEmail([FromBody] ResendInvitationByEmailCommand command)
         {
             var response = await _mediator.Send(command);
-            return response.ToActionResult(this);
+            return response.Type == ResultType.Success
+                ? Accepted(response.Data)
+                : response.ToActionResult(this);
         }
 
         /// <summary>
