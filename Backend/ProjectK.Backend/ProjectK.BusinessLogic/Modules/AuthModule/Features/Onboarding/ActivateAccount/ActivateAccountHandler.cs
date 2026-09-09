@@ -79,9 +79,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
 
             await _userManager.AddToRoleAsync(user, SystemRole.Member);
 
-            // 4. Mark Invitation as used
+            // 4. Mark Invitation as used, and the queue entry as one nobody is waiting on any more.
+            // The entry keeps the only record of how this account came to be; leaving it looking
+            // exactly like an entry still waiting is what let retention mistake the two.
             invitation.UsedAtUtc = DateTime.UtcNow;
             _unitOfWork.Invitations.Update(invitation, cancellationToken);
+
+            if (entry is not null)
+            {
+                entry.InvitationAcceptedAtUtc = DateTime.UtcNow;
+                _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+            }
 
             // 5. Create Member record if it doesn't exist
             var existingMember = await _unitOfWork.Members.GetByEmailAsync(user.Email!, cancellationToken);

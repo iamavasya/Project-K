@@ -114,7 +114,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
                 Token = Guid.NewGuid().ToString("N"), // Simple token for now
                 WaitlistEntryKey = entry.WaitlistEntryKey,
                 TargetUserKey = user.Id,
-                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
+                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingPolicy.InvitationLifetimeDays)
             };
             _unitOfWork.Invitations.Create(invitation, cancellationToken);
 

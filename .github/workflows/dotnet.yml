@@ -153,6 +153,26 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: .
 
+    # The deploy step returns before the app is serving: startup runs migrations and the seeders
+    # first. Announcing straight after it asked a booting process for work and took its 500 as a
+    # failed release, which is how 0.19.1 shipped with a red deploy job over a healthy deploy.
+    - name: Wait for the API to come back up
+      if: github.event_name == 'release'
+      shell: bash
+      env:
+        PROJECTK_API_BASE_URL: ${{ vars.PROJECTK_API_BASE_URL }}
+      run: |
+        health="${PROJECTK_API_BASE_URL%/}/health"
+        for attempt in $(seq 1 30); do
+          if curl -fsS --max-time 10 "$health" > /dev/null; then
+            echo "API is serving after ${attempt} attempt(s)."
+            exit 0
+          fi
+          sleep 10
+        done
+        echo "API did not answer ${health} within five minutes." >&2
+        exit 1
+
     - name: Create public release announcement draft
       if: github.event_name == 'release'
       shell: bash
