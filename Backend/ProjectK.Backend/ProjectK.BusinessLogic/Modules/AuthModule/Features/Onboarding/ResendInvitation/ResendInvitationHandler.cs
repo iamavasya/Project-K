@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation
 {
@@ -61,6 +62,71 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendIn
             await _emailService.SendInvitationEmailAsync(entry.Email, newInvitation.Token, cancellationToken);
 
             return new ServiceResult<Guid>(ResultType.Success, newInvitation.InvitationKey);
+        }
+    }
+
+    public sealed class ResendInvitationByEmailHandler : IRequestHandler<ResendInvitationByEmailCommand, ServiceResult<bool>>
+    {
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
+        private readonly TimeProvider _timeProvider;
+
+        public ResendInvitationByEmailHandler(
+            UserManager<AppUser> userManager,
+            IUnitOfWork unitOfWork,
+            IEmailService emailService,
+            TimeProvider timeProvider)
+        {
+            _userManager = userManager;
+            _unitOfWork = unitOfWork;
+            _emailService = emailService;
+            _timeProvider = timeProvider;
+        }
+
+        public async Task<ServiceResult<bool>> Handle(
+            ResendInvitationByEmailCommand request,
+            CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user is null || user.OnboardingStatus != OnboardingStatus.PendingActivation)
+            {
+                return new ServiceResult<bool>(ResultType.Success, true);
+            }
+
+            var entry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
+            if (entry is null)
+            {
+                return new ServiceResult<bool>(ResultType.Success, true);
+            }
+
+            var invitation = await _unitOfWork.Invitations.GetActiveByWaitlistEntryKeyAsync(
+                entry.WaitlistEntryKey,
+                cancellationToken);
+
+            var newInvitation = new Invitation
+            {
+                InvitationKey = Guid.NewGuid(),
+                Token = Guid.NewGuid().ToString("N"),
+                WaitlistEntryKey = entry.WaitlistEntryKey,
+                TargetUserKey = user.Id,
+                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(7)
+            };
+            _unitOfWork.Invitations.Create(newInvitation, cancellationToken);
+            entry.InvitationSentAtUtc = DateTime.UtcNow;
+            _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _emailService.SendInvitationEmailAsync(user.Email, newInvitation.Token, cancellationToken);
+
+            if (invitation is not null)
+            {
+                invitation.IsRevoked = true;
+                _unitOfWork.Invitations.Update(invitation, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            return new ServiceResult<bool>(ResultType.Success, true);
         }
     }
 }

@@ -6,6 +6,7 @@ import { CardModule } from '@openng/optimus-ui/card';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
+import { forkJoin } from 'rxjs';
 import { OnboardingService } from '../../services/onboarding.service';
 
 /**
@@ -30,7 +31,8 @@ import { OnboardingService } from '../../services/onboarding.service';
         @if (sent) {
           <p class="mb-4">
             Якщо такий обліковий запис існує, лист із посиланням уже в дорозі. Перевірте пошту,
-            зокрема теку зі спамом.
+            зокрема теку зі спамом. Якщо акаунт ще не активований, ми також надіслали нове
+            запрошення для активації.
           </p>
           <a routerLink="/login">Повернутися до входу</a>
         } @else {
@@ -75,7 +77,11 @@ export class ForgotPasswordComponent {
     }
 
     this.loading = true;
-    this.onboardingService.requestPasswordReset(this.form.value.email!).subscribe({
+    const email = this.form.value.email!;
+    forkJoin({
+      reset: this.onboardingService.requestPasswordReset(email),
+      invitation: this.onboardingService.resendInvitationByEmail(email)
+    }).subscribe({
       next: () => {
         this.loading = false;
         this.sent = true;

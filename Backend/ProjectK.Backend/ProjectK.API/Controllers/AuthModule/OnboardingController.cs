@@ -80,6 +80,20 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         /// <summary>
+        /// Re-sends an activation invitation for an account that has not been activated yet.
+        /// The response is deliberately generic to avoid account enumeration.
+        /// </summary>
+        [AllowAnonymous]
+        [EnableRateLimiting("AccountSecurityLimit")]
+        [HttpPost("invitation/resend")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ResendInvitationByEmail([FromBody] ResendInvitationByEmailCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
         /// Rejects a waitlist entry, optionally recording why.
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
