@@ -4,7 +4,10 @@ import { PlastLevelHistoryDto } from '../models/plastLevelHistoryDto';
 import { parseDateOnlyString } from './toDateOnlyString.function';
 
 const PLAST_LEVEL_DISPLAY_MAP: Record<PlastLevel, string> = {
-  [PlastLevel.Entry]: 'пл. прих.',
+  // Joining is a date, not a title: someone who has only just come has nothing to put before their
+  // name yet. Empty here means "print no prefix", which localizeLatestPlastLevel turns into null.
+  [PlastLevel.Entry]: '',
+  [PlastLevel.Prykhylnyk]: 'пл. прих.',
   [PlastLevel.Uchasnyk]: 'пл. уч.',
   [PlastLevel.Rozviduvach]: 'пл. розв.',
   [PlastLevel.Skob]: 'пл. скоб',
@@ -60,7 +63,7 @@ export function localizeLatestPlastLevel(member: Pick<MemberDto, 'latestPlastLev
     }
   }
 
-  return PLAST_LEVEL_DISPLAY_MAP[latestPlastLevel];
+  return PLAST_LEVEL_DISPLAY_MAP[latestPlastLevel] || null;
 }
 
 export function mapMemberForView(member: MemberDto): MemberDto {

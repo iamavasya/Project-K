@@ -90,6 +90,7 @@ export class UpsertMemberComponent implements OnInit {
   readonly PlastLevel = PlastLevel;
   readonly levelsConfig: { level: PlastLevel, label: string }[] = [
     { level: PlastLevel.Entry, label: 'Вступ' },
+    { level: PlastLevel.Prykhylnyk, label: 'Прих.' },
     { level: PlastLevel.Uchasnyk, label: 'Уч.' },
     { level: PlastLevel.Rozviduvach, label: 'Розвд.' },
     { level: PlastLevel.Skob, label: 'Скоб' },

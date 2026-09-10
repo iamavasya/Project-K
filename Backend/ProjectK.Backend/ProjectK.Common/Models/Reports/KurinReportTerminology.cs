@@ -28,7 +28,8 @@ public static class KurinReportTerminology
     private static readonly IReadOnlyDictionary<PlastLevel, string> PlastLevelLabels =
         new Dictionary<PlastLevel, string>
         {
-            [ProjectK.Common.Models.Enums.PlastLevel.Entry] = "Прихильник",
+            [ProjectK.Common.Models.Enums.PlastLevel.Entry] = "Вступ до Пласту",
+            [ProjectK.Common.Models.Enums.PlastLevel.Prykhylnyk] = "Прихильник",
             [ProjectK.Common.Models.Enums.PlastLevel.Uchasnyk] = "Учасник",
             [ProjectK.Common.Models.Enums.PlastLevel.Rozviduvach] = "Розвідувач",
             [ProjectK.Common.Models.Enums.PlastLevel.Skob] = "Скоб",
