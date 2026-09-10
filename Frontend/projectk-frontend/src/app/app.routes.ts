@@ -138,6 +138,14 @@ export const routes: Routes = [
     title: 'Курінь',
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
   },
+  {
+    path: 'kurin/registry',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement', 'groupLeadership')],
+    loadComponent: () => import('./features/kurinModule/registry/registry')
+      .then(m => m.RegistryComponent),
+    title: 'Реєстр',
+    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' }
+  },
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],

@@ -1,0 +1,68 @@
+.registry {
+  width: min(100% - 2rem, 84rem);
+  margin-inline: auto;
+  padding-block: 1.5rem;
+}
+
+.registry__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.registry__head h1 {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.registry__head p {
+  margin-top: 0.25rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+.registry__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.registry__search {
+  width: min(100%, 22rem);
+}
+
+.registry__columns {
+  min-width: 12rem;
+}
+
+/*
+ * Eleven date columns plus contacts is wider than any screen. The table scrolls inside its own box;
+ * the page never does.
+ */
+.registry__table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.registry__name-col {
+  min-width: 14rem;
+  font-weight: 600;
+}
+
+.registry__blank {
+  color: var(--p-text-muted-color);
+}
+
+@media (max-width: 640px) {
+  .registry__head {
+    flex-direction: column;
+  }
+
+  .registry__toolbar > * {
+    flex: 1 1 100%;
+  }
+}

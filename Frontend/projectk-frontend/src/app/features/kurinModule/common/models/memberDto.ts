@@ -9,6 +9,8 @@ export interface MemberDto {
     /** Код, який людина віддає проводу іншого куреня, щоб та прийняла її. Свій — бачить лише вона. */
     publicId?: string;
     groupKey: string;
+    /** Назва гуртка. Її знає лише читання списку — картка бере гурток із членства. */
+    groupName?: string | null;
     kurinKey: string;
     userKey?: string | null;
     userRole?: string | null;

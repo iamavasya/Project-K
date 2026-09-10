@@ -128,6 +128,9 @@ export class SidebarMenuComponent implements OnChanges {
     const isAdmin = this.permissionService.isAdmin();
     const canReviewSkills = this.permissionService.canReviewSkills();
     const canManageKurinSettings = this.permissionService.canManageKurinSettings();
+    const canSeeRegistry = isAdmin
+      || this.permissionService.canManageWholeKurin()
+      || this.permissionService.canLeadGroups();
     const disabled = !kurinKey;
 
     const items: MenuItem[] = [];
@@ -157,6 +160,21 @@ export class SidebarMenuComponent implements OnChanges {
           disabled
         }
       );
+
+      // Реєстр — суцільний склад куреня рядками, з контактами. Це інструмент проводу, тож
+      // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
+      if (canSeeRegistry) {
+        items.push({
+          label: 'Реєстр',
+          icon: 'pi pi-table',
+          routerLink: ['/kurin/registry'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin/registry']);
+          },
+          disabled
+        });
+      }
 
       // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
       // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).

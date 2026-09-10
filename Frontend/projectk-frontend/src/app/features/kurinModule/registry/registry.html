@@ -1,0 +1,113 @@
+<section class="registry">
+  <header class="registry__head">
+    <div>
+      <h1>Реєстр</h1>
+      <p>
+        @if (kurinNumber(); as number) { {{ number }} курінь }
+        @if (branchLabel(); as branch) { · {{ branch }} }
+        · {{ members().length }} у складі
+      </p>
+    </div>
+  </header>
+
+  <p-table
+    #table
+    [value]="members()"
+    [loading]="loading()"
+    styleClass="project-table registry__table"
+    [scrollable]="true"
+    scrollHeight="flex"
+    stripedRows
+    [rowHover]="true"
+    [globalFilterFields]="searchFields">
+
+    <ng-template #caption>
+      <div class="registry__toolbar">
+        <p-iconfield iconPosition="left">
+          <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+          <input
+            pInputText
+            type="text"
+            (input)="table.filterGlobal($any($event.target).value, 'contains')"
+            placeholder="Пошук за прізвищем, поштою, гуртком…"
+            class="registry__search" />
+        </p-iconfield>
+
+        <p-multiselect
+          [options]="allColumns"
+          [ngModel]="selectedColumnIds()"
+          (ngModelChange)="onColumnsChange($event)"
+          optionLabel="header"
+          optionValue="id"
+          group="false"
+          display="chip"
+          [showToggleAll]="true"
+          placeholder="Колонки"
+          selectedItemsLabel="Колонок: {0}"
+          [maxSelectedLabels]="0"
+          styleClass="registry__columns" />
+
+        <p-button
+          label="За замовчуванням"
+          icon="pi pi-replay"
+          severity="secondary"
+          [text]="true"
+          (onClick)="resetColumns()" />
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th scope="col" pFrozenColumn pSortableColumn="lastName" class="registry__name-col">
+          Прізвище та ім'я <p-sortIcon field="lastName" />
+        </th>
+        @for (column of visibleColumns(); track column.id) {
+          <th scope="col">{{ column.header }}</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-member>
+      <tr>
+        <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
+          {{ fullName(member) }}
+        </td>
+        @for (column of visibleColumns(); track column.id) {
+          <td [attr.data-mobile-label]="column.header">
+            @if (column.kind === 'date') {
+              @if (asDate(cell(member, column)); as date) {
+                {{ date | date:'dd.MM.yyyy' }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            } @else {
+              @if (cell(member, column)) {
+                {{ cell(member, column) }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="visibleColumns().length + 1">
+          @if (members().length) {
+            <app-empty-state
+              art="trail"
+              title="Нічого не знайшлось"
+              body="Спробуй коротший запит — або перевір гурток." />
+          } @else {
+            <app-empty-state
+              art="list"
+              title="Тут ще нікого немає"
+              body="Додай першого юнака — і реєстр почне жити." />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

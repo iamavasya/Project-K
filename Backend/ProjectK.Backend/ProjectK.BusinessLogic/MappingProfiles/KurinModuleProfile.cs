@@ -64,11 +64,13 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 // Offices live in LeadershipHistories, not on Member, so the entity cannot answer
                 // this. The repository projections fill it; mapping from the entity leaves it null.
                 .ForMember(dest => dest.UserRole, opt => opt.Ignore())
-                // Where the person stands is said by their membership, which is a different table in
-                // a different aggregate. The caller fills these from it — the response keeps carrying
-                // them so the frontend does not have to change in the same release.
+                // Where the person stands — and what that гурток is called — is said by their
+                // membership, which is a different table in a different aggregate. The caller fills
+                // these from it; the response keeps carrying them so the frontend does not have to
+                // change in the same release.
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
-                .ForMember(dest => dest.GroupKey, opt => opt.Ignore());
+                .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupName, opt => opt.Ignore());
 
             // Lean list read model -> same response shape as the full card. Level,
             // active leadership and active warnings are already resolved in the
@@ -77,7 +79,6 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 // A list never carries anyone's public code: it is answered for a whole kurin, and
                 // the code is something one person hands over, not something a roster hands out.
                 .ForMember(dest => dest.PublicId, opt => opt.Ignore())
-                .ForMember(dest => dest.PlastLevelHistories, opt => opt.Ignore())
                 .ForMember(dest => dest.Awards, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 

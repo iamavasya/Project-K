@@ -126,6 +126,7 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                 {
                     MemberKey = x.Person.MemberKey,
                     GroupKey = x.Placement.GroupKey,
+                    GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
                     KurinKey = x.Placement.KurinKey,
                     UserKey = x.Person.UserKey,
                     FirstName = x.Person.FirstName,
@@ -152,6 +153,14 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                     ProfileVerifiedAtUtc = x.Person.ProfileVerifiedAtUtc,
                     ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
                     ProfileVerificationNote = x.Person.ProfileVerificationNote,
+                    PlastLevelHistories = x.Person.PlastLevelHistory
+                        .Select(h => new PlastLevelHistoryDto
+                        {
+                            MemberKey = h.MemberKey,
+                            PlastLevelHistoryKey = h.PlastLevelHistoryKey,
+                            PlastLevel = h.PlastLevel,
+                            DateAchieved = h.DateAchieved
+                        }).ToList(),
                     LeadershipHistories = x.Person.LeadershipHistories
                         .Where(h => h.EndDate == null)
                         .Select(h => new LeadershipHistoryDto

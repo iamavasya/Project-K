@@ -20,6 +20,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         /// </summary>
         public string? PublicId { get; set; }
         public Guid GroupKey { get; set; }
+
+        /// <summary>
+        /// The гурток's name, when the read knew it. Null from reads that answer about one person
+        /// rather than a placement — the card already shows the гурток from the membership block.
+        /// </summary>
+        public string? GroupName { get; set; }
         public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }
         public string? UserRole { get; set; }
