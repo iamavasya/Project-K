@@ -10,8 +10,12 @@ import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { TagModule } from '@openng/optimus-ui/tag';
 
+import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+
 import { MemberService } from '../common/services/member-service/member.service';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
+import { FormerMemberDto, MembershipService } from '../common/services/membership-service/membership.service';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { MemberDto } from '../common/models/memberDto';
 import { KurinBranch, KURIN_BRANCH_LABELS } from '../common/models/enums/kurin-branch.enum';
@@ -41,18 +45,23 @@ const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
     IconFieldModule,
     InputIconModule,
     TagModule,
+    ConfirmDialogModule,
     FormsModule,
     DatePipe,
     EmptyStateComponent
   ],
   templateUrl: './registry.html',
   styleUrl: './registry.css',
+  providers: [ConfirmationService],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegistryComponent implements OnInit {
   private readonly memberService = inject(MemberService);
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
+  private readonly membershipService = inject(MembershipService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   readonly members = signal<MemberDto[]>([]);
   readonly loading = signal(true);
@@ -61,6 +70,15 @@ export class RegistryComponent implements OnInit {
   readonly selectedColumnIds = signal<string[]>([]);
   readonly exporting = signal(false);
   readonly search = signal('');
+
+  /**
+   * Кого курінь вивів. Окремо від складу й згорнуто: це не щоденний список, але без нього
+   * помилковий клік прибирав людину назовсім — усі читання членства фільтрують закриті рядки, і
+   * повернути її можна було лише за кодом, який тримає вона сама.
+   */
+  readonly former = signal<FormerMemberDto[]>([]);
+  readonly formerOpen = signal(false);
+  readonly returning = signal<string | null>(null);
 
   /**
    * Колонки, які можна вмикати. `mentoredGroups` не серед них: у таблиці впорядників вона стоїть
@@ -147,6 +165,7 @@ export class RegistryComponent implements OnInit {
       this.kurinKey = state.kurinKey;
       this.loadKurin();
       this.loadMembers();
+      this.loadFormer();
     });
   }
 
@@ -171,6 +190,63 @@ export class RegistryComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
+    });
+  }
+
+  private loadFormer(): void {
+    // Тихо: колишні — довідка, а не робота. Курінь, у якому ще нікого не виводили, не має бачити
+    // помилку через порожній список.
+    this.membershipService.former(this.kurinKey).subscribe({
+      next: people => this.former.set(people),
+      error: () => this.former.set([])
+    });
+  }
+
+  formerName(person: FormerMemberDto): string {
+    return [person.lastName, person.firstName, person.middleName].filter(Boolean).join(' ');
+  }
+
+  toggleFormer(): void {
+    this.formerOpen.update(open => !open);
+  }
+
+  /**
+   * Повернути в курінь. Питаємо перед тим — не тому, що дія небезпечна (вона зворотна), а тому, що
+   * це зміна складу, і провід має побачити, кого саме повертає.
+   */
+  confirmTakeBack(person: FormerMemberDto): void {
+    this.confirmationService.confirm({
+      header: 'Повернути в курінь',
+      message: `${this.formerName(person)} знову стане членом куреня. Гурток можна буде вказати `
+        + 'на її картці — повернення саме по собі нікуди її не ставить.',
+      icon: 'pi pi-user-plus',
+      acceptButtonProps: { label: 'Повернути' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      accept: () => this.takeBack(person)
+    });
+  }
+
+  private takeBack(person: FormerMemberDto): void {
+    this.returning.set(person.memberKey);
+    this.membershipService.takeBack(this.kurinKey, person.memberKey).subscribe({
+      next: () => {
+        this.returning.set(null);
+        this.former.update(people => people.filter(other => other.memberKey !== person.memberKey));
+        this.loadMembers();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Повернено',
+          detail: `${this.formerName(person)} знову в курені.`
+        });
+      },
+      error: () => {
+        this.returning.set(null);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Не вдалося повернути',
+          detail: 'Спробуй ще раз.'
+        });
+      }
     });
   }
 

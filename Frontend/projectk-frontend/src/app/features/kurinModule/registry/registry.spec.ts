@@ -1,7 +1,9 @@
-import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
 
 import { AuthService } from '../../authModule/services/authService/auth.service';
+import { Confirmation, ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { FormerMemberDto, MembershipService } from '../common/services/membership-service/membership.service';
 import { KurinService } from '../common/services/kurin-service/kurin.service';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
@@ -27,14 +29,61 @@ function member(partial: Partial<MemberDto>): MemberDto {
   };
 }
 
+function formerPerson(partial: Partial<FormerMemberDto> = {}): FormerMemberDto {
+  return {
+    memberKey: partial.memberKey ?? 'gone-1',
+    firstName: 'Тест',
+    lastName: 'Вибула',
+    groupName: 'Alpha',
+    joinedAtUtc: '2024-01-01T00:00:00Z',
+    leftAtUtc: '2026-09-01T00:00:00Z',
+    ...partial
+  };
+}
+
 describe('RegistryComponent', () => {
   let component: RegistryComponent;
+  let fixture: ComponentFixture<RegistryComponent>;
+  let membership: jasmine.SpyObj<MembershipService>;
 
-  function load(people: MemberDto[], branch = KurinBranch.UPYu): void {
+  /**
+   * Натиснути «Так» у діалозі. `ConfirmationService` компонент дає сам, тож брати його треба з
+   * інжектора компонента, а не з кореневого; сам діалог тут не рендериться, тож викликаємо те, що
+   * викликав би він.
+   */
+  function acceptConfirmation(): void {
+    const service = fixture.debugElement.injector.get(ConfirmationService);
+    pendingConfirmations = [];
+    spyOn(service, 'confirm').and.callFake(confirmation => {
+      pendingConfirmations.push(confirmation);
+      return service;
+    });
+  }
+
+  let pendingConfirmations: Confirmation[] = [];
+
+  /**
+   * @param setup Підмінити відповідь сервісу до того, як компонент її попросить. Ставити стаб перед
+   *   `load` марно: він перестворює шпигуна, і тест на помилку проходив би, бо порожній список
+   *   виглядає так само, як невдале читання.
+   */
+  function load(
+    people: MemberDto[],
+    branch = KurinBranch.UPYu,
+    former: FormerMemberDto[] = [],
+    setup?: (service: jasmine.SpyObj<MembershipService>) => void
+  ): void {
     TestBed.resetTestingModule();
+    membership = jasmine.createSpyObj<MembershipService>('MembershipService', ['former', 'takeBack']);
+    membership.former.and.returnValue(of(former));
+    membership.takeBack.and.returnValue(of('membership-key'));
+
     TestBed.configureTestingModule({
       imports: [RegistryComponent],
       providers: [
+        // Застосунок дає його на рівні app.config; компонент лише споживає.
+        MessageService,
+        { provide: MembershipService, useValue: membership },
         { provide: MemberService, useValue: { getAll: () => of(people) } },
         {
           provide: KurinService,
@@ -44,8 +93,10 @@ describe('RegistryComponent', () => {
       ]
     });
 
+    setup?.(membership);
+
     localStorage.clear();
-    const fixture = TestBed.createComponent(RegistryComponent);
+    fixture = TestBed.createComponent(RegistryComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }
@@ -117,6 +168,61 @@ describe('RegistryComponent', () => {
 
     expect(counts.get('пл. сен. праці')).toBe(1);
     expect(counts.has('Без ступеня / інший')).toBeFalse();
+  });
+
+  /**
+   * Головне в цій задачі. Виведеного не видно в жодному читанні складу — усі вони фільтрують
+   * закриті членства, — тож без цього списку помилковий клік прибирав людину назовсім.
+   */
+  it('should show who the kurin let go, apart from the склад', () => {
+    load([member({ lastName: 'Юнак' })], KurinBranch.UPYu, [formerPerson({ lastName: 'Вибула' })]);
+
+    expect(component.youth().map(person => person.lastName)).toEqual(['Юнак']);
+    expect(component.former().map(person => person.lastName)).toEqual(['Вибула']);
+    expect(component.formerName(component.former()[0])).toBe('Вибула Тест');
+  });
+
+  /** Довідка, а не робота: список згорнутий, поки його не попросили. */
+  it('should keep the former list folded away until asked', () => {
+    load([], KurinBranch.UPYu, [formerPerson()]);
+
+    expect(component.formerOpen()).toBeFalse();
+    component.toggleFormer();
+    expect(component.formerOpen()).toBeTrue();
+  });
+
+  it('should take someone back by their key, without the code they hold', () => {
+    const person = formerPerson({ memberKey: 'gone-42' });
+    load([], KurinBranch.UPYu, [person]);
+
+    acceptConfirmation();
+    component.confirmTakeBack(person);
+    pendingConfirmations[0].accept?.();
+
+    expect(membership.takeBack).toHaveBeenCalledOnceWith('kurin-1', 'gone-42');
+    expect(component.former()).toEqual([]);
+  });
+
+  it('should leave them on the list when taking them back fails', () => {
+    const person = formerPerson({ memberKey: 'gone-42' });
+    load([], KurinBranch.UPYu, [person], service =>
+      service.takeBack.and.returnValue(throwError(() => new Error('nope'))));
+
+    acceptConfirmation();
+    component.confirmTakeBack(person);
+    pendingConfirmations[0].accept?.();
+
+    expect(component.former().length).toBe(1);
+    expect(component.returning()).toBeNull();
+  });
+
+  /** Курінь, у якому ще нікого не виводили, не має бачити помилку через порожній список. */
+  it('should stay quiet when the former list cannot be read', () => {
+    load([member({ lastName: 'Юнак' })], KurinBranch.UPYu, [], service =>
+      service.former.and.returnValue(throwError(() => new Error('nope'))));
+
+    expect(component.former()).toEqual([]);
+    expect(component.youth().length).toBe(1);
   });
 
   it('should search across both tables at once', () => {

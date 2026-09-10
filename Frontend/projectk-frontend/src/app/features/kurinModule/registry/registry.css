@@ -54,6 +54,26 @@
   font-weight: 600;
 }
 
+/* Не заголовок: колишні — довідка, і поки її не розгорнули, вона не має важити як розділ. */
+.registry__former-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block: 2rem 0.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--p-text-muted-color);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.registry__former-toggle:hover {
+  color: var(--p-text-color);
+}
+
 .registry__note {
   margin-bottom: 0.75rem;
   color: var(--p-text-muted-color);

@@ -8,6 +8,8 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
+using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
@@ -327,6 +329,25 @@ namespace ProjectK.API.Controllers.KurinModule
         public async Task<IActionResult> FindCandidate(Guid kurinKey, [FromQuery] string publicId)
         {
             var response = await _mediator.Send(new FindMemberByPublicId(kurinKey, publicId));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Who used to belong to this kurin, so the провід can see whom it let go — and take any of
+        /// them back with <c>POST {kurinKey}/memberships</c>, without needing the code they hold.
+        /// </summary>
+        /// <remarks>
+        /// Read against this kurin's own memberships. It answers "who was here and when did they
+        /// leave" and nothing else: not where they are now, not how to reach them.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("{kurinKey:guid}/memberships/former")]
+        [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey", ResourceType.Kurin)]
+        [ProducesResponseType(typeof(IReadOnlyCollection<FormerMember>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> FormerMembers(Guid kurinKey)
+        {
+            var response = await _mediator.Send(new GetFormerMembers(kurinKey));
             return response.ToActionResult(this);
         }
 

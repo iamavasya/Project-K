@@ -1,3 +1,5 @@
+<p-confirmdialog />
+
 <section class="registry">
   <header class="registry__head">
     <div>
@@ -175,6 +177,55 @@
       </tr>
     </ng-template>
   </p-table>
+
+  @if (former().length) {
+    <button type="button" class="registry__former-toggle" (click)="toggleFormer()">
+      <i class="pi" [class.pi-chevron-right]="!formerOpen()" [class.pi-chevron-down]="formerOpen()"></i>
+      Колишні <span class="registry__count">{{ former().length }}</span>
+    </button>
+
+    @if (formerOpen()) {
+      <p class="registry__note">
+        Кого курінь вивів. Записи цих людей і все, що вони здобули тут, лишились — повернення
+        відкриває членство наново.
+      </p>
+
+      <p-table [value]="former()" styleClass="project-table registry__table" [scrollable]="true" stripedRows>
+        <ng-template #header>
+          <tr>
+            <th scope="col" class="registry__name-col">Прізвище та ім'я</th>
+            <th scope="col">Гурток</th>
+            <th scope="col">У курені з</th>
+            <th scope="col">Вибув</th>
+            <th scope="col"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-person>
+          <tr>
+            <td class="registry__name-col" data-mobile-label="Прізвище та ім'я">{{ formerName(person) }}</td>
+            <td data-mobile-label="Гурток">
+              @if (person.groupName) {
+                {{ person.groupName }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            </td>
+            <td data-mobile-label="У курені з">{{ person.joinedAtUtc | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Вибув">{{ person.leftAtUtc | date:'dd.MM.yyyy' }}</td>
+            <td>
+              <p-button
+                label="Повернути"
+                icon="pi pi-user-plus"
+                severity="secondary"
+                [text]="true"
+                [loading]="returning() === person.memberKey"
+                (onClick)="confirmTakeBack(person)" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  }
 
   <h2 class="registry__section">Чисельність за ступенями</h2>
   <p class="registry__note">Юнацтво куреня. Кожен рахується раз — за ступенем, який має зараз.</p>

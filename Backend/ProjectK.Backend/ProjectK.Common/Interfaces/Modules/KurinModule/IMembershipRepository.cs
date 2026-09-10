@@ -19,6 +19,19 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
             Guid memberKey,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Who used to belong to this kurin and no longer does — one entry per person, their last
+        /// spell here.
+        /// <para>
+        /// Scoped to this kurin's own memberships on purpose: the провід is owed its own history,
+        /// which is who was here and when they left, and nothing about where the person went next.
+        /// Anyone whose membership here is open again is not former and is absent.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyCollection<FormerMember>> GetFormerInKurinAsync(
+            Guid kurinKey,
+            CancellationToken cancellationToken = default);
+
         /// <summary>How many memberships a person has held, current and past.</summary>
         Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 

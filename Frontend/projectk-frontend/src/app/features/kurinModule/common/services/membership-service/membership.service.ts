@@ -23,6 +23,21 @@ export interface MembershipCandidateDto {
 }
 
 /**
+ * Той, хто був у курені й пішов. Курінь пам'ятає рівно свій відтинок: хто, в якому гуртку, з коли
+ * до коли. Ні контактів, ні того, де людина зараз — це вже не його справа.
+ */
+export interface FormerMemberDto {
+  memberKey: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  groupKey?: string | null;
+  groupName?: string | null;
+  joinedAtUtc: string;
+  leftAtUtc: string;
+}
+
+/**
  * Належність до куреня — окремо від профілю людини. Профіль редагується один раз і скрізь, а
  * членство відкривається й закривається в кожному курені окремо, і це різні дії з різними правами.
  */
@@ -41,6 +56,21 @@ export class MembershipService {
 
   joinByPublicId(kurinKey: string, publicId: string, kind = MembershipKind.Youth): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/${kurinKey}/memberships`, { publicId, kind }).pipe(
+      tap(() => this.forgetPlacement())
+    );
+  }
+
+  /** Кого курінь вивів і ще не повернув. */
+  former(kurinKey: string): Observable<FormerMemberDto[]> {
+    return this.http.get<FormerMemberDto[]>(`${this.apiUrl}/${kurinKey}/memberships/former`);
+  }
+
+  /**
+   * Прийняти назад того, кого курінь уже знає — за ключем, без коду, який тримає сама людина.
+   * Це те саме долучення, що й за кодом: відкривається нове членство, старе лишається в історії.
+   */
+  takeBack(kurinKey: string, memberKey: string, groupKey: string | null = null): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/${kurinKey}/memberships`, { memberKey, groupKey }).pipe(
       tap(() => this.forgetPlacement())
     );
   }

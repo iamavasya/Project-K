@@ -28,6 +28,53 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             => await AsRecords(Context.Memberships.Where(m => m.MemberKey == memberKey))
                 .ToListAsync(cancellationToken);
 
+        public async Task<IReadOnlyCollection<FormerMember>> GetFormerInKurinAsync(
+            Guid kurinKey,
+            CancellationToken cancellationToken = default)
+        {
+            var closed = Context.Memberships.Where(m => m.KurinKey == kurinKey && m.LeftAtUtc != null);
+
+            // Someone can leave, be taken back and leave again — the spell that matters is the last
+            // one. And someone taken back who is still here is not former at all, however many closed
+            // rows they have behind them.
+            var stillHere = Context.Memberships
+                .Where(m => m.KurinKey == kurinKey && m.LeftAtUtc == null)
+                .Select(m => m.MemberKey);
+
+            var rows = await (
+                    from membership in closed
+                    where !stillHere.Contains(membership.MemberKey)
+                    join person in Context.Members on membership.MemberKey equals person.MemberKey
+                    select new
+                    {
+                        membership.MemberKey,
+                        person.FirstName,
+                        person.MiddleName,
+                        person.LastName,
+                        membership.GroupKey,
+                        GroupName = membership.Group != null ? membership.Group.Name : null,
+                        membership.JoinedAtUtc,
+                        LeftAtUtc = membership.LeftAtUtc!.Value
+                    })
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            return rows
+                .GroupBy(row => row.MemberKey)
+                .Select(spells => spells.OrderByDescending(row => row.LeftAtUtc).First())
+                .Select(row => new FormerMember(
+                    row.MemberKey,
+                    row.FirstName,
+                    row.MiddleName,
+                    row.LastName,
+                    row.GroupKey,
+                    row.GroupName,
+                    row.JoinedAtUtc,
+                    row.LeftAtUtc))
+                .OrderByDescending(person => person.LeftAtUtc)
+                .ToList();
+        }
+
         public async Task<IReadOnlyCollection<MembershipRecord>> GetCurrentRecordsForAccountAsync(
             Guid userKey,
             CancellationToken cancellationToken = default)
