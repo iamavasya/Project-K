@@ -13,10 +13,14 @@
   </header>
 
   <div class="registry__toolbar">
+    <!-- Підпис є, але його видно лише читалці: поруч стоїть іконка лупи, і напис «Пошук» над полем
+         із таким самим плейсхолдером був би тим самим словом двічі. -->
+    <label for="registry-search" class="registry__label-hidden">Пошук по складу куреня</label>
     <p-iconfield iconPosition="left">
       <p-inputicon><i class="pi pi-search"></i></p-inputicon>
       <input
         pInputText
+        id="registry-search"
         type="text"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"

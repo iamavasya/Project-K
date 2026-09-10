@@ -12,9 +12,11 @@
     Код людина знаходить у власному профілі й передає проводу сама. Пошуку тут немає — лише точний збіг.
   </p>
 
+  <label for="join-by-code-input" class="join-by-code-label-hidden">Публічний код людини</label>
   <div class="join-by-code-row">
     <input
       pInputText
+      id="join-by-code-input"
       class="w-full"
       placeholder="PL-XXXXX-XXXXX"
       [ngModel]="code()"

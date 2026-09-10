@@ -74,6 +74,18 @@
   color: var(--p-text-color);
 }
 
+/* Підпис для читалок екрана: поле впізнається за іконкою й плейсхолдером, але їм цього мало. */
+.registry__label-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .registry__note {
   margin-bottom: 0.75rem;
   color: var(--p-text-muted-color);

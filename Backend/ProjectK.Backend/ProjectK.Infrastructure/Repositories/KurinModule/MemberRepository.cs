@@ -48,9 +48,18 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             Context.Members.Remove(member);
         }
 
+        /// <summary>
+        /// One person with everything their card shows.
+        /// <para>
+        /// Split, not joined: four collections in one query multiply against each other, so a person
+        /// with ten ступенів, three uryadiv, two pересторог and four відзначень comes back as 240
+        /// rows carrying the same person over and over. Each collection gets its own query instead.
+        /// </para>
+        /// </summary>
         public override async Task<Member?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
         {
-            return await Context.Members.Include(m => m.PlastLevelHistory)
+            return await Context.Members.AsSplitQuery()
+                                         .Include(m => m.PlastLevelHistory)
                                          .Include(m => m.LeadershipHistories)
                                             .ThenInclude(h => h.Leadership)
                                                 .ThenInclude(l => l.Group)
