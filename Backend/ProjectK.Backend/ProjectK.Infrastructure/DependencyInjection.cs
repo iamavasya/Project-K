@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<KurinReportPdfRenderer>();
         services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
+        services.AddSingleton<ISpreadsheetReader, ClosedXmlSpreadsheetReader>();
 
         services.AddScoped<GeoIPService>();
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();

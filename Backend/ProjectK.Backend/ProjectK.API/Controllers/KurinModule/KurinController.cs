@@ -23,7 +23,9 @@ using ProjectK.Infrastructure.Reports;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
+using ProjectK.API.Models.Requests;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -34,6 +36,12 @@ namespace ProjectK.API.Controllers.KurinModule
     [ApiController]
     public class KurinController : ControllerBase
     {
+        /// <summary>
+        /// A kurin's roster is a few dozen rows. Five megabytes is far more than that could ever be,
+        /// and is here so a wrong file is refused at the door rather than read into memory.
+        /// </summary>
+        private const long MaxRosterBytes = 5 * 1024 * 1024;
+
         private readonly IMediator _mediator;
         private readonly KurinReportDataService _kurinReportDataService;
         private readonly KurinReportPdfRenderer _kurinReportPdfRenderer;
@@ -74,6 +82,60 @@ namespace ProjectK.API.Controllers.KurinModule
             var request = new GetKurinByKey(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Reads an uploaded roster and answers with its columns, a guess at what each one means, and
+        /// every data row. Writes nothing.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [HttpPost("{kurinKey:guid}/import/preview")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+        [RequestSizeLimit(MaxRosterBytes)]
+        [ProducesResponseType(typeof(RosterPreview), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> PreviewRosterImport(
+            Guid kurinKey,
+            [FromForm] UploadRosterRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (request.File is null || request.File.Length == 0)
+            {
+                return this.Failure(ResultType.BadRequest, "NoFile", "No file was uploaded.");
+            }
+
+            await using var content = request.File.OpenReadStream();
+            var result = await _mediator.Send(new PreviewRosterImport(content), cancellationToken);
+            return result.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Applies a mapped roster to the kurin — or, with <c>dryRun</c>, only reports what it would do.
+        /// </summary>
+        /// <remarks>
+        /// One transaction: either every usable row lands or none does. A half-imported kurin is worse
+        /// than an unimported one, because nobody can tell which half is missing.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+        [HttpPost("{kurinKey:guid}/import")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+        [ProducesResponseType(typeof(RosterImportReport), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ImportRoster(
+            Guid kurinKey,
+            [FromBody] ApplyRosterRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new ImportRoster(
+                    kurinKey,
+                    request.Rows,
+                    request.Mapping,
+                    request.CreateMissingGroups,
+                    request.DryRun),
+                cancellationToken);
+
+            return result.ToActionResult(this);
         }
 
         /// <summary>

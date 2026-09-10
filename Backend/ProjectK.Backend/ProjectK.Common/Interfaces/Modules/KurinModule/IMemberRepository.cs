@@ -43,6 +43,18 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<Member?> GetTrackedByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
         Task<Member?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// People who might already be someone in an imported roster: anyone carrying one of these
+        /// addresses or phone numbers, or one of these surnames. Deliberately wider than the answer —
+        /// a surname is not a match on its own, and the caller narrows it by name and birthday. The
+        /// point is to ask once instead of once per row.
+        /// </summary>
+        Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
+            IReadOnlyCollection<string> emails,
+            IReadOnlyCollection<string> phoneNumbers,
+            IReadOnlyCollection<string> lastNames,
+            CancellationToken cancellationToken = default);
+
         #region PlastLevelHistory Methods
         #endregion
 

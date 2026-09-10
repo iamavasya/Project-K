@@ -200,6 +200,36 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             return [.. rows.Select(row => row.Item)];
         }
 
+        public async Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
+            IReadOnlyCollection<string> emails,
+            IReadOnlyCollection<string> phoneNumbers,
+            IReadOnlyCollection<string> lastNames,
+            CancellationToken cancellationToken = default)
+        {
+            var addresses = emails.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+            var phones = phoneNumbers.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+            var surnames = lastNames.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+
+            if (addresses.Count == 0 && phones.Count == 0 && surnames.Count == 0)
+            {
+                return [];
+            }
+
+            return await Context.Members
+                .AsNoTracking()
+                .Where(member => addresses.Contains(member.Email)
+                    || phones.Contains(member.PhoneNumber)
+                    || surnames.Contains(member.LastName))
+                .Select(member => new MemberIdentity(
+                    member.MemberKey,
+                    member.FirstName,
+                    member.LastName,
+                    member.Email,
+                    member.PhoneNumber,
+                    member.DateOfBirth))
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<Guid?> GetUserKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
             => Context.Members
                 .Where(m => m.MemberKey == memberKey)
