@@ -15,7 +15,6 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PublicAnnouncement;
 
 namespace ProjectK.BusinessLogic;
 
@@ -52,15 +51,6 @@ public static class DependencyInjection
         // Notifications
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
-
-        // Public announcements
-        services.AddHttpClient<TelegramPublicAnnouncementPublisher>();
-        services.AddScoped<IPublicAnnouncementRenderer, PublicAnnouncementRenderer>();
-        services.AddScoped<NullPublicAnnouncementPublisher>();
-        services.AddScoped<IPublicAnnouncementPublisher>(sp =>
-            configuration.GetValue<bool>("Telegram:PublicChannel:Enabled")
-                ? sp.GetRequiredService<TelegramPublicAnnouncementPublisher>()
-                : sp.GetRequiredService<NullPublicAnnouncementPublisher>());
 
         // Probe and badge catalogues
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();

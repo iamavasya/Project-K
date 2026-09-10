@@ -189,10 +189,11 @@
                 <div class="space-y-2.5">
                     @for (probe of probeRows; track probe.probeId) {
                     <div
-                        class="probe-summary-row flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                        class="probe-summary-row rounded-lg px-3 py-2.5"
                         [class.probe-summary-row--completed]="probe.isCompleted"
                         [class.probe-summary-row--disabled]="probe.isDisabled"
                     >
+                        <div class="flex items-center justify-between gap-3">
                         <div class="flex min-w-0 items-center gap-2.5">
                             <span class="probe-state-icon" [class.probe-state-icon--completed]="probe.isCompleted">
                                 @if (probe.isCompleted) {
@@ -214,6 +215,16 @@
                             [disabled]="probe.isDisabled || !probe.canOpenDetails"
                             styleClass="!rounded-lg !px-3 !py-1.5 !text-xs"
                          />
+                        </div>
+
+                        @if (probe.completionPercent !== null) {
+                        <div class="probe-progress mt-2.5">
+                            <p-progressbar [value]="probe.completionPercent" [showValue]="false" styleClass="probe-progress__bar" />
+                            <p class="probe-row-meta mt-1 text-xs">
+                                Підписано {{ probe.signedPointsCount }} з {{ probe.pointsCount }} точок · {{ probe.completionPercent }}%
+                            </p>
+                        </div>
+                        }
                     </div>
                     }
                 </div>

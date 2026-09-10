@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
+import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
 import { MemberDto } from '../common/models/memberDto';
 import { MemberService } from '../common/services/member-service/member.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -61,6 +62,7 @@ import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive'
   imports: [
     DatePipe,
     SkeletonModule,
+    ProgressBarModule,
     ButtonModule,
     TagModule,
     DialogModule,

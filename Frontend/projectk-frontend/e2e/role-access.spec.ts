@@ -15,10 +15,6 @@ describeRole('admin', 'Admin role access', () => {
     await page.goto('/users');
     await expect(page).toHaveURL(/\/users/);
     await expect(page.locator('body')).not.toContainText('Forbidden');
-
-    await page.goto('/announcements');
-    await expect(page).toHaveURL(/\/announcements/);
-    await expect(page.locator('body')).not.toContainText('Forbidden');
   });
 
   test('admin is redirected from kurin to panel if they have no kurinKey', async ({ page }) => {
@@ -56,7 +52,7 @@ describeRole('mentor', 'Mentor role access', ({ user }) => {
     await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
 
-    for (const adminPage of ['/waitlist', '/users', '/announcements', '/panel']) {
+    for (const adminPage of ['/waitlist', '/users', '/panel']) {
       await page.goto(adminPage);
       await expect(page).toHaveURL(/\/kurin/);
     }
@@ -82,7 +78,7 @@ describeRole('member', 'Member role access', ({ user }) => {
     await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
 
-    for (const adminPage of ['/panel', '/waitlist', '/users', '/announcements']) {
+    for (const adminPage of ['/panel', '/waitlist', '/users']) {
       await page.goto(adminPage);
       await expect(page).toHaveURL(/\/kurin/);
     }

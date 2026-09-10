@@ -223,7 +223,9 @@ describe('MemberCardComponent', () => {
       isDisabled: false,
       canOpenDetails: true,
       pointsCount: 10,
-      sectionsCount: 3
+      sectionsCount: 3,
+      signedPointsCount: 4,
+      completionPercent: 40
     };
 
     const disabledProbe = {

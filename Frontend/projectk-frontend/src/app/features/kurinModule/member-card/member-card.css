@@ -215,3 +215,13 @@
         margin-top: 0.25rem;
     }
 }
+
+/*
+ * Прогрес проби. Смуга тонка навмисно — вона супроводжує число поруч, а не заступає його. Кольори
+ * з токенів; свого hex тут немає (BRANDBOOK §0, правило 9).
+ */
+.probe-progress__bar {
+  --p-progressbar-height: 6px;
+  border-radius: 8px;
+  overflow: hidden;
+}

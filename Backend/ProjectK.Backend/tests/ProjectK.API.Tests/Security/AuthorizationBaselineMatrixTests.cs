@@ -216,19 +216,6 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetWaitlistEntries), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.RejectWaitlistEntry), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.ResendInvitation), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Approve), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Create), AdminOrServiceTokenRequirement.PolicyName);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Delete), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.DeleteImage), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetAll), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetByKey), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetCleanupStatus), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Preview), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Publish), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Reject), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.SubmitForApproval), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.Update), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.UploadImage), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<SettingsController>(nameof(SettingsController.GetSettings), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<SettingsController>(nameof(SettingsController.UpdateSetting), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<UserController>(nameof(UserController.GetTileLayouts), AuthorizationPolicies.RequireUser);
@@ -252,7 +239,6 @@ yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLog
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResetPassword));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.SubmitWaitlistRegistration));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ValidateInvitationToken));
-        yield return AnonymousEndpoint<PublicAnnouncementsController>(nameof(PublicAnnouncementsController.GetImage));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.GetStatus));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.Initialize));
     }

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/cor
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
+import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
 import { AccordionModule } from '@openng/optimus-ui/accordion';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -31,7 +32,7 @@ interface ProbeDetailSectionView {
 
 @Component({
   selector: 'app-member-probe-page',
-  imports: [ButtonModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
+  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
   providers: [ConfirmationService],
   templateUrl: './member-probe-page.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -65,6 +66,20 @@ export class MemberProbePageComponent implements OnInit {
   reviewerActionErrorMessage: string | null = null;
   reviewerActionSuccessMessage: string | null = null;
   canManageMemberActions = false;
+
+  /** Скільки точок цієї проби вже підписано. */
+  get signedPointsCount(): number {
+    return this.probeDetailPointRows.filter(point => point.isSigned).length;
+  }
+
+  /**
+   * Скільки пройдено, у відсотках, або null коли точок немає — смуга без знаменника показувала б
+   * нуль, а це інше твердження, ніж «нема чого рахувати».
+   */
+  get completionPercent(): number | null {
+    const total = this.probeDetailPointRows.length;
+    return total ? Math.round((this.signedPointsCount / total) * 100) : null;
+  }
 
   get canManageProbePoints(): boolean {
     return this.permissionService.canReviewSkills() && this.canManageMemberActions;

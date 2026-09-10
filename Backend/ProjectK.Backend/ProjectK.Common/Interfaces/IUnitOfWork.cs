@@ -28,7 +28,6 @@ namespace ProjectK.Common.Interfaces
         IMentorAssignmentRepository MentorAssignments { get; }
         IWaitlistRepository WaitlistEntries { get; }
         IInvitationRepository Invitations { get; }
-        IPublicAnnouncementRepository PublicAnnouncements { get; }
         IAppNotificationRepository AppNotifications { get; }
         ISystemSettingRepository SystemSettings { get; }
         IUserTileLayoutRepository UserTileLayouts { get; }

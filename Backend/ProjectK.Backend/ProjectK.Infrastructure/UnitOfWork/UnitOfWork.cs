@@ -44,7 +44,6 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private IMemberAwardRepository _memberAwards;
         private IWaitlistRepository _waitlistEntries;
         private IInvitationRepository _invitations;
-        private IPublicAnnouncementRepository _publicAnnouncements;
         private IAppNotificationRepository _appNotifications;
         private ISystemSettingRepository _systemSettings;
         private IAppUserRepository _users;
@@ -68,7 +67,6 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);
         public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
         public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
-        public IPublicAnnouncementRepository PublicAnnouncements => _publicAnnouncements ??= new PublicAnnouncementRepository(_context);
         public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
         public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
         public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);

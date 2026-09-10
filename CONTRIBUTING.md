@@ -20,7 +20,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 
 `Infrastructure` і `BusinessLogic` **не знають одне про одного**. Коли бізнес-логіці треба щось із
 зовнішнього світу — інтерфейс оголошується в `Common`, а реалізується в `Infrastructure`
-(наприклад `IKurinReportSource`, `IPublicAnnouncementImageStore`, `IAppUserRepository`).
+(наприклад `IKurinReportSource`, `ISpreadsheetWriter`, `IAppUserRepository`).
 
 Що де лежить:
 

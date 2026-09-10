@@ -107,14 +107,6 @@ export const routes: Routes = [
     data: { breadcrumb: 'Заявки', parent: '/panel' }
   },
   {
-    path: 'announcements',
-    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
-    loadComponent: () => import('./features/adminModule/components/public-announcements/public-announcements')
-      .then(m => m.PublicAnnouncementsComponent),
-    title: 'Оголошення',
-    data: { breadcrumb: 'Оголошення', parent: '/panel' }
-  },
-  {
     path: 'system-settings',
     canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/system-settings/system-settings')

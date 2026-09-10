@@ -33,7 +33,65 @@ function createProbeProgress(overrides: Partial<ProbeProgressDto>): ProbeProgres
   };
 }
 
+function signedPoint(pointId: string, isSigned: boolean) {
+  return {
+    probePointProgressKey: `pp-${pointId}`,
+    pointId,
+    isSigned,
+    signedAtUtc: isSigned ? '2026-01-01T00:00:00Z' : null,
+    signedByUserKey: null,
+    signedByName: null,
+    signedByRole: null
+  };
+}
+
 describe('memberProbeRowsViewMapper', () => {
+  it('should count signed points against the probe total', () => {
+    const rows = buildMemberProbeRows(
+      [createProbeSummary({ id: 'probe-1', pointsCount: 10 })],
+      [createProbeProgress({
+        probeId: 'probe-1',
+        status: ProbeProgressStatus.InProgress,
+        pointSignatures: [
+          signedPoint('a', true),
+          signedPoint('b', true),
+          signedPoint('c', false),
+          signedPoint('d', true)
+        ]
+      })]
+    );
+
+    const first = rows.find(row => row.probeId === 'probe-1')!;
+    expect(first.signedPointsCount).toBe(3);
+    expect(first.completionPercent).toBe(30);
+  });
+
+  it('should report no percent when the probe has no points to count', () => {
+    const rows = buildMemberProbeRows(
+      [createProbeSummary({ id: 'probe-1', pointsCount: 0 })],
+      [createProbeProgress({ probeId: 'probe-1', status: ProbeProgressStatus.InProgress })]
+    );
+
+    // Not zero: a bar at nothing would claim "none of it done", which is a different statement
+    // from "there is nothing here to measure".
+    expect(rows.find(row => row.probeId === 'probe-1')!.completionPercent).toBeNull();
+  });
+
+  it('should show a closed probe as full even when point-by-point data never arrived', () => {
+    const rows = buildMemberProbeRows(
+      [createProbeSummary({ id: 'probe-1', pointsCount: 10 })],
+      [createProbeProgress({
+        probeId: 'probe-1',
+        status: ProbeProgressStatus.Completed,
+        completedAtUtc: '2026-01-01T00:00:00Z'
+      })]
+    );
+
+    const first = rows.find(row => row.probeId === 'probe-1')!;
+    expect(first.completionPercent).toBe(100);
+    expect(first.signedPointsCount).toBe(10);
+  });
+
   it('should return 3 rows in canonical order and keep third probe disabled', () => {
     const probes = [
       createProbeSummary({ id: 'probe-2', title: 'Друга проба', pointsCount: 12, sectionsCount: 2 }),

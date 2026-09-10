@@ -124,7 +124,6 @@ namespace ProjectK.API
             });
 
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
@@ -161,14 +160,12 @@ namespace ProjectK.API
             };
             builder.Services.AddScoped<MemberPhotoReferenceProvider>();
             builder.Services.AddScoped<GroupSilhouetteReferenceProvider>();
-            builder.Services.AddScoped<PublicAnnouncementImageReferenceProvider>();
             builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
             {
                 var providers = new IPhotoReferenceProvider[]
                 {
                     sp.GetRequiredService<MemberPhotoReferenceProvider>(),
-                    sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
-                    sp.GetRequiredService<PublicAnnouncementImageReferenceProvider>()
+                    sp.GetRequiredService<GroupSilhouetteReferenceProvider>()
                 };
 
                 return new CompositePhotoReferenceProvider(providers);

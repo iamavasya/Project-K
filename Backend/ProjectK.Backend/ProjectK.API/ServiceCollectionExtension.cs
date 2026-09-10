@@ -5,7 +5,6 @@ using ProjectK.BusinessLogic;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure;
-using ProjectK.Infrastructure.Services.PublicAnnouncements;
 
 namespace ProjectK.API
 {
@@ -22,15 +21,6 @@ namespace ProjectK.API
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
             services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
             services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
-            services.Configure<PublicAnnouncementImageStoreOptions>(configuration.GetSection("PublicAnnouncements:ImageStore"));
-            services.PostConfigure<PublicAnnouncementImageStoreOptions>(options =>
-            {
-                if (string.IsNullOrWhiteSpace(options.Path))
-                {
-                    options.Path = configuration["PublicAnnouncements:ImageStorePath"];
-                }
-            });
-
             // Injected wherever the clock decides something — token and invitation expiry, warning
             // windows, the agenda's default range — so those rules can be tested at a fixed instant.
             // Plain timestamps still use DateTime.UtcNow.

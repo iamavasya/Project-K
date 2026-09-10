@@ -13,7 +13,6 @@ using ProjectK.Infrastructure.Seeding;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Infrastructure.Services.JwtService;
-using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -48,9 +47,6 @@ public static class DependencyInjection
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();
-
-        services.AddScoped<IPublicAnnouncementImageStore, AzureBlobPublicAnnouncementImageStore>();
-        services.AddSingleton<LocalPublicAnnouncementImageStore>();
 
         services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();

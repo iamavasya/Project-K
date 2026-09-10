@@ -15,6 +15,15 @@
                         Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
                     </p>
                     }
+
+                    @if (completionPercent !== null) {
+                    <div class="probe-progress mt-3">
+                        <p-progressbar [value]="completionPercent" [showValue]="false" styleClass="probe-progress__bar" />
+                        <p class="probe-page-subtitle mt-1 text-sm">
+                            Підписано {{ signedPointsCount }} з {{ probeDetailPointRows.length }} точок · {{ completionPercent }}%
+                        </p>
+                    </div>
+                    }
                 </div>
 
                 <p-button (onClick)="goBackToMember()"
