@@ -9,6 +9,7 @@ using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
 {
@@ -19,19 +20,25 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger<ResetUserMfaCommandHandler> _logger;
         private readonly IActivityLogger _activityLogger;
+        private readonly IAccessContextResolver _access;
+        private readonly IMembershipDirectory _memberships;
 
         public ResetUserMfaCommandHandler(
             UserManager<AppUser> userManager,
             ICurrentUserContext currentUserContext,
             ILogger<ResetUserMfaCommandHandler> logger,
             IActivityLogger activityLogger,
-            IRefreshTokenStore refreshTokens)
+            IRefreshTokenStore refreshTokens,
+            IAccessContextResolver access,
+            IMembershipDirectory memberships)
         {
             _userManager = userManager;
             _currentUserContext = currentUserContext;
             _logger = logger;
             _activityLogger = activityLogger;
             _refreshTokens = refreshTokens;
+            _access = access;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<bool>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
@@ -49,10 +56,16 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa
                 return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "You do not have permission to perform this action.");
             }
 
-            var targetRoles = await _userManager.GetRolesAsync(targetUser);
+            var targetRoles = (await _access.ResolveAsync(targetUser, cancellationToken)).Roles;
             if (isKurinManager)
             {
-                if (targetUser.KurinKey != _currentUserContext.KurinKey)
+                // Asked of membership, never of AppUser.KurinKey: that field is a snapshot taken
+                // when the account was opened and nothing updates it afterwards, so someone who has
+                // since moved on still carries their old kurin — and resetting MFA is the one lever
+                // that hands an account to whoever pulls it.
+                var managerKurinKey = _currentUserContext.KurinKey;
+                var targetKurinKeys = await _memberships.GetKurinKeysForAccountAsync(targetUser.Id, cancellationToken);
+                if (!managerKurinKey.HasValue || !targetKurinKeys.Contains(managerKurinKey.Value))
                 {
                     return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "Kurin managers can reset MFA only in their own Kurin.");
                 }

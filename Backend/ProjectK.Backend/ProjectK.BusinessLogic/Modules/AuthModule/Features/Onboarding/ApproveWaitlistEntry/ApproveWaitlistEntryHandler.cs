@@ -1,10 +1,12 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -18,25 +20,28 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IAccountProvisioningService _accountProvisioning;
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IConfiguration _configuration;
-        private readonly TimeProvider _timeProvider;
+        private readonly IMembershipDirectory _memberships;
 
         public ApproveWaitlistEntryHandler(
             IUnitOfWork unitOfWork,
             UserManager<AppUser> userManager,
+            IAccountProvisioningService accountProvisioning,
             IEmailService emailService,
             ICurrentUserContext currentUserContext,
             IConfiguration configuration,
-            TimeProvider timeProvider)
+            IMembershipDirectory memberships)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _accountProvisioning = accountProvisioning;
             _emailService = emailService;
             _currentUserContext = currentUserContext;
             _configuration = configuration;
-            _timeProvider = timeProvider;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
@@ -62,8 +67,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
                     var existingKurin = await _unitOfWork.Kurins.GetByNumberAsync(num, cancellationToken);
                     if (existingKurin != null && existingKurin.IsZbtKurin)
                     {
+                        var accountsThere = await _memberships
+                            .GetAccountKeysInKurinAsync(existingKurin.KurinKey, cancellationToken);
                         var activeUsersCount = await _unitOfWork.Users
-                            .CountActiveAsync(existingKurin.KurinKey, cancellationToken);
+                            .CountActiveAsync(accountsThere, cancellationToken);
 
                         if (activeUsersCount >= existingKurin.ZbtUserCap)
                         {
@@ -73,26 +80,26 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
                 }
             }
 
-            // 2. Create Inactive AppUser
-            var user = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = entry.Email,
-                Email = entry.Email,
-                FirstName = entry.FirstName,
-                LastName = entry.LastName,
-                OnboardingStatus = OnboardingStatus.PendingActivation,
-                IsBetaParticipant = isClosedBeta
-            };
+            // 2. Create the inactive account and its invitation
+            var provisioned = await _accountProvisioning.ProvisionAsync(
+                new AccountProvisioningRequest(
+                    entry.Email,
+                    entry.FirstName,
+                    entry.LastName,
+                    entry.WaitlistEntryKey,
+                    KurinKey: null,
+                    IsBetaParticipant: isClosedBeta),
+                cancellationToken);
 
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
+            if (provisioned.Type != ResultType.Success || provisioned.Data is null)
             {
-                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                return ServiceResult<Guid>.Failure(ResultType.BadRequest, "UserNotCreated", $"Failed to create user: {errors}");
+                return ServiceResult<Guid>.Failure(
+                    provisioned.Type,
+                    provisioned.ErrorCode ?? "UserNotCreated",
+                    provisioned.ErrorMessage ?? "Failed to create user.");
             }
 
-            // 2. Create Kurin Placeholder if leader candidate
+            // 3. Create Kurin Placeholder if leader candidate
             if (entry.IsKurinLeaderCandidate)
             {
                 // Parse kurin number from claim if possible, else use 0 for placeholder
@@ -103,20 +110,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
                     ZbtUserCap = 15
                 };
                 _unitOfWork.Kurins.Create(kurin, cancellationToken);
-                user.KurinKey = kurin.KurinKey;
-                await _userManager.UpdateAsync(user);
-            }
 
-            // 3. Create Invitation
-            var invitation = new Invitation
-            {
-                InvitationKey = Guid.NewGuid(),
-                Token = Guid.NewGuid().ToString("N"), // Simple token for now
-                WaitlistEntryKey = entry.WaitlistEntryKey,
-                TargetUserKey = user.Id,
-                ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingPolicy.InvitationLifetimeDays)
-            };
-            _unitOfWork.Invitations.Create(invitation, cancellationToken);
+                var user = await _userManager.FindByIdAsync(provisioned.Data.UserKey.ToString());
+                if (user is not null)
+                {
+                    user.KurinKey = kurin.KurinKey;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
 
             // 4. Update Waitlist Entry
             entry.VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation;
@@ -129,9 +130,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 5. Send Invitation Email
-            await _emailService.SendInvitationEmailAsync(entry.Email, invitation.Token, cancellationToken);
+            await _emailService.SendInvitationEmailAsync(entry.Email, provisioned.Data.InvitationToken, cancellationToken);
 
-            return new ServiceResult<Guid>(ResultType.Success, invitation.InvitationKey);
+            return new ServiceResult<Guid>(ResultType.Success, provisioned.Data.InvitationKey);
         }
     }
 }

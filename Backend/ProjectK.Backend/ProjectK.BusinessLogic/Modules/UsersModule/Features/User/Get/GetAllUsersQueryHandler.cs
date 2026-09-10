@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -18,29 +19,41 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
-        public GetAllUsersQueryHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork)
+        private readonly IMembershipDirectory _memberships;
+
+        public GetAllUsersQueryHandler(
+            UserManager<AppUser> userManager,
+            IUnitOfWork unitOfWork,
+            IMembershipDirectory memberships)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _memberships = memberships;
         }
         public async Task<ServiceResult<IEnumerable<UserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
             var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
-            var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
-                .ToDictionary(k => k.KurinKey, k => k.Number);
+
+            // Where each account stands is read from membership in one go. The row shows a single
+            // kurin because that is the shape of the list; someone standing in two is shown in the
+            // one they joined most recently.
+            var standing = await _memberships.GetCurrentForAccountsAsync(
+                users.Select(user => user.Id).ToList(),
+                cancellationToken);
             
             List<UserDto> result = [];
             foreach (var user in users)
             {
-                var role = await _userManager.GetRolesAsync(user);
+                var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
+                var here = standing.TryGetValue(user.Id, out var current) ? current.FirstOrDefault() : null;
                 UserDto userDto = new()
                 {
                     UserId = user.Id,
-                    KurinKey = user.KurinKey,
-                    KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
+                    KurinKey = here?.KurinKey,
+                    KurinNumber = here?.KurinNumber,
                     Email = user.Email!,
                     // Admin panel manages the system role only; offices are shown elsewhere.
-                    Role = role.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
+                    Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                     TwoFactorEnabled = user.TwoFactorEnabled,
                     FirstName = user.FirstName!,
                     LastName = user.LastName!

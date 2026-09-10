@@ -40,7 +40,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandle
             _handler = new UpsertLeadershipHandler(
                 _unitOfWorkMock.Object,
                 _mapperMock.Object,
-                new Mock<ILeadershipRoleSyncService>().Object,
                 _currentUserContextMock.Object);
         }
 

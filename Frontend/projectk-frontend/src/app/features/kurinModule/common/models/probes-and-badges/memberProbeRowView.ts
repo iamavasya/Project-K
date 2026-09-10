@@ -11,4 +11,13 @@ export interface MemberProbeRowView {
   canOpenDetails: boolean;
   pointsCount: number | null;
   sectionsCount: number | null;
+
+  /** Скільки точок проби вже підписано. */
+  signedPointsCount: number;
+
+  /**
+   * Скільки пройдено, у відсотках, або null коли рахувати нема з чого — проба без точок або без
+   * даних про них. Смуга без знаменника показувала б нуль, а це інше твердження, ніж «невідомо».
+   */
+  completionPercent: number | null;
 }

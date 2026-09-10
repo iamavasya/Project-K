@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -17,6 +18,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
     {
         private readonly Mock<ICurrentUserContext> _currentUser = new();
         private readonly Mock<IUnitOfWork> _uow = new();
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IResourceScopeReader> _scopeReader = new();
         private readonly Mock<IResourceAccessService> _resourceAccess = new();
         private readonly Mock<ILeadershipRepository> _leaderships = new();
@@ -28,7 +30,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         public AgendaAccessAuthorizeTargetTests()
         {
             _uow.Setup(u => u.Leaderships).Returns(_leaderships.Object);
-            _access = new AgendaAccess(_currentUser.Object, _uow.Object, _scopeReader.Object, _resourceAccess.Object);
+            _access = new AgendaAccess(_currentUser.Object, _uow.Object, _memberDirectory.Object, _scopeReader.Object, _resourceAccess.Object);
         }
 
         private AgendaTargetInput LeadershipTarget(Guid key) => new() { TargetType = AgendaTargetType.Leadership, TargetKey = key };

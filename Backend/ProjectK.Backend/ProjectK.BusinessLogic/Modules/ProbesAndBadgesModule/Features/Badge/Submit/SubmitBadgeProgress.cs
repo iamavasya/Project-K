@@ -3,11 +3,12 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
@@ -29,20 +30,20 @@ public sealed class SubmitBadgeProgress : IRequest<ServiceResult<BadgeProgressRe
 public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProgress, ServiceResult<BadgeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly INotificationService _notificationService;
-    private readonly IReviewNotificationRecipientResolver _recipientResolver;
+    private readonly IDomainEventPublisher _events;
 
     public SubmitBadgeProgressHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        INotificationService notificationService,
-        IReviewNotificationRecipientResolver recipientResolver)
+        IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
-        _notificationService = notificationService;
-        _recipientResolver = recipientResolver;
+        _events = events;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(SubmitBadgeProgress request, CancellationToken cancellationToken)
@@ -52,7 +53,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.BadRequest);
         }
 
-        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
+        var member = await _members.FindAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.NotFound);
@@ -72,7 +73,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
         }
 
         var now = DateTime.UtcNow;
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
 
         if (progress is null)
         {
@@ -92,8 +93,8 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
                 ToStatus = BadgeProgressStatus.Submitted,
                 Action = "Submitted",
                 ActorUserKey = actor.UserKey,
-                ActorName = actor.ActorName,
-                ActorRole = actor.ActorRole,
+                ActorName = actor.Name,
+                ActorRole = actor.Role,
                 OccurredAtUtc = now,
                 Note = request.Note
             });
@@ -118,8 +119,8 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
                 ToStatus = BadgeProgressStatus.Submitted,
                 Action = "Resubmitted",
                 ActorUserKey = actor.UserKey,
-                ActorName = actor.ActorName,
-                ActorRole = actor.ActorRole,
+                ActorName = actor.Name,
+                ActorRole = actor.Role,
                 OccurredAtUtc = now,
                 Note = request.Note
             });
@@ -132,44 +133,25 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.InternalServerError);
         }
 
-        await NotifyReviewersAsync(member, progress, cancellationToken);
+        await PublishSubmittedAsync(member, progress, cancellationToken);
 
         return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
     }
 
-    private async Task NotifyReviewersAsync(
-        MemberEntity member,
+    private async Task PublishSubmittedAsync(
+        MemberSummary member,
         BadgeProgress progress,
         CancellationToken cancellationToken)
     {
-        var recipientUserKeys = await _recipientResolver.ResolveAsync(
-            member.KurinKey,
-            member.GroupKey,
-            _currentUserContext.UserId,
+        await _events.PublishAsync(
+            new BadgeProgressSubmitted(
+                progress.BadgeProgressKey,
+                progress.BadgeId,
+                member.MemberKey,
+                member.FullName,
+                member.KurinKey,
+                member.GroupKey,
+                _currentUserContext.UserId),
             cancellationToken);
-
-        if (recipientUserKeys.Count == 0)
-        {
-            return;
-        }
-
-        var memberName = $"{member.FirstName} {member.LastName}".Trim();
-        var requests = recipientUserKeys.Select(userKey => new NotificationRequest
-        {
-            RecipientUserKey = userKey,
-            Type = AppNotificationType.MemberSkillSubmittedForReview,
-            Severity = AppNotificationSeverity.Info,
-            Title = "Вмілість подано на перевірку",
-            Body = string.IsNullOrWhiteSpace(memberName)
-                ? "Надійшла вмілість на перевірку."
-                : $"Надійшла вмілість від {memberName} на перевірку.",
-            EntityType = "BadgeProgress",
-            EntityKey = member.MemberKey,
-            Route = $"/kurin/{member.KurinKey}/review/skills",
-            ActorUserKey = _currentUserContext.UserId,
-            DeduplicationKey = $"skill-review:{member.MemberKey}:{progress.BadgeId}"
-        });
-
-        await _notificationService.NotifyManyAsync(requests, cancellationToken);
     }
 }

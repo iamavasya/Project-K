@@ -47,6 +47,23 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
         Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// The offices an account currently holds <b>inside one kurin</b> — the question access
+        /// control actually asks. An office of another kurin does not appear, and neither does one
+        /// held under a membership that has ended.
+        /// <para>
+        /// It starts from <c>Memberships</c> and never touches the member table: who someone is has
+        /// no bearing on what they may do, and this read is the place that would quietly reintroduce
+        /// the dependency.
+        /// </para>
+        /// A mentor assignment to a гурток of this kurin counts as a Виховник (КВ) office — the
+        /// assignment is what makes someone one, and it is folded in here so there is one answer.
+        /// </summary>
+        Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForAccountInKurinAsync(
+            Guid userKey,
+            Guid kurinKey,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Member keys holding an active office in one of <paramref name="roles"/>, optionally scoped to a
         /// kurin (курінний/КВ offices) or a specific group (гуртковий offices).
         /// </summary>

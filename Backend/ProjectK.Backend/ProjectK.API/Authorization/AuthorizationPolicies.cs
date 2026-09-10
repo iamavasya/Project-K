@@ -40,8 +40,6 @@ public static class AuthorizationPolicies
     {
         options.AddPolicy(RequireAdmin, policy => policy.RequireRole(SystemRole.Admin));
 
-        options.AddPolicy(AdminOrServiceTokenRequirement.PolicyName,
-            policy => policy.AddRequirements(new AdminOrServiceTokenRequirement()));
 
         options.AddPolicy(RequireKurinManagement, ByRoles(RolePermissionMap.GrantsWholeKurinManagement));
         options.AddPolicy(RequireGroupLeadership, ByRoles(RolePermissionMap.GrantsGroupLeadership));

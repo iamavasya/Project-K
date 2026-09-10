@@ -15,15 +15,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
         private readonly UserManager<AppUser> _userManager;
         private readonly IJwtService _jwtService;
         private readonly IRefreshTokenStore _refreshTokens;
+        private readonly IAccessContextResolver _access;
 
         public RefreshTokenCommandHandler(
             UserManager<AppUser> userManager,
             IJwtService jwtService,
-            IRefreshTokenStore refreshTokens)
+            IRefreshTokenStore refreshTokens,
+            IAccessContextResolver access)
         {
             _userManager = userManager;
             _jwtService = jwtService;
             _refreshTokens = refreshTokens;
+            _access = access;
         }
 
         public async Task<ServiceResult<JwtResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -49,13 +52,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
+            // A refresh is where a change of office reaches the token, so the roles are worked out
+            // again rather than carried over — and worked out for the kurin the account is in now.
+            var access = await _access.ResolveAsync(user, cancellationToken);
+
             var jwt = new JwtResponse
             {
                 AccessToken = _jwtService.GenerateAccessToken(
                     user.Id.ToString(),
                     user.Email,
-                    await _userManager.GetRolesAsync(user),
-                    user.ResolveScopeKurinKeyString()),
+                    access.Roles,
+                    access.KurinKey?.ToString()),
                 RefreshToken = _jwtService.GenerateRefreshToken()
             };
 

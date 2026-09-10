@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 
@@ -28,7 +28,7 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             // Kurin Mapping
             CreateMap<Kurin, KurinResponse>()
                 .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
-                .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Members.Count));
+                .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)));
             CreateMap<UpsertKurin, Kurin>(MemberList.None)
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
@@ -39,14 +39,15 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
             CreateMap<UpsertGroup, Group>(MemberList.None)
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
+                // A гурток does not change kurin by being renamed. The update path builds the command
+                // without a KurinKey, so mapping it would write Guid.Empty over a live foreign key.
                 .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // Member Mapping
-            CreateMap<UpsertMember, Member>(MemberList.None)
+            CreateMap<UpsertMemberProfileCommand, Member>(MemberList.None)
                 .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UserKey, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore());
 
@@ -62,13 +63,25 @@ namespace ProjectK.BusinessLogic.MappingProfiles
                 .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>())
                 // Offices live in LeadershipHistories, not on Member, so the entity cannot answer
                 // this. The repository projections fill it; mapping from the entity leaves it null.
-                .ForMember(dest => dest.UserRole, opt => opt.Ignore());
+                .ForMember(dest => dest.UserRole, opt => opt.Ignore())
+                // Where the person stands — and what that гурток is called — is said by their
+                // membership, which is a different table in a different aggregate. The caller fills
+                // these from it; the response keeps carrying them so the frontend does not have to
+                // change in the same release.
+                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupName, opt => opt.Ignore())
+                // Standing and виховник assignments are read per placement, and this map has none.
+                .ForMember(dest => dest.IsStaff, opt => opt.Ignore())
+                .ForMember(dest => dest.MentoredGroupNames, opt => opt.Ignore());
 
             // Lean list read model -> same response shape as the full card. Level,
             // active leadership and active warnings are already resolved in the
             // projection; history and awards are card-only and stay empty here.
             CreateMap<MemberListItemDto, MemberResponse>()
-                .ForMember(dest => dest.PlastLevelHistories, opt => opt.Ignore())
+                // A list never carries anyone's public code: it is answered for a whole kurin, and
+                // the code is something one person hands over, not something a roster hands out.
+                .ForMember(dest => dest.PublicId, opt => opt.Ignore())
                 .ForMember(dest => dest.Awards, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
@@ -118,7 +131,6 @@ namespace ProjectK.BusinessLogic.MappingProfiles
             CreateMap<UpsertLeadership, Leadership>(MemberList.None)
                 .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
                 .ForMember(dest => dest.Type, opt => opt.Ignore())
-                .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
                 .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
                 .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
 

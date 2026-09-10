@@ -1,41 +1,39 @@
-﻿using System.IO;
 using AutoMapper;
 using FluentAssertions;
-using Microsoft.AspNetCore.Identity;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Infrastructure.Services.BlobStorageService;
-using Xunit;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
+    /// <summary>
+    /// The orchestrator owns the order of the three use cases and nothing else — these tests pin that
+    /// order and the two answers it gives on its own: a refused account and a stale-profile notice.
+    /// </summary>
     public class UpsertMemberHandlerTests
     {
-        private readonly IMapper _mapper;
-        private readonly Mock<IUnitOfWork> _uowMock;
-        private readonly Mock<IMemberRepository> _memberRepoMock;
-        private readonly Mock<IGroupRepository> _groupRepoMock;
-        private readonly Mock<IWaitlistRepository> _waitlistRepoMock;
-        private readonly Mock<IInvitationRepository> _invitationRepoMock;
-        private readonly Mock<IPhotoService> _photoServiceMock;
-        private readonly Mock<UserManager<AppUser>> _userManagerMock;
-        private readonly Mock<IEmailService> _emailServiceMock;
-        private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-        private readonly Mock<INotificationService> _notificationServiceMock;
+        private readonly Mock<IMediator> _mediatorMock = new();
+        private readonly Mock<IMemberUnitOfWork> _uowMock = new();
+        private readonly Mock<IMemberRepository> _memberRepoMock = new();
+        private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
+        private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
+        private readonly Mock<IDomainEventPublisher> _eventsMock = new();
         private readonly UpsertMemberHandler _handler;
 
         public UpsertMemberHandlerTests()
@@ -43,501 +41,245 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var loggerFactory = LoggerFactory.Create(builder => { });
             var mapperConfig = new MapperConfiguration(cfg =>
             {
-                cfg.ConstructServicesUsing(t =>
-                {
-                    if (t == typeof(ProfilePhotoUrlResolver))
-                    {
-                        return new ProfilePhotoUrlResolver(new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" });
-                    }
-
-                    return Activator.CreateInstance(t)!;
-                });
+                cfg.ConstructServicesUsing(t => t == typeof(ProfilePhotoUrlResolver)
+                    ? new ProfilePhotoUrlResolver(new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" })
+                    : Activator.CreateInstance(t)!);
                 cfg.AddProfile(new KurinModuleProfile());
             }, loggerFactory);
-            _mapper = mapperConfig.CreateMapper();
-
-            _uowMock = new Mock<IUnitOfWork>();
-            _memberRepoMock = new Mock<IMemberRepository>();
-            _groupRepoMock = new Mock<IGroupRepository>();
-            _waitlistRepoMock = new Mock<IWaitlistRepository>();
-            _invitationRepoMock = new Mock<IInvitationRepository>();
-            _photoServiceMock = new Mock<IPhotoService>();
-            _emailServiceMock = new Mock<IEmailService>();
-            _currentUserContextMock = new Mock<ICurrentUserContext>();
-            _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
-            _notificationServiceMock = new Mock<INotificationService>();
-
-            var userStoreMock = new Mock<IUserStore<AppUser>>();
-            _userManagerMock = new Mock<UserManager<AppUser>>(
-                userStoreMock.Object,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!,
-                null!);
-
-            _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((AppUser?)null);
-            _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<AppUser>())).ReturnsAsync(IdentityResult.Success);
 
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
-            _uowMock.Setup(u => u.WaitlistEntries).Returns(_waitlistRepoMock.Object);
-            _uowMock.Setup(u => u.Invitations).Returns(_invitationRepoMock.Object);
-            _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.Available);
 
             _handler = new UpsertMemberHandler(
+                _mediatorMock.Object,
                 _uowMock.Object,
-                _mapper,
-                _photoServiceMock.Object,
-                _userManagerMock.Object,
-                _emailServiceMock.Object,
+                mapperConfig.CreateMapper(),
+                _accountProvisioningMock.Object,
                 _currentUserContextMock.Object,
-                _notificationServiceMock.Object);
+                _eventsMock.Object);
         }
 
-        private static Group MakeGroup(Guid? kurinKey = null)
+        private Member GivenWrittenMember(bool isCreated, Guid? userKey = null)
         {
-            var k = kurinKey ?? Guid.NewGuid();
-            return new Group("G", k) { GroupKey = Guid.NewGuid(), Kurin = new Kurin(10) { KurinKey = k } };
-        }
-
-        private static Member MakeExistingMember(Guid? groupKey, Guid kurinKey) =>
-            new()
+            var member = new Member
             {
                 MemberKey = Guid.NewGuid(),
-                GroupKey = groupKey,
-                KurinKey = kurinKey,
-                FirstName = "Old",
-                MiddleName = "M",
-                LastName = "Name",
-                Email = "old@example.com",
-                PhoneNumber = "111",
-                DateOfBirth = new DateOnly(1990, 1, 1),
-                ProfilePhotoBlobName = "old.png"
-            };
-
-        [Fact]
-        public async Task Handle_Create_NewMember_ShouldReturnCreated()
-        {
-            var group = MakeGroup();
-            var cmd = new UpsertMember
-            {
-                GroupKey = group.GroupKey,
                 FirstName = "Ivan",
-                MiddleName = "I",
                 LastName = "Petrenko",
                 Email = "ivan@example.com",
                 PhoneNumber = "123",
-                DateOfBirth = new DateOnly(2001, 2, 3)
+                UserKey = userKey
             };
 
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                    ResultType.Success,
+                    new MemberProfileWriteResult(member.MemberKey, isCreated, false, null)));
 
-            var result = await _handler.Handle(cmd, CancellationToken.None);
+            _memberRepoMock.Setup(r => r.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(member);
+
+            return member;
+        }
+
+        private void GivenAccountLink(MemberAccountLink? link) =>
+            _memberRepoMock.Setup(r => r.GetAccountLinkAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(link);
+
+        [Fact]
+        public async Task Handle_Create_ShouldWriteTheProfileAndAnswerCreated()
+        {
+            GivenAccountLink(null);
+            var member = GivenWrittenMember(isCreated: true);
+
+            var result = await _handler.Handle(
+                new UpsertMember { KurinKey = Guid.NewGuid(), FirstName = "Ivan", LastName = "Petrenko" },
+                CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Created);
-            result.Data.Should().NotBeNull();
             result.Data!.FirstName.Should().Be("Ivan");
-            result.Data.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
-            _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_Create_KurinScopedMember_ShouldReturnCreated_WithNullGroup()
-        {
-            var kurinKey = Guid.NewGuid();
-            var cmd = new UpsertMember
-            {
-                KurinKey = kurinKey,
-                FirstName = "Kurin",
-                LastName = "Member",
-                Email = "kurin.member@example.com",
-                PhoneNumber = "123",
-                DateOfBirth = new DateOnly(2002, 2, 3)
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
-
-            Member? createdMember = null;
-            _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
-                .Callback<Member, CancellationToken>((m, _) => createdMember = m);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Created);
-            createdMember.Should().NotBeNull();
-            createdMember!.GroupKey.Should().BeNull();
-            createdMember.KurinKey.Should().Be(kurinKey);
-        }
-
-        [Fact]
-        public async Task Handle_Create_WithCreateUserAccount_ShouldCreateInvitationAndSendEmail()
-        {
-            var kurinKey = Guid.NewGuid();
-            var cmd = new UpsertMember
-            {
-                KurinKey = kurinKey,
-                CreateUserAccount = true,
-                FirstName = "Olena",
-                LastName = "Invite",
-                Email = "olena.invite@example.com",
-                PhoneNumber = "123",
-                DateOfBirth = new DateOnly(2003, 3, 3)
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
-            _waitlistRepoMock.Setup(r => r.GetByEmailAsync(cmd.Email, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((WaitlistEntry?)null);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Created);
-            _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>()), Times.Once);
-            _waitlistRepoMock.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Once);
-            _invitationRepoMock.Verify(x => x.Create(It.IsAny<Invitation>(), It.IsAny<CancellationToken>()), Times.Once);
-            _emailServiceMock.Verify(x => x.SendInvitationEmailAsync(cmd.Email, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-            _uowMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
-        }
-
-        [Fact]
-        public async Task Handle_Create_WithCreateUserAccount_WhenUserAlreadyExists_ShouldReturnConflict()
-        {
-            var group = MakeGroup();
-            var cmd = new UpsertMember
-            {
-                GroupKey = group.GroupKey,
-                CreateUserAccount = true,
-                FirstName = "User",
-                LastName = "Exists",
-                Email = "exists@example.com"
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
-            _userManagerMock.Setup(x => x.FindByEmailAsync(cmd.Email))
-                .ReturnsAsync(new AppUser { Id = Guid.NewGuid(), Email = cmd.Email, UserName = cmd.Email, FirstName = "X", LastName = "Y" });
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Conflict);
-            _memberRepoMock.Verify(x => x.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_Update_ExistingMember_ShouldReturnSuccess_AndDeleteOldPhotoWhenChanged()
-        {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            var newBlob = new MemoryStream(new byte[] { 1, 2, 3 });
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "NewName",
-                MiddleName = "M2",
-                LastName = "Surname",
-                Email = "new@example.com",
-                PhoneNumber = "222",
-                DateOfBirth = new DateOnly(1995, 5, 5),
-                BlobContent = newBlob,
-                BlobFileName = "new.png",
-                BlobContentType = "image/png"
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            _photoServiceMock
-                .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
-            _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_Update_VerifiedCurrentMember_WhenProfileFieldChanges_ShouldMarkVerifiedStale()
-        {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
-            existing.ProfileVerifiedAtUtc = DateTime.UtcNow.AddDays(-1);
-            existing.ProfileVerifiedByUserKey = Guid.NewGuid();
-
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "Changed",
-                MiddleName = existing.MiddleName ?? string.Empty,
-                LastName = existing.LastName,
-                Email = existing.Email,
-                PhoneNumber = existing.PhoneNumber,
-                DateOfBirth = existing.DateOfBirth,
-                Address = existing.Address,
-                School = existing.School
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
-            existing.ProfileVerifiedAtUtc.Should().NotBeNull();
-            existing.ProfileVerifiedByUserKey.Should().NotBeNull();
-            result.Data!.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
-        }
-
-        [Fact]
-        public async Task Handle_Update_LinkedVerifiedCurrentMember_WhenProfileFieldChanges_ShouldNotifyMemberOwner()
-        {
-            var actorUserKey = Guid.NewGuid();
-            var memberUserKey = Guid.NewGuid();
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.UserKey = memberUserKey;
-            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
-            existing.ProfileVerifiedAtUtc = DateTime.UtcNow.AddDays(-1);
-            existing.ProfileVerifiedByUserKey = Guid.NewGuid();
-
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "Changed",
-                MiddleName = existing.MiddleName ?? string.Empty,
-                LastName = existing.LastName,
-                Email = existing.Email,
-                PhoneNumber = existing.PhoneNumber,
-                DateOfBirth = existing.DateOfBirth,
-                Address = existing.Address,
-                School = existing.School
-            };
-
-            _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            _notificationServiceMock.Verify(x => x.NotifyAsync(
-                It.Is<NotificationRequest>(request =>
-                    request.RecipientUserKey == memberUserKey
-                    && request.Type == AppNotificationType.MemberProfileChangedAfterVerification
-                    && request.Severity == AppNotificationSeverity.Warn
-                    && request.EntityKey == existing.MemberKey
-                    && request.Route == $"/member/{existing.MemberKey}"
-                    && request.ActorUserKey == actorUserKey
-                    && request.DeduplicationKey == $"member-profile-stale:{existing.MemberKey}"),
-                It.IsAny<CancellationToken>()),
+            _mediatorMock.Verify(
+                m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
         [Fact]
-        public async Task Handle_Update_VerifiedCurrentMember_WhenProfileDoesNotChange_ShouldKeepVerifiedCurrent()
+        public async Task Handle_WhenTheProfileWriteFails_ShouldPassTheFailureThrough()
         {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+            GivenAccountLink(null);
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ServiceResult<MemberProfileWriteResult>.Failure(
+                    ResultType.BadRequest, "ContactInfoLinked", "nope"));
 
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = existing.FirstName,
-                MiddleName = existing.MiddleName ?? string.Empty,
-                LastName = existing.LastName,
-                Email = existing.Email,
-                PhoneNumber = existing.PhoneNumber,
-                DateOfBirth = existing.DateOfBirth,
-                Address = existing.Address,
-                School = existing.School
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
-            result.Data!.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
-        }
-
-        [Fact]
-        public async Task Handle_Update_LinkedMember_ByMentor_ShouldUpdateMemberWithoutEmailConflict_AndPreserveEmail()
-        {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.UserKey = Guid.NewGuid();
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "NewName",
-                MiddleName = "M2",
-                LastName = "Surname",
-                Email = "different@example.com",
-                PhoneNumber = "222",
-                DateOfBirth = new DateOnly(1995, 5, 5)
-            };
-
-            _currentUserContextMock.Setup(x => x.IsInRole("KV.Vykhovnyk")).Returns(true);
-            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            existing.FirstName.Should().Be("NewName");
-            existing.Email.Should().Be("old@example.com");
-            existing.PhoneNumber.Should().Be("222");
-            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_Update_LinkedMember_ByAdmin_ShouldAllowManualEmailChange()
-        {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.UserKey = Guid.NewGuid();
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "NewName",
-                MiddleName = "M2",
-                LastName = "Surname",
-                Email = "admin.changed@example.com",
-                PhoneNumber = "222",
-                DateOfBirth = new DateOnly(1995, 5, 5)
-            };
-
-            _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(true);
-            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            existing.Email.Should().Be("admin.changed@example.com");
-            existing.PhoneNumber.Should().Be("222");
-            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_Update_LinkedMember_ByOwner_ShouldUpdateMemberWithoutEmailConflict_AndPreserveEmail()
-        {
-            var group = MakeGroup();
-            var ownerUserKey = Guid.NewGuid();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.UserKey = ownerUserKey;
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "SelfUpdated",
-                MiddleName = "M2",
-                LastName = "Surname",
-                Email = "different@example.com",
-                PhoneNumber = "222",
-                DateOfBirth = new DateOnly(1995, 5, 5)
-            };
-
-            _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            existing.FirstName.Should().Be("SelfUpdated");
-            existing.Email.Should().Be("old@example.com");
-            existing.PhoneNumber.Should().Be("222");
-            _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_Update_LinkedMember_ByRegularUserForAnotherMember_WhenContactInfoChanges_ShouldReturnBadRequest()
-        {
-            var group = MakeGroup();
-            var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
-            existing.UserKey = Guid.NewGuid();
-            var cmd = new UpsertMember
-            {
-                MemberKey = existing.MemberKey,
-                GroupKey = group.GroupKey,
-                FirstName = "NewName",
-                MiddleName = "M2",
-                LastName = "Surname",
-                Email = "different@example.com",
-                PhoneNumber = "222",
-                DateOfBirth = new DateOnly(1995, 5, 5)
-            };
-
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            var result = await _handler.Handle(cmd, CancellationToken.None);
+            var result = await _handler.Handle(
+                new UpsertMember { KurinKey = Guid.NewGuid(), FirstName = "Ivan" },
+                CancellationToken.None);
 
             result.Type.Should().Be(ResultType.BadRequest);
-            existing.Email.Should().Be("old@example.com");
-            existing.PhoneNumber.Should().Be("111");
-            _memberRepoMock.Verify(r => r.Update(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
+            result.ErrorCode.Should().Be("ContactInfoLinked");
         }
 
         [Fact]
-        public async Task Handle_SaveChangesFailed_ShouldReturnInternalServerError()
+        public async Task Handle_WithAccountRequested_ShouldProvisionAfterTheProfileIsWritten()
         {
-            var group = MakeGroup();
-            var cmd = new UpsertMember
-            {
-                GroupKey = group.GroupKey,
-                FirstName = "Ivan"
-            };
+            GivenAccountLink(null);
+            var member = GivenWrittenMember(isCreated: true);
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
 
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(cmd.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
-            _groupRepoMock.Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-            _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(0);
+            var result = await _handler.Handle(
+                new UpsertMember
+                {
+                    KurinKey = Guid.NewGuid(),
+                    CreateUserAccount = true,
+                    FirstName = "Ivan",
+                    Email = "ivan@example.com"
+                },
+                CancellationToken.None);
 
-            var result = await _handler.Handle(cmd, CancellationToken.None);
+            result.Type.Should().Be(ResultType.Created);
+            _mediatorMock.Verify(
+                m => m.Send(
+                    It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == member.MemberKey),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
 
-            result.Type.Should().Be(ResultType.InternalServerError);
+        [Fact]
+        public async Task Handle_WithAccountRequested_WhenTheAddressIsTaken_ShouldConflictBeforeWritingAnything()
+        {
+            GivenAccountLink(null);
+            _accountProvisioningMock
+                .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AccountAvailability.EmailTaken);
+
+            var result = await _handler.Handle(
+                new UpsertMember
+                {
+                    KurinKey = Guid.NewGuid(),
+                    CreateUserAccount = true,
+                    FirstName = "Ivan",
+                    Email = "taken@example.com"
+                },
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Conflict);
+            _mediatorMock.Verify(
+                m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WithAccountRequested_WhenTheMemberAlreadyHasOne_ShouldConflict()
+        {
+            var memberKey = Guid.NewGuid();
+            GivenAccountLink(new MemberAccountLink(memberKey, Guid.NewGuid()));
+            _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(true);
+            _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
+
+            var result = await _handler.Handle(
+                new UpsertMember
+                {
+                    MemberKey = memberKey,
+                    KurinKey = Guid.NewGuid(),
+                    CreateUserAccount = true,
+                    FirstName = "Ivan",
+                    Email = "ivan@example.com"
+                },
+                CancellationToken.None);
+
+            result.Type.Should().Be(ResultType.Conflict);
+            _mediatorMock.Verify(
+                m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WithAccountRequested_BySomeoneWithoutLeadership_ShouldIgnoreTheRequest()
+        {
+            var memberKey = Guid.NewGuid();
+            GivenAccountLink(new MemberAccountLink(memberKey, null));
+            var member = GivenWrittenMember(isCreated: false);
+
+            await _handler.Handle(
+                new UpsertMember
+                {
+                    MemberKey = memberKey,
+                    KurinKey = Guid.NewGuid(),
+                    CreateUserAccount = true,
+                    FirstName = "Ivan",
+                    Email = "ivan@example.com"
+                },
+                CancellationToken.None);
+
+            _mediatorMock.Verify(
+                m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_WithAPhoto_ShouldHandItToThePhotoUseCase()
+        {
+            GivenAccountLink(null);
+            var member = GivenWrittenMember(isCreated: false);
+            using var content = new MemoryStream(new byte[] { 1, 2, 3 });
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<SetMemberPhotoCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<string?>(ResultType.Success, "new.png"));
+
+            await _handler.Handle(
+                new UpsertMember
+                {
+                    MemberKey = member.MemberKey,
+                    KurinKey = Guid.NewGuid(),
+                    FirstName = "Ivan",
+                    BlobContent = content,
+                    BlobFileName = "new.png"
+                },
+                CancellationToken.None);
+
+            _mediatorMock.Verify(
+                m => m.Send(
+                    It.Is<SetMemberPhotoCommand>(c => c.MemberKey == member.MemberKey && c.FileName == "new.png"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WhenAVerifiedProfileWentStale_ShouldNotifyTheOwner()
+        {
+            var actorUserKey = Guid.NewGuid();
+            var memberUserKey = Guid.NewGuid();
+            _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
+            GivenAccountLink(new MemberAccountLink(Guid.NewGuid(), memberUserKey));
+
+            var member = GivenWrittenMember(isCreated: false, userKey: memberUserKey);
+            member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                    ResultType.Success,
+                    new MemberProfileWriteResult(member.MemberKey, false, true, null)));
+
+            await _handler.Handle(
+                new UpsertMember { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), FirstName = "Changed" },
+                CancellationToken.None);
+
+            _eventsMock.Verify(x => x.PublishAsync(
+                It.Is<MemberProfileWentStale>(raised =>
+                    raised.MemberKey == member.MemberKey
+                    && raised.MemberUserKey == memberUserKey
+                    && raised.ActorUserKey == actorUserKey),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

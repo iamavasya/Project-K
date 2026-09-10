@@ -408,7 +408,8 @@ namespace ProjectK.API.Tests.Controllers
                 new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
                 configuration,
                 userManager: null!,
-                jwtService: null!);
+                jwtService: null!,
+                access: null!);
 
             ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
         }
@@ -424,7 +425,8 @@ namespace ProjectK.API.Tests.Controllers
                 new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
                 configuration,
                 userManager: null!,
-                jwtService: null!);
+                jwtService: null!,
+                access: null!);
 
             ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
         }

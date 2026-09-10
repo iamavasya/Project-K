@@ -4,8 +4,11 @@ import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/ro
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { MessageService } from '@openng/optimus-ui/api';
 import { MemberService } from '../common/services/member-service/member.service';
 import { MemberDto } from '../common/models/memberDto';
+import { KurinBranch } from '../common/models/enums/kurin-branch.enum';
+import { MembershipKind } from '../common/models/enums/membership-kind.enum';
 import { BadgesCatalogService } from '../common/services/probes-and-badges/badges-catalog.service';
 import { ProbesCatalogService } from '../common/services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
@@ -52,7 +55,7 @@ describe('MemberCardComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
@@ -127,11 +130,14 @@ describe('MemberCardComponent', () => {
       auditTrail: []
     }));
 
+    memberServiceSpy.getMemberships.and.returnValue(of([]));
+
     await TestBed.configureTestingModule({
       imports: [MemberCardComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        MessageService,
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: KurinService, useValue: kurinServiceSpy },
         { provide: BadgesCatalogService, useValue: badgesCatalogServiceSpy },
@@ -217,7 +223,9 @@ describe('MemberCardComponent', () => {
       isDisabled: false,
       canOpenDetails: true,
       pointsCount: 10,
-      sectionsCount: 3
+      sectionsCount: 3,
+      signedPointsCount: 4,
+      completionPercent: 40
     };
 
     const disabledProbe = {
@@ -632,6 +640,58 @@ describe('MemberCardComponent', () => {
     expect(memberProgressServiceSpy.reviewBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-2', {
       isApproved: false,
       note: null
+    });
+  });
+
+  describe('гілка куреня', () => {
+    const membershipIn = (branch: KurinBranch) => ({
+      membershipKey: 'ms-1',
+      kurinKey: member.kurinKey,
+      kurinNumber: 7,
+      branch,
+      kurinNamedAfter: null,
+      groupKey: null,
+      groupName: null,
+      kind: MembershipKind.Youth,
+      joinedAtUtc: '2022-09-01T00:00:00Z',
+      leftAtUtc: null,
+      isCurrent: true
+    });
+
+    it('у курені УСП проби й вмілості не показуються і навіть не запитуються', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.USP)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
+      expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
+    });
+
+    it('у юнацькому курені все на місці', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeTrue();
+      expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
+    });
+
+    it('гілку бере членство в тому курені, де ми дивимось людину', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([
+        { ...membershipIn(KurinBranch.UPYu), kurinKey: 'kurin-elsewhere', membershipKey: 'ms-2' },
+        membershipIn(KurinBranch.USP)
+      ]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
     });
   });
 });

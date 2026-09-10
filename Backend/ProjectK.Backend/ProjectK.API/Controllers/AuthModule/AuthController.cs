@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ProjectK.API.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +19,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
@@ -120,13 +121,14 @@ namespace ProjectK.API.Controllers.AuthModule
         public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
 
         /// <summary>
-        /// Points an administrator's session at a particular kurin and issues tokens scoped to it.
+        /// Points the session at a particular kurin and issues tokens scoped to it.
         /// </summary>
         /// <remarks>
-        /// Administrators are the only accounts that exist above a single kurin, so their token has to say
-        /// which one they are currently acting inside.
+        /// A person may belong to more than one kurin and holds different offices in each, so the token
+        /// has to say which one they are acting inside. The handler decides what is allowed: an admin
+        /// steps into any kurin or out of all of them, everyone else only into one they belong to.
         /// </remarks>
-        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("kurin-scope")]
         [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
@@ -143,6 +145,27 @@ namespace ProjectK.API.Controllers.AuthModule
                 SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
             }
 
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// The kurins this account may currently act in.
+        /// </summary>
+        /// <remarks>
+        /// Answered from the caller's own memberships and nothing else, so it says nothing about
+        /// anyone else and needs no permission beyond being signed in.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+        [HttpGet("kurin-scope/options")]
+        [ProducesResponseType(typeof(IEnumerable<KurinScopeOption>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetKurinScopeOptions()
+        {
+            if (this.UserKey() is not { } userKey)
+            {
+                return this.UnreadableIdentity();
+            }
+
+            var response = await _mediator.Send(new GetKurinScopeOptions(userKey));
             return response.ToActionResult(this);
         }
 
@@ -163,7 +186,8 @@ namespace ProjectK.API.Controllers.AuthModule
             [FromBody] LoadTestLoginRequest request,
             [FromServices] Microsoft.Extensions.Configuration.IConfiguration config,
             [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
-            [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService)
+            [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService,
+            [FromServices] ProjectK.Common.Interfaces.Modules.AuthModule.IAccessContextResolver access)
         {
             // Its own secret, not the rate limiter's: the two used to share one value, so setting the
             // bypass key to let a monitor through would also have opened a login as the load-test
@@ -180,8 +204,9 @@ namespace ProjectK.API.Controllers.AuthModule
                 return this.Failure(ResultType.NotFound, "UserNotFound", "Load test user not found.");
             }
 
-            var roles = await userManager.GetRolesAsync(user);
-            var token = jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, user.KurinKey?.ToString());
+            var context = await access.ResolveAsync(user);
+            var token = jwtService.GenerateAccessToken(
+                user.Id.ToString(), user.Email!, context.Roles, context.KurinKey?.ToString());
 
             return Ok(new { data = new { accessToken = token } });
         }

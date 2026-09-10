@@ -189,15 +189,17 @@ describe('UpsertMemberComponent', () => {
       expect(component.kurinKey).toBe('kurin-123');
     });
 
-    it('should not send an empty guid group key when updating a groupless member', () => {
-      setRouteParams({ groupKey: '00000000-0000-0000-0000-000000000000', kurinKey: 'kurin-123', memberKey });
+    it('редагування профілю нікого не переносить — ні гуртка, ні куреня в запиті немає', () => {
+      // Форму відкрито з маршруту, що називає курінь і гурток. Це лише те, звідки ми прийшли:
+      // належність міняється діями над членством, а не збереженням профілю.
+      setRouteParams({ groupKey: 'group-777', kurinKey: 'kurin-123', memberKey });
       create();
 
       component.submit();
 
       const dtoArg = memberServiceSpy.update.calls.mostRecent().args[1];
       expect(dtoArg.groupKey).toBeUndefined();
-      expect(dtoArg.kurinKey).toBe('kurin-123');
+      expect(dtoArg.kurinKey).toBeUndefined();
     });
 
     it('should fall back to the kurin when the member cannot be loaded without a group', () => {

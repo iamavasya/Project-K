@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -23,11 +24,14 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class MemberProfileVerificationHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IMemberUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
+        private readonly Mock<IUnitOfWork> _kurinDataMock = new();
+        private readonly Mock<IMembershipRepository> _membershipsMock = new();
+        private readonly Mock<IKurinRepository> _kurinsMock = new();
         private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-        private readonly Mock<INotificationService> _notificationServiceMock;
+        private readonly Mock<IDomainEventPublisher> _eventsMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IResourceScopeReader> _scopeReaderMock;
         private readonly MemberProfileVerificationService _service;
@@ -36,24 +40,29 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _mentorAssignmentRepoMock = new Mock<IMentorAssignmentRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock = new Mock<IMemberUnitOfWork>();
             _uowMock.SetupGet(x => x.Members).Returns(_memberRepoMock.Object);
-            _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
 
             _currentUserContextMock = new Mock<ICurrentUserContext>();
-            _notificationServiceMock = new Mock<INotificationService>();
+            _eventsMock = new Mock<IDomainEventPublisher>();
             _mapperMock = new Mock<IMapper>();
             _scopeReaderMock = new Mock<IResourceScopeReader>();
             _scopeReaderMock
                 .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<Guid>());
 
+            _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
+            _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurinsMock.Object);
+            _membershipsMock
+                .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
             _service = new MemberProfileVerificationService(
                 _uowMock.Object,
                 _currentUserContextMock.Object,
-                _notificationServiceMock.Object,
+                _eventsMock.Object,
                 _mapperMock.Object,
-                _scopeReaderMock.Object);
+                _scopeReaderMock.Object,
+                _kurinDataMock.Object);
         }
 
         [Fact]
@@ -99,15 +108,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var result = await _service.VerifyAsync(member.MemberKey, null, CancellationToken.None);
 
             result.Type.Should().Be(ResultType.Success);
-            _notificationServiceMock.Verify(x => x.NotifyAsync(
-                It.Is<NotificationRequest>(request =>
-                    request.RecipientUserKey == memberUserKey
-                    && request.Type == AppNotificationType.MemberProfileVerified
-                    && request.Severity == AppNotificationSeverity.Success
-                    && request.EntityKey == member.MemberKey
-                    && request.Route == $"/member/{member.MemberKey}"
-                    && request.ActorUserKey == actorUserKey
-                    && request.DeduplicationKey == $"member-profile-verified:{member.MemberKey}"),
+            _eventsMock.Verify(x => x.PublishAsync(
+                It.Is<MemberProfileVerified>(raised =>
+                    raised.MemberKey == member.MemberKey
+                    && raised.MemberUserKey == memberUserKey
+                    && raised.ActorUserKey == actorUserKey),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
         }
@@ -244,21 +249,18 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Returns(() => MapMember(member));
         }
 
-        private static Member CreateMember(
+        /// <summary>
+        /// Builds the person and, because that is now the only thing that places them, the membership
+        /// and the kurin the caller will read through.
+        /// </summary>
+        private Member CreateMember(
             Guid kurinKey,
             bool profileVerificationEnabled = true,
             Guid? groupKey = null)
         {
-            return new Member
+            var member = new Member
             {
                 MemberKey = Guid.NewGuid(),
-                KurinKey = kurinKey,
-                GroupKey = groupKey ?? Guid.NewGuid(),
-                Kurin = new KurinEntity(1)
-                {
-                    KurinKey = kurinKey,
-                    ProfileVerificationEnabled = profileVerificationEnabled
-                },
                 FirstName = "Ivan",
                 MiddleName = "I.",
                 LastName = "Petrenko",
@@ -266,6 +268,25 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 PhoneNumber = "123",
                 DateOfBirth = new DateOnly(2000, 1, 1)
             };
+
+            _membershipsMock
+                .Setup(x => x.GetActiveForMemberAsync(member.MemberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Membership
+                {
+                    MemberKey = member.MemberKey,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    JoinedAtUtc = DateTime.UtcNow.AddYears(-1)
+                }]);
+            _kurinsMock
+                .Setup(x => x.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new KurinEntity(1)
+                {
+                    KurinKey = kurinKey,
+                    ProfileVerificationEnabled = profileVerificationEnabled
+                });
+
+            return member;
         }
 
         private static MemberResponse MapMember(Member member)
@@ -273,8 +294,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             return new MemberResponse
             {
                 MemberKey = member.MemberKey,
-                GroupKey = member.GroupKey ?? Guid.Empty,
-                KurinKey = member.KurinKey,
                 FirstName = member.FirstName,
                 MiddleName = member.MiddleName,
                 LastName = member.LastName,

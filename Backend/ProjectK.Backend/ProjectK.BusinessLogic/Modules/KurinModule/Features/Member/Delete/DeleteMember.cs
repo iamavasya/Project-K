@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -22,9 +23,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
     public class DeleteMemberHandler : IRequestHandler<DeleteMember, ServiceResult<object>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public DeleteMemberHandler(IUnitOfWork unitOfWork)
+        private readonly IMemberDirectory _members;
+        public DeleteMemberHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
         }
 
         public async Task<ServiceResult<object>> Handle(DeleteMember request, CancellationToken cancellationToken)
@@ -36,8 +39,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
                     "MemberKeyRequired",
                     "MemberKey cannot be empty.");
             }
-            var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-            if (existing is null)
+            var exists = await _members.ExistsAsync(request.MemberKey, cancellationToken);
+            if (!exists)
             {
                 return ServiceResult<object>.Failure(
                     ResultType.NotFound,
@@ -45,7 +48,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete
                     $"Member with key {request.MemberKey} not found.");
             }
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
-            _unitOfWork.Members.Delete(existing, cancellationToken);
+            await _members.RemoveAsync(request.MemberKey, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
             {

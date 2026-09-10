@@ -1,20 +1,18 @@
-﻿using System.IO;
+using System.IO;
 using AutoMapper;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Records;
-using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
 {
@@ -40,202 +38,112 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
         public string? BlobContentType { get; set; }
     }
 
+    /// <summary>
+    /// The one multipart form the UI submits reaches three separate use cases — the profile, the
+    /// photo and the account. This handler only decides the order and reports the outcome; every
+    /// rule about a member's data lives in the use case that owns it.
+    /// </summary>
     public class UpsertMemberHandler : IRequestHandler<UpsertMember, ServiceResult<MemberResponse>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IPhotoService _photoService;
-        private readonly UserManager<AppUser> _userManager;
-        private readonly IEmailService _emailService;
+        private readonly IAccountProvisioningService _accountProvisioning;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
 
         public UpsertMemberHandler(
-            IUnitOfWork unitOfWork,
+            IMediator mediator,
+            IMemberUnitOfWork unitOfWork,
             IMapper mapper,
-            IPhotoService photoService,
-            UserManager<AppUser> userManager,
-            IEmailService emailService,
+            IAccountProvisioningService accountProvisioning,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService)
+            IDomainEventPublisher events)
         {
+            _mediator = mediator;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _photoService = photoService;
-            _userManager = userManager;
-            _emailService = emailService;
+            _accountProvisioning = accountProvisioning;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
         }
 
-        private bool CanEditRestrictedFields()
+        public async Task<ServiceResult<MemberResponse>> Handle(
+            UpsertMember request,
+            CancellationToken cancellationToken)
         {
-            return _currentUserContext.IsLeadership();
-        }
+            var accountLink = await _unitOfWork.Members.GetAccountLinkAsync(request.MemberKey, cancellationToken);
 
-        private bool IsAdmin()
-        {
-            return _currentUserContext.IsAdmin();
-        }
+            // Only leadership hands out accounts, and never twice. Both are settled before anything
+            // is written: a member created here and then refused an account would be a half-result
+            // nobody asked for.
+            var provisionAccount = request.CreateUserAccount
+                && (accountLink is null || _currentUserContext.IsLeadership());
 
-        private bool IsCurrentUserOwner(MemberEntity member)
-        {
-            return member.UserKey.HasValue &&
-                   _currentUserContext.UserId.HasValue &&
-                   member.UserKey.Value == _currentUserContext.UserId.Value;
-        }
-
-        public async Task<ServiceResult<MemberResponse>> Handle(UpsertMember request, CancellationToken cancellationToken)
-        {
-            var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-            
-            if (existing != null && !CanEditRestrictedFields())
+            if (provisionAccount)
             {
-                request.GroupKey = existing.GroupKey;
-                request.KurinKey = existing.KurinKey;
-                request.CreateUserAccount = false;
-            }
-
-            GroupEntity? group = null;
-            if (request.GroupKey.HasValue && request.GroupKey.Value != Guid.Empty)
-            {
-                group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
-            }
-
-            bool isCreated = false;
-            string? oldBlobName = null;
-            var wasProfileVerifiedCurrent = existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
-
-            if (request.CreateUserAccount)
-            {
-                if (existing?.UserKey.HasValue == true)
+                if (accountLink?.UserKey is not null)
                 {
                     return new ServiceResult<MemberResponse>(ResultType.Conflict);
                 }
 
-                var userByEmail = await _userManager.FindByEmailAsync(request.Email);
-                if (userByEmail != null)
-                {
-                    return new ServiceResult<MemberResponse>(ResultType.Conflict);
-                }
-
-                var waitlistByEmail = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
-                if (waitlistByEmail != null)
+                var availability = await _accountProvisioning.CheckAvailabilityAsync(request.Email, cancellationToken);
+                if (availability != AccountAvailability.Available)
                 {
                     return new ServiceResult<MemberResponse>(ResultType.Conflict);
                 }
             }
 
-            if (group == null && (!request.KurinKey.HasValue || request.KurinKey.Value == Guid.Empty))
+            var profile = await _mediator.Send(ToProfileCommand(request), cancellationToken);
+            if (profile.Type != ResultType.Success || profile.Data is null)
             {
-                return new ServiceResult<MemberResponse>(ResultType.NotFound);
+                return Propagate(profile);
             }
 
-            if (existing == null)
+            if (request.BlobContent is not null || request.RemoveProfilePhoto)
             {
-                existing = _mapper.Map<MemberEntity>(request);
-                existing.GroupKey = group?.GroupKey;
-                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
-                existing.LatestPlastLevel = existing.PlastLevelHistory
-                    .OrderByDescending(p => p.DateAchieved)
-                    .FirstOrDefault()?.PlastLevel;
+                var photo = await _mediator.Send(
+                    new SetMemberPhotoCommand(
+                        profile.Data.MemberKey,
+                        request.BlobContent,
+                        request.BlobFileName,
+                        request.RemoveProfilePhoto),
+                    cancellationToken);
 
-                _unitOfWork.Members.Create(existing, cancellationToken);
-                isCreated = true;
-            }
-            else
-            {
-                var preserveLinkedUserEmail = false;
-                string? linkedUserEmail = null;
-                var shouldMarkProfileStale = existing.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent
-                    && HasSignificantProfileChange(request, existing, group);
-
-                if (existing.UserKey.HasValue)
+                if (photo.Type != ResultType.Success)
                 {
-                    var isCurrentUserOwner = IsCurrentUserOwner(existing);
-                    var emailChanged = !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase);
-                    var phoneChanged = !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.OrdinalIgnoreCase);
-
-                    if ((emailChanged || phoneChanged) && !CanEditRestrictedFields() && !isCurrentUserOwner)
-                    {
-                        return ServiceResult<MemberResponse>.Failure(
-                            ResultType.BadRequest, 
-                            "ContactInfoLinked", 
-                            "Cannot change email or phone number for a member linked to an active user account. The user must update this via their account settings.");
-                    }
-
-                    preserveLinkedUserEmail = emailChanged && !IsAdmin();
-                    linkedUserEmail = preserveLinkedUserEmail ? existing.Email : null;
+                    return Propagate(photo);
                 }
-
-                oldBlobName = existing.ProfilePhotoBlobName;
-                _mapper.Map(request, existing);
-
-                if (preserveLinkedUserEmail)
-                {
-                    existing.Email = linkedUserEmail!;
-                }
-
-                existing.GroupKey = group?.GroupKey;
-                existing.KurinKey = group?.KurinKey ?? request.KurinKey!.Value;
-
-                if (shouldMarkProfileStale)
-                {
-                    existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
-                }
-                
-                if (CanEditRestrictedFields())
-                {
-                    UpdatePlastLevelHistory(existing.MemberKey, request.PlastLevelHistories, existing.PlastLevelHistory);
-                    existing.LatestPlastLevel = existing.PlastLevelHistory
-                        .OrderByDescending(p => p.DateAchieved)
-                        .FirstOrDefault()?.PlastLevel;
-                }
-
-                _unitOfWork.Members.Update(existing, cancellationToken);
             }
 
-            if (request.BlobContent is not null && !string.IsNullOrWhiteSpace(request.BlobFileName))
+            if (provisionAccount)
             {
-                var upload = await _photoService.UploadPhotoAsync(request.BlobContent, request.BlobFileName, cancellationToken);
-                existing.ProfilePhotoBlobName = upload.BlobName;
-                MarkVerifiedProfileStaleAfterPhotoChange(existing, oldBlobName);
+                var account = await _mediator.Send(
+                    new ProvisionMemberAccountCommand(profile.Data.MemberKey),
+                    cancellationToken);
+
+                if (account.Type != ResultType.Success)
+                {
+                    return Propagate(account);
+                }
             }
 
-            if (request.RemoveProfilePhoto && oldBlobName != null)
-            {
-                existing.ProfilePhotoBlobName = null;
-                MarkVerifiedProfileStaleAfterPhotoChange(existing, oldBlobName);
-                await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
-            }
-
-            var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
-            if (changes <= 0)
+            var member = await _unitOfWork.Members.GetByKeyAsync(profile.Data.MemberKey, cancellationToken);
+            if (member is null)
             {
                 return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
             }
 
-            if (request.CreateUserAccount)
+            if (!profile.Data.IsCreated
+                && profile.Data.WasProfileVerifiedCurrent
+                && member.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedStale)
             {
-                var invitationToken = await ProvisionUserAccountAndInvitationAsync(existing, cancellationToken);
-                await _emailService.SendInvitationEmailAsync(existing.Email, invitationToken, cancellationToken);
+                await PublishProfileWentStaleAsync(member, cancellationToken);
             }
 
-            if (!isCreated && oldBlobName != null && oldBlobName != existing.ProfilePhotoBlobName)
-            {
-                await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
-            }
+            var response = _mapper.Map<MemberResponse>(member);
 
-            if (!isCreated
-                && wasProfileVerifiedCurrent
-                && existing.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedStale)
-            {
-                await NotifyProfileChangedAfterVerificationAsync(existing, cancellationToken);
-            }
-
-            var response = _mapper.Map<MemberResponse>(existing);
-
-            return isCreated
+            return profile.Data.IsCreated
                 ? new ServiceResult<MemberResponse>(
                     ResultType.Created,
                     response,
@@ -244,197 +152,40 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
                 : new ServiceResult<MemberResponse>(ResultType.Success, response);
         }
 
-        private async Task<string> ProvisionUserAccountAndInvitationAsync(MemberEntity member, CancellationToken cancellationToken)
+        private static UpsertMemberProfileCommand ToProfileCommand(UpsertMember request) => new()
         {
-            var now = DateTime.UtcNow;
-            var user = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = member.Email,
-                Email = member.Email,
-                FirstName = member.FirstName,
-                LastName = member.LastName,
-                KurinKey = member.KurinKey,
-                OnboardingStatus = OnboardingStatus.PendingActivation,
-                IsBetaParticipant = true
-            };
+            MemberKey = request.MemberKey,
+            KurinKey = request.KurinKey,
+            GroupKey = request.GroupKey,
+            FirstName = request.FirstName,
+            MiddleName = request.MiddleName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            DateOfBirth = request.DateOfBirth,
+            Address = request.Address,
+            School = request.School,
+            PlastLevelHistories = request.PlastLevelHistories
+        };
 
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-            {
-                throw new InvalidOperationException("Failed to create user account for member.");
-            }
+        private static ServiceResult<MemberResponse> Propagate<T>(ServiceResult<T> step) =>
+            step.ErrorCode is null
+                ? new ServiceResult<MemberResponse>(step.Type)
+                : ServiceResult<MemberResponse>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
 
-            member.UserKey = user.Id;
-            _unitOfWork.Members.Update(member, cancellationToken);
-
-            var waitlistEntry = new WaitlistEntry
-            {
-                WaitlistEntryKey = Guid.NewGuid(),
-                FirstName = member.FirstName,
-                LastName = member.LastName,
-                Email = member.Email,
-                PhoneNumber = member.PhoneNumber,
-                DateOfBirth = member.DateOfBirth.ToDateTime(TimeOnly.MinValue),
-                IsKurinLeaderCandidate = false,
-                VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
-                IsBetaParticipant = true,
-                RequestedAtUtc = now,
-                ReviewedAtUtc = now,
-                ApprovedAtUtc = now,
-                ReviewedByUserKey = _currentUserContext.UserId,
-                InvitationSentAtUtc = now
-            };
-
-            var invitation = new Invitation
-            {
-                InvitationKey = Guid.NewGuid(),
-                Token = Guid.NewGuid().ToString("N"),
-                WaitlistEntryKey = waitlistEntry.WaitlistEntryKey,
-                TargetUserKey = user.Id,
-                ExpiresAtUtc = now.AddDays(OnboardingPolicy.InvitationLifetimeDays)
-            };
-
-            _unitOfWork.WaitlistEntries.Create(waitlistEntry, cancellationToken);
-            _unitOfWork.Invitations.Create(invitation, cancellationToken);
-
-            var accountChanges = await _unitOfWork.SaveChangesAsync(cancellationToken);
-            if (accountChanges <= 0)
-            {
-                throw new InvalidOperationException("Failed to persist invitation for member account.");
-            }
-
-            return invitation.Token;
-        }
-
-        private static void UpdatePlastLevelHistory(
-            Guid memberKey,
-            ICollection<PlastLevelHistoryDto> plastLevelHistoryDto,
-            ICollection<PlastLevelHistory> plastLevelHistory)
-        {
-            if (plastLevelHistoryDto == null || !plastLevelHistoryDto.Any())
-            {
-                plastLevelHistory.Clear();
-                return;
-            }
-
-            var dtoDict = plastLevelHistoryDto
-                .Where(dto => dto.PlastLevelHistoryKey.HasValue && dto.PlastLevelHistoryKey != Guid.Empty)
-                .ToDictionary(dto => dto.PlastLevelHistoryKey!.Value);
-
-            var entitiesToDelete = plastLevelHistory
-                .Where(e => !dtoDict.ContainsKey(e.PlastLevelHistoryKey))
-                .ToList();
-
-            foreach (var entity in entitiesToDelete)
-            {
-                plastLevelHistory.Remove(entity);
-            }
-
-            foreach (var dto in plastLevelHistoryDto)
-            {
-                if (!dto.PlastLevelHistoryKey.HasValue || dto.PlastLevelHistoryKey == Guid.Empty)
-                {
-                    var newHistory = new PlastLevelHistory
-                    {
-                        MemberKey = memberKey,
-                        PlastLevel = dto.PlastLevel,
-                        DateAchieved = dto.DateAchieved
-                    };
-                    plastLevelHistory.Add(newHistory);
-                }
-                else
-                {
-                    var existingHistory = plastLevelHistory.FirstOrDefault(e => e.PlastLevelHistoryKey == dto.PlastLevelHistoryKey);
-                    if (existingHistory != null)
-                    {
-                        existingHistory.PlastLevel = dto.PlastLevel;
-                        existingHistory.DateAchieved = dto.DateAchieved;
-                    }
-                }
-            }
-        }
-
-        private bool HasSignificantProfileChange(UpsertMember request, MemberEntity existing, GroupEntity? targetGroup)
-        {
-            var targetGroupKey = targetGroup?.GroupKey;
-            var targetKurinKey = targetGroup?.KurinKey ?? request.KurinKey;
-
-            return !string.Equals(existing.FirstName, request.FirstName, StringComparison.Ordinal)
-                   || !string.Equals(existing.MiddleName ?? string.Empty, request.MiddleName ?? string.Empty, StringComparison.Ordinal)
-                   || !string.Equals(existing.LastName, request.LastName, StringComparison.Ordinal)
-                   || !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase)
-                   || !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.Ordinal)
-                   || existing.DateOfBirth != request.DateOfBirth
-                   || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
-                   || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
-                   || existing.GroupKey != targetGroupKey
-                   || existing.KurinKey != targetKurinKey
-                   || (CanEditRestrictedFields() && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
-        }
-
-        private static bool HasPlastLevelHistoryChange(
-            ICollection<PlastLevelHistoryDto> requested,
-            ICollection<PlastLevelHistory> existing)
-        {
-            if (requested.Count != existing.Count)
-            {
-                return true;
-            }
-
-            var existingByKey = existing.ToDictionary(history => history.PlastLevelHistoryKey);
-            foreach (var dto in requested)
-            {
-                if (!dto.PlastLevelHistoryKey.HasValue || dto.PlastLevelHistoryKey == Guid.Empty)
-                {
-                    return true;
-                }
-
-                if (!existingByKey.TryGetValue(dto.PlastLevelHistoryKey.Value, out var entity))
-                {
-                    return true;
-                }
-
-                if (entity.PlastLevel != dto.PlastLevel || entity.DateAchieved != dto.DateAchieved)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static void MarkVerifiedProfileStaleAfterPhotoChange(MemberEntity member, string? previousBlobName)
-        {
-            if (member.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent
-                && !string.Equals(previousBlobName, member.ProfilePhotoBlobName, StringComparison.Ordinal))
-            {
-                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
-            }
-        }
-
-        private async Task NotifyProfileChangedAfterVerificationAsync(MemberEntity member, CancellationToken cancellationToken)
+        private async Task PublishProfileWentStaleAsync(
+            MemberEntity member,
+            CancellationToken cancellationToken)
         {
             if (!member.UserKey.HasValue)
             {
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = member.UserKey.Value,
-                    Type = AppNotificationType.MemberProfileChangedAfterVerification,
-                    Severity = AppNotificationSeverity.Warn,
-                    Title = "Профіль потребує повторної перевірки",
-                    Body = "Після підтвердження профільні дані змінилися. Потрібно перевірити їх повторно.",
-                    EntityType = "Member",
-                    EntityKey = member.MemberKey,
-                    Route = $"/member/{member.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"member-profile-stale:{member.MemberKey}"
-                },
+            await _events.PublishAsync(
+                new MemberProfileWentStale(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
                 cancellationToken);
         }
+
     }
 }

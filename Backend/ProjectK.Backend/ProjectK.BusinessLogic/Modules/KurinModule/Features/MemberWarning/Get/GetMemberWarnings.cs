@@ -25,10 +25,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Get
 
     public sealed class GetMemberWarningsHandler : IRequestHandler<GetMemberWarnings, ServiceResult<IEnumerable<MemberWarningDto>>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public GetMemberWarningsHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetMemberWarningsHandler(IMemberUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;

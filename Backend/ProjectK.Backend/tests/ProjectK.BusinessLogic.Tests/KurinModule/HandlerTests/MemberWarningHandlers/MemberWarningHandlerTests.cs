@@ -1,8 +1,9 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -16,11 +17,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHan
 
 public class MemberWarningHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
 
     private readonly AssignMemberWarningHandler _assignHandler;
@@ -29,11 +30,11 @@ public class MemberWarningHandlerTests
 
     public MemberWarningHandlerTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _unitOfWorkMock = new Mock<IMemberUnitOfWork>();
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-        _notificationServiceMock = new Mock<INotificationService>();
+        _eventsMock = new Mock<IDomainEventPublisher>();
         _mapperMock = new Mock<AutoMapper.IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
@@ -45,7 +46,7 @@ public class MemberWarningHandlerTests
         _assignHandler = new AssignMemberWarningHandler(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
-            _notificationServiceMock.Object,
+            _eventsMock.Object,
             _mapperMock.Object);
         _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
         _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock);
@@ -59,7 +60,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -92,7 +93,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -114,7 +115,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey});
 
         var activeWarning = new MemberWarning
         {
@@ -158,7 +159,7 @@ public class MemberWarningHandlerTests
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid(), UserKey = memberUserKey });
+            .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = memberUserKey });
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -172,15 +173,13 @@ public class MemberWarningHandlerTests
 
         result.Type.Should().Be(ResultType.Created);
         created.Should().NotBeNull();
-        _notificationServiceMock.Verify(x => x.NotifyAsync(
-            It.Is<NotificationRequest>(request =>
-                request.RecipientUserKey == memberUserKey
-                && request.Type == AppNotificationType.MemberWarningAssigned
-                && request.Severity == AppNotificationSeverity.Warn
-                && request.EntityKey == created!.MemberWarningKey
-                && request.Route == $"/member/{memberKey}"
-                && request.ActorUserKey == actorUserKey
-                && request.DeduplicationKey == $"member-warning:{created.MemberWarningKey}"),
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<MemberWarningAssigned>(raised =>
+                raised.MemberWarningKey == created!.MemberWarningKey
+                && raised.MemberKey == memberKey
+                && raised.MemberUserKey == memberUserKey
+                && raised.Level == MemberWarningLevel.Level1
+                && raised.ActorUserKey == actorUserKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

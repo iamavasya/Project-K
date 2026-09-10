@@ -81,6 +81,21 @@
                         </p>
                         }
 
+                        @if (ownPublicId; as code) {
+                        <p class="member-summary-line text-sm sm:col-span-2">
+                            <span class="member-summary-label">Твій код:</span>
+                            <span class="member-summary-value"> {{ code }}</span>
+                            <p-button
+                                [icon]="publicIdCopied ? 'pi pi-check' : 'pi pi-copy'"
+                                [attr.aria-label]="'Скопіювати код'"
+                                pTooltip="Цей код ти віддаєш проводу іншого куреня, щоб він прийняв тебе"
+                                tooltipPosition="top"
+                                variant="text"
+                                severity="secondary"
+                                (onClick)="copyPublicId()" />
+                        </p>
+                        }
+
                         @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
                         <p class="member-summary-line text-sm sm:col-span-2">
                             <span class="member-summary-label">Верифіковано:</span>
@@ -105,6 +120,7 @@
         </section>
         </ng-template>
 
+        @if (hasYouthProgram) {
         <ng-template [appTileDef]="{ key: 'skills', span: 'half', label: 'Здобуті вмілості' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -173,10 +189,11 @@
                 <div class="space-y-2.5">
                     @for (probe of probeRows; track probe.probeId) {
                     <div
-                        class="probe-summary-row flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                        class="probe-summary-row rounded-lg px-3 py-2.5"
                         [class.probe-summary-row--completed]="probe.isCompleted"
                         [class.probe-summary-row--disabled]="probe.isDisabled"
                     >
+                        <div class="flex items-center justify-between gap-3">
                         <div class="flex min-w-0 items-center gap-2.5">
                             <span class="probe-state-icon" [class.probe-state-icon--completed]="probe.isCompleted">
                                 @if (probe.isCompleted) {
@@ -198,6 +215,16 @@
                             [disabled]="probe.isDisabled || !probe.canOpenDetails"
                             styleClass="!rounded-lg !px-3 !py-1.5 !text-xs"
                          />
+                        </div>
+
+                        @if (probe.completionPercent !== null) {
+                        <div class="probe-progress mt-2.5">
+                            <p-progressbar [value]="probe.completionPercent" [showValue]="false" styleClass="probe-progress__bar" />
+                            <p class="probe-row-meta mt-1 text-xs">
+                                Підписано {{ probe.signedPointsCount }} з {{ probe.pointsCount }} точок · {{ probe.completionPercent }}%
+                            </p>
+                        </div>
+                        }
                     </div>
                     }
                 </div>
@@ -211,9 +238,12 @@
             </section>
         </ng-template>
 
+        }
+
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
             <app-member-awards-tile [awards]="member.awards || []"
+                [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
                 [canReview]="canInlineModerateSkills"
                 (saveAward)="onSaveAward($event)"
@@ -226,8 +256,21 @@
             <app-bento-tile-skeleton class="block h-full" variant="media" />
         </ng-template>
 
-        <ng-template [appTileDef]="{ key: 'placeholder-list', span: 'half', label: 'Список (скоро)' }">
-            <app-bento-tile-skeleton class="block h-full" variant="list" />
+        <ng-template [appTileDef]="{ key: 'memberships', span: 'half', label: 'Членства' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+                <div class="mb-4">
+                    <h2 class="member-section-title text-lg font-semibold">Членства</h2>
+                    <p class="member-section-subtitle text-sm">Де ця людина є і де була</p>
+                </div>
+                <app-member-memberships-tile
+                    [memberships]="memberships"
+                    [isLoading]="isMembershipsLoading"
+                    [loadFailed]="membershipsLoadFailed"
+                    [scopedKurinKey]="scopedKurinKey"
+                    [canManage]="canEditMember"
+                    (moveToGroup)="openMoveToGroup($event)"
+                    (leaveKurin)="confirmLeaveKurin($event)" />
+            </section>
         </ng-template>
     </app-tile-board>
 <p-dialog
@@ -476,3 +519,30 @@
     </section>
     }
 </div>
+
+<p-dialog
+    header="Перевести в гурток"
+    [(visible)]="isMoveToGroupDialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(92vw, 26rem)' }">
+    <p class="mb-4 text-sm">
+        Курінь лишається той самий — міняється лише гурток усередині нього.
+    </p>
+
+    <p-select
+        [options]="groupOptions"
+        [(ngModel)]="selectedGroupKey"
+        optionLabel="name"
+        optionValue="groupKey"
+        placeholder="Поза гуртком"
+        [showClear]="true"
+        styleClass="w-full" />
+
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="isMoveToGroupDialogVisible = false" />
+        <p-button label="Перевести" [loading]="isMovingToGroup" (onClick)="saveMoveToGroup()" />
+    </ng-template>
+</p-dialog>

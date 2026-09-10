@@ -51,18 +51,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
                     $"Kurin with key {request.KurinKey} not found.");
             }
 
-            // What the database will not clear itself: offices and members are NO ACTION against both
-            // the kurin and its гуртки, and the гуртки's own cascade is refused while an office still
-            // points at one. Everything else — гуртки, agenda with its assignments, planning sessions,
-            // mentor assignments, the members' histories — cascades.
+            // The people stay. This is what the release is for: a kurin closing is something that
+            // happens to a kurin, not to the person who belonged to it, and everything they earned —
+            // levels, вмілості, probes, awards, перестороги — is theirs and stays with them, stamped
+            // with the kurin it happened in. They simply end up belonging nowhere, until someone
+            // takes them into another kurin.
+            //
+            // What the database will not clear itself: offices are NO ACTION against both the kurin
+            // and its гуртки, and the гуртки's own cascade is refused while an office still points at
+            // one. Everything else — гуртки, agenda with its assignments, planning sessions, mentor
+            // assignments — cascades.
             await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
 
-            var members = await _unitOfWork.Members.GetTrackedForKurinDeletionAsync(request.KurinKey, cancellationToken);
-
-            foreach (var member in members)
-            {
-                _unitOfWork.Members.Delete(member, cancellationToken);
-            }
+            // Membership rows are the kurin's own record of who was in it, and they name it by a
+            // foreign key, so they go with it. Nothing about the people goes with them.
+            await _unitOfWork.Memberships.RemoveForKurinAsync(request.KurinKey, cancellationToken);
 
             _unitOfWork.Kurins.Delete(existing, cancellationToken);
 

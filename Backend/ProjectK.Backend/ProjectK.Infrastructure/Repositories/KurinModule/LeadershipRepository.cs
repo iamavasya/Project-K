@@ -129,6 +129,47 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                                  .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForAccountInKurinAsync(
+            Guid userKey,
+            Guid kurinKey,
+            CancellationToken cancellationToken = default)
+        {
+            var belongsHere = _context.Memberships
+                .Where(ms => ms.UserKey == userKey && ms.KurinKey == kurinKey && ms.LeftAtUtc == null);
+
+            // An office belongs to a провід, and a провід to this kurin either directly or through
+            // one of its гуртки. Both have to be allowed for, or every гуртковий office falls out.
+            var officesOfThisKurin = _context.Leaderships
+                .Where(l => l.EndDate == null
+                    && (l.KurinKey == kurinKey
+                        || (l.GroupKey != null && l.Group!.KurinKey == kurinKey)));
+
+            var held = await (from ms in belongsHere
+                              join history in _context.LeadershipHistories.Where(h => h.EndDate == null)
+                                  on ms.MemberKey equals history.MemberKey
+                              join office in officesOfThisKurin
+                                  on history.LeadershipKey equals office.LeadershipKey
+                              select new MemberOffice(office.Type, history.Role))
+                .Distinct()
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var mentorsHere = await _context.MentorAssignments
+                .AnyAsync(
+                    assignment => assignment.MentorUserKey == userKey
+                        && assignment.RevokedAtUtc == null
+                        && assignment.Group.KurinKey == kurinKey,
+                    cancellationToken);
+
+            var vykhovnyk = new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+            if (mentorsHere && !held.Contains(vykhovnyk))
+            {
+                held.Add(vykhovnyk);
+            }
+
+            return held;
+        }
+
         public async Task<IReadOnlyList<Guid>> GetActiveOfficeMemberKeysAsync(
             IReadOnlyCollection<LeadershipRole> roles,
             Guid? kurinKey = null,

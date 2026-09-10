@@ -1,8 +1,9 @@
-using MediatR;
+﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -30,13 +31,16 @@ public sealed class UpdateProbePointSignature : IRequest<ServiceResult<ProbeProg
 public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdateProbePointSignature, ServiceResult<ProbeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
 
     public UpdateProbePointSignatureHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
     }
 
@@ -50,7 +54,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var normalizedProbeId = request.ProbeId.Trim();
         var normalizedPointId = request.PointId.Trim();
 
-        var memberKurinKey = await _unitOfWork.Members.GetKurinKeyByMemberAsync(request.MemberKey, cancellationToken);
+        var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
             return new ServiceResult<ProbeProgressResponse>(ResultType.NotFound);
@@ -62,8 +66,8 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var probeProgress = await _unitOfWork.ProbeProgresses
             .GetByMemberAndProbeIdAsync(request.MemberKey, normalizedProbeId, cancellationToken);
 
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
-        var actorName = await ResolveActorDisplayNameAsync(actor.UserKey, cancellationToken);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actorName = actor.Name;
         var now = DateTime.UtcNow;
         var pointUpdateContext = new PointSignatureUpdateContext(
             IsSigned: request.IsSigned,
@@ -73,7 +77,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
             PointId: normalizedPointId,
             TimestampUtc: now,
             ActorUserKey: actor.UserKey,
-            ActorRole: actor.ActorRole,
+            ActorRole: actor.Role,
             ActorName: actorName,
             CancellationToken: cancellationToken);
 
@@ -260,25 +264,4 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
             .ToList();
     }
 
-    private async Task<string?> ResolveActorDisplayNameAsync(Guid? actorUserKey, CancellationToken cancellationToken)
-    {
-        if (actorUserKey is null)
-        {
-            return null;
-        }
-
-        var actorMember = await _unitOfWork.Members.GetByUserKeyAsync(actorUserKey.Value, cancellationToken);
-        if (actorMember is not null)
-        {
-            var fullName = $"{actorMember.FirstName} {actorMember.LastName}".Trim();
-            if (!string.IsNullOrWhiteSpace(fullName))
-            {
-                return fullName;
-            }
-
-            return $"member:{actorMember.MemberKey} / user:{actorUserKey.Value}";
-        }
-
-        return $"user:{actorUserKey.Value}";
-    }
 }

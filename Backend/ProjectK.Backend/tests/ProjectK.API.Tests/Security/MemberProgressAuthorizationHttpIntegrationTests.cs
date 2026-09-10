@@ -227,7 +227,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
             var scopeReader = new Mock<IResourceScopeReader>();
             scopeReader
-                .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
             scopeReader

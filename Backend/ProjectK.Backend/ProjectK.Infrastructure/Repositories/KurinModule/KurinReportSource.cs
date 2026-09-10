@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -41,20 +42,44 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(assignment => groupKeys.Contains(assignment.GroupKey) && assignment.RevokedAtUtc == null)
             .ToListAsync(cancellationToken);
 
+        // Who the report is about is decided by membership, and the membership is also what says
+        // which гурток each of them is in — the person's own record no longer carries either.
+        var memberships = await _context.Memberships
+            .AsNoTracking()
+            .Where(membership => membership.KurinKey == kurinKey && membership.LeftAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        var memberKeysHere = memberships.Select(membership => membership.MemberKey).ToArray();
+
         var members = await _context.Members
             .AsNoTracking()
             .AsSplitQuery()
-            .Where(member => member.KurinKey == kurinKey)
+            .Where(member => memberKeysHere.Contains(member.MemberKey))
             .Include(member => member.PlastLevelHistory)
-            .Include(member => member.ProbeProgresses)
-            .Include(member => member.ProbePointProgresses)
-            .Include(member => member.BadgeProgresses)
             .Include(member => member.MemberWarnings)
             .Include(member => member.MemberAwards)
             .Include(member => member.LeadershipHistories)
                 .ThenInclude(history => history.Leadership)
             .OrderBy(member => member.LastName)
             .ThenBy(member => member.FirstName)
+            .ToListAsync(cancellationToken);
+
+        // Progress hangs off the member by key alone, so it is read on its own rather than joined.
+        var memberKeys = members.Select(member => member.MemberKey).ToArray();
+
+        var probeProgress = await _context.ProbeProgresses
+            .AsNoTracking()
+            .Where(progress => memberKeys.Contains(progress.MemberKey))
+            .ToListAsync(cancellationToken);
+
+        var probePointProgress = await _context.ProbePointProgresses
+            .AsNoTracking()
+            .Where(progress => memberKeys.Contains(progress.MemberKey))
+            .ToListAsync(cancellationToken);
+
+        var badgeProgress = await _context.BadgeProgresses
+            .AsNoTracking()
+            .Where(progress => memberKeys.Contains(progress.MemberKey))
             .ToListAsync(cancellationToken);
 
         var userKeys = members
@@ -70,31 +95,28 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(user => userKeys.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, cancellationToken);
 
-        var roleRows = await (
-                from userRole in _context.UserRoles.AsNoTracking()
-                join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
-                where userKeys.Contains(userRole.UserId)
-                select new { userRole.UserId, role.Name })
-            .ToListAsync(cancellationToken);
-
-        var rolesByUserKey = roleRows
-            .GroupBy(row => row.UserId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(row => row.Name)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Cast<string>()
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(name => name)
-                    .ToArray() as IReadOnlyList<string>);
-
+        // Уряди більше не читаються тут окремим запитом. Вони вже приходять із людиною
+        // (`Include(LeadershipHistories).ThenInclude(Leadership)`), а звіт друкує їх словами, не
+        // системними ролями — тож той запит рахував те саме вдруге, аби перекласти назад у
+        // "KV.Vykhovnyk".
         return new KurinReportSourceData(
             kurin,
             groups,
             mentorAssignments,
             members,
             (IReadOnlyDictionary<Guid, AppUser>)usersByKey,
-            rolesByUserKey);
+            GroupByMember(probeProgress, progress => progress.MemberKey),
+            GroupByMember(probePointProgress, progress => progress.MemberKey),
+            GroupByMember(badgeProgress, progress => progress.MemberKey),
+            memberships.ToDictionary(membership => membership.MemberKey));
+    }
+
+    private static IReadOnlyDictionary<Guid, IReadOnlyList<T>> GroupByMember<T>(
+        IEnumerable<T> rows,
+        Func<T, Guid> memberKeyOf)
+    {
+        return rows
+            .GroupBy(memberKeyOf)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<T>)group.ToArray());
     }
 }

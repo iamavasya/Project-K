@@ -15,7 +15,6 @@ namespace ProjectK.Common.Entities.KurinModule
         public string? Description { get; set; }
         public string? SilhouetteBlobName { get; set; }
         public Kurin Kurin { get; set; }
-        public ICollection<Member> Members { get; set; } = new List<Member>();
         public ICollection<MentorAssignment> MentorAssignments { get; set; } = new List<MentorAssignment>();
         public Leadership Leadership { get; set; }
 

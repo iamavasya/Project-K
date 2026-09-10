@@ -7,8 +7,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
+using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification
 {
@@ -51,24 +53,29 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
 
     public sealed class MemberProfileVerificationService : IMemberProfileVerificationService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
         private readonly IResourceScopeReader _scopeReader;
+        private readonly IUnitOfWork _kurinData;
+        private readonly IMembershipRepository _memberships;
 
         public MemberProfileVerificationService(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
+            IDomainEventPublisher events,
             IMapper mapper,
-            IResourceScopeReader scopeReader)
+            IResourceScopeReader scopeReader,
+            IUnitOfWork kurinData)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
             _mapper = mapper;
             _scopeReader = scopeReader;
+            _kurinData = kurinData;
+            _memberships = kurinData.Memberships;
         }
 
         public async Task<ServiceResult<MemberResponse>> VerifyAsync(
@@ -92,7 +99,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             var result = await SaveAsync(member, cancellationToken);
             if (result.Type == ResultType.Success)
             {
-                await NotifyProfileVerifiedAsync(member, cancellationToken);
+                await PublishProfileVerifiedAsync(member, cancellationToken);
             }
 
             return result;
@@ -130,7 +137,23 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
                 return new ServiceResult<MemberResponse>(ResultType.NotFound);
             }
 
-            if (!member.Kurin.ProfileVerificationEnabled)
+            // Whether profiles are checked at all is the asking kurin's own setting, and it is that
+            // kurin's membership that puts this person in reach — a person the caller cannot reach
+            // is refused below in any case.
+            var membership = await _memberships.GetActiveForMemberAsync(member.MemberKey, cancellationToken);
+            var here = membership.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
+                ?? membership.FirstOrDefault();
+
+            if (here is null)
+            {
+                return ServiceResult<MemberResponse>.Failure(
+                    ResultType.BadRequest,
+                    "MemberBelongsNowhere",
+                    "This person does not currently belong to a kurin.");
+            }
+
+            var kurin = await _kurinData.Kurins.GetByKeyAsync(here.KurinKey, cancellationToken);
+            if (kurin is null || !kurin.ProfileVerificationEnabled)
             {
                 return ServiceResult<MemberResponse>.Failure(
                     ResultType.BadRequest,
@@ -143,7 +166,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
                 return new ServiceResult<MemberResponse>(ResultType.Forbidden);
             }
 
-            if (await CanVerifyAsync(member, cancellationToken))
+            if (await CanVerifyAsync(here, cancellationToken))
             {
                 return null;
             }
@@ -151,7 +174,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             return new ServiceResult<MemberResponse>(ResultType.Forbidden);
         }
 
-        private async Task<bool> CanVerifyAsync(MemberEntity member, CancellationToken cancellationToken)
+        private async Task<bool> CanVerifyAsync(MembershipEntity here, CancellationToken cancellationToken)
         {
             if (_currentUserContext.IsAdmin())
             {
@@ -161,11 +184,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             if (_currentUserContext.CanManageWholeKurin())
             {
                 return _currentUserContext.KurinKey.HasValue
-                       && _currentUserContext.KurinKey.Value == member.KurinKey;
+                       && _currentUserContext.KurinKey.Value == here.KurinKey;
             }
 
             if (!_currentUserContext.CanLeadGroups()
-                || !member.GroupKey.HasValue
+                || !here.GroupKey.HasValue
                 || !_currentUserContext.UserId.HasValue
                 || !_currentUserContext.KurinKey.HasValue)
             {
@@ -177,7 +200,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
                 _currentUserContext.KurinKey.Value,
                 cancellationToken);
 
-            return ledGroups.Contains(member.GroupKey.Value);
+            return ledGroups.Contains(here.GroupKey.Value);
         }
 
         private async Task<ServiceResult<MemberResponse>> SaveAsync(MemberEntity member, CancellationToken cancellationToken)
@@ -192,27 +215,15 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVeri
             return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member));
         }
 
-        private async Task NotifyProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)
+        private async Task PublishProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)
         {
             if (!member.UserKey.HasValue)
             {
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = member.UserKey.Value,
-                    Type = AppNotificationType.MemberProfileVerified,
-                    Severity = AppNotificationSeverity.Success,
-                    Title = "Профільні дані підтверджено",
-                    Body = "Ваші профільні дані підтверджено як актуальні.",
-                    EntityType = "Member",
-                    EntityKey = member.MemberKey,
-                    Route = $"/member/{member.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"member-profile-verified:{member.MemberKey}"
-                },
+            await _events.PublishAsync(
+                new MemberProfileVerified(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
                 cancellationToken);
         }
 

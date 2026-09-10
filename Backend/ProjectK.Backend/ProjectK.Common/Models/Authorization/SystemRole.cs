@@ -3,11 +3,16 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.Common.Models.Authorization;
 
 /// <summary>
-/// The access layer's role identities, stored as ASP.NET Identity roles. Office roles mirror the
-/// діловодство registry one-to-one (<c>{провід}.{офіс}</c>, e.g. <c>KV.Zvyazkovyi</c>) and are kept
-/// in sync from active <c>LeadershipHistory</c> by <c>ILeadershipRoleSyncService</c>. <see cref="Admin"/>
-/// is system-level and assigned independently; <see cref="Member"/> is the baseline every
-/// authenticated member carries.
+/// The access layer's role names. Office roles mirror the діловодство registry one-to-one
+/// (<c>{провід}.{офіс}</c>, e.g. <c>KV.Zvyazkovyi</c>) and are worked out by
+/// <c>IAccessContextResolver</c> from the offices held in the kurin the account is currently in.
+/// <para>
+/// They are <b>not</b> stored on the account. They used to be, and that made "виховник" a thing a
+/// person was everywhere rather than in one kurin — which stops being true the moment someone
+/// belongs to two. <see cref="Admin"/> is the one role the identity store still holds, because it
+/// really does mean the same thing everywhere; <see cref="Member"/> is the baseline every
+/// authenticated account carries.
+/// </para>
 /// </summary>
 public static class SystemRole
 {

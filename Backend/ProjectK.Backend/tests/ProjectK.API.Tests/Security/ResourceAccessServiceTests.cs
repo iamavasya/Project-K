@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -337,7 +337,7 @@ public class ResourceAccessServiceTests
 
         var (service, scopeReader, _) = CreateCachingFixture(kurinKey, groupKey, mentorUserId);
         scopeReader
-            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
 
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
@@ -358,7 +358,7 @@ public class ResourceAccessServiceTests
 
         var (service, scopeReader, cache) = CreateCachingFixture(kurinKey, groupKey, mentorUserId);
         scopeReader
-            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
 
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
@@ -425,7 +425,7 @@ public class ResourceAccessServiceTests
 
         var scopeReader = new Mock<IResourceScopeReader>();
         scopeReader
-            .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ResourceScope?)null);
 
         // A mentor covers the group they belong to unless a test says otherwise.
@@ -456,7 +456,7 @@ public class ResourceAccessServiceTests
         public void Scope(ResourceType resourceType, Guid resourceKey, ResourceScope? scope)
         {
             ScopeReader
-                .Setup(x => x.GetScopeAsync(resourceType, resourceKey, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetScopeAsync(resourceType, resourceKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(scope);
         }
 

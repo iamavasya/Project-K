@@ -25,6 +25,11 @@ function resolveCompletedAtUtc(progress: ProbeProgressDto | undefined): string |
   return progress.completedAtUtc ?? progress.verifiedAtUtc;
 }
 
+/** Скільки точок цієї проби підписано. Непідписані приходять у списку теж, тож рахуємо прапорець. */
+function countSignedPoints(progress: ProbeProgressDto | undefined): number {
+  return (progress?.pointSignatures ?? []).filter(point => point.isSigned).length;
+}
+
 function isCompletedStatus(status: ProbeProgressStatus): boolean {
   return status === ProbeProgressStatus.Completed || status === ProbeProgressStatus.Verified;
 }
@@ -55,6 +60,10 @@ export function buildMemberProbeRows(
     const probe = probeById.get(template.probeId);
     const progress = progressByProbeId.get(template.probeId);
     const status = normalizeProbeProgressStatus(progress?.status ?? ProbeProgressStatus.NotStarted);
+    const totalPoints = probe?.pointsCount ?? 0;
+    const signedPoints = isCompletedStatus(status) && countSignedPoints(progress) === 0
+      ? totalPoints
+      : countSignedPoints(progress);
 
     return {
       probeId: probe?.id ?? template.probeId,
@@ -66,7 +75,13 @@ export function buildMemberProbeRows(
       isDisabled: template.isPolicyDisabled,
       canOpenDetails: !template.isPolicyDisabled && !!probe,
       pointsCount: probe?.pointsCount ?? null,
-      sectionsCount: probe?.sectionsCount ?? null
+      sectionsCount: probe?.sectionsCount ?? null,
+      signedPointsCount: signedPoints,
+      // A закрита проба reads as full even when the point-by-point data never arrived: the probe is
+      // done, and showing a half-filled bar under the word "завершено" would contradict it.
+      completionPercent: totalPoints
+        ? Math.round((signedPoints / totalPoints) * 100)
+        : (isCompletedStatus(status) ? 100 : null)
     };
   });
 

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -13,11 +14,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.G
     public class GetGroupMentorsQueryHandler : IRequestHandler<GetGroupMentorsQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly IMapper _mapper;
 
-        public GetGroupMentorsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetGroupMentorsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _mapper = mapper;
         }
 
@@ -26,10 +29,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.G
             var assignments = await _unitOfWork.MentorAssignments.GetByGroupKeyAsync(request.GroupKey, cancellationToken);
             var activeAssignments = assignments.Where(a => a.RevokedAtUtc == null).ToList();
 
-            var mentorMembers = new List<ProjectK.Common.Entities.KurinModule.Member>();
+            var mentorMembers = new List<MemberSummary>();
             foreach (var assignment in activeAssignments)
             {
-                var member = await _unitOfWork.Members.GetByUserKeyAsync(assignment.MentorUserKey, cancellationToken);
+                var member = await _members.FindByAccountAsync(assignment.MentorUserKey, cancellationToken);
                 if (member != null)
                 {
                     mentorMembers.Add(member);

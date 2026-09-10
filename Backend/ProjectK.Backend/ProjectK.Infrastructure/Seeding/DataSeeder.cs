@@ -22,8 +22,10 @@ namespace ProjectK.Infrastructure.Seeding
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-            // 1. Seed Roles (Required for all environments): Admin, Member and every office role.
-            foreach (var roleName in SystemRole.All())
+            // 1. Seed the two roles the identity store still holds. Office roles are not among them:
+            // what an office grants is worked out from the registry for the kurin the account is in,
+            // and storing it on the account is what used to make it true everywhere at once.
+            foreach (var roleName in new[] { SystemRole.Admin, SystemRole.Member })
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
@@ -78,9 +80,10 @@ namespace ProjectK.Infrastructure.Seeding
                 .Select(g => g.GroupKey)
                 .ToListAsync();
 
-            var memberKeys = await dbContext.Members
-                .Where(m => m.KurinKey == kurinKey)
-                .Select(m => m.MemberKey)
+            var memberKeys = await dbContext.Memberships
+                .Where(ms => ms.KurinKey == kurinKey)
+                .Select(ms => ms.MemberKey)
+                .Distinct()
                 .ToListAsync();
 
             var usersToDelete = await userManager.Users
@@ -202,8 +205,15 @@ namespace ProjectK.Infrastructure.Seeding
                 .ToListAsync();
             dbContext.MentorAssignments.RemoveRange(mentorAssignments);
 
+            // The seeder wipes its own demo kurin outright, people included — the reset exists to
+            // give every run the same starting point, and these are not real people.
+            var memberships = await dbContext.Memberships
+                .Where(ms => ms.KurinKey == kurinKey)
+                .ToListAsync();
+            dbContext.Memberships.RemoveRange(memberships);
+
             var members = await dbContext.Members
-                .Where(m => m.KurinKey == kurinKey)
+                .Where(m => memberKeys.Contains(m.MemberKey))
                 .ToListAsync();
             dbContext.Members.RemoveRange(members);
 
@@ -229,7 +239,6 @@ namespace ProjectK.Infrastructure.Seeding
                     EmailConfirmed = true,
                     FirstName = firstName,
                     LastName = lastName,
-                    KurinKey = kurinKey,
                     OnboardingStatus = OnboardingStatus.Active
                 };
 
@@ -303,11 +312,29 @@ namespace ProjectK.Infrastructure.Seeding
                     Email = email,
                     PhoneNumber = phoneNumber,
                     DateOfBirth = dateOfBirth,
-                    KurinKey = kurinKey,
-                    GroupKey = groupKey,
                     UserKey = user!.Id
                 };
                 dbContext.Members.Add(member);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            // Seeded people are written straight to the tables, so nothing announces where they were
+            // put. Without this row they exist and belong to no kurin, which is to say they are in
+            // no list and in nobody's reach.
+            var alreadyPlaced = await dbContext.Memberships.AnyAsync(
+                ms => ms.MemberKey == member.MemberKey && ms.LeftAtUtc == null,
+                cancellationToken);
+            if (!alreadyPlaced)
+            {
+                dbContext.Memberships.Add(new Membership
+                {
+                    MemberKey = member.MemberKey,
+                    UserKey = member.UserKey,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    Kind = MembershipKind.Youth,
+                    JoinedAtUtc = DateTime.UtcNow
+                });
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
@@ -342,7 +369,6 @@ namespace ProjectK.Infrastructure.Seeding
                     EmailConfirmed = true,
                     FirstName = firstName,
                     LastName = lastName,
-                    KurinKey = kurinKey,
                     OnboardingStatus = OnboardingStatus.Active
                 };
 

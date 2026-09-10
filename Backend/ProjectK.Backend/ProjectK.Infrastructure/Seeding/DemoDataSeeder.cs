@@ -14,7 +14,7 @@ namespace ProjectK.Infrastructure.Seeding
     /// <summary>
     /// Seeds a realistic kurin for local testing: three гуртки with діловодські offices, a курінний
     /// провід, a КВ (Зв'язковий + Впорядники), and mentor assignments — everyone a bare Member whose
-    /// access is derived from their office via <see cref="ILeadershipRoleSyncService"/>.
+    /// access is derived from their office when a token is minted.
     /// </summary>
     public class DemoDataSeeder : IDemoDataSeeder
     {
@@ -45,21 +45,18 @@ namespace ProjectK.Infrastructure.Seeding
 
         private readonly AppDbContext _dbContext;
         private readonly UserManager<AppUser> _userManager;
-        private readonly ILeadershipRoleSyncService _roleSync;
 
         private int _personIndex;
         private int _emailIndex;
 
-        public DemoDataSeeder(AppDbContext dbContext, UserManager<AppUser> userManager, ILeadershipRoleSyncService roleSync)
+        public DemoDataSeeder(AppDbContext dbContext, UserManager<AppUser> userManager)
         {
             _dbContext = dbContext;
             _userManager = userManager;
-            _roleSync = roleSync;
         }
 
         public async Task SeedAsync(CancellationToken cancellationToken = default)
         {
-            var membersToSync = new HashSet<Guid>();
 
             // 1. Kurin
             var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == 1, cancellationToken);
@@ -79,7 +76,6 @@ namespace ProjectK.Infrastructure.Seeding
             var zvyazkovyi = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
             var kvLeadership = await EnsureLeadershipAsync(LeadershipType.KV, kurin.KurinKey, null, cancellationToken);
             DataSeeder.AddOffice(kvLeadership, zvyazkovyi.MemberKey, LeadershipRole.Zvyazkovyi);
-            membersToSync.Add(zvyazkovyi.MemberKey);
 
             // 4. Ordinary гуртки: 8 members each, first 6 hold гуртковий-провід offices.
             foreach (var group in new[] { sokoly, levy })
@@ -91,7 +87,6 @@ namespace ProjectK.Infrastructure.Seeding
                     if (i < GroupOffices.Length)
                     {
                         DataSeeder.AddOffice(leadership, member.MemberKey, GroupOffices[i]);
-                        membersToSync.Add(member.MemberKey);
                     }
                 }
             }
@@ -102,7 +97,6 @@ namespace ProjectK.Infrastructure.Seeding
             {
                 var member = await CreateMemberAsync(kurin.KurinKey, vedmedi.GroupKey, cancellationToken);
                 DataSeeder.AddOffice(kurinLeadership, member.MemberKey, KurinOffices[i]);
-                membersToSync.Add(member.MemberKey);
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -119,18 +113,14 @@ namespace ProjectK.Infrastructure.Seeding
                     GroupKey = group.GroupKey,
                     AssignedAtUtc = DateTime.UtcNow
                 });
-                membersToSync.Add(mentor.MemberKey);
             }
 
             // 7. One Інструктор in the КВ.
             var instructor = await CreateMemberAsync(kurin.KurinKey, null, cancellationToken);
             DataSeeder.AddOffice(kvLeadership, instructor.MemberKey, LeadershipRole.Instruktor);
-            membersToSync.Add(instructor.MemberKey);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // 8. Derive system roles from the offices and assignments just created.
-            await _roleSync.SyncMembersAsync(membersToSync, cancellationToken);
         }
 
         private async Task<Member> CreateMemberAsync(Guid kurinKey, Guid? groupKey, CancellationToken cancellationToken)

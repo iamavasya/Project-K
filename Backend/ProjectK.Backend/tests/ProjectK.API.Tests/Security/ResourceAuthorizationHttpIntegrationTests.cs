@@ -94,7 +94,7 @@ public class ResourceAuthorizationHttpIntegrationTests
 
             var scopeReader = new Mock<IResourceScopeReader>();
             scopeReader
-                .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(memberKurinKey, null, null));
 
             builder.Services.AddScoped(_ => scopeReader.Object);

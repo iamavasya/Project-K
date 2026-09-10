@@ -30,6 +30,9 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
                 cancellationToken);
     }
 
+    public Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => Context.BadgeProgresses.CountAsync(x => x.MemberKey == memberKey, cancellationToken);
+
     public async Task<IEnumerable<BadgeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return await Context.BadgeProgresses
@@ -66,4 +69,20 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
     }
 
     public override void Update(BadgeProgress entity, CancellationToken cancellationToken = default) => MarkModified(entity);
+
+    public async Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        if (memberKeys.Count == 0)
+        {
+            return;
+        }
+
+        // Through the tracker rather than ExecuteDelete: this runs inside a use case whose
+        // SaveChanges has not happened yet, and an out-of-band delete would commit ahead of it.
+        var rows = await Context.BadgeProgresses
+            .Where(row => memberKeys.Contains(row.MemberKey))
+            .ToListAsync(cancellationToken);
+
+        Context.BadgeProgresses.RemoveRange(rows);
+    }
 }

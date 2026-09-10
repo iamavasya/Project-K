@@ -154,8 +154,10 @@ jobs:
         package: .
 
     # The deploy step returns before the app is serving: startup runs migrations and the seeders
-    # first. Announcing straight after it asked a booting process for work and took its 500 as a
-    # failed release, which is how 0.19.1 shipped with a red deploy job over a healthy deploy.
+    # first, so a job that ends there says "deployed" about a process that cannot yet answer. This
+    # was found the hard way — 0.19.1 shipped with a red deploy job over a healthy deploy, because
+    # the step that followed asked a booting process for work and took its 500 as a failed release.
+    # That step is gone; waiting for /health stays, because a green deploy should mean it serves.
     - name: Wait for the API to come back up
       if: github.event_name == 'release'
       shell: bash
@@ -172,20 +174,6 @@ jobs:
         done
         echo "API did not answer ${health} within five minutes." >&2
         exit 1
-
-    - name: Create public release announcement draft
-      if: github.event_name == 'release'
-      shell: bash
-      env:
-        PROJECTK_API_BASE_URL: ${{ vars.PROJECTK_API_BASE_URL }}
-        PROJECTK_SERVICE_TOKEN: ${{ secrets.PROJECTK_SERVICE_TOKEN }}
-        ANNOUNCEMENT_TITLE: ${{ github.event.release.name }}
-        ANNOUNCEMENT_BODY: ${{ github.event.release.body }}
-        ANNOUNCEMENT_SOURCE_ID: ${{ github.event.release.tag_name }}
-        ANNOUNCEMENT_SOURCE_URL: ${{ github.event.release.html_url }}
-        ANNOUNCEMENT_ENVIRONMENT: production
-        ANNOUNCEMENT_VERSION: ${{ github.event.release.tag_name }}
-      run: bash .github/scripts/create-public-announcement-draft.sh
 
     - name: Notify dev Telegram on backend deploy failure
       if: failure()

@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -16,15 +17,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set
         private readonly UserManager<AppUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILoginResponseFactory _loginResponseFactory;
+        private readonly IMembershipDirectory _memberships;
 
         public SetKurinScopeCommandHandler(
             UserManager<AppUser> userManager,
             IUnitOfWork unitOfWork,
-            ILoginResponseFactory loginResponseFactory)
+            ILoginResponseFactory loginResponseFactory,
+            IMembershipDirectory memberships)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _loginResponseFactory = loginResponseFactory;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<LoginUserResponse>> Handle(
@@ -37,16 +41,22 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set
                 return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
-            if (!roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase))
-            {
-                return ServiceResult<LoginUserResponse>.Failure(
-                    ResultType.Forbidden,
-                    "kurin_scope_forbidden",
-                    "Only an admin can change kurin scope.");
-            }
+            // Switching kurin is no longer an admin's privilege — it is what someone does when they
+            // belong to more than one. An admin steps into any kurin, or out of all of them; everyone
+            // else may only stand where they actually are, which is what their memberships say.
+            var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
 
-            if (request.KurinKey is not null)
+            if (request.KurinKey is null)
+            {
+                if (!isAdmin)
+                {
+                    return ServiceResult<LoginUserResponse>.Failure(
+                        ResultType.Forbidden,
+                        "kurin_scope_forbidden",
+                        "Only an admin can be outside every kurin.");
+                }
+            }
+            else
             {
                 var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey.Value, cancellationToken);
                 if (kurin is null)
@@ -55,6 +65,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set
                         ResultType.NotFound,
                         "kurin_not_found",
                         "Kurin to scope into was not found.");
+                }
+
+                if (!isAdmin)
+                {
+                    var belongsTo = await _memberships.GetKurinKeysForAccountAsync(user.Id, cancellationToken);
+                    if (!belongsTo.Contains(request.KurinKey.Value))
+                    {
+                        return ServiceResult<LoginUserResponse>.Failure(
+                            ResultType.Forbidden,
+                            "kurin_scope_forbidden",
+                            "You have no current membership in that kurin.");
+                    }
                 }
             }
 

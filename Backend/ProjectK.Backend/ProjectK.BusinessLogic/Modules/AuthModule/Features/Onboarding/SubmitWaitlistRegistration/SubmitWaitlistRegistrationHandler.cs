@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -12,10 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWa
     public class SubmitWaitlistRegistrationHandler : IRequestHandler<SubmitWaitlistRegistrationCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
 
-        public SubmitWaitlistRegistrationHandler(IUnitOfWork unitOfWork)
+        public SubmitWaitlistRegistrationHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
         }
 
         public async Task<ServiceResult<Guid>> Handle(SubmitWaitlistRegistrationCommand request, CancellationToken cancellationToken)
@@ -33,8 +36,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWa
             }
 
             // Also check existing members just in case
-            var memberByEmail = await _unitOfWork.Members.GetByEmailAsync(request.Email, cancellationToken);
-            if (memberByEmail != null)
+            if (await _members.ExistsByEmailAsync(request.Email, cancellationToken))
             {
                 return ServiceResult<Guid>.Failure(ResultType.Conflict, "MemberEmailExists", "A member with this email already exists in the system.");
             }

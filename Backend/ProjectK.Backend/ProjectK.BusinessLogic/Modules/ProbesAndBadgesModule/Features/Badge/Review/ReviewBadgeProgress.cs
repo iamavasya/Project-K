@@ -3,6 +3,8 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -13,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Re
 
 public sealed class ReviewBadgeProgress : IRequest<ServiceResult<BadgeProgressResponse>>
 {
-    public ReviewBadgeProgress(Guid memberKey, string badgeId, bool isApproved, string? note)
+    public ReviewBadgeProgress(Guid memberKey, string badgeId, bool? isApproved, string? note)
     {
         MemberKey = memberKey;
         BadgeId = badgeId;
@@ -23,24 +25,28 @@ public sealed class ReviewBadgeProgress : IRequest<ServiceResult<BadgeProgressRe
 
     public Guid MemberKey { get; }
     public string BadgeId { get; }
-    public bool IsApproved { get; }
+    /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
+    public bool? IsApproved { get; }
     public string? Note { get; }
 }
 
 public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProgress, ServiceResult<BadgeProgressResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly INotificationService _notificationService;
+    private readonly IDomainEventPublisher _events;
 
     public ReviewBadgeProgressHandler(
         IUnitOfWork unitOfWork,
+        IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        INotificationService notificationService)
+        IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
+        _members = members;
         _currentUserContext = currentUserContext;
-        _notificationService = notificationService;
+        _events = events;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(ReviewBadgeProgress request, CancellationToken cancellationToken)
@@ -60,17 +66,20 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
 
         var fromStatus = progress.Status;
         var canReviewSubmitted = fromStatus == BadgeProgressStatus.Submitted;
-        var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !request.IsApproved;
+        // Said, because the validator refused the request otherwise.
+        var approved = request.IsApproved!.Value;
+
+        var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !approved;
         if (!canReviewSubmitted && !canRemoveConfirmed)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.Conflict);
         }
 
         var now = DateTime.UtcNow;
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
-        var targetStatus = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var targetStatus = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
         string action;
-        if (request.IsApproved)
+        if (approved)
         {
             action = "Confirmed";
         }
@@ -86,8 +95,8 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         progress.Status = targetStatus;
         progress.ReviewedAtUtc = now;
         progress.ReviewedByUserKey = actor.UserKey;
-        progress.ReviewedByName = actor.ActorName;
-        progress.ReviewedByRole = actor.ActorRole;
+        progress.ReviewedByName = actor.Name;
+        progress.ReviewedByRole = actor.Role;
         progress.ReviewNote = request.Note;
 
         progress.AuditEvents.Add(new BadgeProgressAuditEvent
@@ -96,8 +105,8 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             ToStatus = targetStatus,
             Action = action,
             ActorUserKey = actor.UserKey,
-            ActorName = actor.ActorName,
-            ActorRole = actor.ActorRole,
+            ActorName = actor.Name,
+            ActorRole = actor.Role,
             OccurredAtUtc = now,
             Note = request.Note
         });
@@ -108,7 +117,7 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.InternalServerError);
         }
 
-        await NotifyMemberOwnerAsync(progress, request.IsApproved, action, cancellationToken);
+        await NotifyMemberOwnerAsync(progress, approved, action, cancellationToken);
 
         return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
     }
@@ -119,38 +128,21 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         string action,
         CancellationToken cancellationToken)
     {
-        var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(progress.MemberKey, cancellationToken);
+        var ownerUserKey = await _members.FindAccountKeyAsync(progress.MemberKey, cancellationToken);
         if (ownerUserKey is null)
         {
             return;
         }
 
-        var wasRemoved = string.Equals(action, "RemovedConfirmed", StringComparison.Ordinal);
-        var title = isApproved
-            ? "Вмілість зараховано"
-            : wasRemoved
-                ? "Підтвердження вмілості скасовано"
-                : "Вмілість потребує доопрацювання";
-        var body = isApproved
-            ? "Вашу вмілість зараховано."
-            : wasRemoved
-                ? "Раніше зараховану вмілість вилучено."
-                : "Вашу вмілість не зараховано. Перегляньте зауваження та подайте її повторно.";
-
-        await _notificationService.NotifyAsync(
-            new NotificationRequest
-            {
-                RecipientUserKey = ownerUserKey.Value,
-                Type = AppNotificationType.MemberSkillReviewed,
-                Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
-                Title = title,
-                Body = body,
-                EntityType = "BadgeProgress",
-                EntityKey = progress.BadgeProgressKey,
-                Route = $"/member/{progress.MemberKey}",
-                ActorUserKey = _currentUserContext.UserId,
-                DeduplicationKey = $"skill-review-result:{progress.MemberKey}:{progress.BadgeId}"
-            },
+        await _events.PublishAsync(
+            new BadgeProgressReviewed(
+                progress.BadgeProgressKey,
+                progress.BadgeId,
+                progress.MemberKey,
+                ownerUserKey.Value,
+                isApproved,
+                string.Equals(action, "RemovedConfirmed", StringComparison.Ordinal),
+                _currentUserContext.UserId),
             cancellationToken);
     }
 }

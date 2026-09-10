@@ -11,9 +11,9 @@ public record GetKurinMentorCandidates(Guid KurinKey) : IRequest<ServiceResult<I
 
 public class GetKurinMentorCandidatesHandler : IRequestHandler<GetKurinMentorCandidates, ServiceResult<IEnumerable<MemberLookupDto>>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IMemberUnitOfWork _uow;
 
-    public GetKurinMentorCandidatesHandler(IUnitOfWork uow)
+    public GetKurinMentorCandidatesHandler(IMemberUnitOfWork uow)
     {
         _uow = uow;
     }

@@ -517,118 +517,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AppNotifications");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.PublicAnnouncementDraft", b =>
-                {
-                    b.Property<Guid>("PublicAnnouncementDraftKey")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ApprovedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ApprovedByUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(4096)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Codename")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedByUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Environment")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ImageAltText")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ImageBlobKey")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("ImagePlacement")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("LastPublishError")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("ParseMode")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("PublishedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("PublishedByUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("RenderedText")
-                        .HasMaxLength(4096)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SourceId")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("SourceType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SourceUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TelegramMessageId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("TemplateDataJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TemplateKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedByUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Version")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("PublicAnnouncementDraftKey");
-
-                    b.HasIndex("SourceType", "SourceId");
-
-                    b.HasIndex("Status", "CreatedAtUtc");
-
-                    b.ToTable("PublicAnnouncementDrafts");
-                });
-
             modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.SystemSetting", b =>
                 {
                     b.Property<string>("Key")
@@ -877,6 +765,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Branch")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -1009,12 +900,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("GroupKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("KurinKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1044,6 +929,11 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid?>("ProfileVerifiedByUserKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("School")
                         .HasColumnType("nvarchar(max)");
 
@@ -1055,9 +945,8 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasKey("MemberKey");
 
-                    b.HasIndex("GroupKey");
-
-                    b.HasIndex("KurinKey");
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.HasIndex("UserKey")
                         .IsUnique()
@@ -1133,6 +1022,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("IssuedByUserKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -1152,9 +1044,61 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasIndex("ExpiresAtUtc");
 
+                    b.HasIndex("KurinKey", "RevokedAtUtc");
+
                     b.HasIndex("MemberKey", "Level");
 
                     b.ToTable("MemberWarnings");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Membership", b =>
+                {
+                    b.Property<Guid>("MembershipKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("GroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("JoinedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LeftAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("MembershipKey");
+
+                    b.HasIndex("GroupKey");
+
+                    b.HasIndex("KurinKey", "LeftAtUtc");
+
+                    b.HasIndex("MemberKey", "KurinKey")
+                        .IsUnique()
+                        .HasFilter("[LeftAtUtc] IS NULL");
+
+                    b.HasIndex("MemberKey", "LeftAtUtc");
+
+                    b.HasIndex("UserKey", "LeftAtUtc");
+
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>
@@ -1294,6 +1238,9 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<DateOnly>("DateAchieved")
                         .HasColumnType("date");
+
+                    b.Property<Guid?>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("MemberKey")
                         .HasColumnType("uniqueidentifier");
@@ -1761,25 +1708,10 @@ namespace ProjectK.Infrastructure.Migrations
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Member", b =>
                 {
-                    b.HasOne("ProjectK.Common.Entities.KurinModule.Group", "Group")
-                        .WithMany("Members")
-                        .HasForeignKey("GroupKey")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
-                        .WithMany("Members")
-                        .HasForeignKey("KurinKey")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "User")
                         .WithOne()
                         .HasForeignKey("ProjectK.Common.Entities.KurinModule.Member", "UserKey")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Kurin");
 
                     b.Navigation("User");
                 });
@@ -1804,6 +1736,24 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Membership", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupKey")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
+                        .WithMany("Memberships")
+                        .HasForeignKey("KurinKey")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Kurin");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>
@@ -1861,17 +1811,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
-                {
-                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
-                        .WithMany("BadgeProgresses")
-                        .HasForeignKey("MemberKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
-                });
-
             modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgressAuditEvent", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", "BadgeProgress")
@@ -1881,28 +1820,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("BadgeProgress");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress", b =>
-                {
-                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
-                        .WithMany("ProbePointProgresses")
-                        .HasForeignKey("MemberKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", b =>
-                {
-                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
-                        .WithMany("ProbeProgresses")
-                        .HasForeignKey("MemberKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgressAuditEvent", b =>
@@ -1928,8 +1845,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Leadership")
                         .IsRequired();
 
-                    b.Navigation("Members");
-
                     b.Navigation("MentorAssignments");
                 });
 
@@ -1941,7 +1856,7 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Navigation("Leaderships");
 
-                    b.Navigation("Members");
+                    b.Navigation("Memberships");
 
                     b.Navigation("PlanningSessions");
                 });
@@ -1953,8 +1868,6 @@ namespace ProjectK.Infrastructure.Migrations
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Member", b =>
                 {
-                    b.Navigation("BadgeProgresses");
-
                     b.Navigation("LeadershipHistories");
 
                     b.Navigation("MemberAwards");
@@ -1962,10 +1875,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("MemberWarnings");
 
                     b.Navigation("PlastLevelHistory");
-
-                    b.Navigation("ProbePointProgresses");
-
-                    b.Navigation("ProbeProgresses");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningParticipant", b =>

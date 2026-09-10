@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -20,17 +21,20 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetStats
         private readonly IConfiguration _configuration;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMembershipDirectory _memberships;
 
         public GetOnboardingStatsHandler(
             UserManager<AppUser> userManager, 
             IConfiguration configuration,
             ICurrentUserContext currentUserContext,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMembershipDirectory memberships)
         {
             _userManager = userManager;
             _configuration = configuration;
             _currentUserContext = currentUserContext;
             _unitOfWork = unitOfWork;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<ZbtStatsDto>> Handle(GetOnboardingStatsQuery request, CancellationToken cancellationToken)
@@ -61,7 +65,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetStats
                 }
             }
 
-            var activeBetaUsersCount = await _unitOfWork.Users.CountActiveBetaAsync(kurinKey, cancellationToken);
+            var scopedAccounts = kurinKey.HasValue
+                ? await _memberships.GetAccountKeysInKurinAsync(kurinKey.Value, cancellationToken)
+                : null;
+            var activeBetaUsersCount = await _unitOfWork.Users.CountActiveBetaAsync(scopedAccounts, cancellationToken);
 
             // If not in closed beta, we can return effectively infinite cap or just signal it via a large number
             if (!isClosedBeta)

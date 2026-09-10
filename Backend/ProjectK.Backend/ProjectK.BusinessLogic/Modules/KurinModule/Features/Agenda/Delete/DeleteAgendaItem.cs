@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -14,20 +16,23 @@ public sealed record DeleteAgendaItem(Guid AgendaItemKey) : IRequest<ServiceResu
 public sealed class DeleteAgendaItemHandler : IRequestHandler<DeleteAgendaItem, ServiceResult<object>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly INotificationService _notifications;
+    private readonly IDomainEventPublisher _events;
 
     public DeleteAgendaItemHandler(
         IUnitOfWork uow,
+        IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        INotificationService notifications)
+        IDomainEventPublisher events)
     {
         _uow = uow;
+        _members = members;
         _access = access;
         _currentUser = currentUser;
-        _notifications = notifications;
+        _events = events;
     }
 
     public async Task<ServiceResult<object>> Handle(DeleteAgendaItem request, CancellationToken cancellationToken)
@@ -51,31 +56,24 @@ public sealed class DeleteAgendaItemHandler : IRequestHandler<DeleteAgendaItem, 
 
         // Resolve who was assigned before the row (and its assignments) are gone.
         var actorUserKey = viewer.ViewerUserKey ?? Guid.Empty;
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, item, actorUserKey, cancellationToken);
-        var route = AgendaRoutes.For(item);
+        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
         var title = item.Title;
-        var kindWord = item.Kind == AgendaItemKind.Task ? "Задачу" : "Подію";
+        var kind = item.Kind;
+        var kurinKey = item.KurinKey;
 
         // Assignments are removed by the cascade delete configured on the relationship.
         _uow.AgendaItems.Delete(item, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        if (recipients.Count > 0)
-        {
-            await _notifications.NotifyManyAsync(recipients.Select(userKey => new NotificationRequest
-            {
-                RecipientUserKey = userKey,
-                Type = AppNotificationType.AgendaItemDeleted,
-                Severity = AppNotificationSeverity.Warn,
-                Title = $"{kindWord} видалено",
-                Body = title,
-                EntityType = "AgendaItem",
-                EntityKey = request.AgendaItemKey,
-                Route = route,
-                ActorUserKey = actorUserKey,
-                DeduplicationKey = $"agenda-deleted:{request.AgendaItemKey}:{userKey}"
-            }), cancellationToken);
-        }
+        await _events.PublishAsync(
+            new AgendaItemRemoved(
+                request.AgendaItemKey,
+                kurinKey,
+                kind,
+                title,
+                recipients,
+                actorUserKey),
+            cancellationToken);
 
         return new ServiceResult<object>(ResultType.Success);
     }

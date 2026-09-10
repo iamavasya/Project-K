@@ -17,10 +17,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete
 
     public sealed class DeleteMemberAwardHandler : IRequestHandler<DeleteMemberAward, ServiceResult<Unit>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUser;
 
-        public DeleteMemberAwardHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUser)
+        public DeleteMemberAwardHandler(IMemberUnitOfWork unitOfWork, ICurrentUserContext currentUser)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;

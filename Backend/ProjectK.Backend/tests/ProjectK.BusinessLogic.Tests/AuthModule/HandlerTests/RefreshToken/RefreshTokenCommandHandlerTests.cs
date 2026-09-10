@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.Common.Entities.AuthModule;
@@ -23,7 +24,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
             _jwtServiceMock = new Mock<IJwtService>();
             _refreshTokensMock = new Mock<IRefreshTokenStore>();
             _handler = new RefreshTokenCommandHandler(
-                _userManagerMock.Object, _jwtServiceMock.Object, _refreshTokensMock.Object);
+                _userManagerMock.Object, _jwtServiceMock.Object, _refreshTokensMock.Object,
+                FakeAccessContext.With());
         }
 
         [Fact]

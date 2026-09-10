@@ -12,7 +12,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBackendCache _cache;
-        public DeleteGroupHandler(IUnitOfWork unitOfWork, IBackendCache cache)
+        public DeleteGroupHandler(IUnitOfWork unitOfWork,
+            IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
             _cache = cache;
@@ -35,23 +36,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete
                     $"Group with key {request.GroupKey} not found.");
             }
 
-            // Everything the гурток holds goes first: its провід is Restrict, its members are
-            // NoAction, so the database refuses to delete a гурток that still has either. Mentor
-            // assignments and the members' own history cascade on their own.
+            // Its провід goes first — that one is Restrict, so the database refuses to delete a
+            // гурток that still carries one. Mentor assignments cascade on their own.
             var leadershipKeys = await _unitOfWork.Leaderships.DeleteForGroupAsync(request.GroupKey, cancellationToken);
 
-            var members = (await _unitOfWork.Members.GetAllAsync(request.GroupKey, cancellationToken)).ToList();
+            // The people stay, and stay in the kurin — they are simply no longer in a гурток, which
+            // is a state a membership is allowed to be in. Dissolving a гурток is not a reason for
+            // anyone to leave.
+            await _unitOfWork.Memberships.DetachFromGroupAsync(request.GroupKey, cancellationToken);
 
             // Agenda assignments name their target by a bare key, so nothing in the database clears
-            // them: the гурток, the offices and the members about to disappear are all valid targets.
+            // them: both the гурток and its offices are valid targets and are about to disappear.
             await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(
-                [request.GroupKey, .. leadershipKeys, .. members.Select(member => member.MemberKey)],
+                [request.GroupKey, .. leadershipKeys],
                 cancellationToken);
-
-            foreach (var member in members)
-            {
-                _unitOfWork.Members.Delete(member, cancellationToken);
-            }
 
             _unitOfWork.Groups.Delete(existing, cancellationToken);
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

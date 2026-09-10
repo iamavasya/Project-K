@@ -91,9 +91,13 @@ describe('KurinService', () => {
       result = response.body;
     });
 
-    const req = httpMock.expectOne(`${baseUrl}/${kurinKey}/report/pdf`);
+    const req = httpMock.expectOne(request => request.url === `${baseUrl}/${kurinKey}/report/pdf`);
     expect(req.request.method).toBe('GET');
     expect(req.request.responseType).toBe('blob');
+    // Пояс їде з запитом: години в документі мають бути ті, що показує годинник читача, а сервер
+    // його поясу не знає. Порівнюємо з тим, що каже браузер, а не з жорстко вписаним «Europe/Kyiv»:
+    // тест має проходити і в CI, який стоїть у UTC.
+    expect(req.request.params.get('timeZone')).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
     const blob = new Blob(['%PDF'], { type: 'application/pdf' });
     req.flush(blob);

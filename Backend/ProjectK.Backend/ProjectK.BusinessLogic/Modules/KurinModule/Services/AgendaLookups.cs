@@ -1,5 +1,6 @@
-using ProjectK.Common.Entities.KurinModule.Agenda;
+﻿using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -17,13 +18,13 @@ public sealed record AgendaLookups(
     public const string KurinLeadershipLabel = "Курінний провід";
     public const string GroupLeadershipLabel = "Гуртковий провід";
 
-    public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, Guid kurinKey, CancellationToken cancellationToken)
+    public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, CancellationToken cancellationToken)
     {
         var groups = await uow.Groups.GetAllAsync(kurinKey, cancellationToken);
-        var members = (await uow.Members.GetAllByKurinKeyAsync(kurinKey, cancellationToken)).ToList();
+        var members = await directory.GetByKurinAsync(kurinKey, cancellationToken);
 
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
-        var memberNames = members.ToDictionary(m => m.MemberKey, m => $"{m.FirstName} {m.LastName}".Trim());
+        var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);
 
         // Creators are app users; resolve their display name through the linked member record.
         var creatorNames = members

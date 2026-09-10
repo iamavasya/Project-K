@@ -1,7 +1,8 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
-import { TitleStrategy, provideRouter } from '@angular/router';
+import { NavigationEnd, Router, TitleStrategy, provideRouter, withNavigationErrorHandler } from '@angular/router';
 
 import { routes } from './app.routes';
+import { clearStaleAppShellMarker, recoverFromStaleAppShell } from './features/systemModule/services/stale-app-shell.function';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
 import { provideOptimus } from '@openng/optimus-ui/config';
 import { LileykaPreset } from './lileyka-preset';
@@ -16,7 +17,12 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    // Кожен маршрут тут лінивий, тож після деплою перший же перехід у вже відкритій вкладці просить
+    // чанк, якого на сервері більше немає, і клік просто нічого не робить. Ловимо це й ставимо
+    // вкладку на свіжу оболонку — один раз, щоб зламаний деплой не перетворився на цикл.
+    provideRouter(routes, withNavigationErrorHandler(error => {
+      recoverFromStaleAppShell(error);
+    })),
     { provide: TitleStrategy, useClass: ProjectKTitleStrategy },
     MessageService,
     provideOptimus({
@@ -43,6 +49,15 @@ export const appConfig: ApplicationConfig = {
     // Constructing ThemeService applies the stored preference. Without this it would only
     // happen once the toolbar renders, so login and welcome would ignore a dark preference.
     provideAppInitializer(() => void inject(ThemeService)),
+    // Вдала навігація означає, що оболонка жива — знімаємо позначку, щоб наступний деплой знову
+    // мав право на одну спробу відновитись.
+    provideAppInitializer(() => {
+      inject(Router).events.subscribe(event => {
+        if (event instanceof NavigationEnd) {
+          clearStaleAppShellMarker();
+        }
+      });
+    }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }

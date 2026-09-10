@@ -12,6 +12,12 @@ namespace ProjectK.Common.Models.Dtos.KurinModule
     {
         public Guid MemberKey { get; set; }
         public Guid? GroupKey { get; set; }
+
+        /// <summary>
+        /// The гурток's name. The key alone was enough while the list only ever linked to a гурток;
+        /// the registry prints it, and prints it for a whole kurin at once.
+        /// </summary>
+        public string? GroupName { get; set; }
         public Guid KurinKey { get; set; }
         public Guid? UserKey { get; set; }
         public string? UserRole { get; set; }
@@ -29,6 +35,31 @@ namespace ProjectK.Common.Models.Dtos.KurinModule
         public DateTime? ProfileVerifiedAtUtc { get; set; }
         public Guid? ProfileVerifiedByUserKey { get; set; }
         public string? ProfileVerificationNote { get; set; }
+        /// <summary>
+        /// Every ступінь this person has reached, with the date. Read here — and not only on the
+        /// member's own card — because the registry is a column per ступінь across the whole kurin,
+        /// and asking per person would be one query each.
+        /// </summary>
+        public List<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
+
+        /// <summary>
+        /// Whether this person holds an open office in this kurin's кадра виховників. It is what the
+        /// registry splits on, and it is asked of the offices rather than of
+        /// <c>Membership.Kind</c>: that field exists for exactly this and is <c>Youth</c> on every
+        /// row ever written, because the migration that introduced it deliberately did not guess.
+        /// <para>
+        /// Only <c>KV</c> counts. A гуртковий or a курінний holds an office too and is still a юнак.
+        /// </para>
+        /// </summary>
+        public bool IsStaff { get; set; }
+
+        /// <summary>
+        /// The гуртки this person runs, by name, in this kurin. Read from the виховник assignments —
+        /// where a виховник is attached is said there, not by their own membership, which places
+        /// them in the kurin and usually in no гурток at all.
+        /// </summary>
+        public List<string> MentoredGroupNames { get; set; } = [];
+
         public List<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];
         public List<MemberWarningDto> Warnings { get; set; } = [];
     }

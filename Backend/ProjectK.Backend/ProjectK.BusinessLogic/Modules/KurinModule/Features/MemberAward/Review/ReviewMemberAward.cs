@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -8,7 +9,7 @@ using ProjectK.Common.Models.Records;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
@@ -16,25 +17,30 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
     public sealed class ReviewMemberAward : IRequest<ServiceResult<MemberAwardDto>>
     {
         public Guid MemberAwardKey { get; set; }
-        public bool IsApproved { get; set; }
+
+        /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
+        public bool? IsApproved { get; set; }
     }
 
     public sealed class ReviewMemberAwardHandler : IRequestHandler<ReviewMemberAward, ServiceResult<MemberAwardDto>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly ICurrentUserContext _currentUserContext;
-        private readonly INotificationService _notificationService;
+        private readonly IDomainEventPublisher _events;
         private readonly IMapper _mapper;
 
         public ReviewMemberAwardHandler(
-            IUnitOfWork unitOfWork,
+            IMemberUnitOfWork unitOfWork,
+            IMemberDirectory members,
             ICurrentUserContext currentUserContext,
-            INotificationService notificationService,
+            IDomainEventPublisher events,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _currentUserContext = currentUserContext;
-            _notificationService = notificationService;
+            _events = events;
             _mapper = mapper;
         }
 
@@ -52,7 +58,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
                 return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
             }
 
-            award.Status = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
+            // Said, because the validator refused the request otherwise.
+            var approved = request.IsApproved!.Value;
+
+            award.Status = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
             award.ReviewedAtUtc = DateTime.UtcNow;
             award.ReviewedByUserKey = _currentUserContext.UserId;
             award.UpdatedDate = DateTime.UtcNow;
@@ -60,7 +69,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
             _unitOfWork.MemberAwards.Update(award);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await NotifyMemberOwnerAsync(award, request.IsApproved, cancellationToken);
+            await NotifyMemberOwnerAsync(award, approved, cancellationToken);
 
             return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(award));
         }
@@ -70,28 +79,19 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
             bool isApproved,
             CancellationToken cancellationToken)
         {
-            var ownerUserKey = await _unitOfWork.Members.GetUserKeyByMemberAsync(award.MemberKey, cancellationToken);
+            var ownerUserKey = await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken);
             if (ownerUserKey is null)
             {
                 return;
             }
 
-            await _notificationService.NotifyAsync(
-                new NotificationRequest
-                {
-                    RecipientUserKey = ownerUserKey.Value,
-                    Type = AppNotificationType.MemberAwardReviewed,
-                    Severity = isApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
-                    Title = isApproved ? "Відзначення затверджено" : "Відзначення не затверджено",
-                    Body = isApproved
-                        ? "Ваше відзначення затверджено."
-                        : "Ваше відзначення не затверджено. Перегляньте зауваження.",
-                    EntityType = "MemberAward",
-                    EntityKey = award.MemberAwardKey,
-                    Route = $"/member/{award.MemberKey}",
-                    ActorUserKey = _currentUserContext.UserId,
-                    DeduplicationKey = $"award-review:{award.MemberAwardKey}"
-                },
+            await _events.PublishAsync(
+                new MemberAwardReviewed(
+                    award.MemberAwardKey,
+                    award.MemberKey,
+                    ownerUserKey.Value,
+                    isApproved,
+                    _currentUserContext.UserId),
                 cancellationToken);
         }
     }

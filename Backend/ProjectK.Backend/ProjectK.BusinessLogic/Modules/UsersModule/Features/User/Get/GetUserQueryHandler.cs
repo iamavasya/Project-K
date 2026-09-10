@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -12,12 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
     public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<UserDto>>
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMembershipDirectory _memberships;
 
-        public GetUserQueryHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork)
+        public GetUserQueryHandler(UserManager<AppUser> userManager, IMembershipDirectory memberships)
         {
             _userManager = userManager;
-            _unitOfWork = unitOfWork;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<UserDto>> Handle(GetUserQuery request, CancellationToken cancellationToken)
@@ -28,18 +29,20 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
                 return new ServiceResult<UserDto>(ResultType.NotFound);
             }
 
-            var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
-                .ToDictionary(k => k.KurinKey, k => k.Number);
-            
-            var roles = await _userManager.GetRolesAsync(user);
+            // The kurin comes from membership; the account record's own copy is a snapshot from the
+            // day it was opened and is not kept up to date.
+            var here = (await _memberships.GetCurrentForAccountAsync(user.Id, cancellationToken)).FirstOrDefault();
+
+            // Only the system role is shown here; offices belong to a kurin and are asked for per kurin.
+            var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
             
             var userDto = new UserDto
             {
                 UserId = user.Id,
-                KurinKey = user.KurinKey,
-                KurinNumber = user.KurinKey.HasValue && kurins.TryGetValue(user.KurinKey.Value, out var number) ? number : null,
+                KurinKey = here?.KurinKey,
+                KurinNumber = here?.KurinNumber,
                 Email = user.Email!,
-                Role = roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase) ? SystemRole.Admin : SystemRole.Member,
+                Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                 TwoFactorEnabled = user.TwoFactorEnabled,
                 FirstName = user.FirstName!,
                 LastName = user.LastName!

@@ -1,5 +1,6 @@
-using ProjectK.Common.Entities.KurinModule.Agenda;
+﻿using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -20,11 +21,13 @@ public static class AgendaNotificationRecipients
 {
     public static async Task<IReadOnlyCollection<Guid>> ResolveAsync(
         IUnitOfWork uow,
+        IMemberDirectory directory,
         AgendaItem item,
         Guid actorUserKey,
         CancellationToken cancellationToken)
     {
-        var members = (await uow.Members.GetAllByKurinKeyAsync(item.KurinKey, cancellationToken)).ToList();
+        // Summaries, not the member graph: this runs on every agenda write and only three keys are read.
+        var members = await directory.GetByKurinAsync(item.KurinKey, cancellationToken);
         var recipients = new HashSet<Guid>();
 
         foreach (var assignment in item.Assignments)

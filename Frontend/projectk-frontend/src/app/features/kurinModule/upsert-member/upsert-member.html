@@ -161,7 +161,11 @@
                     </div>
                     <p-floatLabel variant="on">
                         <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" (ngModelChange)="markFormDirty()" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                        <label for="plastLevelEntry">Дата вступу в Пласт</label>
+                        <label for="plastLevelEntry">Дата вступу до Пласту</label>
+                    </p-floatLabel>
+                    <p-floatLabel variant="on">
+                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Prykhylnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="datePrykhylnyk" #datePrykhylnykCtrl="ngModel" [dateFormat]="defaultDateFormat" />
+                        <label for="plastLevelPrykhylnyk">Дата здобуття прихильника</label>
                     </p-floatLabel>
                     <p-floatLabel variant="on">
                         <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat" />

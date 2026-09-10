@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
@@ -19,8 +19,11 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class GetMemberByKeyHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IMemberUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
+        private readonly Mock<IUnitOfWork> _kurinDataMock = new();
+        private readonly Mock<IMembershipRepository> _membershipsMock = new();
+        private readonly Mock<IKurinRepository> _kurinsMock = new();
         private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -30,16 +33,20 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock = new Mock<IMemberUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
 
             _mapperMock = new Mock<IMapper>(MockBehavior.Strict);
             
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true);
 
-            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
+            _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
+            _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurinsMock.Object);
+            _membershipsMock
+                .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+            _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object);
         }
 
         [Fact]
@@ -52,8 +59,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             var member = new Member
             {
                 MemberKey = memberKey,
-                GroupKey = groupKey,
-                KurinKey = kurinKey,
                 FirstName = "Ivan",
                 MiddleName = "I.",
                 LastName = "Petrenko",
@@ -61,6 +66,16 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 PhoneNumber = "123456",
                 DateOfBirth = new DateOnly(2001, 2, 3)
             };
+
+            _membershipsMock
+                .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Membership
+                {
+                    MemberKey = memberKey,
+                    KurinKey = kurinKey,
+                    GroupKey = groupKey,
+                    JoinedAtUtc = DateTime.UtcNow
+                }]);
 
             _memberRepoMock
                 .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -72,8 +87,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
                 .Returns(new MemberResponse
                 {
                     MemberKey = member.MemberKey,
-                    GroupKey = (Guid)member.GroupKey,
-                    KurinKey = member.KurinKey,
                     FirstName = member.FirstName,
                     MiddleName = member.MiddleName,
                     LastName = member.LastName,

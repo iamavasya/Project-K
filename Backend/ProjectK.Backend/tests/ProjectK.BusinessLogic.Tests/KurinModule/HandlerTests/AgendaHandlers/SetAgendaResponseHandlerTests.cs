@@ -1,9 +1,11 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Responses;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Records;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -15,6 +17,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
     public class SetAgendaResponseHandlerTests
     {
         private readonly Mock<IUnitOfWork> _uow = new();
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IAgendaAccess> _access = new();
         private readonly Mock<ICurrentUserContext> _currentUser = new();
         private readonly Mock<IAgendaItemRepository> _items = new();
@@ -30,15 +33,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         {
             _uow.Setup(u => u.AgendaItems).Returns(_items.Object);
             _uow.Setup(u => u.AgendaResponses).Returns(_responses.Object);
-            _uow.Setup(u => u.Members).Returns(_members.Object);
             _uow.Setup(u => u.AgendaCategories).Returns(_categories.Object);
             _currentUser.Setup(c => c.UserId).Returns(_userKey);
             _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-            _members.Setup(m => m.GetAllByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Member>());
+            _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
             _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<AgendaResponse>());
-            _handler = new SetAgendaResponseHandler(_uow.Object, _access.Object, _currentUser.Object);
+            _handler = new SetAgendaResponseHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
         }
 
         private AgendaItem Event(Guid? kurin = null) => new()

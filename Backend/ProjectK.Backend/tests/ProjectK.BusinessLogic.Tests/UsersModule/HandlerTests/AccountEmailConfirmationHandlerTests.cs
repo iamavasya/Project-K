@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -25,7 +26,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<IRefreshTokenStore> _refreshTokensMock = new();
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-        private readonly Mock<IMemberRepository> _memberRepositoryMock = new();
+        private readonly Mock<IMemberDirectory> _memberDirectoryMock = new();
         private readonly Mock<IMediator> _mediatorMock = new();
         private readonly Mock<IEmailService> _emailServiceMock = new();
 
@@ -34,8 +35,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var userStoreMock = new Mock<IUserStore<AppUser>>();
             _userManagerMock = new Mock<UserManager<AppUser>>(
                 userStoreMock.Object, null, null, null, null, null, null, null, null);
-
-            _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
         }
 
         [Fact]
@@ -80,8 +79,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password")).ReturnsAsync(true);
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.GenerateChangeEmailTokenAsync(user, newEmail)).ReturnsAsync(token);
-            _memberRepositoryMock.Setup(x => x.GetTrackedByUserKeyAsync(userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(member);
             _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _mediatorMock.Setup(x => x.Send(It.Is<GetAccountSettingsQuery>(q => q.UserKey == userId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
@@ -97,9 +94,13 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.Equal(newEmail, result.Data.PendingEmail);
             Assert.Equal(currentEmail, user.Email);
             Assert.Equal(currentEmail, user.UserName);
-            Assert.Equal(currentEmail, member.Email);
             Assert.Equal("new-phone", user.PhoneNumber);
-            Assert.Equal("new-phone", member.PhoneNumber);
+            _memberDirectoryMock.Verify(
+                x => x.SetPhoneFromAccountAsync(userId, "new-phone", It.IsAny<CancellationToken>()),
+                Times.Once);
+            _memberDirectoryMock.Verify(
+                x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
 
             _emailServiceMock.Verify(x => x.SendEmailAsync(
                 newEmail,
@@ -189,8 +190,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _userManagerMock.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(user);
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
-            _memberRepositoryMock.Setup(x => x.GetTrackedByUserKeyAsync(userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member?)null);
             _mediatorMock.Setup(x => x.Send(It.Is<GetAccountSettingsQuery>(q => q.UserKey == userId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
 
@@ -241,8 +240,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.NormalizeName(newEmail)).Returns("NEW@EXAMPLE.COM");
             _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
-            _memberRepositoryMock.Setup(x => x.GetTrackedByUserKeyAsync(userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(member);
             _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _mediatorMock.Setup(x => x.Send(It.Is<GetAccountSettingsQuery>(q => q.UserKey == userId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<AccountSettingsDto>(ResultType.Success, settings));
@@ -262,8 +259,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _refreshTokensMock.Verify(
                 store => store.RevokeAllAsync(user.Id, It.IsAny<CancellationToken>()),
                 Times.Once);
-            Assert.Equal(newEmail, member.Email);
-            _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _memberDirectoryMock.Verify(
+                x => x.SetEmailFromAccountAsync(userId, newEmail, It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -299,7 +297,9 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _refreshTokensMock.Verify(
                 store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
                 Times.Never);
-            _memberRepositoryMock.Verify(x => x.GetTrackedByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+            _memberDirectoryMock.Verify(
+                x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
             _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
             _mediatorMock.Verify(x => x.Send(It.IsAny<GetAccountSettingsQuery>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -308,7 +308,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             return new UpdateAccountProfileCommandHandler(
                 _userManagerMock.Object,
-                _unitOfWorkMock.Object,
+                _memberDirectoryMock.Object,
                 _mediatorMock.Object,
                 _emailServiceMock.Object,
                 Options.Create(new EmailSettings { BaseUrl = "http://localhost:4200/" }),
@@ -319,7 +319,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         {
             return new ConfirmAccountEmailChangeCommandHandler(
                 _userManagerMock.Object,
-                _unitOfWorkMock.Object,
+                _memberDirectoryMock.Object,
                 _mediatorMock.Object,
                 new Mock<IActivityLogger>().Object,
                 _refreshTokensMock.Object);

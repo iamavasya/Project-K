@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -18,14 +18,15 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
         public async Task<ResourceScope?> GetScopeAsync(
             ResourceType resourceType,
             Guid resourceKey,
+            Guid inKurinKey,
             CancellationToken cancellationToken = default)
         {
             return resourceType switch
             {
-                ResourceType.Member => await _context.Members
-                    .Where(m => m.MemberKey == resourceKey)
-                    .Select(m => new ResourceScope(m.KurinKey, m.GroupKey, m.UserKey))
-                    .FirstOrDefaultAsync(cancellationToken),
+                // A person is in scope through their membership, not through their record. That is
+                // what keeps the access decision independent of the member module — and what makes
+                // a Виховник in one kurin an ordinary member in another.
+                ResourceType.Member => await MembershipScopeAsync(resourceKey, inKurinKey, cancellationToken),
 
                 ResourceType.Group => await _context.Groups
                     .Where(g => g.GroupKey == resourceKey)
@@ -46,22 +47,46 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
 
                 ResourceType.AgendaItem => await GetAgendaItemScopeAsync(resourceKey, cancellationToken),
 
-                // Progress records carry the kurin already, but the group and owning user
-                // come from the member the rules are actually about.
-                ResourceType.ProbeProgress => await _context.ProbeProgresses
-                    .Where(p => p.ProbeProgressKey == resourceKey)
-                    .Join(_context.Members, p => p.MemberKey, m => m.MemberKey, (p, m) => m)
-                    .Select(m => new ResourceScope(m.KurinKey, m.GroupKey, m.UserKey))
-                    .FirstOrDefaultAsync(cancellationToken),
+                // Progress belongs to a person; the rules about it are the rules about them, so it
+                // resolves through the same membership.
+                ResourceType.ProbeProgress => await ProgressScopeAsync(
+                    _context.ProbeProgresses
+                        .Where(p => p.ProbeProgressKey == resourceKey)
+                        .Select(p => p.MemberKey),
+                    inKurinKey,
+                    cancellationToken),
 
-                ResourceType.BadgeProgress => await _context.BadgeProgresses
-                    .Where(b => b.BadgeProgressKey == resourceKey)
-                    .Join(_context.Members, b => b.MemberKey, m => m.MemberKey, (b, m) => m)
-                    .Select(m => new ResourceScope(m.KurinKey, m.GroupKey, m.UserKey))
-                    .FirstOrDefaultAsync(cancellationToken),
+                ResourceType.BadgeProgress => await ProgressScopeAsync(
+                    _context.BadgeProgresses
+                        .Where(b => b.BadgeProgressKey == resourceKey)
+                        .Select(b => b.MemberKey),
+                    inKurinKey,
+                    cancellationToken),
 
                 _ => null
             };
+        }
+
+        private Task<ResourceScope?> MembershipScopeAsync(
+            Guid memberKey,
+            Guid inKurinKey,
+            CancellationToken cancellationToken)
+            => _context.Memberships
+                .Where(ms => ms.MemberKey == memberKey
+                             && ms.KurinKey == inKurinKey
+                             && ms.LeftAtUtc == null)
+                .Select(ms => new ResourceScope(ms.KurinKey, ms.GroupKey, ms.UserKey))
+                .FirstOrDefaultAsync(cancellationToken);
+
+        private async Task<ResourceScope?> ProgressScopeAsync(
+            IQueryable<Guid> memberKeys,
+            Guid inKurinKey,
+            CancellationToken cancellationToken)
+        {
+            var memberKey = await memberKeys.FirstOrDefaultAsync(cancellationToken);
+            return memberKey == Guid.Empty
+                ? null
+                : await MembershipScopeAsync(memberKey, inKurinKey, cancellationToken);
         }
 
         public async Task<IReadOnlyCollection<Guid>> GetLedGroupKeysAsync(
@@ -78,10 +103,12 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
                     l => l.LeadershipKey,
                     (h, l) => new { h.MemberKey, GroupKey = l.GroupKey!.Value })
                 .Join(
-                    _context.Members.Where(m => m.UserKey == userKey && m.KurinKey == kurinKey),
+                    _context.Memberships.Where(ms => ms.UserKey == userKey
+                                                     && ms.KurinKey == kurinKey
+                                                     && ms.LeftAtUtc == null),
                     x => x.MemberKey,
-                    m => m.MemberKey,
-                    (x, m) => x.GroupKey)
+                    ms => ms.MemberKey,
+                    (x, ms) => x.GroupKey)
                 .ToListAsync(cancellationToken);
 
             // Legacy source: explicit mentor assignments, kept until fully migrated to offices.
@@ -91,9 +118,12 @@ namespace ProjectK.Infrastructure.Repositories.InfrastructureModule
                 .ToListAsync(cancellationToken);
 
             // Compatibility fallback: a group leader also covers the group they are a member of.
-            var ownGroupKey = await _context.Members
-                .Where(m => m.KurinKey == kurinKey && m.UserKey == userKey && m.GroupKey != null)
-                .Select(m => m.GroupKey)
+            var ownGroupKey = await _context.Memberships
+                .Where(ms => ms.KurinKey == kurinKey
+                             && ms.UserKey == userKey
+                             && ms.LeftAtUtc == null
+                             && ms.GroupKey != null)
+                .Select(ms => ms.GroupKey)
                 .FirstOrDefaultAsync(cancellationToken);
 
             var ledGroups = officeGroups.Concat(assigned);

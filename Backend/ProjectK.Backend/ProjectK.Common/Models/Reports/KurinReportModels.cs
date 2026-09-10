@@ -2,12 +2,26 @@
 
 namespace ProjectK.Common.Models.Reports;
 
+/// <param name="Staff">
+/// The кадра виховників, by the rule in <c>KurinRoster</c> — the same rule the реєстр splits on.
+/// </param>
+/// <param name="Youth">Everyone else in the kurin. Together with <paramref name="Staff"/> this is the whole склад.</param>
+/// <param name="LevelTally">How many юнаки stand at each ступінь of this kurin's ladder.</param>
+/// <param name="Members">
+/// Everyone, staff included, in one list — this is what the per-person картотека pages are built
+/// from, and кадра gets a картотека like anyone else.
+/// </param>
 public sealed record KurinReportData(
     KurinReportHeader Header,
     KurinReportKurin Kurin,
     IReadOnlyList<KurinReportGroup> Groups,
-    IReadOnlyList<KurinReportMember> KeyVolunteers,
+    IReadOnlyList<KurinReportMember> Staff,
+    IReadOnlyList<KurinReportMember> Youth,
+    IReadOnlyList<KurinReportLevelCount> LevelTally,
     IReadOnlyList<KurinReportMember> Members);
+
+/// <summary>One row of the чисельність table: a ступінь and how many юнаки stand at it.</summary>
+public sealed record KurinReportLevelCount(string Label, int Count);
 
 public sealed record KurinReportHeader(
     DateTime GeneratedAtUtc,
@@ -57,7 +71,8 @@ public sealed record KurinReportMember(
     string? ProfilePhotoUrl,
     byte[]? ProfilePhotoBytes,
     PlastLevel? LatestPlastLevel,
-    IReadOnlyList<string> SystemRoles,
+    /// <summary>The гуртки this person runs as виховник. Empty for a юнак.</summary>
+    IReadOnlyList<string> MentoredGroupNames,
     IReadOnlyList<KurinReportPlastLevel> PlastLevels,
     IReadOnlyList<KurinReportProbe> Probes,
     IReadOnlyList<KurinReportProbePoint> SignedProbePoints,

@@ -5,6 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 
@@ -13,6 +14,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 public class SubmitWaitlistRegistrationHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IWaitlistRepository> _waitlistRepository = new();
     private readonly Mock<IMemberRepository> _memberRepository = new();
     private readonly SubmitWaitlistRegistrationHandler _handler;
@@ -20,7 +22,6 @@ public class SubmitWaitlistRegistrationHandlerTests
     public SubmitWaitlistRegistrationHandlerTests()
     {
         _unitOfWork.Setup(x => x.WaitlistEntries).Returns(_waitlistRepository.Object);
-        _unitOfWork.Setup(x => x.Members).Returns(_memberRepository.Object);
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _waitlistRepository
@@ -30,7 +31,7 @@ public class SubmitWaitlistRegistrationHandlerTests
             .Setup(x => x.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member?)null);
 
-        _handler = new SubmitWaitlistRegistrationHandler(_unitOfWork.Object);
+        _handler = new SubmitWaitlistRegistrationHandler(_unitOfWork.Object, _memberDirectory.Object);
     }
 
     [Fact]

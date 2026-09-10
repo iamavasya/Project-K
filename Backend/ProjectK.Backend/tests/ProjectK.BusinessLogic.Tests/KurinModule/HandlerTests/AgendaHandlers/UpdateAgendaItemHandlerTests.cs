@@ -5,6 +5,8 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -18,9 +20,10 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
     public class UpdateAgendaItemHandlerTests
     {
         private readonly Mock<IUnitOfWork> _uow = new();
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IAgendaAccess> _access = new();
         private readonly Mock<ICurrentUserContext> _currentUser = new();
-        private readonly Mock<INotificationService> _notifications = new();
+        private readonly Mock<IDomainEventPublisher> _events = new();
         private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
         private readonly Mock<IMemberRepository> _memberRepo = new();
         private readonly UpdateAgendaItemHandler _handler;
@@ -30,15 +33,14 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
         public UpdateAgendaItemHandlerTests()
         {
             _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-            _uow.Setup(u => u.Members).Returns(_memberRepo.Object);
-            _memberRepo.Setup(r => r.GetAllByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Array.Empty<Member>());
+            _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<MemberSummary>());
             _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
             _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));
             _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ResourceAccessDecision.Allow());
-            _handler = new UpdateAgendaItemHandler(_uow.Object, _access.Object, _currentUser.Object, _notifications.Object);
+            _handler = new UpdateAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
         }
 
         // Regression: stretching an event by adding an end date while keeping the same target must not

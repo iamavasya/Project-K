@@ -14,6 +14,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -26,6 +27,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
+        private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
 
         private readonly GetKurinByKeyHandler _handler;
@@ -45,9 +47,16 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
             _appUserRepositoryMock
-                .Setup(x => x.CountActiveBetaAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.CountActiveBetaAsync(
+                    It.IsAny<IReadOnlyCollection<Guid>?>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(0);
             _unitOfWorkMock.Setup(uow => uow.Users).Returns(_appUserRepositoryMock.Object);
+
+            _membershipRepositoryMock
+                .Setup(x => x.GetAccountKeysInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<Guid>());
+            _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
             _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
         }

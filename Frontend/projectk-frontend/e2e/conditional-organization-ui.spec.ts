@@ -10,7 +10,10 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
 
     await expect(page.locator('.edit-profile-button')).toBeVisible();
     await expect(page.locator('.group-panel .table-caption').getByRole('button')).toBeVisible();
-    await expect(page.locator('app-member-list + div').getByRole('button')).toBeVisible();
+    // Named, not just "the button under the list": taking someone in by code sits beside adding
+    // a new person, and a positional selector would match both.
+    await expect(page.locator('app-member-list + div')
+      .getByRole('button', { name: /Додати учасника/ })).toBeVisible();
     await expect(page.locator('app-kv-panel .kv-caption__actions button:has(.pi-plus)')).toBeVisible();
     await expect(page.locator('app-leadership-panel .leadership-caption__actions button:has(.pi-cog)').first()).toBeVisible();
   });

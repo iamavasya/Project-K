@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -14,13 +15,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
     public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILeadershipRoleSyncService _roleSync;
+        private readonly IMemberDirectory _members;
         private readonly IBackendCache _cache;
 
-        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, ILeadershipRoleSyncService roleSync, IBackendCache cache)
+        public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
-            _roleSync = roleSync;
+            _members = members;
             _cache = cache;
         }
 
@@ -32,7 +33,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
                 return ServiceResult<Guid>.Failure(ResultType.NotFound, "GroupNotFound", "Group not found.");
             }
 
-            var mentorMember = await _unitOfWork.Members.GetByUserKeyAsync(request.MentorUserKey, cancellationToken);
+            var mentorMember = await _members.FindByAccountAsync(request.MentorUserKey, cancellationToken);
             if (mentorMember == null)
             {
                 return ServiceResult<Guid>.Failure(ResultType.NotFound, "MentorNotFound", "Mentor member profile not found.");
@@ -65,9 +66,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.A
             _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // The assignment grants гуртковий access; realign the member's roles and drop the cached
-            // scope set so the next authorization check reflects it immediately.
-            await _roleSync.SyncMemberAsync(mentorMember.MemberKey, cancellationToken);
+            // The assignment itself is what grants гуртковий access — it is read when access is
+            // decided. Only the cached scope set has to go, so the next check sees it at once.
             _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
             return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);

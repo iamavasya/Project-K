@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
@@ -17,6 +18,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
     public class GetAssignTargetsHandlerTests
     {
         private readonly Mock<IUnitOfWork> _uow = new();
+        private readonly Mock<IMemberDirectory> _memberDirectory = new();
         private readonly Mock<IAgendaAccess> _access = new();
         private readonly Mock<IGroupRepository> _groupRepo = new();
         private readonly Mock<IMemberRepository> _memberRepo = new();
@@ -34,21 +36,20 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
                 new("Gurtok 1", _kurinKey) { GroupKey = _g1 },
                 new("Gurtok 2", _kurinKey) { GroupKey = _g2 }
             };
-            var members = new List<Member>
+            var members = new List<MemberSummary>
             {
-                new() { MemberKey = Guid.NewGuid(), KurinKey = _kurinKey, GroupKey = _g1, FirstName = "A", LastName = "One" },
-                new() { MemberKey = Guid.NewGuid(), KurinKey = _kurinKey, GroupKey = _g2, FirstName = "B", LastName = "Two" }
+                new(Guid.NewGuid(), null, _kurinKey, _g1, "A", "One", "a@example.com", null),
+                new(Guid.NewGuid(), null, _kurinKey, _g2, "B", "Two", "b@example.com", null)
             };
 
             _uow.Setup(u => u.Groups).Returns(_groupRepo.Object);
-            _uow.Setup(u => u.Members).Returns(_memberRepo.Object);
             _uow.Setup(u => u.Leaderships).Returns(_leadershipRepo.Object);
             _groupRepo.Setup(r => r.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(groups);
-            _memberRepo.Setup(r => r.GetAllByKurinKeyAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(members);
+            _memberDirectory.Setup(r => r.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(members);
             _leadershipRepo.Setup(r => r.GetLeadershipRefsForKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<LeadershipRef>());
 
-            _handler = new GetAssignTargetsHandler(_uow.Object, _access.Object);
+            _handler = new GetAssignTargetsHandler(_uow.Object, _memberDirectory.Object, _access.Object);
         }
 
         private void SetupViewer(bool canSeeWholeKurin, IReadOnlyCollection<Guid> visibilityGroups)

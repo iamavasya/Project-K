@@ -21,19 +21,37 @@ public sealed class AppUserRepository : IAppUserRepository
     public Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => _context.Users.FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
 
-    public Task<int> CountActiveAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-        => _context.Users.CountAsync(
-            user => user.KurinKey == kurinKey && user.OnboardingStatus == OnboardingStatus.Active,
-            cancellationToken);
+    public Task<int> CountActiveAsync(
+        IReadOnlyCollection<Guid> userKeys,
+        CancellationToken cancellationToken = default)
+    {
+        if (userKeys.Count == 0)
+        {
+            return Task.FromResult(0);
+        }
 
-    public Task<int> CountActiveBetaAsync(Guid? kurinKey, CancellationToken cancellationToken = default)
+        var keys = userKeys.Distinct().ToList();
+        return _context.Users.CountAsync(
+            user => keys.Contains(user.Id) && user.OnboardingStatus == OnboardingStatus.Active,
+            cancellationToken);
+    }
+
+    public Task<int> CountActiveBetaAsync(
+        IReadOnlyCollection<Guid>? userKeys,
+        CancellationToken cancellationToken = default)
     {
         var query = _context.Users.Where(
             user => user.IsBetaParticipant && user.OnboardingStatus == OnboardingStatus.Active);
 
-        if (kurinKey.HasValue)
+        if (userKeys is not null)
         {
-            query = query.Where(user => user.KurinKey == kurinKey.Value);
+            if (userKeys.Count == 0)
+            {
+                return Task.FromResult(0);
+            }
+
+            var keys = userKeys.Distinct().ToList();
+            query = query.Where(user => keys.Contains(user.Id));
         }
 
         return query.CountAsync(cancellationToken);

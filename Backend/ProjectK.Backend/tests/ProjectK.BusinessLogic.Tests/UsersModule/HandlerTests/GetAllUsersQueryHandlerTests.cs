@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Models.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
@@ -6,6 +7,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using System.Linq.Expressions;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
@@ -18,6 +20,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
         private readonly Mock<IKurinRepository> _kurinRepositoryMock;
+        private readonly Mock<IMembershipDirectory> _membershipsMock = new();
         private readonly GetAllUsersQueryHandler _handler;
 
         public GetAllUsersQueryHandlerTests()
@@ -32,36 +35,61 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             _unitOfWorkMock.Setup(u => u.Users).Returns(_appUserRepositoryMock.Object);
             _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Kurin>());
+            StandingNowhere();
 
-            _handler = new GetAllUsersQueryHandler(_userManagerMock.Object, _unitOfWorkMock.Object);
+            _handler = new GetAllUsersQueryHandler(
+                _userManagerMock.Object,
+                _unitOfWorkMock.Object,
+                _membershipsMock.Object);
         }
+
+        /// <summary>Nobody has a current membership, which is what an account alone amounts to.</summary>
+        private void StandingNowhere()
+            => _membershipsMock
+                .Setup(x => x.GetCurrentForAccountsAsync(
+                    It.IsAny<IReadOnlyCollection<Guid>>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Dictionary<Guid, IReadOnlyCollection<MembershipRecord>>());
+
+        private void Standing(Guid userKey, Guid kurinKey, int kurinNumber)
+            => _membershipsMock
+                .Setup(x => x.GetCurrentForAccountsAsync(
+                    It.IsAny<IReadOnlyCollection<Guid>>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Dictionary<Guid, IReadOnlyCollection<MembershipRecord>>
+                {
+                    [userKey] =
+                    [
+                        new MembershipRecord(
+                            Guid.NewGuid(), kurinKey, kurinNumber, KurinBranch.UPYu, null,
+                            null, null, MembershipKind.Youth, DateTime.UtcNow, null)
+                    ]
+                });
 
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenUsersExist()
         {
             // Arrange
             var kurinKey1 = Guid.NewGuid();
+            var userId = Guid.NewGuid();
             var users = new List<AppUser>
             {
                 new AppUser
                 {
-                    Id = Guid.NewGuid(),
+                    Id = userId,
                     Email = "user1@example.com",
                     FirstName = "John",
-                    LastName = "Doe",
-                    KurinKey = kurinKey1
+                    LastName = "Doe"
                 }
             }.AsQueryable();
 
-            var kurins = new List<Kurin> { new Kurin(101) { KurinKey = kurinKey1 } };
-            _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(kurins);
+            Standing(userId, kurinKey1, 101);
 
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string> { "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -92,7 +120,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.NotNull(result.Data);
             Assert.Empty(result.Data);
 
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
+            _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Never);
         }
 
         [Fact]
@@ -115,8 +143,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.Is<AppUser>(u => u.Id == userId)))
-                .ReturnsAsync(new List<string> { "Admin", "Manager", "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == userId), SystemRole.Admin))
+                .ReturnsAsync(true);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -146,8 +174,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string>());
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -159,7 +187,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_ShouldHandleUsersWithNullKurinKey()
+        public async Task Handle_ShouldReportNoKurin_WhenAccountHasNoCurrentMembership()
         {
             // Arrange
             var users = new List<AppUser>
@@ -170,15 +198,16 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                     Email = "nullkurin@example.com",
                     FirstName = "Null",
                     LastName = "Kurin",
-                    KurinKey = null
+                    // Set, and still ignored: an account's own kurin field is a stale snapshot.
+                    KurinKey = Guid.NewGuid()
                 }
             }.AsQueryable();
 
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string> { "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -228,12 +257,12 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.Is<AppUser>(u => u.Id == user1Id)))
-                .ReturnsAsync(new List<string> { "Admin" });
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.Is<AppUser>(u => u.Id == user2Id)))
-                .ReturnsAsync(new List<string> { "Manager" });
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.Is<AppUser>(u => u.Id == user3Id)))
-                .ReturnsAsync(new List<string> { "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user1Id), SystemRole.Admin))
+                .ReturnsAsync(true);
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user2Id), SystemRole.Admin))
+                .ReturnsAsync(false);
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user3Id), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -261,16 +290,17 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                     Id = userId,
                     Email = "test@example.com",
                     FirstName = "Test",
-                    LastName = "User",
-                    KurinKey = kurinKey
+                    LastName = "User"
                 }
             }.AsQueryable();
+
+            Standing(userId, kurinKey, 7);
 
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string> { "TestRole" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -307,7 +337,7 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
         }
 
         [Fact]
-        public async Task Handle_ShouldCallGetRolesAsyncForEachUser()
+        public async Task Handle_ShouldCheckTheSystemRoleOfEachUser()
         {
             // Arrange
             var users = new List<AppUser>
@@ -320,14 +350,14 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users);
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string> { "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Exactly(3));
+            _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Exactly(3));
         }
 
         [Fact]
@@ -350,8 +380,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             var query = new GetAllUsersQuery();
 
             SetupUserManagerUsers(users.AsQueryable());
-            _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync(new List<string> { "User" });
+            _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+                .ReturnsAsync(false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -359,14 +389,17 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Equal(100, result.Data.Count());
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Exactly(100));
+            _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Exactly(100));
         }
 
         [Fact]
         public void Constructor_ShouldInitializeUserManagerCorrectly()
         {
             // Arrange & Act
-            var handler = new GetAllUsersQueryHandler(_userManagerMock.Object, _unitOfWorkMock.Object);
+            var handler = new GetAllUsersQueryHandler(
+                _userManagerMock.Object,
+                _unitOfWorkMock.Object,
+                _membershipsMock.Object);
 
             // Assert
             Assert.NotNull(handler);

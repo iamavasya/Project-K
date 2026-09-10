@@ -1,0 +1,51 @@
+@if (isLoading()) {
+  <p-skeleton height="4rem" />
+} @else if (loadFailed()) {
+  <p class="memberships-note">Не вдалося прочитати теку членств.</p>
+} @else if (!memberships().length) {
+  <p class="memberships-note">Ця людина поки що не належить до жодного куреня.</p>
+} @else {
+  <ul class="memberships-list">
+    @for (membership of current(); track membership.membershipKey) {
+      <li class="membership-row">
+        <span class="membership-kurin">
+          {{ kurinTitle(membership) }}
+          @if (membership.kurinNamedAfter) {
+            <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+          }
+        </span>
+        <span class="membership-facts">
+          <p-tag [value]="branchLabels[membership.branch]" severity="secondary" />
+          <span>{{ kindLabels[membership.kind] }}</span>
+          @if (membership.groupName) {
+            <span>{{ membership.groupName }}</span>
+          }
+          <span class="membership-period">{{ period(membership) }}</span>
+        </span>
+        @if (canAct(membership)) {
+          <span class="membership-actions">
+            <p-button label="Гурток" icon="pi pi-sitemap" variant="text" severity="secondary"
+              (onClick)="moveToGroup.emit(membership)" />
+            <p-button label="Вивести" icon="pi pi-sign-out" variant="text" severity="secondary"
+              (onClick)="leaveKurin.emit(membership)" />
+          </span>
+        }
+      </li>
+    }
+  </ul>
+
+  @if (past().length) {
+    <p class="memberships-subtitle">Раніше</p>
+    <ul class="memberships-list memberships-list--past">
+      @for (membership of past(); track membership.membershipKey) {
+        <li class="membership-row">
+          <span class="membership-kurin">{{ kurinTitle(membership) }}</span>
+          <span class="membership-facts">
+            <p-tag [value]="branchLabels[membership.branch]" severity="secondary" />
+            <span class="membership-period">{{ period(membership) }}</span>
+          </span>
+        </li>
+      }
+    </ul>
+  }
+}

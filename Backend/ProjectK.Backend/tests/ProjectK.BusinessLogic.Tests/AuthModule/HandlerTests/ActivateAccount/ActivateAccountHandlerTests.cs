@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -10,6 +10,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using Xunit;
@@ -28,6 +29,7 @@ public class ActivateAccountHandlerTests
     private static readonly DateTimeOffset Now = new(2026, 8, 30, 12, 0, 0, TimeSpan.Zero);
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IInvitationRepository> _invitations = new();
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
@@ -43,7 +45,6 @@ public class ActivateAccountHandlerTests
 
         _unitOfWork.SetupGet(x => x.Invitations).Returns(_invitations.Object);
         _unitOfWork.SetupGet(x => x.WaitlistEntries).Returns(_waitlistEntries.Object);
-        _unitOfWork.SetupGet(x => x.Members).Returns(_members.Object);
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _userManager.Setup(x => x.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()))
@@ -52,7 +53,7 @@ public class ActivateAccountHandlerTests
         _userManager.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        _handler = new ActivateAccountHandler(_unitOfWork.Object, _userManager.Object, _mediator.Object, _clock);
+        _handler = new ActivateAccountHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock);
     }
 
     private Invitation GivenInvitation(Guid userKey, DateTime? expiresAtUtc = null)

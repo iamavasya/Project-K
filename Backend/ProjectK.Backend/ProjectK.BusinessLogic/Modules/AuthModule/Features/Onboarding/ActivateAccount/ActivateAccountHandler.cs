@@ -1,9 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -20,13 +22,15 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
     public class ActivateAccountHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<Guid>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMediator _mediator;
         private readonly TimeProvider _timeProvider;
 
-        public ActivateAccountHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
+        public ActivateAccountHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
+            _members = members;
             _userManager = userManager;
             _mediator = mediator;
             _timeProvider = timeProvider;
@@ -85,47 +89,47 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
             invitation.UsedAtUtc = DateTime.UtcNow;
             _unitOfWork.Invitations.Update(invitation, cancellationToken);
 
+            // The entry is marked accepted so retention can tell it from one still waiting.
             if (entry is not null)
             {
                 entry.InvitationAcceptedAtUtc = DateTime.UtcNow;
                 _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
             }
 
-            // 5. Create Member record if it doesn't exist
-            var existingMember = await _unitOfWork.Members.GetByEmailAsync(user.Email!, cancellationToken);
-            Guid memberKey;
-            if (existingMember == null)
-            {
-                var member = new Member
-                {
-                    MemberKey = Guid.NewGuid(),
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email!,
-                    PhoneNumber = entry?.PhoneNumber ?? "0000000000",
-                    DateOfBirth = entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
-                    UserKey = user.Id,
-                    KurinKey = user.KurinKey ?? Guid.Empty
-                };
-                _unitOfWork.Members.Create(member, cancellationToken);
-                memberKey = member.MemberKey;
-            }
-            else
-            {
-                existingMember.UserKey = user.Id;
-                _unitOfWork.Members.Update(existingMember, cancellationToken);
-                memberKey = existingMember.MemberKey;
-            }
+            // 5. Make sure the account has a member, linking an existing one when the address is known.
+            // The member module owns that decision — this handler no longer writes Member rows itself.
+            var memberKey = await _members.EnsureForAccountAsync(
+                new MemberForAccount(
+                    user.Id,
+                    user.Email!,
+                    user.FirstName,
+                    user.LastName,
+                    entry?.PhoneNumber ?? "0000000000",
+                    entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
+                    KurinKey: Guid.Empty),
+                cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // 5.5. A founder is taken into the kurin their approval opened for them. The account is
+            // what carries that kurin, and here it is the only thing that can: the kurin was created
+            // moments ago and nobody belongs to it yet. Joining rather than placing matters — someone
+            // who already belongs to a kurin keeps it and founds the new one alongside.
+            var foundedKurinKey = user.KurinKey;
+            if (foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
+            {
+                await _mediator.Send(
+                    new JoinKurin(memberKey, foundedKurinKey.Value, GroupKey: null),
+                    cancellationToken);
+            }
+
             // 6. A kurin-leader candidate becomes the kurin's Зв'язковий; the office sync grants the role.
-            if (isKurinLeaderCandidate && user.KurinKey.HasValue)
+            if (isKurinLeaderCandidate && foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
             {
                 await _mediator.Send(new UpsertLeadership(new UpsertLeadershipRequest
                 {
                     Type = LeadershipType.KV.ToString(),
-                    EntityKey = user.KurinKey.Value,
+                    EntityKey = foundedKurinKey.Value,
                     StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
                     LeadershipHistories = new[]
                     {

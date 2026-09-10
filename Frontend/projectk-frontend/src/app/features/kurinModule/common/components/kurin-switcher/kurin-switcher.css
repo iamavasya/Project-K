@@ -1,0 +1,66 @@
+.kurin-switcher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  min-width: 15rem;
+  padding: 0;
+}
+
+.kurin-switcher-option {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  width: 100%;
+}
+
+.kurin-switcher-option:hover:not(:disabled) {
+  background: var(--p-content-hover-background);
+}
+
+.kurin-switcher-option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.kurin-switcher-option.is-current {
+  border-color: var(--p-primary-color);
+}
+
+.kurin-switcher-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.kurin-switcher-named {
+  color: var(--p-text-muted-color);
+  display: block;
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kurin-switcher-meta {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.kurin-switcher-kind {
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+}
+
+.kurin-switcher-mark {
+  color: var(--p-primary-color);
+  font-size: 0.75rem;
+}

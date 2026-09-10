@@ -1,4 +1,7 @@
-﻿using AutoMapper;
+using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
+using AutoMapper;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
@@ -15,6 +18,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
     {
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
+        private readonly Mock<IAccessContextResolver> _accessMock = FakeAccessContext.Resolver();
         private readonly Mock<UserManager<AppUser>> _userManagerMock;
         private readonly Mock<RoleManager<AppRole>> _roleManagerMock;
         private readonly Mock<IJwtService> _jwtServiceMock;
@@ -40,7 +44,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 _userManagerMock.Object,
                 _roleManagerMock.Object,
                 _jwtServiceMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                _accessMock.Object);
         }
 
         [Fact]
@@ -85,8 +90,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.AddToRoleAsync(user, command.Role))
                 .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString()))
@@ -118,7 +123,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
             _userManagerMock.Verify(x => x.CreateAsync(user, command.Password), Times.Once);
             _roleManagerMock.Verify(x => x.RoleExistsAsync(command.Role), Times.Once);
             _userManagerMock.Verify(x => x.AddToRoleAsync(user, command.Role), Times.Once);
-            _userManagerMock.Verify(x => x.GetRolesAsync(user), Times.Once);
+            _accessMock.Verify(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()), Times.Once);
             _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString()), Times.Once);
             _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
         }
@@ -249,8 +254,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .ReturnsAsync(IdentityResult.Success);
             _userManagerMock.Setup(x => x.AddToRoleAsync(user, command.Role))
                 .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
@@ -524,7 +529,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 _userManagerMock.Object,
                 _roleManagerMock.Object,
                 _jwtServiceMock.Object,
-                _refreshTokensMock.Object);
+                _refreshTokensMock.Object,
+                _accessMock.Object);
 
             // Assert
             Assert.NotNull(handler);
@@ -540,8 +546,8 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Register
                 .ReturnsAsync(true);
             _userManagerMock.Setup(x => x.AddToRoleAsync(user, command.Role))
                 .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
+            _accessMock.Setup(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
             _userManagerMock.Setup(x => x.UpdateAsync(user))
                 .ReturnsAsync(IdentityResult.Success);
             _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))

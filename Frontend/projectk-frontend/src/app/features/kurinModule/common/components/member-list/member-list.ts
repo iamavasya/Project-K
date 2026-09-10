@@ -98,6 +98,19 @@ export class MemberListComponent implements OnInit {
     }
   }
 
+  /**
+   * Перечитати склад. Потрібно тим сторінкам, які самі міняють членство — список вантажиться раз
+   * при відкритті, і без цього прийнята щойно людина зʼявилась би аж після переходу.
+   */
+  reload(): void {
+    if (this.type() === 'leadership') {
+      this.loadLeadership();
+      return;
+    }
+
+    this.loadMembers();
+  }
+
   private loadMembers(): void {
     const request$ = this.type() === 'kurin' 
       ? this.memberService.getAll(undefined, this.typeKey())

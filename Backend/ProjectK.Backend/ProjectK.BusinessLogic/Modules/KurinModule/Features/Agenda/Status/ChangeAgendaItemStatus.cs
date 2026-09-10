@@ -2,6 +2,7 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
@@ -18,18 +19,18 @@ public sealed class ChangeAgendaItemStatusHandler : IRequestHandler<ChangeAgenda
     private readonly IUnitOfWork _uow;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly INotificationService _notifications;
+    private readonly IDomainEventPublisher _events;
 
     public ChangeAgendaItemStatusHandler(
         IUnitOfWork uow,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        INotificationService notifications)
+        IDomainEventPublisher events)
     {
         _uow = uow;
         _access = access;
         _currentUser = currentUser;
-        _notifications = notifications;
+        _events = events;
     }
 
     public async Task<ServiceResult<object>> Handle(ChangeAgendaItemStatus request, CancellationToken cancellationToken)
@@ -62,12 +63,12 @@ public sealed class ChangeAgendaItemStatusHandler : IRequestHandler<ChangeAgenda
         // explicit Update() — which would re-mark the client-keyed assignments and fight change tracking.
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await NotifyStatusChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
+        await PublishStatusChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
 
         return new ServiceResult<object>(ResultType.Success);
     }
 
-    private async Task NotifyStatusChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
+    private async Task PublishStatusChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
         // The creator wants to know when a task they set moves; skip if the creator is the actor.
         if (item.CreatedByUserKey == Guid.Empty || item.CreatedByUserKey == actorUserKey)
@@ -75,22 +76,15 @@ public sealed class ChangeAgendaItemStatusHandler : IRequestHandler<ChangeAgenda
             return;
         }
 
-        var severity = item.Status == AgendaItemStatus.Done
-            ? AppNotificationSeverity.Success
-            : AppNotificationSeverity.Info;
-
-        await _notifications.NotifyAsync(new NotificationRequest
-        {
-            RecipientUserKey = item.CreatedByUserKey,
-            Type = AppNotificationType.AgendaItemStatusChanged,
-            Severity = severity,
-            Title = "Статус задачі змінено",
-            Body = item.Title,
-            EntityType = "AgendaItem",
-            EntityKey = item.AgendaItemKey,
-            Route = AgendaRoutes.For(item),
-            ActorUserKey = actorUserKey,
-            DeduplicationKey = $"agenda-status:{item.AgendaItemKey}"
-        }, cancellationToken);
+        await _events.PublishAsync(
+            new AgendaItemStatusChanged(
+                item.AgendaItemKey,
+                item.KurinKey,
+                item.Kind,
+                item.Title,
+                item.Status,
+                item.CreatedByUserKey,
+                actorUserKey),
+            cancellationToken);
     }
 }

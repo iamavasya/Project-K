@@ -25,7 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
 {
     public class GetMembersHandlerTests
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
+        private readonly Mock<IMemberUnitOfWork> _uowMock;
         private readonly Mock<IMemberRepository> _memberRepoMock;
         private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
         private readonly IMapper _mapper;
@@ -36,9 +36,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
         {
             _memberRepoMock = new Mock<IMemberRepository>();
             _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
+            _uowMock = new Mock<IMemberUnitOfWork>();
             _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
 
             _currentUserContextMock = new Mock<ICurrentUserContext>();
             _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests

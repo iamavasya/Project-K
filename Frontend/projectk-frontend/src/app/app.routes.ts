@@ -107,14 +107,6 @@ export const routes: Routes = [
     data: { breadcrumb: 'Заявки', parent: '/panel' }
   },
   {
-    path: 'announcements',
-    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
-    loadComponent: () => import('./features/adminModule/components/public-announcements/public-announcements')
-      .then(m => m.PublicAnnouncementsComponent),
-    title: 'Оголошення',
-    data: { breadcrumb: 'Оголошення', parent: '/panel' }
-  },
-  {
     path: 'system-settings',
     canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/components/system-settings/system-settings')
@@ -137,6 +129,22 @@ export const routes: Routes = [
       .then(m => m.KurinPanelComponent),
     title: 'Курінь',
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
+  },
+  {
+    path: 'kurin/import',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
+    loadComponent: () => import('./features/kurinModule/import/import')
+      .then(m => m.RosterImportComponent),
+    title: 'Імпорт складу',
+    data: { breadcrumb: 'Імпорт складу', parent: '/kurin', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/registry',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement', 'groupLeadership')],
+    loadComponent: () => import('./features/kurinModule/registry/registry')
+      .then(m => m.RegistryComponent),
+    title: 'Реєстр',
+    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' }
   },
   { 
     path: 'group/:groupKey',

@@ -90,6 +90,7 @@ export class UpsertMemberComponent implements OnInit {
   readonly PlastLevel = PlastLevel;
   readonly levelsConfig: { level: PlastLevel, label: string }[] = [
     { level: PlastLevel.Entry, label: 'Вступ' },
+    { level: PlastLevel.Prykhylnyk, label: 'Прих.' },
     { level: PlastLevel.Uchasnyk, label: 'Уч.' },
     { level: PlastLevel.Rozviduvach, label: 'Розвд.' },
     { level: PlastLevel.Skob, label: 'Скоб' },
@@ -540,10 +541,14 @@ export class UpsertMemberComponent implements OnInit {
       plastLevelHistories: this.buildPlastLevelsPayload(),
     };
 
-    if (this.groupKey) {
-      baseDto.groupKey = this.groupKey;
-    } else if (this.kurinKey) {
-      baseDto.kurinKey = this.kurinKey;
+    // Куди людину поставити — сказано лише при заведенні. Редагування профілю нікого не переносить:
+    // належність живе в членстві, і міняється діями «перевести в гурток» та «вивести з куреня».
+    if (this.isCreate) {
+      if (this.groupKey) {
+        baseDto.groupKey = this.groupKey;
+      } else if (this.kurinKey) {
+        baseDto.kurinKey = this.kurinKey;
+      }
     }
 
     const saveObs = this.isCreate 

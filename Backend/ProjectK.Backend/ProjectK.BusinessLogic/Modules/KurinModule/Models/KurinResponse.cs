@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
 {
@@ -10,6 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
     {
         public Guid KurinKey { get; set; }
         public int Number { get; set; }
+
+        /// <summary>Яка гілка. Read by the UI, which shows юнацькі речі only where they mean something.</summary>
+        public KurinBranch Branch { get; set; }
         public string? Stanytsia { get; set; }
         public string? RegionOrCountry { get; set; }
         public string? NamedAfter { get; set; }

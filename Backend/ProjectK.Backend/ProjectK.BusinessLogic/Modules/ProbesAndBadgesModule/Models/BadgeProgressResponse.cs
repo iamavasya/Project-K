@@ -1,5 +1,6 @@
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
+﻿using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 
@@ -27,7 +28,7 @@ public sealed class BadgeProgressResponse
         return FromEntity(entity, null);
     }
 
-    public static BadgeProgressResponse FromEntity(BadgeProgress entity, ProjectK.Common.Entities.KurinModule.Member? member)
+    public static BadgeProgressResponse FromEntity(BadgeProgress entity, MemberSummary? member)
     {
         var auditTrail = entity.AuditEvents
             .OrderBy(x => x.OccurredAtUtc)

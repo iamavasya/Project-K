@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -14,13 +15,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.R
     public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<bool>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILeadershipRoleSyncService _roleSync;
+        private readonly IMemberDirectory _members;
         private readonly IBackendCache _cache;
 
-        public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, ILeadershipRoleSyncService roleSync, IBackendCache cache)
+        public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
         {
             _unitOfWork = unitOfWork;
-            _roleSync = roleSync;
+            _members = members;
             _cache = cache;
         }
 
@@ -45,12 +46,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.R
 
             // Revocation must take effect at once, not after the TTL — otherwise the
             // mentor keeps write access to the group until the cached set expires.
-            var mentorMember = await _unitOfWork.Members.GetByUserKeyAsync(request.MentorUserKey, cancellationToken);
-            if (mentorMember is not null)
-            {
-                await _roleSync.SyncMemberAsync(mentorMember.MemberKey, cancellationToken);
-            }
-
             _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
             return new ServiceResult<bool>(ResultType.Success, true);

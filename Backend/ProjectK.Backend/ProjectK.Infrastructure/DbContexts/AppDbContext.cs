@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<Kurin> Kurins { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<Member> Members { get; set; }
+        public DbSet<Membership> Memberships { get; set; }
         public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
         public DbSet<Leadership> Leaderships { get; set; }
         public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -43,13 +45,30 @@ namespace ProjectK.Infrastructure.DbContexts
         public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
         public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
         public DbSet<Invitation> Invitations { get; set; }
-        public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
         public DbSet<AppNotification> AppNotifications { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<UserTileLayout> UserTileLayouts { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
+        }
+
+        /// <summary>
+        /// Stamps a new member's public code before it is written. It sits here rather than in a use
+        /// case because a member is also opened by the seeders and by account activation, and a person
+        /// without a code cannot be found by the one thing another kurin can ask for.
+        /// </summary>
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            foreach (var entry in ChangeTracker.Entries<Member>())
+            {
+                if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
+                {
+                    entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -59,6 +78,7 @@ namespace ProjectK.Infrastructure.DbContexts
             // Kurin module entity configuration
             builder.Entity<Kurin>(entity =>
             {
+                entity.Property(e => e.Branch).HasConversion<int>();
                 entity.HasKey(e => e.KurinKey);
                 entity.HasIndex(e => e.Number).IsUnique();
                 entity.Property(e => e.Stanytsia)
@@ -87,22 +107,46 @@ namespace ProjectK.Infrastructure.DbContexts
             builder.Entity<Member>(entity =>
             {
                 entity.HasKey(e => e.MemberKey);
-                entity.HasOne(entity => entity.Group)
-                      .WithMany(g => g.Members)
-                      .HasForeignKey(e => e.GroupKey)
-                      .OnDelete(DeleteBehavior.NoAction);
-                entity.HasOne(entity => entity.Kurin)
-                        .WithMany(k => k.Members)
-                        .HasForeignKey(e => e.KurinKey)
-                        .OnDelete(DeleteBehavior.NoAction);
+                entity.Property(e => e.PublicId)
+                      .HasMaxLength(20)
+                      .IsRequired();
+                entity.HasIndex(e => e.PublicId)
+                      .IsUnique();
                 entity.HasOne(entity => entity.User)
                       .WithOne()
                       .HasForeignKey<Member>(e => e.UserKey)
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
+            builder.Entity<Membership>(entity =>
+            {
+                entity.HasKey(e => e.MembershipKey);
+                entity.Property(e => e.Kind).HasConversion<int>();
+                entity.HasOne(e => e.Kurin)
+                      .WithMany(k => k.Memberships)
+                      .HasForeignKey(e => e.KurinKey)
+                      .OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(e => e.Group)
+                      .WithMany()
+                      .HasForeignKey(e => e.GroupKey)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                // The reads this table exists for: everyone in a kurin, every kurin of one person,
+                // and the scope of the account making a request.
+                entity.HasIndex(e => new { e.KurinKey, e.LeftAtUtc });
+                entity.HasIndex(e => new { e.MemberKey, e.LeftAtUtc });
+                entity.HasIndex(e => new { e.UserKey, e.LeftAtUtc });
+
+                // A person belongs to a kurin once at a time. Past memberships are excluded, so
+                // rejoining after leaving is allowed and being in it twice at once is not.
+                entity.HasIndex(e => new { e.MemberKey, e.KurinKey })
+                      .IsUnique()
+                      .HasFilter("[LeftAtUtc] IS NULL");
+            });
+
             builder.Entity<MemberWarning>(entity =>
             {
+                entity.HasIndex(e => new { e.KurinKey, e.RevokedAtUtc });
                 entity.HasKey(e => e.MemberWarningKey);
                 entity.Property(e => e.Level)
                     .HasConversion<int>();
@@ -274,10 +318,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasConversion<int>();
                 entity.HasIndex(e => new { e.MemberKey, e.BadgeId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.BadgeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<BadgeProgressAuditEvent>(entity =>
@@ -310,10 +350,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasConversion<int>();
                 entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<ProbeProgressAuditEvent>(entity =>
@@ -349,10 +385,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasMaxLength(50);
                 entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
                     .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbePointProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<MentorAssignment>(entity =>
@@ -406,51 +438,6 @@ namespace ProjectK.Infrastructure.DbContexts
                     .HasForeignKey(e => e.TargetUserKey)
                     .OnDelete(DeleteBehavior.SetNull);
                 entity.HasIndex(e => e.Token).IsUnique();
-            });
-
-            builder.Entity<PublicAnnouncementDraft>(entity =>
-            {
-                entity.HasKey(e => e.PublicAnnouncementDraftKey);
-                entity.Property(e => e.Status)
-                    .HasConversion<int>();
-                entity.Property(e => e.SourceType)
-                    .HasConversion<int>();
-                entity.Property(e => e.ParseMode)
-                    .HasConversion<int>();
-                entity.Property(e => e.ImagePlacement)
-                    .HasConversion<int>();
-                entity.Property(e => e.Title)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.Body)
-                    .HasMaxLength(4096)
-                    .IsRequired();
-                entity.Property(e => e.RenderedText)
-                    .HasMaxLength(4096);
-                entity.Property(e => e.SourceId)
-                    .HasMaxLength(200);
-                entity.Property(e => e.SourceUrl)
-                    .HasMaxLength(1000);
-                entity.Property(e => e.Environment)
-                    .HasMaxLength(100);
-                entity.Property(e => e.Version)
-                    .HasMaxLength(100);
-                entity.Property(e => e.Codename)
-                    .HasMaxLength(200);
-                entity.Property(e => e.ImageBlobKey)
-                    .HasMaxLength(500);
-                entity.Property(e => e.ImageUrl)
-                    .HasMaxLength(1000);
-                entity.Property(e => e.ImageAltText)
-                    .HasMaxLength(500);
-                entity.Property(e => e.TemplateKey)
-                    .HasMaxLength(100);
-                entity.Property(e => e.TelegramMessageId)
-                    .HasMaxLength(100);
-                entity.Property(e => e.LastPublishError)
-                    .HasMaxLength(1000);
-                entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
-                entity.HasIndex(e => new { e.SourceType, e.SourceId });
             });
 
             builder.Entity<AppNotification>(entity =>

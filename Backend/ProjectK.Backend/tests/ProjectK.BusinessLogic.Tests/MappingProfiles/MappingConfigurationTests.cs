@@ -22,7 +22,6 @@ public class MappingConfigurationTests
             cfg.AddCollectionMappers();
             cfg.AddProfile(new AuthModuleProfile());
             cfg.AddProfile(new KurinModuleProfile());
-            cfg.AddProfile(new InfrastructureModuleProfile());
         }, NullLoggerFactory.Instance);
 
         configuration.AssertConfigurationIsValid();

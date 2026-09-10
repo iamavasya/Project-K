@@ -13,13 +13,13 @@ using ProjectK.Infrastructure.Seeding;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Infrastructure.Services.JwtService;
-using ProjectK.Infrastructure.Services.PublicAnnouncements;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Services.Spreadsheets;
 
 namespace ProjectK.Infrastructure;
 
@@ -34,7 +34,11 @@ public static class DependencyInjection
     {
         // Data access. Repositories are reached only through IUnitOfWork, which owns their lifetime
         // and shares the request DbContext, so they are deliberately not registered individually.
-        services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddScoped<UnitOfWork.UnitOfWork>();
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
+        // The member module's facade is the same instance, so its writes still commit with the rest
+        // of the request. What it buys is that no one else can reach the member table at all.
+        services.AddScoped<IMemberUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
 
         services.AddScoped<IJwtService, JwtService>();
@@ -44,12 +48,11 @@ public static class DependencyInjection
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();
 
-        services.AddScoped<IPublicAnnouncementImageStore, AzureBlobPublicAnnouncementImageStore>();
-        services.AddSingleton<LocalPublicAnnouncementImageStore>();
-
         services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<KurinReportPdfRenderer>();
+        services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
+        services.AddSingleton<ISpreadsheetReader, ClosedXmlSpreadsheetReader>();
 
         services.AddScoped<GeoIPService>();
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();

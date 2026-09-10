@@ -18,7 +18,7 @@ using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     {
         private readonly AppDbContext _context;
 
@@ -29,6 +29,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
         // and used single-threaded, so no synchronisation is needed.
         private IKurinRepository _kurins;
         private IGroupRepository _groups;
+        private IMembershipRepository _memberships;
         private IMemberRepository _members;
         private ILeadershipRepository _leaderships;
         private IPlanningSessionRepository _planningSessions;
@@ -43,7 +44,6 @@ namespace ProjectK.Infrastructure.UnitOfWork
         private IMemberAwardRepository _memberAwards;
         private IWaitlistRepository _waitlistEntries;
         private IInvitationRepository _invitations;
-        private IPublicAnnouncementRepository _publicAnnouncements;
         private IAppNotificationRepository _appNotifications;
         private ISystemSettingRepository _systemSettings;
         private IAppUserRepository _users;
@@ -51,6 +51,7 @@ namespace ProjectK.Infrastructure.UnitOfWork
 
         public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
         public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
+        public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
         public IMemberRepository Members => _members ??= new MemberRepository(_context);
         public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
         public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
@@ -66,7 +67,6 @@ namespace ProjectK.Infrastructure.UnitOfWork
         public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);
         public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
         public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
-        public IPublicAnnouncementRepository PublicAnnouncements => _publicAnnouncements ??= new PublicAnnouncementRepository(_context);
         public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
         public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
         public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);

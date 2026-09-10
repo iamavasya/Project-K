@@ -2,6 +2,7 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -17,11 +18,13 @@ public sealed class GetAssignTargetsHandler
     : IRequestHandler<GetAssignTargets, ServiceResult<AgendaAssignTargetsResponse>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
 
-    public GetAssignTargetsHandler(IUnitOfWork uow, IAgendaAccess access)
+    public GetAssignTargetsHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access)
     {
         _uow = uow;
+        _members = members;
         _access = access;
     }
 
@@ -35,7 +38,7 @@ public sealed class GetAssignTargetsHandler
             cancellationToken);
 
         var groups = (await _uow.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
-        var members = (await _uow.Members.GetAllByKurinKeyAsync(request.KurinKey, cancellationToken)).ToList();
+        var members = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
 
         // Managers/admins reach every group; mentors/group leaders only their scoped groups.

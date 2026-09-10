@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using ProjectK.BusinessLogic.Behaviors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -124,7 +124,6 @@ namespace ProjectK.API
             });
 
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSingleton<IAuthorizationHandler, AdminOrServiceTokenHandler>();
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
@@ -161,14 +160,12 @@ namespace ProjectK.API
             };
             builder.Services.AddScoped<MemberPhotoReferenceProvider>();
             builder.Services.AddScoped<GroupSilhouetteReferenceProvider>();
-            builder.Services.AddScoped<PublicAnnouncementImageReferenceProvider>();
             builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
             {
                 var providers = new IPhotoReferenceProvider[]
                 {
                     sp.GetRequiredService<MemberPhotoReferenceProvider>(),
-                    sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
-                    sp.GetRequiredService<PublicAnnouncementImageReferenceProvider>()
+                    sp.GetRequiredService<GroupSilhouetteReferenceProvider>()
                 };
 
                 return new CompositePhotoReferenceProvider(providers);
@@ -426,6 +423,9 @@ namespace ProjectK.API
 
                     ctx.Status("Migrating legacy roles to offices...");
                     await LegacyRoleMigrationSeeder.MigrateAsync(scope.ServiceProvider);
+
+                    ctx.Status("Taking office roles off accounts...");
+                    await OfficeRoleCleanupSeeder.CleanAsync(scope.ServiceProvider);
 
                     ctx.Status("Handing back what retention took...");
                     await StrandedInvitationRepairSeeder.RepairAsync(scope.ServiceProvider);

@@ -26,12 +26,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Canc
 
     public sealed class CancelMemberWarningHandler : IRequestHandler<CancelMemberWarning, ServiceResult<MemberWarningDto>>
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberUnitOfWork _unitOfWork;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IMapper _mapper;
         private readonly TimeProvider _timeProvider;
 
-        public CancelMemberWarningHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper, TimeProvider timeProvider)
+        public CancelMemberWarningHandler(IMemberUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper, TimeProvider timeProvider)
         {
             _unitOfWork = unitOfWork;
             _currentUserContext = currentUserContext;

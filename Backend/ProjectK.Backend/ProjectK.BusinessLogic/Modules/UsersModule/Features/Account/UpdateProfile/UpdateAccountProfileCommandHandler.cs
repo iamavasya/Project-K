@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
@@ -18,7 +19,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProf
     public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountProfileCommand, ServiceResult<AccountSettingsDto>>
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemberDirectory _members;
         private readonly IMediator _mediator;
         private readonly IEmailService _emailService;
         private readonly EmailSettings _emailSettings;
@@ -26,14 +27,14 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProf
 
         public UpdateAccountProfileCommandHandler(
             UserManager<AppUser> userManager,
-            IUnitOfWork unitOfWork,
+            IMemberDirectory members,
             IMediator mediator,
             IEmailService emailService,
             IOptions<EmailSettings> emailSettings,
             IActivityLogger activityLogger)
         {
             _userManager = userManager;
-            _unitOfWork = unitOfWork;
+            _members = members;
             _mediator = mediator;
             _emailService = emailService;
             _emailSettings = emailSettings.Value;
@@ -84,12 +85,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProf
                 return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "UpdateFailed", "Failed to update profile.");
             }
 
-            var member = await _unitOfWork.Members.GetTrackedByUserKeyAsync(user.Id, cancellationToken);
-            if (member != null)
-            {
-                member.PhoneNumber = user.PhoneNumber ?? string.Empty;
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
+            await _members.SetPhoneFromAccountAsync(user.Id, user.PhoneNumber ?? string.Empty, cancellationToken);
 
             var settingsResult = await _mediator.Send(new GetAccountSettingsQuery(user.Id), cancellationToken);
             if (!emailChanged || settingsResult.Data == null)

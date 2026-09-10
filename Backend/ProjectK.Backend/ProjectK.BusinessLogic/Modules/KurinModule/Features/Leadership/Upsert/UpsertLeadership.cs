@@ -54,17 +54,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly ILeadershipRoleSyncService _roleSync;
         private readonly ICurrentUserContext _currentUserContext;
         public UpsertLeadershipHandler(
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILeadershipRoleSyncService roleSync,
             ICurrentUserContext currentUserContext)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _roleSync = roleSync;
             _currentUserContext = currentUserContext;
         }
 
@@ -142,13 +139,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert
                 return new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
             }
 
-            // Realign system roles for everyone whose office assignment was touched (added or ended).
-            var affectedMembers = existing.LeadershipHistories
-                .Select(history => history.MemberKey)
-                .Distinct()
-                .ToList();
-            await _roleSync.SyncMembersAsync(affectedMembers, cancellationToken);
-
+            // Nothing to realign: what an office grants is worked out from this registry when a token
+            // is minted, so seating someone in an office is the whole of the change. It reaches them
+            // on their next refresh, as it always did.
             var response = _mapper.Map<LeadershipResponse>(existing);
 
             return isCreated
