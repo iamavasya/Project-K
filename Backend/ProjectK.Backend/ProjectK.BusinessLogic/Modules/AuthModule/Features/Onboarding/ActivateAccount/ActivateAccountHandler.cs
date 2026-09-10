@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -105,18 +106,30 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.Activate
                     user.LastName,
                     entry?.PhoneNumber ?? "0000000000",
                     entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
-                    user.KurinKey ?? Guid.Empty),
+                    KurinKey: Guid.Empty),
                 cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // 5.5. A founder is taken into the kurin their approval opened for them. The account is
+            // what carries that kurin, and here it is the only thing that can: the kurin was created
+            // moments ago and nobody belongs to it yet. Joining rather than placing matters — someone
+            // who already belongs to a kurin keeps it and founds the new one alongside.
+            var foundedKurinKey = user.KurinKey;
+            if (foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
+            {
+                await _mediator.Send(
+                    new JoinKurin(memberKey, foundedKurinKey.Value, GroupKey: null),
+                    cancellationToken);
+            }
+
             // 6. A kurin-leader candidate becomes the kurin's Зв'язковий; the office sync grants the role.
-            if (isKurinLeaderCandidate && user.KurinKey.HasValue)
+            if (isKurinLeaderCandidate && foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
             {
                 await _mediator.Send(new UpsertLeadership(new UpsertLeadershipRequest
                 {
                     Type = LeadershipType.KV.ToString(),
-                    EntityKey = user.KurinKey.Value,
+                    EntityKey = foundedKurinKey.Value,
                     StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
                     LeadershipHistories = new[]
                     {

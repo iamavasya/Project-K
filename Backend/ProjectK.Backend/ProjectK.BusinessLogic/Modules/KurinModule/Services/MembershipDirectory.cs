@@ -31,4 +31,14 @@ public sealed class MembershipDirectory : IMembershipDirectory
         Guid userKey,
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetCurrentRecordsForAccountAsync(userKey, cancellationToken);
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetCurrentForAccountsAsync(
+        IReadOnlyCollection<Guid> userKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetCurrentRecordsForAccountsAsync(userKeys, cancellationToken);
+
+    public Task<IReadOnlyCollection<Guid>> GetAccountKeysInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetAccountKeysInKurinAsync(kurinKey, cancellationToken);
 }

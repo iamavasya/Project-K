@@ -20,12 +20,20 @@ public interface IAppUserRepository
     /// </summary>
     Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    /// <summary>Accounts that finished onboarding in the kurin.</summary>
-    Task<int> CountActiveAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// How many of these accounts finished onboarding. The caller names the accounts because who
+    /// belongs to a kurin is a question for membership, and an account record cannot answer it:
+    /// <c>AppUser.KurinKey</c> is written once when the account is opened and never again.
+    /// </summary>
+    Task<int> CountActiveAsync(
+        IReadOnlyCollection<Guid> userKeys,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Active beta participants, across the system when <paramref name="kurinKey"/> is <c>null</c>
-    /// and inside one kurin otherwise. This is what the beta cap is measured against.
+    /// Active beta participants, across the system when <paramref name="userKeys"/> is <c>null</c>
+    /// and among the named accounts otherwise. This is what the beta cap is measured against.
     /// </summary>
-    Task<int> CountActiveBetaAsync(Guid? kurinKey, CancellationToken cancellationToken = default);
+    Task<int> CountActiveBetaAsync(
+        IReadOnlyCollection<Guid>? userKeys,
+        CancellationToken cancellationToken = default);
 }

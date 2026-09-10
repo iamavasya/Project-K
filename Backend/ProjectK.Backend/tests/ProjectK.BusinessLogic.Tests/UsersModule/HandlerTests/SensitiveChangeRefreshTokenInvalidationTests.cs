@@ -6,6 +6,7 @@ using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
@@ -275,7 +276,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Arrange
             var kurinKey = Guid.NewGuid();
             var targetUser = CreateSignedInUser();
-            targetUser.KurinKey = kurinKey;
             targetUser.TwoFactorEnabled = true;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
             currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
@@ -287,7 +287,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
                 _refreshTokensMock.Object,
-                FakeAccessContext.With("Member"));
+                FakeAccessContext.With("Member"),
+                StandingIn(targetUser.Id, kurinKey));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
@@ -315,7 +316,6 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             // Arrange
             var kurinKey = Guid.NewGuid();
             var targetUser = CreateSignedInUser();
-            targetUser.KurinKey = kurinKey;
             var currentUserContextMock = new Mock<ICurrentUserContext>();
             currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
             currentUserContextMock.Setup(x => x.IsInRole("KV.Zvyazkovyi")).Returns(true);
@@ -326,7 +326,8 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
                 new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
                 _activityLoggerMock.Object,
                 _refreshTokensMock.Object,
-                FakeAccessContext.With("KV.Zvyazkovyi"));
+                FakeAccessContext.With("KV.Zvyazkovyi"),
+                StandingIn(targetUser.Id, kurinKey));
 
             _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
             _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
@@ -340,6 +341,93 @@ namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
             Assert.False(result.Data);
             _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(It.IsAny<AppUser>()), Times.Never);
             _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ResetUserMfa_ShouldReturnForbidden_WhenTargetHasMovedOnFromTheManagersKurin()
+        {
+            // Arrange: the account still carries the kurin it was opened in, but the person has
+            // since left it for another. Resetting MFA hands an account over, so the stale snapshot
+            // must not be what decides.
+            var oldKurinKey = Guid.NewGuid();
+            var newKurinKey = Guid.NewGuid();
+            var targetUser = CreateSignedInUser();
+            targetUser.KurinKey = oldKurinKey;
+            targetUser.TwoFactorEnabled = true;
+
+            var currentUserContextMock = new Mock<ICurrentUserContext>();
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+            currentUserContextMock.Setup(x => x.KurinKey).Returns(oldKurinKey);
+
+            var handler = new ResetUserMfaCommandHandler(
+                _userManagerMock.Object,
+                currentUserContextMock.Object,
+                new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object,
+                FakeAccessContext.With("Member"),
+                StandingIn(targetUser.Id, newKurinKey));
+
+            _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
+            _userManagerMock.Setup(x => x.GetRolesAsync(targetUser)).ReturnsAsync(new[] { "Member" });
+
+            // Act
+            var result = await handler.Handle(new ResetUserMfaCommand(targetUser.Id), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ResultType.Forbidden, result.Type);
+            _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(It.IsAny<AppUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ResetUserMfa_ShouldReset_WhenTargetStandsInTheManagersKurin_EvenWithoutTheAccountSnapshot()
+        {
+            // Arrange: the common case after 0.20.0 — the account never had its kurin field written,
+            // and belonging is known only from membership.
+            var kurinKey = Guid.NewGuid();
+            var targetUser = CreateSignedInUser();
+            targetUser.KurinKey = null;
+            targetUser.TwoFactorEnabled = true;
+
+            var currentUserContextMock = new Mock<ICurrentUserContext>();
+            currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
+            currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+            currentUserContextMock.Setup(x => x.KurinKey).Returns(kurinKey);
+
+            var handler = new ResetUserMfaCommandHandler(
+                _userManagerMock.Object,
+                currentUserContextMock.Object,
+                new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
+                _activityLoggerMock.Object,
+                _refreshTokensMock.Object,
+                FakeAccessContext.With("Member"),
+                StandingIn(targetUser.Id, kurinKey));
+
+            _userManagerMock.Setup(x => x.FindByIdAsync(targetUser.Id.ToString())).ReturnsAsync(targetUser);
+            _userManagerMock.Setup(x => x.GetRolesAsync(targetUser)).ReturnsAsync(new[] { "Member" });
+            _userManagerMock.Setup(x => x.SetTwoFactorEnabledAsync(targetUser, false))
+                .ReturnsAsync(IdentityResult.Success);
+            _userManagerMock.Setup(x => x.ResetAuthenticatorKeyAsync(targetUser))
+                .ReturnsAsync(IdentityResult.Success);
+            _userManagerMock.Setup(x => x.UpdateAsync(targetUser)).ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            var result = await handler.Handle(new ResetUserMfaCommand(targetUser.Id), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ResultType.Success, result.Type);
+            _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(targetUser), Times.Once);
+        }
+
+        /// <summary>Where the target actually stands, which is what the check reads.</summary>
+        private static IMembershipDirectory StandingIn(Guid userKey, params Guid[] kurinKeys)
+        {
+            var directory = new Mock<IMembershipDirectory>();
+            directory
+                .Setup(x => x.GetKurinKeysForAccountAsync(userKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(kurinKeys);
+            return directory.Object;
         }
 
         private static AppUser CreateSignedInUser()

@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -20,12 +21,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.Preflight
         private readonly UserManager<AppUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMemberDirectory _members;
+        private readonly IMembershipDirectory _memberships;
 
-        public GetMigrationPreflightReportHandler(UserManager<AppUser> userManager, IUnitOfWork unitOfWork, IMemberDirectory members)
+        public GetMigrationPreflightReportHandler(
+            UserManager<AppUser> userManager,
+            IUnitOfWork unitOfWork,
+            IMemberDirectory members,
+            IMembershipDirectory memberships)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _members = members;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<MigrationPreflightReport>> Handle(GetMigrationPreflightReportQuery request, CancellationToken cancellationToken)
@@ -77,20 +84,33 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.Preflight
                 }
             }
 
-            // 4. Inconsistent Links
+            // 4. Inconsistent Links — an account whose snapshot names a kurin the person does not
+            // stand in. Only a contradiction is reported, never a merely absent snapshot:
+            // AppUser.KurinKey is written when the account is opened and never again, so most
+            // accounts carry nothing, and reporting those would be reporting the whole table.
+            var standing = await _memberships.GetCurrentForAccountsAsync(
+                users.Select(user => user.Id).ToList(),
+                cancellationToken);
+
             foreach (var member in members.Where(m => m.UserKey.HasValue))
             {
-                var user = users.FirstOrDefault(u => u.Id == member.UserKey.Value);
-                if (user != null)
+                var user = users.FirstOrDefault(u => u.Id == member.UserKey!.Value);
+                if (user?.KurinKey is null || user.KurinKey == Guid.Empty)
                 {
-                    if (user.KurinKey != member.KurinKey)
-                    {
-                        report.InconsistentLinks.Add(new InconsistentLinkInfo(
-                            member.MemberKey,
-                            user.Id,
-                            member.KurinKey,
-                            user.KurinKey));
-                    }
+                    continue;
+                }
+
+                var kurinsHere = standing.TryGetValue(user.Id, out var current)
+                    ? current.Select(record => record.KurinKey).ToList()
+                    : [];
+
+                if (kurinsHere.Count > 0 && !kurinsHere.Contains(user.KurinKey.Value))
+                {
+                    report.InconsistentLinks.Add(new InconsistentLinkInfo(
+                        member.MemberKey,
+                        user.Id,
+                        kurinsHere[0],
+                        user.KurinKey));
                 }
             }
 

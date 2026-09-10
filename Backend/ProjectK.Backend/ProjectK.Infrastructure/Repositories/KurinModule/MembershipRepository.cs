@@ -34,6 +34,53 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
             => await AsRecords(Context.Memberships.Where(m => m.UserKey == userKey && m.LeftAtUtc == null))
                 .ToListAsync(cancellationToken);
 
+        public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetCurrentRecordsForAccountsAsync(
+            IReadOnlyCollection<Guid> userKeys,
+            CancellationToken cancellationToken = default)
+        {
+            if (userKeys.Count == 0)
+            {
+                return new Dictionary<Guid, IReadOnlyCollection<MembershipRecord>>();
+            }
+
+            var keys = userKeys.Distinct().ToList();
+            var rows = await Context.Memberships
+                .Where(m => m.UserKey != null && keys.Contains(m.UserKey.Value) && m.LeftAtUtc == null)
+                .OrderByDescending(m => m.JoinedAtUtc)
+                .Select(m => new
+                {
+                    UserKey = m.UserKey!.Value,
+                    Record = new MembershipRecord(
+                        m.MembershipKey,
+                        m.KurinKey,
+                        m.Kurin.Number,
+                        m.Kurin.Branch,
+                        m.Kurin.NamedAfter,
+                        m.GroupKey,
+                        m.Group != null ? m.Group.Name : null,
+                        m.Kind,
+                        m.JoinedAtUtc,
+                        m.LeftAtUtc)
+                })
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            return rows
+                .GroupBy(row => row.UserKey)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyCollection<MembershipRecord>)group.Select(row => row.Record).ToList());
+        }
+
+        public async Task<IReadOnlyCollection<Guid>> GetAccountKeysInKurinAsync(
+            Guid kurinKey,
+            CancellationToken cancellationToken = default)
+            => await Context.Memberships
+                .Where(m => m.KurinKey == kurinKey && m.LeftAtUtc == null && m.UserKey != null)
+                .Select(m => m.UserKey!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
         /// <summary>Current memberships first, then the ones already closed, newest joined first.</summary>
         private static IQueryable<MembershipRecord> AsRecords(IQueryable<Membership> memberships)
             => memberships

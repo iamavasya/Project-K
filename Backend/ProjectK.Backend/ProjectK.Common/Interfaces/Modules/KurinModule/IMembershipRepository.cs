@@ -36,6 +36,23 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// The same for many accounts at once, keyed by account; an account with no current
+        /// membership is absent from the result. Exists so a list of accounts costs one read rather
+        /// than one per row.
+        /// </summary>
+        Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetCurrentRecordsForAccountsAsync(
+            IReadOnlyCollection<Guid> userKeys,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// The accounts that currently belong to a kurin. Read where the question is about accounts
+        /// rather than people — a seat cap counts sign-ins, not names.
+        /// </summary>
+        Task<IReadOnlyCollection<Guid>> GetAccountKeysInKurinAsync(
+            Guid kurinKey,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Writes the account key onto every current membership of a person. The copy exists so that
         /// authorization never has to read the member record; keeping it correct is this method's job,
         /// and it runs whenever an account is linked.

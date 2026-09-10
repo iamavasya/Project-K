@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using System;
@@ -23,6 +24,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
         private readonly IEmailService _emailService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IConfiguration _configuration;
+        private readonly IMembershipDirectory _memberships;
 
         public ApproveWaitlistEntryHandler(
             IUnitOfWork unitOfWork,
@@ -30,7 +32,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
             IAccountProvisioningService accountProvisioning,
             IEmailService emailService,
             ICurrentUserContext currentUserContext,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IMembershipDirectory memberships)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
@@ -38,6 +41,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
             _emailService = emailService;
             _currentUserContext = currentUserContext;
             _configuration = configuration;
+            _memberships = memberships;
         }
 
         public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
@@ -63,8 +67,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
                     var existingKurin = await _unitOfWork.Kurins.GetByNumberAsync(num, cancellationToken);
                     if (existingKurin != null && existingKurin.IsZbtKurin)
                     {
+                        var accountsThere = await _memberships
+                            .GetAccountKeysInKurinAsync(existingKurin.KurinKey, cancellationToken);
                         var activeUsersCount = await _unitOfWork.Users
-                            .CountActiveAsync(existingKurin.KurinKey, cancellationToken);
+                            .CountActiveAsync(accountsThere, cancellationToken);
 
                         if (activeUsersCount >= existingKurin.ZbtUserCap)
                         {

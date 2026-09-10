@@ -34,4 +34,20 @@ public interface IMembershipDirectory
     Task<IReadOnlyCollection<MembershipRecord>> GetCurrentForAccountAsync(
         Guid userKey,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same for a whole list of accounts, in one read. An account that stands nowhere is absent
+    /// from the result rather than present with an empty list.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetCurrentForAccountsAsync(
+        IReadOnlyCollection<Guid> userKeys,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The accounts currently standing in a kurin. Asked where the subject is the account and not
+    /// the person behind it: a beta seat cap counts who can sign in.
+    /// </summary>
+    Task<IReadOnlyCollection<Guid>> GetAccountKeysInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
 }
