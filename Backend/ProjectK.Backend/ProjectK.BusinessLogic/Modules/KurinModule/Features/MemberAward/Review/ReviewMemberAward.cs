@@ -17,7 +17,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
     public sealed class ReviewMemberAward : IRequest<ServiceResult<MemberAwardDto>>
     {
         public Guid MemberAwardKey { get; set; }
-        public bool IsApproved { get; set; }
+
+        /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
+        public bool? IsApproved { get; set; }
     }
 
     public sealed class ReviewMemberAwardHandler : IRequestHandler<ReviewMemberAward, ServiceResult<MemberAwardDto>>
@@ -56,7 +58,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
                 return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
             }
 
-            award.Status = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
+            // Said, because the validator refused the request otherwise.
+            var approved = request.IsApproved!.Value;
+
+            award.Status = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
             award.ReviewedAtUtc = DateTime.UtcNow;
             award.ReviewedByUserKey = _currentUserContext.UserId;
             award.UpdatedDate = DateTime.UtcNow;
@@ -64,7 +69,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
             _unitOfWork.MemberAwards.Update(award);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await NotifyMemberOwnerAsync(award, request.IsApproved, cancellationToken);
+            await NotifyMemberOwnerAsync(award, approved, cancellationToken);
 
             return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(award));
         }

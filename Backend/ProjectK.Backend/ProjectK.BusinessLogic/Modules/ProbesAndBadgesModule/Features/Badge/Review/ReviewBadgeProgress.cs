@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Re
 
 public sealed class ReviewBadgeProgress : IRequest<ServiceResult<BadgeProgressResponse>>
 {
-    public ReviewBadgeProgress(Guid memberKey, string badgeId, bool isApproved, string? note)
+    public ReviewBadgeProgress(Guid memberKey, string badgeId, bool? isApproved, string? note)
     {
         MemberKey = memberKey;
         BadgeId = badgeId;
@@ -25,7 +25,8 @@ public sealed class ReviewBadgeProgress : IRequest<ServiceResult<BadgeProgressRe
 
     public Guid MemberKey { get; }
     public string BadgeId { get; }
-    public bool IsApproved { get; }
+    /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
+    public bool? IsApproved { get; }
     public string? Note { get; }
 }
 
@@ -65,7 +66,10 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
 
         var fromStatus = progress.Status;
         var canReviewSubmitted = fromStatus == BadgeProgressStatus.Submitted;
-        var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !request.IsApproved;
+        // Said, because the validator refused the request otherwise.
+        var approved = request.IsApproved!.Value;
+
+        var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !approved;
         if (!canReviewSubmitted && !canRemoveConfirmed)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.Conflict);
@@ -73,9 +77,9 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
 
         var now = DateTime.UtcNow;
         var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
-        var targetStatus = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
+        var targetStatus = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
         string action;
-        if (request.IsApproved)
+        if (approved)
         {
             action = "Confirmed";
         }
@@ -113,7 +117,7 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             return new ServiceResult<BadgeProgressResponse>(ResultType.InternalServerError);
         }
 
-        await NotifyMemberOwnerAsync(progress, request.IsApproved, action, cancellationToken);
+        await NotifyMemberOwnerAsync(progress, approved, action, cancellationToken);
 
         return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
     }
