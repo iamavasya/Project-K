@@ -27,6 +27,16 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models
         /// </summary>
         public string? GroupName { get; set; }
         public Guid KurinKey { get; set; }
+
+        /// <summary>
+        /// Whether they are в кадрі виховників of the kurin this read was about. Filled by list
+        /// reads; a read about one person leaves it false, because standing is a property of a
+        /// placement and there is no placement in view.
+        /// </summary>
+        public bool IsStaff { get; set; }
+
+        /// <summary>The гуртки they run as виховник in that kurin, by name. Empty for a юнак.</summary>
+        public ICollection<string> MentoredGroupNames { get; set; } = [];
         public Guid? UserKey { get; set; }
         public string? UserRole { get; set; }
         public string FirstName { get; set; }

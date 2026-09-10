@@ -16,7 +16,17 @@ import { AuthService } from '../../authModule/services/authService/auth.service'
 import { MemberDto } from '../common/models/memberDto';
 import { KurinBranch, KURIN_BRANCH_LABELS } from '../common/models/enums/kurin-branch.enum';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
-import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor } from './registry-columns';
+import { PlastLevel } from '../common/models/enums/plast-level.enum';
+import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../common/models/enums/plast-ladder';
+import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
+
+/** Рядок таблиці чисельності: скільки юнаків стоїть на цьому ступені. */
+export interface TallyRow {
+  readonly label: string;
+  readonly count: number;
+  /** Підсумок і «без ступеня» малюються інакше — вони не ступені драбини. */
+  readonly kind: 'level' | 'rest' | 'total';
+}
 
 /** Ключ вибору колонок. На курінь, бо в різних гілках потрібне різне. */
 const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
@@ -50,8 +60,13 @@ export class RegistryComponent implements OnInit {
   readonly kurinNumber = signal<number | null>(null);
   readonly selectedColumnIds = signal<string[]>([]);
   readonly exporting = signal(false);
+  readonly search = signal('');
 
-  readonly allColumns: RegistryColumn[] = REGISTRY_COLUMNS;
+  /**
+   * Колонки, які можна вмикати. `mentoredGroups` не серед них: у таблиці впорядників вона стоїть
+   * завжди, а в таблиці юнаків не значить нічого — вибирати там нічого.
+   */
+  readonly allColumns: RegistryColumn[] = REGISTRY_COLUMNS.filter(column => column.id !== 'mentoredGroups');
 
   readonly branchLabel = computed(() => {
     const branch = this.branch();
@@ -64,7 +79,62 @@ export class RegistryComponent implements OnInit {
     return this.allColumns.filter(column => chosen.has(column.id));
   });
 
-  readonly searchFields = ['lastName', 'firstName', 'middleName', 'email', 'phoneNumber', 'groupName'];
+  /**
+   * Юнаки й впорядники — окремими таблицями, бо це різні питання до одного складу. Розділяє уряд
+   * у кадрі виховників, який рахує бекенд: гуртковий теж має уряд і теж юнак.
+   */
+  readonly youth = computed(() => this.found().filter(member => !member.isStaff));
+  readonly staff = computed(() => this.found().filter(member => member.isStaff));
+
+  /** Ті самі колонки, але закріплення попереду й без власного гуртка. */
+  readonly staffColumns = computed(() => staffColumnsOf(this.visibleColumns()));
+
+  /**
+   * Чисельність за ступенями — лише юнацтво: впорядники рахуються як кадра, не як склад юнаків.
+   * Рядки — драбина цієї гілки, тож УСП- і УПС-курінь рахують свої ступені, а не юнацькі.
+   */
+  readonly tally = computed<TallyRow[]>(() => {
+    const youth = this.youth();
+    const levels = defaultLevelsFor(this.branch());
+    const rows: TallyRow[] = levels.map(level => ({
+      label: PLAST_LEVEL_COLUMN_LABELS[level],
+      count: youth.filter(member => member.latestPlastLevel === level).length,
+      kind: 'level' as const
+    }));
+
+    // Хто стоїть поза драбиною цієї гілки або взагалі без ступеня. Без цього рядка стовпчик не
+    // сходився б зі складом — а саме незаписаний ступінь провід тут і шукає.
+    const onLadder = new Set<string>(levels as readonly PlastLevel[]);
+    const rest = youth.filter(member => !member.latestPlastLevel || !onLadder.has(member.latestPlastLevel)).length;
+    if (rest) {
+      rows.push({ label: 'Без ступеня / інший', count: rest, kind: 'rest' });
+    }
+
+    rows.push({ label: 'Разом', count: youth.length, kind: 'total' });
+    return rows;
+  });
+
+  /**
+   * Пошук живе тут, а не у фільтрі таблиці: таблиць дві, а поле одне, і людина шукає по складу —
+   * не знаючи наперед, у якій із двох таблиць той, кого вона шукає.
+   */
+  private found = computed(() => {
+    const needle = this.search().trim().toLowerCase();
+    if (!needle) {
+      return this.members();
+    }
+
+    return this.members().filter(member =>
+      [
+        member.lastName,
+        member.firstName,
+        member.middleName,
+        member.email,
+        member.phoneNumber,
+        member.groupName,
+        ...(member.mentoredGroupNames ?? [])
+      ].some(field => field?.toLowerCase().includes(needle)));
+  });
 
   private kurinKey = '';
 

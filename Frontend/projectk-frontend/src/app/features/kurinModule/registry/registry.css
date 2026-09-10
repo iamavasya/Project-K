@@ -29,6 +29,49 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.registry__section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block: 2rem 0.75rem;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.registry__section:first-of-type {
+  margin-top: 0;
+}
+
+.registry__count {
+  padding: 0.05rem 0.5rem;
+  border-radius: var(--p-border-radius-sm, 4px);
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.registry__note {
+  margin-bottom: 0.75rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+/* Дві колонки чисел не мають розтягуватись на всю ширину сторінки. */
+.registry__tally {
+  max-width: 26rem;
+}
+
+.registry__number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.registry__tally-total > td {
+  font-weight: 700;
 }
 
 .registry__search {

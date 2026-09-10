@@ -42,6 +42,24 @@ namespace ProjectK.Common.Models.Dtos.KurinModule
         /// </summary>
         public List<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
 
+        /// <summary>
+        /// Whether this person holds an open office in this kurin's кадра виховників. It is what the
+        /// registry splits on, and it is asked of the offices rather than of
+        /// <c>Membership.Kind</c>: that field exists for exactly this and is <c>Youth</c> on every
+        /// row ever written, because the migration that introduced it deliberately did not guess.
+        /// <para>
+        /// Only <c>KV</c> counts. A гуртковий or a курінний holds an office too and is still a юнак.
+        /// </para>
+        /// </summary>
+        public bool IsStaff { get; set; }
+
+        /// <summary>
+        /// The гуртки this person runs, by name, in this kurin. Read from the виховник assignments —
+        /// where a виховник is attached is said there, not by their own membership, which places
+        /// them in the kurin and usually in no гурток at all.
+        /// </summary>
+        public List<string> MentoredGroupNames { get; set; } = [];
+
         public List<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];
         public List<MemberWarningDto> Warnings { get; set; } = [];
     }

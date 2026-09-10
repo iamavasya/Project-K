@@ -128,6 +128,24 @@ namespace ProjectK.Infrastructure.Repositories.KurinModule
                     GroupKey = x.Placement.GroupKey,
                     GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
                     KurinKey = x.Placement.KurinKey,
+                    // Кадра виховників, і саме цього куреня. Уряд типу Group — це гуртковий, а він
+                    // юнак; тому тут звужено до KV, а не до «має якийсь уряд».
+                    IsStaff = Context.LeadershipHistories.Any(history =>
+                        history.MemberKey == x.Person.MemberKey
+                        && history.EndDate == null
+                        && history.Leadership.EndDate == null
+                        && history.Leadership.Type == LeadershipType.KV
+                        && history.Leadership.KurinKey == x.Placement.KurinKey),
+                    // Закріплення виховника ведеться на акаунт, а не на людину, тож людина без
+                    // акаунта не має закріплень — і список порожній, а не помилковий.
+                    MentoredGroupNames = Context.MentorAssignments
+                        .Where(assignment => assignment.RevokedAtUtc == null
+                            && x.Person.UserKey != null
+                            && assignment.MentorUserKey == x.Person.UserKey
+                            && assignment.Group.KurinKey == x.Placement.KurinKey)
+                        .OrderBy(assignment => assignment.Group.Name)
+                        .Select(assignment => assignment.Group.Name)
+                        .ToList(),
                     UserKey = x.Person.UserKey,
                     FirstName = x.Person.FirstName,
                     MiddleName = x.Person.MiddleName,

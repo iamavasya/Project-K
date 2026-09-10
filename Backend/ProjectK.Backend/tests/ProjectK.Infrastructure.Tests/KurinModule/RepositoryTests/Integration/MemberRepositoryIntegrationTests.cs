@@ -338,6 +338,101 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
             Assert.Null(hiddenItem.School);
         }
 
+        /// <summary>
+        /// The split the реєстр draws. Only an office in the кадра виховників makes someone кадра: a
+        /// гуртковий holds an office too and is still a юнак, and getting that wrong would empty the
+        /// юнаки table of exactly the people who run the гуртки.
+        /// </summary>
+        [Fact]
+        public async Task GetListItemsByKurinKeyAsync_ShouldCallOnlyKvOfficersStaff_AndNameTheGroupsTheyMentor()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(21);
+            uow.Kurins.Create(kurin);
+            await uow.SaveChangesAsync();
+
+            var alpha = new Group("Alpha", kurin.KurinKey);
+            var beta = new Group("Beta", kurin.KurinKey);
+            uow.Groups.Create(alpha);
+            uow.Groups.Create(beta);
+            await uow.SaveChangesAsync();
+
+            var youth = BuildMember(alpha, kurin, "Yura", "Yunak");
+            var hurtkovyi = BuildMember(alpha, kurin, "Hanna", "Hurtkova");
+            var mentor = BuildMember(alpha, kurin, "Marta", "Vykhovna");
+            mentor.UserKey = Guid.NewGuid();
+            Placed(uow, youth, kurin.KurinKey, alpha.GroupKey);
+            Placed(uow, hurtkovyi, kurin.KurinKey, alpha.GroupKey);
+            Placed(uow, mentor, kurin.KurinKey);
+            await uow.SaveChangesAsync();
+
+            var groupOffice = new Leadership
+            {
+                LeadershipKey = Guid.NewGuid(),
+                Type = LeadershipType.Group,
+                Group = alpha,
+                Name = "Alpha",
+                StartDate = new DateOnly(2024, 1, 1)
+            };
+            var kvOffice = new Leadership
+            {
+                LeadershipKey = Guid.NewGuid(),
+                Type = LeadershipType.KV,
+                KurinKey = kurin.KurinKey,
+                Name = "KV",
+                StartDate = new DateOnly(2024, 1, 1)
+            };
+            context.Set<Leadership>().AddRange(groupOffice, kvOffice);
+            context.Set<LeadershipHistory>().AddRange(
+                new LeadershipHistory
+                {
+                    LeadershipHistoryKey = Guid.NewGuid(),
+                    MemberKey = hurtkovyi.MemberKey,
+                    LeadershipKey = groupOffice.LeadershipKey,
+                    Role = LeadershipRole.Hurtkoviy,
+                    StartDate = new DateOnly(2024, 1, 1)
+                },
+                new LeadershipHistory
+                {
+                    LeadershipHistoryKey = Guid.NewGuid(),
+                    MemberKey = mentor.MemberKey,
+                    LeadershipKey = kvOffice.LeadershipKey,
+                    Role = LeadershipRole.Vykhovnyk,
+                    StartDate = new DateOnly(2024, 1, 1)
+                });
+            context.Set<MentorAssignment>().AddRange(
+                new MentorAssignment
+                {
+                    MentorUserKey = mentor.UserKey!.Value,
+                    GroupKey = beta.GroupKey,
+                    AssignedAtUtc = DateTime.UtcNow.AddDays(-10)
+                },
+                new MentorAssignment
+                {
+                    MentorUserKey = mentor.UserKey!.Value,
+                    GroupKey = alpha.GroupKey,
+                    AssignedAtUtc = DateTime.UtcNow.AddDays(-20),
+                    RevokedAtUtc = DateTime.UtcNow.AddDays(-1) // handed the гурток over
+                });
+            await context.SaveChangesAsync();
+
+            var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
+            var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+
+            var plainItem = items.Single(item => item.MemberKey == youth.MemberKey);
+            var hurtkovyiItem = items.Single(item => item.MemberKey == hurtkovyi.MemberKey);
+            var mentorItem = items.Single(item => item.MemberKey == mentor.MemberKey);
+
+            Assert.False(plainItem.IsStaff);
+            Assert.False(hurtkovyiItem.IsStaff);
+            Assert.True(mentorItem.IsStaff);
+
+            Assert.Empty(hurtkovyiItem.MentoredGroupNames);
+            Assert.Equal(["Beta"], mentorItem.MentoredGroupNames);
+        }
+
         [Fact]
         public async Task GetAllAsync_Parameterless_ShouldThrowNotSupported()
         {

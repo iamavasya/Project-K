@@ -60,6 +60,13 @@ export const REGISTRY_COLUMNS: RegistryColumn[] = [
     value: member => member.groupName ?? null
   },
   {
+    id: 'mentoredGroups',
+    header: 'Гурток (закріплення)',
+    group: 'Належність',
+    kind: 'text',
+    value: member => member.mentoredGroupNames?.join(', ') || null
+  },
+  {
     id: 'phoneNumber',
     header: 'Телефон',
     group: 'Контакти',
@@ -93,6 +100,9 @@ export const REGISTRY_COLUMNS: RegistryColumn[] = [
 /**
  * Що курінь цієї гілки бачить, поки нічого не вибирав. Особа й належність — завжди; з дат — те, що
  * гілка звично записує.
+ *
+ * `mentoredGroups` тут немає навмисно: у таблиці впорядників вона стоїть завжди, а в таблиці юнаків
+ * не значить нічого — вмикати її вручну ніде.
  */
 export function defaultColumnIdsFor(branch: KurinBranch | null | undefined): string[] {
   return [
@@ -102,4 +112,13 @@ export function defaultColumnIdsFor(branch: KurinBranch | null | undefined): str
     'phoneNumber',
     ...defaultLevelsFor(branch).map(level => `level:${level}`)
   ];
+}
+
+/**
+ * Колонки таблиці впорядників: закріплення попереду, а власний гурток прибрано — виховника членство
+ * ставить у курінь і зазвичай у жоден гурток, тож ця колонка в них порожня й лише збиває з пантелику.
+ */
+export function staffColumnsOf(columns: readonly RegistryColumn[]): RegistryColumn[] {
+  const assignment = REGISTRY_COLUMNS.find(column => column.id === 'mentoredGroups')!;
+  return [assignment, ...columns.filter(column => column.id !== 'groupName' && column.id !== 'mentoredGroups')];
 }

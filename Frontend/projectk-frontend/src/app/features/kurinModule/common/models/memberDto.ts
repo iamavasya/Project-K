@@ -14,6 +14,13 @@ export interface MemberDto {
     kurinKey: string;
     userKey?: string | null;
     userRole?: string | null;
+    /**
+     * Чи людина в кадрі виховників цього куреня. Заповнює лише читання списку — картка про одну
+     * людину не знає, про яке саме членство йдеться.
+     */
+    isStaff?: boolean;
+    /** Гуртки, за якими людина закріплена як виховник. Порожньо в юнака. */
+    mentoredGroupNames?: string[];
     firstName: string;
     middleName: string;
     lastName: string;

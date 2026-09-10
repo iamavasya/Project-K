@@ -23,6 +23,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
                 ["dateOfBirth"] = new("Дата народження", m => SheetCell.Of(m.DateOfBirth)),
                 ["plastLevel"] = new("Пластовий ступінь", m => SheetCell.Of(LevelName(m.LatestPlastLevel))),
                 ["groupName"] = new("Гурток", m => SheetCell.Of(m.GroupName)),
+                ["mentoredGroups"] = new("Гурток (закріплення)", m => SheetCell.Of(
+                    m.MentoredGroupNames.Count == 0 ? null : string.Join(", ", m.MentoredGroupNames))),
                 ["phoneNumber"] = new("Телефон", m => SheetCell.Of(m.PhoneNumber)),
                 ["email"] = new("Пошта", m => SheetCell.Of(m.Email)),
                 ["address"] = new("Адреса", m => SheetCell.Of(m.Address)),
@@ -32,12 +34,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
         private static readonly IReadOnlyDictionary<PlastLevel, string> LevelHeaders =
             new Dictionary<PlastLevel, string>
             {
-                [PlastLevel.Entry] = "Вступ",
-                [PlastLevel.Prykhylnyk] = "Прихильник",
-                [PlastLevel.Uchasnyk] = "Заприсяження",
-                [PlastLevel.Rozviduvach] = "Розвідувач",
-                [PlastLevel.Skob] = "Скоб / вірлиця",
-                [PlastLevel.HetmanskiySkob] = "Гетьм. скоб",
+                [PlastLevel.Entry] = "пл. неім.",
+                [PlastLevel.Prykhylnyk] = "пл. прих.",
+                [PlastLevel.Uchasnyk] = "пл. уч.",
+                [PlastLevel.Rozviduvach] = "пл. розв.",
+                [PlastLevel.Skob] = "пл. скоб / вірл.",
+                [PlastLevel.HetmanskiySkob] = "пл. гетьм. скоб / вірл.",
                 [PlastLevel.Starshoplastun] = "Старшопластун",
                 [PlastLevel.Senior] = "Перехід в УПС",
                 [PlastLevel.SeniorPratsi] = "Сен. праці",

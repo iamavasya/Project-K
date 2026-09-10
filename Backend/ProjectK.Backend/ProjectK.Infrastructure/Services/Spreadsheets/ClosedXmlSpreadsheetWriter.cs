@@ -11,24 +11,41 @@ public sealed class ClosedXmlSpreadsheetWriter : ISpreadsheetWriter
     /// Excel reads it in the system codepage unless it finds a BOM, so Ukrainian names arrive as
     /// mojibake on most machines, and dates come out as text.
     /// </summary>
-    public byte[] Write(
-        string sheetName,
-        IReadOnlyList<string> headers,
-        IReadOnlyList<IReadOnlyList<SheetCell>> rows)
+    public byte[] Write(IReadOnlyList<SheetTable> sheets)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet(SafeSheetName(sheetName));
 
-        for (var column = 0; column < headers.Count; column++)
+        foreach (var table in sheets)
+        {
+            WriteSheet(workbook, table);
+        }
+
+        // A workbook with no sheets is not a file Excel will open. Reaching this means every table
+        // was empty, and an empty реєстр is still an answer — so it gets a sheet saying so.
+        if (!workbook.Worksheets.Any())
+        {
+            WriteSheet(workbook, new SheetTable("Порожньо", ["Немає даних"], []));
+        }
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    private static void WriteSheet(XLWorkbook workbook, SheetTable table)
+    {
+        var sheet = workbook.AddWorksheet(SafeSheetName(table.Name));
+
+        for (var column = 0; column < table.Headers.Count; column++)
         {
             var cell = sheet.Cell(1, column + 1);
-            cell.Value = headers[column];
+            cell.Value = table.Headers[column];
             cell.Style.Font.Bold = true;
         }
 
-        for (var row = 0; row < rows.Count; row++)
+        for (var row = 0; row < table.Rows.Count; row++)
         {
-            var values = rows[row];
+            var values = table.Rows[row];
             for (var column = 0; column < values.Count; column++)
             {
                 var cell = sheet.Cell(row + 2, column + 1);
@@ -38,6 +55,10 @@ public sealed class ClosedXmlSpreadsheetWriter : ISpreadsheetWriter
                 {
                     cell.Value = date.ToDateTime(TimeOnly.MinValue);
                     cell.Style.DateFormat.Format = "dd.MM.yyyy";
+                }
+                else if (value.Number is { } number)
+                {
+                    cell.Value = number;
                 }
                 else if (!string.IsNullOrEmpty(value.Text))
                 {
@@ -50,10 +71,6 @@ public sealed class ClosedXmlSpreadsheetWriter : ISpreadsheetWriter
 
         sheet.SheetView.FreezeRows(1);
         sheet.Columns().AdjustToContents();
-
-        using var stream = new MemoryStream();
-        workbook.SaveAs(stream);
-        return stream.ToArray();
     }
 
     /// <summary>Excel refuses some characters in a sheet name and caps it at 31.</summary>

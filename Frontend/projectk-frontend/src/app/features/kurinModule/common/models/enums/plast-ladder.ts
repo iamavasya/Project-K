@@ -21,14 +21,17 @@ export const PLAST_LADDER: readonly PlastLevel[] = [
   PlastLevel.SeniorKerivnytstva
 ];
 
-/** Підпис колонки з датою здобуття — короткий, бо колонок багато. */
+/**
+ * Підпис ступеня — так, як його пишуть у звітах. Дата вступу до Пласту стоїть під «пл. неім.»: це і
+ * є ступінь пластуна неіменованого, а не окремий службовий рядок перед драбиною.
+ */
 export const PLAST_LEVEL_COLUMN_LABELS: Record<PlastLevel, string> = {
-  [PlastLevel.Entry]: 'Вступ',
-  [PlastLevel.Prykhylnyk]: 'Прихильник',
-  [PlastLevel.Uchasnyk]: 'Заприсяження',
-  [PlastLevel.Rozviduvach]: 'Розвідувач',
-  [PlastLevel.Skob]: 'Скоб / вірлиця',
-  [PlastLevel.HetmanskiySkob]: 'Гетьм. скоб',
+  [PlastLevel.Entry]: 'пл. неім.',
+  [PlastLevel.Prykhylnyk]: 'пл. прих.',
+  [PlastLevel.Uchasnyk]: 'пл. уч.',
+  [PlastLevel.Rozviduvach]: 'пл. розв.',
+  [PlastLevel.Skob]: 'пл. скоб / вірл.',
+  [PlastLevel.HetmanskiySkob]: 'пл. гетьм. скоб / вірл.',
   [PlastLevel.Starshoplastun]: 'Старшопластун',
   [PlastLevel.Senior]: 'Перехід в УПС',
   [PlastLevel.SeniorPratsi]: 'Сен. праці',
