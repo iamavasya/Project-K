@@ -7,10 +7,11 @@ namespace ProjectK.API.Tests.Reports;
 /// <summary>
 /// The report's label tables must answer for every enum value.
 /// <para>
-/// The frontend keeps its own tables — deliberately, because it renders different wording for the
-/// same values (the report says "Прихильник", the member list says "пл. прих."). What must not
-/// happen is a new office or level being added on one side and silently falling back to its raw
-/// enum name on the other, so each side asserts its own table is total.
+/// Ступені are no longer one of those tables: the report, the реєстр and its .xlsx all read
+/// <see cref="PlastLevelNames"/>, so there is one wording and this asserts it covers the enum.
+/// Offices still have a table of their own here. The frontend mirrors both — a new value added on
+/// one side and left unnamed on the other would print as its raw enum name, which is what these
+/// assertions exist to catch.
 /// </para>
 /// </summary>
 public class KurinReportTerminologyTotalityTests

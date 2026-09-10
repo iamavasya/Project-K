@@ -37,7 +37,12 @@ public sealed class KurinReportPdfRenderer
                 column.Spacing(14);
                 column.Item().Element(container => ComposeKurinSummary(container, report));
                 column.Item().Element(container => ComposeGroupsTable(container, report.Groups));
-                column.Item().Element(container => ComposeKeyVolunteerSection(container, report.KeyVolunteers));
+                // Той самий порядок, що й на екрані реєстру: спершу юнаки, потім кадра, потім
+                // чисельність. Провід читає одне поруч з іншим, і різний порядок змушував би
+                // щоразу перевіряти, чи це та сама таблиця.
+                column.Item().Element(container => ComposeYouthSection(container, report.Youth));
+                column.Item().Element(container => ComposeStaffSection(container, report.Staff));
+                column.Item().Element(container => ComposeLevelTally(container, report.LevelTally));
             });
         });
     }
@@ -280,16 +285,16 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposeKeyVolunteerSection(IContainer container, IReadOnlyList<KurinReportMember> members)
+    private static void ComposeYouthSection(IContainer container, IReadOnlyList<KurinReportMember> members)
     {
         container.Column(column =>
         {
             column.Spacing(6);
-            column.Item().Element(item => SectionHeader(item, "КВ, зв'язкові та впорядники"));
+            column.Item().Element(item => SectionHeader(item, "Юнаки"));
 
             if (members.Count == 0)
             {
-                column.Item().Text("Ключових користувачів не знайдено.").FontColor(Colors.Grey.Darken1);
+                column.Item().Text("Юнаків немає.").FontColor(Colors.Grey.Darken1);
                 return;
             }
 
@@ -297,6 +302,50 @@ public sealed class KurinReportPdfRenderer
             {
                 table.ColumnsDefinition(columns =>
                 {
+                    columns.RelativeColumn(4);
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(3);
+                });
+
+                HeaderCell(table, "ПІБ");
+                HeaderCell(table, "Гурток");
+                HeaderCell(table, "Ступінь");
+                HeaderCell(table, "Телефон");
+
+                foreach (var member in members)
+                {
+                    BodyCell(table, member.FullName);
+                    BodyCell(table, member.GroupName ?? "-");
+                    BodyCell(table, KurinReportTerminology.PlastLevel(member.LatestPlastLevel));
+                    BodyCell(table, member.PhoneNumber);
+                }
+            });
+        });
+    }
+
+    /// <summary>
+    /// Кадра виховників. Замість власного гуртка — закріплення: виховника членство ставить у курінь
+    /// і зазвичай у жоден гурток, тож та колонка в них порожня.
+    /// </summary>
+    private static void ComposeStaffSection(IContainer container, IReadOnlyList<KurinReportMember> members)
+    {
+        container.Column(column =>
+        {
+            column.Spacing(6);
+            column.Item().Element(item => SectionHeader(item, "Впорядники"));
+
+            if (members.Count == 0)
+            {
+                column.Item().Text("Кадри виховників немає.").FontColor(Colors.Grey.Darken1);
+                return;
+            }
+
+            column.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(4);
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(2);
@@ -304,6 +353,7 @@ public sealed class KurinReportPdfRenderer
                 });
 
                 HeaderCell(table, "ПІБ");
+                HeaderCell(table, "Гурток (закріплення)");
                 HeaderCell(table, "Пошта");
                 HeaderCell(table, "Телефон");
                 HeaderCell(table, "Ролі");
@@ -311,9 +361,46 @@ public sealed class KurinReportPdfRenderer
                 foreach (var member in members)
                 {
                     BodyCell(table, member.FullName);
+                    BodyCell(table, FormatList(member.MentoredGroupNames));
                     BodyCell(table, member.Email);
                     BodyCell(table, member.PhoneNumber);
                     BodyCell(table, FormatList(member.SystemRoles));
+                }
+            });
+        });
+    }
+
+    private static void ComposeLevelTally(IContainer container, IReadOnlyList<KurinReportLevelCount> rows)
+    {
+        container.Column(column =>
+        {
+            column.Spacing(6);
+            column.Item().Element(item => SectionHeader(item, "Чисельність за ступенями"));
+            column.Item().Text("Юнацтво куреня. Кожен рахується раз — за ступенем, який має зараз.")
+                .FontSize(8)
+                .FontColor(Colors.Grey.Darken1);
+
+            if (rows.Count == 0)
+            {
+                column.Item().Text("Рахувати немає кого.").FontColor(Colors.Grey.Darken1);
+                return;
+            }
+
+            column.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(4);
+                    columns.RelativeColumn(1);
+                });
+
+                HeaderCell(table, "Ступінь");
+                HeaderCell(table, "Кількість");
+
+                foreach (var row in rows)
+                {
+                    BodyCell(table, row.Label);
+                    BodyCell(table, row.Count.ToString(CultureInfo.InvariantCulture));
                 }
             });
         });

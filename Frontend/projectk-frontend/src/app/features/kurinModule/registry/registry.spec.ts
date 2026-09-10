@@ -115,7 +115,7 @@ describe('RegistryComponent', () => {
 
     const counts = new Map(component.tally().map(row => [row.label, row.count]));
 
-    expect(counts.get('Сен. праці')).toBe(1);
+    expect(counts.get('пл. сен. праці')).toBe(1);
     expect(counts.has('Без ступеня / інший')).toBeFalse();
   });
 

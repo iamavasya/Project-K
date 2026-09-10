@@ -10,6 +10,7 @@ using ProjectK.Common.Models.Enums;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Models.Roster;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 
@@ -57,10 +58,25 @@ public sealed class KurinReportDataService
             .GroupBy(member => member.UserKey!.Value)
             .ToDictionary(group => group.Key, group => group.First());
 
+        // Де закріплений виховник — питається в закріплень, а не в його власного членства: воно
+        // ставить його в курінь і зазвичай у жоден гурток. Так само, як це читає реєстр.
+        var mentoredGroupsByUserKey = mentorAssignments
+            .GroupBy(assignment => assignment.MentorUserKey)
+            .ToDictionary(
+                assignments => assignments.Key,
+                assignments => (IReadOnlyList<string>)assignments
+                    .Select(assignment => groupNamesByKey.GetValueOrDefault(assignment.GroupKey))
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Select(name => name!)
+                    .Distinct(StringComparer.CurrentCulture)
+                    .OrderBy(name => name, StringComparer.CurrentCulture)
+                    .ToArray());
+
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
         {
-            reportMembers.Add(await BuildMemberReportAsync(member, source, groupNamesByKey, rolesByUserKey, cancellationToken));
+            reportMembers.Add(await BuildMemberReportAsync(
+                member, source, groupNamesByKey, rolesByUserKey, mentoredGroupsByUserKey, cancellationToken));
         }
 
         var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
@@ -84,31 +100,31 @@ public sealed class KurinReportDataService
                         BuildFullName(member),
                         member.Email,
                         member.PhoneNumber,
-                        member.LatestPlastLevel))
+                        LatestLevelOf(member)))
                     .ToArray()));
         }
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var keyVolunteerKeys = members
-            .Where(member =>
-                member.UserKey.HasValue
-                && rolesByUserKey.TryGetValue(member.UserKey.Value, out var roles)
-                && RolePermissionMap.GrantsGroupLeadership(roles))
+        // Кадра — за тим самим правилом, що й у реєстрі, і воно живе в одному місці на обидва
+        // виводи. Раніше сюди потрапляв і курінний, і будь-хто з глобальною роллю в Identity —
+        // тобто людина, яка має уряд виховника в іншому курені, рахувалась кадрою й тут.
+        var staffKeys = members
+            .Where(member => member.LeadershipHistories.Any(history => KurinRoster.IsStaffOffice(
+                history.Leadership.Type,
+                history.Leadership.KurinKey,
+                history.Leadership.EndDate,
+                history.EndDate,
+                kurinKey)))
             .Select(member => member.MemberKey)
-            .Concat(members
-                .SelectMany(member => member.LeadershipHistories)
-                .Where(history =>
-                    (history.EndDate is null || history.EndDate >= today)
-                    && (history.Leadership.Type == LeadershipType.Kurin
-                        || history.Leadership.Type == LeadershipType.KV))
-                .Select(history => history.MemberKey))
-            .Distinct()
+            .ToHashSet();
+
+        var staff = reportMembers
+            .Where(member => staffKeys.Contains(member.MemberKey))
+            .OrderBy(member => member.FullName, StringComparer.CurrentCulture)
             .ToArray();
 
-        var keyVolunteers = keyVolunteerKeys
-            .Where(reportMembersByKey.ContainsKey)
-            .Select(key => reportMembersByKey[key])
-            .OrderBy(member => member.FullName)
+        var youth = reportMembers
+            .Where(member => !staffKeys.Contains(member.MemberKey))
+            .OrderBy(member => member.FullName, StringComparer.CurrentCulture)
             .ToArray();
 
         return new KurinReportData(
@@ -128,15 +144,58 @@ public sealed class KurinReportDataService
                 kurin.IsZbtKurin,
                 kurin.ZbtUserCap),
             reportGroups,
-            keyVolunteers,
+            staff,
+            youth,
+            BuildLevelTally(kurin.Branch, youth),
             reportMembers);
     }
+
+    /// <summary>
+    /// Скільки юнаків стоїть на кожному ступені драбини цієї гілки. Впорядники не рахуються — вони
+    /// кадра, а не склад юнацтва; рядок «Без ступеня / інший» є завжди, коли є кого в нього
+    /// покласти, інакше стовпчик не сходився б зі складом. Те саме, що показує реєстр.
+    /// </summary>
+    private static IReadOnlyList<KurinReportLevelCount> BuildLevelTally(
+        KurinBranch branch,
+        IReadOnlyList<KurinReportMember> youth)
+    {
+        var ladder = PlastLadder.DefaultFor(branch);
+        var rows = ladder
+            .Select(level => new KurinReportLevelCount(
+                PlastLevelNames.Of(level),
+                youth.Count(member => member.LatestPlastLevel == level)))
+            .ToList();
+
+        var onLadder = ladder.ToHashSet();
+        var rest = youth.Count(member =>
+            member.LatestPlastLevel is null || !onLadder.Contains(member.LatestPlastLevel.Value));
+        if (rest > 0)
+        {
+            rows.Add(new KurinReportLevelCount("Без ступеня / інший", rest));
+        }
+
+        rows.Add(new KurinReportLevelCount("Разом", youth.Count));
+        return rows;
+    }
+
+    /// <summary>
+    /// Ступінь, який людина має зараз: найновіший записаний, а як історії немає — збережене поле.
+    /// Дзеркалить читання списку мемберів. Брати саме <c>LatestPlastLevel</c> не можна: воно
+    /// оновлюється записом, і звіт показував би не те, що реєстр, у кожного, кому ступінь додали
+    /// заднім числом.
+    /// </summary>
+    private static PlastLevel? LatestLevelOf(Member member)
+        => member.PlastLevelHistory
+            .OrderByDescending(history => history.DateAchieved)
+            .Select(history => (PlastLevel?)history.PlastLevel)
+            .FirstOrDefault() ?? member.LatestPlastLevel;
 
     private async Task<KurinReportMember> BuildMemberReportAsync(
         Member member,
         KurinReportSourceData source,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> rolesByUserKey,
+        IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
         CancellationToken cancellationToken)
     {
         var roles = member.UserKey is Guid userKey && rolesByUserKey.TryGetValue(userKey, out var userRoles)
@@ -163,7 +222,11 @@ public sealed class KurinReportDataService
             member.School,
             BuildBlobUrl(member.ProfilePhotoBlobName),
             await _media.TryDownloadAsync(member.ProfilePhotoBlobName, cancellationToken),
-            member.LatestPlastLevel,
+            LatestLevelOf(member),
+            member.UserKey is Guid mentorUserKey
+                && mentoredGroupsByUserKey.TryGetValue(mentorUserKey, out var mentoredGroups)
+                ? mentoredGroups
+                : [],
             roles,
             member.PlastLevelHistory
                 .OrderByDescending(item => item.DateAchieved)

@@ -24,6 +24,9 @@ export const PLAST_LADDER: readonly PlastLevel[] = [
 /**
  * Підпис ступеня — так, як його пишуть у звітах. Дата вступу до Пласту стоїть під «пл. неім.»: це і
  * є ступінь пластуна неіменованого, а не окремий службовий рядок перед драбиною.
+ *
+ * Дзеркалить `PlastLevelNames` на бекенді — те саме джерело для реєстру, вивантаження й PDF-звіту.
+ * Розійтися їм не можна: провід читає екран і звіт поруч.
  */
 export const PLAST_LEVEL_COLUMN_LABELS: Record<PlastLevel, string> = {
   [PlastLevel.Entry]: 'пл. неім.',
@@ -32,11 +35,11 @@ export const PLAST_LEVEL_COLUMN_LABELS: Record<PlastLevel, string> = {
   [PlastLevel.Rozviduvach]: 'пл. розв.',
   [PlastLevel.Skob]: 'пл. скоб / вірл.',
   [PlastLevel.HetmanskiySkob]: 'пл. гетьм. скоб / вірл.',
-  [PlastLevel.Starshoplastun]: 'Старшопластун',
-  [PlastLevel.Senior]: 'Перехід в УПС',
-  [PlastLevel.SeniorPratsi]: 'Сен. праці',
-  [PlastLevel.SeniorDovirja]: "Сен. довір'я",
-  [PlastLevel.SeniorKerivnytstva]: 'Сен. керівництва'
+  [PlastLevel.Starshoplastun]: 'ст. пл.',
+  [PlastLevel.Senior]: 'пл. сен.',
+  [PlastLevel.SeniorPratsi]: 'пл. сен. праці',
+  [PlastLevel.SeniorDovirja]: "пл. сен. довір'я",
+  [PlastLevel.SeniorKerivnytstva]: 'пл. сен. керівництва'
 };
 
 const THROUGH_YOUTH: readonly PlastLevel[] = PLAST_LADDER.slice(0, 6);

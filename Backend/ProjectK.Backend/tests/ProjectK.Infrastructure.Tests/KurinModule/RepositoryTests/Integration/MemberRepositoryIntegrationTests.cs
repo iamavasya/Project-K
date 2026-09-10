@@ -14,6 +14,7 @@ using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Roster;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
 {
@@ -431,6 +432,98 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration
 
             Assert.Empty(hurtkovyiItem.MentoredGroupNames);
             Assert.Equal(["Beta"], mentorItem.MentoredGroupNames);
+        }
+
+        /// <summary>
+        /// The реєстр decides кадра in SQL and the звіт куреня decides it in memory, so the rule
+        /// itself lives in <see cref="KurinRoster"/> and neither owns it. This is what stops the two
+        /// from drifting: the projection's answer is compared against the rule applied to the very
+        /// same offices, over a fixture that has one of each kind — including the two that look like
+        /// кадра and are not.
+        /// </summary>
+        [Fact]
+        public async Task GetListItemsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule()
+        {
+            using var context = CreateInMemoryDbContext();
+            var uow = new InfraUnitOfWork(context);
+
+            var kurin = new Kurin(31);
+            var elsewhere = new Kurin(32);
+            uow.Kurins.Create(kurin);
+            uow.Kurins.Create(elsewhere);
+            await uow.SaveChangesAsync();
+
+            var group = new Group("Alpha", kurin.KurinKey);
+            uow.Groups.Create(group);
+            await uow.SaveChangesAsync();
+
+            var plain = BuildMember(group, kurin, "Yura", "Plain");
+            var hurtkovyi = BuildMember(group, kurin, "Hanna", "Hurtkova");
+            var kurinnyi = BuildMember(group, kurin, "Ostap", "Kurinnyi");
+            var mentor = BuildMember(group, kurin, "Marta", "Mentor");
+            var former = BuildMember(group, kurin, "Olena", "Former");
+            var elsewhereMentor = BuildMember(group, kurin, "Ivan", "Foreign");
+            foreach (var person in new[] { plain, hurtkovyi, kurinnyi, mentor, former, elsewhereMentor })
+            {
+                Placed(uow, person, kurin.KurinKey, group.GroupKey);
+            }
+
+            await uow.SaveChangesAsync();
+
+            Leadership Office(LeadershipType type, Guid? kurinKey, Group? scope, DateOnly? closed = null) => new()
+            {
+                LeadershipKey = Guid.NewGuid(),
+                Type = type,
+                KurinKey = kurinKey,
+                Group = scope,
+                Name = type.ToString(),
+                StartDate = new DateOnly(2024, 1, 1),
+                EndDate = closed
+            };
+
+            var groupOffice = Office(LeadershipType.Group, null, group);
+            var kurinOffice = Office(LeadershipType.Kurin, kurin.KurinKey, null);
+            var kvOffice = Office(LeadershipType.KV, kurin.KurinKey, null);
+            var foreignKvOffice = Office(LeadershipType.KV, elsewhere.KurinKey, null);
+            context.Set<Leadership>().AddRange(groupOffice, kurinOffice, kvOffice, foreignKvOffice);
+
+            LeadershipHistory Held(Member person, Leadership office, LeadershipRole role, DateOnly? until = null) => new()
+            {
+                LeadershipHistoryKey = Guid.NewGuid(),
+                MemberKey = person.MemberKey,
+                LeadershipKey = office.LeadershipKey,
+                Role = role,
+                StartDate = new DateOnly(2024, 1, 1),
+                EndDate = until
+            };
+
+            context.Set<LeadershipHistory>().AddRange(
+                Held(hurtkovyi, groupOffice, LeadershipRole.Hurtkoviy),
+                Held(kurinnyi, kurinOffice, LeadershipRole.Kurinnuy),
+                Held(mentor, kvOffice, LeadershipRole.Vykhovnyk),
+                Held(former, kvOffice, LeadershipRole.Vykhovnyk, until: new DateOnly(2025, 6, 1)),
+                Held(elsewhereMentor, foreignKvOffice, LeadershipRole.Vykhovnyk));
+            await context.SaveChangesAsync();
+
+            var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
+            var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+
+            var offices = context.Set<Leadership>().ToDictionary(office => office.LeadershipKey);
+            var expected = context.Set<LeadershipHistory>()
+                .AsEnumerable()
+                .Where(history => KurinRoster.IsStaffOffice(
+                    offices[history.LeadershipKey].Type,
+                    offices[history.LeadershipKey].KurinKey,
+                    offices[history.LeadershipKey].EndDate,
+                    history.EndDate,
+                    kurin.KurinKey))
+                .Select(history => history.MemberKey)
+                .ToHashSet();
+
+            var actual = items.Where(item => item.IsStaff).Select(item => item.MemberKey).ToHashSet();
+
+            Assert.Equal(expected, actual);
+            Assert.Equal([mentor.MemberKey], actual);
         }
 
         [Fact]

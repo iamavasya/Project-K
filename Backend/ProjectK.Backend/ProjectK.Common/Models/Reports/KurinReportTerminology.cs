@@ -4,8 +4,13 @@ namespace ProjectK.Common.Models.Reports;
 
 public static class KurinReportTerminology
 {
+    /// <summary>
+    /// The ступінь, named by <see cref="PlastLevelNames"/> — the same words the реєстр and its
+    /// .xlsx use. The report used to keep its own wording; a провід reading one beside the other
+    /// then had to work out that «Заприсяження» and «Прихильник» were rows of the same ladder.
+    /// </summary>
     public static string PlastLevel(PlastLevel? value)
-        => value is null ? "-" : PlastLevelLabels.GetValueOrDefault(value.Value, value.Value.ToString());
+        => value is null ? "-" : PlastLevelNames.Of(value.Value);
 
     public static string ProbeStatus(ProbeProgressStatus value)
         => ProbeStatusLabels.GetValueOrDefault(value, value.ToString());
@@ -24,22 +29,6 @@ public static class KurinReportTerminology
 
     public static string LeadershipRole(LeadershipRole value)
         => LeadershipRoleLabels.GetValueOrDefault(value, value.ToString());
-
-    private static readonly IReadOnlyDictionary<PlastLevel, string> PlastLevelLabels =
-        new Dictionary<PlastLevel, string>
-        {
-            [ProjectK.Common.Models.Enums.PlastLevel.Entry] = "Вступ до Пласту",
-            [ProjectK.Common.Models.Enums.PlastLevel.Prykhylnyk] = "Прихильник",
-            [ProjectK.Common.Models.Enums.PlastLevel.Uchasnyk] = "Учасник",
-            [ProjectK.Common.Models.Enums.PlastLevel.Rozviduvach] = "Розвідувач",
-            [ProjectK.Common.Models.Enums.PlastLevel.Skob] = "Скоб",
-            [ProjectK.Common.Models.Enums.PlastLevel.HetmanskiySkob] = "Гетьманський скоб",
-            [ProjectK.Common.Models.Enums.PlastLevel.Starshoplastun] = "Старшопластун",
-            [ProjectK.Common.Models.Enums.PlastLevel.Senior] = "Сеньйор",
-            [ProjectK.Common.Models.Enums.PlastLevel.SeniorPratsi] = "Сеньйор праці",
-            [ProjectK.Common.Models.Enums.PlastLevel.SeniorDovirja] = "Сеньйор довір'я",
-            [ProjectK.Common.Models.Enums.PlastLevel.SeniorKerivnytstva] = "Сеньйор керівництва"
-        };
 
     private static readonly IReadOnlyDictionary<ProbeProgressStatus, string> ProbeStatusLabels =
         new Dictionary<ProbeProgressStatus, string>

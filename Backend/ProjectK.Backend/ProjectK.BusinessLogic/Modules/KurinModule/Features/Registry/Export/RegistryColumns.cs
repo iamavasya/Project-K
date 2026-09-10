@@ -12,6 +12,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
     /// щойно потрапляє в enum. Іменовані колонки доводиться додавати руками; колонка, якої тут немає,
     /// просто не вивантажується.
     /// </para>
+    /// <para>
+    /// Підписи ступенів беруться з <see cref="PlastLevelNames"/> — того самого місця, звідки їх бере
+    /// звіт куреня. Свою таблицю тут тримати не можна: два підписи одного ступеня в одному релізі
+    /// вже траплялися.
+    /// </para>
     /// </summary>
     internal static class RegistryColumns
     {
@@ -31,22 +36,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
                 ["school"] = new("Школа", m => SheetCell.Of(m.School))
             };
 
-        private static readonly IReadOnlyDictionary<PlastLevel, string> LevelHeaders =
-            new Dictionary<PlastLevel, string>
-            {
-                [PlastLevel.Entry] = "пл. неім.",
-                [PlastLevel.Prykhylnyk] = "пл. прих.",
-                [PlastLevel.Uchasnyk] = "пл. уч.",
-                [PlastLevel.Rozviduvach] = "пл. розв.",
-                [PlastLevel.Skob] = "пл. скоб / вірл.",
-                [PlastLevel.HetmanskiySkob] = "пл. гетьм. скоб / вірл.",
-                [PlastLevel.Starshoplastun] = "Старшопластун",
-                [PlastLevel.Senior] = "Перехід в УПС",
-                [PlastLevel.SeniorPratsi] = "Сен. праці",
-                [PlastLevel.SeniorDovirja] = "Сен. довір'я",
-                [PlastLevel.SeniorKerivnytstva] = "Сен. керівництва"
-            };
-
         /// <summary>The column's heading, or null when nothing here answers to that id.</summary>
         public static string? HeaderFor(string columnId)
         {
@@ -55,7 +44,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
                 return named.Header;
             }
 
-            return TryLevel(columnId, out var level) ? LevelHeaders[level] : null;
+            return TryLevel(columnId, out var level) ? PlastLevelNames.Of(level) : null;
         }
 
         /// <summary>This person's value in that column.</summary>
@@ -81,10 +70,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export
             const string prefix = "level:";
             return columnId.StartsWith(prefix, StringComparison.Ordinal)
                    && Enum.TryParse(columnId[prefix.Length..], out level)
-                   && LevelHeaders.ContainsKey(level);
+                   && Enum.IsDefined(level);
         }
 
         private static string? LevelName(PlastLevel? level)
-            => level.HasValue && LevelHeaders.TryGetValue(level.Value, out var name) ? name : null;
+            => level.HasValue ? PlastLevelNames.Of(level.Value) : null;
     }
 }

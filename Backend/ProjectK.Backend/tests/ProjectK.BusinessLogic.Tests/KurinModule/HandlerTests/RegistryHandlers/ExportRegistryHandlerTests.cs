@@ -174,8 +174,8 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers
 
             var counts = Tally();
 
-            counts.Should().ContainKey("Сен. праці");
-            counts["Сен. праці"].Should().Be(1);
+            counts.Should().ContainKey("пл. сен. праці");
+            counts["пл. сен. праці"].Should().Be(1);
             counts.Should().NotContainKey("Без ступеня / інший");
         }
     }
