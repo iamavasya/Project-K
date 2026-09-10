@@ -38,6 +38,14 @@ export class KurinService {
     });
   }
 
+  /** Реєстр у .xlsx — саме тими колонками, які зараз видно на екрані. */
+  exportRegistry(kurinKey: string, columns: string[]): Observable<HttpResponse<Blob>> {
+    return this.http.post(`${this.apiUrl}/${kurinKey}/registry/export`, { columns }, {
+      observe: 'response',
+      responseType: 'blob'
+    });
+  }
+
   createKurin(kurin: KurinDto): Observable<KurinDto> {
     return this.http.post<KurinDto>(
       `${this.apiUrl}`,

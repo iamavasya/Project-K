@@ -190,6 +190,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), "RequireUser");
         yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinController>(nameof(KurinController.ExportRegistry), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);

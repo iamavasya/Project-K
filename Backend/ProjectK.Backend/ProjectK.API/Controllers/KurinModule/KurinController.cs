@@ -23,6 +23,7 @@ using ProjectK.Infrastructure.Reports;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.API.Authorization;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 
 namespace ProjectK.API.Controllers.KurinModule
 {
@@ -73,6 +74,39 @@ namespace ProjectK.API.Controllers.KurinModule
             var request = new GetKurinByKey(kurinKey);
             var response = await _mediator.Send(request);
             return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// The kurin's registry as a spreadsheet, in the columns the caller asked for.
+        /// </summary>
+        /// <remarks>
+        /// Answered from the same read the screen uses, so a field the caller may not see on screen is
+        /// not in the file either. Nothing is exported that could not simply be looked at.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+        [HttpPost("{kurinKey:guid}/registry/export")]
+        [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ExportRegistry(
+            Guid kurinKey,
+            [FromBody] ExportRegistryRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new ExportRegistry(kurinKey, request.Columns ?? []),
+                cancellationToken);
+
+            if (result.Type != ResultType.Success || result.Data is null)
+            {
+                return result.ToActionResult(this);
+            }
+
+            return File(
+                result.Data.Content,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                result.Data.FileName);
         }
 
         /// <summary>

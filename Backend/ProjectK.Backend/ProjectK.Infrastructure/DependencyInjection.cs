@@ -20,6 +20,7 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Services.Spreadsheets;
 
 namespace ProjectK.Infrastructure;
 
@@ -54,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<KurinReportPdfRenderer>();
+        services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
 
         services.AddScoped<GeoIPService>();
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();

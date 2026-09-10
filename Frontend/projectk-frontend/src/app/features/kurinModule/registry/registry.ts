@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -48,6 +49,7 @@ export class RegistryComponent implements OnInit {
   readonly branch = signal<KurinBranch | null>(null);
   readonly kurinNumber = signal<number | null>(null);
   readonly selectedColumnIds = signal<string[]>([]);
+  readonly exporting = signal(false);
 
   readonly allColumns: RegistryColumn[] = REGISTRY_COLUMNS;
 
@@ -131,6 +133,45 @@ export class RegistryComponent implements OnInit {
     if (this.kurinKey) {
       localStorage.removeItem(columnChoiceKey(this.kurinKey));
     }
+  }
+
+  /** Вивантажує рівно те, що на екрані — і з тим самим маскуванням, бо файл робить той самий читач. */
+  exportToExcel(): void {
+    if (!this.kurinKey || this.exporting()) {
+      return;
+    }
+
+    this.exporting.set(true);
+    this.kurinService.exportRegistry(this.kurinKey, this.selectedColumnIds()).subscribe({
+      next: response => {
+        if (response.body) {
+          this.saveBlob(response.body, this.fileNameFrom(response));
+        }
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false)
+    });
+  }
+
+  private fileNameFrom(response: HttpResponse<Blob>): string {
+    const disposition = response.headers.get('content-disposition');
+    const match = disposition?.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+    if (match?.[1]) {
+      return decodeURIComponent(match[1].replace(/"$/g, ''));
+    }
+
+    return `reyestr-kurin-${this.kurinNumber() ?? ''}.xlsx`;
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
   }
 
   /**

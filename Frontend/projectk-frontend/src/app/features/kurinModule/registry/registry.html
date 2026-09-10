@@ -53,6 +53,15 @@
           severity="secondary"
           [text]="true"
           (onClick)="resetColumns()" />
+
+        <p-button
+          label="Вивантажити"
+          icon="pi pi-download"
+          severity="secondary"
+          [loading]="exporting()"
+          [disabled]="!members().length"
+          (onClick)="exportToExcel()"
+          styleClass="registry__export" />
       </div>
     </ng-template>
 
