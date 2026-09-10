@@ -111,7 +111,11 @@ public sealed class KurinReportPdfRenderer
     {
         page.Size(PageSizes.A4);
         page.Margin(32);
-        page.DefaultTextStyle(style => style.FontSize(9).FontFamily("Arial"));
+        // Lato, а не Arial: Arial у контейнері немає, тож рядок «Arial» нічого не давав — Skia
+        // мовчки брала запасний шрифт, і ним щоразу виявлялася Lato, яку QuestPDF носить із собою.
+        // Написано те, що справді вбудовується у файл; на машині з Arial звіт більше не виглядатиме
+        // інакше, ніж у проді.
+        page.DefaultTextStyle(style => style.FontSize(9).FontFamily(Fonts.Lato));
 
         page.Header().Element(container => ComposePageHeader(container, report));
         page.Footer().AlignCenter().Text(text =>
@@ -356,7 +360,7 @@ public sealed class KurinReportPdfRenderer
                 HeaderCell(table, "Гурток (закріплення)");
                 HeaderCell(table, "Пошта");
                 HeaderCell(table, "Телефон");
-                HeaderCell(table, "Ролі");
+                HeaderCell(table, "Уряд");
 
                 foreach (var member in members)
                 {
@@ -364,7 +368,7 @@ public sealed class KurinReportPdfRenderer
                     BodyCell(table, FormatList(member.MentoredGroupNames));
                     BodyCell(table, member.Email);
                     BodyCell(table, member.PhoneNumber);
-                    BodyCell(table, FormatList(member.SystemRoles));
+                    BodyCell(table, FormatList(CurrentOffices(member)));
                 }
             });
         });
@@ -597,6 +601,17 @@ public sealed class KurinReportPdfRenderer
 
     private static IContainer ValueCell(IContainer container)
         => container.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(3);
+
+    /// <summary>
+    /// Уряди, які людина тримає зараз, названі словами. Раніше тут стояли системні ролі — той самий
+    /// рядок, що всередині токена: «KV.Vykhovnyk, Member». Провід читає звіт, а не мапу прав.
+    /// </summary>
+    private static IReadOnlyCollection<string> CurrentOffices(KurinReportMember member)
+        => member.LeadershipHistory
+            .Where(history => history.EndDate is null)
+            .Select(history => history.RoleLabel)
+            .Distinct(StringComparer.CurrentCulture)
+            .ToArray();
 
     private static string FormatList(IReadOnlyCollection<string> values)
         => values.Count == 0 ? "-" : string.Join(", ", values);

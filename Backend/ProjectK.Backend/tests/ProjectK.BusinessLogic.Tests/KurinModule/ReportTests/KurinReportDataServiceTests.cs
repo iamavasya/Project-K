@@ -81,15 +81,23 @@ public sealed class KurinReportDataServiceTests
         return member;
     }
 
-    private void GiveOffice(Member member, LeadershipType type, LeadershipRole role, Guid? groupKey = null, DateOnly? heldUntil = null)
+    private void GiveOffice(
+        Member member,
+        LeadershipType type,
+        LeadershipRole role,
+        Guid? groupKey = null,
+        DateOnly? heldUntil = null,
+        Guid? inKurinKey = null)
     {
         var office = new Leadership
         {
             LeadershipKey = Guid.NewGuid(),
             Type = type,
-            KurinKey = type == LeadershipType.Group ? null : _kurinKey,
+            KurinKey = type == LeadershipType.Group ? null : inKurinKey ?? _kurinKey,
             GroupKey = groupKey,
-            Name = type.ToString(),
+            // Без власної назви — так їх і заводять UpsertLeadership і сідери. Назва, якщо є,
+            // перебиває все інше, і фікстура з нею не перевіряла б нічого.
+            Name = null,
             StartDate = new DateOnly(2024, 1, 1)
         };
 
@@ -224,6 +232,58 @@ public sealed class KurinReportDataServiceTests
         counts.Should().ContainKey("пл. сен. праці");
         counts["пл. сен. праці"].Should().Be(1);
         counts.Should().NotContainKey("Без ступеня / інший");
+    }
+
+    /// <summary>
+    /// Offices are read along with the person, and from 0.20 a person can be in several kurins. The
+    /// звіт is about one of them, so an office held somewhere else has no business being printed
+    /// here — nor counting its holder as this kurin's кадра.
+    /// </summary>
+    [Fact]
+    public async Task ShouldIgnoreOfficesHeldInAnotherKurin()
+    {
+        var visitor = Person("Гостя", _alphaKey, withAccount: true);
+        GiveOffice(visitor, LeadershipType.KV, LeadershipRole.Vykhovnyk, inKurinKey: Guid.NewGuid());
+
+        var report = await Build();
+
+        report!.Staff.Should().BeEmpty("the КВ office belongs to a different kurin");
+        report.Members.Single().LeadershipHistory.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// The звіт names offices the way a провід writes them. The Впорядники table used to print the
+    /// identity roles instead — «KV.Vykhovnyk, Member», the very string inside the token.
+    /// </summary>
+    [Fact]
+    public async Task ShouldNameOfficesInWords()
+    {
+        var mentor = Person("Виховна", withAccount: true);
+        GiveOffice(mentor, LeadershipType.KV, LeadershipRole.Vykhovnyk);
+
+        var report = await Build();
+
+        report!.Staff.Single().LeadershipHistory.Single().RoleLabel.Should().Be("Впорядник");
+    }
+
+    /// <summary>
+    /// A гуртковий's office is scoped to a гурток and says which. A курінний's and a виховник's are
+    /// scoped to the kurin the звіт is already about, so they say nothing — they used to print the
+    /// literals "Kurin" and "KV", which read as «КВ/Впорядник; KV» in the document.
+    /// </summary>
+    [Fact]
+    public async Task ShouldScopeAnOfficeByItsГурток_AndLeaveKurinWideOnesUnqualified()
+    {
+        var hurtkovyi = Person("Гурткова", _alphaKey);
+        var mentor = Person("Виховна", withAccount: true);
+        GiveOffice(hurtkovyi, LeadershipType.Group, LeadershipRole.Hurtkoviy, _alphaKey);
+        GiveOffice(mentor, LeadershipType.KV, LeadershipRole.Vykhovnyk);
+
+        var report = await Build();
+
+        report!.Youth.Single(member => member.FullName == "Тест Гурткова")
+            .LeadershipHistory.Single().ScopeName.Should().Be("Alpha");
+        report.Staff.Single().LeadershipHistory.Single().ScopeName.Should().BeNull();
     }
 
     /// <summary>

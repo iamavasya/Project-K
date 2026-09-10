@@ -76,7 +76,7 @@ public sealed class KurinReportDataService
         foreach (var member in members)
         {
             reportMembers.Add(await BuildMemberReportAsync(
-                member, source, groupNamesByKey, rolesByUserKey, mentoredGroupsByUserKey, cancellationToken));
+                member, source, kurinKey, groupNamesByKey, rolesByUserKey, mentoredGroupsByUserKey, cancellationToken));
         }
 
         var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
@@ -190,9 +190,26 @@ public sealed class KurinReportDataService
             .Select(history => (PlastLevel?)history.PlastLevel)
             .FirstOrDefault() ?? member.LatestPlastLevel;
 
+    /// <summary>
+    /// Чи цей уряд узагалі про цей курінь. Курінні й КВ-уряди носять курінь на собі, гурткові —
+    /// через гурток, і `groupNamesByKey` — це рівно гуртки цього куреня.
+    /// <para>
+    /// Питати доводиться тому, що уряди читаються разом із людиною, а людина від 0.20 може бути в
+    /// кількох куренях: без цієї перевірки уряд виховника в курені А друкувався б у звіті куреня Б.
+    /// </para>
+    /// </summary>
+    private static bool BelongsToKurin(
+        Leadership office,
+        Guid kurinKey,
+        IReadOnlyDictionary<Guid, string> groupsHere)
+        => office.Type == LeadershipType.Group
+            ? office.GroupKey is Guid groupKey && groupsHere.ContainsKey(groupKey)
+            : office.KurinKey == kurinKey;
+
     private async Task<KurinReportMember> BuildMemberReportAsync(
         Member member,
         KurinReportSourceData source,
+        Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> rolesByUserKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
@@ -302,6 +319,7 @@ public sealed class KurinReportDataService
                     KurinReportTerminology.BadgeStatus(item.Status)))
                 .ToArray(),
             member.LeadershipHistories
+                .Where(item => BelongsToKurin(item.Leadership, kurinKey, groupNamesByKey))
                 .OrderByDescending(item => item.StartDate)
                 .Select(item => new KurinReportLeadershipHistory(
                     item.Leadership.Type,
@@ -399,14 +417,12 @@ public sealed class KurinReportDataService
             return leadership.Name;
         }
 
-        return leadership.Type switch
-        {
-            LeadershipType.Group when leadership.GroupKey is Guid groupKey && groupNamesByKey.TryGetValue(groupKey, out var groupName) => groupName,
-            LeadershipType.Group => leadership.GroupKey?.ToString(),
-            LeadershipType.Kurin => "Kurin",
-            LeadershipType.KV => "KV",
-            _ => null
-        };
+        // Курінний і КВ-уряди нічим не звужені — звіт і так про цей курінь, а рядок поруч уже
+        // каже «Курінь» чи «КВ». Раніше тут стояли літерали "Kurin" і "KV", тож у документі виходило
+        // «КВ/Впорядник; KV». Гурток без назви — так само нічого, а не його guid.
+        return leadership.Type == LeadershipType.Group && leadership.GroupKey is Guid groupKey
+            ? groupNamesByKey.GetValueOrDefault(groupKey)
+            : null;
     }
 
     private static string ResolveProbeTitle(string probeId, GroupedProbeResponse? probe)
