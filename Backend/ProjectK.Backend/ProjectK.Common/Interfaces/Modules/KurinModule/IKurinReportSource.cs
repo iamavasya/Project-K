@@ -14,7 +14,6 @@ public sealed record KurinReportSourceData(
     IReadOnlyList<MentorAssignment> MentorAssignments,
     IReadOnlyList<Member> Members,
     IReadOnlyDictionary<Guid, AppUser> UsersByKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<string>> RolesByUserKey,
     IReadOnlyDictionary<Guid, IReadOnlyList<ProbeProgress>> ProbeProgressByMemberKey,
     IReadOnlyDictionary<Guid, IReadOnlyList<ProbePointProgress>> ProbePointProgressByMemberKey,
     IReadOnlyDictionary<Guid, IReadOnlyList<BadgeProgress>> BadgeProgressByMemberKey,

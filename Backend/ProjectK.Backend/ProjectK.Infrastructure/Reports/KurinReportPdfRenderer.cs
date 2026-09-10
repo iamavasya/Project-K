@@ -8,29 +8,41 @@ namespace ProjectK.Infrastructure.Reports;
 
 public sealed class KurinReportPdfRenderer
 {
-    public byte[] Render(KurinReportData report)
+    /// <summary>
+    /// Draws the report. Every timestamp in <paramref name="report"/> is UTC — that is how they are
+    /// stored — and every one of them is printed in <paramref name="timeZoneId"/>, so a провід reads
+    /// the hours their own clock showed when the thing happened.
+    /// </summary>
+    /// <param name="timeZoneId">
+    /// An IANA zone the caller sends (the browser knows its own). Unknown or absent means UTC: the
+    /// value comes from a request and must never be able to fail the report.
+    /// </param>
+    public byte[] Render(KurinReportData report, string? timeZoneId = null)
     {
+        var zone = ReportClock.Resolve(timeZoneId);
+
         return Document.Create(document =>
         {
-            ComposeSummaryPage(document, report);
+            ComposeSummaryPage(document, report, zone);
 
             foreach (var group in report.Groups)
             {
-                ComposeGroupPage(document, report, group);
+                ComposeGroupPage(document, report, group, zone);
             }
 
             foreach (var member in report.Members)
             {
-                ComposeMemberPage(document, report, member);
+                ComposeMemberPage(document, report, member, zone);
             }
         }).GeneratePdf();
     }
 
-    private static void ComposeSummaryPage(IDocumentContainer document, KurinReportData report)
+
+    private static void ComposeSummaryPage(IDocumentContainer document, KurinReportData report, TimeZoneInfo zone)
     {
         document.Page(page =>
         {
-            ConfigurePage(page, report);
+            ConfigurePage(page, report, zone);
 
             page.Content().Column(column =>
             {
@@ -47,11 +59,11 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposeGroupPage(IDocumentContainer document, KurinReportData report, KurinReportGroup group)
+    private static void ComposeGroupPage(IDocumentContainer document, KurinReportData report, KurinReportGroup group, TimeZoneInfo zone)
     {
         document.Page(page =>
         {
-            ConfigurePage(page, report);
+            ConfigurePage(page, report, zone);
 
             page.Content().Column(column =>
             {
@@ -72,11 +84,11 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposeMemberPage(IDocumentContainer document, KurinReportData report, KurinReportMember member)
+    private static void ComposeMemberPage(IDocumentContainer document, KurinReportData report, KurinReportMember member, TimeZoneInfo zone)
     {
         document.Page(page =>
         {
-            ConfigurePage(page, report);
+            ConfigurePage(page, report, zone);
 
             page.Content().Column(column =>
             {
@@ -95,19 +107,19 @@ public sealed class KurinReportPdfRenderer
                         ("Адреса", member.Address ?? "-"),
                         ("Школа", member.School ?? "-"),
                         ("Ступінь", KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
-                        ("Ролі в системі", FormatList(member.SystemRoles))
+                        ("Діловодство", FormatList(CurrentOffices(member)))
                     }));
                 });
 
-                column.Item().Element(container => ComposeProbeState(container, member));
+                column.Item().Element(container => ComposeProbeState(container, member, zone));
                 column.Item().Element(container => ComposeBadges(container, member));
-                column.Item().Element(container => ComposeWarningsAndAwards(container, member));
+                column.Item().Element(container => ComposeWarningsAndAwards(container, member, zone));
                 column.Item().Element(container => ComposeLeadershipHistory(container, member));
             });
         });
     }
 
-    private static void ConfigurePage(PageDescriptor page, KurinReportData report)
+    private static void ConfigurePage(PageDescriptor page, KurinReportData report, TimeZoneInfo zone)
     {
         page.Size(PageSizes.A4);
         page.Margin(32);
@@ -117,7 +129,7 @@ public sealed class KurinReportPdfRenderer
         // інакше, ніж у проді.
         page.DefaultTextStyle(style => style.FontSize(9).FontFamily(Fonts.Lato));
 
-        page.Header().Element(container => ComposePageHeader(container, report));
+        page.Header().Element(container => ComposePageHeader(container, report, zone));
         page.Footer().AlignCenter().Text(text =>
         {
             text.DefaultTextStyle(style => style.FontSize(8).FontColor(Colors.Grey.Darken1));
@@ -128,7 +140,7 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposePageHeader(IContainer container, KurinReportData report)
+    private static void ComposePageHeader(IContainer container, KurinReportData report, TimeZoneInfo zone)
     {
         container.PaddingBottom(8).BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Row(row =>
         {
@@ -136,7 +148,7 @@ public sealed class KurinReportPdfRenderer
             {
                 column.Item().Text($"Курінь #{report.Kurin.Number}").FontSize(15).Bold();
                 column.Item().Text("Beta export звіту").FontSize(8).SemiBold().FontColor(Colors.Orange.Darken2);
-                column.Item().Text($"Звіт сформовано: {FormatDateTime(report.Header.GeneratedAtUtc)} UTC").FontSize(8).FontColor(Colors.Grey.Darken1);
+                column.Item().Text($"Звіт сформовано: {ReportClock.Format(report.Header.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
 
             row.RelativeItem().AlignRight().Column(column =>
@@ -360,7 +372,7 @@ public sealed class KurinReportPdfRenderer
                 HeaderCell(table, "Гурток (закріплення)");
                 HeaderCell(table, "Пошта");
                 HeaderCell(table, "Телефон");
-                HeaderCell(table, "Уряд");
+                HeaderCell(table, "Діловодство");
 
                 foreach (var member in members)
                 {
@@ -449,7 +461,7 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposeProbeState(IContainer container, KurinReportMember member)
+    private static void ComposeProbeState(IContainer container, KurinReportMember member, TimeZoneInfo zone)
     {
         container.Column(column =>
         {
@@ -472,7 +484,7 @@ public sealed class KurinReportPdfRenderer
                 column.Item().PaddingTop(2).Text("Підписані точки").SemiBold();
                 foreach (var point in member.SignedProbePoints)
                 {
-                    column.Item().Text($"{point.ProbeTitle}, {point.PointLabel}: {FormatDateTime(point.SignedAtUtc)}; {point.SignedByName ?? "-"} ({point.SignedByRole ?? "-"})");
+                    column.Item().Text($"{point.ProbeTitle}, {point.PointLabel}: {ReportClock.Format(point.SignedAtUtc, zone)}; {point.SignedByName ?? "-"} ({point.SignedByRole ?? "-"})");
                 }
             }
         });
@@ -498,7 +510,7 @@ public sealed class KurinReportPdfRenderer
         });
     }
 
-    private static void ComposeWarningsAndAwards(IContainer container, KurinReportMember member)
+    private static void ComposeWarningsAndAwards(IContainer container, KurinReportMember member, TimeZoneInfo zone)
     {
         container.Column(column =>
         {
@@ -513,7 +525,7 @@ public sealed class KurinReportPdfRenderer
             {
                 foreach (var warning in member.ActiveWarnings)
                 {
-                    column.Item().Text($"{warning.LevelLabel}: {FormatDateTime(warning.IssuedAtUtc)} - {FormatDateTime(warning.ExpiresAtUtc)}");
+                    column.Item().Text($"{warning.LevelLabel}: {ReportClock.Format(warning.IssuedAtUtc, zone)} - {ReportClock.Format(warning.ExpiresAtUtc, zone)}");
                 }
             }
 
@@ -525,7 +537,7 @@ public sealed class KurinReportPdfRenderer
             {
                 foreach (var award in member.Awards)
                 {
-                    column.Item().Text($"{award.LevelLabel}: {FormatDateTime(award.DateAcquired)}; {award.StatusLabel}; {award.Note ?? "-"}");
+                    column.Item().Text($"{award.LevelLabel}: {ReportClock.Format(award.DateAcquired, zone)}; {award.StatusLabel}; {award.Note ?? "-"}");
                 }
             }
         });
@@ -546,7 +558,7 @@ public sealed class KurinReportPdfRenderer
 
             foreach (var history in member.LeadershipHistory)
             {
-                column.Item().Text($"{history.TypeLabel}/{history.RoleLabel}; {history.ScopeName ?? "-"}; {history.StartDate:yyyy-MM-dd} - {history.EndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "дотепер"}");
+                column.Item().Text(OfficeLine(history));
             }
         });
     }
@@ -603,8 +615,26 @@ public sealed class KurinReportPdfRenderer
         => container.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(3);
 
     /// <summary>
-    /// Уряди, які людина тримає зараз, названі словами. Раніше тут стояли системні ролі — той самий
-    /// рядок, що всередині токена: «KV.Vykhovnyk, Member». Провід читає звіт, а не мапу прав.
+    /// Один рядок історії: «КВ/Впорядник, 2026-09-10 — дотепер», з гуртком, коли він щось звужує.
+    /// Порожній сегмент не друкується — «КВ/Впорядник; -; …» читалося як загублене поле.
+    /// </summary>
+    private static string OfficeLine(KurinReportLeadershipHistory history)
+    {
+        var office = string.IsNullOrWhiteSpace(history.ScopeName)
+            ? $"{history.TypeLabel}/{history.RoleLabel}"
+            : $"{history.TypeLabel}/{history.RoleLabel}, {history.ScopeName}";
+
+        var until = history.EndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "дотепер";
+        return $"{office}: {history.StartDate:yyyy-MM-dd} - {until}";
+    }
+
+    /// <summary>
+    /// Діловодство, яке людина веде зараз **у цьому курені**, названо словами. Раніше тут стояли
+    /// системні ролі — той самий рядок, що всередині токена: «KV.Vykhovnyk, Member». Провід читає
+    /// звіт, а не мапу прав.
+    /// <para>
+    /// Курінь уже врахований: <c>LeadershipHistory</c> звіту звужена до нього при збиранні.
+    /// </para>
     /// </summary>
     private static IReadOnlyCollection<string> CurrentOffices(KurinReportMember member)
         => member.LeadershipHistory
@@ -616,6 +646,5 @@ public sealed class KurinReportPdfRenderer
     private static string FormatList(IReadOnlyCollection<string> values)
         => values.Count == 0 ? "-" : string.Join(", ", values);
 
-    private static string FormatDateTime(DateTime? value)
-        => value?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "-";
+
 }

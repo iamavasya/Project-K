@@ -43,7 +43,6 @@ public sealed class KurinReportPdfRendererTests
             [],
             [],
             [],
-            [],
             []);
 
     private static KurinReportData Report(

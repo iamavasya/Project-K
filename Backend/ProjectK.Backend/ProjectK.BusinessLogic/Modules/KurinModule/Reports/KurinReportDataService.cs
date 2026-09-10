@@ -50,7 +50,7 @@ public sealed class KurinReportDataService
             return null;
         }
 
-        var (kurin, groups, mentorAssignments, members, usersByKey, rolesByUserKey, _, _, _, _) = source;
+        var (kurin, groups, mentorAssignments, members, usersByKey, _, _, _, _) = source;
 
         var groupNamesByKey = groups.ToDictionary(group => group.GroupKey, group => group.Name);
         var memberByUserKey = members
@@ -76,7 +76,7 @@ public sealed class KurinReportDataService
         foreach (var member in members)
         {
             reportMembers.Add(await BuildMemberReportAsync(
-                member, source, kurinKey, groupNamesByKey, rolesByUserKey, mentoredGroupsByUserKey, cancellationToken));
+                member, source, kurinKey, groupNamesByKey, mentoredGroupsByUserKey, cancellationToken));
         }
 
         var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
@@ -211,14 +211,9 @@ public sealed class KurinReportDataService
         KurinReportSourceData source,
         Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
-        IReadOnlyDictionary<Guid, IReadOnlyList<string>> rolesByUserKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
         CancellationToken cancellationToken)
     {
-        var roles = member.UserKey is Guid userKey && rolesByUserKey.TryGetValue(userKey, out var userRoles)
-            ? userRoles
-            : [];
-
         var probeProgress = ProgressOf(source.ProbeProgressByMemberKey, member.MemberKey);
         var probePointProgress = ProgressOf(source.ProbePointProgressByMemberKey, member.MemberKey);
         var badgeProgress = ProgressOf(source.BadgeProgressByMemberKey, member.MemberKey);
@@ -244,7 +239,6 @@ public sealed class KurinReportDataService
                 && mentoredGroupsByUserKey.TryGetValue(mentorUserKey, out var mentoredGroups)
                 ? mentoredGroups
                 : [],
-            roles,
             member.PlastLevelHistory
                 .OrderByDescending(item => item.DateAchieved)
                 .Select(item => new KurinReportPlastLevel(item.PlastLevel, item.DateAchieved))

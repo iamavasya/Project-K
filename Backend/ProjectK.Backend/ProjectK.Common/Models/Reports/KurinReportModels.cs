@@ -73,7 +73,6 @@ public sealed record KurinReportMember(
     PlastLevel? LatestPlastLevel,
     /// <summary>The гуртки this person runs as виховник. Empty for a юнак.</summary>
     IReadOnlyList<string> MentoredGroupNames,
-    IReadOnlyList<string> SystemRoles,
     IReadOnlyList<KurinReportPlastLevel> PlastLevels,
     IReadOnlyList<KurinReportProbe> Probes,
     IReadOnlyList<KurinReportProbePoint> SignedProbePoints,

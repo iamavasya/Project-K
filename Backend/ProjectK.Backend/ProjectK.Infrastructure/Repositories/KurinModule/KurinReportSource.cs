@@ -95,42 +95,16 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(user => userKeys.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, cancellationToken);
 
-        // The offices held here, not what the identity store says a person is anywhere — an office
-        // belongs to a kurin, and this report is about one.
-        var officeRows = await (
-                from history in _context.LeadershipHistories.AsNoTracking()
-                where history.EndDate == null && memberKeysHere.Contains(history.MemberKey)
-                join office in _context.Leaderships.AsNoTracking()
-                    on history.LeadershipKey equals office.LeadershipKey
-                where office.EndDate == null
-                    && (office.KurinKey == kurinKey
-                        || (office.GroupKey != null && office.Group!.KurinKey == kurinKey))
-                select new { history.MemberKey, office.Type, history.Role })
-            .ToListAsync(cancellationToken);
-
-        var userKeyByMemberKey = members
-            .Where(member => member.UserKey.HasValue)
-            .ToDictionary(member => member.MemberKey, member => member.UserKey!.Value);
-
-        var rolesByUserKey = officeRows
-            .Where(row => userKeyByMemberKey.ContainsKey(row.MemberKey))
-            .GroupBy(row => userKeyByMemberKey[row.MemberKey])
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(row => SystemRole.ForOffice(row.Type, row.Role))
-                    .Append(SystemRole.Member)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(name => name)
-                    .ToArray() as IReadOnlyList<string>);
-
+        // Уряди більше не читаються тут окремим запитом. Вони вже приходять із людиною
+        // (`Include(LeadershipHistories).ThenInclude(Leadership)`), а звіт друкує їх словами, не
+        // системними ролями — тож той запит рахував те саме вдруге, аби перекласти назад у
+        // "KV.Vykhovnyk".
         return new KurinReportSourceData(
             kurin,
             groups,
             mentorAssignments,
             members,
             (IReadOnlyDictionary<Guid, AppUser>)usersByKey,
-            rolesByUserKey,
             GroupByMember(probeProgress, progress => progress.MemberKey),
             GroupByMember(probePointProgress, progress => progress.MemberKey),
             GroupByMember(badgeProgress, progress => progress.MemberKey),

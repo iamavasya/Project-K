@@ -133,7 +133,6 @@ public sealed class KurinReportDataServiceTests
                 _mentorAssignments,
                 _members,
                 new Dictionary<Guid, AppUser>(),
-                new Dictionary<Guid, IReadOnlyList<string>>(),
                 new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress>>(),
                 new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress>>(),
                 new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress>>(),

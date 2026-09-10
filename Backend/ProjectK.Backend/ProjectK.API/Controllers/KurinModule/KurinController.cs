@@ -183,7 +183,14 @@ namespace ProjectK.API.Controllers.KurinModule
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/pdf")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ExportReportPdf(Guid kurinKey, CancellationToken cancellationToken)
+        /// <param name="timeZone">
+        /// The reader's IANA zone, so the document prints the hours their own clock showed. Only the
+        /// browser knows it, so it says. Absent or unknown prints UTC.
+        /// </param>
+        public async Task<IActionResult> ExportReportPdf(
+            Guid kurinKey,
+            [FromQuery] string? timeZone,
+            CancellationToken cancellationToken)
         {
             var report = await _kurinReportDataService.BuildAsync(kurinKey, cancellationToken);
             if (report is null)
@@ -191,7 +198,7 @@ namespace ProjectK.API.Controllers.KurinModule
                 return this.Failure(ResultType.NotFound, "KurinNotFound", "No report data exists for this kurin.");
             }
 
-            var bytes = _kurinReportPdfRenderer.Render(report);
+            var bytes = _kurinReportPdfRenderer.Render(report, timeZone);
             var fileName = $"kurin-{report.Kurin.Number}-report-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pdf";
 
             return File(bytes, "application/pdf", fileName);

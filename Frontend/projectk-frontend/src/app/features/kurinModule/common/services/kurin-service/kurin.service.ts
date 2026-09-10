@@ -6,6 +6,7 @@ import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../../
 import { Observable } from 'rxjs/internal/Observable';
 import { tap } from 'rxjs';
 import { ClientCacheService } from '../client-cache/client-cache.service';
+import { browserTimeZone } from '../../functions/browserTimeZone.function';
 import { ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 
 @Injectable({
@@ -32,8 +33,13 @@ export class KurinService {
     );
   }
 
+  /**
+   * Звіт куреня в PDF. Разом із запитом їде часовий пояс браузера: години в документі мають бути
+   * ті, що показує годинник читача, а сервер його поясу не знає — раніше там стояв UTC.
+   */
   downloadReportPdf(kurinKey: string): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.apiUrl}/${kurinKey}/report/pdf`, {
+      params: { timeZone: browserTimeZone() },
       observe: 'response',
       responseType: 'blob'
     });
