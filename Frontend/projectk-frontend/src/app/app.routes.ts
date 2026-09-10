@@ -139,6 +139,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
   },
   {
+    path: 'kurin/import',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
+    loadComponent: () => import('./features/kurinModule/import/import')
+      .then(m => m.RosterImportComponent),
+    title: 'Імпорт складу',
+    data: { breadcrumb: 'Імпорт складу', parent: '/kurin', titleContext: 'kurin' }
+  },
+  {
     path: 'kurin/registry',
     canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement', 'groupLeadership')],
     loadComponent: () => import('./features/kurinModule/registry/registry')

@@ -89,6 +89,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert
             if (existing == null)
             {
                 existing = _mapper.Map<MemberEntity>(request);
+
+                // The ступені the request carried. The mapper deliberately leaves the collection
+                // alone — it cannot tell a new row from an edited one — so a person created with
+                // their ступені known arrived with none of them until this ran. The roster import is
+                // what made that visible: every imported юнак came in with a blank ступінь.
+                if (CanEditRestrictedFields())
+                {
+                    UpdatePlastLevelHistory(
+                        existing.MemberKey,
+                        kurinKey,
+                        request.PlastLevelHistories,
+                        existing.PlastLevelHistory);
+                }
+
                 existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
 
                 _unitOfWork.Members.Create(existing, cancellationToken);

@@ -39,7 +39,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import
             ("сен. пр", PlastLevel.SeniorPratsi),
             ("сеніор пр", PlastLevel.SeniorPratsi),
             ("прац", PlastLevel.SeniorPratsi),
-            ("гетьман", PlastLevel.HetmanskiySkob),
+            // "гетьм." is how the app itself prints it, and a roster pasted out of our own screens is
+            // the likeliest file of all — so the short forms have to parse before the long ones.
+            ("гетьм", PlastLevel.HetmanskiySkob),
             ("старш", PlastLevel.Starshoplastun),
             ("ст. пл", PlastLevel.Starshoplastun),
             ("усп", PlastLevel.Starshoplastun),
@@ -50,6 +52,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import
             ("вірлиц", PlastLevel.Skob),
             ("розв", PlastLevel.Rozviduvach),
             ("учасн", PlastLevel.Uchasnyk),
+            ("уч.", PlastLevel.Uchasnyk),
             ("прихил", PlastLevel.Prykhylnyk),
             ("прих", PlastLevel.Prykhylnyk),
             ("вступ", PlastLevel.Entry)

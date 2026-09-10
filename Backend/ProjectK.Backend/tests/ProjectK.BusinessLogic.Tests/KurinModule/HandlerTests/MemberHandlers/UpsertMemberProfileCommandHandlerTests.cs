@@ -10,6 +10,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Settings;
 using Xunit;
@@ -134,6 +135,50 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
             created!.FirstName.Should().Be("Ivan");
             created.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
             _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        /// <summary>
+        /// A person can be created with their ступені already known — the roster import does exactly
+        /// that. The mapper leaves the collection alone by design, so until the create branch applied
+        /// the history itself, every such person arrived with a blank ступінь and no dates. A live
+        /// import is what surfaced it: four юнаки imported with their скоб and their заприсяження,
+        /// and all four showed "—" in the registry.
+        /// </summary>
+        [Fact]
+        public async Task Handle_Create_WithKnownLevels_ShouldRecordThemAndTheLatestOne()
+        {
+            var group = MakeGroup();
+            _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+
+            var cmd = new UpsertMemberProfileCommand
+            {
+                GroupKey = group.GroupKey,
+                FirstName = "Ivan",
+                LastName = "Petrenko",
+                Email = "ivan@example.com",
+                PhoneNumber = "123",
+                DateOfBirth = new DateOnly(2010, 3, 12),
+                PlastLevelHistories =
+                [
+                    new PlastLevelHistoryDto { PlastLevel = PlastLevel.Uchasnyk, DateAchieved = new DateOnly(2022, 5, 1) },
+                    new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2024, 4, 22) }
+                ]
+            };
+
+            ExistingMemberIs(null, cmd.MemberKey);
+            GroupIs(group);
+
+            Member? created = null;
+            _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+                .Callback<Member, CancellationToken>((m, _) => created = m);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+
+            created.Should().NotBeNull();
+            created!.PlastLevelHistory.Should().HaveCount(2);
+            created.PlastLevelHistory.Select(entry => entry.PlastLevel)
+                .Should().BeEquivalentTo([PlastLevel.Uchasnyk, PlastLevel.Skob]);
+            created.LatestPlastLevel.Should().Be(PlastLevel.Skob);
         }
 
         [Fact]

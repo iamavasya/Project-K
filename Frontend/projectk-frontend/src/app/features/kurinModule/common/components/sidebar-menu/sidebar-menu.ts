@@ -176,6 +176,20 @@ export class SidebarMenuComponent implements OnChanges {
         });
       }
 
+      // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
+      if (canManageKurinSettings) {
+        items.push({
+          label: 'Імпорт складу',
+          icon: 'pi pi-upload',
+          routerLink: ['/kurin/import'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin/import']);
+          },
+          disabled
+        });
+      }
+
       // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
       // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
       items.push({

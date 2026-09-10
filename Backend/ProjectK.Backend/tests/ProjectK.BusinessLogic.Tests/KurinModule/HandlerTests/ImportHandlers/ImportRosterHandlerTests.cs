@@ -219,14 +219,27 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.ImportHandlers
             report.Data!.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
         }
 
-        /// <summary>Rosters say the ступінь in whatever words the person writing had to hand.</summary>
+        /// <summary>
+        /// Rosters say the ступінь in whatever words the person writing had to hand — and the
+        /// likeliest roster of all is one pasted out of this app, which prints the short forms.
+        /// «пл. уч.» and «пл. гетьм. скоб» were both unrecognised until a live import said so.
+        /// </summary>
         [Theory]
         [InlineData("скоб")]
         [InlineData("Вірлиця")]
-        [InlineData("пл. розв.")]
+        [InlineData("розвідувачка")]
         [InlineData("учасник")]
-        [InlineData("прихильник")]
+        [InlineData("прихильниця")]
+        [InlineData("пл. прих.")]
+        [InlineData("пл. уч.")]
+        [InlineData("пл. розв.")]
+        [InlineData("пл. скоб")]
+        [InlineData("пл. гетьм. скоб")]
+        [InlineData("Гетьманський скоб")]
         [InlineData("ст. пл.")]
+        [InlineData("пл. сен. пр.")]
+        [InlineData("пл. сен. дов.")]
+        [InlineData("пл. сен. кер.")]
         public async Task ALevelIsRecognised_InTheWordsRostersUse(string level)
         {
             var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", level, "22.04.2024", "Ведмеді", "2")]);
