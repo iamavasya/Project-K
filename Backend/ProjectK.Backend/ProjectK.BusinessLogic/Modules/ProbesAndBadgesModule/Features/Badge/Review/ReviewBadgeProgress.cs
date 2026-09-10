@@ -72,7 +72,7 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         }
 
         var now = DateTime.UtcNow;
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
         var targetStatus = request.IsApproved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
         string action;
         if (request.IsApproved)
@@ -91,8 +91,8 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
         progress.Status = targetStatus;
         progress.ReviewedAtUtc = now;
         progress.ReviewedByUserKey = actor.UserKey;
-        progress.ReviewedByName = actor.ActorName;
-        progress.ReviewedByRole = actor.ActorRole;
+        progress.ReviewedByName = actor.Name;
+        progress.ReviewedByRole = actor.Role;
         progress.ReviewNote = request.Note;
 
         progress.AuditEvents.Add(new BadgeProgressAuditEvent
@@ -101,8 +101,8 @@ public sealed class ReviewBadgeProgressHandler : IRequestHandler<ReviewBadgeProg
             ToStatus = targetStatus,
             Action = action,
             ActorUserKey = actor.UserKey,
-            ActorName = actor.ActorName,
-            ActorRole = actor.ActorRole,
+            ActorName = actor.Name,
+            ActorRole = actor.Role,
             OccurredAtUtc = now,
             Note = request.Note
         });

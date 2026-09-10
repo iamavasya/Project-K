@@ -47,6 +47,63 @@ public class ReviewBadgeProgressHandlerTests
             _eventsMock.Object);
     }
 
+    /// <summary>
+    /// The trail says who signed it off, by name. It used to say <c>UserId.ToString()</c> — the
+    /// screens printed the guid, and nobody noticed because it never failed, it only read as
+    /// gibberish. Found on the stabilisation pass, not by a test.
+    /// </summary>
+    [Fact]
+    public async Task Handle_ShouldRecordTheReviewersName_NotTheirKey()
+    {
+        var memberKey = Guid.NewGuid();
+        var reviewerUserKey = Guid.NewGuid();
+        const string badgeId = "badge-1";
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(reviewerUserKey);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(
+                Guid.NewGuid(), reviewerUserKey, Guid.NewGuid(), null,
+                "Іван", "Петренко", "ivan@example.com", null));
+
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        await _handler.Handle(new ReviewBadgeProgress(memberKey, badgeId, true, null), CancellationToken.None);
+
+        Assert.Equal("Іван Петренко", progress.ReviewedByName);
+        Assert.DoesNotContain(reviewerUserKey.ToString(), progress.ReviewedByName);
+        Assert.Equal("Іван Петренко", progress.AuditEvents.Last().ActorName);
+    }
+
+    /// <summary>
+    /// A reviewer with no member record still has to be recorded as somebody. The marker says so in
+    /// as many words, rather than leaving a bare guid that reads like a name gone wrong.
+    /// </summary>
+    [Fact]
+    public async Task Handle_WhenTheReviewerHasNoMemberRecord_ShouldSaySoRatherThanPrintABareKey()
+    {
+        var memberKey = Guid.NewGuid();
+        var reviewerUserKey = Guid.NewGuid();
+        const string badgeId = "badge-1";
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(reviewerUserKey);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemberSummary?)null);
+
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        await _handler.Handle(new ReviewBadgeProgress(memberKey, badgeId, true, null), CancellationToken.None);
+
+        Assert.Equal($"user:{reviewerUserKey}", progress.ReviewedByName);
+    }
+
     [Fact]
     public async Task Handle_ShouldApproveSubmittedProgress()
     {

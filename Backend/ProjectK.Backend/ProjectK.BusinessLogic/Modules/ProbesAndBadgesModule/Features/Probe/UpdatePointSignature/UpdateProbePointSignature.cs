@@ -66,8 +66,8 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
         var probeProgress = await _unitOfWork.ProbeProgresses
             .GetByMemberAndProbeIdAsync(request.MemberKey, normalizedProbeId, cancellationToken);
 
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
-        var actorName = await ResolveActorDisplayNameAsync(actor.UserKey, cancellationToken);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actorName = actor.Name;
         var now = DateTime.UtcNow;
         var pointUpdateContext = new PointSignatureUpdateContext(
             IsSigned: request.IsSigned,
@@ -77,7 +77,7 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
             PointId: normalizedPointId,
             TimestampUtc: now,
             ActorUserKey: actor.UserKey,
-            ActorRole: actor.ActorRole,
+            ActorRole: actor.Role,
             ActorName: actorName,
             CancellationToken: cancellationToken);
 
@@ -264,25 +264,4 @@ public sealed class UpdateProbePointSignatureHandler : IRequestHandler<UpdatePro
             .ToList();
     }
 
-    private async Task<string?> ResolveActorDisplayNameAsync(Guid? actorUserKey, CancellationToken cancellationToken)
-    {
-        if (actorUserKey is null)
-        {
-            return null;
-        }
-
-        var actorMember = await _members.FindByAccountAsync(actorUserKey.Value, cancellationToken);
-        if (actorMember is not null)
-        {
-            var fullName = $"{actorMember.FirstName} {actorMember.LastName}".Trim();
-            if (!string.IsNullOrWhiteSpace(fullName))
-            {
-                return fullName;
-            }
-
-            return $"member:{actorMember.MemberKey} / user:{actorUserKey.Value}";
-        }
-
-        return $"user:{actorUserKey.Value}";
-    }
 }

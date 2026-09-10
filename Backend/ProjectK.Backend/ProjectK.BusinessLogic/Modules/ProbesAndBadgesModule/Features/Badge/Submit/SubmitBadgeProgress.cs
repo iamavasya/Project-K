@@ -73,7 +73,7 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
         }
 
         var now = DateTime.UtcNow;
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
 
         if (progress is null)
         {
@@ -93,8 +93,8 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
                 ToStatus = BadgeProgressStatus.Submitted,
                 Action = "Submitted",
                 ActorUserKey = actor.UserKey,
-                ActorName = actor.ActorName,
-                ActorRole = actor.ActorRole,
+                ActorName = actor.Name,
+                ActorRole = actor.Role,
                 OccurredAtUtc = now,
                 Note = request.Note
             });
@@ -119,8 +119,8 @@ public sealed class SubmitBadgeProgressHandler : IRequestHandler<SubmitBadgeProg
                 ToStatus = BadgeProgressStatus.Submitted,
                 Action = "Resubmitted",
                 ActorUserKey = actor.UserKey,
-                ActorName = actor.ActorName,
-                ActorRole = actor.ActorRole,
+                ActorName = actor.Name,
+                ActorRole = actor.Role,
                 OccurredAtUtc = now,
                 Note = request.Note
             });

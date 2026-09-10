@@ -102,13 +102,13 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
         }
 
         var now = DateTime.UtcNow;
-        var actor = ProgressActorResolver.Resolve(_currentUserContext);
-        var actorName = await ResolveActorDisplayNameAsync(actor.UserKey, cancellationToken);
+        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actorName = actor.Name;
         var auditAction = ResolveAuditAction(currentStatus, request.Status);
 
         progress.Status = request.Status;
 
-        ApplyStatusSideEffects(progress, currentStatus, request.Status, now, actor.UserKey, actorName, actor.ActorRole);
+        ApplyStatusSideEffects(progress, currentStatus, request.Status, now, actor.UserKey, actorName, actor.Role);
 
         progress.AuditEvents.Add(new ProbeProgressAuditEvent
         {
@@ -117,7 +117,7 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             Action = auditAction,
             ActorUserKey = actor.UserKey,
             ActorName = actorName,
-            ActorRole = actor.ActorRole,
+            ActorRole = actor.Role,
             OccurredAtUtc = now,
             Note = request.Note
         });
@@ -189,28 +189,6 @@ public sealed class UpdateProbeProgressStatusHandler : IRequestHandler<UpdatePro
             ProbeProgressStatus.Verified => target == ProbeProgressStatus.Completed,
             _ => false
         };
-    }
-
-    private async Task<string?> ResolveActorDisplayNameAsync(Guid? actorUserKey, CancellationToken cancellationToken)
-    {
-        if (actorUserKey is null)
-        {
-            return null;
-        }
-
-        var actorMember = await _members.FindByAccountAsync(actorUserKey.Value, cancellationToken);
-        if (actorMember is not null)
-        {
-            var fullName = $"{actorMember.FirstName} {actorMember.LastName}".Trim();
-            if (!string.IsNullOrWhiteSpace(fullName))
-            {
-                return fullName;
-            }
-
-            return $"member:{actorMember.MemberKey} / user:{actorUserKey.Value}";
-        }
-
-        return $"user:{actorUserKey.Value}";
     }
 
     private static string ResolveAuditAction(ProbeProgressStatus currentStatus, ProbeProgressStatus targetStatus)
