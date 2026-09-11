@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

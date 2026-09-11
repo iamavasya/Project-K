@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 

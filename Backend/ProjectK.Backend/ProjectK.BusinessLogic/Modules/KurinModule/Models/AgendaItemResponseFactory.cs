@@ -1,6 +1,6 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 

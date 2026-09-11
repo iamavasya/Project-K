@@ -1,6 +1,6 @@
-﻿using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 

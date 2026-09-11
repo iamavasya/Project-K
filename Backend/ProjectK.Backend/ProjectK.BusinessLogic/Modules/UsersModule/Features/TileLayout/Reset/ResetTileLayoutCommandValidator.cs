@@ -1,16 +1,15 @@
-﻿using FluentValidation;
+using FluentValidation;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 
-namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
+
+public sealed class ResetTileLayoutCommandValidator : AbstractValidator<ResetTileLayoutCommand>
 {
-    public sealed class ResetTileLayoutCommandValidator : AbstractValidator<ResetTileLayoutCommand>
+    public ResetTileLayoutCommandValidator()
     {
-        public ResetTileLayoutCommandValidator()
-        {
-            RuleFor(command => command.BoardKey)
-                .Must(TileBoardKeys.All.Contains)
-                .WithMessage("Unknown board key.");
-        }
+        RuleFor(command => command.BoardKey)
+            .Must(TileBoardKeys.All.Contains)
+            .WithMessage("Unknown board key.");
     }
 }

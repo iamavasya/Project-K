@@ -1,8 +1,7 @@
-﻿namespace ProjectK.Common.Models.Dtos.InfrastructureModule
+namespace ProjectK.Common.Models.Dtos.InfrastructureModule;
+
+public sealed class NotificationQuery
 {
-    public sealed class NotificationQuery
-    {
-        public bool UnreadOnly { get; set; }
-        public int Take { get; set; } = 50;
-    }
+    public bool UnreadOnly { get; set; }
+    public int Take { get; set; } = 50;
 }

@@ -1,7 +1,7 @@
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 

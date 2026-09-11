@@ -1,9 +1,10 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -13,9 +14,8 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.ActivateAccount;
 

@@ -1,14 +1,13 @@
-﻿using FluentValidation;
+using FluentValidation;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
+
+public sealed class ActivateAccountCommandValidator : AbstractValidator<ActivateAccountCommand>
 {
-    public sealed class ActivateAccountCommandValidator : AbstractValidator<ActivateAccountCommand>
+    public ActivateAccountCommandValidator()
     {
-        public ActivateAccountCommandValidator()
-        {
-            // Presence only; password complexity stays with the Identity password policy.
-            RuleFor(command => command.Token).NotEmpty();
-            RuleFor(command => command.Password).NotEmpty();
-        }
+        // Presence only; password complexity stays with the Identity password policy.
+        RuleFor(command => command.Token).NotEmpty();
+        RuleFor(command => command.Password).NotEmpty();
     }
 }

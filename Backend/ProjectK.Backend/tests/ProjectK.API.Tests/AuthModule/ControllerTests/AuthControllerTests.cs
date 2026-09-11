@@ -1,17 +1,12 @@
-﻿using AutoMapper;
+using System.Security.Claims;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.API.Controllers.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using System.Security.Claims;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
@@ -20,437 +15,441 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
-using Microsoft.Extensions.Configuration;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
+using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Dtos.AuthModule.Requests;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.API.Tests.Controllers
+namespace ProjectK.API.Tests.Controllers;
+
+public class AuthControllerTests
 {
-    public class AuthControllerTests
+    private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<IMapper> _mapperMock;
+    private readonly AuthController _controller;
+
+    public AuthControllerTests()
     {
-        private readonly Mock<IMediator> _mediatorMock;
-        private readonly Mock<IMapper> _mapperMock;
-        private readonly AuthController _controller;
+        _mediatorMock = new Mock<IMediator>();
+        _mapperMock = new Mock<IMapper>();
 
-        public AuthControllerTests()
+        _controller = new AuthController(_mediatorMock.Object, _mapperMock.Object)
         {
-            _mediatorMock = new Mock<IMediator>();
-            _mapperMock = new Mock<IMapper>();
-
-            _controller = new AuthController(_mediatorMock.Object, _mapperMock.Object)
+            ControllerContext = new ControllerContext
             {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext()
-                }
-            };
-        }
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+    }
 
-        [Fact]
-        public async Task RegisterKurin_ShouldReturnOk_WhenMediatorReturnsSuccess()
+    [Fact]
+    public async Task RegisterKurin_ShouldReturnOk_WhenMediatorReturnsSuccess()
+    {
+        // Arrange
+        var request = new RegisterUserRequest
         {
-            // Arrange
-            var request = new RegisterUserRequest
+            Email = "test@example.com",
+            Password = "Chosen-by-the-admin-1!",
+            FirstName = "Kurin",
+            LastName = "Founder",
+            KurinNumber = 1
+        };
+
+        var serviceResult = new ServiceResult<RegisterUserResponse>(ResultType.Success, new RegisterUserResponse());
+        _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterKurinCommand>(), default))
+            .ReturnsAsync(serviceResult);
+
+        // Act
+        var result = await _controller.RegisterKurin(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(serviceResult.Data, okResult.Value);
+    }
+
+    [Fact]
+    public async Task RegisterKurin_ShouldRefuse_WhenNoPasswordIsGiven()
+    {
+        // The endpoint used to fill in "tempManagerPass1!" — a password anyone could read off the
+        // repository — for every request that left it out.
+        var request = new RegisterUserRequest
+        {
+            Email = "test@example.com",
+            FirstName = "Kurin",
+            LastName = "Founder",
+            KurinNumber = 1
+        };
+
+        var result = await _controller.RegisterKurin(request);
+
+        ApiErrorAssert.HasError(result, 400, "PasswordRequired");
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RegisterKurinCommand>(), default), Times.Never);
+    }
+
+    [Fact]
+    public async Task Login_ShouldSetCookie_WhenLoginSuccessful()
+    {
+        // Arrange
+        var request = new LoginUserRequest { Email = "test@test.com", Password = "pass" };
+
+        var tokens = new JwtResponse
+        {
+            AccessToken = "AccessToken",
+            RefreshToken = new RefreshToken
             {
-                Email = "test@example.com",
-                Password = "Chosen-by-the-admin-1!",
-                FirstName = "Kurin",
-                LastName = "Founder",
-                KurinNumber = 1
-            };
+                Token = "RefreshToken",
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow,
+            }
+        };
 
-            var serviceResult = new ServiceResult<RegisterUserResponse>(ResultType.Success, new RegisterUserResponse());
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterKurinCommand>(), default))
-                .ReturnsAsync(serviceResult);
+        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens });
 
-            // Act
-            var result = await _controller.RegisterKurin(request);
+        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
+            .Returns(new LoginUserCommand(request.Email, request.Password));
 
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(serviceResult.Data, okResult.Value);
-        }
+        _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
+            .ReturnsAsync(serviceResult);
 
-        [Fact]
-        public async Task RegisterKurin_ShouldRefuse_WhenNoPasswordIsGiven()
+        // Act
+        var result = await _controller.Login(request);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
+        Assert.Contains("refreshToken", setCookieHeader);
+        Assert.Contains("samesite=lax", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_ShouldSetSecureSameSiteNoneCookie_WhenRequestIsHttps()
+    {
+        // Arrange
+        _controller.Request.Scheme = "https";
+        var request = new LoginUserRequest { Email = "test@test.com", Password = "pass" };
+        var tokens = new JwtResponse
         {
-            // The endpoint used to fill in "tempManagerPass1!" — a password anyone could read off the
-            // repository — for every request that left it out.
-            var request = new RegisterUserRequest
+            AccessToken = "AccessToken",
+            RefreshToken = new RefreshToken
             {
-                Email = "test@example.com",
-                FirstName = "Kurin",
-                LastName = "Founder",
-                KurinNumber = 1
-            };
+                Token = "RefreshToken",
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow,
+            }
+        };
 
-            var result = await _controller.RegisterKurin(request);
+        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
+            .Returns(new LoginUserCommand(request.Email, request.Password));
 
-            ApiErrorAssert.HasError(result, 400, "PasswordRequired");
-            _mediatorMock.Verify(m => m.Send(It.IsAny<RegisterKurinCommand>(), default), Times.Never);
-        }
+        _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
+            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
 
-        [Fact]
-        public async Task Login_ShouldSetCookie_WhenLoginSuccessful()
+        // Act
+        var result = await _controller.Login(request);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
+        Assert.Contains("refreshToken", setCookieHeader);
+        Assert.Contains("samesite=none", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_ShouldReturnUnauthorized_WhenLoginFails()
+    {
+        // Arrange
+        var request = new LoginUserRequest { Email = "bad@test.com", Password = "wrong" };
+        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+
+        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
+            .Returns(new LoginUserCommand(request.Email, request.Password));
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
+            .ReturnsAsync(serviceResult);
+
+        // Act
+        var result = await _controller.Login(request);
+
+        // Assert
+        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
+    }
+
+    [Fact]
+    public async Task Refresh_ShouldReturnUnauthorized_WhenNoCookie()
+    {
+        // Arrange
+        // no refreshToken cookie set
+
+        // Act
+        var result = await _controller.Refresh();
+
+        // Assert
+        // Every failure now carries { error, message }; assert the contract, not the result type.
+        var unauthorized = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
+    }
+
+    [Fact]
+    public async Task Refresh_ShouldDeleteCookieWithoutLogout_WhenRefreshTokenIsInvalid()
+    {
+        // Arrange
+        _controller.Request.Headers.Cookie = "refreshToken=invalid-token";
+        _mediatorMock.Setup(m => m.Send(It.IsAny<RefreshTokenCommand>(), default))
+            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+
+        // Act
+        var result = await _controller.Refresh();
+
+        // Assert
+        // Every failure now carries { error, message }; assert the contract, not the result type.
+        var unauthorized = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
+        Assert.Contains("refreshToken=", _controller.Response.Headers["Set-Cookie"].ToString());
+        _mediatorMock.Verify(m => m.Send(It.IsAny<LogoutUserCommand>(), default), Times.Never);
+    }
+
+    [Fact]
+    public async Task Refresh_ShouldUseValidToken_WhenDuplicateRefreshTokenCookiesExist()
+    {
+        // Arrange
+        _controller.Request.Headers.Cookie = "refreshToken=stale-token; refreshToken=valid-token";
+        var refreshedJwt = new JwtResponse
         {
-            // Arrange
-            var request = new LoginUserRequest { Email = "test@test.com", Password = "pass" };
-
-            var tokens = new JwtResponse
+            AccessToken = "new-access-token",
+            RefreshToken = new RefreshToken
             {
-                AccessToken = "AccessToken",
-                RefreshToken = new RefreshToken
-                {
-                    Token = "RefreshToken",
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Created = DateTime.UtcNow,
-                }
-            };
+                Token = "new-refresh-token",
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow
+            }
+        };
 
-            var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens });
+        _mediatorMock.Setup(m => m.Send(
+                It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"),
+                default))
+            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+        _mediatorMock.Setup(m => m.Send(
+                It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"),
+                default))
+            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Success, refreshedJwt));
 
-            _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-                .Returns(new LoginUserCommand(request.Email, request.Password));
+        // Act
+        var result = await _controller.Refresh();
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
-                .ReturnsAsync(serviceResult);
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(refreshedJwt, okResult.Value);
+        Assert.Contains("new-refresh-token", _controller.Response.Headers["Set-Cookie"].ToString());
+        _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"), default), Times.Once);
+        _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"), default), Times.Once);
+    }
 
-            // Act
-            var result = await _controller.Login(request);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-            var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
-            Assert.Contains("refreshToken", setCookieHeader);
-            Assert.Contains("samesite=lax", setCookieHeader, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
-        }
-
-        [Fact]
-        public async Task Login_ShouldSetSecureSameSiteNoneCookie_WhenRequestIsHttps()
+    [Fact]
+    public async Task CheckAccess_ShouldReturnOk_WhenMediatorReturnsTrue()
+    {
+        // Arrange
+        var request = new CheckEntityAccessRequest
         {
-            // Arrange
-            _controller.Request.Scheme = "https";
-            var request = new LoginUserRequest { Email = "test@test.com", Password = "pass" };
-            var tokens = new JwtResponse
+            EntityType = "TestEntity",
+            EntityKey = "123",
+            ActiveKurinKey = Guid.NewGuid().ToString()
+        };
+
+        var serviceResult = new ServiceResult<bool>(ResultType.Success, true);
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<CheckEntityAccessQuery>(), default))
+            .ReturnsAsync(serviceResult);
+
+        // Act
+        var result = await _controller.CheckAccess(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var boolValue = (bool)okResult.Value!;
+        Assert.True(boolValue);
+
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<CheckEntityAccessQuery>(q =>
+                q.EntityType == request.EntityType
+                && q.EntityKey == request.EntityKey
+                && q.ActiveKurinKey == null),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMfaSetup_ShouldSendQueryForCurrentUser()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        SetCurrentUser(userKey);
+        var setup = new MfaSetupResponseDto("shared-key", "otpauth://totp/Project-K:user@example.com", "qr-base64");
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetMfaSetupQuery>(), default))
+            .ReturnsAsync(new ServiceResult<MfaSetupResponseDto>(ResultType.Success, setup));
+
+        // Act
+        var result = await _controller.GetMfaSetup();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(setup, okResult.Value);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<GetMfaSetupQuery>(q => q.UserKey == userKey),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task EnableMfa_ShouldSendCommandForCurrentUser()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        SetCurrentUser(userKey);
+        var request = new MfaVerifyRequestDto("123 456");
+        var response = new MfaEnableResponseDto(true, new[] { "code-1", "code-2" });
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<EnableMfaCommand>(), default))
+            .ReturnsAsync(new ServiceResult<MfaEnableResponseDto>(ResultType.Success, response));
+
+        // Act
+        var result = await _controller.EnableMfa(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(response, okResult.Value);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<EnableMfaCommand>(cmd => cmd.UserKey == userKey && cmd.Code == request.Code),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task RotateMfaRecoveryCodes_ShouldSendCommandForCurrentUser()
+    {
+        // Arrange
+        var userKey = Guid.NewGuid();
+        SetCurrentUser(userKey);
+        var request = new MfaRecoveryCodesRequestDto("current-password");
+        var response = new MfaRecoveryCodesResponseDto(new[] { "code-1" });
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GenerateMfaRecoveryCodesCommand>(), default))
+            .ReturnsAsync(new ServiceResult<MfaRecoveryCodesResponseDto>(ResultType.Success, response));
+
+        // Act
+        var result = await _controller.RotateMfaRecoveryCodes(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(response, okResult.Value);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<GenerateMfaRecoveryCodesCommand>(cmd =>
+                cmd.UserKey == userKey && cmd.CurrentPassword == request.CurrentPassword),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task VerifyMfaLogin_ShouldSetCookie_WhenVerificationReturnsTokens()
+    {
+        // Arrange
+        var request = new MfaLoginRequestDto("user@example.com", "123456", true);
+        var tokens = new JwtResponse
+        {
+            AccessToken = "AccessToken",
+            RefreshToken = new RefreshToken
             {
-                AccessToken = "AccessToken",
-                RefreshToken = new RefreshToken
-                {
-                    Token = "RefreshToken",
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Created = DateTime.UtcNow,
-                }
-            };
+                Token = "MfaRefreshToken",
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow
+            }
+        };
+        var response = new LoginUserResponse { Email = request.Email, Tokens = tokens };
 
-            _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-                .Returns(new LoginUserCommand(request.Email, request.Password));
+        _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
+            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, response));
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
-                .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
+        // Act
+        var result = await _controller.VerifyMfaLogin(request);
 
-            // Act
-            var result = await _controller.Login(request);
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Contains("refreshToken=MfaRefreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<VerifyMfaLoginCommand>(cmd =>
+                cmd.Email == request.Email &&
+                cmd.Code == request.Code &&
+                cmd.RememberMe == request.RememberMe),
+            default), Times.Once);
+    }
 
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-            var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
-            Assert.Contains("refreshToken", setCookieHeader);
-            Assert.Contains("samesite=none", setCookieHeader, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("secure", setCookieHeader, StringComparison.OrdinalIgnoreCase);
-        }
+    [Fact]
+    public async Task VerifyMfaLogin_ShouldNotSetCookie_WhenMfaIsUnauthorized()
+    {
+        // Arrange
+        var request = new MfaLoginRequestDto("user@example.com", "bad-code", false);
 
-        [Fact]
-        public async Task Login_ShouldReturnUnauthorized_WhenLoginFails()
+        _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
+            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Unauthorized));
+
+        // Act
+        var result = await _controller.VerifyMfaLogin(request);
+
+        // Assert
+        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
+        Assert.DoesNotContain("refreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
+    }
+
+    private void SetCurrentUser(Guid userKey)
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userKey.ToString()) };
+        _controller.ControllerContext = new ControllerContext
         {
-            // Arrange
-            var request = new LoginUserRequest { Email = "bad@test.com", Password = "wrong" };
-            var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
-
-            _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-                .Returns(new LoginUserCommand(request.Email, request.Password));
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
-                .ReturnsAsync(serviceResult);
-
-            // Act
-            var result = await _controller.Login(request);
-
-            // Assert
-            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
-        }
-
-        [Fact]
-        public async Task Refresh_ShouldReturnUnauthorized_WhenNoCookie()
-        {
-            // Arrange
-            // no refreshToken cookie set
-
-            // Act
-            var result = await _controller.Refresh();
-
-            // Assert
-            // Every failure now carries { error, message }; assert the contract, not the result type.
-            var unauthorized = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
-        }
-
-        [Fact]
-        public async Task Refresh_ShouldDeleteCookieWithoutLogout_WhenRefreshTokenIsInvalid()
-        {
-            // Arrange
-            _controller.Request.Headers.Cookie = "refreshToken=invalid-token";
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RefreshTokenCommand>(), default))
-                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
-
-            // Act
-            var result = await _controller.Refresh();
-
-            // Assert
-            // Every failure now carries { error, message }; assert the contract, not the result type.
-            var unauthorized = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorized.StatusCode);
-            Assert.Contains("refreshToken=", _controller.Response.Headers["Set-Cookie"].ToString());
-            _mediatorMock.Verify(m => m.Send(It.IsAny<LogoutUserCommand>(), default), Times.Never);
-        }
-
-        [Fact]
-        public async Task Refresh_ShouldUseValidToken_WhenDuplicateRefreshTokenCookiesExist()
-        {
-            // Arrange
-            _controller.Request.Headers.Cookie = "refreshToken=stale-token; refreshToken=valid-token";
-            var refreshedJwt = new JwtResponse
+            HttpContext = new DefaultHttpContext
             {
-                AccessToken = "new-access-token",
-                RefreshToken = new RefreshToken
-                {
-                    Token = "new-refresh-token",
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Created = DateTime.UtcNow
-                }
-            };
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims))
+            }
+        };
+    }
 
-            _mediatorMock.Setup(m => m.Send(
-                    It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"),
-                    default))
-                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
-            _mediatorMock.Setup(m => m.Send(
-                    It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"),
-                    default))
-                .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Success, refreshedJwt));
+    /// <summary>
+    /// The endpoint mints a token for the seeded load-test account, so the only thing between it
+    /// and an anonymous caller is the configured key. Empty means off, which is how it ships:
+    /// appsettings.json leaves LoadTestLoginKey blank.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task LoadTestLogin_ShouldRefuse_WhenNoKeyIsConfigured(string? configuredKey)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = configuredKey })
+            .Build();
 
-            // Act
-            var result = await _controller.Refresh();
+        var result = await _controller.LoadTestLogin(
+            new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
+            configuration,
+            userManager: null!,
+            jwtService: null!,
+            access: null!);
 
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(refreshedJwt, okResult.Value);
-            Assert.Contains("new-refresh-token", _controller.Response.Headers["Set-Cookie"].ToString());
-            _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"), default), Times.Once);
-            _mediatorMock.Verify(m => m.Send(It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"), default), Times.Once);
-        }
+        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+    }
 
-        [Fact]
-        public async Task CheckAccess_ShouldReturnOk_WhenMediatorReturnsTrue()
-        {
-            // Arrange
-            var request = new CheckEntityAccessRequest
-            {
-                EntityType = "TestEntity",
-                EntityKey = "123",
-                ActiveKurinKey = Guid.NewGuid().ToString()
-            };
+    [Fact]
+    public async Task LoadTestLogin_ShouldRefuse_WhenTheKeyDoesNotMatch()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = "the-real-key" })
+            .Build();
 
-            var serviceResult = new ServiceResult<bool>(ResultType.Success, true);
+        var result = await _controller.LoadTestLogin(
+            new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
+            configuration,
+            userManager: null!,
+            jwtService: null!,
+            access: null!);
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<CheckEntityAccessQuery>(), default))
-                .ReturnsAsync(serviceResult);
-
-            // Act
-            var result = await _controller.CheckAccess(request);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var boolValue = (bool)okResult.Value!;
-            Assert.True(boolValue);
-
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<CheckEntityAccessQuery>(q =>
-                    q.EntityType == request.EntityType
-                    && q.EntityKey == request.EntityKey
-                    && q.ActiveKurinKey == null),
-                default), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetMfaSetup_ShouldSendQueryForCurrentUser()
-        {
-            // Arrange
-            var userKey = Guid.NewGuid();
-            SetCurrentUser(userKey);
-            var setup = new MfaSetupResponseDto("shared-key", "otpauth://totp/Project-K:user@example.com", "qr-base64");
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetMfaSetupQuery>(), default))
-                .ReturnsAsync(new ServiceResult<MfaSetupResponseDto>(ResultType.Success, setup));
-
-            // Act
-            var result = await _controller.GetMfaSetup();
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(setup, okResult.Value);
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<GetMfaSetupQuery>(q => q.UserKey == userKey),
-                default), Times.Once);
-        }
-
-        [Fact]
-        public async Task EnableMfa_ShouldSendCommandForCurrentUser()
-        {
-            // Arrange
-            var userKey = Guid.NewGuid();
-            SetCurrentUser(userKey);
-            var request = new MfaVerifyRequestDto("123 456");
-            var response = new MfaEnableResponseDto(true, new[] { "code-1", "code-2" });
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<EnableMfaCommand>(), default))
-                .ReturnsAsync(new ServiceResult<MfaEnableResponseDto>(ResultType.Success, response));
-
-            // Act
-            var result = await _controller.EnableMfa(request);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<EnableMfaCommand>(cmd => cmd.UserKey == userKey && cmd.Code == request.Code),
-                default), Times.Once);
-        }
-
-        [Fact]
-        public async Task RotateMfaRecoveryCodes_ShouldSendCommandForCurrentUser()
-        {
-            // Arrange
-            var userKey = Guid.NewGuid();
-            SetCurrentUser(userKey);
-            var request = new MfaRecoveryCodesRequestDto("current-password");
-            var response = new MfaRecoveryCodesResponseDto(new[] { "code-1" });
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GenerateMfaRecoveryCodesCommand>(), default))
-                .ReturnsAsync(new ServiceResult<MfaRecoveryCodesResponseDto>(ResultType.Success, response));
-
-            // Act
-            var result = await _controller.RotateMfaRecoveryCodes(request);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<GenerateMfaRecoveryCodesCommand>(cmd =>
-                    cmd.UserKey == userKey && cmd.CurrentPassword == request.CurrentPassword),
-                default), Times.Once);
-        }
-
-        [Fact]
-        public async Task VerifyMfaLogin_ShouldSetCookie_WhenVerificationReturnsTokens()
-        {
-            // Arrange
-            var request = new MfaLoginRequestDto("user@example.com", "123456", true);
-            var tokens = new JwtResponse
-            {
-                AccessToken = "AccessToken",
-                RefreshToken = new RefreshToken
-                {
-                    Token = "MfaRefreshToken",
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Created = DateTime.UtcNow
-                }
-            };
-            var response = new LoginUserResponse { Email = request.Email, Tokens = tokens };
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-                .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, response));
-
-            // Act
-            var result = await _controller.VerifyMfaLogin(request);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-            Assert.Contains("refreshToken=MfaRefreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<VerifyMfaLoginCommand>(cmd =>
-                    cmd.Email == request.Email &&
-                    cmd.Code == request.Code &&
-                    cmd.RememberMe == request.RememberMe),
-                default), Times.Once);
-        }
-
-        [Fact]
-        public async Task VerifyMfaLogin_ShouldNotSetCookie_WhenMfaIsUnauthorized()
-        {
-            // Arrange
-            var request = new MfaLoginRequestDto("user@example.com", "bad-code", false);
-
-            _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-                .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Unauthorized));
-
-            // Act
-            var result = await _controller.VerifyMfaLogin(request);
-
-            // Assert
-            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized);
-            Assert.DoesNotContain("refreshToken", _controller.Response.Headers["Set-Cookie"].ToString());
-        }
-
-        private void SetCurrentUser(Guid userKey)
-        {
-            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userKey.ToString()) };
-            _controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(claims))
-                }
-            };
-        }
-    
-        /// <summary>
-        /// The endpoint mints a token for the seeded load-test account, so the only thing between it
-        /// and an anonymous caller is the configured key. Empty means off, which is how it ships:
-        /// appsettings.json leaves LoadTestLoginKey blank.
-        /// </summary>
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        public async Task LoadTestLogin_ShouldRefuse_WhenNoKeyIsConfigured(string? configuredKey)
-        {
-            var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = configuredKey })
-                .Build();
-
-            var result = await _controller.LoadTestLogin(
-                new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
-                configuration,
-                userManager: null!,
-                jwtService: null!,
-                access: null!);
-
-            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
-        }
-
-        [Fact]
-        public async Task LoadTestLogin_ShouldRefuse_WhenTheKeyDoesNotMatch()
-        {
-            var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = "the-real-key" })
-                .Build();
-
-            var result = await _controller.LoadTestLogin(
-                new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
-                configuration,
-                userManager: null!,
-                jwtService: null!,
-                access: null!);
-
-            ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
-        }
-}
+        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
+    }
 }

@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;

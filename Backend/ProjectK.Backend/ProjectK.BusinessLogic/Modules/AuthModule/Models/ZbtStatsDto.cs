@@ -1,12 +1,11 @@
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Models
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
+
+public record ZbtStatsDto
 {
-    public record ZbtStatsDto
-    {
-        public int CurrentActiveUsers { get; init; }
-        public int BetaCap { get; init; }
-        public bool IsClosedBeta { get; init; }
-        public bool IsCapReached => IsClosedBeta && CurrentActiveUsers >= BetaCap;
-        public string? KurinName { get; init; }
-        public string Scope { get; init; } = "Global";
-    }
+    public int CurrentActiveUsers { get; init; }
+    public int BetaCap { get; init; }
+    public bool IsClosedBeta { get; init; }
+    public bool IsCapReached => IsClosedBeta && CurrentActiveUsers >= BetaCap;
+    public string? KurinName { get; init; }
+    public string Scope { get; init; } = "Global";
 }

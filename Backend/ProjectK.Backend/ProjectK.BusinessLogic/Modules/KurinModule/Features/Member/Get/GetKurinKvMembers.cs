@@ -1,16 +1,16 @@
-﻿using AutoMapper;
-using MediatR;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
+using MediatR;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 

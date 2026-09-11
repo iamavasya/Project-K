@@ -9,77 +9,76 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+
+public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserResponse>>
 {
-    public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserResponse>>
+    private const string InvalidCredentialsCode = "InvalidCredentials";
+    private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";
+
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILogger<VerifyMfaLoginCommandHandler> _logger;
+    private readonly IActivityLogger _activityLogger;
+    private readonly IJwtService _jwtService;
+
+    public VerifyMfaLoginCommandHandler(
+        UserManager<AppUser> userManager,
+        ILoginResponseFactory loginResponseFactory,
+        ILogger<VerifyMfaLoginCommandHandler> logger,
+        IActivityLogger activityLogger,
+        IJwtService jwtService)
     {
-        private const string InvalidCredentialsCode = "InvalidCredentials";
-        private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";
+        _userManager = userManager;
+        _loginResponseFactory = loginResponseFactory;
+        _logger = logger;
+        _activityLogger = activityLogger;
+        _jwtService = jwtService;
+    }
 
-        private readonly UserManager<AppUser> _userManager;
-        private readonly ILoginResponseFactory _loginResponseFactory;
-        private readonly ILogger<VerifyMfaLoginCommandHandler> _logger;
-        private readonly IActivityLogger _activityLogger;
-        private readonly IJwtService _jwtService;
-
-        public VerifyMfaLoginCommandHandler(
-            UserManager<AppUser> userManager,
-            ILoginResponseFactory loginResponseFactory,
-            ILogger<VerifyMfaLoginCommandHandler> logger,
-            IActivityLogger activityLogger,
-            IJwtService jwtService)
+    public async Task<ServiceResult<LoginUserResponse>> Handle(VerifyMfaLoginCommand request, CancellationToken cancellationToken)
+    {
+        // Suspended between the password step and this one is still suspended.
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null || !user.CanSignIn())
         {
-            _userManager = userManager;
-            _loginResponseFactory = loginResponseFactory;
-            _logger = logger;
-            _activityLogger = activityLogger;
-            _jwtService = jwtService;
+            _activityLogger.TrackFailedMfa(request.Email);
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
         }
 
-        public async Task<ServiceResult<LoginUserResponse>> Handle(VerifyMfaLoginCommand request, CancellationToken cancellationToken)
+        // The second factor is only ever the second one. The challenge is minted by the password
+        // step for this account and lives a few minutes; without it, a code alone — read over a
+        // shoulder, or a recovery code that leaked — was a complete sign-in.
+        var challengedUserKey = string.IsNullOrWhiteSpace(request.MfaToken)
+            ? null
+            : _jwtService.ReadMfaChallenge(request.MfaToken);
+
+        if (challengedUserKey is null || challengedUserKey.Value != user.Id)
         {
-            // Suspended between the password step and this one is still suspended.
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null || !user.CanSignIn())
+            _activityLogger.TrackFailedMfa(request.Email);
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
+        }
+
+        var verificationCode = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
+        var isTokenValid = await _userManager.VerifyTwoFactorTokenAsync(
+            user,
+            _userManager.Options.Tokens.AuthenticatorTokenProvider,
+            verificationCode);
+
+        if (!isTokenValid)
+        {
+            var recoveryCodeResult = await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, request.Code.Trim());
+            if (!recoveryCodeResult.Succeeded)
             {
                 _activityLogger.TrackFailedMfa(request.Email);
                 return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
             }
 
-            // The second factor is only ever the second one. The challenge is minted by the password
-            // step for this account and lives a few minutes; without it, a code alone — read over a
-            // shoulder, or a recovery code that leaked — was a complete sign-in.
-            var challengedUserKey = string.IsNullOrWhiteSpace(request.MfaToken)
-                ? null
-                : _jwtService.ReadMfaChallenge(request.MfaToken);
-
-            if (challengedUserKey is null || challengedUserKey.Value != user.Id)
-            {
-                _activityLogger.TrackFailedMfa(request.Email);
-                return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
-            }
-
-            var verificationCode = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
-            var isTokenValid = await _userManager.VerifyTwoFactorTokenAsync(
-                user,
-                _userManager.Options.Tokens.AuthenticatorTokenProvider,
-                verificationCode);
-
-            if (!isTokenValid)
-            {
-                var recoveryCodeResult = await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, request.Code.Trim());
-                if (!recoveryCodeResult.Succeeded)
-                {
-                    _activityLogger.TrackFailedMfa(request.Email);
-                    return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
-                }
-
-                _logger.LogInformation("Audit: User {UserId} successfully logged in using a recovery code.", user.Id);
-            }
-
-            var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
-
-            return new ServiceResult<LoginUserResponse>(ResultType.Success, response);
+            _logger.LogInformation("Audit: User {UserId} successfully logged in using a recovery code.", user.Id);
         }
+
+        var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+
+        return new ServiceResult<LoginUserResponse>(ResultType.Success, response);
     }
 }

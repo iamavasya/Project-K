@@ -5,35 +5,35 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Resend;
 
-namespace ProjectK.Infrastructure.Services.EmailService
+namespace ProjectK.Infrastructure.Services.EmailService;
+
+public class ResendEmailService : IEmailService
 {
-    public class ResendEmailService : IEmailService
+    private readonly IResend _resend;
+    private readonly EmailSettings _settings;
+
+    public ResendEmailService(IResend resend, IOptions<EmailSettings> settings)
     {
-        private readonly IResend _resend;
-        private readonly EmailSettings _settings;
+        _resend = resend;
+        _settings = settings.Value;
+    }
 
-        public ResendEmailService(IResend resend, IOptions<EmailSettings> settings)
-        {
-            _resend = resend;
-            _settings = settings.Value;
-        }
+    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        var message = new EmailMessage();
+        message.From = $"{_settings.FromName} <{_settings.FromEmail}>";
+        message.To.Add(to);
+        message.Subject = subject;
+        message.HtmlBody = body;
 
-        public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
-        {
-            var message = new EmailMessage();
-            message.From = $"{_settings.FromName} <{_settings.FromEmail}>";
-            message.To.Add(to);
-            message.Subject = subject;
-            message.HtmlBody = body;
+        await _resend.EmailSendAsync(message, cancellationToken);
+    }
 
-            await _resend.EmailSendAsync(message, cancellationToken);
-        }
-
-        public async Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
-        {
-            var activationUrl = $"{_settings.BaseUrl}/activate/{token}";
-            var subject = "Welcome to ProjectK - Your Invitation";
-            var body = $@"
+    public async Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        var activationUrl = $"{_settings.BaseUrl}/activate/{token}";
+        var subject = "Welcome to ProjectK - Your Invitation";
+        var body = $@"
                 <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto;'>
                     <h2>Welcome to ProjectK!</h2>
                     <p>You have been invited to join ProjectK. To activate your account and set your password, please click the link below:</p>
@@ -47,16 +47,16 @@ namespace ProjectK.Infrastructure.Services.EmailService
                     <p style='color: #888; font-size: 12px;'>If you didn't request this invitation, you can safely ignore this email.</p>
                 </div>";
 
-            await SendEmailAsync(to, subject, body, cancellationToken);
-        }
+        await SendEmailAsync(to, subject, body, cancellationToken);
+    }
 
-        public async Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
-        {
-            // Both encoded: a reset token carries '+' and '/', and an address may too, and either
-            // one read back from the query string as a space breaks the link for exactly that person.
-            var resetUrl = $"{_settings.BaseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(to)}";
-            var subject = "ProjectK - Password Reset Request";
-            var body = $@"
+    public async Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        // Both encoded: a reset token carries '+' and '/', and an address may too, and either
+        // one read back from the query string as a space breaks the link for exactly that person.
+        var resetUrl = $"{_settings.BaseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(to)}";
+        var subject = "ProjectK - Password Reset Request";
+        var body = $@"
                 <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto;'>
                     <h2>Password Reset Request</h2>
                     <p>We received a request to reset your ProjectK password. Click the link below to choose a new password:</p>
@@ -69,7 +69,6 @@ namespace ProjectK.Infrastructure.Services.EmailService
                     <p style='color: #888; font-size: 12px;'>This is an automated message, please do not reply.</p>
                 </div>";
 
-            await SendEmailAsync(to, subject, body, cancellationToken);
-        }
+        await SendEmailAsync(to, subject, body, cancellationToken);
     }
 }

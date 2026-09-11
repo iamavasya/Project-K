@@ -1,11 +1,11 @@
-﻿using MediatR;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MediatR;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete;
 

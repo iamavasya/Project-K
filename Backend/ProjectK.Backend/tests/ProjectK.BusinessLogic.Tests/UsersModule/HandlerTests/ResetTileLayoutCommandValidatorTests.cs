@@ -1,30 +1,29 @@
-﻿using System;
+using System;
 using FluentValidation.TestHelper;
-using ProjectK.Common.Models.Dtos.UsersModule;
-using Xunit;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
 using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
+using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
+namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
+
+public class ResetTileLayoutCommandValidatorTests
 {
-    public class ResetTileLayoutCommandValidatorTests
+    private readonly ResetTileLayoutCommandValidator _validator = new();
+
+    [Fact]
+    public void Validate_ShouldPass_ForKnownBoard()
     {
-        private readonly ResetTileLayoutCommandValidator _validator = new();
+        var command = new ResetTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard);
+        _validator.TestValidate(command).ShouldNotHaveAnyValidationErrors();
+    }
 
-        [Fact]
-        public void Validate_ShouldPass_ForKnownBoard()
-        {
-            var command = new ResetTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard);
-            _validator.TestValidate(command).ShouldNotHaveAnyValidationErrors();
-        }
-
-        [Fact]
-        public void Validate_ShouldFail_ForUnknownBoard()
-        {
-            var command = new ResetTileLayoutCommand(Guid.NewGuid(), "nope");
-            _validator.TestValidate(command)
-                .ShouldHaveValidationErrorFor(x => x.BoardKey)
-                .WithErrorMessage("Unknown board key.");
-        }
+    [Fact]
+    public void Validate_ShouldFail_ForUnknownBoard()
+    {
+        var command = new ResetTileLayoutCommand(Guid.NewGuid(), "nope");
+        _validator.TestValidate(command)
+            .ShouldHaveValidationErrorFor(x => x.BoardKey)
+            .WithErrorMessage("Unknown board key.");
     }
 }

@@ -1,11 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Extensions;
 using Member = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
@@ -43,7 +43,7 @@ public sealed class GetBadgeReviewQueueHandler : IRequestHandler<GetBadgeReviewQ
             allowedGroupKeys = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, request.KurinKey, cancellationToken);
         }
 
-        var filteredMembers = allowedGroupKeys != null 
+        var filteredMembers = allowedGroupKeys != null
             ? membersDict.Values.Where(m => m.GroupKey.HasValue && allowedGroupKeys.Contains(m.GroupKey.Value))
             : membersDict.Values;
 

@@ -1,21 +1,20 @@
 using System;
 
-namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
-{
-    public interface IActivityLogger
-    {
-        void LogAudit(
-            string action,
-            Guid? actorUserId = null,
-            Guid? targetUserId = null,
-            string? email = null,
-            string? newEmail = null,
-            string? reason = null);
+namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
-        void TrackFailedLogin(string email);
-        void TrackFailedMfa(string email);
-        void ReportRateLimitRejection(string? policyName);
-        void ReportGeoBlocked(string ip, string? countryCode);
-        void TrackIpChange(Guid userId, string ip);
-    }
+public interface IActivityLogger
+{
+    void LogAudit(
+        string action,
+        Guid? actorUserId = null,
+        Guid? targetUserId = null,
+        string? email = null,
+        string? newEmail = null,
+        string? reason = null);
+
+    void TrackFailedLogin(string email);
+    void TrackFailedMfa(string email);
+    void ReportRateLimitRejection(string? policyName);
+    void ReportGeoBlocked(string ip, string? countryCode);
+    void TrackIpChange(Guid userId, string ip);
 }

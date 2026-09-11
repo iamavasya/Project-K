@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using System.Security.Claims;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 namespace ProjectK.API.Helpers;
 

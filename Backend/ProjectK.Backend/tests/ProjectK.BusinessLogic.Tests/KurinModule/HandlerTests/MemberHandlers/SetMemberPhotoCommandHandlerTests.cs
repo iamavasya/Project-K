@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
 using ProjectK.Common.Entities.KurinModule;
@@ -9,117 +9,116 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
+
+public class SetMemberPhotoCommandHandlerTests
 {
-    public class SetMemberPhotoCommandHandlerTests
+    private readonly Mock<IMemberUnitOfWork> _uowMock = new();
+    private readonly Mock<IMemberRepository> _memberRepoMock = new();
+    private readonly Mock<IPhotoService> _photoServiceMock = new();
+    private readonly SetMemberPhotoCommandHandler _handler;
+
+    public SetMemberPhotoCommandHandlerTests()
     {
-        private readonly Mock<IMemberUnitOfWork> _uowMock = new();
-        private readonly Mock<IMemberRepository> _memberRepoMock = new();
-        private readonly Mock<IPhotoService> _photoServiceMock = new();
-        private readonly SetMemberPhotoCommandHandler _handler;
+        _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
+        _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _handler = new SetMemberPhotoCommandHandler(_uowMock.Object, _photoServiceMock.Object);
+    }
 
-        public SetMemberPhotoCommandHandlerTests()
+    private Member GivenMember(string? blobName = "old.png")
+    {
+        var member = new Member
         {
-            _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-            _handler = new SetMemberPhotoCommandHandler(_uowMock.Object, _photoServiceMock.Object);
-        }
+            MemberKey = Guid.NewGuid(),
+            FirstName = "A",
+            LastName = "B",
+            Email = "a@example.com",
+            PhoneNumber = "1",
+            ProfilePhotoBlobName = blobName
+        };
 
-        private Member GivenMember(string? blobName = "old.png")
-        {
-            var member = new Member
-            {
-                MemberKey = Guid.NewGuid(),
-                FirstName = "A",
-                LastName = "B",
-                Email = "a@example.com",
-                PhoneNumber = "1",
-                ProfilePhotoBlobName = blobName
-            };
+        _memberRepoMock.Setup(r => r.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(member);
 
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(member);
+        return member;
+    }
 
-            return member;
-        }
+    [Fact]
+    public async Task Handle_Upload_ShouldReplacePhotoAndDeleteThePreviousBlob()
+    {
+        var member = GivenMember();
+        using var content = new MemoryStream(new byte[] { 1, 2, 3 });
 
-        [Fact]
-        public async Task Handle_Upload_ShouldReplacePhotoAndDeleteThePreviousBlob()
-        {
-            var member = GivenMember();
-            using var content = new MemoryStream(new byte[] { 1, 2, 3 });
+        _photoServiceMock
+            .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
 
-            _photoServiceMock
-                .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
+        var result = await _handler.Handle(
+            new SetMemberPhotoCommand(member.MemberKey, content, "new.png", Remove: false),
+            CancellationToken.None);
 
-            var result = await _handler.Handle(
-                new SetMemberPhotoCommand(member.MemberKey, content, "new.png", Remove: false),
-                CancellationToken.None);
+        result.Type.Should().Be(ResultType.Success);
+        member.ProfilePhotoBlobName.Should().Be("new.png");
+        _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
+        _memberRepoMock.Verify(r => r.Update(member, It.IsAny<CancellationToken>()), Times.Once);
+    }
 
-            result.Type.Should().Be(ResultType.Success);
-            member.ProfilePhotoBlobName.Should().Be("new.png");
-            _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-            _memberRepoMock.Verify(r => r.Update(member, It.IsAny<CancellationToken>()), Times.Once);
-        }
+    [Fact]
+    public async Task Handle_Upload_OnVerifiedProfile_ShouldSendItBackForVerification()
+    {
+        var member = GivenMember();
+        member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+        using var content = new MemoryStream(new byte[] { 1 });
 
-        [Fact]
-        public async Task Handle_Upload_OnVerifiedProfile_ShouldSendItBackForVerification()
-        {
-            var member = GivenMember();
-            member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
-            using var content = new MemoryStream(new byte[] { 1 });
+        _photoServiceMock
+            .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
 
-            _photoServiceMock
-                .Setup(p => p.UploadPhotoAsync(It.IsAny<Stream>(), "new.png", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new PhotoUploadResult("new.png", "TEST_URL"));
+        await _handler.Handle(
+            new SetMemberPhotoCommand(member.MemberKey, content, "new.png", Remove: false),
+            CancellationToken.None);
 
-            await _handler.Handle(
-                new SetMemberPhotoCommand(member.MemberKey, content, "new.png", Remove: false),
-                CancellationToken.None);
+        member.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+    }
 
-            member.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
-        }
+    [Fact]
+    public async Task Handle_Remove_ShouldClearThePhotoAndDeleteTheBlobOnce()
+    {
+        var member = GivenMember();
 
-        [Fact]
-        public async Task Handle_Remove_ShouldClearThePhotoAndDeleteTheBlobOnce()
-        {
-            var member = GivenMember();
+        var result = await _handler.Handle(
+            new SetMemberPhotoCommand(member.MemberKey, Content: null, FileName: null, Remove: true),
+            CancellationToken.None);
 
-            var result = await _handler.Handle(
-                new SetMemberPhotoCommand(member.MemberKey, Content: null, FileName: null, Remove: true),
-                CancellationToken.None);
+        result.Type.Should().Be(ResultType.Success);
+        member.ProfilePhotoBlobName.Should().BeNull();
+        _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
+    }
 
-            result.Type.Should().Be(ResultType.Success);
-            member.ProfilePhotoBlobName.Should().BeNull();
-            _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-        }
+    [Fact]
+    public async Task Handle_RemoveWithoutAPhoto_ShouldDoNothing()
+    {
+        var member = GivenMember(blobName: null);
 
-        [Fact]
-        public async Task Handle_RemoveWithoutAPhoto_ShouldDoNothing()
-        {
-            var member = GivenMember(blobName: null);
+        var result = await _handler.Handle(
+            new SetMemberPhotoCommand(member.MemberKey, Content: null, FileName: null, Remove: true),
+            CancellationToken.None);
 
-            var result = await _handler.Handle(
-                new SetMemberPhotoCommand(member.MemberKey, Content: null, FileName: null, Remove: true),
-                CancellationToken.None);
+        result.Type.Should().Be(ResultType.Success);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _photoServiceMock.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-            result.Type.Should().Be(ResultType.Success);
-            _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-            _photoServiceMock.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
+    [Fact]
+    public async Task Handle_UnknownMember_ShouldReturnNotFound()
+    {
+        _memberRepoMock.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Member)null!);
 
-        [Fact]
-        public async Task Handle_UnknownMember_ShouldReturnNotFound()
-        {
-            _memberRepoMock.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Member)null!);
+        var result = await _handler.Handle(
+            new SetMemberPhotoCommand(Guid.NewGuid(), Content: null, FileName: null, Remove: true),
+            CancellationToken.None);
 
-            var result = await _handler.Handle(
-                new SetMemberPhotoCommand(Guid.NewGuid(), Content: null, FileName: null, Remove: true),
-                CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.NotFound);
-        }
+        result.Type.Should().Be(ResultType.NotFound);
     }
 }

@@ -1,25 +1,25 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Logging;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
-using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Seeding;
+using ProjectK.Infrastructure.Services;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Spreadsheets;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Infrastructure.Repositories.AuthModule;
-using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
-using ProjectK.Infrastructure.Services.Spreadsheets;
 
 namespace ProjectK.Infrastructure;
 

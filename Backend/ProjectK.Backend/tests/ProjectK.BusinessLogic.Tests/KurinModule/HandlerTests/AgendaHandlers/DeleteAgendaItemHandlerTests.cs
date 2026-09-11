@@ -1,96 +1,95 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
+
+public class DeleteAgendaItemHandlerTests
 {
-    public class DeleteAgendaItemHandlerTests
+    private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IAgendaAccess> _access = new();
+    private readonly Mock<ICurrentUserContext> _currentUser = new();
+    private readonly Mock<IDomainEventPublisher> _events = new();
+    private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
+    private readonly Mock<IMemberRepository> _memberRepo = new();
+    private readonly DeleteAgendaItemHandler _handler;
+
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly Guid _creatorKey = Guid.NewGuid();
+
+    public DeleteAgendaItemHandlerTests()
     {
-        private readonly Mock<IUnitOfWork> _uow = new();
-        private readonly Mock<IMemberDirectory> _memberDirectory = new();
-        private readonly Mock<IAgendaAccess> _access = new();
-        private readonly Mock<ICurrentUserContext> _currentUser = new();
-        private readonly Mock<IDomainEventPublisher> _events = new();
-        private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
-        private readonly Mock<IMemberRepository> _memberRepo = new();
-        private readonly DeleteAgendaItemHandler _handler;
+        _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
+        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<MemberSummary>());
+        _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
+        _handler = new DeleteAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
+    }
 
-        private readonly Guid _kurinKey = Guid.NewGuid();
-        private readonly Guid _creatorKey = Guid.NewGuid();
+    private AgendaItem Item() => new()
+    {
+        AgendaItemKey = Guid.NewGuid(),
+        KurinKey = _kurinKey,
+        Kind = AgendaItemKind.Event,
+        Title = "Подія",
+        CreatedByUserKey = _creatorKey,
+        Assignments = new List<AgendaAssignment>()
+    };
 
-        public DeleteAgendaItemHandlerTests()
-        {
-            _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-            _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Array.Empty<MemberSummary>());
-            _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-            _handler = new DeleteAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
-        }
+    private void SetupViewer(bool canSeeWholeKurin, bool isLeadership, Guid? viewerUserKey)
+    {
+        _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AgendaViewerContext(
+                _kurinKey, viewerUserKey, null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), canSeeWholeKurin, isLeadership));
+    }
 
-        private AgendaItem Item() => new()
-        {
-            AgendaItemKey = Guid.NewGuid(),
-            KurinKey = _kurinKey,
-            Kind = AgendaItemKind.Event,
-            Title = "Подія",
-            CreatedByUserKey = _creatorKey,
-            Assignments = new List<AgendaAssignment>()
-        };
+    [Fact]
+    public async Task Handle_WhenItemMissing_ReturnsNotFound()
+    {
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AgendaItem?)null);
 
-        private void SetupViewer(bool canSeeWholeKurin, bool isLeadership, Guid? viewerUserKey)
-        {
-            _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new AgendaViewerContext(
-                    _kurinKey, viewerUserKey, null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), canSeeWholeKurin, isLeadership));
-        }
+        var result = await _handler.Handle(new DeleteAgendaItem(Guid.NewGuid()), default);
 
-        [Fact]
-        public async Task Handle_WhenItemMissing_ReturnsNotFound()
-        {
-            _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((AgendaItem?)null);
+        result.Type.Should().Be(ResultType.NotFound);
+    }
 
-            var result = await _handler.Handle(new DeleteAgendaItem(Guid.NewGuid()), default);
+    [Fact]
+    public async Task Handle_WhenPlainMemberNotCreator_ReturnsForbidden()
+    {
+        var item = Item();
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: Guid.NewGuid());
 
-            result.Type.Should().Be(ResultType.NotFound);
-        }
+        var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
 
-        [Fact]
-        public async Task Handle_WhenPlainMemberNotCreator_ReturnsForbidden()
-        {
-            var item = Item();
-            _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
-            SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: Guid.NewGuid());
+        result.Type.Should().Be(ResultType.Forbidden);
+        _agendaRepo.Verify(r => r.Delete(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-            var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
+    [Fact]
+    public async Task Handle_WhenCreator_DeletesAndSaves()
+    {
+        var item = Item();
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: _creatorKey);
 
-            result.Type.Should().Be(ResultType.Forbidden);
-            _agendaRepo.Verify(r => r.Delete(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
+        var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
 
-        [Fact]
-        public async Task Handle_WhenCreator_DeletesAndSaves()
-        {
-            var item = Item();
-            _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
-            SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: _creatorKey);
-
-            var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
-
-            result.Type.Should().Be(ResultType.Success);
-            _agendaRepo.Verify(r => r.Delete(item, It.IsAny<CancellationToken>()), Times.Once);
-            _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
+        result.Type.Should().Be(ResultType.Success);
+        _agendaRepo.Verify(r => r.Delete(item, It.IsAny<CancellationToken>()), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

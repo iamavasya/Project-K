@@ -1,15 +1,15 @@
-﻿using MediatR;
-using ProjectK.API.Extensions;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectK.API.Authorization;
+using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
-using ProjectK.API.Authorization;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

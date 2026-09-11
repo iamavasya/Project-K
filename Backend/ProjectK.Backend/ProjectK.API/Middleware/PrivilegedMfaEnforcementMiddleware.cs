@@ -1,93 +1,92 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 
-namespace ProjectK.API.Middleware
+namespace ProjectK.API.Middleware;
+
+public class PrivilegedMfaEnforcementMiddleware
 {
-    public class PrivilegedMfaEnforcementMiddleware
+    private readonly RequestDelegate _next;
+
+    public PrivilegedMfaEnforcementMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
+        _next = next;
+    }
 
-        public PrivilegedMfaEnforcementMiddleware(RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IMfaEnforcementPolicy mfaEnforcementPolicy)
+    {
+        if (!RequiresMfaEnforcement(context))
         {
-            _next = next;
+            await _next(context);
+            return;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IMfaEnforcementPolicy mfaEnforcementPolicy)
+        if (!await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
         {
-            if (!RequiresMfaEnforcement(context))
-            {
-                await _next(context);
-                return;
-            }
-
-            if (!await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
-            {
-                await _next(context);
-                return;
-            }
-
-            if (context.User.GetUserKey() is not { } userKey)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-
-            var user = await userManager.FindByIdAsync(userKey.ToString());
-            if (user?.TwoFactorEnabled == true)
-            {
-                await _next(context);
-                return;
-            }
-
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                message = "MFA is required for privileged accounts."
-            });
+            await _next(context);
+            return;
         }
 
-        private static bool RequiresMfaEnforcement(HttpContext context)
+        if (context.User.GetUserKey() is not { } userKey)
         {
-            if (HttpMethods.IsOptions(context.Request.Method)
-                || HttpMethods.IsHead(context.Request.Method)
-                || HttpMethods.IsGet(context.Request.Method)
-                || context.User.Identity?.IsAuthenticated != true
-                || IsExemptPath(context))
-            {
-                return false;
-            }
-
-            // Privileged = whole-kurin managers: Зв'язковий and admin. Курінний leads the провід but
-            // holds nothing on members, so he is not privileged here.
-            return RolePermissionMap.GrantsWholeKurinManagement(
-                context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
-        private static bool IsExemptPath(PathString path)
+        var user = await userManager.FindByIdAsync(userKey.ToString());
+        if (user?.TwoFactorEnabled == true)
         {
-            return path.StartsWithSegments("/api/auth/mfa", StringComparison.OrdinalIgnoreCase)
-                || path.StartsWithSegments("/api/auth/logout", StringComparison.OrdinalIgnoreCase)
-                || path.StartsWithSegments("/api/auth/refresh", StringComparison.OrdinalIgnoreCase)
-                || path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase);
+            await _next(context);
+            return;
         }
 
-        private static bool IsExemptPath(HttpContext context)
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new
         {
-            var path = context.Request.Path;
-            if (IsExemptPath(path))
-            {
-                return true;
-            }
+            message = "MFA is required for privileged accounts."
+        });
+    }
 
-            return (HttpMethods.IsPost(context.Request.Method)
-                    && path.StartsWithSegments("/api/user/me/mfa/reset", StringComparison.OrdinalIgnoreCase))
-                || (HttpMethods.IsPost(context.Request.Method)
-                    && path.StartsWithSegments("/api/auth/check-access", StringComparison.OrdinalIgnoreCase));
+    private static bool RequiresMfaEnforcement(HttpContext context)
+    {
+        if (HttpMethods.IsOptions(context.Request.Method)
+            || HttpMethods.IsHead(context.Request.Method)
+            || HttpMethods.IsGet(context.Request.Method)
+            || context.User.Identity?.IsAuthenticated != true
+            || IsExemptPath(context))
+        {
+            return false;
         }
+
+        // Privileged = whole-kurin managers: Зв'язковий and admin. Курінний leads the провід but
+        // holds nothing on members, so he is not privileged here.
+        return RolePermissionMap.GrantsWholeKurinManagement(
+            context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
+    }
+
+    private static bool IsExemptPath(PathString path)
+    {
+        return path.StartsWithSegments("/api/auth/mfa", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/api/auth/logout", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/api/auth/refresh", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsExemptPath(HttpContext context)
+    {
+        var path = context.Request.Path;
+        if (IsExemptPath(path))
+        {
+            return true;
+        }
+
+        return (HttpMethods.IsPost(context.Request.Method)
+                && path.StartsWithSegments("/api/user/me/mfa/reset", StringComparison.OrdinalIgnoreCase))
+            || (HttpMethods.IsPost(context.Request.Method)
+                && path.StartsWithSegments("/api/auth/check-access", StringComparison.OrdinalIgnoreCase));
     }
 }

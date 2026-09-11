@@ -1,440 +1,439 @@
-﻿using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
+using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using Xunit;
 
-namespace ProjectK.API.Tests.KurinModule.ControllerTests
+namespace ProjectK.API.Tests.KurinModule.ControllerTests;
+
+public class MemberControllerTests
 {
-    public class MemberControllerTests
+    private readonly Mock<IMediator> _mediatorMock;
+    private readonly MemberController _controller;
+
+    public MemberControllerTests()
     {
-        private readonly Mock<IMediator> _mediatorMock;
-        private readonly MemberController _controller;
+        _mediatorMock = new Mock<IMediator>();
+        _controller = new MemberController(_mediatorMock.Object);
+    }
 
-        public MemberControllerTests()
+    [Fact]
+    public async Task GetByKey_ShouldReturnOk_WhenSuccess()
+    {
+        var key = Guid.NewGuid();
+        var dto = new MemberResponse
         {
-            _mediatorMock = new Mock<IMediator>();
-            _controller = new MemberController(_mediatorMock.Object);
-        }
+            MemberKey = key,
+            GroupKey = Guid.NewGuid(),
+            KurinKey = Guid.NewGuid(),
+            FirstName = "Ivan",
+            MiddleName = "I.",
+            LastName = "Petrenko",
+            Email = "ivan@example.com",
+            PhoneNumber = "123",
+            DateOfBirth = new DateOnly(2000, 1, 1)
+        };
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success, dto);
 
-        [Fact]
-        public async Task GetByKey_ShouldReturnOk_WhenSuccess()
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.GetByKey(key);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<MemberResponse>(ok.Value);
+        Assert.Equal(key, data.MemberKey);
+    }
+
+    [Fact]
+    public async Task GetByKey_ShouldReturnNotFound_WhenNotFound()
+    {
+        var key = Guid.NewGuid();
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.GetByKey(key);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task GetAllByGroup_ShouldReturnOk_WhenSuccess()
+    {
+        var groupKey = Guid.NewGuid();
+        var members = new List<MemberResponse>
         {
-            var key = Guid.NewGuid();
-            var dto = new MemberResponse
+            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
+            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
+        };
+        var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.GetAllByGroup(groupKey);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<List<MemberResponse>>(ok.Value);
+        Assert.Equal(members.Count, data.Count);
+
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<GetMembers>(q => q.GroupKey == groupKey && q.KurinKey == Guid.Empty),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllByKurin_ShouldReturnOk_WhenSuccess()
+    {
+        var kurinKey = Guid.NewGuid();
+        var members = new List<MemberResponse>
+        {
+            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
+            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
+        };
+
+        var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.GetAllByKurin(kurinKey);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<List<MemberResponse>>(ok.Value);
+        Assert.Equal(members.Count, data.Count);
+
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<GetMembers>(q => q.GroupKey == Guid.Empty && q.KurinKey == kurinKey),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_ShouldReturnCreated_WhenSuccess()
+    {
+        var key = Guid.NewGuid();
+        var request = new UpsertMemberRequest
+        {
+            GroupKey = Guid.NewGuid(),
+            FirstName = "Ivan",
+            MiddleName = "I.",
+            LastName = "Petrenko",
+            Email = "ivan@example.com",
+            PhoneNumber = "123456",
+            DateOfBirth = new DateOnly(2000, 5, 10)
+        };
+
+        var serviceResult = new ServiceResult<MemberResponse>(
+            ResultType.Created,
+            new MemberResponse
             {
                 MemberKey = key,
-                GroupKey = Guid.NewGuid(),
+                GroupKey = request.GroupKey!.Value,
                 KurinKey = Guid.NewGuid(),
-                FirstName = "Ivan",
-                MiddleName = "I.",
-                LastName = "Petrenko",
-                Email = "ivan@example.com",
-                PhoneNumber = "123",
-                DateOfBirth = new DateOnly(2000, 1, 1)
-            };
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success, dto);
+                FirstName = request.FirstName,
+                MiddleName = request.MiddleName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                DateOfBirth = request.DateOfBirth
+            },
+            "GetByKey",
+            new { memberKey = key });
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            var result = await _controller.GetByKey(key);
+        var result = await _controller.Create(request, CancellationToken.None);
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<MemberResponse>(ok.Value);
-            Assert.Equal(key, data.MemberKey);
-        }
+        var created = Assert.IsType<CreatedAtActionResult>(result);
+        var data = Assert.IsType<MemberResponse>(created.Value);
+        Assert.Equal(key, data.MemberKey);
 
-        [Fact]
-        public async Task GetByKey_ShouldReturnNotFound_WhenNotFound()
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<UpsertMember>(c =>
+                c.GroupKey == request.GroupKey &&
+                c.FirstName == request.FirstName &&
+                c.LastName == request.LastName),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_ShouldReturnBadRequest_WhenInvalid()
+    {
+        var request = new UpsertMemberRequest
         {
-            var key = Guid.NewGuid();
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
+            GroupKey = Guid.NewGuid(),
+            FirstName = "Bad",
+            MiddleName = "X",
+            LastName = "User",
+            Email = "bad@example.com",
+            PhoneNumber = "000",
+            DateOfBirth = new DateOnly(1999, 1, 1)
+        };
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
-            var result = await _controller.GetByKey(key);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            Assert.IsType<NotFoundObjectResult>(result);
-        }
+        var result = await _controller.Create(request, CancellationToken.None);
 
-        [Fact]
-        public async Task GetAllByGroup_ShouldReturnOk_WhenSuccess()
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_ShouldReturnOk_WhenSuccess()
+    {
+        var memberKey = Guid.NewGuid();
+        var request = new UpsertMemberRequest
         {
-            var groupKey = Guid.NewGuid();
-            var members = new List<MemberResponse>
+            GroupKey = Guid.NewGuid(),
+            FirstName = "Updated",
+            MiddleName = "U.",
+            LastName = "Name",
+            Email = "upd@example.com",
+            PhoneNumber = "555",
+            DateOfBirth = new DateOnly(1995, 2, 2),
+            RemoveProfilePhoto = false
+        };
+
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success,
+            new MemberResponse
             {
-                new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-                new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
-            };
-            var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+                MemberKey = memberKey,
+                GroupKey = request.GroupKey!.Value,
+                KurinKey = Guid.NewGuid(),
+                FirstName = request.FirstName,
+                MiddleName = request.MiddleName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                DateOfBirth = request.DateOfBirth
+            });
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            var result = await _controller.GetAllByGroup(groupKey);
+        var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<List<MemberResponse>>(ok.Value);
-            Assert.Equal(members.Count, data.Count);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<MemberResponse>(ok.Value);
+        Assert.Equal(memberKey, data.MemberKey);
 
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<GetMembers>(q => q.GroupKey == groupKey && q.KurinKey == Guid.Empty),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<UpsertMember>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
-        [Fact]
-        public async Task GetAllByKurin_ShouldReturnOk_WhenSuccess()
+    [Fact]
+    public async Task Update_ShouldReturnNotFound_WhenNotFound()
+    {
+        var memberKey = Guid.NewGuid();
+        var request = new UpsertMemberRequest
         {
-            var kurinKey = Guid.NewGuid();
-            var members = new List<MemberResponse>
+            GroupKey = Guid.NewGuid(),
+            FirstName = "X",
+            MiddleName = "Y",
+            LastName = "Z",
+            Email = "x@example.com",
+            PhoneNumber = "1",
+            DateOfBirth = new DateOnly(1990, 1, 1)
+        };
+
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.Update(memberKey, request, CancellationToken.None);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_ShouldReturnBadRequest_WhenInvalid()
+    {
+        var memberKey = Guid.NewGuid();
+        var request = new UpsertMemberRequest
+        {
+            GroupKey = Guid.NewGuid(),
+            FirstName = "Bad",
+            MiddleName = "B",
+            LastName = "User",
+            Email = "b@example.com",
+            PhoneNumber = "0",
+            DateOfBirth = new DateOnly(1999, 1, 1)
+        };
+
+        var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.Update(memberKey, request, CancellationToken.None);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task VerifyProfile_ShouldSendCommandWithNote_WhenSuccess()
+    {
+        var memberKey = Guid.NewGuid();
+        var request = new VerifyMemberProfileRequest { Note = "Checked by phone." };
+        var serviceResult = new ServiceResult<MemberResponse>(
+            ResultType.Success,
+            new MemberResponse
             {
-                new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-                new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
-            };
+                MemberKey = memberKey,
+                ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent,
+                ProfileVerificationNote = request.Note
+            });
 
-            var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        var result = await _controller.VerifyProfile(memberKey, request, CancellationToken.None);
 
-            var result = await _controller.GetAllByKurin(kurinKey);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<MemberResponse>(ok.Value);
+        Assert.Equal(MemberProfileVerificationStatus.VerifiedCurrent, data.ProfileVerificationStatus);
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<List<MemberResponse>>(ok.Value);
-            Assert.Equal(members.Count, data.Count);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == request.Note),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<GetMembers>(q => q.GroupKey == Guid.Empty && q.KurinKey == kurinKey),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
+    [Fact]
+    public async Task VerifyProfile_ShouldSendCommandWithNullNote_WhenRequestIsNull()
+    {
+        var memberKey = Guid.NewGuid();
+        var serviceResult = new ServiceResult<MemberResponse>(
+            ResultType.Success,
+            new MemberResponse { MemberKey = memberKey });
 
-        [Fact]
-        public async Task Create_ShouldReturnCreated_WhenSuccess()
-        {
-            var key = Guid.NewGuid();
-            var request = new UpsertMemberRequest
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        await _controller.VerifyProfile(memberKey, null, CancellationToken.None);
+
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == null),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetProfileVerification_ShouldSendCommand_WhenSuccess()
+    {
+        var memberKey = Guid.NewGuid();
+        var serviceResult = new ServiceResult<MemberResponse>(
+            ResultType.Success,
+            new MemberResponse
             {
-                GroupKey = Guid.NewGuid(),
-                FirstName = "Ivan",
-                MiddleName = "I.",
-                LastName = "Petrenko",
-                Email = "ivan@example.com",
-                PhoneNumber = "123456",
-                DateOfBirth = new DateOnly(2000, 5, 10)
-            };
+                MemberKey = memberKey,
+                ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified
+            });
 
-            var serviceResult = new ServiceResult<MemberResponse>(
-                ResultType.Created,
-                new MemberResponse
-                {
-                    MemberKey = key,
-                    GroupKey = request.GroupKey!.Value,
-                    KurinKey = Guid.NewGuid(),
-                    FirstName = request.FirstName,
-                    MiddleName = request.MiddleName,
-                    LastName = request.LastName,
-                    Email = request.Email,
-                    PhoneNumber = request.PhoneNumber,
-                    DateOfBirth = request.DateOfBirth
-                },
-                "GetByKey",
-                new { memberKey = key });
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<ResetMemberProfileVerification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        var result = await _controller.ResetProfileVerification(memberKey, CancellationToken.None);
 
-            var result = await _controller.Create(request, CancellationToken.None);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<MemberResponse>(ok.Value);
+        Assert.Equal(MemberProfileVerificationStatus.Unverified, data.ProfileVerificationStatus);
 
-            var created = Assert.IsType<CreatedAtActionResult>(result);
-            var data = Assert.IsType<MemberResponse>(created.Value);
-            Assert.Equal(key, data.MemberKey);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<ResetMemberProfileVerification>(c => c.MemberKey == memberKey),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<UpsertMember>(c =>
-                    c.GroupKey == request.GroupKey &&
-                    c.FirstName == request.FirstName &&
-                    c.LastName == request.LastName),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
+    [Fact]
+    public async Task Delete_ShouldReturnOk_WhenSuccess()
+    {
+        var memberKey = Guid.NewGuid();
+        var serviceResult = new ServiceResult<object>(ResultType.Success);
 
-        [Fact]
-        public async Task Create_ShouldReturnBadRequest_WhenInvalid()
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.Delete(memberKey);
+
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
+    {
+        var memberKey = Guid.NewGuid();
+        var serviceResult = new ServiceResult<object>((ResultType)999);
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
+
+        var result = await _controller.Delete(memberKey);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetKurinMentorCandidates_ShouldReturnOk_WhenSuccess()
+    {
+        var kurinKey = Guid.NewGuid();
+        var mentors = new List<MemberLookupDto>
         {
-            var request = new UpsertMemberRequest
-            {
-                GroupKey = Guid.NewGuid(),
-                FirstName = "Bad",
-                MiddleName = "X",
-                LastName = "User",
-                Email = "bad@example.com",
-                PhoneNumber = "000",
-                DateOfBirth = new DateOnly(1999, 1, 1)
-            };
+            new() { MemberKey = Guid.NewGuid(), UserKey = Guid.NewGuid(), FirstName = "Mentor", MiddleName = "M", LastName = "One" }
+        };
+        var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
 
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidates>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceResult);
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
+        var result = await _controller.GetKurinMentorCandidates(kurinKey);
 
-            var result = await _controller.Create(request, CancellationToken.None);
-
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task Update_ShouldReturnOk_WhenSuccess()
-        {
-            var memberKey = Guid.NewGuid();
-            var request = new UpsertMemberRequest
-            {
-                GroupKey = Guid.NewGuid(),
-                FirstName = "Updated",
-                MiddleName = "U.",
-                LastName = "Name",
-                Email = "upd@example.com",
-                PhoneNumber = "555",
-                DateOfBirth = new DateOnly(1995, 2, 2),
-                RemoveProfilePhoto = false
-            };
-
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success,
-                new MemberResponse
-                {
-                    MemberKey = memberKey,
-                    GroupKey = request.GroupKey!.Value,
-                    KurinKey = Guid.NewGuid(),
-                    FirstName = request.FirstName,
-                    MiddleName = request.MiddleName,
-                    LastName = request.LastName,
-                    Email = request.Email,
-                    PhoneNumber = request.PhoneNumber,
-                    DateOfBirth = request.DateOfBirth
-                });
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.Update(memberKey, request, CancellationToken.None);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<MemberResponse>(ok.Value);
-            Assert.Equal(memberKey, data.MemberKey);
-
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<UpsertMember>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task Update_ShouldReturnNotFound_WhenNotFound()
-        {
-            var memberKey = Guid.NewGuid();
-            var request = new UpsertMemberRequest
-            {
-                GroupKey = Guid.NewGuid(),
-                FirstName = "X",
-                MiddleName = "Y",
-                LastName = "Z",
-                Email = "x@example.com",
-                PhoneNumber = "1",
-                DateOfBirth = new DateOnly(1990, 1, 1)
-            };
-
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.Update(memberKey, request, CancellationToken.None);
-
-            Assert.IsType<NotFoundObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task Update_ShouldReturnBadRequest_WhenInvalid()
-        {
-            var memberKey = Guid.NewGuid();
-            var request = new UpsertMemberRequest
-            {
-                GroupKey = Guid.NewGuid(),
-                FirstName = "Bad",
-                MiddleName = "B",
-                LastName = "User",
-                Email = "b@example.com",
-                PhoneNumber = "0",
-                DateOfBirth = new DateOnly(1999, 1, 1)
-            };
-
-            var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.Update(memberKey, request, CancellationToken.None);
-
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task VerifyProfile_ShouldSendCommandWithNote_WhenSuccess()
-        {
-            var memberKey = Guid.NewGuid();
-            var request = new VerifyMemberProfileRequest { Note = "Checked by phone." };
-            var serviceResult = new ServiceResult<MemberResponse>(
-                ResultType.Success,
-                new MemberResponse
-                {
-                    MemberKey = memberKey,
-                    ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent,
-                    ProfileVerificationNote = request.Note
-                });
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.VerifyProfile(memberKey, request, CancellationToken.None);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<MemberResponse>(ok.Value);
-            Assert.Equal(MemberProfileVerificationStatus.VerifiedCurrent, data.ProfileVerificationStatus);
-
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == request.Note),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task VerifyProfile_ShouldSendCommandWithNullNote_WhenRequestIsNull()
-        {
-            var memberKey = Guid.NewGuid();
-            var serviceResult = new ServiceResult<MemberResponse>(
-                ResultType.Success,
-                new MemberResponse { MemberKey = memberKey });
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            await _controller.VerifyProfile(memberKey, null, CancellationToken.None);
-
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == null),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task ResetProfileVerification_ShouldSendCommand_WhenSuccess()
-        {
-            var memberKey = Guid.NewGuid();
-            var serviceResult = new ServiceResult<MemberResponse>(
-                ResultType.Success,
-                new MemberResponse
-                {
-                    MemberKey = memberKey,
-                    ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified
-                });
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<ResetMemberProfileVerification>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.ResetProfileVerification(memberKey, CancellationToken.None);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<MemberResponse>(ok.Value);
-            Assert.Equal(MemberProfileVerificationStatus.Unverified, data.ProfileVerificationStatus);
-
-            _mediatorMock.Verify(m => m.Send(
-                It.Is<ResetMemberProfileVerification>(c => c.MemberKey == memberKey),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task Delete_ShouldReturnOk_WhenSuccess()
-        {
-            var memberKey = Guid.NewGuid();
-            var serviceResult = new ServiceResult<object>(ResultType.Success);
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.Delete(memberKey);
-
-            Assert.IsType<OkObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
-        {
-            var memberKey = Guid.NewGuid();
-            var serviceResult = new ServiceResult<object>((ResultType)999);
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.Delete(memberKey);
-
-            var obj = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, obj.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetKurinMentorCandidates_ShouldReturnOk_WhenSuccess()
-        {
-            var kurinKey = Guid.NewGuid();
-            var mentors = new List<MemberLookupDto>
-            {
-                new() { MemberKey = Guid.NewGuid(), UserKey = Guid.NewGuid(), FirstName = "Mentor", MiddleName = "M", LastName = "One" }
-            };
-            var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
-
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidates>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceResult);
-
-            var result = await _controller.GetKurinMentorCandidates(kurinKey);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
-            Assert.Single(data);
-            Assert.Equal("One", data[0].LastName);
-        }
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
+        Assert.Single(data);
+        Assert.Equal("One", data[0].LastName);
     }
 }

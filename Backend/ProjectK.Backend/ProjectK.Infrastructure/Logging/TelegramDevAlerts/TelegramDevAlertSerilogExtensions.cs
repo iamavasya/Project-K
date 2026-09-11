@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Settings;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Events;

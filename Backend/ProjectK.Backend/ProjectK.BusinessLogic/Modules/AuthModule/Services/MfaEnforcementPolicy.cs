@@ -1,46 +1,45 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using ProjectK.Common.Models;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
+
+public interface IMfaEnforcementPolicy
 {
-    public interface IMfaEnforcementPolicy
+    Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default);
+}
+
+public class MfaEnforcementPolicy : IMfaEnforcementPolicy
+{
+    private readonly IHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
+    private readonly ISystemSettingsService _systemSettings;
+
+    public MfaEnforcementPolicy(
+        IHostEnvironment environment,
+        IConfiguration configuration,
+        ISystemSettingsService systemSettings)
     {
-        Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default);
+        _environment = environment;
+        _configuration = configuration;
+        _systemSettings = systemSettings;
     }
 
-    public class MfaEnforcementPolicy : IMfaEnforcementPolicy
+    public async Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default)
     {
-        private readonly IHostEnvironment _environment;
-        private readonly IConfiguration _configuration;
-        private readonly ISystemSettingsService _systemSettings;
+        // All bypasses below apply to LAN/test tiers only. Production and Staging ignore them outright,
+        // so e.g. a stray E2E__BypassPrivilegedMfa in a deployed env file can never disable privileged MFA.
+        var isNonProdEnv = !_environment.IsProduction() && !_environment.IsStaging();
 
-        public MfaEnforcementPolicy(
-            IHostEnvironment environment,
-            IConfiguration configuration,
-            ISystemSettingsService systemSettings)
-        {
-            _environment = environment;
-            _configuration = configuration;
-            _systemSettings = systemSettings;
-        }
+        var isBypassed = isNonProdEnv
+            && (_environment.IsDevelopment()
+                || _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false)
+                || (_environment.EnvironmentName == "SelfHost"
+                    && !await _systemSettings.GetBoolAsync(
+                        SystemSettingKeys.EnforcePrivilegedMfa,
+                        defaultValue: false,
+                        cancellationToken)));
 
-        public async Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default)
-        {
-            // All bypasses below apply to LAN/test tiers only. Production and Staging ignore them outright,
-            // so e.g. a stray E2E__BypassPrivilegedMfa in a deployed env file can never disable privileged MFA.
-            var isNonProdEnv = !_environment.IsProduction() && !_environment.IsStaging();
-
-            var isBypassed = isNonProdEnv
-                && (_environment.IsDevelopment()
-                    || _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false)
-                    || (_environment.EnvironmentName == "SelfHost"
-                        && !await _systemSettings.GetBoolAsync(
-                            SystemSettingKeys.EnforcePrivilegedMfa,
-                            defaultValue: false,
-                            cancellationToken)));
-
-            return !isBypassed;
-        }
+        return !isBypassed;
     }
 }

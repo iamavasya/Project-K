@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
@@ -9,8 +9,8 @@ public class AgendaResponseRepository : BaseEntityRepository<AgendaResponse>, IA
 {
 
     public AgendaResponseRepository(AppDbContext context) : base(context)
-        {
-        }
+    {
+    }
 
     public override async Task<AgendaResponse?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default) =>
         await Context.AgendaResponses.FirstOrDefaultAsync(r => r.AgendaResponseKey == entityKey, cancellationToken);

@@ -1,16 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace ProjectK.Common.Entities.InfrastructureModule
+namespace ProjectK.Common.Entities.InfrastructureModule;
+
+public class SystemSetting
 {
-    public class SystemSetting
-    {
-        [Key]
-        [MaxLength(100)]
-        public string Key { get; set; } = string.Empty;
+    [Key]
+    [MaxLength(100)]
+    public string Key { get; set; } = string.Empty;
 
-        public string Value { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 
-        public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
-    }
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 }

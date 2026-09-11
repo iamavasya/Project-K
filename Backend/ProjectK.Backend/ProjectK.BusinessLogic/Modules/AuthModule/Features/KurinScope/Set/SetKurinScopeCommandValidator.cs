@@ -1,13 +1,12 @@
-﻿using FluentValidation;
+using FluentValidation;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
+
+public sealed class SetKurinScopeCommandValidator : AbstractValidator<SetKurinScopeCommand>
 {
-    public sealed class SetKurinScopeCommandValidator : AbstractValidator<SetKurinScopeCommand>
+    public SetKurinScopeCommandValidator()
     {
-        public SetKurinScopeCommandValidator()
-        {
-            // KurinKey is intentionally optional: null means "return to system-wide scope".
-            RuleFor(command => command.UserKey).NotEmpty();
-        }
+        // KurinKey is intentionally optional: null means "return to system-wide scope".
+        RuleFor(command => command.UserKey).NotEmpty();
     }
 }

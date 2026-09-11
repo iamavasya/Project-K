@@ -89,6 +89,14 @@ jobs:
             | awk '{printf "| %s | %s |\n", $2, $1}'
         } >> "$GITHUB_STEP_SUMMARY"
 
+    # Advisory too, for now: the whole backend was normalised in one pass (FMT-01), and this is
+    # what keeps it from drifting back. Turn it blocking once a couple of releases have gone by
+    # without it firing. Migrations are EF-generated and excluded on purpose.
+    - name: Check formatting
+      if: always()
+      continue-on-error: true
+      run: dotnet format Backend/ProjectK.Backend/ProjectK.Backend.sln --verify-no-changes --no-restore --exclude "**/Migrations/**"
+
     - name: Test
       run: >-
         dotnet test Backend/ProjectK.Backend --configuration Release --no-build --verbosity normal

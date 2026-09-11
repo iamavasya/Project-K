@@ -1,35 +1,34 @@
-﻿using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
-namespace ProjectK.Infrastructure.Services.EmailService
+namespace ProjectK.Infrastructure.Services.EmailService;
+
+public class MockEmailService : IEmailService
 {
-    public class MockEmailService : IEmailService
+    private readonly ILogger<MockEmailService> _logger;
+
+    public MockEmailService(ILogger<MockEmailService> logger)
     {
-        private readonly ILogger<MockEmailService> _logger;
+        _logger = logger;
+    }
 
-        public MockEmailService(ILogger<MockEmailService> logger)
-        {
-            _logger = logger;
-        }
+    public Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MOCK EMAIL] To: {To}, Subject: {Subject}, Body: {Body}", to, subject, body);
+        return Task.CompletedTask;
+    }
 
-        public Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("[MOCK EMAIL] To: {To}, Subject: {Subject}, Body: {Body}", to, subject, body);
-            return Task.CompletedTask;
-        }
+    public Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        var body = $"Your invitation token is: {token}";
+        return SendEmailAsync(to, "ProjectK Invitation", body, cancellationToken);
+    }
 
-        public Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
-        {
-            var body = $"Your invitation token is: {token}";
-            return SendEmailAsync(to, "ProjectK Invitation", body, cancellationToken);
-        }
-
-        public Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
-        {
-            var body = $"Your password reset token is: {token}";
-            return SendEmailAsync(to, "ProjectK Password Reset", body, cancellationToken);
-        }
+    public Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        var body = $"Your password reset token is: {token}";
+        return SendEmailAsync(to, "ProjectK Password Reset", body, cancellationToken);
     }
 }

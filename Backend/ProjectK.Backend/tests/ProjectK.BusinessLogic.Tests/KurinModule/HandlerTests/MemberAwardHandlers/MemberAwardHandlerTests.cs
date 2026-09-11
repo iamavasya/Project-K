@@ -1,35 +1,35 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
+using Xunit;
+using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 
 public class MemberAwardHandlerTests
 {
     private readonly Mock<IMemberUnitOfWork> _unitOfWorkMock;
-        private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberAwardRepository> _memberAwardRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -141,12 +141,12 @@ public class MemberAwardHandlerTests
 
         _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
-        var result = await _upsertHandler.Handle(new UpsertMemberAward 
-        { 
-            MemberKey = memberKey, 
-            Level = MemberAwardLevel.First, 
-            DateAcquired = dateAcquired, 
-            Note = "Test" 
+        var result = await _upsertHandler.Handle(new UpsertMemberAward
+        {
+            MemberKey = memberKey,
+            Level = MemberAwardLevel.First,
+            DateAcquired = dateAcquired,
+            Note = "Test"
         }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -179,7 +179,7 @@ public class MemberAwardHandlerTests
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Member { MemberKey = memberKey });
 
-        var existingAward = new MemberAward 
+        var existingAward = new MemberAward
         {
             MemberAwardKey = awardKey,
             MemberKey = memberKey,
@@ -198,19 +198,19 @@ public class MemberAwardHandlerTests
 
         _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
-        var result = await _upsertHandler.Handle(new UpsertMemberAward 
-        { 
+        var result = await _upsertHandler.Handle(new UpsertMemberAward
+        {
             MemberAwardKey = awardKey,
-            MemberKey = memberKey, 
-            Level = MemberAwardLevel.First, 
-            DateAcquired = dateAcquired, 
-            Note = "New Note" 
+            MemberKey = memberKey,
+            Level = MemberAwardLevel.First,
+            DateAcquired = dateAcquired,
+            Note = "New Note"
         }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        
+
         _memberAwardRepositoryMock.Verify(x => x.Update(existingAward, It.IsAny<CancellationToken>()), Times.Once);
-        
+
         existingAward.DateAcquired.Should().Be(dateAcquired);
         existingAward.Note.Should().Be("New Note");
         existingAward.Status.Should().Be(BadgeProgressStatus.Submitted);

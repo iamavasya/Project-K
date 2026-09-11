@@ -1,43 +1,42 @@
-﻿using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWaitlistEntry
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWaitlistEntry;
+
+public class RejectWaitlistEntryHandler : IRequestHandler<RejectWaitlistEntryCommand, ServiceResult<Guid>>
 {
-    public class RejectWaitlistEntryHandler : IRequestHandler<RejectWaitlistEntryCommand, ServiceResult<Guid>>
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserContext _currentUserContext;
+
+    public RejectWaitlistEntryHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ICurrentUserContext _currentUserContext;
+        _unitOfWork = unitOfWork;
+        _currentUserContext = currentUserContext;
+    }
 
-        public RejectWaitlistEntryHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext)
+    public async Task<ServiceResult<Guid>> Handle(RejectWaitlistEntryCommand request, CancellationToken cancellationToken)
+    {
+        var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
+        if (entry == null)
         {
-            _unitOfWork = unitOfWork;
-            _currentUserContext = currentUserContext;
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
         }
 
-        public async Task<ServiceResult<Guid>> Handle(RejectWaitlistEntryCommand request, CancellationToken cancellationToken)
-        {
-            var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
-            if (entry == null)
-            {
-                return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
-            }
+        entry.VerificationStatus = WaitlistVerificationStatus.Rejected;
+        entry.ReviewedAtUtc = DateTime.UtcNow;
+        entry.ReviewedByUserKey = _currentUserContext.UserId;
+        entry.VerificationNote = request.Note;
 
-            entry.VerificationStatus = WaitlistVerificationStatus.Rejected;
-            entry.ReviewedAtUtc = DateTime.UtcNow;
-            entry.ReviewedByUserKey = _currentUserContext.UserId;
-            entry.VerificationNote = request.Note;
+        _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return new ServiceResult<Guid>(ResultType.Success, entry.WaitlistEntryKey);
-        }
+        return new ServiceResult<Guid>(ResultType.Success, entry.WaitlistEntryKey);
     }
 }

@@ -1,13 +1,13 @@
-﻿using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Extensions;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

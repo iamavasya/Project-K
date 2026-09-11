@@ -2,52 +2,51 @@ using Microsoft.Extensions.Caching.Memory;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.ProbeAndBadges.Abstractions;
 
-namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+
+public sealed class ProbesCatalogService : IProbesCatalogService
 {
-    public sealed class ProbesCatalogService : IProbesCatalogService
+    private static readonly TimeSpan CatalogCacheTtl = TimeSpan.FromHours(6);
+
+    private readonly IProbesCatalog _probesCatalog;
+    private readonly IMemoryCache _cache;
+
+    public ProbesCatalogService(IProbesCatalog probesCatalog, IMemoryCache cache)
     {
-        private static readonly TimeSpan CatalogCacheTtl = TimeSpan.FromHours(6);
+        _probesCatalog = probesCatalog;
+        _cache = cache;
+    }
 
-        private readonly IProbesCatalog _probesCatalog;
-        private readonly IMemoryCache _cache;
-
-        public ProbesCatalogService(IProbesCatalog probesCatalog, IMemoryCache cache)
+    public IReadOnlyList<ProbeSummaryResponse> GetProbes()
+    {
+        return _cache.GetOrCreate("catalog:probes:list", entry =>
         {
-            _probesCatalog = probesCatalog;
-            _cache = cache;
+            entry.AbsoluteExpirationRelativeToNow = CatalogCacheTtl;
+            return _probesCatalog
+                .GetAll()
+                .Select(ProbeSummaryResponse.FromProbe)
+                .ToList();
+        })!;
+    }
+
+    public GroupedProbeResponse? GetGroupedProbeById(string probeId)
+    {
+        var cacheKey = $"catalog:probes:grouped:{probeId}";
+
+        if (_cache.TryGetValue(cacheKey, out GroupedProbeResponse? cachedProbe))
+        {
+            return cachedProbe;
         }
 
-        public IReadOnlyList<ProbeSummaryResponse> GetProbes()
+        var probe = _probesCatalog.GetById(probeId);
+        if (probe is null)
         {
-            return _cache.GetOrCreate("catalog:probes:list", entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = CatalogCacheTtl;
-                return _probesCatalog
-                    .GetAll()
-                    .Select(ProbeSummaryResponse.FromProbe)
-                    .ToList();
-            })!;
+            return null;
         }
 
-        public GroupedProbeResponse? GetGroupedProbeById(string probeId)
-        {
-            var cacheKey = $"catalog:probes:grouped:{probeId}";
+        var response = GroupedProbeResponse.FromProbe(probe);
+        _cache.Set(cacheKey, response, CatalogCacheTtl);
 
-            if (_cache.TryGetValue(cacheKey, out GroupedProbeResponse? cachedProbe))
-            {
-                return cachedProbe;
-            }
-
-            var probe = _probesCatalog.GetById(probeId);
-            if (probe is null)
-            {
-                return null;
-            }
-
-            var response = GroupedProbeResponse.FromProbe(probe);
-            _cache.Set(cacheKey, response, CatalogCacheTtl);
-
-            return response;
-        }
+        return response;
     }
 }

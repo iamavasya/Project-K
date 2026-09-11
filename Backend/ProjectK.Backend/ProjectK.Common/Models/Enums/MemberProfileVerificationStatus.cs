@@ -1,9 +1,8 @@
-namespace ProjectK.Common.Models.Enums
+namespace ProjectK.Common.Models.Enums;
+
+public enum MemberProfileVerificationStatus
 {
-    public enum MemberProfileVerificationStatus
-    {
-        Unverified = 0,
-        VerifiedStale = 1,
-        VerifiedCurrent = 2
-    }
+    Unverified = 0,
+    VerifiedStale = 1,
+    VerifiedCurrent = 2
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
@@ -9,8 +9,8 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
 {
 
     public ProbeProgressRepository(AppDbContext context) : base(context)
-        {
-        }
+    {
+    }
 
     public override async Task<ProbeProgress?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {

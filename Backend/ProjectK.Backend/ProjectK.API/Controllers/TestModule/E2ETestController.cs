@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.API.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Seeding;
 

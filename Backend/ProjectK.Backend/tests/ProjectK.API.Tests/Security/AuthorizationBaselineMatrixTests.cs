@@ -1,28 +1,28 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
+using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.InfrastructureModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
+using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;
+using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
-using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.API.Models.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.InfrastructureModule;
-using ProjectK.API.Controllers.TestModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -232,7 +232,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
 
-yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLogin));
+        yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLogin));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.GetLatestInvitationByEmail));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));

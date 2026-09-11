@@ -1,24 +1,23 @@
 using ProjectK.Common.Models.Dtos.AuthModule;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Models
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
+
+public class LoginUserResponse
 {
-    public class LoginUserResponse
-    {
-        public Guid UserKey { get; set; }
-        public Guid? MemberKey { get; set; }
-        public string Email { get; set; } = null!;
-        public bool IsAdmin { get; set; }
-        public IReadOnlyCollection<string> Permissions { get; set; } = Array.Empty<string>();
-        public IReadOnlyCollection<string> Roles { get; set; } = Array.Empty<string>();
-        public string? KurinKey { get; set; }
-        public bool RequiresMfa { get; set; }
+    public Guid UserKey { get; set; }
+    public Guid? MemberKey { get; set; }
+    public string Email { get; set; } = null!;
+    public bool IsAdmin { get; set; }
+    public IReadOnlyCollection<string> Permissions { get; set; } = Array.Empty<string>();
+    public IReadOnlyCollection<string> Roles { get; set; } = Array.Empty<string>();
+    public string? KurinKey { get; set; }
+    public bool RequiresMfa { get; set; }
 
-        /// <summary>
-        /// Proof that the password step passed, handed back only when <see cref="RequiresMfa"/> is
-        /// set. The second-factor step has to bring it back; without it a code alone is refused.
-        /// </summary>
-        public string? MfaToken { get; set; }
+    /// <summary>
+    /// Proof that the password step passed, handed back only when <see cref="RequiresMfa"/> is
+    /// set. The second-factor step has to bring it back; without it a code alone is refused.
+    /// </summary>
+    public string? MfaToken { get; set; }
 
-        public JwtResponse? Tokens { get; set; } = null!;
-    }
+    public JwtResponse? Tokens { get; set; } = null!;
 }

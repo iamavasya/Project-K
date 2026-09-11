@@ -1,4 +1,4 @@
-﻿namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 
 public class UpdateProbePointSignatureRequest
 {

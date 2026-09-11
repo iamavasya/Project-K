@@ -1,18 +1,18 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

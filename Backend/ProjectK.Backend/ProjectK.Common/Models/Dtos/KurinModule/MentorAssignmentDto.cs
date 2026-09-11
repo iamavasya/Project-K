@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 
-namespace ProjectK.Common.Models.Dtos.KurinModule
+namespace ProjectK.Common.Models.Dtos.KurinModule;
+
+public class MentorAssignmentDto
 {
-    public class MentorAssignmentDto
-    {
-        public Guid MentorAssignmentKey { get; set; }
-        public Guid MentorUserKey { get; set; }
-        public Guid GroupKey { get; set; }
-        public string GroupName { get; set; } = string.Empty;
-        public DateTime AssignedAtUtc { get; set; }
-        public DateTime? RevokedAtUtc { get; set; }
-        public MemberLookupDto? Member { get; set; }
-    }
+    public Guid MentorAssignmentKey { get; set; }
+    public Guid MentorUserKey { get; set; }
+    public Guid GroupKey { get; set; }
+    public string GroupName { get; set; } = string.Empty;
+    public DateTime AssignedAtUtc { get; set; }
+    public DateTime? RevokedAtUtc { get; set; }
+    public MemberLookupDto? Member { get; set; }
 }
