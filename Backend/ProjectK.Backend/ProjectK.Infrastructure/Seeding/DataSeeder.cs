@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
@@ -33,24 +34,28 @@ namespace ProjectK.Infrastructure.Seeding
                 }
             }
 
-            // 2. Seed System Admin (Skip for SelfHost, as it will be created via Setup)
-            if (env.EnvironmentName != "SelfHost")
+            // 2. Demo accounts exist only where demo data does, and demo data exists only on the two
+            // tiers that are meant to start from the same point every time: Development and E2E.
+            // The well-known administrator used to be created in production too, with the password
+            // that sits in this file; a deployed instance now gets its first administrator through the
+            // setup wizard instead, and this repository holds no password that opens one.
+            //
+            // Staging and Tailscale used to be on the demo list as well, and it cost real data: the
+            // reset below wipes kurin 1 outright, so whatever people entered on a stand shown to
+            // them was gone at the next `dev.sh up`, and every account that stood in that kurin was
+            // left pointing at a key that no longer existed (STAB-07, STAB-05). Those tiers now keep
+            // what they have and get their first administrator the way production does.
+            var seedsDemoData = env.IsDevelopment() || env.EnvironmentName == "E2E";
+            if (!seedsDemoData)
             {
-                await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
-            }
-
-            // 3. Seed Load Test User (Required for load tests across all environments)
-            if (env.EnvironmentName != "SelfHost")
-            {
-                await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.Member);
-            }
-
-            // --- STOP HERE FOR PRODUCTION AND SELFHOST ---
-            // Only seed comprehensive test data in Development or other non-prod environments
-            if (env.IsProduction() || env.EnvironmentName == "SelfHost")
-            {
+                await WarnWhenNoAdministratorAsync(scope.ServiceProvider, userManager);
                 return;
             }
+
+            await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
+
+            // 3. The load-test account: passwordless, reachable only through LoadTestLoginKey.
+            await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.Member);
 
             await ResetKurin1DataAsync(dbContext, userManager);
 
@@ -64,6 +69,23 @@ namespace ProjectK.Infrastructure.Seeding
             {
                 await E2eFixtureSeeder.SeedAsync(scope.ServiceProvider);
             }
+        }
+
+        /// <summary>
+        /// Said out loud at startup, because a deployment with no administrator is one nobody can
+        /// manage until somebody opens the setup wizard — and the log is where that is first noticed.
+        /// </summary>
+        private static async Task WarnWhenNoAdministratorAsync(IServiceProvider services, UserManager<AppUser> userManager)
+        {
+            var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+            if (administrators.Count > 0)
+            {
+                return;
+            }
+
+            services.GetService<ILoggerFactory>()
+                ?.CreateLogger(nameof(DataSeeder))
+                .LogWarning("No administrator account exists yet; the first visitor is sent to the setup wizard to create one.");
         }
 
         private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)

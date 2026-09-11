@@ -40,7 +40,10 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule
         [ProducesResponseType(typeof(IEnumerable<Badge>), StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] int take = 200)
         {
-            return Ok(_badgesCatalogService.GetBadges(take));
+            // The catalog is a few hundred entries; a page past that is the whole thing, and a
+            // non-positive request is a mistake answered with the default rather than nothing.
+            var page = take <= 0 ? 200 : Math.Min(take, 500);
+            return Ok(_badgesCatalogService.GetBadges(page));
         }
 
         /// <summary>

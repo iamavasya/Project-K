@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 import { LoginRequest } from '../../models/login-request.model';
 import { LoginResponse } from '../../models/login-response.model';
 import { AuthState } from '../../models/auth-state.model';
-import { KurinDto } from '../../../kurinModule/common/models/kurinDto';
 import { environment } from '../../../../../environments/environment';
 
 describe('AuthService', () => {
@@ -224,7 +223,7 @@ describe('AuthService', () => {
         accessToken: 'mfa-access-token'
       };
 
-      service.verifyMfaLogin('mfa@example.com', '123456').subscribe(state => {
+      service.verifyMfaLogin('mfa@example.com', '123456', 'challenge').subscribe(state => {
         expect(state).toEqual(expectedState);
         expect(service.getAuthStateValue()).toEqual(expectedState);
         expect(localStorage.getItem('authState')).toBe(JSON.stringify({ ...expectedState, accessToken: null }));
@@ -233,7 +232,7 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/login-verify`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ email: 'mfa@example.com', code: '123456', rememberMe: true });
+      expect(req.request.body).toEqual({ email: 'mfa@example.com', code: '123456', rememberMe: true, mfaToken: 'challenge' });
       expect(req.request.withCredentials).toBeTrue();
       req.flush(mockResponse);
     });
@@ -249,7 +248,7 @@ describe('AuthService', () => {
         tokens: null
       };
 
-      service.verifyMfaLogin('mfa@example.com', '123456').subscribe({
+      service.verifyMfaLogin('mfa@example.com', '123456', 'challenge').subscribe({
         next: () => fail('should have failed'),
         error: error => {
           expect(error.message).toBe('No tokens in response');
@@ -535,54 +534,6 @@ describe('AuthService', () => {
       expect(req.request.method).toBe('POST');
       expect(req.request.withCredentials).toBeTrue();
       req.flush({ accessToken: 'new-access-token' });
-    });
-  });
-
-  describe('registerFirstManager', () => {
-    it('should send registration request with correct data', (done) => {
-      const kurinDto: KurinDto = {
-        kurinKey: 'kurin-key',
-        number: 42,
-        managerEmail: 'manager@test.com'
-      };
-
-      const expectedBody = {
-        email: 'manager@test.com',
-        password: null,
-        firstName: null,
-        lastName: null,
-        phoneNumber: null,
-        kurinNumber: 42
-      };
-
-      service.registerFirstManager(kurinDto).subscribe(() => {
-        done();
-      });
-
-      const req = httpMock.expectOne(`${apiUrl}/auth/register/manager`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(expectedBody);
-      expect(req.request.withCredentials).toBeTrue();
-      req.flush(null);
-    });
-
-    it('should handle registration error', (done) => {
-      const kurinDto: KurinDto = {
-        kurinKey: 'kurin-key',
-        number: 42,
-        managerEmail: 'manager@test.com'
-      };
-
-      service.registerFirstManager(kurinDto).subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.status).toBe(400);
-          done();
-        }
-      });
-
-      const req = httpMock.expectOne(`${apiUrl}/auth/register/manager`);
-      req.flush('Bad Request', { status: 400, statusText: 'Bad Request' });
     });
   });
 

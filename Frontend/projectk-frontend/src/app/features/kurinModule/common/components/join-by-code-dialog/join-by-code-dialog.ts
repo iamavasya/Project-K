@@ -4,6 +4,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MembershipCandidateDto, MembershipService } from '../../services/membership-service/membership.service';
+import { failureDetail } from '../../../../../shared/functions/failureDetail.function';
 
 /**
  * Прийняти в курінь людину, яка вже є в системі, за кодом, який вона віддала.
@@ -68,9 +69,9 @@ export class JoinByCodeDialogComponent {
         this.close();
         this.joined.emit();
       },
-      error: () => {
+      error: (error: unknown) => {
         this.isJoining.set(false);
-        this.errorMessage.set('Не вдалося прийняти. Спробуй ще раз.');
+        this.errorMessage.set(failureDetail(error, 'Не вдалося прийняти. Спробуй ще раз.'));
       }
     });
   }

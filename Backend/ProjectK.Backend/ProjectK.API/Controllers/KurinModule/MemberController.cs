@@ -148,6 +148,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Create, "arg:request.GroupKey")]
+        [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -158,6 +159,11 @@ namespace ProjectK.API.Controllers.KurinModule
             if (!request.GroupKey.HasValue || request.GroupKey.Value == Guid.Empty)
             {
                 return this.Failure(ResultType.BadRequest, "GroupKeyRequired", "groupKey is required.");
+            }
+
+            if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+            {
+                return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
             }
 
             var command = new UpsertMember
@@ -186,6 +192,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("kurins/{kurinKey:guid}/members")]
         [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
+        [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -194,6 +201,11 @@ namespace ProjectK.API.Controllers.KurinModule
             [FromForm] UpsertMemberRequest request,
             CancellationToken cancellationToken)
         {
+            if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+            {
+                return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            }
+
             var command = new UpsertMember
             {
                 KurinKey = kurinKey,
@@ -224,6 +236,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPut("{memberKey:guid}")]
         [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+        [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -233,6 +246,10 @@ namespace ProjectK.API.Controllers.KurinModule
                                                 [FromForm] UpsertMemberRequest request,
                                                 CancellationToken cancellationToken)
         {
+            if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+            {
+                return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            }
 
             var command = new UpsertMember
             {

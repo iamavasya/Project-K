@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -32,7 +32,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo
 
             if (request.Content is not null && !string.IsNullOrWhiteSpace(request.FileName))
             {
-                var upload = await _photoService.UploadPhotoAsync(request.Content, request.FileName, cancellationToken);
+                PhotoUploadResult upload;
+                try
+                {
+                    upload = await _photoService.UploadPhotoAsync(request.Content, request.FileName, cancellationToken);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Storage refuses anything it cannot decode as an image; that is the caller's
+                    // mistake, not the server's.
+                    return ServiceResult<string?>.Failure(
+                        ResultType.BadRequest,
+                        "InvalidImage",
+                        "The uploaded file is not a valid image.");
+                }
+
                 member.ProfilePhotoBlobName = upload.BlobName;
             }
             else if (request.Remove && previousBlobName is not null)

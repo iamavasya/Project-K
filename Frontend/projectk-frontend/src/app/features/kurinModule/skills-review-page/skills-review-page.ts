@@ -20,6 +20,7 @@ import { BadgesCatalogService } from '../common/services/probes-and-badges/badge
 import { MemberProgressService } from '../common/services/probes-and-badges/member-progress.service';
 import { BadgeImageBlobService } from '../common/services/probes-and-badges/badge-image-blob.service';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 interface SkillsReviewItemView {
@@ -154,12 +155,12 @@ export class SkillsReviewPageComponent implements OnInit {
 
           if (error?.status === 403) {
             this.feedbackSeverity = 'error';
-            this.feedbackMessage = 'Немає доступу до модерації цієї заявки.';
+            this.feedbackMessage = failureDetail(error, 'Немає доступу до модерації цієї заявки.');
             return;
           }
 
           this.feedbackSeverity = 'error';
-          this.feedbackMessage = 'Не вдалося виконати дію. Спробуй ще раз.';
+          this.feedbackMessage = failureDetail(error, 'Не вдалося виконати дію. Спробуй ще раз.');
         }
       });
   }

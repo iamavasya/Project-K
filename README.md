@@ -74,12 +74,18 @@ Backend/ProjectK.Backend/   .NET solution (API, BusinessLogic, Infrastructure, C
 Frontend/projectk-frontend/ Angular app (brand assets in public/assets/)
 docker/                     compose stacks, nginx, env templates, self-host bundle
 scripts/                    dev / start / stop / doctor / migration-bundle helpers
-docs/                       self-host guide, planning docs
+docs/                       self-host guide, data retention, observability, quality baseline
+ARCHITECTURE.md             what the system is made of and where a request goes
+CONTRIBUTING.md             the conventions new code follows
 BRANDBOOK.md                visual system (read §0 before any UI change)
 ```
+
+Planning lives outside the repository on purpose (`todo/`, gitignored); what survives a task goes
+into the three documents above.
 
 ## Links
 
 - [Releases](https://github.com/iamavasya/Project-K/releases)
 - [Brand assets](Frontend/projectk-frontend/public/assets/README.md)
 - [Self-host guide](docs/self-host/README.md)
+- [Security policy](SECURITY.md)

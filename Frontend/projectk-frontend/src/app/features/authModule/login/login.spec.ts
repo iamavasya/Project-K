@@ -103,10 +103,11 @@ describe('LoginComponent', () => {
     component.email = 'mfa@example.com';
     component.showOtpInput = true;
     component.otpValue = '123456';
+    component.mfaToken = 'challenge';
 
     component.onSubmit();
 
-    expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456');
+    expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456', 'challenge');
     expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
   });
 

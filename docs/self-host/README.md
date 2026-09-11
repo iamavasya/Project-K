@@ -80,22 +80,43 @@ nano .env
 docker compose up -d
 ```
 
-At minimum, change these values before exposing the instance outside your machine:
+Two values must be set before the first start, and the API refuses to come up while they are the
+example ones:
 
-- `PROJECTK_JWT_KEY`
-- `PROJECTK_SQL_PASSWORD`
-- `PROJECTK_DB_CONNECTION_STRING` password portion
-- `PROJECTK_PUBLIC_URL`
-- `PROJECTK_API_URL`
-- `PROJECTK_CORS_ORIGIN`
-- `PROJECTK_BLOB_PUBLIC_BASE_URL`
+- `PROJECTK_JWT_KEY` — at least 32 random characters (`openssl rand -base64 48`);
+- `PROJECTK_SQL_PASSWORD` — and the same password inside `PROJECTK_DB_CONNECTION_STRING`.
+
+Open http://localhost:8080. The first visit lands on the setup wizard, which creates the
+administrator account; no account exists before that and none is seeded.
+
+The bundle publishes one port, the web one. The API, SQL Server and the blob store stay on the
+compose network: nginx inside `projectk-web` forwards `/api` to the API and `/blob` to the store,
+so `PROJECTK_API_URL` is the relative `/api` and nothing else has to be reachable from outside.
 
 Default Docker URLs:
 
-- Frontend: http://localhost:8080
-- Backend: http://localhost:5205
-- Backend health: http://localhost:5205/health
-- Azurite blob endpoint: http://localhost:10000/devstoreaccount1
+- App: http://localhost:8080
+- API health (the API itself is not published): `docker compose exec projectk-api curl -fsS http://localhost:8080/health`
+
+## Before exposing to the internet
+
+The bundle listens on plain HTTP and is meant to sit behind a reverse proxy that terminates TLS
+(Caddy, nginx, Traefik, or the hosting provider's). Then:
+
+1. Put the public address in `.env` — `PROJECTK_PUBLIC_URL`, `PROJECTK_CORS_ORIGIN` and the host
+   part of `PROJECTK_BLOB_PUBLIC_BASE_URL` all become `https://your.domain`. `PROJECTK_API_URL`
+   stays `/api`.
+2. Point the reverse proxy at `127.0.0.1:8080` (or whatever `PROJECTK_WEB_PORT` says) and let it
+   pass the visitor's address along; nginx in `projectk-web` forwards it to the API as `X-Real-IP`,
+   which is what sign-in attempts are rate-limited by.
+3. Keep SQL Server and Azurite unpublished. If you need the database from the host for a backup,
+   add a `docker-compose.override.yml` that publishes `projectk-sql` on `127.0.0.1:1433` only.
+4. Photos are public blobs by design: anyone with a photo's URL can open it without signing in.
+   The URLs are unguessable, but they are not protected.
+5. Back up both volumes before the first real data goes in and before every update —
+   `backup-restore.md`.
+6. Turn on two-factor authentication for the administrator and for every Зв'язковий account.
+   The system settings let you require it for privileged accounts.
 
 ## Install directly from GHCR images
 

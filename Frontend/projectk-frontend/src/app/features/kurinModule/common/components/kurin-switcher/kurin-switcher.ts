@@ -9,6 +9,7 @@ import { AuthService } from '../../../../authModule/services/authService/auth.se
 import { KurinScopeOption } from '../../models/kurinScopeOption';
 import { KURIN_BRANCH_LABELS } from '../../models/enums/kurin-branch.enum';
 import { MEMBERSHIP_KIND_LABELS } from '../../models/enums/membership-kind.enum';
+import { failureDetail } from '../../../../../shared/functions/failureDetail.function';
 
 /**
  * Вибір куреня, в якому людина зараз діє. Зʼявляється лише тим, хто справді належить до кількох:
@@ -74,12 +75,12 @@ export class KurinSwitcherComponent implements OnInit {
         // Сторінка під нами належала попередньому куреню — його ключі тут уже нічого не відкриють.
         this.router.navigate(['/kurin', option.kurinKey]);
       },
-      error: () => {
+      error: (error: unknown) => {
         this.switchingTo.set(null);
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося перейти',
-          detail: `Курінь ч. ${option.kurinNumber} лишився недосяжним. Спробуй ще раз.`
+          detail: failureDetail(error, `Курінь ч. ${option.kurinNumber} лишився недосяжним. Спробуй ще раз.`)
         });
       }
     });

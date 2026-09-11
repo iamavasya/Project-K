@@ -36,7 +36,12 @@
 }
 
 .users-list-actions {
-  width: 8rem;
+  width: 10rem;
+}
+
+.users-list-suspended {
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
 
 :host ::ng-deep .project-table .p-datatable-table {

@@ -2,7 +2,6 @@
 using Azure.Core;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
@@ -15,7 +14,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +31,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
     {
         private readonly BlobContainerClient _container;
         private readonly BlobStorageOptions _options;
-        private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
         private volatile bool _containerInitialized;
         private readonly SemaphoreSlim _containerInitLock = new(1, 1);
         private readonly IPhotoReferenceProvider? _referenceProvider;
@@ -148,8 +145,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
             BlobUploadContext uploadContext,
             CancellationToken cancellationToken)
         {
-            string finalExtension = Path.GetExtension(fileName).ToLowerInvariant();
-
             try
             {
                 using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
@@ -176,30 +171,14 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
 
                 return new PreparedBlobUpload(processedBytes, ".jpg", uploadContext.ContentType); // Force extension to jpg since we encoded as jpeg
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogWarning(ex, "Failed to compress image {FileName}. Proceeding with original bytes.", fileName);
-                // If it's not a valid image (e.g. corrupted), we fallback to the original bytes.
-                // The API shouldn't accept non-images, but this is a fallback.
-                finalExtension = string.IsNullOrWhiteSpace(finalExtension) ? ".bin" : finalExtension;
-                var originalBytes = await ReadOriginalForFallbackAsync(photoStream, cancellationToken).ConfigureAwait(false);
-                return new PreparedBlobUpload(originalBytes, finalExtension, ResolveContentType(fileName, finalExtension) ?? MediaTypeNames.Application.Octet);
+                // Nothing but a decoded image is ever written. The container is public, so a file
+                // that failed to decode used to be stored under its own extension and content type —
+                // an .html or .svg upload became a page served from the storage domain.
+                _logger?.LogWarning(ex, "Uploaded file {FileName} is not a decodable image.", fileName);
+                throw new InvalidOperationException("Uploaded file is not a valid image.", ex);
             }
-        }
-
-        // Recover the original bytes for the non-image fallback. Requires a seekable source
-        // (the request/form stream and the byte[] wrapper both are); otherwise the data was
-        // already consumed and cannot be replayed.
-        private static async Task<byte[]> ReadOriginalForFallbackAsync(Stream photoStream, CancellationToken cancellationToken)
-        {
-            if (photoStream.CanSeek)
-            {
-                photoStream.Position = 0;
-            }
-
-            using var buffer = new MemoryStream();
-            await photoStream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
-            return buffer.ToArray();
         }
 
         private async Task<PreparedBlobUpload> PreparePngUploadAsync(
@@ -339,15 +318,6 @@ namespace ProjectK.Infrastructure.Services.BlobStorageService
 
         private string BuildPublicUrl(BlobClient client)
             => BlobPublicUrl.Build(_options.PublicBaseUrl, client.Name, client.Uri.ToString())!;
-
-        private string? ResolveContentType(string fileName, string extension)
-        {
-            if (_contentTypeProvider.TryGetContentType(fileName, out var ct))
-                return ct;
-            if (_contentTypeProvider.TryGetContentType("file" + extension, out var extCt))
-                return extCt;
-            return null;
-        }
 
         private static string NormalizeFolder(string folder)
         {

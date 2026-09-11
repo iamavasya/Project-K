@@ -22,6 +22,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.API.Authorization;
 
@@ -254,6 +255,37 @@ namespace ProjectK.API.Controllers.UsersModule
         public async Task<IActionResult> ResetUserMfa(Guid userId)
         {
             var response = await _mediator.Send(new ResetUserMfaCommand(userId));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Suspends an account: it is refused at sign-in and every session it holds is ended. Administrators only.
+        /// </summary>
+        /// <remarks>
+        /// Reversible, unlike deletion: the person, their memberships and everything they earned stay as they are.
+        /// An administrator cannot suspend their own account.
+        /// </remarks>
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+        [HttpPost("{userId}/suspend")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SuspendUser(Guid userId)
+        {
+            var response = await _mediator.Send(new SuspendUserCommand(userId));
+            return response.ToActionResult(this);
+        }
+
+        /// <summary>
+        /// Lets a suspended account sign in again. Administrators only.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+        [HttpPost("{userId}/restore")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RestoreUser(Guid userId)
+        {
+            var response = await _mediator.Send(new RestoreUserCommand(userId));
             return response.ToActionResult(this);
         }
 

@@ -5,7 +5,6 @@ import { environment } from "../../../../../environments/environment";
 import { LoginRequest } from "../../models/login-request.model";
 import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
-import { KurinDto } from "../../../kurinModule/common/models/kurinDto";
 import { KurinScopeOption } from "../../../kurinModule/common/models/kurinScopeOption";
 import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
@@ -85,10 +84,14 @@ export class AuthService {
     );
   }
 
-  verifyMfaLogin(email: string, code: string): Observable<AuthState> {
+  /**
+   * The second step of a sign-in. `mfaToken` is what the password step answered with; the server
+   * refuses a code that arrives without it.
+   */
+  verifyMfaLogin(email: string, code: string, mfaToken: string | null): Observable<AuthState> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/mfa/login-verify`,
-      { email, code, rememberMe: true },
+      { email, code, rememberMe: true, mfaToken },
       { withCredentials: true }
     ).pipe(
       map(response => this.toAuthState(response)),
@@ -191,23 +194,6 @@ export class AuthService {
     );
 
     return this.refreshTokenRequest$;
-  }
-
-  registerFirstManager(kurinDto: KurinDto): Observable<void> {
-    const body = {
-      email: kurinDto.managerEmail,
-      password: null,
-      firstName: null,
-      lastName: null,
-      phoneNumber: null,
-      kurinNumber: kurinDto.number
-    };
-
-    return this.http.post<void>(
-      `${this.apiUrl}/auth/register/manager`,
-      body,
-      { withCredentials: true }
-    );
   }
 
   getAccessToken(): string | null {

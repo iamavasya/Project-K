@@ -45,6 +45,9 @@
                     </td>
                     <td data-mobile-label="Прізвище">
                         {{user.lastName}}
+                        @if (user.isSuspended) {
+                            <p-tag value="Призупинено" severity="warn" [rounded]="true" class="users-list-suspended" />
+                        }
                     </td>
                     <td data-mobile-label="Email">
                         {{user.email}}
@@ -73,6 +76,29 @@
                                     rounded
                                     severity="secondary">
                                 </button>
+                                @if (user.isSuspended) {
+                                    <button
+                                        pButton
+                                        type="button"
+                                        icon="pi pi-play"
+                                        (click)="restoreUser(user)"
+                                        aria-label="Поновити акаунт"
+                                        text
+                                        rounded
+                                        severity="success">
+                                    </button>
+                                } @else {
+                                    <button
+                                        pButton
+                                        type="button"
+                                        icon="pi pi-pause"
+                                        (click)="suspendUser(user)"
+                                        aria-label="Призупинити акаунт"
+                                        text
+                                        rounded
+                                        severity="warn">
+                                    </button>
+                                }
                                 <button
                                     pButton
                                     type="button"

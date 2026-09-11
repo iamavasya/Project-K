@@ -9,7 +9,7 @@
 
 **Продукт.** Самохостована система для одного куреня НСОУ «Пласт»: реєстр учасників, планування сходин, точкування, вмілості, документи. Один розробник, малий проєкт, свідомо мінімальний обсяг UI.
 
-**Стек.** Angular 21 (standalone components, signals + RxJS) · PrimeNG 21 з темою Aura · Tailwind 4 (`@import "tailwindcss"` + `tailwindcss-primeui`) · .NET backend. Фронтенд: `Frontend/projectk-frontend`.
+**Стек.** Angular 22 (standalone components, signals + RxJS) · `@openng/optimus-ui` 2 — сумісний із PrimeNG форк, тож усе нижче про PrimeNG-компоненти, severity й Aura-токени чинне без змін · Tailwind 4 (`@import "tailwindcss"` + `@openng/optimus-ui-tailwindcss`) · .NET 10 backend. Фронтенд: `Frontend/projectk-frontend`.
 
 **Дві назви — не помилка:**
 | Назва | Де вживається |

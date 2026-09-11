@@ -73,18 +73,15 @@ namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService
         }
 
         [Fact]
-        public async Task CompressImageAsync_ShouldReturnOriginalBytes_WhenFileIsNotAnImage()
+        public async Task CompressImageAsync_ShouldRefuse_WhenFileIsNotAnImage()
         {
-            // Arrange
+            // The container is public. A file that does not decode used to be stored as it came, under
+            // its own extension and content type — which made the storage domain serve whatever was uploaded.
             byte[] invalidImageBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 }; // Invalid image header
             string fileName = "document.pdf";
 
-            // Act
-            var result = await _service.CompressImageAsync(invalidImageBytes, fileName, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(".pdf", result.FinalExtension); // Extension shouldn't change
-            Assert.Equal(invalidImageBytes, result.ProcessedBytes); // Bytes shouldn't change since it failed to parse
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _service.CompressImageAsync(invalidImageBytes, fileName, CancellationToken.None));
         }
 
         [Fact]

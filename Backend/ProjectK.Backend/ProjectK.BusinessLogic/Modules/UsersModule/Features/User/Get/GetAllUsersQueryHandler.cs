@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
@@ -55,6 +56,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get
                     // Admin panel manages the system role only; offices are shown elsewhere.
                     Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                     TwoFactorEnabled = user.TwoFactorEnabled,
+                    IsSuspended = !user.CanSignIn(),
                     FirstName = user.FirstName!,
                     LastName = user.LastName!
                 };

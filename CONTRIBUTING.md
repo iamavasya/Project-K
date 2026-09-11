@@ -245,9 +245,9 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **740** тестів
-- фронт — **615** тестів, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
-- e2e — **97** тестів
+- бекенд — **1073** тести (BusinessLogic 523 · API 472 · Infrastructure 69 · Architecture 9)
+- фронт — **664** тести, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- e2e — **101** тест
 
 ```bash
 cd Frontend/projectk-frontend && npx ng lint && npx ng test --watch=false --browsers=ChromeHeadless && npx ng build

@@ -99,6 +99,8 @@ HTTP
   ↓  Serilog request logging, forwarded headers, rate limiting
   ↓  автентифікація JWT (access у заголовку, refresh у httpOnly-cookie)
   ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
+  ↓     другий фактор: пароль → короткий mfaToken (5 хв, окрема audience) → код + mfaToken;
+  ↓     код без mfaToken відхиляється — другий фактор ніколи не буває єдиним
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
   ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
   ↓  контролер: жодних рішень, лише _mediator.Send(...)
@@ -160,7 +162,7 @@ Permission                           напр. Group:Manage:KurinWide
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля — усі | `Infrastructure/Repositories/AuthModule` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена | `Infrastructure/Repositories/AuthModule` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
@@ -199,14 +201,32 @@ Angular 22, standalone-компоненти, signals (декораторів н�
 
 | Середовище | Для чого |
 |---|---|
-| `Development` | локальна розробка; Swagger увімкнено |
-| `E2E` | стек під Playwright; додається `E2ETestController` з фікстурами |
-| `SelfHost` | самостійне розгортання; доступний майстер первинної настройки |
-| `Staging` | перевірка релізу; Swagger увімкнено |
-| `Tailscale` | закритий доступ через tailnet |
-| `Production` | прод; Swagger вимкнено, `LoadTestLoginKey` порожній |
+| `Development` | локальна розробка; Swagger увімкнено; сідер заводить демо-курінь і `admin@projectk.com` |
+| `E2E` | стек під Playwright; лише тут у застосунку існує `E2ETestController` з фікстурами — в інших середовищах його прибирає з моделі `E2EOnlyControllerFeatureProvider` |
+| `SelfHost` | самостійне розгортання; сідер не заводить нікого |
+| `Staging` | перевірка релізу; Swagger увімкнено; демо-даних немає, дані переживають перезапуск |
+| `Tailscale` | закритий доступ через tailnet — стенд для людей, не демо: сідер його не чіпає, дані переживають перезапуск |
+| `Production` | прод; Swagger вимкнено, `LoadTestLoginKey` порожній; **демо-акаунтів немає** |
+
+Майстер первинної настройки (`api/auth/setup`) відкритий у **кожному** середовищі, доки в базі
+немає жодного адміністратора, і зачиняється, щойно він зʼявився. Тому середовища з сідером його
+ніколи не бачать, а свіжий `Production` чи `SelfHost` отримує першого адміністратора саме тут — а
+не з пароля, записаного в репозиторії, як було до 1.0.
 
 Підняти будь-яке: `./scripts/dev.sh up <env>`. Деталі — у [docker/README.md](docker/README.md).
+
+Демо-курінь і демо-акаунти сідер заводить (і стирає при кожному старті) **лише** в `Development` і
+`E2E`. Раніше це стосувалося й `Staging` та `Tailscale`, і стенд, який показували людям, губив усе
+введене при наступному запуску.
+
+**Адреса відвідувача.** Рейт-ліміт входу, гео-блок і журнал зміни IP читають
+`Connection.RemoteIpAddress`. Звідки він береться — `Security:ClientIp`: `Header` називає заголовок,
+який пише єдиний проксі попереду (`CF-Connecting-IP` за Cloudflare у `Production`/`Staging`,
+`X-Real-IP` від nginx у self-host bundle), і `ClientIpMiddleware` кладе його значення в адресу
+зʼєднання одразу після `UseForwardedHeaders`; `TrustedProxies` — адреси або мережі, чий
+`X-Forwarded-For` приймається. Без `Header` адреса — те, що лишив `X-Forwarded-For`, а він
+приймається від будь-кого, поки список довірених проксі порожній. Запуск відмовляється від
+`Jwt:Key`, коротшого за 32 символи або з шаблонним словом із прикладів (`JwtKeyRules`).
 
 ---
 

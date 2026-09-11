@@ -28,6 +28,25 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
                 FakeAccessContext.With());
         }
 
+        /// <summary>SEC-4.3: a token issued before the suspension must not keep the session alive.</summary>
+        [Theory]
+        [InlineData(OnboardingStatus.Suspended)]
+        [InlineData(OnboardingStatus.Archived)]
+        public async Task Handle_ShouldRefuse_WhenTheAccountIsSuspended(OnboardingStatus status)
+        {
+            var user = CreateUser(kurinKey: Guid.NewGuid());
+            user.OnboardingStatus = status;
+            var session = GivenActiveSession("issued-before-suspension", user);
+            GivenIssuedTokens(user, "access", "rotated");
+
+            var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+            Assert.Equal(ResultType.Unauthorized, result.Type);
+            _refreshTokensMock.Verify(
+                store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
         [Fact]
         public async Task Handle_ShouldRotateTheSession_WhenTheTokenIsActive()
         {

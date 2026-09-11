@@ -17,6 +17,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
 using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.UsersModule.ControllerTests
@@ -327,6 +328,36 @@ namespace ProjectK.API.Tests.UsersModule.ControllerTests
             Assert.True(Assert.IsType<bool>(okResult.Value));
 
             _mediatorMock.Verify(m => m.Send(It.Is<ResetUserMfaCommand>(cmd =>
+                cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SuspendUser_ShouldSendCommandForTargetUser()
+        {
+            var targetUserKey = Guid.NewGuid();
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<SuspendUserCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            var result = await _controller.SuspendUser(targetUserKey);
+
+            Assert.IsType<OkObjectResult>(result);
+            _mediatorMock.Verify(m => m.Send(It.Is<SuspendUserCommand>(cmd =>
+                cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RestoreUser_ShouldSendCommandForTargetUser()
+        {
+            var targetUserKey = Guid.NewGuid();
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<RestoreUserCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+
+            var result = await _controller.RestoreUser(targetUserKey);
+
+            Assert.IsType<OkObjectResult>(result);
+            _mediatorMock.Verify(m => m.Send(It.Is<RestoreUserCommand>(cmd =>
                 cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
         }
 

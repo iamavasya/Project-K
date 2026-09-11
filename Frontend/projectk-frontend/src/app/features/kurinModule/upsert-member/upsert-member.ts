@@ -34,6 +34,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
 import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 
 @Component({
   selector: 'app-upsert-member',
@@ -333,7 +334,7 @@ export class UpsertMemberComponent implements OnInit {
           this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
           this.profileVerificationMessage = error?.status === 400
             ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : 'Не вдалося верифікувати профіль. Спробуй ще раз.';
+            : failureDetail(error, 'Не вдалося верифікувати профіль. Спробуй ще раз.');
         }
       });
   }
@@ -369,7 +370,7 @@ export class UpsertMemberComponent implements OnInit {
           this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
           this.profileVerificationMessage = error?.status === 400
             ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : 'Не вдалося зняти верифікацію. Спробуй ще раз.';
+            : failureDetail(error, 'Не вдалося зняти верифікацію. Спробуй ще раз.');
         }
       });
   }

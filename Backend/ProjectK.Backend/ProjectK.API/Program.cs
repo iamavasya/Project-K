@@ -87,9 +87,22 @@ namespace ProjectK.API
             TryClearConsole();
             PrintTitle(builder.Configuration, builder.Environment);
 
+            // Refused before anything is wired: a template or short signing key is the one
+            // misconfiguration that makes every session forgeable, and a self-host that boots
+            // with the example key would run that way for months without a symptom.
+            if (JwtKeyRules.Refusal(builder.Configuration["Jwt:Key"], builder.Environment.EnvironmentName) is { } keyRefusal)
+            {
+                throw new InvalidOperationException(keyRefusal);
+            }
+
             builder.Services.AddIdentity<AppUser, AppRole>(options =>
             {
-                bool.TryParse(builder.Configuration["DebugMode:SecurePasswordOptions"], out bool securePasswordOption);
+                // Strict unless a local config opts out explicitly. A missing key used to read as
+                // "no digit, no upper case, no symbol" — which is what a fresh self-host got, since
+                // its appsettings never mentioned the key at all.
+                var securePasswordOption =
+                    !bool.TryParse(builder.Configuration["DebugMode:SecurePasswordOptions"], out var configured)
+                    || configured;
 
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = securePasswordOption;
@@ -202,6 +215,16 @@ namespace ProjectK.API
             });
             builder.Services.AddValidatorsFromAssembly(typeof(GetKurinByKey).Assembly);
             builder.Services.AddControllers()
+                .ConfigureApplicationPartManager(manager =>
+                {
+                    // The e2e fixture controller is compiled into the same image as production. Outside
+                    // the E2E environment it is taken out of the application model, so its routes do
+                    // not exist there rather than merely refuse.
+                    if (!builder.Environment.IsEnvironment("E2E"))
+                    {
+                        manager.FeatureProviders.Add(new E2EOnlyControllerFeatureProvider());
+                    }
+                })
                 .AddJsonOptions(opt =>
                 {
                     opt.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
@@ -254,16 +277,30 @@ namespace ProjectK.API
 
             builder.Services.AddProjectDependencies(builder.Configuration);
 
+            // Which address a request is charged to. X-Forwarded-For is believed from the proxies
+            // named in Security:ClientIp:TrustedProxies вЂ” from anyone when the list is empty, which
+            // is what App Service needs and what makes the header forgeable by whoever reaches the
+            // API directly. That is why Security:ClientIp:Header exists: a header only the one proxy
+            // in front can write (Cloudflare's CF-Connecting-IP, nginx's X-Real-IP), applied by
+            // ClientIpMiddleware and read by everything after it. The Azure side of this вЂ” admitting
+            // Cloudflare alone to the App Service вЂ” is SEC-4.1 and lives outside the code.
+            var clientIp = builder.Configuration.GetSection(ClientIpOptions.SectionName).Get<ClientIpOptions>() ?? new ClientIpOptions();
+            builder.Services.Configure<ClientIpOptions>(builder.Configuration.GetSection(ClientIpOptions.SectionName));
             builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
-                options.KnownNetworks.Clear();
+                options.KnownIPNetworks.Clear();
                 options.KnownProxies.Clear();
+                foreach (var rejected in clientIp.ApplyTo(options))
+                {
+                    Log.Warning("Security:ClientIp:TrustedProxies entry {Entry} is neither an address nor a network and was ignored.", rejected);
+                }
             });
 
             var app = builder.Build();
 
             app.UseForwardedHeaders();
+            app.UseMiddleware<ProjectK.API.Middleware.ClientIpMiddleware>();
             app.UseSerilogRequestLogging(options =>
             {
                 options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
@@ -537,7 +574,7 @@ namespace ProjectK.API
             var bypassKey = configuration["RateLimitBypassKey"];
             if (!string.IsNullOrEmpty(bypassKey) &&
                 httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) &&
-                providedKey == bypassKey)
+                SecretComparer.Matches(providedKey.ToString(), bypassKey))
             {
                 return RateLimitPartition.GetNoLimiter("Bypass");
             }

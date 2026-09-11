@@ -30,6 +30,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
 using ProjectK.API.Authorization;
+using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 
 namespace ProjectK.API.Controllers.AuthModule
@@ -53,25 +54,43 @@ namespace ProjectK.API.Controllers.AuthModule
         }
 
         /// <summary>
-        /// Creates a kurin together with its first account, which becomes that kurin's Kurinnyi.
+        /// Creates a kurin together with its first account, which becomes that kurin's Зв'язковий.
         /// </summary>
         /// <remarks>
         /// Admin only, because it is the one call that brings a new kurin into being. Every other registration
-        /// attaches a person to a kurin that already exists.
+        /// attaches a person to a kurin that already exists. The password, the name and the kurin number are
+        /// all required: an account minted with a placeholder password is an account whose password is written
+        /// in this repository.
         /// </remarks>
         [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
         [HttpPost("register/kurin")]
         [ProducesResponseType(typeof(RegisterUserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RegisterKurin([FromBody] RegisterUserRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return this.Failure(ResultType.BadRequest, "PasswordRequired", "A password for the first account is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+            {
+                return this.Failure(ResultType.BadRequest, "NameRequired", "First and last name are required.");
+            }
+
+            if (request.KurinNumber is not > 0)
+            {
+                return this.Failure(ResultType.BadRequest, "KurinNumberRequired", "A positive kurin number is required.");
+            }
+
             var command = new RegisterKurinCommand
             {
                 Email = request.Email,
-                Password = request.Password ?? "tempManagerPass1!",
-                FirstName = request.FirstName ?? "tempManagerFirstName",
-                LastName = request.LastName ?? "tempManagerLastName",
-                PhoneNumber = request.PhoneNumber ?? "tempManagerNumber",
-                KurinNumber = (int)request.KurinNumber!
+                Password = request.Password,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                PhoneNumber = request.PhoneNumber ?? string.Empty,
+                KurinNumber = request.KurinNumber.Value
             };
             var response = await _mediator.Send(command);
             return response.ToActionResult(this);
@@ -193,7 +212,7 @@ namespace ProjectK.API.Controllers.AuthModule
             // bypass key to let a monitor through would also have opened a login as the load-test
             // account. Empty means the endpoint is off, which is how it ships.
             var expectedKey = config["LoadTestLoginKey"];
-            if (string.IsNullOrEmpty(expectedKey) || request.ApiKey != expectedKey)
+            if (string.IsNullOrEmpty(expectedKey) || !SecretComparer.Matches(request.ApiKey, expectedKey))
             {
                 return this.Failure(ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");
             }
@@ -351,8 +370,10 @@ namespace ProjectK.API.Controllers.AuthModule
         /// Completes a sign-in that stopped for the second factor, accepting a code or a recovery code.
         /// </summary>
         /// <remarks>
-        /// Anonymous by necessity: the caller has proved the password but has no token yet. Carries the
-        /// account-security rate limit, since it is the point where codes could be guessed.
+        /// Anonymous by necessity: the caller has proved the password but has no token yet. What they do hold
+        /// is the short-lived <c>mfaToken</c> the password step answered with, and it is required here — a
+        /// code on its own is not a sign-in. Carries the account-security rate limit, since it is the point
+        /// where codes could be guessed.
         /// </remarks>
         [AllowAnonymous]
         [EnableRateLimiting("AccountSecurityLimit")]
@@ -360,7 +381,7 @@ namespace ProjectK.API.Controllers.AuthModule
         [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request)
         {
-            var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe);
+            var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe, request.MfaToken);
             var response = await _mediator.Send(command);
             if (response.Type == ResultType.Success && response.Data.Tokens != null)
             {

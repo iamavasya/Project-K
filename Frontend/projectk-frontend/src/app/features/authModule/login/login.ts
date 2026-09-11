@@ -35,6 +35,8 @@ export class LoginComponent implements OnInit {
   otpValue = '';
   loading = false;
   useRecoveryCode = false;
+  /** What the password step handed back; goes with the code so the server knows the password was proved. */
+  mfaToken: string | null = null;
 
   ngOnInit() {
     this.authService.getSetupStatus().subscribe({
@@ -82,6 +84,7 @@ export class LoginComponent implements OnInit {
           this.showOtpInput = true;
           this.otpValue = '';
           this.useRecoveryCode = false;
+          this.mfaToken = response.mfaToken ?? null;
         } else {
           this.navigateToPanel();
         }
@@ -95,7 +98,7 @@ export class LoginComponent implements OnInit {
 
   verifyOtp(): void {
     this.loading = true;
-    this.authService.verifyMfaLogin(this.email, this.otpValue).subscribe({
+    this.authService.verifyMfaLogin(this.email, this.otpValue, this.mfaToken).subscribe({
       next: () => {
         this.loading = false;
         this.navigateToPanel();
@@ -119,6 +122,7 @@ export class LoginComponent implements OnInit {
     this.showOtpInput = false;
     this.otpValue = '';
     this.useRecoveryCode = false;
+    this.mfaToken = null;
   }
 
   toggleRecoveryCode(): void {

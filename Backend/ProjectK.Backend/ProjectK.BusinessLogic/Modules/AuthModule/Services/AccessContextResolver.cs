@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
@@ -13,15 +14,18 @@ public sealed class AccessContextResolver : IAccessContextResolver
     private readonly UserManager<AppUser> _userManager;
     private readonly IOfficeDirectory _offices;
     private readonly IMembershipDirectory _memberships;
+    private readonly IUnitOfWork _unitOfWork;
 
     public AccessContextResolver(
         UserManager<AppUser> userManager,
         IOfficeDirectory offices,
-        IMembershipDirectory memberships)
+        IMembershipDirectory memberships,
+        IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
         _offices = offices;
         _memberships = memberships;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<AccessContext> ResolveAsync(Guid userKey, CancellationToken cancellationToken = default)
@@ -47,7 +51,17 @@ public sealed class AccessContextResolver : IAccessContextResolver
             roles.Add(SystemRole.Admin);
         }
 
+        // The account's choice is a bare key with no foreign key behind it, so it can outlive the
+        // kurin: a deleted kurin, or one the seeder rebuilt under a new key. Honouring it then means
+        // signing the person in to a kurin that is not there вЂ” a scope with nothing in it and, for
+        // anyone but an admin, no way to step out (STAB-05). A choice that no longer exists is
+        // treated as no choice at all.
         var chosen = user.ResolveScopeKurinKey();
+        if (chosen.HasValue && !await _unitOfWork.Kurins.ExistsAsync(chosen.Value, cancellationToken))
+        {
+            chosen = null;
+        }
+
         var (kurinKey, offices) = chosen.HasValue
             ? (chosen, await _offices.GetForAccountInKurinAsync(user.Id, chosen.Value, cancellationToken))
             : await WhereTheyStandAsync(user.Id, cancellationToken);

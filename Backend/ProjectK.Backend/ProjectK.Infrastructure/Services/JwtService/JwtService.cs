@@ -1,20 +1,20 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjectK.Infrastructure.Services.JwtService
 {
     public class JwtService : IJwtService
     {
+        private const string MfaChallengePurposeClaim = "purpose";
+        private const string MfaChallengePurpose = "mfa-challenge";
+        private static readonly TimeSpan MfaChallengeLifetime = TimeSpan.FromMinutes(5);
+
         private readonly IConfiguration _config;
         private readonly TimeProvider _timeProvider;
 
@@ -43,8 +43,7 @@ namespace ProjectK.Infrastructure.Services.JwtService
                 claims.Add(new Claim("kurinKey", kurinKey));
             }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var creds = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -74,5 +73,70 @@ namespace ProjectK.Infrastructure.Services.JwtService
             };
         }
 
+        /// <inheritdoc />
+        public string GenerateMfaChallengeToken(Guid userId)
+        {
+            var claims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
+                new(MfaChallengePurposeClaim, MfaChallengePurpose)
+            };
+
+            // Its own audience, so the bearer middleware never accepts a challenge as an access
+            // token — the two are signed with the same key and would otherwise look alike.
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: MfaChallengeAudience,
+                claims: claims,
+                expires: _timeProvider.GetUtcNow().UtcDateTime.Add(MfaChallengeLifetime),
+                signingCredentials: new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256));
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        /// <inheritdoc />
+        public Guid? ReadMfaChallenge(string token)
+        {
+            // Claims are read as written: the default handler renames "sub" to NameIdentifier on the
+            // way in, which is a surprise nobody needs here.
+            var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
+
+            try
+            {
+                var principal = handler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = _config["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = MfaChallengeAudience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = SigningKey,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                }, out _);
+
+                if (principal.FindFirst(MfaChallengePurposeClaim)?.Value != MfaChallengePurpose)
+                {
+                    return null;
+                }
+
+                return Guid.TryParse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId)
+                    ? userId
+                    : null;
+            }
+            catch (SecurityTokenException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        private SymmetricSecurityKey SigningKey => new(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+
+        private string MfaChallengeAudience => $"{_config["Jwt:Audience"]}:{MfaChallengePurpose}";
     }
 }

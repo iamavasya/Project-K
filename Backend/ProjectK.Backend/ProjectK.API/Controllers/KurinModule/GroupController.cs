@@ -30,14 +30,6 @@ namespace ProjectK.API.Controllers.KurinModule
     [ApiController]
     public class GroupController : ControllerBase
     {
-        private const long MaxSilhouetteFileSizeBytes = 5 * 1024 * 1024;
-        private static readonly ISet<string> AllowedSilhouetteContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "image/png",
-            "image/jpeg",
-            "image/webp"
-        };
-
         private readonly IMediator _mediator;
 
         public GroupController(IMediator mediator)
@@ -129,7 +121,7 @@ namespace ProjectK.API.Controllers.KurinModule
         [Authorize(Policy = AuthorizationPolicies.RequireUser)]
         [HttpPost("{groupKey:guid}/silhouette")]
         [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
-        [RequestSizeLimit(MaxSilhouetteFileSizeBytes)]
+        [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -142,14 +134,9 @@ namespace ProjectK.API.Controllers.KurinModule
                 return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
             }
 
-            if (file.Length > MaxSilhouetteFileSizeBytes)
+            if (ImageUploadRules.Refusal(file) is { } refusal)
             {
-                return this.Failure(ResultType.BadRequest, "ImageTooLarge", "Image file must be 5 MB or smaller.");
-            }
-
-            if (!AllowedSilhouetteContentTypes.Contains(file.ContentType))
-            {
-                return this.Failure(ResultType.BadRequest, "UnsupportedImageType", "Allowed image types are PNG, JPEG and WebP.");
+                return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
             }
 
             var bytes = await file.ToByteArrayAsync(cancellationToken);

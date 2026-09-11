@@ -54,6 +54,7 @@ import { MembershipService } from '../common/services/membership-service/members
 import { GroupDto } from '../common/models/groupDto';
 import { ProfileVerificationBadgeComponent } from '../common/components/profile-verification-badge/profile-verification-badge';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 import { TileBoardComponent } from '../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../shared/tile-board/tile-def.directive';
 
@@ -289,12 +290,12 @@ export class MemberCardComponent implements OnInit {
           this.isMoveToGroupDialogVisible = false;
           this.refreshData();
         },
-        error: () => {
+        error: (error: unknown) => {
           this.isMovingToGroup = false;
           this.messageService.add({
             severity: 'error',
             summary: 'Не вдалося перевести',
-            detail: 'Спробуй ще раз.'
+            detail: failureDetail(error)
           });
         }
       });
@@ -323,10 +324,10 @@ export class MemberCardComponent implements OnInit {
 
     this.membershipService.leave(membership.kurinKey, this.memberKey).subscribe({
       next: () => this.refreshData(),
-      error: () => this.messageService.add({
+      error: (error: unknown) => this.messageService.add({
         severity: 'error',
         summary: 'Не вдалося вивести',
-        detail: 'Спробуй ще раз.'
+        detail: failureDetail(error)
       })
     });
   }
@@ -635,7 +636,7 @@ export class MemberCardComponent implements OnInit {
           console.error('Error submitting badge:', error);
           this.isSubmittingSkill = false;
           this.submittingBadgeId = null;
-          this.addSkillErrorMessage = 'Не вдалося подати вмілість. Спробуй ще раз.';
+          this.addSkillErrorMessage = failureDetail(error, 'Не вдалося подати вмілість. Спробуй ще раз.');
         }
       });
   }
@@ -723,12 +724,12 @@ export class MemberCardComponent implements OnInit {
 
           if (error?.status === 403) {
             this.inlineModerationSeverity = 'error';
-            this.inlineModerationMessage = 'Немає доступу для цієї дії модерації.';
+            this.inlineModerationMessage = failureDetail(error, 'Немає доступу для цієї дії модерації.');
             return;
           }
 
           this.inlineModerationSeverity = 'error';
-          this.inlineModerationMessage = 'Не вдалося виконати дію. Спробуй ще раз.';
+          this.inlineModerationMessage = failureDetail(error, 'Не вдалося виконати дію. Спробуй ще раз.');
         }
       });
   }

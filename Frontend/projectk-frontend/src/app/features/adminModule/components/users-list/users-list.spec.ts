@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { UserService } from '../../services/user.service';
 import { UserDto } from '../../models/userDto';
 import { of, throwError } from 'rxjs';
+import { Confirmation, ConfirmationService } from '@openng/optimus-ui/api';
 
 describe('UsersListComponent', () => {
   let component: UsersListComponent;
@@ -38,9 +39,11 @@ describe('UsersListComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockUserService = jasmine.createSpyObj('UserService', ['getAllUsers', 'changeUserRole']);
+    mockUserService = jasmine.createSpyObj('UserService', ['getAllUsers', 'changeUserRole', 'suspendUser', 'restoreUser']);
     mockUserService.getAllUsers.and.returnValue(of(JSON.parse(JSON.stringify(mockUsers))));
     mockUserService.changeUserRole.and.returnValue(of(true));
+    mockUserService.suspendUser.and.returnValue(of(true));
+    mockUserService.restoreUser.and.returnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [UsersListComponent],
@@ -57,6 +60,60 @@ describe('UsersListComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  // SEC-4.3: suspension is the reversible alternative to deletion.
+  describe('suspendUser / restoreUser', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    // ConfirmationService is provided by the component itself, so it lives in the element injector.
+    const confirmationService = () => fixture.debugElement.injector.get(ConfirmationService);
+
+    it('marks the row suspended once the API confirms, after the admin confirmed the dialog', () => {
+      const confirmation = confirmationService();
+      spyOn(confirmation, 'confirm').and.callFake((options: Confirmation) => {
+        options.accept?.();
+        return confirmation;
+      });
+      const user = component.users[0];
+
+      component.suspendUser(user);
+
+      expect(mockUserService.suspendUser).toHaveBeenCalledWith('user-1');
+      expect(user.isSuspended).toBeTrue();
+    });
+
+    it('does nothing until the dialog is confirmed', () => {
+      const confirmation = confirmationService();
+      spyOn(confirmation, 'confirm').and.returnValue(confirmation);
+
+      component.suspendUser(component.users[0]);
+
+      expect(mockUserService.suspendUser).not.toHaveBeenCalled();
+      expect(component.users[0].isSuspended).toBeFalsy();
+    });
+
+    it('clears the mark once the account is restored', () => {
+      const user = component.users[1];
+      user.isSuspended = true;
+
+      component.restoreUser(user);
+
+      expect(mockUserService.restoreUser).toHaveBeenCalledWith('user-2');
+      expect(user.isSuspended).toBeFalse();
+    });
+
+    it('leaves the mark in place when restoring failed', () => {
+      mockUserService.restoreUser.and.returnValue(throwError(() => new Error('down')));
+      const user = component.users[1];
+      user.isSuspended = true;
+
+      component.restoreUser(user);
+
+      expect(user.isSuspended).toBeTrue();
+    });
   });
 
   describe('Component initialization', () => {

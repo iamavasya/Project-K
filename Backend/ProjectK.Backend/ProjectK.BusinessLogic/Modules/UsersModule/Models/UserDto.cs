@@ -16,5 +16,8 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Models
         public string Email { get; set; }
         public string Role { get; set; }
         public bool TwoFactorEnabled { get; set; }
+
+        /// <summary>Refused at sign-in by an administrator; every session was ended when it was applied.</summary>
+        public bool IsSuspended { get; set; }
     }
 }

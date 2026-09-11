@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
@@ -23,6 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
         private readonly Mock<IMemberRepository> _memberRepositoryMock;
         private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
         private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
+        private readonly Mock<IAppUserRepository> _usersMock = new();
         private readonly Mock<IBackendCache> _cacheMock;
 
         public DeleteKurinHandlerTests()
@@ -36,6 +38,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
             _unitOfWorkMock.Setup(uow => uow.Leaderships).Returns(_leadershipRepositoryMock.Object);
+            _unitOfWorkMock.Setup(uow => uow.Users).Returns(_usersMock.Object);
             _leadershipRepositoryMock
                 .Setup(r => r.DeleteForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
@@ -71,6 +74,34 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers
             result.Data.Should().BeNull();
             _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        }
+
+        /// <summary>
+        /// STAB-05: an account's chosen kurin is a bare key, so the handler has to forget it on every
+        /// account that names this kurin вЂ” otherwise they sign in to a kurin that no longer exists.
+        /// </summary>
+        [Fact]
+        public async Task Handle_WhenKurinExists_ShouldDetachEveryAccountThatStoodInIt_BeforeSaving()
+        {
+            var kurinKey = Guid.NewGuid();
+            var kurin = new Kurin(1) { KurinKey = kurinKey };
+            _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+            var order = new List<string>();
+            _usersMock
+                .Setup(u => u.DetachFromKurinAsync(kurinKey, It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("detach"))
+                .Returns(Task.CompletedTask);
+            _unitOfWorkMock
+                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("save"))
+                .ReturnsAsync(1);
+
+            await _handler.Handle(new DeleteKurin(kurinKey), default);
+
+            _usersMock.Verify(u => u.DetachFromKurinAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+            order.Should().Equal("detach", "save");
         }
 
         [Fact]

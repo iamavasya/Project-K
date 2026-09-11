@@ -14,6 +14,7 @@ import { NotificationBellComponent } from '../../../../notificationsModule/compo
 import { ThemeService } from '../../../../systemModule/services/theme.service';
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb';
 import { KurinSwitcherComponent } from '../kurin-switcher/kurin-switcher';
+import { failureDetail } from '../../../../../shared/functions/failureDetail.function';
 
 @Component({
   selector: 'app-toolbar-header',
@@ -45,10 +46,10 @@ export class ToolbarHeaderComponent {
       next: () => this.router.navigate(['/panel']),
       // Staying put is the honest outcome: only the server can widen the token's scope
       // back, so clearing it locally would leave the claim pointing at the old kurin.
-      error: () => this.messageService.add({
+      error: (error: unknown) => this.messageService.add({
         severity: 'error',
         summary: 'Не вдалося вийти з куреня',
-        detail: 'Спробуй ще раз.'
+        detail: failureDetail(error)
       })
     });
   }

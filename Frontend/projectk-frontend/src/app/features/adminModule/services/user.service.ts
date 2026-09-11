@@ -32,6 +32,22 @@ export class UserService {
         );
     }
 
+    suspendUser(userId: string) {
+        return this.http.post<boolean>(
+            `${this.apiUrl}/user/${userId}/suspend`,
+            null,
+            { withCredentials: true }
+        );
+    }
+
+    restoreUser(userId: string) {
+        return this.http.post<boolean>(
+            `${this.apiUrl}/user/${userId}/restore`,
+            null,
+            { withCredentials: true }
+        );
+    }
+
     deleteUser(userId: string) {
         return this.http.delete<boolean>(
             `${this.apiUrl}/user/${userId}`,

@@ -51,6 +51,9 @@ namespace ProjectK.API.Tests.Controllers
             var request = new RegisterUserRequest
             {
                 Email = "test@example.com",
+                Password = "Chosen-by-the-admin-1!",
+                FirstName = "Kurin",
+                LastName = "Founder",
                 KurinNumber = 1
             };
 
@@ -64,6 +67,25 @@ namespace ProjectK.API.Tests.Controllers
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(serviceResult.Data, okResult.Value);
+        }
+
+        [Fact]
+        public async Task RegisterKurin_ShouldRefuse_WhenNoPasswordIsGiven()
+        {
+            // The endpoint used to fill in "tempManagerPass1!" — a password anyone could read off the
+            // repository — for every request that left it out.
+            var request = new RegisterUserRequest
+            {
+                Email = "test@example.com",
+                FirstName = "Kurin",
+                LastName = "Founder",
+                KurinNumber = 1
+            };
+
+            var result = await _controller.RegisterKurin(request);
+
+            ApiErrorAssert.HasError(result, 400, "PasswordRequired");
+            _mediatorMock.Verify(m => m.Send(It.IsAny<RegisterKurinCommand>(), default), Times.Never);
         }
 
         [Fact]

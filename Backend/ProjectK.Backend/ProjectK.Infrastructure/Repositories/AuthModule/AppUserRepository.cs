@@ -56,4 +56,24 @@ public sealed class AppUserRepository : IAppUserRepository
 
         return query.CountAsync(cancellationToken);
     }
+
+    public async Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        var scoped = await _context.Users
+            .Where(user => user.ActiveKurinKey == kurinKey || user.KurinKey == kurinKey)
+            .ToListAsync(cancellationToken);
+
+        foreach (var user in scoped)
+        {
+            if (user.ActiveKurinKey == kurinKey)
+            {
+                user.ActiveKurinKey = null;
+            }
+
+            if (user.KurinKey == kurinKey)
+            {
+                user.KurinKey = null;
+            }
+        }
+    }
 }

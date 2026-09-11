@@ -23,6 +23,7 @@ import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 import { PlastLevel } from '../common/models/enums/plast-level.enum';
 import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../common/models/enums/plast-ladder';
 import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 
 /** Рядок таблиці чисельності: скільки юнаків стоїть на цьому ступені. */
 export interface TallyRow {
@@ -239,12 +240,12 @@ export class RegistryComponent implements OnInit {
           detail: `${this.formerName(person)} знову в курені.`
         });
       },
-      error: () => {
+      error: (error: unknown) => {
         this.returning.set(null);
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося повернути',
-          detail: 'Спробуй ще раз.'
+          detail: failureDetail(error)
         });
       }
     });

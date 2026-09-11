@@ -35,7 +35,7 @@ describe('AdminPanelComponent', () => {
     const kurinServiceSpy = jasmine.createSpyObj('KurinService',
       ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
     const authServiceSpy = jasmine.createSpyObj('AuthService',
-      ['registerFirstManager', 'setKurinKey', 'setKurinScope']);
+      ['setKurinKey', 'setKurinScope']);
 
     await TestBed.configureTestingModule({
       imports: [AdminPanelComponent],
@@ -119,15 +119,17 @@ describe('AdminPanelComponent', () => {
   describe('onManageAction', () => {
     beforeEach(() => {
       component.ngOnInit(); // baseline fetch
-      authService.registerFirstManager.and.returnValue(of(void 0));
+      kurinService.createKurin.and.returnValue(of({ kurinKey: '3', number: 103 }));
       kurinService.updateKurin.and.returnValue(of({ kurinKey: '1', number: 201 }));
       kurinService.deleteKurin.and.returnValue(of(void 0));
     });
 
     it('handles create', () => {
-      const newEntity: KurinDto = { kurinKey: '3', number: 103, managerEmail: 'test@example.com' };
+      // Creating a kurin creates the kurin — it used to register a manager against a route the
+      // API never had, so the admin's "create" did nothing at all.
+      const newEntity: KurinDto = { kurinKey: '3', number: 103 };
       component.onManageAction({ action: 'create', entity: newEntity, entityType: 'kurin' });
-      expect(authService.registerFirstManager).toHaveBeenCalledWith(newEntity);
+      expect(kurinService.createKurin).toHaveBeenCalledWith(newEntity);
       expect(kurinService.getKurins).toHaveBeenCalledTimes(2); // initial + refresh
     });
 

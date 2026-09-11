@@ -2,9 +2,13 @@ services:
   projectk-web:
     image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.2-beta}
     environment:
-      PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
+      # Relative on purpose: nginx inside this container proxies /api to the API, so the browser
+      # never needs a second host or port and the API is not reachable from outside at all.
+      PROJECTK_API_URL: ${PROJECTK_API_URL:-/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Self-Host}
       PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-Лілейка}
+    # The only port the bundle publishes. Put a TLS-terminating reverse proxy in front of it
+    # before exposing the host to the internet (README, "Before exposing to the internet").
     ports:
       - "${PROJECTK_WEB_PORT:-8080}:80"
     depends_on:
@@ -25,17 +29,22 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: ${PROJECTK_DB_CONNECTION_STRING}
       ConnectionStrings__BlobStorage: ${PROJECTK_BLOB_CONNECTION_STRING}
-      BlobStorage__PublicBaseUrl: ${PROJECTK_BLOB_PUBLIC_BASE_URL:-http://localhost:10000/devstoreaccount1/photos}
+      # Photos are read by the browser straight from the blob store, through nginx's /blob prefix
+      # (Azurite itself is not published). Has to be the address people open the app by.
+      BlobStorage__PublicBaseUrl: ${PROJECTK_BLOB_PUBLIC_BASE_URL:-http://localhost:8080/blob/devstoreaccount1/photos}
       BlobStorage__ContainerName: ${PROJECTK_BLOB_CONTAINER:-photos}
       EnvCorsOrigin: ${PROJECTK_CORS_ORIGIN:-http://localhost:8080}
       Email__BaseUrl: ${PROJECTK_PUBLIC_URL:-http://localhost:8080}
+      # Refused at startup when it is the example value or shorter than 32 characters.
       Jwt__Key: ${PROJECTK_JWT_KEY}
       Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}
       Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
+      # nginx is the only thing that reaches this container, and it writes X-Real-IP from the
+      # actual connection; that is the address sign-in attempts are rate-limited by.
+      Security__ClientIp__Header: X-Real-IP
       Telegram__DevAlerts__Enabled: "false"
       Telegram__PublicChannel__Enabled: "false"
-    ports:
-      - "${PROJECTK_API_PORT:-5205}:8080"
+    # Not published: reached only through projectk-web's nginx on the compose network.
     depends_on:
       projectk-sql:
         condition: service_healthy
@@ -53,8 +62,8 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_PID: ${PROJECTK_SQL_EDITION:-Developer}
       MSSQL_SA_PASSWORD: ${PROJECTK_SQL_PASSWORD}
-    ports:
-      - "${PROJECTK_SQL_PORT:-1433}:1433"
+    # Not published. To reach the database from the host for a backup or a query, add a
+    # docker-compose.override.yml with a ports entry for this service and bind it to 127.0.0.1.
     volumes:
       - projectk-sql-data:/var/opt/mssql
     healthcheck:
@@ -66,10 +75,7 @@ services:
   projectk-azurite:
     image: mcr.microsoft.com/azure-storage/azurite:3.35.0
     command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent --skipApiVersionCheck
-    ports:
-      - "${PROJECTK_AZURITE_BLOB_PORT:-10000}:10000"
-      - "${PROJECTK_AZURITE_QUEUE_PORT:-10001}:10001"
-      - "${PROJECTK_AZURITE_TABLE_PORT:-10002}:10002"
+    # Not published: photos are served through projectk-web's /blob prefix.
     volumes:
       - projectk-azurite-data:/data
     healthcheck:

@@ -67,6 +67,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete
             // foreign key, so they go with it. Nothing about the people goes with them.
             await _unitOfWork.Memberships.RemoveForKurinAsync(request.KurinKey, cancellationToken);
 
+            // Accounts remember which kurin they stood in, and nothing in the schema forgets it for
+            // them. Left alone, everyone who had stepped into this kurin would keep signing in to a
+            // key that no longer exists вЂ” shown a kurin, offered no way out of it (STAB-05).
+            await _unitOfWork.Users.DetachFromKurinAsync(request.KurinKey, cancellationToken);
+
             _unitOfWork.Kurins.Delete(existing, cancellationToken);
 
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

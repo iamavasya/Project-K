@@ -111,6 +111,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa), "RequireUser");
         yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<UserController, Guid>>(nameof(UserController.DeleteUser), "RequireAdmin");
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.SuspendUser), "RequireAdmin");
+        yield return Row<Action<UserController, Guid>>(nameof(UserController.RestoreUser), "RequireAdmin");
         yield return Row<Action<UserController, Guid, UserRole>>(nameof(UserController.ChangeUserRole), AuthorizationPolicies.RequireKurinManagement);
 
         yield return Row<Action<MemberController, Guid, string?>>(nameof(MemberController.GetDossier), "RequireUser");

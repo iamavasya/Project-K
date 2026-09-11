@@ -13,4 +13,6 @@ export interface UserDto {
     kurinNumber: number | null;
     firstName: string;
     lastName: string;
+    /** Refused at sign-in by an administrator; reversible, unlike deletion. */
+    isSuspended?: boolean;
 }

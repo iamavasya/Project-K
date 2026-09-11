@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
@@ -51,7 +52,9 @@ namespace ProjectK.Infrastructure.Services.EmailService
 
         public async Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
         {
-            var resetUrl = $"{_settings.BaseUrl}/reset-password?token={token}&email={to}";
+            // Both encoded: a reset token carries '+' and '/', and an address may too, and either
+            // one read back from the query string as a space breaks the link for exactly that person.
+            var resetUrl = $"{_settings.BaseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(to)}";
             var subject = "ProjectK - Password Reset Request";
             var body = $@"
                 <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto;'>

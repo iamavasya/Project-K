@@ -36,4 +36,13 @@ public interface IAppUserRepository
     Task<int> CountActiveBetaAsync(
         IReadOnlyCollection<Guid>? userKeys,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Forgets the kurin on every account that names it, whether as the one stepped into
+    /// (<c>ActiveKurinKey</c>) or as the one written at sign-up (<c>KurinKey</c>). Neither column is a
+    /// foreign key, so deleting a kurin used to leave these accounts scoped to a key that no longer
+    /// existed: signed in, shown a kurin, and with nowhere to step out to. The change is tracked and
+    /// lands with the caller's <c>SaveChangesAsync</c>.
+    /// </summary>
+    Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

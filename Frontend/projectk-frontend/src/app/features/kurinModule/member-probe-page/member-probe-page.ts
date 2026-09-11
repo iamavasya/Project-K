@@ -22,6 +22,7 @@ import { buildMemberProbeDetailPointRows } from '../common/functions/memberProbe
 import { ProbeProgressStatus } from '../common/models/enums/probe-progress-status.enum';
 import { normalizeProbeProgressStatus } from '../common/functions/memberProbeRowsViewMapper.function';
 import { formatUtcDateTime } from '../../../shared/functions/utcDateTime.function';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -304,7 +305,7 @@ export class MemberProbePageComponent implements OnInit {
             this.reviewerActionErrorMessage = 'Пробу не вдалося закрити: не всі точки підписані або стан уже змінено.';
             this.loadData();
           } else {
-            this.reviewerActionErrorMessage = 'Не вдалося закрити пробу. Спробуй ще раз.';
+            this.reviewerActionErrorMessage = failureDetail(error, 'Не вдалося закрити пробу. Спробуй ще раз.');
           }
         }
       });
@@ -424,7 +425,7 @@ export class MemberProbePageComponent implements OnInit {
             this.reviewerActionErrorMessage = 'Конфлікт оновлення. Дані синхронізовано, перевір поточний стан точки.';
             this.loadData();
           } else {
-            this.reviewerActionErrorMessage = 'Не вдалося оновити підпис точки. Спробуй ще раз.';
+            this.reviewerActionErrorMessage = failureDetail(error, 'Не вдалося оновити підпис точки. Спробуй ще раз.');
           }
         }
       });

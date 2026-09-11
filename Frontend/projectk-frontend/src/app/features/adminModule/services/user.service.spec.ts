@@ -36,6 +36,25 @@ describe('UserService', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('suspendUser / restoreUser', () => {
+    it('posts the suspension to the account', () => {
+      service.suspendUser('user-1').subscribe(result => expect(result).toBeTrue());
+
+      const req = httpMock.expectOne(`${apiUrl}/user/user-1/suspend`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(true);
+    });
+
+    it('posts the restoration to the account', () => {
+      service.restoreUser('user-1').subscribe(result => expect(result).toBeTrue());
+
+      const req = httpMock.expectOne(`${apiUrl}/user/user-1/restore`);
+      expect(req.request.method).toBe('POST');
+      req.flush(true);
+    });
+  });
+
   describe('getAllUsers', () => {
     const mockUsers: UserDto[] = [
       {

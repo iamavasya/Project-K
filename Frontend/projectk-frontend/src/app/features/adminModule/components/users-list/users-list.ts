@@ -12,12 +12,14 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { TagModule } from '@openng/optimus-ui/tag';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { SystemUserRole } from '../../models/userDto';
+import { failureDetail } from '../../../../shared/functions/failureDetail.function';
 
 @Component({
   selector: 'app-users-list',
-  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, EmptyStateComponent],
+  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, TagModule, EmptyStateComponent],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -84,6 +86,48 @@ export class UsersListComponent implements OnInit {
           }
         });
       }
+    });
+  }
+
+  // Suspension is the reversible alternative to deletion: the person, their memberships and
+  // everything they earned stay; only the sign-in is refused, and every open session is ended.
+  suspendUser(user: UserDto) {
+    this.confirmationService.confirm({
+      message: `${user.firstName} ${user.lastName} не зможе увійти, а всі відкриті сесії буде завершено. `
+        + 'Людина, її членства і все зароблене лишаються. Поновити можна будь-коли.',
+      header: 'Призупинити акаунт',
+      icon: 'pi pi-pause',
+      acceptLabel: 'Призупинити',
+      rejectLabel: 'Скасувати',
+      acceptButtonProps: { label: 'Призупинити', severity: 'warn' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      accept: () => {
+        this.userService.suspendUser(user.userId).subscribe({
+          next: () => {
+            user.isSuspended = true;
+            this.messageService.add({ severity: 'success', summary: 'Призупинено', detail: `${user.firstName} ${user.lastName} більше не може увійти.` });
+          },
+          error: (error: unknown) => this.messageService.add({
+            severity: 'error',
+            summary: 'Не вдалося призупинити',
+            detail: failureDetail(error, (error as { error?: { message?: string } })?.error?.message ?? 'Спробуй ще раз.')
+          })
+        });
+      }
+    });
+  }
+
+  restoreUser(user: UserDto) {
+    this.userService.restoreUser(user.userId).subscribe({
+      next: () => {
+        user.isSuspended = false;
+        this.messageService.add({ severity: 'success', summary: 'Поновлено', detail: `${user.firstName} ${user.lastName} знову може увійти.` });
+      },
+      error: (error: unknown) => this.messageService.add({
+        severity: 'error',
+        summary: 'Не вдалося поновити',
+        detail: failureDetail(error)
+      })
     });
   }
 

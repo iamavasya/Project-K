@@ -5,5 +5,10 @@ namespace ProjectK.Common.Models.Dtos.AuthModule
     public record MfaEnableResponseDto(bool Enabled, IEnumerable<string> RecoveryCodes);
     public record MfaRecoveryCodesRequestDto(string CurrentPassword);
     public record MfaRecoveryCodesResponseDto(IEnumerable<string> RecoveryCodes);
-    public record MfaLoginRequestDto(string Email, string Code, bool RememberMe);
+
+    /// <summary>
+    /// The second step of a sign-in. <paramref name="MfaToken"/> is what the password step answered
+    /// with; without it a code alone is refused.
+    /// </summary>
+    public record MfaLoginRequestDto(string Email, string Code, bool RememberMe, string? MfaToken = null);
 }

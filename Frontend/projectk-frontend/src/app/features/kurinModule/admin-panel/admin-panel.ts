@@ -10,6 +10,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../authModule/services/authService/auth.service';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
+import { failureDetail } from '../../../shared/functions/failureDetail.function';
 
 @Component({
   selector: 'app-admin-panel',
@@ -51,19 +52,10 @@ export class AdminPanelComponent implements OnInit {
         placeholder: 'Наприклад: 101',
         required: true,
         hiddenOn: ['delete'],
-      },
-      {
-        name: 'managerEmail',
-        label: 'Email звʼязкового',
-        type: 'text',
-        placeholder: 'manager@example.com',
-        required: true,
-        hiddenOn: ['delete'],
-        disabledOn: ['update']
       }
     ],
     displayName: (entity: KurinDto) => `${entity.number} курінь`,
-    createFactory: () => ({ kurinKey: '', number: null, managerEmail: '' }),
+    createFactory: () => ({ kurinKey: '', number: null }),
   }
 
   prepareItemActions(item: KurinDto): void {
@@ -94,7 +86,10 @@ export class AdminPanelComponent implements OnInit {
   onManageAction(e: { action: ManageAction; entity: KurinDto; entityType: string }): void {
     switch (e.action) {
       case 'create':
-        this.authService.registerFirstManager(e.entity).subscribe(() => { this.refreshData(); });
+        // The kurin alone. Its Звʼязковий arrives through the waitlist as a kurin-leader candidate,
+        // or is seated by an admin once the person has an account — the old "email of the
+        // Звʼязковий" field posted to a route the API never had.
+        this.kurinService.createKurin(e.entity).subscribe(() => { this.refreshData(); });
         break;
       case 'update':
         this.kurinService.updateKurin(e.entity).subscribe(() => this.refreshData());
@@ -114,10 +109,10 @@ export class AdminPanelComponent implements OnInit {
   onOpenClick(kurinKey: string): void {
     this.authService.setKurinScope(kurinKey).subscribe({
       next: () => this.router.navigate(['/kurin']),
-      error: () => this.messageService.add({
+      error: (error: unknown) => this.messageService.add({
         severity: 'error',
         summary: 'Не вдалося відкрити курінь',
-        detail: 'Спробуй ще раз.'
+        detail: failureDetail(error)
       })
     });
   }

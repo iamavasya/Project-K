@@ -10,8 +10,10 @@ using ProjectK.Infrastructure.Seeding;
 namespace ProjectK.API.Controllers.TestModule;
 
 /// <summary>
-/// Fixtures for the end-to-end suite. Registered only when the E2E environment switch is on; the
-/// controller does not exist in a normal deployment.
+/// Fixtures for the end-to-end suite. Outside the E2E environment the controller is taken out of the
+/// application model by <see cref="E2EOnlyControllerFeatureProvider"/>, so its routes do not exist
+/// in a normal deployment; the environment check inside each action is the second line, for a host
+/// that was built without that provider.
 /// </summary>
 [ApiController]
 [AllowAnonymous]
@@ -139,7 +141,8 @@ public sealed class E2ETestController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "E2E reset is not configured." });
         }
 
-        if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken) || providedToken != expectedToken)
+        if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken)
+            || !SecretComparer.Matches(providedToken.ToString(), expectedToken))
         {
             return this.Failure(ResultType.Unauthorized, "InvalidResetToken", "Invalid E2E reset token.");
         }

@@ -37,8 +37,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refres
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }
 
+            // Suspension ends every session when it is applied; this is the backstop for a token
+            // issued in the gap, so a suspended account cannot keep a session alive by refreshing.
             var user = await _userManager.FindByIdAsync(session.UserId.ToString());
-            if (user is null)
+            if (user is null || !user.CanSignIn())
             {
                 return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
             }

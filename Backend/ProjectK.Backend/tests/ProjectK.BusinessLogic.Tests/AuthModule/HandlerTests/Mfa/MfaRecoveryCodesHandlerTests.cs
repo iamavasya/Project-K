@@ -45,19 +45,83 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa
             loginResponseFactoryMock.Setup(x => x.CreateAsync(user, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(response);
 
-            var handler = new VerifyMfaLoginCommandHandler(
-                _userManagerMock.Object,
-                loginResponseFactoryMock.Object,
-                new Mock<ILogger<VerifyMfaLoginCommandHandler>>().Object,
-                new Mock<IActivityLogger>().Object);
+            var handler = CreateVerifyHandler(loginResponseFactoryMock.Object, challengeFor: user.Id);
 
             // Act
-            var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "recovery-code", true), CancellationToken.None);
+            var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "recovery-code", true, "challenge"), CancellationToken.None);
 
             // Assert
             Assert.Equal(ResultType.Success, result.Type);
             Assert.Same(response, result.Data);
             _userManagerMock.Verify(x => x.RedeemTwoFactorRecoveryCodeAsync(user, "recovery-code"), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("challenge-for-somebody-else")]
+        public async Task VerifyMfaLogin_ShouldRefuse_WithoutTheChallengeThePasswordStepIssued(string? mfaToken)
+        {
+            // A valid code on its own is not a sign-in: the second factor is only ever the second one.
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@example.com",
+                FirstName = "John",
+                LastName = "Doe"
+            };
+            var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+            var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
+
+            _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.VerifyTwoFactorTokenAsync(user, provider, "123456")).ReturnsAsync(true);
+
+            var handler = CreateVerifyHandler(loginResponseFactoryMock.Object, challengeFor: Guid.NewGuid());
+
+            var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "123456", true, mfaToken), CancellationToken.None);
+
+            Assert.Equal(ResultType.Unauthorized, result.Type);
+            Assert.Equal("InvalidCredentials", result.ErrorCode);
+            loginResponseFactoryMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        /// <summary>SEC-4.3: suspended between the password step and this one is still suspended.</summary>
+        [Fact]
+        public async Task VerifyMfaLogin_ShouldRefuse_WhenTheAccountIsSuspended()
+        {
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@example.com",
+                FirstName = "John",
+                LastName = "Doe",
+                OnboardingStatus = OnboardingStatus.Suspended
+            };
+            var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+            var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
+            _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.VerifyTwoFactorTokenAsync(user, provider, "123456")).ReturnsAsync(true);
+            var handler = CreateVerifyHandler(loginResponseFactoryMock.Object, challengeFor: user.Id);
+
+            var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "123456", true, "challenge"), CancellationToken.None);
+
+            Assert.Equal(ResultType.Unauthorized, result.Type);
+            Assert.Equal("InvalidCredentials", result.ErrorCode);
+            loginResponseFactoryMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        private VerifyMfaLoginCommandHandler CreateVerifyHandler(ILoginResponseFactory loginResponseFactory, Guid challengeFor)
+        {
+            var jwtServiceMock = new Mock<IJwtService>();
+            jwtServiceMock.Setup(x => x.ReadMfaChallenge("challenge")).Returns(challengeFor);
+            jwtServiceMock.Setup(x => x.ReadMfaChallenge("challenge-for-somebody-else")).Returns(Guid.NewGuid());
+
+            return new VerifyMfaLoginCommandHandler(
+                _userManagerMock.Object,
+                loginResponseFactory,
+                new Mock<ILogger<VerifyMfaLoginCommandHandler>>().Object,
+                new Mock<IActivityLogger>().Object,
+                jwtServiceMock.Object);
         }
 
         [Fact]
