@@ -238,7 +238,7 @@ export class AccountSettingsComponent implements OnInit {
       },
       error: () => {
         this.resettingMfa = false;
-        this.showError('Unable to disable MFA. Check your current password.');
+        this.showError('Не вдалося вимкнути MFA. Перевірте поточний пароль.');
       }
     });
   }
@@ -265,7 +265,7 @@ export class AccountSettingsComponent implements OnInit {
         this.recoveryCodes = response.recoveryCodes ?? [];
         this.recoveryCodesPassword = '';
         this.rotatingRecoveryCodes = false;
-        this.messageService.add({ severity: 'success', summary: 'MFA', detail: 'Recovery codes rotated.' });
+        this.messageService.add({ severity: 'success', summary: 'MFA', detail: 'Резервні коди оновлено.' });
       },
       error: () => {
         this.rotatingRecoveryCodes = false;

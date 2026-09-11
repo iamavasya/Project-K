@@ -22,13 +22,13 @@ public class MockEmailService : IEmailService
 
     public Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
     {
-        var body = $"Your invitation token is: {token}";
-        return SendEmailAsync(to, "ProjectK Invitation", body, cancellationToken);
+        var body = $"Ваш токен запрошення: {token}";
+        return SendEmailAsync(to, "Лілейка · запрошення до системи", body, cancellationToken);
     }
 
     public Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
     {
-        var body = $"Your password reset token is: {token}";
-        return SendEmailAsync(to, "ProjectK Password Reset", body, cancellationToken);
+        var body = $"Ваш токен відновлення пароля: {token}";
+        return SendEmailAsync(to, "Лілейка · відновлення пароля", body, cancellationToken);
     }
 }

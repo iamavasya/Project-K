@@ -39,11 +39,16 @@ public enum RowOutcome
 }
 
 /// <summary>One row's verdict, with the row number the person sees in Excel.</summary>
+/// <param name="AccountInvited">
+/// Whether an account was opened for the person and an activation letter sent to the row's
+/// address (on a dry run: whether one would be).
+/// </param>
 public sealed record RowResult(
     int RowNumber,
     string Name,
     RowOutcome Outcome,
-    string? Reason = null);
+    string? Reason = null,
+    bool AccountInvited = false);
 
 /// <summary>
 /// The whole picture before or after writing: what happens to each row, which гуртки would have
@@ -62,4 +67,6 @@ public sealed record RosterImportReport(
     public int AlreadyHereCount => Rows.Count(row => row.Outcome == RowOutcome.AlreadyHere);
 
     public int RejectedCount => Rows.Count(row => row.Outcome == RowOutcome.Rejected);
+
+    public int InvitedCount => Rows.Count(row => row.AccountInvited);
 }

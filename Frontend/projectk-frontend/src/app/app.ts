@@ -5,12 +5,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToolbarHeaderComponent } from "./features/kurinModule/components/toolbar-header/toolbar-header";
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
 import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog';
+import { DevRoleSwitcherComponent } from './features/systemModule/components/dev-role-switcher/dev-role-switcher';
 import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer-service/mfa-enforcer.service';
 import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
+  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, DevRoleSwitcherComponent, ToastModule],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'

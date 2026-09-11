@@ -145,7 +145,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         var response = _mapper.Map<LeadershipResponse>(existing);
 
         return isCreated
-            ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKeyQuery", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
+            ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
             : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
     }
 

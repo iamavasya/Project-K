@@ -6,6 +6,7 @@ import { CardModule } from '@openng/optimus-ui/card';
 import { PasswordModule } from '@openng/optimus-ui/password';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { OnboardingService } from '../../../services/onboarding-service/onboarding.service';
 
 /**
@@ -14,7 +15,7 @@ import { OnboardingService } from '../../../services/onboarding-service/onboardi
  */
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, PasswordModule, ButtonModule, CardModule, ToastModule, RouterLink],
+  imports: [ReactiveFormsModule, PasswordModule, ButtonModule, CardModule, ToastModule, RouterLink, MessageModule],
   providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -51,7 +52,7 @@ import { OnboardingService } from '../../../services/onboarding-service/onboardi
             </div>
 
             @if (form.hasError('passwordsDiffer') && form.get('confirmPassword')?.touched) {
-              <small class="text-red-500">Паролі не збігаються.</small>
+              <p-message severity="error" text="Паролі не збігаються." />
             }
 
             <p-button

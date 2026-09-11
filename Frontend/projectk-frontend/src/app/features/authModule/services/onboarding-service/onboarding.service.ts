@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { LoginResponse } from '../../models/login-response.model';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
@@ -42,15 +43,6 @@ export interface PasswordResetPayload {
   newPassword: string;
 }
 
-export interface ZbtStats {
-  currentActiveUsers: number;
-  betaCap: number;
-  isClosedBeta: boolean;
-  isCapReached: boolean;
-  kurinName?: string;
-  scope: 'Global' | 'Kurin';
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -64,14 +56,6 @@ export class OnboardingService {
 
   getWaitlistEntries(): Observable<WaitlistEntry[]> {
     return this.http.get<WaitlistEntry[]>(`${this.apiUrl}/waitlist`);
-  }
-
-  getOnboardingStats(kurinKey?: string): Observable<ZbtStats> {
-    let url = `${this.apiUrl}/stats`;
-    if (kurinKey) {
-      url += `?kurinKey=${kurinKey}`;
-    }
-    return this.http.get<ZbtStats>(url);
   }
 
   approveWaitlistEntry(key: string): Observable<string> {
@@ -92,8 +76,9 @@ export class OnboardingService {
     return this.http.get<InvitationValidationResponse>(`${this.apiUrl}/invitation/${token}/validate`);
   }
 
-  activateAccount(payload: AccountActivationPayload): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/activate`, payload);
+  /** Answers with a signed-in session: the person lands inside the app, not on the sign-in form. */
+  activateAccount(payload: AccountActivationPayload): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/activate`, payload, { withCredentials: true });
   }
 
   requestPasswordReset(email: string): Observable<boolean> {

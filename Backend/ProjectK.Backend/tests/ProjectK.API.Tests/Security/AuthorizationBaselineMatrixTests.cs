@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.DevModule;
 using ProjectK.API.Controllers.InfrastructureModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
@@ -196,6 +197,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<KurinController>(nameof(KurinController.ExportRegistry), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<KurinController>(nameof(KurinController.PreviewRosterImport), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinController>(nameof(KurinController.ImportRoster), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<DevToolsController>(nameof(DevToolsController.Impersonate), AuthorizationPolicies.RequireAdmin);
+        yield return Endpoint<DevToolsController>(nameof(DevToolsController.ImpersonateMember), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
@@ -215,7 +218,6 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAllAsRead), AuthorizationPolicies.RequireUser);
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAsRead), AuthorizationPolicies.RequireUser);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.ApproveWaitlistEntry), AuthorizationPolicies.RequireAdmin);
-        yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetOnboardingStats), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetWaitlistEntries), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.RejectWaitlistEntry), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.ResendInvitation), AuthorizationPolicies.RequireAdmin);
@@ -229,6 +231,7 @@ public class AuthorizationBaselineMatrixTests
     public static IEnumerable<object[]> AllowAnonymousEndpoints()
     {
         yield return Row<Action<AuthController, LoginUserRequest>>(nameof(AuthController.Login));
+        yield return Row<Action<DevToolsController, DevToolsController.ReturnRequest>>(nameof(DevToolsController.Return));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
 

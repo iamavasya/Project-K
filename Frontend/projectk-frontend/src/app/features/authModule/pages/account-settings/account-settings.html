@@ -50,7 +50,7 @@
 
           @if (isEmailChanged) {
             <div class="field">
-              <label for="profile-current-password">Current password</label>
+              <label for="profile-current-password">Поточний пароль</label>
               <p-password
                 inputId="profile-current-password"
                 name="profileCurrentPassword"
@@ -168,7 +168,7 @@
           <div class="mfa-actions">
             @if (settings.twoFactorEnabled) {
               <div class="mfa-password">
-                <label for="mfa-reset-password">Current password</label>
+                <label for="mfa-reset-password">Поточний пароль</label>
                 <p-password
                   inputId="mfa-reset-password"
                   name="mfaResetPassword"
@@ -217,7 +217,7 @@
           @if (settings.twoFactorEnabled) {
             <div class="recovery-panel">
               <div class="mfa-password">
-                <label for="mfa-recovery-password">Current password</label>
+                <label for="mfa-recovery-password">Поточний пароль</label>
                 <p-password
                   inputId="mfa-recovery-password"
                   name="recoveryCodesPassword"
@@ -231,7 +231,7 @@
               </div>
 
               <p-button
-                label="Rotate recovery codes"
+                label="Оновити резервні коди"
                 icon="pi pi-refresh"
                 severity="secondary"
                 [loading]="rotatingRecoveryCodes"

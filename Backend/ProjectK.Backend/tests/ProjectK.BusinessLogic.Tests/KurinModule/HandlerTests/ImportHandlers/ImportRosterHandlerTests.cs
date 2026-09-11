@@ -1,4 +1,5 @@
 using FluentAssertions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
@@ -71,6 +72,90 @@ public class ImportRosterHandlerTests
     ];
 
     private static SheetRow Row(int number, params string[] cells) => new(number, cells);
+
+    /// <summary>The same columns with an address at the end: the file most куріні actually have.</summary>
+    private static readonly IReadOnlyList<ColumnMapping> MappingWithEmail =
+        [.. FullMapping, new(7, RosterField.Email)];
+
+    /// <summary>
+    /// A row with an address is a person who gets an account: the file is how a kurin brings its
+    /// people in, and someone with no way to sign in is only half brought in. The dry run promises
+    /// it, the real run does it, and a row without an address is left alone.
+    /// </summary>
+    [Fact]
+    public async Task ARowWithAnAddress_IsPromisedAnAccount_OnADryRun()
+    {
+        var report = await _handler.Handle(
+            new ImportRosterCommand(
+                KurinKey,
+                [
+                    Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com"),
+                    Row(3, "Коваль", "Марта", "02.02.2011", "скоб", "22.04.2024", "Ведмеді", "2", "")
+                ],
+                MappingWithEmail,
+                CreateMissingGroups: false,
+                DryRun: true),
+            CancellationToken.None);
+
+        report.Data!.InvitedCount.Should().Be(1);
+        report.Data.Rows.Single(row => row.RowNumber == 2).AccountInvited.Should().BeTrue();
+        report.Data.Rows.Single(row => row.RowNumber == 3).AccountInvited.Should().BeFalse();
+        _mediator.Verify(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AConfirmedImport_OpensAnAccount_ForTheRowWithAnAddress()
+    {
+        var memberKey = Guid.NewGuid();
+        _mediator
+            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                ResultType.Success,
+                new MemberProfileWriteResult(memberKey, true, false, null)));
+        _mediator
+            .Setup(m => m.Send(It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == memberKey), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
+
+        var report = await _handler.Handle(
+            new ImportRosterCommand(
+                KurinKey,
+                [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")],
+                MappingWithEmail,
+                CreateMissingGroups: false,
+                DryRun: false),
+            CancellationToken.None);
+
+        report.Data!.CreatedCount.Should().Be(1);
+        report.Data.InvitedCount.Should().Be(1);
+        _mediator.Verify(m => m.Send(It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == memberKey), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AConfirmedImport_NotesWhenTheAccountCouldNotBeOpened_ButKeepsThePerson()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                ResultType.Success,
+                new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
+        _mediator
+            .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.InternalServerError));
+
+        var report = await _handler.Handle(
+            new ImportRosterCommand(
+                KurinKey,
+                [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")],
+                MappingWithEmail,
+                CreateMissingGroups: false,
+                DryRun: false),
+            CancellationToken.None);
+
+        var row = report.Data!.Rows.Single();
+        row.Outcome.Should().Be(RowOutcome.Created);
+        row.AccountInvited.Should().BeFalse();
+        row.Reason.Should().Contain("акаунт");
+    }
 
     private Task<ServiceResult<RosterImportReport>> RunAsync(
         IReadOnlyList<SheetRow> rows,

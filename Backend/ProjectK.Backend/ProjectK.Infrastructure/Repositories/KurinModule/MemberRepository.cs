@@ -138,13 +138,20 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
                     KurinKey = x.Placement.KurinKey,
                     // Кадра виховників, і саме цього куреня. Уряд типу Group — це гуртковий, а він
-                    // юнак; тому тут звужено до KV, а не до «має якийсь уряд».
+                    // юнак; тому тут звужено до KV, а не до «має якийсь уряд». Активне закріплення
+                    // за гуртком — теж впорядник: доступ так його й трактує (LeadershipRepository),
+                    // і реєстр не має казати «юнак» тому, кого сайдбар зве впорядником.
                     IsStaff = Context.LeadershipHistories.Any(history =>
                         history.MemberKey == x.Person.MemberKey
                         && history.EndDate == null
                         && history.Leadership.EndDate == null
                         && history.Leadership.Type == LeadershipType.KV
-                        && history.Leadership.KurinKey == x.Placement.KurinKey),
+                        && history.Leadership.KurinKey == x.Placement.KurinKey)
+                        || Context.MentorAssignments.Any(assignment =>
+                            assignment.RevokedAtUtc == null
+                            && x.Person.UserKey != null
+                            && assignment.MentorUserKey == x.Person.UserKey
+                            && assignment.Group.KurinKey == x.Placement.KurinKey),
                     // Закріплення виховника ведеться на акаунт, а не на людину, тож людина без
                     // акаунта не має закріплень — і список порожній, а не помилковий.
                     MentoredGroupNames = Context.MentorAssignments

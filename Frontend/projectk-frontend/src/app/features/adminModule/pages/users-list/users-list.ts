@@ -36,8 +36,8 @@ export class UsersListComponent implements OnInit {
   // System-level roles only. Kurin offices are managed on the Leadership screen.
   // Posted by name, so the backend enum's order is not part of the contract.
   roles: { label: string; value: SystemUserRole }[] = [
-    { label: 'Admin', value: 'Admin' },
-    { label: 'Member', value: 'Member' }
+    { label: 'Адміністратор', value: 'Admin' },
+    { label: 'Учасник', value: 'Member' }
   ];
 
   ngOnInit() {
@@ -135,9 +135,14 @@ export class UsersListComponent implements OnInit {
     this.clonedUsers[user.userId] = { ...user };
   }
 
+  /** What the role is called on screen; the value itself is the API's name and stays English. */
+  roleLabel(role: string): string {
+    return this.roles.find(r => r.value === role)?.label ?? role;
+  }
+
   onRowEditSave(user: UserDto) {
-    // Determine new role as number based on string label (assuming select mutates user.role to be a string or number temporarily, we need to map it)
-    const newRoleValue = this.roles.find(r => r.label === user.role)?.value;
+    // The select writes the API value into user.role; the label is for reading only.
+    const newRoleValue = this.roles.find(r => r.value === user.role)?.value;
     
     if (newRoleValue === undefined) {
       this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Обрано некоректну роль.' });

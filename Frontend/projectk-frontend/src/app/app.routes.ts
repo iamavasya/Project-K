@@ -31,6 +31,13 @@ export const routes: Routes = [
     data: { breadcrumb: 'Вітання' }
   },
   {
+    path: 'about',
+    loadComponent: () => import('./features/systemModule/pages/about-page/about-page')
+      .then(m => m.AboutPageComponent),
+    title: 'Про Лілейку',
+    data: { breadcrumb: 'Про Лілейку' }
+  },
+  {
     path: 'forgot-password',
     loadComponent: () => import('./features/authModule/pages/onboarding/forgot-password/forgot-password')
       .then(m => m.ForgotPasswordComponent),

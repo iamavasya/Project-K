@@ -377,6 +377,44 @@ describe('AuthService', () => {
       });
     });
 
+    it('sends the bearer token with the sign-out and only then forgets the session', (done) => {
+      service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
+        service.logout().subscribe(() => {
+          expect(service.getAuthStateValue()).toBeNull();
+          done();
+        });
+
+        // The token is still in hand while the request is in flight: that is what the
+        // interceptor puts in the Authorization header.
+        expect(service.getAccessToken()).toBe('token-789');
+        httpMock.expectOne(`${apiUrl}/auth/logout`).flush('Logged out successfully');
+      });
+
+      httpMock.expectOne(`${apiUrl}/auth/login`).flush({
+        userKey: 'user-123', memberKey: 'm', email: 'test@example.com', isAdmin: false,
+        permissions: [], roles: [], kurinKey: null, tokens: { accessToken: 'token-789' }
+      });
+    });
+
+    it('refreshes an expired token once and signs out again before forgetting the session', (done) => {
+      service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
+        service.logout().subscribe(() => {
+          expect(service.getAuthStateValue()).toBeNull();
+          done();
+        });
+
+        httpMock.expectOne(`${apiUrl}/auth/logout`).flush('expired', { status: 401, statusText: 'Unauthorized' });
+        httpMock.expectOne(`${apiUrl}/auth/refresh`).flush({ accessToken: 'fresh-token' });
+        expect(service.getAccessToken()).toBe('fresh-token');
+        httpMock.expectOne(`${apiUrl}/auth/logout`).flush('Logged out successfully');
+      });
+
+      httpMock.expectOne(`${apiUrl}/auth/login`).flush({
+        userKey: 'user-123', memberKey: 'm', email: 'test@example.com', isAdmin: false,
+        permissions: [], roles: [], kurinKey: null, tokens: { accessToken: 'token-789' }
+      });
+    });
+
     it('should clear auth state if logout request fails', (done) => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',

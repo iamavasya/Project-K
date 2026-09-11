@@ -45,7 +45,6 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IMapper _mapper;
-    private const string refreshTokenCookieName = "refreshToken";
 
     public AuthController(IMediator mediator, IMapper mapper)
     {
@@ -129,6 +128,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginUserRequest request)
     {
         var command = _mapper.Map<LoginUserCommand>(request);
+        command.MfaTrustToken = MfaTrustCookie.Read(Request);
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data.Tokens != null)
         {
@@ -387,6 +387,10 @@ public class AuthController : ControllerBase
         {
             SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
         }
+        if (response.Type == ResultType.Success && response.Data.MfaTrust is { } trust)
+        {
+            MfaTrustCookie.Set(HttpContext, trust.Token, trust.ExpiresUtc);
+        }
         return response.ToActionResult(this);
     }
 
@@ -415,52 +419,9 @@ public class AuthController : ControllerBase
         return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled, isMfaRequired });
     }
 
-    private void SetRefreshTokenCookie(string token, DateTime expires)
-    {
-        DeleteRefreshTokenCookie();
+    private void SetRefreshTokenCookie(string token, DateTime expires) => RefreshTokenCookie.Set(HttpContext, token, expires);
 
-        var isSecureRequest = IsSecureRequest();
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = isSecureRequest,
-            SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires = expires,
-            Path = "/api/auth"
-        };
-        Response.Cookies.Append(refreshTokenCookieName, token, cookieOptions);
-    }
+    private void DeleteRefreshTokenCookie() => RefreshTokenCookie.Delete(HttpContext);
 
-    private void DeleteRefreshTokenCookie()
-    {
-        var isSecureRequest = IsSecureRequest();
-
-        foreach (var path in new[] { "/api/auth", "/api", "/" })
-        {
-            Response.Cookies.Delete(refreshTokenCookieName, new CookieOptions
-            {
-                Secure = isSecureRequest,
-                SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = path
-            });
-        }
-    }
-
-    private List<string> GetRefreshTokenCookieValues()
-    {
-        return Request.Headers.Cookie
-            .SelectMany(header => header?.Split(';') ?? [])
-            .Select(cookie => cookie.Trim())
-            .Where(cookie => cookie.StartsWith($"{refreshTokenCookieName}=", StringComparison.Ordinal))
-            .Select(cookie => cookie[(refreshTokenCookieName.Length + 1)..])
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => Uri.UnescapeDataString(value.Trim('"')))
-            .ToList();
-    }
-
-    private bool IsSecureRequest()
-    {
-        return Request.IsHttps
-            || string.Equals(Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
-    }
+    private List<string> GetRefreshTokenCookieValues() => RefreshTokenCookie.Read(Request);
 }

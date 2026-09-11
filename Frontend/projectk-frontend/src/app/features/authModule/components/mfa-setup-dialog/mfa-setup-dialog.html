@@ -61,15 +61,15 @@
 
     @if (recoveryCodes.length > 0) {
       <div class="mfa-recovery">
-      <h2>Recovery codes</h2>
-      <p>Save these codes now. Each code can be used once if you lose access to your authenticator.</p>
+      <h2>Резервні коди</h2>
+      <p>Збережіть ці коди зараз. Кожен спрацьовує один раз, якщо ви втратите доступ до застосунку-автентифікатора.</p>
       <div class="recovery-grid">
         @for (code of recoveryCodes; track $index) {
           <code>{{ code }}</code>
         }
       </div>
       <p-button
-        label="I saved these codes"
+        label="Я зберіг(ла) ці коди"
         icon="pi pi-check"
         (onClick)="closeAfterSavingCodes()"
         styleClass="w-full"

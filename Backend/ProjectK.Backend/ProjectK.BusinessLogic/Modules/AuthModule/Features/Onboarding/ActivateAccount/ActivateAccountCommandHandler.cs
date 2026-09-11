@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.Common.Entities.AuthModule;
@@ -19,16 +21,18 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 
-public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<Guid>>
+public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<LoginUserResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly UserManager<AppUser> _userManager;
     private readonly IMediator _mediator;
     private readonly TimeProvider _timeProvider;
+    private readonly ILoginResponseFactory _loginResponseFactory;
 
-    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider)
+    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseFactory loginResponseFactory)
     {
+        _loginResponseFactory = loginResponseFactory;
         _unitOfWork = unitOfWork;
         _members = members;
         _userManager = userManager;
@@ -36,26 +40,26 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         _timeProvider = timeProvider;
     }
 
-    public async Task<ServiceResult<Guid>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LoginUserResponse>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
     {
         // 1. Validate Token
         var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
 
         if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "InvalidInvitationToken", "Invalid or expired invitation token.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "InvalidInvitationToken", "Invalid or expired invitation token.");
         }
 
         // 2. Get User
         if (!invitation.TargetUserKey.HasValue)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "InvitationHasNoUser", "Invitation is not linked to a user.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "InvitationHasNoUser", "Invitation is not linked to a user.");
         }
 
         var user = await _userManager.FindByIdAsync(invitation.TargetUserKey.Value.ToString());
         if (user == null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
         }
 
         // 3. Set Password and Activate
@@ -63,7 +67,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!addPasswordResult.Succeeded)
         {
             var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "PasswordNotSet", $"Failed to set password: {errors}");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "PasswordNotSet", $"Failed to set password: {errors}");
         }
 
         user.OnboardingStatus = OnboardingStatus.Active;
@@ -73,7 +77,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "UserNotUpdated", $"Failed to update user status: {errors}");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "UserNotUpdated", $"Failed to update user status: {errors}");
         }
 
         // 3.5. Assign the baseline system role. Kurin authority comes from a діловодський office,
@@ -147,6 +151,8 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
             }, cancellationToken);
         }
 
-        return new ServiceResult<Guid>(ResultType.Success, user.Id);
+        // Signed in on the spot: the password was just chosen, asking for it again is a wall.
+        var session = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        return new ServiceResult<LoginUserResponse>(ResultType.Success, session);
     }
 }

@@ -296,8 +296,8 @@ features/<x>Module/
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **1077** тестів (BusinessLogic 523 · API 472 · Infrastructure 69 · Architecture 13)
-- фронт — **664** тести, лінт **0 помилок** (17 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- бекенд — **1117** тестів (BusinessLogic 546 · API 483 · Infrastructure 75 · Architecture 13)
+- фронт — **697** тестів, лінт **0 помилок** (11 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
 ```bash

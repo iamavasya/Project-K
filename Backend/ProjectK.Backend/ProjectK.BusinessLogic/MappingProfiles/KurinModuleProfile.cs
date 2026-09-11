@@ -86,6 +86,17 @@ public class KurinModuleProfile : Profile
         CreateMap<Member, MemberLookupDto>()
             .ForMember(dest => dest.UserRole, opt => opt.Ignore());
 
+        // The mentor list is answered through IMemberDirectory, which hands back the summary
+        // record rather than the entity; without this map every GET /group/{key}/mentors was a 500
+        // that the unit tests, mapping with mocks, never saw.
+        CreateMap<MemberSummary, MemberLookupDto>()
+            .ForMember(dest => dest.MiddleName, opt => opt.Ignore())
+            .ForMember(dest => dest.UserRole, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfileVerificationStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfileVerifiedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfileVerifiedByUserKey, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfileVerificationNote, opt => opt.Ignore());
+
         // Plast Level History Mapping
         CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
 

@@ -55,10 +55,10 @@
                     <td data-mobile-label="Роль">
                         <p-cellEditor>
                             <ng-template #input>
-                                <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="label" appendTo="body" />
+                                <p-select [options]="roles" [(ngModel)]="user.role" optionLabel="label" optionValue="value" appendTo="body" />
                             </ng-template>
                             <ng-template #output>
-                                {{user.role}}
+                                {{ roleLabel(user.role) }}
                             </ng-template>
                         </p-cellEditor>
                     </td>

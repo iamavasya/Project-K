@@ -1,5 +1,5 @@
 import { inject, Injectable } from "@angular/core";
-import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, tap } from "rxjs";
+import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, switchMap, tap, throwError } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "../../../../../environments/environment";
 import { LoginRequest } from "../../models/login-request.model";
@@ -163,9 +163,26 @@ export class AuthService {
     this.forgetKurinScopedEntities();
   }
 
+  /**
+   * Ends this browser's session on the server, then forgets it locally.
+   *
+   * Order matters: the local state used to be cleared first, which sent the request without a
+   * bearer token — every sign-out was a 401, the refresh token stayed valid for a week, and the
+   * kurin the admin had stepped into was never cleared. An access token that has expired in the
+   * meantime is refreshed once; the interceptor deliberately does not do that for this route.
+   */
   logout() {
-    this.clearLocalState();
-    return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true, responseType: 'text' });
+    const signOut = () => this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true, responseType: 'text' });
+
+    return signOut().pipe(
+      catchError((error: unknown) =>
+        (error as { status?: number })?.status === 401 && this.authState$.value?.userKey
+          ? this.refreshToken().pipe(switchMap(() => signOut()))
+          : throwError(() => error)),
+      // Before the caller hears the answer, not after: whoever subscribes expects to be signed out
+      // by the time `next` or `error` arrives.
+      tap({ next: () => this.clearLocalState(), error: () => this.clearLocalState() })
+    );
   }
 
   refreshToken(): Observable<string> {
@@ -279,6 +296,18 @@ export class AuthService {
 
   clearKurinKey(): void {
     this.setKurinKey(null);
+  }
+
+  /**
+   * Takes a sign-in the caller obtained some other way (the dev role switcher) as the current
+   * session. Same path as the login form, so nothing about the session is remembered differently.
+   */
+  applyLoginResponse(response: LoginResponse): AuthState {
+    const state = this.toAuthState(response);
+    clearMfaSessionState();
+    this.forgetKurinScopedEntities();
+    this.applyState(state);
+    return state;
   }
 
   private toAuthState(response: LoginResponse): AuthState {

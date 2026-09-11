@@ -35,10 +35,12 @@ import { ProfileVerificationBadgeComponent } from '../../components/profile-veri
 import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { MessageModule } from '@openng/optimus-ui/message';
+import { toUkrainianPhone, UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../shared/functions/ukrainian-phone.function';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent, MessageModule],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -66,7 +68,11 @@ export class UpsertMemberComponent implements OnInit {
   memberKey = '';
   groupKey = '';
   kurinKey = '';
-  createUserAccount = false;
+  // Every new member gets an account: the letter is how they get in, and the box that used
+  // to make it optional was mostly left unticked by accident.
+  createUserAccount = true;
+  readonly phoneMask = UKRAINIAN_PHONE_MASK;
+  readonly phonePlaceholder = UKRAINIAN_PHONE_PLACEHOLDER;
 
   route = inject(ActivatedRoute);
   router = inject(Router);
@@ -164,6 +170,7 @@ export class UpsertMemberComponent implements OnInit {
         const memberForEdit: MemberDto = {
           ...member,
           dateOfBirth: parseDateOnlyString(member.dateOfBirth),
+          phoneNumber: toUkrainianPhone(member.phoneNumber),
           plastLevelHistories
         };
 
@@ -595,12 +602,12 @@ export class UpsertMemberComponent implements OnInit {
           icon: 'pi pi-info-circle',
           rejectLabel: 'Cancel',
           rejectButtonProps: {
-              label: 'Cancel',
+              label: 'Скасувати',
               severity: 'secondary',
               outlined: true,
           },
           acceptButtonProps: {
-              label: 'Delete',
+              label: 'Видалити',
               severity: 'danger',
           },
 

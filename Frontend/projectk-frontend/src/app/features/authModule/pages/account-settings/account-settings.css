@@ -123,7 +123,7 @@
 }
 
 .recovery-grid code {
-  background: var(--p-surface-50);
+  background: var(--p-content-hover-background);
   border: 1px solid var(--p-content-border-color);
   border-radius: 6px;
   color: var(--p-text-color);

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using MediatR;
+using ProjectK.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -7,7 +8,6 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetStats;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetWaitlistEntries;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWaitlistEntry;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
@@ -121,18 +121,6 @@ public class OnboardingController : ControllerBase
     }
 
     /// <summary>
-    /// Reports how many accounts exist against the beta cap, kurin by kurin.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpGet("stats")]
-    [ProducesResponseType(typeof(ZbtStatsDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetOnboardingStats([FromQuery] Guid? kurinKey)
-    {
-        var response = await _mediator.Send(new GetOnboardingStatsQuery(kurinKey));
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
     /// Checks an invitation link before the activation form is shown.
     /// </summary>
     /// <remarks>
@@ -157,10 +145,15 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("activate")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> ActivateAccount([FromBody] ActivateAccountCommand command)
     {
         var response = await _mediator.Send(command);
+        if (response.Type == ResultType.Success && response.Data?.Tokens is { } tokens)
+        {
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+        }
+
         return response.ToActionResult(this);
     }
 

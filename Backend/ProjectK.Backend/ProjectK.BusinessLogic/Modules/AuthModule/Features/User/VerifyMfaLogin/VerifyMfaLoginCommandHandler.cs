@@ -79,6 +79,10 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
 
         var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
 
+        // The code was right once on this device; the browser keeps that, so the next sign-ins
+        // here skip the second factor until the trust runs out or the account's stamp changes.
+        response.MfaTrust = _jwtService.GenerateMfaTrustToken(user.Id, user.SecurityStamp ?? string.Empty);
+
         return new ServiceResult<LoginUserResponse>(ResultType.Success, response);
     }
 }

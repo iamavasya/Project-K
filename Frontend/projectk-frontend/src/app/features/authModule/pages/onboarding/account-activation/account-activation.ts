@@ -3,78 +3,79 @@ import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/cor
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OnboardingService, InvitationValidationResponse } from '../../../services/onboarding-service/onboarding.service';
+import { AuthService } from '../../../services/auth-service/auth.service';
+import { authenticatedHomeRoute } from '../../../functions/authenticated-home-route';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { PasswordModule } from '@openng/optimus-ui/password';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
+import { failureDetail } from '../../../../../shared/functions/failure-detail.function';
 
+/**
+ * Where the invitation letter lands. The password chosen here signs the person in on the spot:
+ * the answer is a session, and the page takes them to their home rather than to a sign-in form
+ * they have never used.
+ */
 @Component({
   selector: 'app-account-activation',
-  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, ToastModule],
+  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, MessageModule, ToastModule],
   providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <p-toast />
-    <div class="flex justify-center items-center min-h-screen p-4">
-      <p-card header="Account Activation" [style]="{ width: '400px' }">
+    <main class="flex justify-center items-center min-h-screen p-4">
+      <p-card header="Активація акаунта" [style]="{ width: 'min(100%, 420px)' }">
         @if (loading && !validationData) {
           <div class="text-center p-4">
             <i class="pi pi-spin pi-spinner text-4xl"></i>
-            <p>Validating invitation...</p>
+            <p>Перевіряємо запрошення…</p>
           </div>
         }
 
         @if (!loading && !validationData?.isValid) {
-          <div class="text-center p-4">
-            <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-            <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
-            <p class="text-muted-color mb-4">
-              Посилання вже не діє. Ми надішлемо нове запрошення на ту саму адресу — це та сама
-              форма, що й для забутого пароля.
+          <div class="flex flex-col gap-4">
+            <p-message severity="warn" styleClass="w-full" text="Посилання недійсне або прострочене." />
+            <p class="text-muted-color m-0">
+              Ми надішлемо нове запрошення на ту саму адресу — це та сама форма, що й для забутого пароля.
             </p>
             <div class="flex flex-col gap-2">
               <p-button label="Надіслати нове запрошення" (onClick)="goToRecovery()" />
-              <p-button label="Back to Login" [text]="true" (onClick)="goToLogin()" />
+              <p-button label="До входу" [text]="true" (onClick)="goToLogin()" />
             </div>
           </div>
         }
 
-        @if (validationData?.isValid) {
-          <div>
-            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-              <p class="font-bold text-blue-800">Welcome, {{ validationData.firstName }}!</p>
-              <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData.email }}.</p>
-            </div>
+        @if (validationData?.isValid && !activated) {
+          <div class="flex flex-col gap-4">
+            <p-message severity="info" styleClass="w-full"
+              [text]="'Вітаємо, ' + validationData.firstName + '! Оберіть пароль для акаунта ' + validationData.email + '.'" />
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
-                <label for="password">New Password</label>
-                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+                <label for="password">Новий пароль</label>
+                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
               </div>
               <div class="flex flex-col gap-2">
-                <label for="confirmPassword">Confirm Password</label>
-                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+                <label for="confirmPassword">Повторіть пароль</label>
+                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
                 @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
-                  <small class="p-error text-red-500">
-                    Passwords do not match
-                  </small>
+                  <p-message severity="error" text="Паролі не збігаються." />
                 }
               </div>
-              
-              <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full" />
+
+              <p-button label="Активувати і увійти" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full" />
             </form>
           </div>
         }
 
         @if (activated) {
-          <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
-            Success! Your account is active. Redirecting you...
-          </div>
+          <p-message severity="success" styleClass="w-full" text="Акаунт активовано. Заходимо…" />
         }
       </p-card>
-    </div>
+    </main>
   `
 })
 export class AccountActivationComponent implements OnInit {
@@ -89,6 +90,7 @@ export class AccountActivationComponent implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private onboardingService = inject(OnboardingService);
+  private authService = inject(AuthService);
   private messageService = inject(MessageService);
 
   constructor() {
@@ -133,14 +135,15 @@ export class AccountActivationComponent implements OnInit {
     };
 
     this.onboardingService.activateAccount(payload).subscribe({
-      next: () => {
+      next: (session) => {
         this.activated = true;
         this.submitting = false;
+        this.authService.applyLoginResponse(session);
         this.messageService.add({ severity: 'success', summary: 'Активовано', detail: 'Вітаємо в Лілейці!' });
-        setTimeout(() => this.router.navigate(['/login']), 2000);
+        this.router.navigate(authenticatedHomeRoute(this.authService.getAuthStateValue()));
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Activation failed' });
+        this.messageService.add({ severity: 'error', summary: 'Не вдалося активувати', detail: failureDetail(err, 'Спробуйте ще раз або замовте нове запрошення.') });
         this.submitting = false;
       }
     });

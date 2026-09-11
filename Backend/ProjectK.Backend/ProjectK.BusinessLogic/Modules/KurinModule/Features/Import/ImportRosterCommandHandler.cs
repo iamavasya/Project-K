@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.Common.Interfaces;
@@ -127,20 +128,31 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 
             var outcome = match is null ? RowOutcome.Created : RowOutcome.Attached;
 
-            if (!request.DryRun)
+            // A row with an address gets an account: the file is how a kurin brings its people
+            // in, and a person with no way to sign in is only half brought in. On a dry run this
+            // is a promise, and the tally shows how many letters are about to go out.
+            if (request.DryRun)
             {
-                var failure = match is null
-                    ? await CreateAsync(row, request.KurinKey, groupKey, cancellationToken)
-                    : await AttachAsync(match, request.KurinKey, groupKey, cancellationToken);
-
-                if (failure is not null)
-                {
-                    results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, failure));
-                    continue;
-                }
+                results.Add(new RowResult(row.Number, row.DisplayName, outcome, AccountInvited: row.Email is not null));
+                continue;
             }
 
-            results.Add(new RowResult(row.Number, row.DisplayName, outcome));
+            var memberKey = match?.MemberKey;
+            var failure = match is null
+                ? await CreateAsync(row, request.KurinKey, groupKey, key => memberKey = key, cancellationToken)
+                : await AttachAsync(match, request.KurinKey, groupKey, cancellationToken);
+
+            if (failure is not null)
+            {
+                results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, failure));
+                continue;
+            }
+
+            var invitation = row.Email is not null && memberKey is { } key
+                ? await InviteAsync(key, cancellationToken)
+                : Invitation.NotApplicable;
+
+            results.Add(new RowResult(row.Number, row.DisplayName, outcome, invitation.Note, invitation.Sent));
         }
 
         return new ServiceResult<RosterImportReport>(
@@ -191,6 +203,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         RosterRow row,
         Guid kurinKey,
         Guid groupKey,
+        Action<Guid> created,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new UpsertMemberProfileCommand
@@ -209,7 +222,34 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             PlastLevelHistories = row.Levels()
         }, cancellationToken);
 
-        return result.Type == ResultType.Success ? null : "Не вдалося створити запис.";
+        if (result.Type == ResultType.Success && result.Data is not null)
+        {
+            created(result.Data.MemberKey);
+            return null;
+        }
+
+        return "Не вдалося створити запис.";
+    }
+
+    private readonly record struct Invitation(bool Sent, string? Note)
+    {
+        public static Invitation NotApplicable => new(false, null);
+    }
+
+    /// <summary>
+    /// Opens an account and sends the activation letter. A person who already has one is left as
+    /// they are, quietly; any other refusal is noted on the row, because the import itself went
+    /// through and the провід has to know who still cannot sign in.
+    /// </summary>
+    private async Task<Invitation> InviteAsync(Guid memberKey, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ProvisionMemberAccountCommand(memberKey), cancellationToken);
+        return result.Type switch
+        {
+            ResultType.Success or ResultType.Created => new Invitation(true, null),
+            ResultType.Conflict => Invitation.NotApplicable,
+            _ => new Invitation(false, "Запис створено, але акаунт відкрити не вдалося.")
+        };
     }
 
     private async Task<string?> AttachAsync(

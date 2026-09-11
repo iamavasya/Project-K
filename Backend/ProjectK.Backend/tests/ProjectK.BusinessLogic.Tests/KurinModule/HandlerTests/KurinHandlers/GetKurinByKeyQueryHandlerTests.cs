@@ -47,7 +47,7 @@ public class GetKurinByKeyHandlerTests
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
         _appUserRepositoryMock
-            .Setup(x => x.CountActiveBetaAsync(
+            .Setup(x => x.CountActiveAsync(
                 It.IsAny<IReadOnlyCollection<Guid>?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);

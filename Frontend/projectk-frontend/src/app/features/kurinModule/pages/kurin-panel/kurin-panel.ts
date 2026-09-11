@@ -23,7 +23,6 @@ import { MemberListComponent } from '../../components/member-list/member-list';
 import { KurinDto } from '../../models/kurin.dto';
 import { JoinByCodeDialogComponent } from '../../components/join-by-code-dialog/join-by-code-dialog';
 import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
-import { OnboardingService, ZbtStats } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KvPanelComponent } from '../../components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
@@ -60,7 +59,6 @@ export class KurinPanelComponent implements OnInit {
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
-  private readonly onboardingService = inject(OnboardingService);
   private readonly memberService = inject(MemberService);
   private readonly fb = inject(FormBuilder);
 
@@ -72,7 +70,6 @@ export class KurinPanelComponent implements OnInit {
   kurinData: KurinDto | null = null;
   isJoinByCodeVisible = false;
   readonly memberList = viewChild(MemberListComponent);
-  zbtStats: ZbtStats | null = null;
 
   canManageGroups = false;
   canManageMembers = false;
@@ -225,20 +222,6 @@ export class KurinPanelComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching kurin:', error);
-      }
-    });
-
-    if (!this.permissionService.isAdmin()) {
-      this.zbtStats = null;
-      return;
-    }
-
-    this.onboardingService.getOnboardingStats(this.kurinKey).subscribe({
-      next: (stats) => {
-        this.zbtStats = stats;
-      },
-      error: (error) => {
-        console.error('Error fetching stats:', error);
       }
     });
   }

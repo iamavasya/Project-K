@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { OnboardingService, WaitlistEntry, ZbtStats } from '../../../authModule/services/onboarding-service/onboarding.service';
+import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -61,25 +61,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Заявки на приєднання</h2>
         
-        @if (stats && stats.isClosedBeta) {
-          <div class="flex flex-col items-end gap-1">
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-semibold text-gray-600">
-                @if (stats.scope === 'Kurin') {
-                    Ліміт ЗБТ ({{ stats.kurinName }})
-                } @else {
-                    Ліміт ЗБТ (глобальний)
-                }
-              </span>
-              <p-tag [severity]="stats.isCapReached ? 'danger' : 'info'"
-                     [value]="stats.currentActiveUsers + ' / ' + stats.betaCap" />
-            </div>
-            <p-progressBar [value]="(stats.currentActiveUsers / stats.betaCap) * 100" 
-                           [showValue]="false" 
-                           class="w-64 h-2"
-                           [color]="stats.isCapReached ? 'var(--p-red-500)' : 'var(--p-primary-color)'" />
-          </div>
-        }
       </div>
 
       <p-table [value]="entries" [responsiveLayout]="'scroll'" [loading]="loading" styleClass="p-datatable-sm">
@@ -151,7 +132,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 })
 export class WaitlistManagementComponent implements OnInit {
   entries: WaitlistEntry[] = [];
-  stats: ZbtStats | null = null;
   loading = true;
 
   rejectionDialogVisible = false;
@@ -165,7 +145,6 @@ export class WaitlistManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadEntries();
-    this.loadStats();
   }
 
   loadEntries() {
@@ -182,32 +161,13 @@ export class WaitlistManagementComponent implements OnInit {
     });
   }
 
-  loadStats() {
-    const kurinKey = this.authService.getAuthStateValue()?.kurinKey;
-    this.onboardingService.getOnboardingStats(kurinKey || undefined).subscribe({
-      next: (data) => {
-        this.stats = data;
-      }
-    });
-  }
-
   approve(entry: WaitlistEntry) {
-    if (this.stats?.isCapReached) {
-        this.confirmationService.confirm({
-            message: `Ліміт бети (${this.stats.betaCap}) вичерпано. Схвалення цього користувача перевищить його. Продовжити?`,
-            header: 'Ліміт бети досягнуто',
-            icon: 'pi pi-exclamation-triangle',
-            acceptButtonStyleClass: 'p-button-danger',
-            accept: () => this.executeApproval(entry)
-        });
-    } else {
-        this.confirmationService.confirm({
-            message: `Схвалити заявку ${entry.firstName} ${entry.lastName}? На ${entry.email} піде лист із запрошенням.`,
-            header: 'Підтвердити схвалення',
-            icon: 'pi pi-user-plus',
-            accept: () => this.executeApproval(entry)
-        });
-    }
+    this.confirmationService.confirm({
+        message: `Схвалити заявку ${entry.firstName} ${entry.lastName}? На ${entry.email} піде лист із запрошенням.`,
+        header: 'Підтвердити схвалення',
+        icon: 'pi pi-user-plus',
+        accept: () => this.executeApproval(entry)
+    });
   }
 
   private executeApproval(entry: WaitlistEntry) {
@@ -215,8 +175,7 @@ export class WaitlistManagementComponent implements OnInit {
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Схвалено', detail: 'Запрошення надіслано' });
           this.loadEntries();
-          this.loadStats();
-        },
+              },
         error: (err) => {
           this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося схвалити' });
         }
@@ -237,8 +196,7 @@ export class WaitlistManagementComponent implements OnInit {
         this.messageService.add({ severity: 'info', summary: 'Відхилено', detail: 'Заявку відхилено' });
         this.rejectionDialogVisible = false;
         this.loadEntries();
-        this.loadStats();
-      },
+          },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося відхилити' });
       }

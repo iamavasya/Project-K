@@ -6,14 +6,24 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.Services.JwtService;
 
 public class JwtService : IJwtService
 {
-    private const string MfaChallengePurposeClaim = "purpose";
+    private const string PurposeClaim = "purpose";
     private const string MfaChallengePurpose = "mfa-challenge";
     private static readonly TimeSpan MfaChallengeLifetime = TimeSpan.FromMinutes(5);
+
+    // The dev role switcher's way back to the administrator: long enough for a testing session,
+    // short enough that a ticket left in a browser is not a standing door.
+    private const string DevReturnPurpose = "dev-return";
+    private static readonly TimeSpan DevReturnLifetime = TimeSpan.FromHours(12);
+
+    private const string MfaTrustPurpose = "mfa-trust";
+    private const string SecurityStampClaim = "stamp";
+    private const int DefaultMfaTrustDays = 7;
 
     private readonly IConfiguration _config;
     private readonly TimeProvider _timeProvider;
@@ -74,29 +84,76 @@ public class JwtService : IJwtService
     }
 
     /// <inheritdoc />
-    public string GenerateMfaChallengeToken(Guid userId)
+    public string GenerateMfaChallengeToken(Guid userId) => GeneratePurposeToken(userId, MfaChallengePurpose, MfaChallengeLifetime);
+
+    /// <inheritdoc />
+    public Guid? ReadMfaChallenge(string token) => ReadPurposeToken(token, MfaChallengePurpose);
+
+    /// <inheritdoc />
+    public string GenerateDevReturnTicket(Guid userId) => GeneratePurposeToken(userId, DevReturnPurpose, DevReturnLifetime);
+
+    /// <inheritdoc />
+    public Guid? ReadDevReturnTicket(string token) => ReadPurposeToken(token, DevReturnPurpose);
+
+    public MfaTrustGrant GenerateMfaTrustToken(Guid userId, string securityStamp)
+    {
+        var days = int.TryParse(_config["Security:MfaTrustDays"], out var configured) && configured > 0
+            ? configured
+            : DefaultMfaTrustDays;
+        var lifetime = TimeSpan.FromDays(days);
+        var token = GeneratePurposeToken(userId, MfaTrustPurpose, lifetime, [new Claim(SecurityStampClaim, securityStamp)]);
+        return new MfaTrustGrant(token, _timeProvider.GetUtcNow().UtcDateTime.Add(lifetime));
+    }
+
+    public MfaTrust? ReadMfaTrust(string token)
+    {
+        var principal = ReadPurposePrincipal(token, MfaTrustPurpose);
+        if (principal is null || !Guid.TryParse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId))
+        {
+            return null;
+        }
+
+        var stamp = principal.FindFirst(SecurityStampClaim)?.Value;
+        return stamp is null ? null : new MfaTrust(userId, stamp);
+    }
+
+    /// <summary>
+    /// A short-lived token that proves one thing about one account and nothing else. Its own
+    /// audience, so the bearer middleware never accepts it as an access token: the two are
+    /// signed with the same key and would otherwise look alike.
+    /// </summary>
+    private string GeneratePurposeToken(Guid userId, string purpose, TimeSpan lifetime, IEnumerable<Claim>? extraClaims = null)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
-            new(MfaChallengePurposeClaim, MfaChallengePurpose)
+            new(PurposeClaim, purpose)
         };
+        if (extraClaims is not null)
+        {
+            claims.AddRange(extraClaims);
+        }
 
-        // Its own audience, so the bearer middleware never accepts a challenge as an access
-        // token — the two are signed with the same key and would otherwise look alike.
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"],
-            audience: MfaChallengeAudience,
+            audience: PurposeAudience(purpose),
             claims: claims,
-            expires: _timeProvider.GetUtcNow().UtcDateTime.Add(MfaChallengeLifetime),
+            expires: _timeProvider.GetUtcNow().UtcDateTime.Add(lifetime),
             signingCredentials: new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256));
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    /// <inheritdoc />
-    public Guid? ReadMfaChallenge(string token)
+    private Guid? ReadPurposeToken(string token, string purpose)
+    {
+        var principal = ReadPurposePrincipal(token, purpose);
+        return principal is not null && Guid.TryParse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId)
+            ? userId
+            : null;
+    }
+
+    private ClaimsPrincipal? ReadPurposePrincipal(string token, string purpose)
     {
         // Claims are read as written: the default handler renames "sub" to NameIdentifier on the
         // way in, which is a surprise nobody needs here.
@@ -109,21 +166,14 @@ public class JwtService : IJwtService
                 ValidateIssuer = true,
                 ValidIssuer = _config["Jwt:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = MfaChallengeAudience,
+                ValidAudience = PurposeAudience(purpose),
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = SigningKey,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromSeconds(30)
             }, out _);
 
-            if (principal.FindFirst(MfaChallengePurposeClaim)?.Value != MfaChallengePurpose)
-            {
-                return null;
-            }
-
-            return Guid.TryParse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId)
-                ? userId
-                : null;
+            return principal.FindFirst(PurposeClaim)?.Value == purpose ? principal : null;
         }
         catch (SecurityTokenException)
         {
@@ -137,5 +187,5 @@ public class JwtService : IJwtService
 
     private SymmetricSecurityKey SigningKey => new(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
 
-    private string MfaChallengeAudience => $"{_config["Jwt:Audience"]}:{MfaChallengePurpose}";
+    private string PurposeAudience(string purpose) => $"{_config["Jwt:Audience"]}:{purpose}";
 }

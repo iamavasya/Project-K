@@ -29,6 +29,10 @@ export class MfaEnforcerService {
       return;
     }
 
+    // The mandatory dialog enables MFA itself; without this the "required" flag stayed in
+    // sessionStorage and the next navigation opened the dialog again over an enabled account.
+    dialog.enabled.subscribe(() => this.markMfaEnabledForCurrentSession());
+
     const routeChanges$ = this.router.events.pipe(filter(event => event instanceof NavigationEnd));
 
     this.subscription = merge(this.authService.getAuthState(), routeChanges$)

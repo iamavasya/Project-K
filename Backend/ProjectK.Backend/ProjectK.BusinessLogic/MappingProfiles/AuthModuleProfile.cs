@@ -15,6 +15,7 @@ public class AuthModuleProfile : Profile
         CreateMap<RegisterUserRequest, RegisterUserCommand>(MemberList.None);
         CreateMap<RegisterUserCommand, AppUser>(MemberList.None);
 
-        CreateMap<LoginUserRequest, LoginUserCommand>();
+        CreateMap<LoginUserRequest, LoginUserCommand>()
+            .ForMember(dest => dest.MfaTrustToken, opt => opt.Ignore());
     }
 }

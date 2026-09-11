@@ -94,7 +94,13 @@
             <li><strong>{{ result.attachedCount }}</strong> долучень наявних</li>
             <li><strong>{{ result.alreadyHereCount }}</strong> уже в курені</li>
             <li class="import__tally--bad"><strong>{{ result.rejectedCount }}</strong> відхилено</li>
+            <li><strong>{{ result.invitedCount }}</strong> листів з активацією</li>
           </ul>
+
+          @if (result.invitedCount > 0) {
+            <p-message severity="info" styleClass="import__error"
+              text="Кожен рядок із поштою отримає акаунт і лист із посиланням для активації. Пошта має бути актуальною; попередьте людей перевірити теку «Спам»." />
+          }
 
           @if (result.missingGroups.length) {
             <p-message severity="info" styleClass="import__error"

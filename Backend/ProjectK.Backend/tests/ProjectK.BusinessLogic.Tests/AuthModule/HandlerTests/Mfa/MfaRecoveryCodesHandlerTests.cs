@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Models.Records;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
@@ -85,6 +86,37 @@ public class MfaRecoveryCodesHandlerTests
         loginResponseFactoryMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// The code was right once on this device; the answer carries what the browser keeps so that
+    /// the next sign-ins here skip the second factor.
+    /// </summary>
+    [Fact]
+    public async Task VerifyMfaLogin_ShouldHandBackDeviceTrust_WhenTheCodeIsRight()
+    {
+        var user = new AppUser
+        {
+            Id = Guid.NewGuid(),
+            Email = "user@example.com",
+            FirstName = "John",
+            LastName = "Doe",
+            SecurityStamp = "stamp-1",
+            OnboardingStatus = OnboardingStatus.Active
+        };
+        var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+        loginResponseFactoryMock
+            .Setup(x => x.CreateAsync(user, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LoginUserResponse { UserKey = user.Id, Email = user.Email });
+        var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
+        _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.VerifyTwoFactorTokenAsync(user, provider, "123456")).ReturnsAsync(true);
+        var handler = CreateVerifyHandler(loginResponseFactoryMock.Object, challengeFor: user.Id);
+
+        var result = await handler.Handle(new VerifyMfaLoginCommand(user.Email, "123456", true, "challenge"), CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.Equal("device-trust", result.Data!.MfaTrust!.Token);
+    }
+
     /// <summary>SEC-4.3: suspended between the password step and this one is still suspended.</summary>
     [Fact]
     public async Task VerifyMfaLogin_ShouldRefuse_WhenTheAccountIsSuspended()
@@ -115,6 +147,9 @@ public class MfaRecoveryCodesHandlerTests
         var jwtServiceMock = new Mock<IJwtService>();
         jwtServiceMock.Setup(x => x.ReadMfaChallenge("challenge")).Returns(challengeFor);
         jwtServiceMock.Setup(x => x.ReadMfaChallenge("challenge-for-somebody-else")).Returns(Guid.NewGuid());
+        jwtServiceMock
+            .Setup(x => x.GenerateMfaTrustToken(challengeFor, It.IsAny<string>()))
+            .Returns(new MfaTrustGrant("device-trust", DateTime.UtcNow.AddDays(7)));
 
         return new VerifyMfaLoginCommandHandler(
             _userManagerMock.Object,

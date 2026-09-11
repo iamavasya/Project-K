@@ -50,6 +50,8 @@ export interface RowResult {
   name: string;
   outcome: RowOutcome;
   reason: string | null;
+  /** An account is (or would be) opened for the row's address and the activation letter sent. */
+  accountInvited: boolean;
 }
 
 export interface RosterImportReport {
@@ -61,6 +63,7 @@ export interface RosterImportReport {
   attachedCount: number;
   alreadyHereCount: number;
   rejectedCount: number;
+  invitedCount: number;
 }
 
 export interface ApplyRosterRequest {

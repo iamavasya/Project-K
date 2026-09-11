@@ -36,27 +36,6 @@ public sealed class AppUserRepository : IAppUserRepository
             cancellationToken);
     }
 
-    public Task<int> CountActiveBetaAsync(
-        IReadOnlyCollection<Guid>? userKeys,
-        CancellationToken cancellationToken = default)
-    {
-        var query = _context.Users.Where(
-            user => user.IsBetaParticipant && user.OnboardingStatus == OnboardingStatus.Active);
-
-        if (userKeys is not null)
-        {
-            if (userKeys.Count == 0)
-            {
-                return Task.FromResult(0);
-            }
-
-            var keys = userKeys.Distinct().ToList();
-            query = query.Where(user => keys.Contains(user.Id));
-        }
-
-        return query.CountAsync(cancellationToken);
-    }
-
     public async Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         var scoped = await _context.Users

@@ -75,7 +75,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
             && !_environment.IsStaging()
             && _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa");
 
-        if (user.TwoFactorEnabled && !bypassMfa)
+        if (user.TwoFactorEnabled && !bypassMfa && !IsTrustedDevice(request.MfaTrustToken, user))
         {
             return new ServiceResult<LoginUserResponse>(
                 ResultType.Success,
@@ -94,5 +94,23 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         return new ServiceResult<LoginUserResponse>(
             ResultType.Success,
             response);
+    }
+
+    /// <summary>
+    /// A device that finished the second factor recently is not asked again. The token is tied to
+    /// the security stamp the account had then: a password change or an MFA reset rotates the
+    /// stamp, and every device has to prove itself once more.
+    /// </summary>
+    private bool IsTrustedDevice(string? trustToken, AppUser user)
+    {
+        if (string.IsNullOrWhiteSpace(trustToken))
+        {
+            return false;
+        }
+
+        var trust = _jwtService.ReadMfaTrust(trustToken);
+        return trust is not null
+            && trust.UserId == user.Id
+            && string.Equals(trust.SecurityStamp, user.SecurityStamp, StringComparison.Ordinal);
     }
 }

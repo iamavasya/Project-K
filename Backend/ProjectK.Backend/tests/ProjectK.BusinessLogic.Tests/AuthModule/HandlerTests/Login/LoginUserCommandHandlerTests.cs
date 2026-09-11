@@ -536,4 +536,64 @@ public class LoginUserCommandHandlerTests
             store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    /// <summary>
+    /// A device that finished the second factor keeps a trust token; while it is valid and the
+    /// account's stamp has not moved, the password alone signs in. Signing out and back in on the
+    /// same laptop used to mean the authenticator every time.
+    /// </summary>
+    [Fact]
+    public async Task Handle_ShouldSkipMfa_OnATrustedDevice()
+    {
+        var user = TwoFactorUser();
+        user.SecurityStamp = "stamp-1";
+        _jwtServiceMock.Setup(x => x.ReadMfaTrust("trusted")).Returns(new MfaTrust(user.Id, "stamp-1"));
+
+        var result = await _handler.Handle(new LoginUserCommand(user.Email!, "password123") { MfaTrustToken = "trusted" }, CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.False(result.Data!.RequiresMfa);
+        Assert.NotNull(result.Data.Tokens);
+    }
+
+    [Theory]
+    [InlineData("stamp-old", false)]
+    [InlineData("stamp-1", true)]
+    public async Task Handle_ShouldAskForTheCodeAgain_WhenTheTrustIsStaleOrSomebodyElses(string stamp, bool otherAccount)
+    {
+        var user = TwoFactorUser();
+        user.SecurityStamp = "stamp-1";
+        _jwtServiceMock.Setup(x => x.GenerateMfaChallengeToken(user.Id)).Returns("challenge");
+        _jwtServiceMock
+            .Setup(x => x.ReadMfaTrust("trusted"))
+            .Returns(new MfaTrust(otherAccount ? Guid.NewGuid() : user.Id, stamp));
+
+        var result = await _handler.Handle(new LoginUserCommand(user.Email!, "password123") { MfaTrustToken = "trusted" }, CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.True(result.Data!.RequiresMfa);
+        Assert.Null(result.Data.Tokens);
+    }
+
+    private AppUser TwoFactorUser()
+    {
+        var user = new AppUser
+        {
+            Id = Guid.NewGuid(),
+            Email = "2fa@example.com",
+            TwoFactorEnabled = true,
+            FirstName = "TwoFactor",
+            LastName = "User"
+        };
+
+        _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, "password123", false))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string>());
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>()))
+            .Returns("access");
+        _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
+            .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
+        return user;
+    }
 }

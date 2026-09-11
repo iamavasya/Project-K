@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
 
@@ -20,4 +22,11 @@ public class LoginUserResponse
     public string? MfaToken { get; set; }
 
     public JwtResponse? Tokens { get; set; } = null!;
+
+    /// <summary>
+    /// Issued when the second factor just passed. The controller turns it into an HttpOnly cookie
+    /// and it never reaches the JSON body: a script must not be able to read what makes a device trusted.
+    /// </summary>
+    [JsonIgnore]
+    public MfaTrustGrant? MfaTrust { get; set; }
 }

@@ -2,7 +2,7 @@
 <form #form="ngForm">
     <p-accordion [multiple]="true" [(value)]="activeAccordionPanels">
         <p-accordion-panel value="0">
-            <p-accordion-header>General Info</p-accordion-header>
+            <p-accordion-header>Основне</p-accordion-header>
             <p-accordion-content>
                 @if (!isCreate) {
                     <div class="upsert-profile-header">
@@ -45,7 +45,7 @@
                                 #firstNameCtrl="ngModel"
                                 [invalid]="firstNameCtrl.invalid && (firstNameCtrl.dirty || firstNameCtrl.touched)"
                                 autocomplete="off" />
-                            <label for="firstName">First Name</label>
+                            <label for="firstName">Імʼя</label>
                         </p-floatlabel>
                         <p-floatlabel variant="on">
                             <input
@@ -57,7 +57,7 @@
                                 #middleNameCtrl="ngModel"
                                 [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
                                 autocomplete="off" />
-                            <label for="middleName">Middle Name</label>
+                            <label for="middleName">По батькові</label>
                         </p-floatlabel>
                         <p-floatlabel variant="on">
                             <input
@@ -69,7 +69,7 @@
                                 #lastNameCtrl="ngModel"
                                 [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
                                 autocomplete="off" />
-                            <label for="lastName">Last Name</label>
+                            <label for="lastName">Прізвище</label>
                         </p-floatlabel>
                         @if (canEditEmail()) {
                             <p-floatlabel variant="on">
@@ -85,10 +85,15 @@
                                     autocomplete="off" />
                                 <label for="email">Email</label>
                             </p-floatlabel>
+                            @if (isCreate) {
+                                <p-message severity="info" styleClass="w-full"
+                                    text="На цю адресу прийде лист із посиланням для активації акаунта. Попросіть перевірити теку «Спам», якщо лист не видно." />
+                            }
                         }
                         <p-floatlabel variant="on">
                             <p-inputMask
-                                mask="999-999-9999"
+                                [mask]="phoneMask"
+                                [placeholder]="phonePlaceholder"
                                 id="phoneNumber"
                                 name="phoneNumber"
                                 [(ngModel)]="member.phoneNumber"
@@ -96,7 +101,7 @@
                                 #phoneNumberCtrl="ngModel"
                                 [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
                             />
-                            <label for="phoneNumber">Phone Number</label>
+                            <label for="phoneNumber">Номер телефону</label>
                         </p-floatlabel>
                         <p-floatlabel variant="on">
                             <p-datepicker
@@ -107,7 +112,7 @@
                                 minAge
                                 #dateOfBirthCtrl="ngModel"
                                 [dateFormat]="defaultDateFormat" />
-                            <label for="dateOfBirth">Date of Birth</label>
+                            <label for="dateOfBirth">Дата народження</label>
                         </p-floatlabel>
                     </div>
                     <div class="flex flex-col gap-2">
@@ -136,12 +141,6 @@
                             <p-button type="button" icon="pi pi-trash" label="Очистити фото"
                                 [disabled]="!member.profilePhotoUrl && !croppedImage"
                                 (onClick)="clearProfilePhoto(form.form)" />
-                        }
-                        @if (isCreate) {
-                            <div class="flex align-items-center gap-2 mt-2">
-                                <input type="checkbox" id="createUserAccount" name="createUserAccount" [(ngModel)]="createUserAccount" />
-                                <label for="createUserAccount">Створити акаунт User та надіслати лист активації</label>
-                            </div>
                         }
                     </div>
                 </div>
@@ -245,7 +244,7 @@
         <div class="upsert-member-actions">
             <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)" />
             @if (canDeleteMember()) {
-                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Delete Profile" icon="pi pi-trash" />
+                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Видалити профіль" icon="pi pi-trash" />
             }
         </div>
     </div>

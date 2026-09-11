@@ -72,6 +72,8 @@ public class PrivilegedMfaEnforcementMiddleware
     {
         return path.StartsWithSegments("/api/auth/mfa", StringComparison.OrdinalIgnoreCase)
             || path.StartsWithSegments("/api/auth/logout", StringComparison.OrdinalIgnoreCase)
+            // Local-tier testing aids; the controller behind them does not exist on deployed tiers.
+            || path.StartsWithSegments("/api/dev", StringComparison.OrdinalIgnoreCase)
             || path.StartsWithSegments("/api/auth/refresh", StringComparison.OrdinalIgnoreCase)
             || path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase);
     }

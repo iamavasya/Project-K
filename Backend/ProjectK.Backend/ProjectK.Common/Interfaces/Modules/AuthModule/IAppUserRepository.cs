@@ -30,14 +30,6 @@ public interface IAppUserRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Active beta participants, across the system when <paramref name="userKeys"/> is <c>null</c>
-    /// and among the named accounts otherwise. This is what the beta cap is measured against.
-    /// </summary>
-    Task<int> CountActiveBetaAsync(
-        IReadOnlyCollection<Guid>? userKeys,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Forgets the kurin on every account that names it, whether as the one stepped into
     /// (<c>ActiveKurinKey</c>) or as the one written at sign-up (<c>KurinKey</c>). Neither column is a
     /// foreign key, so deleting a kurin used to leave these accounts scoped to a key that no longer

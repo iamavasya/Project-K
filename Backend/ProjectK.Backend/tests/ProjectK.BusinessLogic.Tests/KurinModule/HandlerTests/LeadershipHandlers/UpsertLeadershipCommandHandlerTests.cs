@@ -132,7 +132,7 @@ public class UpsertLeadershipHandlerTests
         Assert.Equal(ResultType.Created, result.Type);
         Assert.NotNull(result.Data);
         Assert.Equal(entity.LeadershipKey, result.Data!.LeadershipKey);
-        Assert.Equal("GetLeadershipByKeyQuery", result.CreatedAtActionName);
+        Assert.Equal("GetLeadershipByKey", result.CreatedAtActionName);
         Assert.NotNull(result.CreatedAtRouteValues);
 
         _leadershipRepoMock.Verify(r => r.Add(entity, It.IsAny<CancellationToken>()), Times.Once);

@@ -224,6 +224,12 @@ public static class Program
                 {
                     manager.FeatureProviders.Add(new E2EOnlyControllerFeatureProvider());
                 }
+
+                // The dev role switcher: same idea, three local tiers.
+                if (!DevOnlyControllerFeatureProvider.Allows(builder.Environment.EnvironmentName))
+                {
+                    manager.FeatureProviders.Add(new DevOnlyControllerFeatureProvider());
+                }
             })
             .AddJsonOptions(opt =>
             {
@@ -491,6 +497,15 @@ public static class Program
 
     private static void ConfigureRateLimiting(IServiceCollection services, IConfiguration configuration)
     {
+        // The strict limits are per address, and on a container stand every browser arrives from
+        // the same docker gateway address: five failed sign-ins by anyone on the tailnet locked
+        // everyone out for five minutes. Production sees real addresses (Security:ClientIp), so the
+        // defaults stay tight there; the local tiers raise them in their appsettings.
+        var strictPermit = configuration.GetValue("RateLimiting:StrictAuth:PermitLimit", 5);
+        var strictWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:StrictAuth:WindowMinutes", 5));
+        var accountPermit = configuration.GetValue("RateLimiting:AccountSecurity:PermitLimit", 10);
+        var accountWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:AccountSecurity:WindowMinutes", 5));
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -529,9 +544,9 @@ public static class Program
                     factory: partition => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = 5,
+                        PermitLimit = strictPermit,
                         QueueLimit = 0,
-                        Window = TimeSpan.FromMinutes(5)
+                        Window = strictWindow
                     });
             });
 
@@ -552,9 +567,9 @@ public static class Program
                     factory: partition => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = 10,
+                        PermitLimit = accountPermit,
                         QueueLimit = 0,
-                        Window = TimeSpan.FromMinutes(5)
+                        Window = accountWindow
                     });
             });
 

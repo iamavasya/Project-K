@@ -292,6 +292,16 @@ export class SidebarMenuComponent implements OnChanges {
       }
     });
 
+    items.push({
+      label: 'Про Лілейку',
+      icon: 'pi pi-info-circle',
+      routerLink: ['/about'],
+      command: () => {
+        this.close();
+        this.router.navigate(['/about']);
+      }
+    });
+
     return items;
   }
 

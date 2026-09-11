@@ -217,7 +217,7 @@ public class LeadershipRepository : ILeadershipRepository
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);
 
-        return rows
+        var lookup = rows
             .Select(r => new MemberLookupDto
             {
                 MemberKey = r.MemberKey,
@@ -230,6 +230,37 @@ public class LeadershipRepository : ILeadershipRepository
                 UserRole = SystemRole.ForOffice(type, r.Role)
             })
             .ToList();
+
+        // A person closed over a гурток is a впорядник of this КВ whether or not the провід screen
+        // ever seated them: access already reads the assignment that way, and the КВ list has to
+        // show the same person the sidebar does.
+        if (type == LeadershipType.KV)
+        {
+            var seated = lookup.Select(entry => entry.MemberKey).ToHashSet();
+            var mentors = await _context.MentorAssignments
+                .Where(assignment => assignment.RevokedAtUtc == null && assignment.Group.KurinKey == kurinKey)
+                .Join(_context.Members,
+                      assignment => assignment.MentorUserKey,
+                      member => member.UserKey,
+                      (assignment, member) => new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName })
+                .Distinct()
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            lookup.AddRange(mentors
+                .Where(mentor => seated.Add(mentor.MemberKey))
+                .Select(mentor => new MemberLookupDto
+                {
+                    MemberKey = mentor.MemberKey,
+                    UserKey = mentor.UserKey,
+                    FirstName = mentor.FirstName,
+                    MiddleName = mentor.MiddleName,
+                    LastName = mentor.LastName,
+                    UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
+                }));
+        }
+
+        return lookup;
     }
 
     public async Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)

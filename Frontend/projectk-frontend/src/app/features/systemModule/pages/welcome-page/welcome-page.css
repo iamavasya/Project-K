@@ -146,13 +146,88 @@
   width: 100%;
 }
 
-.product-preview img {
+/* A window, not a page: the bar with three dots says "picture" before anyone tries to press it. */
+.preview-window {
   border: 1px solid var(--p-surface-border);
   border-radius: 12px;
   box-shadow: 0 20px 52px rgba(16, 20, 19, 0.1);
-  display: block;
-  height: auto;
+  overflow: hidden;
+}
+
+.preview-window__bar {
+  align-items: center;
+  background: var(--lil-surface);
+  border-bottom: 1px solid var(--p-surface-border);
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.preview-window__dot {
+  background: var(--lil-line);
+  border-radius: 50%;
+  display: inline-block;
+  height: 0.6rem;
+  width: 0.6rem;
+}
+
+.preview-window__title {
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-left: 0.6rem;
+}
+
+.preview-window__screen {
+  aspect-ratio: 1440 / 900;
+  position: relative;
   width: 100%;
+}
+
+.preview-window__frame {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 200ms ease;
+  width: 100%;
+}
+
+.preview-window__frame--active {
+  opacity: 1;
+}
+
+.preview-dots {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.9rem;
+}
+
+.preview-dots__dot {
+  background: var(--lil-line);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 0.6rem;
+  padding: 0;
+  transition: background-color 120ms ease;
+  width: 0.6rem;
+}
+
+.preview-dots__dot--active,
+.preview-dots__dot:hover {
+  background: var(--p-primary-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-window__frame {
+    transition: none;
+  }
 }
 
 .feature-section {

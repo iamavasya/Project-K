@@ -8,9 +8,11 @@ import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { InputMaskModule } from '@openng/optimus-ui/inputmask';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ToastModule } from '@openng/optimus-ui/toast';
 import { RouterLink } from '@angular/router';
+import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../../shared/functions/ukrainian-phone.function';
 
 @Component({
   selector: 'app-waitlist-registration',
@@ -22,6 +24,7 @@ import { RouterLink } from '@angular/router';
     InputMaskModule,
     ButtonModule,
     CardModule,
+    MessageModule,
     ToastModule,
     RouterLink
 ],
@@ -35,6 +38,14 @@ import { RouterLink } from '@angular/router';
         subheader="Залиште заявку, щоб отримати доступ до Лілейки"
         [style]="{ width: 'min(100%, 480px)' }"
       >
+        @if (submitted) {
+          <div class="flex flex-col gap-4">
+            <p-message severity="success" styleClass="w-full"
+              text="Дякуємо! Заявку надіслано. Ми переглянемо її і напишемо на вказану пошту." />
+            <p-message severity="info" styleClass="w-full"
+              text="Наші листи часом потрапляють у «Спам» — якщо відповіді не видно, загляньте туди." />
+          </div>
+        } @else {
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
@@ -56,8 +67,9 @@ import { RouterLink } from '@angular/router';
             <label for="phone">Номер телефону</label>
             <p-inputMask id="phone"
               formControlName="phoneNumber"
-              mask="+38 (099) 999-99-99"
-              placeholder="+38 (0XX) XXX-XX-XX"
+              [mask]="phoneMask"
+              [placeholder]="phonePlaceholder"
+              autocomplete="tel"
              />
           </div>
 
@@ -87,6 +99,11 @@ import { RouterLink } from '@angular/router';
             <label for="leader">Я є зв'язковим куреня</label>
           </div>
 
+          @if (!form.get('isKurinLeaderCandidate')?.value) {
+            <p-message severity="info" styleClass="w-full"
+              text="Наразі ми приймаємо лише курені. Заявки окремих пластунів опрацюємо пізніше." />
+          }
+
           @if (form.get('isKurinLeaderCandidate')?.value) {
             <div class="flex flex-col gap-2">
               <label for="kurin">Число куреня</label>
@@ -107,13 +124,8 @@ import { RouterLink } from '@angular/router';
             [loading]="loading"
             styleClass="w-full"
            />
-
-          @if (submitted) {
-            <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
-              Дякуємо! Вашу заявку надіслано. Ми переглянемо її та зв'яжемося з вами через пошту.
-            </div>
-          }
         </form>
+        }
 
         <ng-template pTemplate="footer">
           <div class="text-center text-sm text-muted-color">
@@ -130,7 +142,12 @@ export class WaitlistRegistrationComponent {
   loading = false;
   submitted = false;
   maxDate = new Date();
+  readonly phoneMask = UKRAINIAN_PHONE_MASK;
+  readonly phonePlaceholder = UKRAINIAN_PHONE_PLACEHOLDER;
 
+  // Only a Зв'язковий may apply for now: the kurin is what gets onboarded, and a person on
+  // their own has nowhere to be placed. The box is required, so the button stays disabled
+  // and the notice explains why, instead of letting a lone пластун submit and hear nothing.
   private fb = inject(FormBuilder);
   private onboardingService = inject(OnboardingService);
   private messageService = inject(MessageService);
@@ -167,11 +184,10 @@ export class WaitlistRegistrationComponent {
       next: () => {
         this.submitted = true;
         this.loading = false;
-        this.form.disable();
         this.messageService.add({
           severity: 'success',
           summary: 'Заявку надіслано',
-          detail: 'Ваш запит отримано'
+          detail: 'Відповідь прийде на пошту. Перевірте й теку «Спам».'
         });
       },
       error: (err) => {

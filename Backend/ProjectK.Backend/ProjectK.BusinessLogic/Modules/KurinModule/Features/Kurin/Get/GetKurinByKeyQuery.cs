@@ -57,11 +57,11 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
 
                 var accountsHere = await _unitOfWork.Memberships
                     .GetAccountKeysInKurinAsync(request.KurinKey, token);
-                var activeBetaUsersCount = await _unitOfWork.Users
-                    .CountActiveBetaAsync(accountsHere, token);
+                var activeUsersCount = await _unitOfWork.Users
+                    .CountActiveAsync(accountsHere, token);
 
                 var kurinResponse = _mapper.Map<KurinResponse>(kurin);
-                kurinResponse.CurrentUserCount = activeBetaUsersCount;
+                kurinResponse.CurrentUserCount = activeUsersCount;
 
                 return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
             },

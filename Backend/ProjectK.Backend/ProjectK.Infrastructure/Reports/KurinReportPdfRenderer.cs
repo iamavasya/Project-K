@@ -181,7 +181,6 @@ public sealed class KurinReportPdfRenderer
                     ("Станиця", report.Kurin.Stanytsia ?? "-"),
                     ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
                     ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
-                    ("ЗБТ", report.Kurin.IsZbtKurin ? $"Так, ліміт {report.Kurin.ZbtUserCap}" : "Ні"),
                     ("Опис", report.Kurin.Description ?? "-")
                 }));
             });

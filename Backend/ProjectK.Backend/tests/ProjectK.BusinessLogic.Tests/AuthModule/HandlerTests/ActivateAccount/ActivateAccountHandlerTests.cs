@@ -1,5 +1,7 @@
 using FluentAssertions;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
@@ -34,6 +36,7 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
     private readonly FixedTimeProvider _clock = new(Now);
     private readonly ActivateAccountCommandHandler _handler;
@@ -53,7 +56,11 @@ public class ActivateAccountHandlerTests
         _userManager.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock);
+        _loginResponses
+            .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email! });
+
+        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock, _loginResponses.Object);
     }
 
     private Invitation GivenInvitation(Guid userKey, DateTime? expiresAtUtc = null)

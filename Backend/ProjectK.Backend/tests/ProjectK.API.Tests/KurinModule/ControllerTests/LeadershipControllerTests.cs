@@ -153,7 +153,7 @@ public class LeadershipControllerTests
         var result = new ServiceResult<LeadershipResponse>(
             ResultType.Created,
             dto,
-            "GetLeadershipByKeyQuery",
+            "GetLeadershipByKey",
             new { leadershipKey = dto.LeadershipKey });
 
         _mediatorMock
@@ -167,7 +167,7 @@ public class LeadershipControllerTests
         var actionResult = await _controller.CreateLeadership(request);
 
         var created = Assert.IsType<CreatedAtActionResult>(actionResult);
-        Assert.Equal("GetLeadershipByKeyQuery", created.ActionName);
+        Assert.Equal("GetLeadershipByKey", created.ActionName);
         Assert.Equal(dto, created.Value);
     }
 

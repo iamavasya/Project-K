@@ -1,4 +1,5 @@
 using System.Net;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -226,6 +227,12 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockMemberUnitOfWork.Object);
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
+            // Activation answers with a session now; the factory is the part of sign-in the host does not build.
+            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            mockLoginResponses
+                .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email ?? string.Empty });
+            builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
