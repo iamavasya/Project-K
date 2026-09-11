@@ -1,15 +1,15 @@
-# Production Observability
+# Спостережуваність у проді
 
-The API sends ASP.NET Core telemetry to the Application Insights resource configured by
-`APPLICATIONINSIGHTS_CONNECTION_STRING`. The same resource receives Serilog traces through
+API надсилає телеметрію ASP.NET Core в ресурс Application Insights, заданий змінною
+`APPLICATIONINSIGHTS_CONNECTION_STRING`. Той самий ресурс отримує трейси Serilog через
 `Serilog__WriteTo__1__Args__connectionString`.
 
-Both settings should be Key Vault references in the production App Service. Do not put the
-connection string or instrumentation key in source control or in KQL queries.
+Обидва значення в проді мають бути посиланнями на Key Vault в App Service. Рядок підключення чи
+instrumentation key не потрапляє ні в репозиторій, ні в запити KQL.
 
-## First checks after deployment
+## Перші перевірки після деплою
 
-Run a request against `/health`, then wait briefly for ingestion and run:
+Зроби запит на `/health`, зачекай хвилину на інжест і виконай:
 
 ```kusto
 requests
@@ -17,12 +17,12 @@ requests
 | summarize Requests=count(), Failed=countif(success == false), P95=percentile(duration, 95)
 ```
 
-The API should produce `requests` and `dependencies` in addition to `traces`. Exceptions should
-appear in `exceptions` when an unhandled request failure occurs.
+Окрім `traces`, API має давати `requests` і `dependencies`. Необроблена помилка запиту зʼявляється в
+`exceptions`.
 
-## Useful queries
+## Корисні запити
 
-### Failed requests
+### Невдалі запити
 
 ```kusto
 requests
@@ -32,7 +32,7 @@ requests
 | order by timestamp desc
 ```
 
-### Exceptions
+### Винятки
 
 ```kusto
 exceptions
@@ -41,14 +41,14 @@ exceptions
 | order by timestamp desc
 ```
 
-### Password reset and invitation flow
+### Відновлення пароля і запрошення
 
 ```kusto
 union isfuzzy=true
 (
     requests
     | where timestamp > ago(7d)
-    | where url has_any ("password-reset", "invitation/resend")
+    | where url has_any ("password-reset", "invitation/resend", "activate")
     | project timestamp, itemType="request", name, resultCode, success, operation_Id
 ),
 (
@@ -60,9 +60,22 @@ union isfuzzy=true
 | order by timestamp desc
 ```
 
-### Correlate one request
+### Аудит безпеки
 
-Use `operation_Id` from a request, trace, or exception to inspect the full flow:
+Безпекові події (`Auth.*`, `Mfa.*`, `Dev.Impersonate`, призупинення акаунтів) пишуться через
+`IActivityLogger` як структуровані трейси:
+
+```kusto
+traces
+| where timestamp > ago(7d)
+| where customDimensions.Action startswith "Auth." or customDimensions.Action startswith "Mfa."
+| project timestamp, customDimensions.Action, customDimensions.ActorUserId, customDimensions.TargetUserId, message
+| order by timestamp desc
+```
+
+### Один запит цілком
+
+Візьми `operation_Id` із запиту, трейсу чи винятку і подивись увесь ланцюжок:
 
 ```kusto
 union isfuzzy=true requests, dependencies, exceptions, traces
@@ -71,9 +84,15 @@ union isfuzzy=true requests, dependencies, exceptions, traces
 | order by timestamp asc
 ```
 
-## Access
+## Доступ
 
-The Application Insights resource must have query network access enabled. A user querying logs
-needs at least `Monitoring Reader` on the Application Insights resource or its resource group.
-The API's managed identity is unrelated to a human user's portal query permissions; it only needs
-access to Key Vault for the connection-string references.
+У ресурсу Application Insights має бути увімкнений мережевий доступ до запитів. Людині, що
+дивиться логи, потрібна щонайменше роль `Monitoring Reader` на ресурсі або його групі. Керована
+ідентичність API до цього не стосується: їй потрібен лише доступ до Key Vault для посилань на
+рядок підключення.
+
+## Health-ендпоінт
+
+`GET /health` відповідає без автентифікації; фронтенд опитує його і показує банер «сервер
+прокидається», поки App Service холодний. Той самий ендпоінт використовує healthcheck контейнера в
+self-host.

@@ -1,30 +1,32 @@
-# Backup and restore
+# Резервні копії та відновлення
 
-Project-K self-host data lives in two Docker volumes:
+Дані self-host-інсталяції живуть у двох томах Docker:
 
-- `projectk-sql-data`: SQL Server database data;
-- `projectk-azurite-data`: uploaded files stored by Azurite.
+- `projectk-sql-data` — база SQL Server;
+- `projectk-azurite-data` — завантажені файли (фото, сильветки) в Azurite.
 
-Back up both volumes before updating, moving servers, changing compose files, or testing a rollback.
+Роби копію обох томів перед оновленням, переїздом на інший сервер, зміною compose-файлів і перед
+будь-яким відкатом.
 
-Do not use `docker compose down -v` during normal maintenance. The `-v` flag deletes the volumes that hold Project-K data.
+Під час звичайного обслуговування **не виконуй `docker compose down -v`**: прапорець `-v` видаляє
+томи з даними.
 
-## Quick volume check
+## Перевірити томи
 
 ```bash
 docker volume ls --filter name=projectk
 ```
 
-A healthy `0.14.2-beta` self-host installation should have these volumes:
+У справній інсталяції є обидва:
 
 ```text
 projectk-sql-data
 projectk-azurite-data
 ```
 
-## SQL Server backup
+## Копія бази SQL Server
 
-Create a database backup from inside the SQL Server container:
+Бекап робиться зсередини контейнера SQL Server (пароль — той, що в `.env`):
 
 ```bash
 docker compose exec projectk-sql /opt/mssql-tools18/bin/sqlcmd \
@@ -35,28 +37,28 @@ docker compose exec projectk-sql /opt/mssql-tools18/bin/sqlcmd \
   -Q "BACKUP DATABASE [projectK] TO DISK = N'/var/opt/mssql/data/projectK.bak' WITH NOFORMAT, INIT, NAME = 'projectK backup'"
 ```
 
-Copy the backup file out:
+Забрати файл із контейнера:
 
 ```bash
 docker cp $(docker compose ps -q projectk-sql):/var/opt/mssql/data/projectK.bak ./projectK.bak
 ```
 
-PowerShell equivalent for copying the SQL backup:
+PowerShell:
 
 ```powershell
 $containerId = docker compose ps -q projectk-sql
 docker cp "$containerId`:/var/opt/mssql/data/projectK.bak" ./projectK.bak
 ```
 
-## Azurite backup
+## Копія файлів (Azurite)
 
-Stop the stack before making a volume-level backup:
+Перед копією тому зупини стек:
 
 ```bash
 docker compose down
 ```
 
-Create an archive of the Azurite volume:
+Заархівувати том:
 
 ```bash
 docker run --rm \
@@ -65,7 +67,7 @@ docker run --rm \
   alpine tar czf /backup/projectk-azurite-data.tar.gz -C /data .
 ```
 
-PowerShell equivalent:
+PowerShell:
 
 ```powershell
 docker run --rm `
@@ -74,9 +76,10 @@ docker run --rm `
   alpine tar czf /backup/projectk-azurite-data.tar.gz -C /data .
 ```
 
-## Full volume archive fallback
+## Архів обох томів (запасний варіант)
 
-Use this only when SQL Server is stopped. A SQL `.bak` file is preferred for database backups, but a stopped-volume archive is useful for server migration.
+Лише при зупиненому SQL Server. Для бази краще `.bak`, але архів томів зручний для переїзду на
+інший сервер:
 
 ```bash
 docker compose down
@@ -84,8 +87,16 @@ docker run --rm -v projectk-sql-data:/data -v "$PWD:/backup" alpine tar czf /bac
 docker run --rm -v projectk-azurite-data:/data -v "$PWD:/backup" alpine tar czf /backup/projectk-azurite-data.tar.gz -C /data .
 ```
 
-## Restore notes
+## Відновлення
 
-Restore into a clean stack with matching or newer Project-K version. Restore SQL Server first, then Azurite data, then start the API and frontend.
+Відновлюй у чистий стек тієї самої або новішої версії Лілейки. Порядок: спершу SQL Server, потім
+дані Azurite, потім запуск API і фронтенду. Після старту API сам застосує міграції, якщо версія
+новіша за ту, з якої робили копію.
 
-Always keep the `.env` file together with backups. It contains the public URLs and secrets required by the installation.
+Зберігай `.env` разом із копіями: там публічні адреси й секрети, без яких інсталяція не
+підніметься.
+
+## Розклад
+
+Мінімум — перед кожним оновленням. Для живого куреня розумно робити `.bak` щотижня скриптом у cron
+і тримати копії поза сервером.

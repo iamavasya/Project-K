@@ -1,93 +1,81 @@
-# Updating a self-host installation
+# Оновлення self-host-інсталяції
 
-This guide assumes you installed Project-K using the Docker self-host release bundle.
+Для інсталяцій, поставлених із Docker self-host bundle релізу.
 
-## Before updating
+## Перед оновленням
 
-1. Read the release notes.
-2. Back up SQL Server and Azurite data.
-3. Save your current `.env` file.
-4. Check that your Docker volumes exist:
+1. Прочитай нотатки до релізу.
+2. Зроби [копії бази і файлів](backup-restore.md).
+3. Збережи поточний `.env`.
+4. Перевір, що томи на місці:
 
 ```bash
 docker volume ls --filter name=projectk
 ```
 
-Project-K self-host keeps user data in Docker named volumes. Updating container images does not delete those volumes.
+Дані живуть в іменованих томах Docker; оновлення образів їх не чіпає.
 
-Never run this command unless you intentionally want to delete all Project-K self-host data:
+Ніколи не виконуй це, якщо не хочеш видалити всі дані інсталяції:
 
 ```bash
 docker compose down -v
 ```
 
-The `-v` flag removes volumes, including SQL Server data and Azurite blob data.
+## Оновлення в тій самій теці bundle
 
-## Update with the same bundle folder
-
-Edit `.env` and set the target version:
+У `.env` постав цільову версію:
 
 ```text
-PROJECTK_VERSION=0.14.2-beta
+PROJECTK_VERSION=<версія>
 ```
 
-Pull the new GHCR images and restart:
+Витягни нові образи з GHCR і перезапусти:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-The API applies EF Core migrations on startup.
+API застосовує міграції EF Core на старті. Великі рефакторинги (як 0.20.0 з переходом на
+членства) роблять це довше за звичайне — дай API хвилину і перевір `docker compose logs -f projectk-api`.
 
-## GHCR image tags
+## Теги образів
 
-The compose file pulls these images by `PROJECTK_VERSION`:
+Compose тягне образи за `PROJECTK_VERSION`:
 
 ```text
 ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION}
 ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION}
 ```
 
-Use explicit version tags, for example `0.14.2-beta`, for normal installs. The `beta` tag tracks the latest beta image and may move when a new beta is published.
+Для живих інсталяцій — явна версія (наприклад `1.0.0`). Тег `beta` рухається до найновішої бети і
+годиться лише тим, хто свідомо хоче йти за нею.
 
-## Update from a new release bundle
+## Оновлення з нового bundle
 
-1. Download the new `projectk-<version>-docker-selfhost` bundle.
-2. Extract it into a new folder.
-3. Copy your existing `.env` into the new folder.
-4. Review `.env.example` for new variables.
-5. Run:
+1. Завантаж новий `projectk-<версія>-docker-selfhost`.
+2. Розпакуй у нову теку.
+3. Скопіюй туди свій `.env`.
+4. Переглянь `.env.example` — чи не зʼявились нові змінні.
+5. Виконай:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-Starting with `0.14.2-beta`, the bundle uses explicit Docker volume names:
+Bundle використовує явні назви томів `projectk-sql-data` і `projectk-azurite-data`, тож дані
+лишаються привʼязаними до інсталяції навіть при зміні назви теки.
 
-- `projectk-sql-data`
-- `projectk-azurite-data`
+## Якщо інсталяція старіша за 0.14.2-beta
 
-That keeps data attached to the installation even when the bundle folder name changes.
+Ранні bundle давали томам назви з префіксом теки, наприклад
+`projectk-0.14.1-beta-docker-selfhost_projectk-sql-data`. Перед запуском нової версії з нової теки
+перевір реальні назви томів (`docker volume ls --filter name=projectk`). Якщо дані в томах із
+префіксом — зроби копію зі старої теки і віднови її в нові томи `projectk-sql-data` та
+`projectk-azurite-data`.
 
-## Upgrading from 0.14.1-beta bundle volumes
+## Відкат
 
-The `0.14.1-beta` bundle used Compose-managed volume names that may include the folder name as a prefix, for example:
-
-```text
-projectk-0.14.1-beta-docker-selfhost_projectk-sql-data
-projectk-0.14.1-beta-docker-selfhost_projectk-azurite-data
-```
-
-Before starting `0.14.2-beta` from a new folder, check your actual volume names:
-
-```bash
-docker volume ls --filter name=projectk
-```
-
-If your data is in prefixed `0.14.1-beta` volumes, create a backup first, then restore or copy that data into the new stable volumes named `projectk-sql-data` and `projectk-azurite-data`. The safest route is to keep the old bundle folder, create SQL and Azurite backups, then restore them into the `0.14.2-beta` stack.
-
-## Rollback
-
-Rollback is only safe if the database schema is compatible with the previous version. Prefer restoring from backup for major changes or failed migrations.
+Відкат безпечний лише коли схема бази сумісна з попередньою версією. Після невдалої міграції чи
+великих змін — відновлюйся з копії, а не відкочуй образ.

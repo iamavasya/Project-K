@@ -1,36 +1,42 @@
-# Security Policy
+# Політика безпеки
 
-## Reporting a vulnerability
+## Як повідомити про вразливість
 
-**Please do not open a public issue for security problems.**
+**Не відкривай публічний issue для проблем безпеки.**
 
-Report privately through GitHub's **[Private vulnerability reporting](https://github.com/iamavasya/Project-K/security/advisories/new)**
-(Security tab → *Report a vulnerability*). This opens a private advisory visible
-only to you and the maintainers.
+Повідом приватно через **[Private vulnerability reporting](https://github.com/iamavasya/Project-K/security/advisories/new)**
+на GitHub (вкладка Security → *Report a vulnerability*). Це створює приватний advisory, який бачиш
+лише ти і мейнтейнер.
 
-Please include:
+У повідомленні вкажи:
 
-- affected component (backend API, frontend, self-host bundle) and version/tag,
-- a description and impact,
-- reproduction steps or a proof of concept,
-- any suggested remediation.
+- компонент (API, фронтенд, self-host bundle) і версію чи тег;
+- опис і вплив;
+- кроки відтворення або proof of concept;
+- за можливості — пропозицію виправлення.
 
-We aim to acknowledge a report within a few days and will keep you updated as we
-triage and fix. Please allow a reasonable time for a fix before any public
-disclosure.
+Підтвердження отримання — протягом кількох днів; далі тримаємо в курсі, поки триває розбір і
+виправлення. Просимо дати розумний час на виправлення до публічного розголосу.
 
-## Supported versions
+## Які версії підтримуються
 
-This project is in active beta. Only the **latest released version** receives
-security fixes; please upgrade before reporting against older tags.
+Виправлення безпеки отримує лише **остання випущена версія**. Перед повідомленням про проблему в
+старішому тегу онови інсталяцію.
 
-| Version | Supported |
+| Версія | Підтримка |
 |---|---|
-| latest release | ✅ |
-| older betas | ❌ |
+| остання випущена (1.0.x після релізу 1.0) | ✅ |
+| старіші бети | ❌ |
 
-## Scope
+## Що в межах
 
-In scope: the ProjectK backend, the Лілейка frontend, and the self-host Docker
-bundle in this repository. Out of scope: third-party services (Azure,
-Cloudflare, Telegram, Resend) and self-hoster misconfiguration.
+У межах: бекенд ProjectK, фронтенд Лілейки і self-host Docker bundle з цього репозиторію.
+Поза межами: сторонні сервіси (Azure, Cloudflare, Telegram, Resend) і помилкова конфігурація
+власної інсталяції.
+
+## Що вже зроблено
+
+Двофакторний вхід (TOTP) з резервними кодами, обовʼязковий для проводу; довірений пристрій на
+7 днів, привʼязаний до security stamp; refresh-сесії з відкликанням; рейт-ліміти входу й
+відновлення; гео-блок за заголовком CDN; аудит безпекових дій; перевірка доступу до кожного ресурсу
+на сервері; Dependabot, CodeQL і secret scanning у CI. Подробиці — `ARCHITECTURE.md`.

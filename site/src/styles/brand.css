@@ -1,0 +1,132 @@
+/*
+ * Лілейка на Starlight. Кольори й шрифти ті самі, що в застосунку (BRANDBOOK.md, lileyka-theme.css):
+ * один зелений, чорнило, поверхня; терракота тут не потрібна взагалі. Starlight тримає темну
+ * палітру на :root, світлу — під [data-theme='light'], тому «white» у темній темі — це колір тексту.
+ */
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/neucha-400-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/neucha-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --sl-font: 'Manrope', system-ui, -apple-system, sans-serif;
+  --lil-font-hand: 'Neucha', cursive;
+
+  /* Темна тема */
+  --sl-color-accent-low: #084733;
+  --sl-color-accent: #34C48D;
+  --sl-color-accent-high: #A6D0BD;
+  --sl-color-white: #E9EDEA;
+  --sl-color-gray-1: #DDE2DF;
+  --sl-color-gray-2: #9BA8A2;
+  --sl-color-gray-3: #6C7570;
+  --sl-color-gray-4: #3A433F;
+  --sl-color-gray-5: #232A27;
+  --sl-color-gray-6: #161B19;
+  --sl-color-black: #0D1110;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #CFE5D9;
+  --sl-color-accent: #0E6E4E;
+  --sl-color-accent-high: #084733;
+  --sl-color-white: #101413;
+  --sl-color-gray-1: #2E3633;
+  --sl-color-gray-2: #6E7873;
+  --sl-color-gray-3: #9AA39F;
+  --sl-color-gray-4: #C9D0CD;
+  --sl-color-gray-5: #E4E8E6;
+  --sl-color-gray-6: #F7F9F8;
+  --sl-color-gray-7: #FFFFFF;
+  --sl-color-black: #FFFFFF;
+}
+
+/* Заголовки — щільніші, як у застосунку. */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Hero: підпис — рукописний рядок, як порожні стани в застосунку; це єдине місце для Neucha. */
+.hero .tagline {
+  font-family: var(--lil-font-hand);
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  line-height: 1.3;
+}
+
+/* Картки живуть на рамці 1px, без тіней (BRANDBOOK §правило 4 і 6). */
+.card {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.card .title {
+  font-weight: 700;
+}
+
+/* Кнопки в hero: 8px радіус, без тіней. */
+.sl-link-button {
+  border-radius: 8px;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+/* Таблиці довідки на рамці, з мʼякшою шапкою. */
+.sl-markdown-content table {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+}
+
+.sl-markdown-content img {
+  border-radius: 12px;
+}
+
+/* Портрет на сторінці «Про Лілейку» — єдина не-скриншотна картинка в довідці. */
+.sl-markdown-content img[alt='Ростислав Муха'] {
+  max-width: 240px;
+}

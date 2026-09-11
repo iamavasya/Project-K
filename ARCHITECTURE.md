@@ -237,6 +237,13 @@ HttpOnly-cookie `mfaTrust` (`MfaTrustCookie`, шлях `/api/auth`) з JWT-кв�
 **Активація акаунта.** `POST onboarding/activate` відповідає `LoginUserResponse` і ставить refresh-cookie:
 людина, яка щойно обрала пароль, потрапляє одразу в застосунок, а не на форму входу.
 
+**Сайт.** `site/` — візитка й довідка на Astro + Starlight, окрема статика зі своїм деплоєм.
+Довідка не пишеться на сайті: «Для користувача» — `docs/user/*.md`, «Для розробника» — `docs/dev/*`
+(гайди, перенесені з Notion, і DevLog) плюс кореневі `ARCHITECTURE`, `CONTRIBUTING`, `BRANDBOOK`,
+`SECURITY`, `docs/self-host/*`, які `site/scripts/sync-docs.mjs` збирає в `site/src/content/docs/`
+перед `dev` і `build`, дописуючи frontmatter і переписуючи посилання між ними. Стиль — `site/src/styles/brand.css` з тими ж
+токенами, що й `lileyka-theme.css`.
+
 **Адреса відвідувача.** Рейт-ліміт входу, гео-блок і журнал зміни IP читають
 `Connection.RemoteIpAddress`. Звідки він береться — `Security:ClientIp`: `Header` називає заголовок,
 який пише єдиний проксі попереду (`CF-Connecting-IP` за Cloudflare у `Production`/`Staging`,

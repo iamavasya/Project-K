@@ -1,15 +1,16 @@
-# Project-K self-host
+# Self-host Лілейки
 
-Project-K supports two self-host friendly startup paths:
+Лілейку можна підняти двома шляхами:
 
-- local try-out from a cloned repository;
-- Docker self-host from published GHCR images through a GitHub Release bundle without git.
+- локально з клонованого репозиторію — для проби і розробки;
+- Docker self-host з готових образів GHCR через bundle релізу GitHub, без git і без збірки.
 
-Frontend and backend stay separate in both modes. The frontend is an Angular app. The backend is an ASP.NET Core API. Azurite provides local Azure Blob-compatible storage.
+В обох випадках фронтенд (Angular) і бекенд (ASP.NET Core API) — окремі процеси; файли зберігає
+Azurite, сумісне з Azure Blob сховище.
 
-## Local try-out from cloned repository
+## Локально з клонованого репозиторію
 
-Use this when you have git, .NET SDK, Node.js, npm, SQL Server, and Azurite available on your machine.
+Потрібні git, .NET SDK, Node.js, npm, SQL Server і Azurite на машині.
 
 Windows:
 
@@ -26,45 +27,36 @@ chmod +x ./scripts/*.sh
 ./scripts/start-local.sh
 ```
 
-Default URLs:
+Адреси:
 
-- Frontend: http://localhost:4200
-- Backend: http://localhost:5205
+- фронтенд: http://localhost:4200
+- API: http://localhost:5205
 - Swagger: http://localhost:5205/swagger
-- Azurite blob endpoint: http://127.0.0.1:10000/devstoreaccount1
+- Azurite: http://127.0.0.1:10000/devstoreaccount1
 
-Stop the local stack:
+Зупинити: `./scripts/stop-local.ps1` або `./scripts/stop-local.sh`. Логи — в `.tmp/local-run/logs`.
 
-```powershell
-./scripts/stop-local.ps1
-```
+Альтернатива без встановлення SDK — контейнерний стек із `docker/`: `./dev.sh up dev --build`
+(див. `docker/README.md`).
 
-or:
+## Docker self-host без git
 
-```bash
-./scripts/stop-local.sh
-```
+Для сервера чи машини, де є лише Docker.
 
-Logs are written under `.tmp/local-run/logs`.
+Образи публікуються в GitHub Container Registry:
 
-## Docker self-host without git
+- `ghcr.io/iamavasya/projectk-api:<версія>`
+- `ghcr.io/iamavasya/projectk-web:<версія>`
 
-Use this when you want to run Project-K on a server or on a machine that has Docker but does not have git, .NET SDK, Node.js, or npm.
-
-Project-K self-host images are published to GitHub Container Registry:
-
-- `ghcr.io/iamavasya/projectk-api:<version>`
-- `ghcr.io/iamavasya/projectk-web:<version>`
-
-The easiest install path is the GitHub Release bundle. It contains `docker-compose.yml`, `.env.example`, and the self-host docs. It does not contain app binaries and does not build anything locally; Docker pulls the published images from GHCR.
-
-Download the `projectk-<version>-docker-selfhost.zip` or `.tar.gz` bundle from GitHub Releases.
+Найпростіший шлях — bundle з GitHub Releases: `projectk-<версія>-docker-selfhost.zip` або `.tar.gz`.
+Всередині `docker-compose.yml`, `.env.example` і ця документація. Бінарників там немає і нічого не
+збирається — Docker тягне готові образи.
 
 Windows:
 
 ```powershell
-Expand-Archive projectk-0.14.2-beta-docker-selfhost.zip
-cd projectk-0.14.2-beta-docker-selfhost
+Expand-Archive projectk-<версія>-docker-selfhost.zip
+cd projectk-<версія>-docker-selfhost
 copy .env.example .env
 notepad .env
 docker compose up -d
@@ -73,99 +65,101 @@ docker compose up -d
 Linux/macOS:
 
 ```bash
-tar -xzf projectk-0.14.2-beta-docker-selfhost.tar.gz
-cd projectk-0.14.2-beta-docker-selfhost
+tar -xzf projectk-<версія>-docker-selfhost.tar.gz
+cd projectk-<версія>-docker-selfhost
 cp .env.example .env
 nano .env
 docker compose up -d
 ```
 
-Two values must be set before the first start, and the API refuses to come up while they are the
-example ones:
+Два значення треба задати до першого запуску — з прикладними API не стартує:
 
-- `PROJECTK_JWT_KEY` — at least 32 random characters (`openssl rand -base64 48`);
-- `PROJECTK_SQL_PASSWORD` — and the same password inside `PROJECTK_DB_CONNECTION_STRING`.
+- `PROJECTK_JWT_KEY` — щонайменше 32 випадкові символи (`openssl rand -base64 48`);
+- `PROJECTK_SQL_PASSWORD` — і той самий пароль усередині `PROJECTK_DB_CONNECTION_STRING`.
 
-Open http://localhost:8080. The first visit lands on the setup wizard, which creates the
-administrator account; no account exists before that and none is seeded.
+Відкрий http://localhost:8080. Перший візит веде на майстер налаштування, який створює
+адміністратора. До цього жодного акаунта немає і нічого не засіюється.
 
-The bundle publishes one port, the web one. The API, SQL Server and the blob store stay on the
-compose network: nginx inside `projectk-web` forwards `/api` to the API and `/blob` to the store,
-so `PROJECTK_API_URL` is the relative `/api` and nothing else has to be reachable from outside.
+Bundle публікує один порт — веб. API, SQL Server і сховище лишаються в мережі compose: nginx у
+`projectk-web` проксить `/api` до API і `/blob` до сховища, тому `PROJECTK_API_URL` — відносний
+`/api`, і ззовні більше нічого не має бути видно.
 
-Default Docker URLs:
+Перевірка здоровʼя API (сам API назовні не опублікований):
 
-- App: http://localhost:8080
-- API health (the API itself is not published): `docker compose exec projectk-api curl -fsS http://localhost:8080/health`
+```bash
+docker compose exec projectk-api curl -fsS http://localhost:8080/health
+```
 
-## Before exposing to the internet
+## Перед виходом в інтернет
 
-The bundle listens on plain HTTP and is meant to sit behind a reverse proxy that terminates TLS
-(Caddy, nginx, Traefik, or the hosting provider's). Then:
+Bundle слухає звичайний HTTP і розрахований на реверс-проксі, який термінує TLS (Caddy, nginx,
+Traefik або проксі хостера). Далі:
 
-1. Put the public address in `.env` — `PROJECTK_PUBLIC_URL`, `PROJECTK_CORS_ORIGIN` and the host
-   part of `PROJECTK_BLOB_PUBLIC_BASE_URL` all become `https://your.domain`. `PROJECTK_API_URL`
-   stays `/api`.
-2. Point the reverse proxy at `127.0.0.1:8080` (or whatever `PROJECTK_WEB_PORT` says) and let it
-   pass the visitor's address along; nginx in `projectk-web` forwards it to the API as `X-Real-IP`,
-   which is what sign-in attempts are rate-limited by.
-3. Keep SQL Server and Azurite unpublished. If you need the database from the host for a backup,
-   add a `docker-compose.override.yml` that publishes `projectk-sql` on `127.0.0.1:1433` only.
-4. Photos are public blobs by design: anyone with a photo's URL can open it without signing in.
-   The URLs are unguessable, but they are not protected.
-5. Back up both volumes before the first real data goes in and before every update —
-   `backup-restore.md`.
-6. Turn on two-factor authentication for the administrator and for every Зв'язковий account.
-   The system settings let you require it for privileged accounts.
+1. У `.env` постав публічну адресу: `PROJECTK_PUBLIC_URL`, `PROJECTK_CORS_ORIGIN` і хост у
+   `PROJECTK_BLOB_PUBLIC_BASE_URL` стають `https://твій.домен`. `PROJECTK_API_URL` лишається `/api`.
+2. Спрямуй реверс-проксі на `127.0.0.1:8080` (або що в `PROJECTK_WEB_PORT`) і передавай адресу
+   відвідувача; nginx у `projectk-web` віддає її API як `X-Real-IP` — за нею обмежуються спроби входу.
+3. SQL Server і Azurite не публікуй. Якщо база потрібна з хоста для бекапу — додай
+   `docker-compose.override.yml`, який публікує `projectk-sql` лише на `127.0.0.1:1433`.
+4. Фото — публічні блоби за задумом: хто має URL, той відкриє без входу. URL невгадувані, але не
+   захищені.
+5. Зроби копію обох томів до перших реальних даних і перед кожним оновленням —
+   [backup-restore.md](backup-restore.md).
+6. Увімкни двофакторну автентифікацію адміністратору і кожному Звʼязковому. У налаштуваннях
+   системи її можна зробити обовʼязковою для привілейованих акаунтів (на self-host вона типово
+   вимкнена, `Security__EnforcePrivilegedMFA`).
 
-## Install directly from GHCR images
+## Пошта
 
-Use the release bundle when possible. It is the supported git-free installation path and keeps the compose file aligned with the release.
+Без поштового провайдера запрошення й відновлення пароля нікуди не підуть — у логах API буде
+лише текст листа (`Email__Provider=Mock`). Для живої інсталяції задай Resend:
+`Email__Provider=Resend`, `Email__ApiKey`, `Email__FromEmail` на своєму домені.
 
-If you already have your own deployment folder, create `.env` from `docker/selfhost/.env.example`, copy `docker/selfhost/compose.bundle.yml` as `docker-compose.yml`, and run:
+## Установка прямо з образів GHCR
+
+Bundle — підтримуваний шлях: compose-файл у ньому узгоджений з релізом. Якщо в тебе вже є своя
+тека розгортання — створи `.env` за `docker/selfhost/.env.example`, скопіюй
+`docker/selfhost/compose.bundle.yml` як `docker-compose.yml` і виконай:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-For a quick image availability check:
+Перевірити доступність образів:
 
 ```bash
-docker pull ghcr.io/iamavasya/projectk-api:0.14.2-beta
-docker pull ghcr.io/iamavasya/projectk-web:0.14.2-beta
+docker pull ghcr.io/iamavasya/projectk-api:<версія>
+docker pull ghcr.io/iamavasya/projectk-web:<версія>
 ```
 
-The `beta` tag is also published for the latest beta build:
+Тег `beta` вказує на останню бету. Для живих інсталяцій бери явну версію; `beta` — лише якщо
+свідомо йдеш за найновішим.
 
-```bash
-docker pull ghcr.io/iamavasya/projectk-api:beta
-docker pull ghcr.io/iamavasya/projectk-web:beta
-```
+## Контейнери
 
-Prefer version tags such as `0.14.2-beta` for real self-host installations. Use `beta` only when you intentionally want to follow the latest beta image.
+Compose-файл bundle запускає лише готові образи:
 
-## Containers
+- `projectk-web` — nginx зі збіркою Angular;
+- `projectk-api` — ASP.NET Core API;
+- `projectk-sql` — SQL Server;
+- `projectk-azurite` — емулятор сховища Azurite.
 
-The release bundle compose file uses published GHCR container images only and does not build from source. It starts:
+Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_APP_NAME` при старті
+контейнера і записує в `env.js`, тож один образ працює на будь-якому домені без перезбірки.
 
-- `projectk-web`: nginx serving the Angular build;
-- `projectk-api`: ASP.NET Core API;
-- `projectk-sql`: SQL Server;
-- `projectk-azurite`: Azurite storage emulator.
+## Томи
 
-The frontend image reads `PROJECTK_API_URL` at container startup and writes it into `env.js`, so you can reuse the same image across hosts without rebuilding it for each domain.
+Compose створює іменовані томи зі стабільними назвами:
 
-## Volumes
+- `projectk-sql-data` — дані SQL Server;
+- `projectk-azurite-data` — завантажені файли.
 
-The compose file creates persistent named volumes with stable Docker names:
+Контейнери можна перестворювати при оновленнях — дані лишаються в томах. Не виконуй
+`docker compose down -v`, якщо не хочеш видалити всі дані. Копія обох томів — перед оновленням і
+переїздом.
 
-- `projectk-sql-data` for SQL Server data;
-- `projectk-azurite-data` for uploaded blobs.
-
-Containers can be recreated during updates. These volumes keep the data. Do not run `docker compose down -v` unless you intentionally want to delete all Project-K self-host data. Back up both volumes before updates or server migration.
-
-## Useful commands
+## Корисні команди
 
 ```bash
 docker compose ps
@@ -176,6 +170,10 @@ docker compose pull
 docker compose up -d
 ```
 
-## Building images locally
+## Збірка образів локально
 
-The release bundle uses published GHCR container images and does not need .NET, Node.js, npm, or NuGet credentials. If you build images locally from the repository and private GitHub NuGet packages are required, set PROJECTK_NUGET_AUTH_TOKEN in your local environment or .env file.
+Bundle не потребує .NET, Node.js, npm чи NuGet-токена. Якщо збираєш образи з репозиторію сам —
+для приватних NuGet-пакетів потрібен `NUGET_AUTH_TOKEN` (або `PROJECTK_NUGET_AUTH_TOKEN`) у
+середовищі; в `.env` його не клади.
+
+Далі: [оновлення](update.md), [резервні копії](backup-restore.md).

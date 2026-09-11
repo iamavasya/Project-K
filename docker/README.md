@@ -1,111 +1,100 @@
-# Project-K dev containers
+# Контейнери для розробки
 
-Run any environment — `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod` —
-locally in containers, selected by a single variable. Build the images yourself
-or consume a prebuilt one. Images are tagged **locally only and never pushed** to
-a registry.
+Будь-яке середовище — `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod` — можна підняти
+локально в контейнерах, вибираючи його однією змінною. Образи збираються самому або беруться
+готові. Локальні образи **лише тегуються і ніколи не пушаться** в реєстр.
 
-## How it works
+## Як це працює
 
-- **The .NET API image is environment-agnostic.** One built image runs as any
-  environment; the environment is chosen at runtime via `ASPNETCORE_ENVIRONMENT`,
-  which selects the matching `appsettings.<Env>.json`. Connection strings, CORS,
-  and JWT come from environment variables.
-- **The Angular build config is baked per environment** (`NG_CONFIG` build arg:
-  `development` / `staging` / `tailscale` / `production`), but a few values stay
-  runtime-injectable via `env.js`: the API URL (`PROJECTK_API_URL`), the
-  environment name shown in the sidebar badge (`PROJECTK_ENVIRONMENT_NAME`), and
-  the product name in the browser tab (`PROJECTK_APP_NAME`, defaults to
-  `ProjectK` — set it to the release name once the beta code name is retired).
-- **SQL Server + Azurite are shared tooling.** They run once
-  (`compose.tools.yml`) on the shared `projectk-dev-net` network. Every
-  environment's app stack attaches to it and uses its **own database** on the same
-  server (`projectK_dev`, `projectK_e2e`, …), so tooling is shared while data
-  stays isolated.
+- **Образ .NET API не залежить від середовища.** Один зібраний образ запускається як будь-яке
+  середовище; його вибирає `ASPNETCORE_ENVIRONMENT`, який підтягує відповідний
+  `appsettings.<Env>.json`. Рядки підключення, CORS і JWT приходять зі змінних середовища.
+- **Збірка Angular запікається на середовище** (build arg `NG_CONFIG`: `development` / `staging` /
+  `tailscale` / `production`), але кілька значень підмінюються на старті через `env.js`: адреса API
+  (`PROJECTK_API_URL`), назва середовища в бейджі сайдбару (`PROJECTK_ENVIRONMENT_NAME`) і назва
+  продукту у вкладці (`PROJECTK_APP_NAME`).
+- **SQL Server + Azurite — спільна інфраструктура.** Вони запускаються один раз
+  (`compose.tools.yml`) у мережі `projectk-dev-net`. Стек кожного середовища підключається до неї і
+  працює зі **своєю базою** на тому ж сервері (`projectK_dev`, `projectK_e2e`, …): інструменти
+  спільні, дані ізольовані.
 
 ```
 docker/
-  compose.tools.yml         shared SQL + Azurite (run once)
-  compose.app.yml           parameterized API + Web (per environment)
-  compose.dev.override.yml  hot-reload override (dotnet watch / ng serve)
+  compose.tools.yml         спільні SQL + Azurite (запускаються раз)
+  compose.app.yml           параметризовані API + Web (на середовище)
+  compose.dev.override.yml  hot-reload (dotnet watch / ng serve)
   env/
-    dev.env  e2e.env  selfhost.env  tailscale.env   (committed, local defaults)
-    staging.env.example  prod.env.example           (copy → fill secrets)
-  nginx/                    frontend nginx config baked into the web image
+    dev.env  e2e.env  selfhost.env  tailscale.env   (у git, локальні дефолти)
+    staging.env.example  prod.env.example           (скопіювати → заповнити секрети)
+  nginx/                    конфіг nginx, запечений у веб-образ
     projectk-frontend.conf  40-projectk-env.sh
-  selfhost/                 self-host release artifacts (packaged into the bundle)
-    compose.yml             build-from-source self-host stack
-    compose.bundle.yml      prebuilt-image self-host stack (GHCR)
-    .env.example            self-host deployment env template
+  selfhost/                 артефакти self-host (пакуються в bundle релізу)
+    compose.yml             self-host зі збіркою з джерел
+    compose.bundle.yml      self-host з готових образів (GHCR)
+    .env.example            шаблон .env для self-host
 ```
 
-The orchestrator scripts live in `scripts/dev.sh` / `scripts/dev.ps1`, with thin
-`./dev.sh` / `./dev.ps1` wrappers at the repo root. See the
-[Command reference](#command-reference).
+Оркестратор — `scripts/dev.sh` / `scripts/dev.ps1`, з тонкими обгортками `./dev.sh` / `./dev.ps1` у
+корені репозиторію. Див. [довідник команд](#довідник-команд).
 
-## NuGet token (never commit it)
+## NuGet-токен (ніколи не комітити)
 
-Building the **API** image restores private GitHub NuGet packages, which needs a
-GitHub token. It is read from your **host environment variable `NUGET_AUTH_TOKEN`** —
-the compose files fall back to it automatically
+Збірка образу **API** відновлює приватні NuGet-пакети з GitHub, для чого потрібен токен GitHub. Він
+читається зі **змінної хоста `NUGET_AUTH_TOKEN`** — compose-файли беруть її автоматично
 (`${PROJECTK_NUGET_AUTH_TOKEN:-${NUGET_AUTH_TOKEN:-}}`).
 
-**Do not put the token in `docker/env/*.env`** — those files are committed. Set it
-in your shell instead:
+**Не клади токен у `docker/env/*.env`** — ці файли в git. Задай його в шелі:
 
 ```powershell
-# PowerShell — current session
-$env:NUGET_AUTH_TOKEN = "ghp_your_token"
-# …or persist for your user (once)
-setx NUGET_AUTH_TOKEN "ghp_your_token"   # reopen the shell afterwards
+# PowerShell — поточна сесія
+$env:NUGET_AUTH_TOKEN = "ghp_твій_токен"
+# …або назавжди для користувача (один раз)
+setx NUGET_AUTH_TOKEN "ghp_твій_токен"   # після цього перевідкрий шел
 ```
 
 ```bash
-# bash — add to ~/.bashrc / ~/.profile to persist
-export NUGET_AUTH_TOKEN="ghp_your_token"
+# bash — додай у ~/.bashrc / ~/.profile
+export NUGET_AUTH_TOKEN="ghp_твій_токен"
 ```
 
-No token at all? Skip building and pull a prebuilt image instead (see
-[Two ways to run](#two-ways-to-run)).
+Немає токена? Не збирай, а витягни готовий образ (див. [два способи запуску](#два-способи-запуску)).
 
-## Step-by-step (out of the box)
+## Покроково
 
-Prerequisites: **Docker Desktop running**, and `NUGET_AUTH_TOKEN` set in your shell
-(previous section) if you build locally.
+Передумови: **Docker Desktop запущений**, і `NUGET_AUTH_TOKEN` у шелі, якщо збираєш локально.
 
-Everything goes through the orchestrator. From the repo root use the thin
-entrypoint `./dev.ps1` (PowerShell) or `./dev.sh` (bash / Git Bash); it forwards to
-`scripts/dev.*`, which you can also call directly. All take the same commands and
-work from any directory.
+Все йде через оркестратор. З кореня репозиторію — `./dev.ps1` (PowerShell) або `./dev.sh`
+(bash / Git Bash); вони прокидають у `scripts/dev.*`, які можна викликати і напряму. Команди
+однакові й працюють з будь-якої теки.
 
-Run these from the **repo root**:
+З **кореня репозиторію**:
 
 ```powershell
-# 1. Start the shared tooling once per session (SQL + Azurite on projectk-dev-net)
+# 1. Спільна інфраструктура, раз на сесію (SQL + Azurite у projectk-dev-net)
 ./dev.ps1 tools up
 
-# 2. Build + start an environment. First run is slow (restore + ng build);
-#    the API applies EF migrations and seeds on startup automatically.
+# 2. Зібрати й запустити середовище. Перший запуск довгий (restore + ng build);
+#    API сам застосовує міграції EF і засіює демо-дані на старті.
 ./dev.ps1 up dev --build         # web http://localhost:4200, API http://localhost:5205/api
 
-# 3. Open the app. Swagger is at http://localhost:5205/swagger for dev.
+# 3. Відкрий застосунок. Swagger для dev — http://localhost:5205/swagger.
 
-# 4. Day-to-day
-./dev.ps1 logs dev               # tail logs (add a service name to narrow)
-./dev.ps1 ps dev                 # container status
-./dev.ps1 down dev               # stop (DB data is kept in the shared tools volume)
-./dev.ps1 down dev -v            # stop + drop this env's volumes
+# 4. Щодня
+./dev.ps1 logs dev               # логи (додай назву сервісу, щоб звузити)
+./dev.ps1 ps dev                 # стан контейнерів
+./dev.ps1 down dev               # зупинити (дані лишаються в томах tools)
+./dev.ps1 down dev -v            # зупинити + видалити томи цього середовища
 ```
 
-Other environments are the same command with a different name — ports are unique so
-they can run in parallel (see the [matrix](#environment-matrix)):
+Інші середовища — та сама команда з іншою назвою; порти унікальні, тож можна тримати кілька
+паралельно (див. [матрицю](#матриця-середовищ)):
 
 ```powershell
-./dev.ps1 up selfhost --build    # web http://localhost:8080 — first-run /setup flow
-./dev.ps1 up e2e --build         # web http://localhost:4201 (separate projectK_e2e DB)
+./dev.ps1 up selfhost --build    # web http://localhost:8080 — майстер /setup при першому вході
+./dev.ps1 up e2e --build         # web http://localhost:4201 (окрема база projectK_e2e)
 ```
 
-bash equivalent — swap `./dev.ps1` for `./dev.sh`:
+bash — те саме з `./dev.sh`:
 
 ```bash
 ./dev.sh tools up
@@ -113,54 +102,58 @@ bash equivalent — swap `./dev.ps1` for `./dev.sh`:
 ./dev.sh down dev
 ```
 
-## Command reference
+Демо-облікові записи середовища `dev` (лише сід розробки, не прод): `admin@projectk.com` /
+`Admin@12345` і `demo0…demoN@projectk.com` / `User@12345`, де `demo0` — Звʼязковий демо-куреня.
+У `dev.env` пошта — `Resend` з порожнім ключем; для локальних сценаріїв з листами постав
+`Email__Provider=Mock`.
 
-Two equivalent entrypoints, usable from any directory in the repo:
+## Довідник команд
 
-- **`./dev.ps1 <command>`** (PowerShell) / **`./dev.sh <command>`** (bash / Git Bash) —
-  thin repo-root wrappers. Recommended.
-- **`./scripts/dev.ps1 <command>`** / **`./scripts/dev.sh <command>`** — the underlying
-  scripts the wrappers forward to.
+Два рівнозначні входи, з будь-якої теки репозиторію:
 
-`<env>` is one of: `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod`.
+- **`./dev.ps1 <команда>`** (PowerShell) / **`./dev.sh <команда>`** (bash / Git Bash) — обгортки в
+  корені. Рекомендовано.
+- **`./scripts/dev.ps1 <команда>`** / **`./scripts/dev.sh <команда>`** — самі скрипти.
 
-### Shared tooling — run once per session
+`<env>` — одне з: `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod`.
 
-| Command | What it does |
-|---------|--------------|
-| `tools up`   | Start SQL Server + Azurite on the shared `projectk-dev-net` network |
-| `tools down` | Stop the tooling (data volumes are kept; add `-v` to drop them) |
-| `tools logs` | Follow the tooling logs |
-| `tools ps`   | List the tooling containers |
+### Спільна інфраструктура — раз на сесію
 
-### Per-environment app stack — API + Web
+| Команда | Що робить |
+|---------|-----------|
+| `tools up`   | Запускає SQL Server + Azurite у мережі `projectk-dev-net` |
+| `tools down` | Зупиняє (томи лишаються; `-v` — видалити) |
+| `tools logs` | Логи інфраструктури |
+| `tools ps`   | Контейнери інфраструктури |
 
-| Command | What it does |
-|---------|--------------|
-| `up <env>`              | Start the env's API + Web using existing images |
-| `up <env> --build`      | Build the images first, then start |
-| `up <env> --pull`       | Pull images (`--pull always`), then start |
-| `watch <env>`           | Start with **hot-reload** (bind-mount + `dotnet watch` / `ng serve`); runs in the foreground, Ctrl-C to stop |
-| `build <env>`           | Build the images only, do not start |
-| `pull <env>`            | Pull the `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` tags |
-| `down <env>`            | Stop the env's stack (DB data stays in the shared tooling) |
-| `down <env> -v`         | Stop and drop this env's own volumes |
-| `logs <env> [service]`  | Follow logs; optionally one service (`projectk-api` / `projectk-web`) |
-| `ps <env>`              | List the env's containers |
-| `--help`                | Print usage |
+### Стек середовища — API + Web
 
-Notes:
+| Команда | Що робить |
+|---------|-----------|
+| `up <env>`              | Запустити API + Web з наявних образів |
+| `up <env> --build`      | Спершу зібрати образи, потім запустити |
+| `up <env> --pull`       | Витягнути образи (`--pull always`), потім запустити |
+| `watch <env>`           | **Hot-reload** (bind-mount + `dotnet watch` / `ng serve`); у форграунді, Ctrl-C зупиняє |
+| `build <env>`           | Лише зібрати образи |
+| `pull <env>`            | Витягнути теги `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` |
+| `down <env>`            | Зупинити стек (дані лишаються в спільній інфраструктурі) |
+| `down <env> -v`         | Зупинити й видалити томи середовища |
+| `logs <env> [service]`  | Логи; можна один сервіс (`projectk-api` / `projectk-web`) |
+| `ps <env>`              | Контейнери середовища |
+| `--help`                | Підказка |
 
-- `up` and `watch` auto-start the shared tooling and the `projectk-dev-net` network
-  if they are not already running — you don't have to run `tools up` first.
-- Pass **only** the listed options; never combine `--build` with `watch` (hot-reload
-  uses base SDK/Node images driven by command, not the built images).
-- Each env runs as its own compose project (`projectk-<env>`) with unique host ports
-  (see the [matrix](#environment-matrix)), so several environments can run at once.
+Нюанси:
 
-## Environment matrix
+- `up` і `watch` самі піднімають інфраструктуру й мережу `projectk-dev-net`, якщо вони ще не
+  запущені — `tools up` наперед не обовʼязковий.
+- Передавай **лише** перелічені опції; `--build` з `watch` не поєднуй (hot-reload працює на базових
+  образах SDK/Node, а не на зібраних).
+- Кожне середовище — окремий compose-проєкт (`projectk-<env>`) з унікальними портами, тож кілька
+  можуть працювати одночасно.
 
-| env       | ASPNETCORE_ENVIRONMENT | NG_CONFIG   | Web  | API  | Database            |
+## Матриця середовищ
+
+| env       | ASPNETCORE_ENVIRONMENT | NG_CONFIG   | Web  | API  | База                |
 |-----------|------------------------|-------------|------|------|---------------------|
 | dev       | Development            | development | 4200 | 5205 | projectK_dev        |
 | e2e       | E2E                    | development | 4201 | 5206 | projectK_e2e        |
@@ -169,40 +162,34 @@ Notes:
 | staging   | Staging                | staging     | 8090 | 5235 | projectK_staging *  |
 | prod      | Production             | production  | 8095 | 5245 | projectK_prod *     |
 
-\* `staging` / `prod` ship as `*.env.example`. Copy to `docker/env/<env>.env`
-(gitignored) and set real secrets. The defaults point at the local shared tooling
-for a config smoke test; swap the connection strings + JWT to target real cloud.
+\* `staging` / `prod` є лише як `*.env.example`. Скопіюй у `docker/env/<env>.env` (у .gitignore) і
+постав справжні секрети. Дефолти вказують на локальну інфраструктуру для перевірки конфігу;
+для хмари підміни рядки підключення і JWT.
 
-Ports are unique per environment, so multiple stacks can run at once.
+## Два способи запуску
 
-## Two ways to run
+**Зібрати локально.** Потрібен `NUGET_AUTH_TOKEN` у шелі
+(див. [NuGet-токен](#nuget-токен-ніколи-не-комітити)), далі `./dev.ps1 up <env> --build`.
 
-**Build locally.** Needs `NUGET_AUTH_TOKEN` in your shell (see
-[NuGet token](#nuget-token-never-commit-it)), then `./dev.ps1 up <env> --build`.
+**Готовий образ.** Постав `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` в env-файлі на конкретний тег
+(наприклад `ghcr.io/iamavasya/projectk-api:1.0.0`), далі `./dev.ps1 pull <env>` і
+`./dev.ps1 up <env>` — ні збірки, ні токена.
 
-**Consume a prebuilt image.** Set `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` in
-the env file to a specific tag (e.g. `ghcr.io/iamavasya/projectk-api:0.15.0-beta`),
-then `./dev.ps1 pull <env>` and `./dev.ps1 up <env>` — no local build or NuGet
-token needed.
+## Hot-reload
 
-## Hot-reload dev loop
+`./dev.ps1 watch dev` монтує джерела і запускає `dotnet watch` + `ng serve` у контейнерах — правки
+підхоплюються на льоту. Працює у форграунді (Ctrl-C зупиняє). `--build` з `watch` **не** передавай.
 
-`./dev.ps1 watch dev` bind-mounts the source and runs `dotnet watch` +
-`ng serve` inside containers, so edits reload live. It runs in the foreground
-(Ctrl-C to stop). Do **not** pass `--build` with `watch`: it uses the base
-SDK/Node images driven by command, not the production images.
+> Нативний цикл `scripts/start-local.*` (без контейнерів) теж працює і лишається найшвидшим, якщо
+> .NET SDK і Node стоять на хості.
 
-> The native `scripts/start-local.*` loop (no containers) still works and is the
-> fastest inner loop if you have the .NET SDK + Node installed on the host.
+## Якщо щось не так
 
-## Troubleshooting
-
-- **`Cannot connect to the Docker daemon`** — Docker Desktop isn't running.
-- **API build fails on restore / `401 Unauthorized`** — `NUGET_AUTH_TOKEN` isn't set
-  in the shell you launched the script from, or the token expired. Re-check
-  [NuGet token](#nuget-token-never-commit-it), or use a prebuilt image.
-- **Web returns 502 right after start** — the API is still starting / migrating; the
-  web container depends on the API healthcheck, give it a few seconds.
-- **Reset an environment's database** — `./dev.ps1 down <env> -v`, then `up` again.
-  To wipe the shared SQL/Azurite entirely: `./dev.ps1 tools down` then
-  `docker volume rm projectk-sql-data projectk-azurite-data`.
+- **`Cannot connect to the Docker daemon`** — Docker Desktop не запущений.
+- **Збірка API падає на restore / `401 Unauthorized`** — `NUGET_AUTH_TOKEN` не заданий у тому шелі,
+  з якого запущено скрипт, або токен протух. Перевір [NuGet-токен](#nuget-токен-ніколи-не-комітити)
+  або візьми готовий образ.
+- **Web віддає 502 одразу після старту** — API ще стартує / мігрує; веб-контейнер чекає його
+  healthcheck, дай кілька секунд.
+- **Скинути базу середовища** — `./dev.ps1 down <env> -v`, потім `up`. Стерти спільні SQL/Azurite
+  повністю: `./dev.ps1 tools down`, потім `docker volume rm projectk-sql-data projectk-azurite-data`.
