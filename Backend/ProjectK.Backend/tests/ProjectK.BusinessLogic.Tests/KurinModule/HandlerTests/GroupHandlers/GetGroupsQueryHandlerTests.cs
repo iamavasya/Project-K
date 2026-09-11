@@ -24,7 +24,7 @@ public class GetGroupsHandlerTests
     private readonly IMapper _mapper;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly GetGroupsHandler _handler;
+    private readonly GetGroupsQueryHandler _handler;
 
     public GetGroupsHandlerTests()
     {
@@ -37,7 +37,7 @@ public class GetGroupsHandlerTests
 
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-        _handler = new GetGroupsHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetGroupsQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -61,7 +61,7 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(groups);
 
-        var query = new GetGroups(kurinKey);
+        var query = new GetGroupsQuery(kurinKey);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -93,7 +93,7 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Group>());
 
-        var query = new GetGroups(kurinKey);
+        var query = new GetGroupsQuery(kurinKey);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -117,7 +117,7 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expected);
 
-        var query = new GetGroups(kurinKey);
+        var query = new GetGroupsQuery(kurinKey);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() =>
@@ -143,7 +143,7 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(groups);
 
-        var query = new GetGroups(kurinKey);
+        var query = new GetGroupsQuery(kurinKey);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -162,8 +162,8 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Group>());
 
-        await _handler.Handle(new GetGroups(kurinKey), CancellationToken.None);
-        await _handler.Handle(new GetGroups(kurinKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupsQuery(kurinKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupsQuery(kurinKey), CancellationToken.None);
 
         _groupRepositoryMock.Verify(r => r.GetAllAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -178,8 +178,8 @@ public class GetGroupsHandlerTests
             .Setup(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Group>());
 
-        await _handler.Handle(new GetGroups(firstKurinKey), CancellationToken.None);
-        await _handler.Handle(new GetGroups(secondKurinKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupsQuery(firstKurinKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupsQuery(secondKurinKey), CancellationToken.None);
 
         _groupRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }

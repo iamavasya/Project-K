@@ -19,7 +19,7 @@ public class DeleteMemberHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock = new();
-    private readonly DeleteMemberHandler _handler;
+    private readonly DeleteMemberCommandHandler _handler;
 
     public DeleteMemberHandlerTests()
     {
@@ -35,13 +35,13 @@ public class DeleteMemberHandlerTests
             .Setup(d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _handler = new DeleteMemberHandler(_unitOfWorkMock.Object, _memberDirectory.Object);
+        _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object, _memberDirectory.Object);
     }
 
     [Fact]
     public async Task Handle_WithoutAKey_ShouldReturnBadRequest()
     {
-        var result = await _handler.Handle(new DeleteMember(Guid.Empty), CancellationToken.None);
+        var result = await _handler.Handle(new DeleteMemberCommand(Guid.Empty), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("MemberKeyRequired");
@@ -54,7 +54,7 @@ public class DeleteMemberHandlerTests
             .Setup(d => d.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var result = await _handler.Handle(new DeleteMember(Guid.NewGuid()), CancellationToken.None);
+        var result = await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.NotFound);
         _memberDirectory.Verify(
@@ -67,7 +67,7 @@ public class DeleteMemberHandlerTests
     {
         var memberKey = Guid.NewGuid();
 
-        var result = await _handler.Handle(new DeleteMember(memberKey), CancellationToken.None);
+        var result = await _handler.Handle(new DeleteMemberCommand(memberKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _agendaItemRepositoryMock.Verify(
@@ -87,7 +87,7 @@ public class DeleteMemberHandlerTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        var result = await _handler.Handle(new DeleteMember(Guid.NewGuid()), CancellationToken.None);
+        var result = await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.InternalServerError);
         result.ErrorCode.Should().Be("MemberDeleteFailed");
@@ -100,7 +100,7 @@ public class DeleteMemberHandlerTests
             .Setup(d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("boom"));
 
-        var act = async () => await _handler.Handle(new DeleteMember(Guid.NewGuid()), CancellationToken.None);
+        var act = async () => await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
 
         await act.Should().ThrowAsync<Exception>().WithMessage("boom");
     }

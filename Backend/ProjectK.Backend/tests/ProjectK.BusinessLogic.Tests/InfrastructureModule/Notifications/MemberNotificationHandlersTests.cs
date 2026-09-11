@@ -30,7 +30,7 @@ public class MemberNotificationHandlersTests
         var memberKey = Guid.NewGuid();
         var ownerUserKey = Guid.NewGuid();
         var actorUserKey = Guid.NewGuid();
-        var handler = new MemberProfileWentStaleNotificationHandler(_notifications.Object);
+        var handler = new MemberProfileWentStaleEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new MemberProfileWentStale(memberKey, ownerUserKey, actorUserKey)),
@@ -55,7 +55,7 @@ public class MemberNotificationHandlersTests
     {
         var memberKey = Guid.NewGuid();
         var ownerUserKey = Guid.NewGuid();
-        var handler = new MemberProfileVerifiedNotificationHandler(_notifications.Object);
+        var handler = new MemberProfileVerifiedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new MemberProfileVerified(memberKey, ownerUserKey, null)),
@@ -83,7 +83,7 @@ public class MemberNotificationHandlersTests
         var awardKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
         var ownerUserKey = Guid.NewGuid();
-        var handler = new MemberAwardReviewedNotificationHandler(_notifications.Object);
+        var handler = new MemberAwardReviewedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new MemberAwardReviewed(awardKey, memberKey, ownerUserKey, isApproved, null)),
@@ -116,7 +116,7 @@ public class MemberNotificationHandlersTests
             .Setup(x => x.ResolveAsync(kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([managerUserKey, mentorUserKey]);
 
-        var handler = new MemberAwardSubmittedNotificationHandler(_notifications.Object, _recipients.Object);
+        var handler = new MemberAwardSubmittedEventHandler(_notifications.Object, _recipients.Object);
 
         await handler.Handle(
             Raised(new MemberAwardSubmitted(awardKey, memberKey, "Іван Петренко", kurinKey, groupKey, actorUserKey)),
@@ -145,7 +145,7 @@ public class MemberNotificationHandlersTests
             .Setup(x => x.ResolveAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var handler = new MemberAwardSubmittedNotificationHandler(_notifications.Object, _recipients.Object);
+        var handler = new MemberAwardSubmittedEventHandler(_notifications.Object, _recipients.Object);
 
         await handler.Handle(
             Raised(new MemberAwardSubmitted(Guid.NewGuid(), Guid.NewGuid(), "X", Guid.NewGuid(), null, null)),
@@ -166,7 +166,7 @@ public class MemberNotificationHandlersTests
         var warningKey = Guid.NewGuid();
         var memberKey = Guid.NewGuid();
         var ownerUserKey = Guid.NewGuid();
-        var handler = new MemberWarningAssignedNotificationHandler(_notifications.Object);
+        var handler = new MemberWarningAssignedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new MemberWarningAssigned(warningKey, memberKey, ownerUserKey, level, null)),
@@ -194,7 +194,7 @@ public class MemberNotificationHandlersTests
             .Setup(x => x.ResolveAsync(kurinKey, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync([mentorUserKey]);
 
-        var handler = new BadgeProgressSubmittedNotificationHandler(_notifications.Object, _recipients.Object);
+        var handler = new BadgeProgressSubmittedEventHandler(_notifications.Object, _recipients.Object);
 
         await handler.Handle(
             Raised(new BadgeProgressSubmitted(Guid.NewGuid(), "badge-1", memberKey, "Іван", kurinKey, null, null)),
@@ -221,7 +221,7 @@ public class MemberNotificationHandlersTests
     {
         var memberKey = Guid.NewGuid();
         var ownerUserKey = Guid.NewGuid();
-        var handler = new BadgeProgressReviewedNotificationHandler(_notifications.Object);
+        var handler = new BadgeProgressReviewedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new BadgeProgressReviewed(

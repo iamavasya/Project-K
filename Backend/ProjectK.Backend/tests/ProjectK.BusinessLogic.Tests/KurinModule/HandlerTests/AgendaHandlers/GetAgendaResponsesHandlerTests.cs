@@ -24,7 +24,7 @@ public class GetAgendaResponsesHandlerTests
     private readonly Mock<IAgendaResponseRepository> _responses = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IAgendaCategoryRepository> _categories = new();
-    private readonly GetAgendaResponsesHandler _handler;
+    private readonly GetAgendaResponsesQueryHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _userKey = Guid.NewGuid();
@@ -38,7 +38,7 @@ public class GetAgendaResponsesHandlerTests
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
         _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<AgendaResponse>());
-        _handler = new GetAgendaResponsesHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
+        _handler = new GetAgendaResponsesQueryHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
     }
 
     private AgendaItem Event(Guid? kurin = null) => new()
@@ -60,7 +60,7 @@ public class GetAgendaResponsesHandlerTests
         var item = Event(kurin: Guid.NewGuid());
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var result = await _handler.Handle(new GetAgendaResponses(item.AgendaItemKey), default);
+        var result = await _handler.Handle(new GetAgendaResponsesQuery(item.AgendaItemKey), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
     }
@@ -73,7 +73,7 @@ public class GetAgendaResponsesHandlerTests
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupVisible(_kurinKey, visible: false);
 
-        var result = await _handler.Handle(new GetAgendaResponses(item.AgendaItemKey), default);
+        var result = await _handler.Handle(new GetAgendaResponsesQuery(item.AgendaItemKey), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
     }
@@ -91,7 +91,7 @@ public class GetAgendaResponsesHandlerTests
                 new() { AgendaItemKey = item.AgendaItemKey, UserKey = Guid.NewGuid(), Status = AgendaRsvpStatus.Maybe, RespondedAtUtc = DateTime.UtcNow }
             });
 
-        var result = await _handler.Handle(new GetAgendaResponses(item.AgendaItemKey), default);
+        var result = await _handler.Handle(new GetAgendaResponsesQuery(item.AgendaItemKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.GoingConfirmedCount.Should().Be(1);

@@ -35,7 +35,7 @@ public class KurinControllerTests
         var serviceResult = new ServiceResult<KurinResponse>(ResultType.Success, new KurinResponse { KurinKey = key, Number = 1 });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetKurinByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -52,7 +52,7 @@ public class KurinControllerTests
         var serviceResult = new ServiceResult<KurinResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetKurinByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -70,7 +70,7 @@ public class KurinControllerTests
         };
         var serviceResult = new ServiceResult<IEnumerable<KurinResponse>>(ResultType.Success, kurins);
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetKurins>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetKurinsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
         var result = await _controller.GetAll();
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -90,7 +90,7 @@ public class KurinControllerTests
             new { kurinKey = key });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Create(kurinNumber);
@@ -107,7 +107,7 @@ public class KurinControllerTests
         var serviceResult = new ServiceResult<KurinResponse>(ResultType.BadRequest, new KurinResponse());
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Upsert(key, new UpdateKurinRequest { Number = 10 });
@@ -119,14 +119,14 @@ public class KurinControllerTests
     public async Task Upsert_ShouldSendProfileVerificationEnabled()
     {
         var key = Guid.NewGuid();
-        UpsertKurin? sentCommand = null;
+        UpsertKurinCommand? sentCommand = null;
         var serviceResult = new ServiceResult<KurinResponse>(
             ResultType.Success,
             new KurinResponse { KurinKey = key, Number = 10, ProfileVerificationEnabled = true });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
-            .Callback<IRequest<ServiceResult<KurinResponse>>, CancellationToken>((command, _) => sentCommand = (UpsertKurin)command)
+            .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            .Callback<IRequest<ServiceResult<KurinResponse>>, CancellationToken>((command, _) => sentCommand = (UpsertKurinCommand)command)
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Upsert(key, new UpdateKurinRequest
@@ -147,7 +147,7 @@ public class KurinControllerTests
         var serviceResult = new ServiceResult<object>(ResultType.Success);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteKurin>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(key);
@@ -162,7 +162,7 @@ public class KurinControllerTests
         var serviceResult = new ServiceResult<object>((ResultType)999); // невідомий тип
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteKurin>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(key);

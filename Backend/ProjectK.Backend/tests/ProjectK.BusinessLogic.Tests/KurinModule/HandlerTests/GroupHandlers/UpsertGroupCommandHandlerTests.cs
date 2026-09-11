@@ -24,7 +24,7 @@ public class UpsertGroupHandlerTests
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBackendCache> _cacheMock;
-    private readonly UpsertGroupHandler _handler;
+    private readonly UpsertGroupCommandHandler _handler;
 
     public UpsertGroupHandlerTests()
     {
@@ -40,7 +40,7 @@ public class UpsertGroupHandlerTests
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _handler = new UpsertGroupHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
+        _handler = new UpsertGroupCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class UpsertGroupHandlerTests
         var description = "  First patrol group  ";
         Group savedGroup = null!;
 
-        var command = new UpsertGroup(name, kurin.KurinKey, description);
+        var command = new UpsertGroupCommand(name, kurin.KurinKey, description);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(Guid.Empty, It.IsAny<CancellationToken>()))
@@ -97,7 +97,7 @@ public class UpsertGroupHandlerTests
     {
         // Arrange
         var kurinKey = Guid.NewGuid();
-        var command = new UpsertGroup("Alpha", kurinKey);
+        var command = new UpsertGroupCommand("Alpha", kurinKey);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(Guid.Empty, It.IsAny<CancellationToken>()))
@@ -125,7 +125,7 @@ public class UpsertGroupHandlerTests
         var existing = new Group("OldName", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin };
         var newName = "NewName";
 
-        var command = new UpsertGroup(groupKey, newName, "  Updated group description  ");
+        var command = new UpsertGroupCommand(groupKey, newName, "  Updated group description  ");
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -160,7 +160,7 @@ public class UpsertGroupHandlerTests
     public async Task Handle_WhenDescriptionIsTooLong_ShouldReturnBadRequest()
     {
         // Arrange
-        var command = new UpsertGroup("Alpha", Guid.NewGuid(), new string('a', 1001));
+        var command = new UpsertGroupCommand("Alpha", Guid.NewGuid(), new string('a', 1001));
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -177,7 +177,7 @@ public class UpsertGroupHandlerTests
     {
         // Arrange
         var kurin = new Kurin(3) { KurinKey = Guid.NewGuid() };
-        var command = new UpsertGroup("Bravo", kurin.KurinKey);
+        var command = new UpsertGroupCommand("Bravo", kurin.KurinKey);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(Guid.Empty, It.IsAny<CancellationToken>()))
@@ -205,7 +205,7 @@ public class UpsertGroupHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var command = new UpsertGroup(groupKey, "Name");
+        var command = new UpsertGroupCommand(groupKey, "Name");
         var expected = new Exception("DB failure");
 
         _groupRepositoryMock
@@ -222,7 +222,7 @@ public class UpsertGroupHandlerTests
     {
         // Arrange
         var kurin = new Kurin(9) { KurinKey = Guid.NewGuid() };
-        var command = new UpsertGroup("Echo", kurin.KurinKey);
+        var command = new UpsertGroupCommand("Echo", kurin.KurinKey);
         Group saved = null!;
 
         _groupRepositoryMock
@@ -275,7 +275,7 @@ public class UpsertGroupHandlerTests
             .ReturnsAsync(1);
 
         var result = await _handler.Handle(
-            new UpsertGroup(existing.GroupKey, "After", "new"),
+            new UpsertGroupCommand(existing.GroupKey, "After", "new"),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);

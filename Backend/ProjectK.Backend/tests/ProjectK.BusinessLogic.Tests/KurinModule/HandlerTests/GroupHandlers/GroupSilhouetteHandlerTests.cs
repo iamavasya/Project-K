@@ -42,7 +42,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin, SilhouetteBlobName = "old.png" };
-        var handler = new UploadGroupSilhouetteHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -58,7 +58,7 @@ public sealed class GroupSilhouetteHandlerTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var result = await handler.Handle(new UploadGroupSilhouette(groupKey, [1, 2, 3], "silhouette.jpg"), CancellationToken.None);
+        var result = await handler.Handle(new UploadGroupSilhouetteCommand(groupKey, [1, 2, 3], "silhouette.jpg"), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         group.SilhouetteBlobName.Should().Be("group-silhouettes/2026/05/27/new.png");
@@ -74,7 +74,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin };
-        var handler = new UploadGroupSilhouetteHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -87,7 +87,7 @@ public sealed class GroupSilhouetteHandlerTests
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("bad image"));
 
-        var result = await handler.Handle(new UploadGroupSilhouette(groupKey, [1], "bad.png"), CancellationToken.None);
+        var result = await handler.Handle(new UploadGroupSilhouetteCommand(groupKey, [1], "bad.png"), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("InvalidImageContent");
@@ -100,7 +100,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin, SilhouetteBlobName = "old.png" };
-        var handler = new DeleteGroupSilhouetteHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new DeleteGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -109,7 +109,7 @@ public sealed class GroupSilhouetteHandlerTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var result = await handler.Handle(new DeleteGroupSilhouette(groupKey), CancellationToken.None);
+        var result = await handler.Handle(new DeleteGroupSilhouetteCommand(groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         group.SilhouetteBlobName.Should().BeNull();

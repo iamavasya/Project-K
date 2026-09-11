@@ -42,7 +42,7 @@ public class MemberWarningsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWarnings(Guid memberKey)
     {
-        var response = await _mediator.Send(new GetMemberWarnings(memberKey));
+        var response = await _mediator.Send(new GetMemberWarningsQuery(memberKey));
         return response.ToActionResult(this);
     }
 
@@ -58,7 +58,7 @@ public class MemberWarningsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AssignWarning(Guid memberKey, [FromBody] AssignMemberWarningRequest request)
     {
-        var response = await _mediator.Send(new AssignMemberWarning(memberKey, request.Level));
+        var response = await _mediator.Send(new AssignMemberWarningCommand(memberKey, request.Level));
         return response.ToActionResult(this);
     }
 
@@ -77,7 +77,7 @@ public class MemberWarningsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CancelWarning(Guid memberKey, Guid warningKey)
     {
-        var response = await _mediator.Send(new CancelMemberWarning(memberKey, warningKey));
+        var response = await _mediator.Send(new CancelMemberWarningCommand(memberKey, warningKey));
         return response.ToActionResult(this);
     }
 }

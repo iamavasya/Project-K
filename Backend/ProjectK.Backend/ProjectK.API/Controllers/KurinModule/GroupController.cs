@@ -47,7 +47,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid groupKey)
     {
-        var request = new GetGroupByKey(groupKey);
+        var request = new GetGroupByKeyQuery(groupKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -62,7 +62,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Exists(Guid groupKey)
     {
-        var request = new ExistsGroupByKey(groupKey);
+        var request = new ExistsGroupByKeyQuery(groupKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -77,7 +77,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll(Guid kurinKey)
     {
-        var request = new GetGroups(kurinKey);
+        var request = new GetGroupsQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -93,7 +93,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
     {
-        var command = new UpsertGroup(request.Name, request.KurinKey, request.Description);
+        var command = new UpsertGroupCommand(request.Name, request.KurinKey, request.Description);
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }
@@ -110,7 +110,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update(Guid groupKey, [FromBody] UpdateGroupRequest request)
     {
-        var command = new UpsertGroup(groupKey, request.Name, request.Description);
+        var command = new UpsertGroupCommand(groupKey, request.Name, request.Description);
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }
@@ -145,7 +145,7 @@ public class GroupController : ControllerBase
             return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
         }
 
-        var command = new UploadGroupSilhouette(groupKey, bytes, file.FileName);
+        var command = new UploadGroupSilhouetteCommand(groupKey, bytes, file.FileName);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
@@ -160,7 +160,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSilhouette(Guid groupKey, CancellationToken cancellationToken)
     {
-        var command = new DeleteGroupSilhouette(groupKey);
+        var command = new DeleteGroupSilhouetteCommand(groupKey);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
@@ -176,7 +176,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid groupKey)
     {
-        var command = new DeleteGroup(groupKey);
+        var command = new DeleteGroupCommand(groupKey);
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }

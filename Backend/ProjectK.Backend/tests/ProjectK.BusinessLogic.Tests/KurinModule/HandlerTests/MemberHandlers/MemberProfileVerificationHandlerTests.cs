@@ -76,9 +76,9 @@ public class MemberProfileVerificationHandlerTests
         SetupMember(member);
         _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new VerifyMemberProfileHandler(_service);
+        var handler = new VerifyMemberProfileCommandHandler(_service);
         var result = await handler.Handle(
-            new VerifyMemberProfile(member.MemberKey, " checked "),
+            new VerifyMemberProfileCommand(member.MemberKey, " checked "),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -170,9 +170,9 @@ public class MemberProfileVerificationHandlerTests
         SetupMember(member);
         _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new ResetMemberProfileVerificationHandler(_service);
+        var handler = new ResetMemberProfileVerificationCommandHandler(_service);
         var result = await handler.Handle(
-            new ResetMemberProfileVerification(member.MemberKey),
+            new ResetMemberProfileVerificationCommand(member.MemberKey),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);

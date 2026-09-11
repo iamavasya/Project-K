@@ -30,7 +30,7 @@ public class GetKurinByKeyHandlerTests
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
 
-    private readonly GetKurinByKeyHandler _handler;
+    private readonly GetKurinByKeyQueryHandler _handler;
 
     public GetKurinByKeyHandlerTests()
     {
@@ -58,7 +58,7 @@ public class GetKurinByKeyHandlerTests
             .ReturnsAsync(Array.Empty<Guid>());
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
-        _handler = new GetKurinByKeyHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
+        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -70,7 +70,7 @@ public class GetKurinByKeyHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var kurin = new Kurin(123) { KurinKey = kurinKey };
-        var query = new GetKurinByKey(kurinKey);
+        var query = new GetKurinByKeyQuery(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(kurin);
@@ -92,7 +92,7 @@ public class GetKurinByKeyHandlerTests
     {
         // Arrange
         var kurinKey = Guid.NewGuid();
-        var query = new GetKurinByKey(kurinKey);
+        var query = new GetKurinByKeyQuery(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync((Kurin)null!);
@@ -112,7 +112,7 @@ public class GetKurinByKeyHandlerTests
     {
         // Arrange
         var kurinKey = Guid.NewGuid();
-        var query = new GetKurinByKey(kurinKey);
+        var query = new GetKurinByKeyQuery(kurinKey);
         var expectedException = new Exception("Database error");
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
@@ -131,7 +131,7 @@ public class GetKurinByKeyHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var kurin = new Kurin(456) { KurinKey = kurinKey };
-        var query = new GetKurinByKey(kurinKey);
+        var query = new GetKurinByKeyQuery(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(kurin);
@@ -158,8 +158,8 @@ public class GetKurinByKeyHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(kurin);
 
-        await _handler.Handle(new GetKurinByKey(kurinKey), default);
-        await _handler.Handle(new GetKurinByKey(kurinKey), default);
+        await _handler.Handle(new GetKurinByKeyQuery(kurinKey), default);
+        await _handler.Handle(new GetKurinByKeyQuery(kurinKey), default);
 
         _kurinRepositoryMock.Verify(r => r.GetByKeyAsync(kurinKey, default), Times.Once);
     }

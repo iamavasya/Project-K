@@ -162,7 +162,7 @@ public class KurinRepositoryIntegrationTests
     }
 
     /// <summary>
-    /// The sequence <c>DeleteKurinHandler</c> runs, against a real change tracker — and the claim
+    /// The sequence <c>DeleteKurinCommandHandler</c> runs, against a real change tracker — and the claim
     /// this release exists to make: a kurin closing is something that happens to the kurin. The
     /// person who belonged to it is still there afterwards, belonging nowhere, with everything
     /// they earned still theirs.

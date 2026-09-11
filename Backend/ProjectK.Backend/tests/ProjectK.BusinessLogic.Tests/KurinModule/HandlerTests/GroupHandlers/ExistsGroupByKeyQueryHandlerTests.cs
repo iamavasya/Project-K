@@ -10,7 +10,7 @@ public class ExistsGroupByKeyHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
-    private readonly ExistsGroupByKeyHandler _handler;
+    private readonly ExistsGroupByKeyQueryHandler _handler;
 
     public ExistsGroupByKeyHandlerTests()
     {
@@ -19,7 +19,7 @@ public class ExistsGroupByKeyHandlerTests
 
         _unitOfWorkMock.Setup(x => x.Groups).Returns(_groupRepositoryMock.Object);
 
-        _handler = new ExistsGroupByKeyHandler(_unitOfWorkMock.Object);
+        _handler = new ExistsGroupByKeyQueryHandler(_unitOfWorkMock.Object);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -46,7 +46,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -65,7 +65,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var emptyGroupKey = Guid.Empty;
-        var query = new ExistsGroupByKey(emptyGroupKey);
+        var query = new ExistsGroupByKeyQuery(emptyGroupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(emptyGroupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -84,7 +84,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
         var cancellationToken = new CancellationToken();
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, cancellationToken))
@@ -105,8 +105,8 @@ public class ExistsGroupByKeyHandlerTests
         // Arrange
         var groupKey1 = Guid.NewGuid();
         var groupKey2 = Guid.NewGuid();
-        var query1 = new ExistsGroupByKey(groupKey1);
-        var query2 = new ExistsGroupByKey(groupKey2);
+        var query1 = new ExistsGroupByKeyQuery(groupKey1);
+        var query2 = new ExistsGroupByKeyQuery(groupKey2);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -133,7 +133,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         // Test both true and false scenarios to ensure ResultType is always Success
         _groupRepositoryMock.SetupSequence(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -154,7 +154,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -172,7 +172,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -199,7 +199,7 @@ public class ExistsGroupByKeyHandlerTests
 
         foreach (var groupKey in testCases)
         {
-            var query = new ExistsGroupByKey(groupKey);
+            var query = new ExistsGroupByKeyQuery(groupKey);
             _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(groupKey != Guid.Empty);
 
@@ -222,7 +222,7 @@ public class ExistsGroupByKeyHandlerTests
     public void Constructor_ShouldInitializeUnitOfWorkCorrectly()
     {
         // Arrange & Act
-        var handler = new ExistsGroupByKeyHandler(_unitOfWorkMock.Object);
+        var handler = new ExistsGroupByKeyQueryHandler(_unitOfWorkMock.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -233,7 +233,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -248,7 +248,7 @@ public class ExistsGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new ExistsGroupByKey(groupKey);
+        var query = new ExistsGroupByKeyQuery(groupKey);
         var cancelledToken = new CancellationToken(true);
 
         _groupRepositoryMock.Setup(x => x.ExistsAsync(groupKey, cancelledToken))

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { AuthService } from '../services/authService/auth.service';
+import { AuthService } from '../services/auth-service/auth.service';
 import { capabilityGuard } from './capability.guard';
 
 describe('capabilityGuard', () => {

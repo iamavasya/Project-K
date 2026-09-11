@@ -26,7 +26,7 @@ public class UpdateAgendaItemHandlerTests
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
     private readonly Mock<IMemberRepository> _memberRepo = new();
-    private readonly UpdateAgendaItemHandler _handler;
+    private readonly UpdateAgendaItemCommandHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
 
@@ -40,7 +40,7 @@ public class UpdateAgendaItemHandlerTests
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
-        _handler = new UpdateAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
+        _handler = new UpdateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
     }
 
     // Regression: stretching an event by adding an end date while keeping the same target must not
@@ -61,7 +61,7 @@ public class UpdateAgendaItemHandlerTests
         };
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var request = new UpdateAgendaItem
+        var request = new UpdateAgendaItemCommand
         {
             AgendaItemKey = item.AgendaItemKey,
             Kind = AgendaItemKind.Event,
@@ -99,7 +99,7 @@ public class UpdateAgendaItemHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
         var newMember = Guid.NewGuid();
-        var request = new UpdateAgendaItem
+        var request = new UpdateAgendaItemCommand
         {
             AgendaItemKey = item.AgendaItemKey,
             Kind = AgendaItemKind.Task,

@@ -23,7 +23,7 @@ public class UpsertKurinHandlerTests
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBackendCache> _cacheMock;
-    private readonly UpsertKurinHandler _handler;
+    private readonly UpsertKurinCommandHandler _handler;
 
     public UpsertKurinHandlerTests()
     {
@@ -37,7 +37,7 @@ public class UpsertKurinHandlerTests
 
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _handler = new UpsertKurinHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
+        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class UpsertKurinHandlerTests
     {
         // Arrange
         var number = 123;
-        var command = new UpsertKurin(number);
+        var command = new UpsertKurinCommand(number);
         Kurin savedKurin = null!;
 
         _kurinRepositoryMock.Setup(r => r.Create(It.IsAny<Kurin>(), default))
@@ -82,7 +82,7 @@ public class UpsertKurinHandlerTests
         var oldNumber = 123;
         var newNumber = 456;
         var existingKurin = new Kurin(oldNumber) { KurinKey = kurinKey };
-        var command = new UpsertKurin(kurinKey, newNumber, "  Kyiv  ", "  Ukraine  ", "  Some Patron  ", "  Long form notes  ", profileVerificationEnabled: true);
+        var command = new UpsertKurinCommand(kurinKey, newNumber, "  Kyiv  ", "  Ukraine  ", "  Some Patron  ", "  Long form notes  ", profileVerificationEnabled: true);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(existingKurin);
@@ -123,7 +123,7 @@ public class UpsertKurinHandlerTests
         string expectedErrorCode)
     {
         // Arrange
-        var command = new UpsertKurin(
+        var command = new UpsertKurinCommand(
             Guid.NewGuid(),
             123,
             stanytsiaLength.HasValue ? new string('a', stanytsiaLength.Value) : null,
@@ -146,7 +146,7 @@ public class UpsertKurinHandlerTests
     {
         // Arrange
         var number = 123;
-        var command = new UpsertKurin(number);
+        var command = new UpsertKurinCommand(number);
 
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(0);
 
@@ -167,7 +167,7 @@ public class UpsertKurinHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var number = 123;
-        var command = new UpsertKurin(kurinKey, number);
+        var command = new UpsertKurinCommand(kurinKey, number);
         var expectedException = new Exception("Database error");
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
@@ -183,7 +183,7 @@ public class UpsertKurinHandlerTests
     {
         // Arrange
         var number = 123;
-        var command = new UpsertKurin(number);
+        var command = new UpsertKurinCommand(number);
         Kurin savedKurin = null!;
 
         _kurinRepositoryMock.Setup(r => r.Create(It.IsAny<Kurin>(), default))

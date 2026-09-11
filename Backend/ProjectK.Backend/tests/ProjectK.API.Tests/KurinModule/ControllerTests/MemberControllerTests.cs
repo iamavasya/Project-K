@@ -52,7 +52,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success, dto);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -69,7 +69,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMemberByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -89,7 +89,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetAllByGroup(groupKey);
@@ -99,7 +99,7 @@ public class MemberControllerTests
         Assert.Equal(members.Count, data.Count);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<GetMembers>(q => q.GroupKey == groupKey && q.KurinKey == Guid.Empty),
+            It.Is<GetMembersQuery>(q => q.GroupKey == groupKey && q.KurinKey == Guid.Empty),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -117,7 +117,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetAllByKurin(kurinKey);
@@ -127,7 +127,7 @@ public class MemberControllerTests
         Assert.Equal(members.Count, data.Count);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<GetMembers>(q => q.GroupKey == Guid.Empty && q.KurinKey == kurinKey),
+            It.Is<GetMembersQuery>(q => q.GroupKey == Guid.Empty && q.KurinKey == kurinKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -165,7 +165,7 @@ public class MemberControllerTests
             new { memberKey = key });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Create(request, CancellationToken.None);
@@ -175,7 +175,7 @@ public class MemberControllerTests
         Assert.Equal(key, data.MemberKey);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<UpsertMember>(c =>
+            It.Is<UpsertMemberCommand>(c =>
                 c.GroupKey == request.GroupKey &&
                 c.FirstName == request.FirstName &&
                 c.LastName == request.LastName),
@@ -200,7 +200,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Create(request, CancellationToken.None);
@@ -239,7 +239,7 @@ public class MemberControllerTests
             });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -249,7 +249,7 @@ public class MemberControllerTests
         Assert.Equal(memberKey, data.MemberKey);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<UpsertMember>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
+            It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -272,7 +272,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -298,7 +298,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Update(memberKey, request, CancellationToken.None);
@@ -321,7 +321,7 @@ public class MemberControllerTests
             });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<VerifyMemberProfileCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.VerifyProfile(memberKey, request, CancellationToken.None);
@@ -331,7 +331,7 @@ public class MemberControllerTests
         Assert.Equal(MemberProfileVerificationStatus.VerifiedCurrent, data.ProfileVerificationStatus);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == request.Note),
+            It.Is<VerifyMemberProfileCommand>(c => c.MemberKey == memberKey && c.Note == request.Note),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -345,13 +345,13 @@ public class MemberControllerTests
             new MemberResponse { MemberKey = memberKey });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<VerifyMemberProfile>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<VerifyMemberProfileCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         await _controller.VerifyProfile(memberKey, null, CancellationToken.None);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<VerifyMemberProfile>(c => c.MemberKey == memberKey && c.Note == null),
+            It.Is<VerifyMemberProfileCommand>(c => c.MemberKey == memberKey && c.Note == null),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -369,7 +369,7 @@ public class MemberControllerTests
             });
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<ResetMemberProfileVerification>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<ResetMemberProfileVerificationCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.ResetProfileVerification(memberKey, CancellationToken.None);
@@ -379,7 +379,7 @@ public class MemberControllerTests
         Assert.Equal(MemberProfileVerificationStatus.Unverified, data.ProfileVerificationStatus);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<ResetMemberProfileVerification>(c => c.MemberKey == memberKey),
+            It.Is<ResetMemberProfileVerificationCommand>(c => c.MemberKey == memberKey),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -391,7 +391,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<object>(ResultType.Success);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(memberKey);
@@ -406,7 +406,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<object>((ResultType)999);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteMember>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(memberKey);
@@ -426,7 +426,7 @@ public class MemberControllerTests
         var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidates>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidatesQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetKurinMentorCandidates(kurinKey);

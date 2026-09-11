@@ -30,7 +30,7 @@ public class GetMembersHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
     private readonly IMapper _mapper;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly GetMembersHandler _handler;
+    private readonly GetMembersQueryHandler _handler;
 
     public GetMembersHandlerTests()
     {
@@ -59,7 +59,7 @@ public class GetMembersHandlerTests
         }, loggerFactory);
         _mapper = mapperConfig.CreateMapper();
 
-        _handler = new GetMembersHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
+        _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
     }
 
     private static MemberListItemDto MakeItem(Guid groupKey, Guid kurinKey, string first, string last,
@@ -95,7 +95,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(members);
 
-        var query = new GetMembers(groupKey, Guid.Empty);
+        var query = new GetMembersQuery(groupKey, Guid.Empty);
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -125,7 +125,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(members);
 
-        var query = new GetMembers(Guid.Empty, kurinKey);
+        var query = new GetMembersQuery(Guid.Empty, kurinKey);
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -148,7 +148,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MemberListItemDto> { member });
 
-        var result = await _handler.Handle(new GetMembers(Guid.Empty, kurinKey), CancellationToken.None);
+        var result = await _handler.Handle(new GetMembersQuery(Guid.Empty, kurinKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.Single().UserRole.Should().Be("Group.Hurtkoviy");
@@ -157,7 +157,7 @@ public class GetMembersHandlerTests
     [Fact]
     public async Task Handle_BothKeysProvided_ShouldReturnBadRequest()
     {
-        var query = new GetMembers(Guid.NewGuid(), Guid.NewGuid());
+        var query = new GetMembersQuery(Guid.NewGuid(), Guid.NewGuid());
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -176,7 +176,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MemberListItemDto>());
 
-        var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
+        var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data.Should().NotBeNull();
@@ -192,7 +192,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expected);
 
-        var query = new GetMembers(groupKey, Guid.Empty);
+        var query = new GetMembersQuery(groupKey, Guid.Empty);
 
         var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(query, CancellationToken.None));
         ex.Should().BeSameAs(expected);
@@ -213,7 +213,7 @@ public class GetMembersHandlerTests
             .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(members);
 
-        var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
+        var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         var direct = _mapper.Map<IEnumerable<MemberResponse>>(members);

@@ -30,8 +30,8 @@ public class JoinKurinByPublicIdTests
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly Guid _kurinKey = Guid.NewGuid();
 
-    private readonly JoinKurinHandler _join;
-    private readonly FindMemberByPublicIdHandler _lookup;
+    private readonly JoinKurinCommandHandler _join;
+    private readonly FindMemberByPublicIdQueryHandler _lookup;
 
     public JoinKurinByPublicIdTests()
     {
@@ -52,8 +52,8 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new MemberSummary(
                 _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
 
-        _join = new JoinKurinHandler(_unitOfWork.Object, _members.Object);
-        _lookup = new FindMemberByPublicIdHandler(_members.Object, _unitOfWork.Object);
+        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object);
+        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class JoinKurinByPublicIdTests
             .Callback<Membership>(membership => opened = membership);
 
         var result = await _join.Handle(
-            new JoinKurin(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
@@ -77,7 +77,7 @@ public class JoinKurinByPublicIdTests
     public async Task ACodeNobodyHas_ShouldBeRefused_WithoutOpeningAnything()
     {
         var result = await _join.Handle(
-            new JoinKurin(Guid.Empty, _kurinKey, null, MembershipKind.Youth, "PL-00000-00000"),
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, "PL-00000-00000"),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.NotFound);
@@ -89,7 +89,7 @@ public class JoinKurinByPublicIdTests
     public async Task NeitherAKeyNorACode_ShouldBeRefused()
     {
         var result = await _join.Handle(
-            new JoinKurin(Guid.Empty, _kurinKey, null), CancellationToken.None);
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("MembershipKeysRequired");
@@ -103,7 +103,7 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new Membership { MemberKey = _memberKey, KurinKey = _kurinKey });
 
         var result = await _join.Handle(
-            new JoinKurin(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);
@@ -114,7 +114,7 @@ public class JoinKurinByPublicIdTests
     public async Task TheCard_ShouldSayHowManyKurinsButNotWhich()
     {
         var result = await _lookup.Handle(
-            new FindMemberByPublicId(_kurinKey, Code), CancellationToken.None);
+            new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.Member.FullName.Should().Be("Оксана Тестова");
@@ -134,7 +134,7 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new Membership { MemberKey = _memberKey, KurinKey = _kurinKey });
 
         var result = await _lookup.Handle(
-            new FindMemberByPublicId(_kurinKey, Code), CancellationToken.None);
+            new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
 
         result.Data!.AlreadyInThisKurin.Should().BeTrue();
     }
@@ -143,9 +143,9 @@ public class JoinKurinByPublicIdTests
     public async Task AnUnknownCode_ShouldAnswerTheSameWayAsAMalformedOne()
     {
         var unknown = await _lookup.Handle(
-            new FindMemberByPublicId(_kurinKey, "PL-00000-00000"), CancellationToken.None);
+            new FindMemberByPublicIdQuery(_kurinKey, "PL-00000-00000"), CancellationToken.None);
         var malformed = await _lookup.Handle(
-            new FindMemberByPublicId(_kurinKey, "not-a-code"), CancellationToken.None);
+            new FindMemberByPublicIdQuery(_kurinKey, "not-a-code"), CancellationToken.None);
 
         unknown.Type.Should().Be(ResultType.NotFound);
         malformed.Type.Should().Be(ResultType.NotFound);

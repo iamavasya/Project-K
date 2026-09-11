@@ -41,7 +41,7 @@ public class LeadershipController : ControllerBase
     [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
     {
-        var request = new GetLeadershipByType(leadershipType, typeKey);
+        var request = new GetLeadershipByTypeQuery(leadershipType, typeKey);
         var response = await _mediator.Send(request, cancellationToken);
         return response.ToActionResult(this);
     }
@@ -61,7 +61,7 @@ public class LeadershipController : ControllerBase
     [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
     {
-        var request = new GetLeadershipByKey(leadershipKey);
+        var request = new GetLeadershipByKeyQuery(leadershipKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -79,7 +79,7 @@ public class LeadershipController : ControllerBase
     [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
     {
-        var request = new UpsertLeadership(dto);
+        var request = new UpsertLeadershipCommand(dto);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -93,7 +93,7 @@ public class LeadershipController : ControllerBase
     [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
     {
-        var request = new UpsertLeadership(dto, leadershipKey);
+        var request = new UpsertLeadershipCommand(dto, leadershipKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -107,7 +107,7 @@ public class LeadershipController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)
     {
-        var request = new GetLeadershipHistories(leadershipKey);
+        var request = new GetLeadershipHistoriesQuery(leadershipKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }

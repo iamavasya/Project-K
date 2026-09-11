@@ -16,7 +16,7 @@ public class MemberResponse
 
     /// <summary>
     /// The code a person hands to another kurin's провід so it can take them in. Only ever filled
-    /// in for the person themselves — see <c>GetMemberByKey</c>, which clears it for everyone else.
+    /// in for the person themselves — see <c>GetMemberByKeyQuery</c>, which clears it for everyone else.
     /// </summary>
     public string? PublicId { get; set; }
     public Guid GroupKey { get; set; }

@@ -14,33 +14,33 @@ using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 
-public sealed record VerifyMemberProfile(Guid MemberKey, string? Note = null) : IRequest<ServiceResult<MemberResponse>>;
+public sealed record VerifyMemberProfileCommand(Guid MemberKey, string? Note = null) : IRequest<ServiceResult<MemberResponse>>;
 
-public sealed record ResetMemberProfileVerification(Guid MemberKey) : IRequest<ServiceResult<MemberResponse>>;
+public sealed record ResetMemberProfileVerificationCommand(Guid MemberKey) : IRequest<ServiceResult<MemberResponse>>;
 
-public sealed class VerifyMemberProfileHandler : IRequestHandler<VerifyMemberProfile, ServiceResult<MemberResponse>>
+public sealed class VerifyMemberProfileCommandHandler : IRequestHandler<VerifyMemberProfileCommand, ServiceResult<MemberResponse>>
 {
     private readonly IMemberProfileVerificationService _service;
 
-    public VerifyMemberProfileHandler(IMemberProfileVerificationService service)
+    public VerifyMemberProfileCommandHandler(IMemberProfileVerificationService service)
     {
         _service = service;
     }
 
-    public Task<ServiceResult<MemberResponse>> Handle(VerifyMemberProfile request, CancellationToken cancellationToken)
+    public Task<ServiceResult<MemberResponse>> Handle(VerifyMemberProfileCommand request, CancellationToken cancellationToken)
         => _service.VerifyAsync(request.MemberKey, request.Note, cancellationToken);
 }
 
-public sealed class ResetMemberProfileVerificationHandler : IRequestHandler<ResetMemberProfileVerification, ServiceResult<MemberResponse>>
+public sealed class ResetMemberProfileVerificationCommandHandler : IRequestHandler<ResetMemberProfileVerificationCommand, ServiceResult<MemberResponse>>
 {
     private readonly IMemberProfileVerificationService _service;
 
-    public ResetMemberProfileVerificationHandler(IMemberProfileVerificationService service)
+    public ResetMemberProfileVerificationCommandHandler(IMemberProfileVerificationService service)
     {
         _service = service;
     }
 
-    public Task<ServiceResult<MemberResponse>> Handle(ResetMemberProfileVerification request, CancellationToken cancellationToken)
+    public Task<ServiceResult<MemberResponse>> Handle(ResetMemberProfileVerificationCommand request, CancellationToken cancellationToken)
         => _service.ResetAsync(request.MemberKey, cancellationToken);
 }
 

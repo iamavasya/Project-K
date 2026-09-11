@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
-import { PageTitleService } from './page-title.service';
+import { PageTitleService } from './page-title-service/page-title.service';
 
 @Injectable({
   providedIn: 'root'

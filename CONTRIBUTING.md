@@ -51,6 +51,17 @@ Modules/<Module>/Features/<Entity>/<Verb>/
 Запит, валідатор і хендлер лежать **поруч**. Окремих папок `Commands/`, `Queries/` чи `Handlers/`
 не буває — саме їхнє співіснування й давало чотири різні розкладки.
 
+Імена — за суфіксом, і він обовʼязковий: запит, що змінює стан, зветься `…Command`, запит, що лише
+читає, — `…Query` (`GetKurinsQuery`, `PreviewRosterImportQuery`, `ExportRegistryQuery`);
+хендлер — імʼя запиту плюс `Handler`, валідатор — плюс `Validator`. Короткий стиль без суфікса
+(`UpsertMember` + `UpsertMemberHandler`), який жив у `KurinModule`, знято 2026-09-11 (`DEBT-06`).
+Запит і його хендлер можуть лежати в одному файлі, названому за запитом
+(`DeleteGroupCommand.cs`), — розкладка по файлах не є частиною правила.
+
+Обробники доменних подій (`INotificationHandler<DomainEventNotification<…>>`) звуться
+`…EventHandler`, щоб не плутатися з хендлерами запитів. Усе це перевіряє
+`ProjectK.Architecture.Tests` → `NamingRules`.
+
 Поза `Features/` у модулі допускаються лише `Models/` (типи відповідей) і `Services/` (доменні
 служби, спільні для кількох зрізів).
 
@@ -231,12 +242,39 @@ dotnet format Backend/ProjectK.Backend/ProjectK.Backend.sln --exclude "**/Migrat
 | Файл компонента | `member-card.ts` | `member-card.component.ts`, `login-component.ts` |
 | Шаблон і стилі | `member-card.html`, `member-card.css` | `member-card.component.html` |
 | Клас компонента | `MemberCardComponent` | `MemberCard` |
-| Файл сервіса | `agenda.service.ts` у папці `agenda-service/` | `agenda-service.ts` |
+| Файл сервіса | `agenda.service.ts` у папці `agenda-service/` (або в теці групи: `probes-and-badges/`) | `agenda-service.ts`, голий файл у `services/` |
+| Файл моделі | `member.dto.ts`, `kurin-scope-option.model.ts`, `member-probe-row.view.ts`, `plast-level.enum.ts` | `memberDto.ts`, `kurinScopeOption.ts` |
+| Файл функції | `base64-to-blob.function.ts` | `base64ToBlob.function.ts` |
 | Папка фічі | `notificationsModule/` | `notifications/` |
 | Стилі в декораторі | `styleUrl: './x.css'` | `styleUrls: ['./x.css']` |
 
+Імена файлів — лише kebab-case; суфікс каже, що всередині: `.dto.ts` для того, що приходить з
+API, `.view.ts` для моделей подання, `.enum.ts`, `.model.ts` для решти, `.function.ts` для чистих
+функцій. Приведено одним проходом 2026-09-11 (`DEBT-07`).
+
 Єдиний свідомий виняток — кореневий клас `App` у `app.ts`: так його генерує сам Angular і так на
 нього посилається бутстрап.
+
+### Розкладка модуля
+
+Кожен `features/<x>Module/` має одну й ту саму розкладку, і теки `common/` у ньому немає:
+
+```
+features/<x>Module/
+    pages/        // те, на що веде маршрут: registry/, member-card/, login/
+    components/   // те, що вбудовується в сторінки: toolbar-header/, kurin-switcher/
+    services/     // <name>-service/<name>.service.ts
+    models/       // dto, view, enum, model
+    functions/    // чисті функції
+    guards/, directives/  // за потреби
+```
+
+Спільне для кількох модулів лежить у `shared/`. Що є сторінкою, а що компонентом, вирішує
+`app.routes.ts`: якщо на нього є `loadComponent`, це `pages/`.
+
+Кольори в CSS — лише токени (`var(--p-…)`, `var(--lil-…)`) без hex-фолбеків: тема підключена
+завжди, а фолбек лише маскує, що токен названо неправильно. Єдиний hex-список у коді — палітра
+категорій агенди (`BRANDBOOK.md` §2), і це дані, які зберігаються в базі, а не стиль.
 
 Суфікс `Component` лишається **в класі**, але не у **файлі**: ім'я файла й так лежить у папці, що
 його називає, а в шаблоні та імпортах суфікс відрізняє компонент від сервіса чи моделі.
@@ -258,8 +296,8 @@ dotnet format Backend/ProjectK.Backend/ProjectK.Backend.sln --exclude "**/Migrat
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **1073** тести (BusinessLogic 523 · API 472 · Infrastructure 69 · Architecture 9)
-- фронт — **664** тести, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- бекенд — **1077** тестів (BusinessLogic 523 · API 472 · Infrastructure 69 · Architecture 13)
+- фронт — **664** тести, лінт **0 помилок** (17 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
 ```bash

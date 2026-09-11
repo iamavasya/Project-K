@@ -21,12 +21,12 @@ internal static class AgendaNotificationText
         kind == AgendaItemKind.Task ? "Задачу" : "Подію";
 }
 
-public sealed class AgendaItemAssignedNotificationHandler
+public sealed class AgendaItemAssignedEventHandler
     : INotificationHandler<DomainEventNotification<AgendaItemAssigned>>
 {
     private readonly INotificationService _notifications;
 
-    public AgendaItemAssignedNotificationHandler(INotificationService notifications)
+    public AgendaItemAssignedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -57,12 +57,12 @@ public sealed class AgendaItemAssignedNotificationHandler
     }
 }
 
-public sealed class AgendaItemChangedNotificationHandler
+public sealed class AgendaItemChangedEventHandler
     : INotificationHandler<DomainEventNotification<AgendaItemChanged>>
 {
     private readonly INotificationService _notifications;
 
-    public AgendaItemChangedNotificationHandler(INotificationService notifications)
+    public AgendaItemChangedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -93,12 +93,12 @@ public sealed class AgendaItemChangedNotificationHandler
     }
 }
 
-public sealed class AgendaItemRemovedNotificationHandler
+public sealed class AgendaItemRemovedEventHandler
     : INotificationHandler<DomainEventNotification<AgendaItemRemoved>>
 {
     private readonly INotificationService _notifications;
 
-    public AgendaItemRemovedNotificationHandler(INotificationService notifications)
+    public AgendaItemRemovedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -129,12 +129,12 @@ public sealed class AgendaItemRemovedNotificationHandler
     }
 }
 
-public sealed class AgendaItemStatusChangedNotificationHandler
+public sealed class AgendaItemStatusChangedEventHandler
     : INotificationHandler<DomainEventNotification<AgendaItemStatusChanged>>
 {
     private readonly INotificationService _notifications;
 
-    public AgendaItemStatusChangedNotificationHandler(INotificationService notifications)
+    public AgendaItemStatusChangedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }

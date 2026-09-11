@@ -23,7 +23,7 @@ public class GetGroupByKeyHandlerTests
     private readonly IMapper _mapper;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly GetGroupByKeyHandler _handler;
+    private readonly GetGroupByKeyQueryHandler _handler;
 
     public GetGroupByKeyHandlerTests()
     {
@@ -36,7 +36,7 @@ public class GetGroupByKeyHandlerTests
 
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-        _handler = new GetGroupByKeyHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetGroupByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -54,7 +54,7 @@ public class GetGroupByKeyHandlerTests
             Kurin = kurin,
             Description = "Group description"
         };
-        var query = new GetGroupByKey(groupKey);
+        var query = new GetGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -80,7 +80,7 @@ public class GetGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new GetGroupByKey(groupKey);
+        var query = new GetGroupByKeyQuery(groupKey);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -101,7 +101,7 @@ public class GetGroupByKeyHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var query = new GetGroupByKey(groupKey);
+        var query = new GetGroupByKeyQuery(groupKey);
         var expected = new Exception("DB failure");
 
         _groupRepositoryMock
@@ -126,7 +126,7 @@ public class GetGroupByKeyHandlerTests
             GroupKey = Guid.NewGuid(),
             Kurin = kurin
         };
-        var query = new GetGroupByKey(group.GroupKey);
+        var query = new GetGroupByKeyQuery(group.GroupKey);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
@@ -155,8 +155,8 @@ public class GetGroupByKeyHandlerTests
             .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(group);
 
-        await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
-        await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupByKeyQuery(group.GroupKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupByKeyQuery(group.GroupKey), CancellationToken.None);
 
         _groupRepositoryMock.Verify(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()), Times.Once);
     }

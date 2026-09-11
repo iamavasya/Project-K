@@ -28,7 +28,7 @@ public class GetMemberDossierHandlerTests
     private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
     private readonly Mock<IMapper> _mapper = new();
-    private readonly GetMemberDossierHandler _handler;
+    private readonly GetMemberDossierQueryHandler _handler;
 
     public GetMemberDossierHandlerTests()
     {
@@ -76,7 +76,7 @@ public class GetMemberDossierHandlerTests
                 [new ProbeProgressRecord("upu-1", ProbeProgressStatus.Completed, Guid.NewGuid(), null, null)],
                 []));
 
-        _handler = new GetMemberDossierHandler(
+        _handler = new GetMemberDossierQueryHandler(
             _uow.Object, _memberships.Object, _progress.Object, _mapper.Object);
     }
 
@@ -85,7 +85,7 @@ public class GetMemberDossierHandlerTests
         null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-2), null);
 
     private Task<ServiceResult<MemberDossierResponse>> Open(params string[] include)
-        => _handler.Handle(new GetMemberDossier(MemberKey, include), CancellationToken.None);
+        => _handler.Handle(new GetMemberDossierQuery(MemberKey, include), CancellationToken.None);
 
     [Fact]
     public async Task WithNothingAsked_ShouldReturnTheIndexAndNoContents()
@@ -161,7 +161,7 @@ public class GetMemberDossierHandlerTests
     public async Task NoSuchPerson_ShouldBeNotFound()
     {
         var result = await _handler.Handle(
-            new GetMemberDossier(Guid.NewGuid(), []), CancellationToken.None);
+            new GetMemberDossierQuery(Guid.NewGuid(), []), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.NotFound);
     }
@@ -170,7 +170,7 @@ public class GetMemberDossierHandlerTests
     public async Task WithoutAKey_ShouldBeRefused()
     {
         var result = await _handler.Handle(
-            new GetMemberDossier(Guid.Empty, []), CancellationToken.None);
+            new GetMemberDossierQuery(Guid.Empty, []), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("MemberKeyRequired");

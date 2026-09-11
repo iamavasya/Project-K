@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
-import { NotificationService } from '../../services/notification.service';
+import { NotificationService } from '../../services/notification-service/notification.service';
 import { NotificationBellComponent } from './notification-bell';
 
 describe('NotificationBellComponent', () => {

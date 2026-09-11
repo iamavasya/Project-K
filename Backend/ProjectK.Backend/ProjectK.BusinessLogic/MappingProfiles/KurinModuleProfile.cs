@@ -27,7 +27,7 @@ public class KurinModuleProfile : Profile
         CreateMap<Kurin, KurinResponse>()
             .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
             .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)));
-        CreateMap<UpsertKurin, Kurin>(MemberList.None)
+        CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
@@ -35,7 +35,7 @@ public class KurinModuleProfile : Profile
         CreateMap<Group, GroupResponse>()
             .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number))
             .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
-        CreateMap<UpsertGroup, Group>(MemberList.None)
+        CreateMap<UpsertGroupCommand, Group>(MemberList.None)
             .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
             // A гурток does not change kurin by being renamed. The update path builds the command
             // without a KurinKey, so mapping it would write Guid.Empty over a live foreign key.
@@ -126,14 +126,14 @@ public class KurinModuleProfile : Profile
                     ? (src.GroupKey ?? Guid.Empty)
                     : (src.KurinKey ?? Guid.Empty)));
 
-        CreateMap<UpsertLeadership, Leadership>(MemberList.None)
+        CreateMap<UpsertLeadershipCommand, Leadership>(MemberList.None)
             .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore())
             .ForMember(dest => dest.Type, opt => opt.Ignore())
             .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
             .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
 
         // Planning Mapping
-        CreateMap<CreatePlanningSession, PlanningSession>(MemberList.None);
+        CreateMap<CreatePlanningSessionCommand, PlanningSession>(MemberList.None);
 
         CreateMap<ParticipantInputDto, PlanningParticipant>(MemberList.None);
 

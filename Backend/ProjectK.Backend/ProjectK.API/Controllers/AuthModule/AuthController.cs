@@ -184,7 +184,7 @@ public class AuthController : ControllerBase
             return this.UnreadableIdentity();
         }
 
-        var response = await _mediator.Send(new GetKurinScopeOptions(userKey));
+        var response = await _mediator.Send(new GetKurinScopeOptionsQuery(userKey));
         return response.ToActionResult(this);
     }
 

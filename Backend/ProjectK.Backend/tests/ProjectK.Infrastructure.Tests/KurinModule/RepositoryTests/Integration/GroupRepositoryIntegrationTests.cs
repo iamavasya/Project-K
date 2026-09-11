@@ -161,7 +161,7 @@ public class GroupRepositoryIntegrationTests
     }
 
     /// <summary>
-    /// The sequence <c>DeleteGroupHandler</c> runs, against a real change tracker.
+    /// The sequence <c>DeleteGroupCommandHandler</c> runs, against a real change tracker.
     /// <para>
     /// Members used to arrive <c>AsNoTracking</c> with their own detached <see cref="Group"/>
     /// attached; removing one then put a second instance of the already-tracked гурток in front

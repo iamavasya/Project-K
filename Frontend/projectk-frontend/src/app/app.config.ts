@@ -2,15 +2,15 @@ import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalE
 import { NavigationEnd, Router, TitleStrategy, provideRouter, withNavigationErrorHandler } from '@angular/router';
 
 import { routes } from './app.routes';
-import { clearStaleAppShellMarker, recoverFromStaleAppShell } from './features/systemModule/services/stale-app-shell.function';
+import { clearStaleAppShellMarker, recoverFromStaleAppShell } from './features/systemModule/functions/stale-app-shell.function';
 import { ProjectKTitleStrategy } from './features/systemModule/services/page-title.strategy';
 import { provideOptimus } from '@openng/optimus-ui/config';
 import { LileykaPreset } from './lileyka-preset';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
-import { HealthBannerService } from './features/systemModule/services/health-banner.service';
-import { ThemeService } from './features/systemModule/services/theme.service';
+import { HealthBannerService } from './features/systemModule/services/health-banner-service/health-banner.service';
+import { ThemeService } from './features/systemModule/services/theme-service/theme.service';
 import { MessageService } from '@openng/optimus-ui/api';
 
 export const appConfig: ApplicationConfig = {

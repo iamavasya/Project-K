@@ -43,7 +43,7 @@ public class MemberAwardsController : ControllerBase
     [HttpPost]
     [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(MemberAwardDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> UpsertAward(Guid memberKey, [FromBody] UpsertMemberAward command)
+    public async Task<IActionResult> UpsertAward(Guid memberKey, [FromBody] UpsertMemberAwardCommand command)
     {
         command.MemberKey = memberKey;
         var result = await _mediator.Send(command);
@@ -59,7 +59,7 @@ public class MemberAwardsController : ControllerBase
     [ProducesResponseType(typeof(MemberAwardDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReviewAward(Guid memberKey, Guid awardKey, [FromBody] ReviewBadgeProgressRequest request)
     {
-        var result = await _mediator.Send(new ReviewMemberAward
+        var result = await _mediator.Send(new ReviewMemberAwardCommand
         {
             MemberAwardKey = awardKey,
             IsApproved = request.IsApproved
@@ -79,7 +79,7 @@ public class MemberAwardsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAward(Guid memberKey, Guid awardKey)
     {
-        var result = await _mediator.Send(new DeleteMemberAward { MemberAwardKey = awardKey });
+        var result = await _mediator.Send(new DeleteMemberAwardCommand { MemberAwardKey = awardKey });
         return result.ToActionResult(this);
     }
 

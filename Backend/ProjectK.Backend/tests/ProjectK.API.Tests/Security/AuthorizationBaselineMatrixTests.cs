@@ -153,7 +153,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<LeadershipController, Guid, UpsertLeadershipRequest>>(nameof(LeadershipController.UpdateLeadership), "RequireUser");
         yield return Row<Action<LeadershipController, Guid>>(nameof(LeadershipController.GetLeadershipHistories), "RequireUser");
 
-        yield return Row<Action<PlanningController, CreatePlanningSession>>(nameof(PlanningController.CreatePlanningSession), "RequirePlanningAuthor");
+        yield return Row<Action<PlanningController, CreatePlanningSessionCommand>>(nameof(PlanningController.CreatePlanningSession), "RequirePlanningAuthor");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessionByKey), "RequireUser");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.GetPlanningSessions), "RequireUser");
         yield return Row<Action<PlanningController, Guid>>(nameof(PlanningController.DeletePlanningSession), "RequireUser");
@@ -176,14 +176,14 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?>>(nameof(AgendaController.GetCalendar), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetBoard), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireAgendaAuthor");
-        yield return Row<Action<AgendaController, CreateAgendaItem>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
-        yield return Row<Action<AgendaController, Guid, UpdateAgendaItem>>(nameof(AgendaController.Update), "RequireUser");
+        yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
+        yield return Row<Action<AgendaController, Guid, UpdateAgendaItemCommand>>(nameof(AgendaController.Update), "RequireUser");
         yield return Row<Action<AgendaController, Guid, ChangeAgendaStatusRequest>>(nameof(AgendaController.ChangeStatus), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.Delete), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategories), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategoriesForManagement), "RequireUser");
-        yield return Row<Action<AgendaController, UpsertAgendaCategory>>(nameof(AgendaController.UpsertCategory), "RequireUser");
-        yield return Row<Action<AgendaController, Guid, UpsertAgendaCategory>>(nameof(AgendaController.UpdateCategory), "RequireUser");
+        yield return Row<Action<AgendaController, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpsertCategory), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpdateCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid, Guid>>(nameof(AgendaController.DeleteCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");

@@ -7,21 +7,21 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 
-public sealed record GetNotifications(bool UnreadOnly, int Take) : IRequest<ServiceResult<IReadOnlyList<AppNotificationDto>>>;
+public sealed record GetNotificationsQuery(bool UnreadOnly, int Take) : IRequest<ServiceResult<IReadOnlyList<AppNotificationDto>>>;
 
-public sealed record GetUnreadNotificationCount : IRequest<ServiceResult<int>>;
+public sealed record GetUnreadNotificationCountQuery : IRequest<ServiceResult<int>>;
 
-public sealed record MarkNotificationAsRead(Guid NotificationKey) : IRequest<ServiceResult<AppNotificationDto>>;
+public sealed record MarkNotificationAsReadCommand(Guid NotificationKey) : IRequest<ServiceResult<AppNotificationDto>>;
 
-public sealed record MarkAllNotificationsAsRead : IRequest<ServiceResult<int>>;
+public sealed record MarkAllNotificationsAsReadCommand : IRequest<ServiceResult<int>>;
 
-public sealed class GetNotificationsHandler
-    : IRequestHandler<GetNotifications, ServiceResult<IReadOnlyList<AppNotificationDto>>>
+public sealed class GetNotificationsQueryHandler
+    : IRequestHandler<GetNotificationsQuery, ServiceResult<IReadOnlyList<AppNotificationDto>>>
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserContext _currentUserContext;
 
-    public GetNotificationsHandler(
+    public GetNotificationsQueryHandler(
         INotificationService notificationService,
         ICurrentUserContext currentUserContext)
     {
@@ -30,7 +30,7 @@ public sealed class GetNotificationsHandler
     }
 
     public async Task<ServiceResult<IReadOnlyList<AppNotificationDto>>> Handle(
-        GetNotifications request,
+        GetNotificationsQuery request,
         CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
@@ -50,13 +50,13 @@ public sealed class GetNotificationsHandler
     }
 }
 
-public sealed class GetUnreadNotificationCountHandler
-    : IRequestHandler<GetUnreadNotificationCount, ServiceResult<int>>
+public sealed class GetUnreadNotificationCountQueryHandler
+    : IRequestHandler<GetUnreadNotificationCountQuery, ServiceResult<int>>
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserContext _currentUserContext;
 
-    public GetUnreadNotificationCountHandler(
+    public GetUnreadNotificationCountQueryHandler(
         INotificationService notificationService,
         ICurrentUserContext currentUserContext)
     {
@@ -65,7 +65,7 @@ public sealed class GetUnreadNotificationCountHandler
     }
 
     public async Task<ServiceResult<int>> Handle(
-        GetUnreadNotificationCount request,
+        GetUnreadNotificationCountQuery request,
         CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
@@ -78,13 +78,13 @@ public sealed class GetUnreadNotificationCountHandler
     }
 }
 
-public sealed class MarkNotificationAsReadHandler
-    : IRequestHandler<MarkNotificationAsRead, ServiceResult<AppNotificationDto>>
+public sealed class MarkNotificationAsReadCommandHandler
+    : IRequestHandler<MarkNotificationAsReadCommand, ServiceResult<AppNotificationDto>>
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserContext _currentUserContext;
 
-    public MarkNotificationAsReadHandler(
+    public MarkNotificationAsReadCommandHandler(
         INotificationService notificationService,
         ICurrentUserContext currentUserContext)
     {
@@ -93,7 +93,7 @@ public sealed class MarkNotificationAsReadHandler
     }
 
     public async Task<ServiceResult<AppNotificationDto>> Handle(
-        MarkNotificationAsRead request,
+        MarkNotificationAsReadCommand request,
         CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
@@ -111,13 +111,13 @@ public sealed class MarkNotificationAsReadHandler
     }
 }
 
-public sealed class MarkAllNotificationsAsReadHandler
-    : IRequestHandler<MarkAllNotificationsAsRead, ServiceResult<int>>
+public sealed class MarkAllNotificationsAsReadCommandHandler
+    : IRequestHandler<MarkAllNotificationsAsReadCommand, ServiceResult<int>>
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserContext _currentUserContext;
 
-    public MarkAllNotificationsAsReadHandler(
+    public MarkAllNotificationsAsReadCommandHandler(
         INotificationService notificationService,
         ICurrentUserContext currentUserContext)
     {
@@ -126,7 +126,7 @@ public sealed class MarkAllNotificationsAsReadHandler
     }
 
     public async Task<ServiceResult<int>> Handle(
-        MarkAllNotificationsAsRead request,
+        MarkAllNotificationsAsReadCommand request,
         CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)

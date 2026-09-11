@@ -22,7 +22,7 @@ public class ChangeAgendaItemStatusHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
-    private readonly ChangeAgendaItemStatusHandler _handler;
+    private readonly ChangeAgendaItemStatusCommandHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _memberKey = Guid.NewGuid();
@@ -32,7 +32,7 @@ public class ChangeAgendaItemStatusHandlerTests
     {
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-        _handler = new ChangeAgendaItemStatusHandler(_uow.Object, _access.Object, _currentUser.Object, _events.Object);
+        _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _access.Object, _currentUser.Object, _events.Object);
     }
 
     private AgendaItem TaskAssignedToMember(Guid? createdBy = null)
@@ -73,7 +73,7 @@ public class ChangeAgendaItemStatusHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerMemberKey: _memberKey);
 
-        var result = await _handler.Handle(new ChangeAgendaItemStatus(item.AgendaItemKey, AgendaItemStatus.Done), default);
+        var result = await _handler.Handle(new ChangeAgendaItemStatusCommand(item.AgendaItemKey, AgendaItemStatus.Done), default);
 
         result.Type.Should().Be(ResultType.Success);
         item.Status.Should().Be(AgendaItemStatus.Done);
@@ -88,7 +88,7 @@ public class ChangeAgendaItemStatusHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerMemberKey: Guid.NewGuid());
 
-        var result = await _handler.Handle(new ChangeAgendaItemStatus(item.AgendaItemKey, AgendaItemStatus.Done), default);
+        var result = await _handler.Handle(new ChangeAgendaItemStatusCommand(item.AgendaItemKey, AgendaItemStatus.Done), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         item.Status.Should().Be(AgendaItemStatus.Todo);
@@ -102,7 +102,7 @@ public class ChangeAgendaItemStatusHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupViewer(canSeeWholeKurin: true, isLeadership: true, viewerMemberKey: null);
 
-        var result = await _handler.Handle(new ChangeAgendaItemStatus(item.AgendaItemKey, AgendaItemStatus.InProgress), default);
+        var result = await _handler.Handle(new ChangeAgendaItemStatusCommand(item.AgendaItemKey, AgendaItemStatus.InProgress), default);
 
         result.Type.Should().Be(ResultType.Success);
         item.Status.Should().Be(AgendaItemStatus.InProgress);

@@ -27,7 +27,7 @@ public class GetMemberByKeyHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly GetMemberByKeyHandler _handler;
+    private readonly GetMemberByKeyQueryHandler _handler;
 
     public GetMemberByKeyHandlerTests()
     {
@@ -46,7 +46,7 @@ public class GetMemberByKeyHandlerTests
         _membershipsMock
             .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _handler = new GetMemberByKeyHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object);
+        _handler = new GetMemberByKeyQueryHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class GetMemberByKeyHandlerTests
                 ProfilePhotoUrl = null
             });
 
-        var query = new GetMemberByKey(memberKey);
+        var query = new GetMemberByKeyQuery(memberKey);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -124,7 +124,7 @@ public class GetMemberByKeyHandlerTests
             .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member)null!);
 
-        var query = new GetMemberByKey(memberKey);
+        var query = new GetMemberByKeyQuery(memberKey);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);

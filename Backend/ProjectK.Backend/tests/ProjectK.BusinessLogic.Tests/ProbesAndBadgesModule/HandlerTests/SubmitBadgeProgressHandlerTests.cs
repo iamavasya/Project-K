@@ -24,7 +24,7 @@ public class SubmitBadgeProgressHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepositoryMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
-    private readonly SubmitBadgeProgressHandler _handler;
+    private readonly SubmitBadgeProgressCommandHandler _handler;
 
     public SubmitBadgeProgressHandlerTests()
     {
@@ -35,7 +35,7 @@ public class SubmitBadgeProgressHandlerTests
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "mentor" });
 
-        _handler = new SubmitBadgeProgressHandler(
+        _handler = new SubmitBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
@@ -61,7 +61,7 @@ public class SubmitBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BadgeProgress?)null);
 
-        var result = await _handler.Handle(new SubmitBadgeProgress(memberKey, badgeId, null), CancellationToken.None);
+        var result = await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, badgeId, null), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _eventsMock.Verify(x => x.PublishAsync(

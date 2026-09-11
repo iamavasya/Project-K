@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { HealthBannerService } from '../../services/health-banner.service';
+import { HealthBannerService } from '../../services/health-banner-service/health-banner.service';
 
 @Component({
   selector: 'app-cold-start-banner',

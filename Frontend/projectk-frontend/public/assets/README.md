@@ -44,8 +44,8 @@ referenced by `index.html`.
 The mark is inlined (not a shared component, to preserve the descendant CSS that
 sizes and colours it). When the geometry changes, update **both**:
 
-- `src/app/features/kurinModule/common/components/sidebar-menu/sidebar-menu.html`
-- `src/app/features/systemModule/components/welcome-page/welcome-page.html`
+- `src/app/features/kurinModule/components/sidebar-menu/sidebar-menu.html`
+- `src/app/features/systemModule/pages/welcome-page/welcome-page.html`
 
 The centre petal there carries `class="lil-mark-center"`, styled globally in
 `src/lileyka-theme.css` (`stroke: var(--lil-clay-500)`), so it stays terracotta

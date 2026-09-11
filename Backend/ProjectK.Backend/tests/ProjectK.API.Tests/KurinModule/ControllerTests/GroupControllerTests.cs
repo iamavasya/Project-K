@@ -43,7 +43,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, dto);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetGroupByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -60,7 +60,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetGroupByKey>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetByKey(key);
@@ -80,7 +80,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, groups);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetGroups>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetGroupsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.GetAll(kurinKey);
@@ -105,7 +105,7 @@ public class GroupControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(
-                It.Is<UpsertGroup>(command => command.Description == "Group description"),
+                It.Is<UpsertGroupCommand>(command => command.Description == "Group description"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
@@ -126,7 +126,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var createRequest = new CreateGroupRequest { Name = "Alpha", KurinKey = kurinKey };
@@ -145,7 +145,7 @@ public class GroupControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(
-                It.Is<UpsertGroup>(command => command.Description == "Updated description"),
+                It.Is<UpsertGroupCommand>(command => command.Description == "Updated description"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
@@ -165,7 +165,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<UpsertGroup>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var updateRequest = new UpdateGroupRequest { Name = "X" };
@@ -191,7 +191,7 @@ public class GroupControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(
-                It.Is<UploadGroupSilhouette>(command =>
+                It.Is<UploadGroupSilhouetteCommand>(command =>
                     command.GroupKey == groupKey &&
                     command.BlobFileName == "silhouette.png" &&
                     command.BlobContent.Length == 4),
@@ -216,7 +216,7 @@ public class GroupControllerTests
         var result = await _controller.UploadSilhouette(groupKey, new UploadImageRequest { File = file }, CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(result);
-        _mediatorMock.Verify(m => m.Send(It.IsAny<UploadGroupSilhouette>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mediatorMock.Verify(m => m.Send(It.IsAny<UploadGroupSilhouetteCommand>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class GroupControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(
-                It.Is<DeleteGroupSilhouette>(command => command.GroupKey == groupKey),
+                It.Is<DeleteGroupSilhouetteCommand>(command => command.GroupKey == groupKey),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
@@ -244,7 +244,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<object>(ResultType.Success);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(groupKey);
@@ -260,7 +260,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<object>(ResultType.NotFound);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(groupKey);
@@ -275,7 +275,7 @@ public class GroupControllerTests
         var serviceResult = new ServiceResult<object>((ResultType)999);
 
         _mediatorMock
-            .Setup(m => m.Send(It.IsAny<DeleteGroup>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Delete(groupKey);

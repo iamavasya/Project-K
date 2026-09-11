@@ -5,7 +5,7 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { InputOtpModule } from '@openng/optimus-ui/inputotp';
-import { AuthService, MfaSetupResponse } from '../../services/authService/auth.service';
+import { AuthService, MfaSetupResponse } from '../../services/auth-service/auth.service';
 
 @Component({
   selector: 'app-mfa-setup-dialog',

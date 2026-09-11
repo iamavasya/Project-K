@@ -24,7 +24,7 @@ public class DeleteAgendaItemHandlerTests
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
     private readonly Mock<IMemberRepository> _memberRepo = new();
-    private readonly DeleteAgendaItemHandler _handler;
+    private readonly DeleteAgendaItemCommandHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _creatorKey = Guid.NewGuid();
@@ -35,7 +35,7 @@ public class DeleteAgendaItemHandlerTests
         _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MemberSummary>());
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-        _handler = new DeleteAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
+        _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
     }
 
     private AgendaItem Item() => new()
@@ -61,7 +61,7 @@ public class DeleteAgendaItemHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AgendaItem?)null);
 
-        var result = await _handler.Handle(new DeleteAgendaItem(Guid.NewGuid()), default);
+        var result = await _handler.Handle(new DeleteAgendaItemCommand(Guid.NewGuid()), default);
 
         result.Type.Should().Be(ResultType.NotFound);
     }
@@ -73,7 +73,7 @@ public class DeleteAgendaItemHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: Guid.NewGuid());
 
-        var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
+        var result = await _handler.Handle(new DeleteAgendaItemCommand(item.AgendaItemKey), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         _agendaRepo.Verify(r => r.Delete(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -86,7 +86,7 @@ public class DeleteAgendaItemHandlerTests
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupViewer(canSeeWholeKurin: false, isLeadership: false, viewerUserKey: _creatorKey);
 
-        var result = await _handler.Handle(new DeleteAgendaItem(item.AgendaItemKey), default);
+        var result = await _handler.Handle(new DeleteAgendaItemCommand(item.AgendaItemKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         _agendaRepo.Verify(r => r.Delete(item, It.IsAny<CancellationToken>()), Times.Once);

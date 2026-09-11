@@ -24,7 +24,7 @@ public class SetAgendaResponseHandlerTests
     private readonly Mock<IAgendaResponseRepository> _responses = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IAgendaCategoryRepository> _categories = new();
-    private readonly SetAgendaResponseHandler _handler;
+    private readonly SetAgendaResponseCommandHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _userKey = Guid.NewGuid();
@@ -39,7 +39,7 @@ public class SetAgendaResponseHandlerTests
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
         _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AgendaResponse>());
-        _handler = new SetAgendaResponseHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
+        _handler = new SetAgendaResponseCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
     }
 
     private AgendaItem Event(Guid? kurin = null) => new()
@@ -64,7 +64,7 @@ public class SetAgendaResponseHandlerTests
         item.Kind = AgendaItemKind.Task;
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var result = await _handler.Handle(new SetAgendaResponse(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.BadRequest);
     }
@@ -75,7 +75,7 @@ public class SetAgendaResponseHandlerTests
         var item = Event(kurin: Guid.NewGuid()); // belongs to a different kurin than the caller's claim
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var result = await _handler.Handle(new SetAgendaResponse(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         _responses.Verify(r => r.Create(It.IsAny<AgendaResponse>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -89,7 +89,7 @@ public class SetAgendaResponseHandlerTests
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupVisible(_kurinKey, visible: false);
 
-        var result = await _handler.Handle(new SetAgendaResponse(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
     }
@@ -103,7 +103,7 @@ public class SetAgendaResponseHandlerTests
         _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AgendaResponse?)null);
 
-        var result = await _handler.Handle(new SetAgendaResponse(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Success);
         _responses.Verify(r => r.Create(It.Is<AgendaResponse>(x => x.UserKey == _userKey && x.Status == AgendaRsvpStatus.Going), It.IsAny<CancellationToken>()), Times.Once);
@@ -126,7 +126,7 @@ public class SetAgendaResponseHandlerTests
         _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
-        var result = await _handler.Handle(new SetAgendaResponse(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Success);
         existing.Status.Should().Be(AgendaRsvpStatus.Going);

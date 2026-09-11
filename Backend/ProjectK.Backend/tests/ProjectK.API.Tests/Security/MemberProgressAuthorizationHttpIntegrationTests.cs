@@ -236,11 +236,11 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
             var mediator = new Mock<IMediator>();
             mediator
-                .Setup(x => x.Send(It.IsAny<GetBadgeProgresses>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetBadgeProgressesQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Success, []));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -253,7 +253,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -266,13 +266,13 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<GetProbeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetProbeProgressQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     ProbeProgressResponse.CreateNotStarted(targetMemberKey, targetMemberKurinKey, "probe-1")));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatus>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatusCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     new ProbeProgressResponse

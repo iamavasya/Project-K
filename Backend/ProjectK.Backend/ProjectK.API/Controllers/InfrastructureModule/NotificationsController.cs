@@ -39,7 +39,7 @@ public class NotificationsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var response = await _mediator.Send(
-            new GetNotifications(unreadOnly, take),
+            new GetNotificationsQuery(unreadOnly, take),
             cancellationToken);
 
         return response.ToActionResult(this);
@@ -54,7 +54,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new GetUnreadNotificationCount(), cancellationToken);
+        var response = await _mediator.Send(new GetUnreadNotificationCountQuery(), cancellationToken);
         return response.ToActionResult(this);
     }
 
@@ -71,7 +71,7 @@ public class NotificationsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(
-            new MarkNotificationAsRead(notificationKey),
+            new MarkNotificationAsReadCommand(notificationKey),
             cancellationToken);
 
         return response.ToActionResult(this);
@@ -86,7 +86,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new MarkAllNotificationsAsRead(), cancellationToken);
+        var response = await _mediator.Send(new MarkAllNotificationsAsReadCommand(), cancellationToken);
         return response.ToActionResult(this);
     }
 }

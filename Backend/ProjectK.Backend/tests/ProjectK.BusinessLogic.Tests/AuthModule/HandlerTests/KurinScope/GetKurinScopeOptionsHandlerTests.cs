@@ -15,12 +15,12 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope;
 public class GetKurinScopeOptionsHandlerTests
 {
     private readonly Mock<IMembershipDirectory> _memberships = new();
-    private readonly GetKurinScopeOptionsHandler _handler;
+    private readonly GetKurinScopeOptionsQueryHandler _handler;
     private readonly Guid _userKey = Guid.NewGuid();
 
     public GetKurinScopeOptionsHandlerTests()
     {
-        _handler = new GetKurinScopeOptionsHandler(_memberships.Object);
+        _handler = new GetKurinScopeOptionsQueryHandler(_memberships.Object);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class GetKurinScopeOptionsHandlerTests
     {
         Current(Membership(42, KurinBranch.USP, MembershipKind.Staff), Membership(7, KurinBranch.UPYu));
 
-        var result = await _handler.Handle(new GetKurinScopeOptions(_userKey), CancellationToken.None);
+        var result = await _handler.Handle(new GetKurinScopeOptionsQuery(_userKey), CancellationToken.None);
 
         result.Data!.Select(o => o.KurinNumber).Should().Equal(7, 42);
         result.Data.Last().Branch.Should().Be(KurinBranch.USP);
@@ -40,7 +40,7 @@ public class GetKurinScopeOptionsHandlerTests
     {
         Current();
 
-        var result = await _handler.Handle(new GetKurinScopeOptions(_userKey), CancellationToken.None);
+        var result = await _handler.Handle(new GetKurinScopeOptionsQuery(_userKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data.Should().BeEmpty();

@@ -2,7 +2,7 @@ import { inject, Injectable } from "@angular/core";
 import { ActivatedRouteSnapshot, CanActivate, Router } from "@angular/router";
 import { HttpErrorResponse } from "@angular/common/http";
 import { catchError, map, Observable, of } from "rxjs";
-import { EntityService } from "../services/entity.service";
+import { EntityService } from "../services/entity-service/entity.service";
 
 @Injectable({
   providedIn: 'root'

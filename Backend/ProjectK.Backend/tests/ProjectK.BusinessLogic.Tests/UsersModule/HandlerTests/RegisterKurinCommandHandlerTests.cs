@@ -86,11 +86,11 @@ public class RegisterKurinHandlerTests
                 PhoneNumber = command.PhoneNumber
             });
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(kurinResult);
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(userResult);
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(memberResult);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -109,12 +109,12 @@ public class RegisterKurinHandlerTests
         Assert.Equal("access-token", result.Data.Tokens.AccessToken);
 
         // Verify all commands were sent
-        _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurin>(cmd => cmd.Number == 5), It.IsAny<CancellationToken>()), Times.Once);
+        _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurinCommand>(cmd => cmd.Number == 5), It.IsAny<CancellationToken>()), Times.Once);
         _mediatorMock.Verify(x => x.Send(It.Is<RegisterUserCommand>(cmd =>
             cmd.Email == command.Email &&
             cmd.Role == "Member" &&
             cmd.KurinKey == kurinKey), It.IsAny<CancellationToken>()), Times.Once);
-        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
+        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
             cmd.KurinKey == kurinKey &&
             cmd.UserKey == userId &&
             cmd.Email == command.Email), It.IsAny<CancellationToken>()), Times.Once);
@@ -146,7 +146,7 @@ public class RegisterKurinHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurin>(cmd =>
+        _mediatorMock.Verify(x => x.Send(It.Is<UpsertKurinCommand>(cmd =>
             cmd.Number == 10 &&
             cmd.KurinKey == Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -204,7 +204,7 @@ public class RegisterKurinHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
+        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
             cmd.FirstName == "John" &&
             cmd.MiddleName == "Middle" &&
             cmd.LastName == "Doe" &&
@@ -221,7 +221,7 @@ public class RegisterKurinHandlerTests
         var command = CreateValid();
         var exception = new Exception("Kurin creation failed");
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
         // Act & Assert
@@ -239,7 +239,7 @@ public class RegisterKurinHandlerTests
         var command = CreateValid();
         var exception = new Exception("User registration failed");
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
@@ -259,11 +259,11 @@ public class RegisterKurinHandlerTests
         var command = CreateValid();
         var exception = new Exception("Member creation failed");
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
         // Act & Assert
@@ -335,7 +335,7 @@ public class RegisterKurinHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMember>(cmd =>
+        _mediatorMock.Verify(x => x.Send(It.Is<UpsertMemberCommand>(cmd =>
             cmd.MiddleName == null), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -346,16 +346,16 @@ public class RegisterKurinHandlerTests
         var command = CreateValid();
         var executionOrder = new List<string>();
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
-            .Callback(() => executionOrder.Add("UpsertKurin"))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
+            .Callback(() => executionOrder.Add("UpsertKurinCommand"))
             .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
 
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
             .Callback(() => executionOrder.Add("RegisterUser"))
             .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
-            .Callback(() => executionOrder.Add("UpsertMember"))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
+            .Callback(() => executionOrder.Add("UpsertMemberCommand"))
             .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse()));
 
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -370,7 +370,7 @@ public class RegisterKurinHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Equal(new[] { "UpsertKurin", "RegisterUser", "UpsertMember", "SaveChanges", "Commit" }, executionOrder.ToArray());
+        Assert.Equal(new[] { "UpsertKurinCommand", "RegisterUser", "UpsertMemberCommand", "SaveChanges", "Commit" }, executionOrder.ToArray());
     }
 
     [Fact]
@@ -429,11 +429,11 @@ public class RegisterKurinHandlerTests
 
     private void SetupSuccessfulResponses()
     {
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = Guid.NewGuid() }));
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<RegisterUserResponse>(ResultType.Success, CreateValidRegisterUserResponse()));
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse()));
     }
 
@@ -442,7 +442,7 @@ public class RegisterKurinHandlerTests
         var actualKurinKey = kurinKey ?? Guid.NewGuid();
         var actualUserId = userId ?? Guid.NewGuid();
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurin>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<KurinResponse>(ResultType.Created, new KurinResponse { KurinKey = actualKurinKey, Number = command.KurinNumber }));
 
         _mediatorMock.Setup(x => x.Send(It.IsAny<RegisterUserCommand>(), It.IsAny<CancellationToken>()))
@@ -459,7 +459,7 @@ public class RegisterKurinHandlerTests
                 }
             }));
 
-        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMember>(), It.IsAny<CancellationToken>()))
+        _mediatorMock.Setup(x => x.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<MemberResponse>(ResultType.Created, new MemberResponse
             {
                 MemberKey = Guid.NewGuid(),

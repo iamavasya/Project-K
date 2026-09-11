@@ -205,7 +205,7 @@ public static class Program
         builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssembly(typeof(GetKurinByKey).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(GetKurinByKeyQuery).Assembly);
             // Outer -> inner. Timing wraps everything; Validation fails fast; Caching
             // returns hits before a transaction is opened; Transaction sits around the handler.
             cfg.AddOpenBehavior(typeof(RequestTimingBehavior<,>));
@@ -213,7 +213,7 @@ public static class Program
             cfg.AddOpenBehavior(typeof(CachingBehavior<,>));
             cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
         });
-        builder.Services.AddValidatorsFromAssembly(typeof(GetKurinByKey).Assembly);
+        builder.Services.AddValidatorsFromAssembly(typeof(GetKurinByKeyQuery).Assembly);
         builder.Services.AddControllers()
             .ConfigureApplicationPartManager(manager =>
             {

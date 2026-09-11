@@ -22,7 +22,7 @@ public class AgendaCategoryHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_items.Object);
     }
 
-    private UpsertAgendaCategory ValidUpsert(Guid? key) => new()
+    private UpsertAgendaCategoryCommand ValidUpsert(Guid? key) => new()
     {
         AgendaCategoryKey = key,
         KurinKey = _kurinKey,
@@ -37,7 +37,7 @@ public class AgendaCategoryHandlerTests
     [Fact]
     public async Task Upsert_WithoutKey_CreatesAndReturnsCreated()
     {
-        var handler = new UpsertAgendaCategoryHandler(_uow.Object);
+        var handler = new UpsertAgendaCategoryCommandHandler(_uow.Object);
 
         var result = await handler.Handle(ValidUpsert(key: null), default);
 
@@ -51,7 +51,7 @@ public class AgendaCategoryHandlerTests
     {
         var existing = new AgendaCategory { AgendaCategoryKey = Guid.NewGuid(), KurinKey = _kurinKey, Name = "old" };
         _categories.Setup(r => r.GetByKeyAsync(existing.AgendaCategoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        var handler = new UpsertAgendaCategoryHandler(_uow.Object);
+        var handler = new UpsertAgendaCategoryCommandHandler(_uow.Object);
 
         var result = await handler.Handle(ValidUpsert(existing.AgendaCategoryKey), default);
 
@@ -66,7 +66,7 @@ public class AgendaCategoryHandlerTests
     {
         var existing = new AgendaCategory { AgendaCategoryKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), Name = "old" };
         _categories.Setup(r => r.GetByKeyAsync(existing.AgendaCategoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        var handler = new UpsertAgendaCategoryHandler(_uow.Object);
+        var handler = new UpsertAgendaCategoryCommandHandler(_uow.Object);
 
         var result = await handler.Handle(ValidUpsert(existing.AgendaCategoryKey), default);
 
@@ -78,7 +78,7 @@ public class AgendaCategoryHandlerTests
     public async Task Upsert_MissingCategory_ReturnsNotFound()
     {
         _categories.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((AgendaCategory?)null);
-        var handler = new UpsertAgendaCategoryHandler(_uow.Object);
+        var handler = new UpsertAgendaCategoryCommandHandler(_uow.Object);
 
         var result = await handler.Handle(ValidUpsert(Guid.NewGuid()), default);
 
@@ -90,9 +90,9 @@ public class AgendaCategoryHandlerTests
     {
         var category = new AgendaCategory { AgendaCategoryKey = Guid.NewGuid(), KurinKey = _kurinKey };
         _categories.Setup(r => r.GetByKeyAsync(category.AgendaCategoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(category);
-        var handler = new DeleteAgendaCategoryHandler(_uow.Object);
+        var handler = new DeleteAgendaCategoryCommandHandler(_uow.Object);
 
-        var result = await handler.Handle(new DeleteAgendaCategory(category.AgendaCategoryKey, _kurinKey), default);
+        var result = await handler.Handle(new DeleteAgendaCategoryCommand(category.AgendaCategoryKey, _kurinKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         _items.Verify(r => r.ClearCategoryAsync(category.AgendaCategoryKey, It.IsAny<CancellationToken>()), Times.Once);
@@ -104,9 +104,9 @@ public class AgendaCategoryHandlerTests
     public async Task Delete_MissingCategory_ReturnsNotFound()
     {
         _categories.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((AgendaCategory?)null);
-        var handler = new DeleteAgendaCategoryHandler(_uow.Object);
+        var handler = new DeleteAgendaCategoryCommandHandler(_uow.Object);
 
-        var result = await handler.Handle(new DeleteAgendaCategory(Guid.NewGuid(), _kurinKey), default);
+        var result = await handler.Handle(new DeleteAgendaCategoryCommand(Guid.NewGuid(), _kurinKey), default);
 
         result.Type.Should().Be(ResultType.NotFound);
         _items.Verify(r => r.ClearCategoryAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -117,9 +117,9 @@ public class AgendaCategoryHandlerTests
     {
         var category = new AgendaCategory { AgendaCategoryKey = Guid.NewGuid(), KurinKey = Guid.NewGuid() };
         _categories.Setup(r => r.GetByKeyAsync(category.AgendaCategoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(category);
-        var handler = new DeleteAgendaCategoryHandler(_uow.Object);
+        var handler = new DeleteAgendaCategoryCommandHandler(_uow.Object);
 
-        var result = await handler.Handle(new DeleteAgendaCategory(category.AgendaCategoryKey, _kurinKey), default);
+        var result = await handler.Handle(new DeleteAgendaCategoryCommand(category.AgendaCategoryKey, _kurinKey), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         _items.Verify(r => r.ClearCategoryAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);

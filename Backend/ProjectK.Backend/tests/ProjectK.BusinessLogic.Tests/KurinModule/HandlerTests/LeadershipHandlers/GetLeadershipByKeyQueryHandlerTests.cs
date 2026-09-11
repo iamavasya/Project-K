@@ -25,12 +25,12 @@ public class GetLeadershipByKeyHandlerTests
     private readonly IMapper _mapper = new MapperConfiguration(
         cfg => cfg.AddProfile(new KurinModuleProfile()),
         NullLoggerFactory.Instance).CreateMapper();
-    private readonly GetLeadershipByKeyHandler _handler;
+    private readonly GetLeadershipByKeyQueryHandler _handler;
 
     public GetLeadershipByKeyHandlerTests()
     {
         _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-        _handler = new GetLeadershipByKeyHandler(_unitOfWorkMock.Object, _mapper);
+        _handler = new GetLeadershipByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
     }
 
     private static Leadership BuildLeadership(LeadershipType type, Guid? kurinKey = null, Guid? groupKey = null) =>
@@ -58,7 +58,7 @@ public class GetLeadershipByKeyHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnNotFound_WhenEntityDoesNotExist()
     {
-        var query = new GetLeadershipByKey(Guid.NewGuid());
+        var query = new GetLeadershipByKeyQuery(Guid.NewGuid());
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(query.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -74,7 +74,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldMapAndReturnSuccess_ForKurinType()
     {
         var entity = BuildLeadership(LeadershipType.Kurin, kurinKey: Guid.NewGuid());
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -94,7 +94,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldMapAndReturnSuccess_ForKvType()
     {
         var entity = BuildLeadership(LeadershipType.KV, kurinKey: Guid.NewGuid());
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -113,7 +113,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldMapAndReturnSuccess_ForGroupType()
     {
         var entity = BuildLeadership(LeadershipType.Group, groupKey: Guid.NewGuid());
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -132,7 +132,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldSetEntityKeyToEmpty_WhenKurinTypeHasNullKurinKey()
     {
         var entity = BuildLeadership(LeadershipType.Kurin, kurinKey: null);
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -149,7 +149,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldSetEntityKeyToEmpty_WhenGroupTypeHasNullGroupKey()
     {
         var entity = BuildLeadership(LeadershipType.Group, groupKey: null);
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
 
         _leadershipRepoMock
             .Setup(r => r.GetByKeyAsync(entity.LeadershipKey, It.IsAny<CancellationToken>()))
@@ -166,7 +166,7 @@ public class GetLeadershipByKeyHandlerTests
     public async Task Handle_ShouldPassCancellationToken_ToRepository()
     {
         var entity = BuildLeadership(LeadershipType.KV, kurinKey: Guid.NewGuid());
-        var query = new GetLeadershipByKey(entity.LeadershipKey);
+        var query = new GetLeadershipByKeyQuery(entity.LeadershipKey);
         using var cts = new CancellationTokenSource();
 
         _leadershipRepoMock

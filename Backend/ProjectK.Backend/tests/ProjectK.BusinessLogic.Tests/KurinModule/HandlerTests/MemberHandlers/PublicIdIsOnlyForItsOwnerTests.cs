@@ -74,7 +74,7 @@ public class PublicIdIsOnlyForItsOwnerTests
     {
         _currentUser.SetupGet(c => c.UserId).Returns(_ownerUserKey);
 
-        var result = await Handler().Handle(new GetMemberByKey(_memberKey), CancellationToken.None);
+        var result = await Handler().Handle(new GetMemberByKeyQuery(_memberKey), CancellationToken.None);
 
         result.Data!.PublicId.Should().Be(Code);
     }
@@ -85,12 +85,12 @@ public class PublicIdIsOnlyForItsOwnerTests
         _currentUser.SetupGet(c => c.UserId).Returns(Guid.NewGuid());
         _currentUser.SetupGet(c => c.Roles).Returns(["KV.Zvyazkovyi"]);
 
-        var result = await Handler().Handle(new GetMemberByKey(_memberKey), CancellationToken.None);
+        var result = await Handler().Handle(new GetMemberByKeyQuery(_memberKey), CancellationToken.None);
 
         result.Data!.PublicId.Should().BeNull();
     }
 
-    private GetMemberByKeyHandler Handler() => new(
+    private GetMemberByKeyQueryHandler Handler() => new(
         _memberData.Object,
         _mapper.Object,
         _currentUser.Object,

@@ -25,7 +25,7 @@ public class ExportRegistryHandlerTests
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<ISpreadsheetWriter> _writer = new();
-    private readonly ExportRegistryHandler _handler;
+    private readonly ExportRegistryQueryHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private IReadOnlyList<SheetTable> _written = [];
@@ -40,7 +40,7 @@ public class ExportRegistryHandlerTests
             .Callback<IReadOnlyList<SheetTable>>(sheets => _written = sheets)
             .Returns([1, 2, 3]);
 
-        _handler = new ExportRegistryHandler(
+        _handler = new ExportRegistryQueryHandler(
             _mediator.Object,
             _uow.Object,
             _writer.Object,
@@ -77,11 +77,11 @@ public class ExportRegistryHandlerTests
 
     private void RosterIs(params MemberResponse[] people)
         => _mediator
-            .Setup(m => m.Send(It.IsAny<GetMembers>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, people));
 
     private Task<ServiceResult<RegistryFile>> Export(params string[] columnIds)
-        => _handler.Handle(new ExportRegistry(_kurinKey, columnIds), CancellationToken.None);
+        => _handler.Handle(new ExportRegistryQuery(_kurinKey, columnIds), CancellationToken.None);
 
     private Dictionary<string, int?> Tally()
         => _written

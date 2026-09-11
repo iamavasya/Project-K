@@ -37,7 +37,7 @@ public class RegisterKurinCommandHandler : IRequestHandler<RegisterKurinCommand,
         try
         {
             // Step 1: Create the new Kurin
-            var kurinResult = await _mediator.Send(new UpsertKurin(request.KurinNumber), cancellationToken);
+            var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
 
             // Step 2: Register the user.
             //
@@ -56,7 +56,7 @@ public class RegisterKurinCommandHandler : IRequestHandler<RegisterKurinCommand,
             }, cancellationToken);
 
             // Step 3: Create the new Member and associate with User
-            var memberResult = await _mediator.Send(new UpsertMember
+            var memberResult = await _mediator.Send(new UpsertMemberCommand
             {
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName,
@@ -69,7 +69,7 @@ public class RegisterKurinCommandHandler : IRequestHandler<RegisterKurinCommand,
 
             // Step 4: Make the new owner the kurin's Зв'язковий (KV office). Upsert syncs the
             // system role from the office automatically, granting full kurin management.
-            await _mediator.Send(new UpsertLeadership(new UpsertLeadershipRequest
+            await _mediator.Send(new UpsertLeadershipCommand(new UpsertLeadershipRequest
             {
                 Type = LeadershipType.KV.ToString(),
                 EntityKey = kurinResult.Data.KurinKey,

@@ -26,17 +26,17 @@ public class CreateAgendaItemHandlerTests
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
     private readonly Mock<IMemberRepository> _memberRepo = new();
-    private readonly CreateAgendaItemHandler _handler;
+    private readonly CreateAgendaItemCommandHandler _handler;
 
     public CreateAgendaItemHandlerTests()
     {
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MemberSummary>());
-        _handler = new CreateAgendaItemHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
+        _handler = new CreateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
     }
 
-    private static CreateAgendaItem CommandWith(Guid kurinKey, params AgendaTargetInput[] targets) => new()
+    private static CreateAgendaItemCommand CommandWith(Guid kurinKey, params AgendaTargetInput[] targets) => new()
     {
         KurinKey = kurinKey,
         Kind = AgendaItemKind.Task,

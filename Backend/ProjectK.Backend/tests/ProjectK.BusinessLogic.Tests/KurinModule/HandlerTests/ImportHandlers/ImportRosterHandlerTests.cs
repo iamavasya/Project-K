@@ -30,7 +30,7 @@ public class ImportRosterHandlerTests
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IMediator> _mediator = new();
-    private readonly ImportRosterHandler _handler;
+    private readonly ImportRosterCommandHandler _handler;
 
     private List<MemberIdentity> _knownPeople = [];
     private List<MemberSummary> _peopleHere = [];
@@ -55,7 +55,7 @@ public class ImportRosterHandlerTests
         _kurinData.Setup(u => u.Memberships).Returns(_memberships.Object);
         _memberData.Setup(u => u.Members).Returns(_members.Object);
 
-        _handler = new ImportRosterHandler(_kurinData.Object, _memberData.Object, _mediator.Object);
+        _handler = new ImportRosterCommandHandler(_kurinData.Object, _memberData.Object, _mediator.Object);
     }
 
     /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь.</summary>
@@ -76,7 +76,7 @@ public class ImportRosterHandlerTests
         IReadOnlyList<SheetRow> rows,
         bool createMissingGroups = false)
         => _handler.Handle(
-            new ImportRoster(KurinKey, rows, FullMapping, createMissingGroups, DryRun: true),
+            new ImportRosterCommand(KurinKey, rows, FullMapping, createMissingGroups, DryRun: true),
             CancellationToken.None);
 
     [Fact]
@@ -256,7 +256,7 @@ public class ImportRosterHandlerTests
             m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _mediator.Verify(
-            m => m.Send(It.IsAny<JoinKurin>(), It.IsAny<CancellationToken>()),
+            m => m.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _groups.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
         _kurinData.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -277,7 +277,7 @@ public class ImportRosterHandlerTests
                 new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
 
         var report = await _handler.Handle(
-            new ImportRoster(
+            new ImportRosterCommand(
                 KurinKey,
                 [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2")],
                 FullMapping,

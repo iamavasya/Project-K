@@ -45,7 +45,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid memberKey)
     {
-        var request = new GetMemberByKey(memberKey);
+        var request = new GetMemberByKeyQuery(memberKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -64,7 +64,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDossier(Guid memberKey, [FromQuery] string? include)
     {
-        var response = await _mediator.Send(new GetMemberDossier(memberKey, ParseInclude(include)));
+        var response = await _mediator.Send(new GetMemberDossierQuery(memberKey, ParseInclude(include)));
         return response.ToActionResult(this);
     }
 
@@ -79,7 +79,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDossierFolder(Guid memberKey, string folder)
     {
-        var response = await _mediator.Send(new GetMemberDossier(memberKey, [folder]));
+        var response = await _mediator.Send(new GetMemberDossierQuery(memberKey, [folder]));
         if (response.Type != ResultType.Success)
         {
             return response.ToActionResult(this);
@@ -122,7 +122,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAllByGroup(Guid groupKey)
     {
-        var request = new GetMembers(groupKey, Guid.Empty);
+        var request = new GetMembersQuery(groupKey, Guid.Empty);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -137,7 +137,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAllByKurin(Guid kurinKey)
     {
-        var request = new GetMembers(Guid.Empty, kurinKey);
+        var request = new GetMembersQuery(Guid.Empty, kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -166,7 +166,7 @@ public class MemberController : ControllerBase
             return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
         }
 
-        var command = new UpsertMember
+        var command = new UpsertMemberCommand
         {
             GroupKey = request.GroupKey.Value,
             KurinKey = request.KurinKey,
@@ -206,7 +206,7 @@ public class MemberController : ControllerBase
             return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
         }
 
-        var command = new UpsertMember
+        var command = new UpsertMemberCommand
         {
             KurinKey = kurinKey,
             GroupKey = null,
@@ -251,7 +251,7 @@ public class MemberController : ControllerBase
             return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
         }
 
-        var command = new UpsertMember
+        var command = new UpsertMemberCommand
         {
             MemberKey = memberKey,
             GroupKey = request.GroupKey,
@@ -290,7 +290,7 @@ public class MemberController : ControllerBase
         CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(
-            new VerifyMemberProfile(memberKey, request?.Note),
+            new VerifyMemberProfileCommand(memberKey, request?.Note),
             cancellationToken);
 
         return response.ToActionResult(this);
@@ -312,7 +312,7 @@ public class MemberController : ControllerBase
         CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(
-            new ResetMemberProfileVerification(memberKey),
+            new ResetMemberProfileVerificationCommand(memberKey),
             cancellationToken);
 
         return response.ToActionResult(this);
@@ -329,7 +329,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid memberKey)
     {
-        var command = new DeleteMember(memberKey);
+        var command = new DeleteMemberCommand(memberKey);
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }
@@ -343,7 +343,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
     {
-        var request = new GetKurinKvMembers(kurinKey);
+        var request = new GetKurinKvMembersQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -357,7 +357,7 @@ public class MemberController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
     {
-        var request = new GetKurinMentorCandidates(kurinKey);
+        var request = new GetKurinMentorCandidatesQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }

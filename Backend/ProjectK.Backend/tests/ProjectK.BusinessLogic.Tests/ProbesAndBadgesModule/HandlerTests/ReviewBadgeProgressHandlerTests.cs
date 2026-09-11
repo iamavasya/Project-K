@@ -22,7 +22,7 @@ public class ReviewBadgeProgressHandlerTests
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
-    private readonly ReviewBadgeProgressHandler _handler;
+    private readonly ReviewBadgeProgressCommandHandler _handler;
 
     public ReviewBadgeProgressHandlerTests()
     {
@@ -40,7 +40,7 @@ public class ReviewBadgeProgressHandlerTests
             .Returns((string role) => string.Equals(role, "mentor", StringComparison.OrdinalIgnoreCase));
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "mentor" });
 
-        _handler = new ReviewBadgeProgressHandler(
+        _handler = new ReviewBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
@@ -71,7 +71,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        await _handler.Handle(new ReviewBadgeProgress(memberKey, badgeId, true, null), CancellationToken.None);
+        await _handler.Handle(new ReviewBadgeProgressCommand(memberKey, badgeId, true, null), CancellationToken.None);
 
         Assert.Equal("Іван Петренко", progress.ReviewedByName);
         Assert.DoesNotContain(reviewerUserKey.ToString(), progress.ReviewedByName);
@@ -99,7 +99,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        await _handler.Handle(new ReviewBadgeProgress(memberKey, badgeId, true, null), CancellationToken.None);
+        await _handler.Handle(new ReviewBadgeProgressCommand(memberKey, badgeId, true, null), CancellationToken.None);
 
         Assert.Equal($"user:{reviewerUserKey}", progress.ReviewedByName);
     }
@@ -116,7 +116,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -151,7 +151,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ownerUserKey);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -183,7 +183,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "remove");
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "remove");
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -217,7 +217,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ownerUserKey);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "remove");
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "remove");
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -248,7 +248,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid?)null);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "reject");
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "reject");
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -273,7 +273,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);

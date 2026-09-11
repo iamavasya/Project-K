@@ -46,7 +46,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCalendar(Guid kurinKey, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc)
     {
-        var response = await _mediator.Send(new GetAgendaItems(kurinKey, fromUtc, toUtc));
+        var response = await _mediator.Send(new GetAgendaItemsQuery(kurinKey, fromUtc, toUtc));
         return response.ToActionResult(this);
     }
 
@@ -59,7 +59,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBoard(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetAgendaBoard(kurinKey));
+        var response = await _mediator.Send(new GetAgendaBoardQuery(kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -72,7 +72,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(AgendaAssignTargetsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAssignTargets(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetAssignTargets(kurinKey));
+        var response = await _mediator.Send(new GetAssignTargetsQuery(kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -85,7 +85,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> Create([FromBody] CreateAgendaItem request)
+    public async Task<IActionResult> Create([FromBody] CreateAgendaItemCommand request)
     {
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
@@ -101,7 +101,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(Guid agendaItemKey, [FromBody] UpdateAgendaItem request)
+    public async Task<IActionResult> Update(Guid agendaItemKey, [FromBody] UpdateAgendaItemCommand request)
     {
         // The route key wins so a mismatched body cannot retarget another item.
         var response = await _mediator.Send(request with { AgendaItemKey = agendaItemKey });
@@ -121,7 +121,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeStatus(Guid agendaItemKey, [FromBody] ChangeAgendaStatusRequest request)
     {
-        var response = await _mediator.Send(new ChangeAgendaItemStatus(agendaItemKey, request.Status));
+        var response = await _mediator.Send(new ChangeAgendaItemStatusCommand(agendaItemKey, request.Status));
         return response.ToActionResult(this);
     }
 
@@ -136,7 +136,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid agendaItemKey)
     {
-        var response = await _mediator.Send(new DeleteAgendaItem(agendaItemKey));
+        var response = await _mediator.Send(new DeleteAgendaItemCommand(agendaItemKey));
         return response.ToActionResult(this);
     }
 
@@ -151,7 +151,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategories(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetAgendaCategories(kurinKey, IncludeArchived: false));
+        var response = await _mediator.Send(new GetAgendaCategoriesQuery(kurinKey, IncludeArchived: false));
         return response.ToActionResult(this);
     }
 
@@ -164,7 +164,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoriesForManagement(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetAgendaCategories(kurinKey, IncludeArchived: true));
+        var response = await _mediator.Send(new GetAgendaCategoriesQuery(kurinKey, IncludeArchived: true));
         return response.ToActionResult(this);
     }
 
@@ -177,7 +177,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(typeof(AgendaCategoryResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UpsertCategory([FromBody] UpsertAgendaCategory request)
+    public async Task<IActionResult> UpsertCategory([FromBody] UpsertAgendaCategoryCommand request)
     {
         var response = await _mediator.Send(request with { AgendaCategoryKey = null });
         return response.ToActionResult(this);
@@ -193,7 +193,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateCategory(Guid categoryKey, [FromBody] UpsertAgendaCategory request)
+    public async Task<IActionResult> UpdateCategory(Guid categoryKey, [FromBody] UpsertAgendaCategoryCommand request)
     {
         // The route key wins so a mismatched body cannot retarget another group.
         var response = await _mediator.Send(request with { AgendaCategoryKey = categoryKey });
@@ -211,7 +211,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCategory(Guid kurinKey, Guid categoryKey)
     {
-        var response = await _mediator.Send(new DeleteAgendaCategory(categoryKey, kurinKey));
+        var response = await _mediator.Send(new DeleteAgendaCategoryCommand(categoryKey, kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -227,7 +227,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetResponses(Guid agendaItemKey)
     {
-        var response = await _mediator.Send(new GetAgendaResponses(agendaItemKey));
+        var response = await _mediator.Send(new GetAgendaResponsesQuery(agendaItemKey));
         return response.ToActionResult(this);
     }
 
@@ -246,7 +246,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetResponse(Guid agendaItemKey, [FromBody] SetAgendaResponseRequest request)
     {
-        var response = await _mediator.Send(new SetAgendaResponse(agendaItemKey, request.Status));
+        var response = await _mediator.Send(new SetAgendaResponseCommand(agendaItemKey, request.Status));
         return response.ToActionResult(this);
     }
 }

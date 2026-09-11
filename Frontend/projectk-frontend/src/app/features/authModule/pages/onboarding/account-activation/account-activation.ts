@@ -1,0 +1,156 @@
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { OnboardingService, InvitationValidationResponse } from '../../../services/onboarding-service/onboarding.service';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { PasswordModule } from '@openng/optimus-ui/password';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { CardModule } from '@openng/optimus-ui/card';
+import { MessageService } from '@openng/optimus-ui/api';
+import { ToastModule } from '@openng/optimus-ui/toast';
+
+@Component({
+  selector: 'app-account-activation',
+  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, ToastModule],
+  providers: [MessageService],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <p-toast />
+    <div class="flex justify-center items-center min-h-screen p-4">
+      <p-card header="Account Activation" [style]="{ width: '400px' }">
+        @if (loading && !validationData) {
+          <div class="text-center p-4">
+            <i class="pi pi-spin pi-spinner text-4xl"></i>
+            <p>Validating invitation...</p>
+          </div>
+        }
+
+        @if (!loading && !validationData?.isValid) {
+          <div class="text-center p-4">
+            <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <h3 class="text-xl font-bold">Invalid or Expired Invitation</h3>
+            <p class="text-muted-color mb-4">
+              Посилання вже не діє. Ми надішлемо нове запрошення на ту саму адресу — це та сама
+              форма, що й для забутого пароля.
+            </p>
+            <div class="flex flex-col gap-2">
+              <p-button label="Надіслати нове запрошення" (onClick)="goToRecovery()" />
+              <p-button label="Back to Login" [text]="true" (onClick)="goToLogin()" />
+            </div>
+          </div>
+        }
+
+        @if (validationData?.isValid) {
+          <div>
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+              <p class="font-bold text-blue-800">Welcome, {{ validationData.firstName }}!</p>
+              <p class="text-sm text-blue-600">Please set a password to activate your account for {{ validationData.email }}.</p>
+            </div>
+
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <label for="password">New Password</label>
+                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label for="confirmPassword">Confirm Password</label>
+                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+                @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
+                  <small class="p-error text-red-500">
+                    Passwords do not match
+                  </small>
+                }
+              </div>
+              
+              <p-button label="Activate Account" type="submit" [disabled]="form.invalid || submitting" [loading]="submitting" styleClass="w-full" />
+            </form>
+          </div>
+        }
+
+        @if (activated) {
+          <div class="mt-4 p-4 bg-green-100 text-green-700 rounded text-center">
+            Success! Your account is active. Redirecting you...
+          </div>
+        }
+      </p-card>
+    </div>
+  `
+})
+export class AccountActivationComponent implements OnInit {
+  token: string | null = null;
+  loading = true;
+  submitting = false;
+  activated = false;
+  validationData: InvitationValidationResponse | null = null;
+  form: FormGroup;
+
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private onboardingService = inject(OnboardingService);
+  private messageService = inject(MessageService);
+
+  constructor() {
+    this.form = this.fb.group({
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  ngOnInit() {
+    this.token = this.route.snapshot.paramMap.get('token');
+    if (this.token) {
+      this.validateToken();
+    } else {
+      this.loading = false;
+    }
+  }
+
+  validateToken() {
+    this.onboardingService.validateInvitation(this.token!).subscribe({
+      next: (data) => {
+        this.validationData = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+  }
+
+  passwordMatchValidator(g: FormGroup) {
+    return g.get('password')?.value === g.get('confirmPassword')?.value ? null : { mismatch: true };
+  }
+
+  onSubmit() {
+    if (this.form.invalid) return;
+
+    this.submitting = true;
+    const payload = {
+      token: this.token,
+      password: this.form.value.password
+    };
+
+    this.onboardingService.activateAccount(payload).subscribe({
+      next: () => {
+        this.activated = true;
+        this.submitting = false;
+        this.messageService.add({ severity: 'success', summary: 'Активовано', detail: 'Вітаємо в Лілейці!' });
+        setTimeout(() => this.router.navigate(['/login']), 2000);
+      },
+      error: (err) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Activation failed' });
+        this.submitting = false;
+      }
+    });
+  }
+
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
+
+  goToRecovery() {
+    this.router.navigate(['/forgot-password']);
+  }
+}

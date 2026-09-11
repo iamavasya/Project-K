@@ -2,10 +2,10 @@ import { AfterViewInit, Component, inject, signal, ChangeDetectionStrategy, view
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ToolbarHeaderComponent } from "./features/kurinModule/common/components/toolbar-header/toolbar-header";
+import { ToolbarHeaderComponent } from "./features/kurinModule/components/toolbar-header/toolbar-header";
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
 import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog';
-import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer.service';
+import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer-service/mfa-enforcer.service';
 import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({

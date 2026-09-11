@@ -16,7 +16,7 @@ public class DeleteGroupHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
-    private readonly DeleteGroupHandler _handler;
+    private readonly DeleteGroupCommandHandler _handler;
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
@@ -40,7 +40,7 @@ public class DeleteGroupHandlerTests
             .Setup(r => r.DeleteForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _handler = new DeleteGroupHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class DeleteGroupHandlerTests
         _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default)).ReturnsAsync([]);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        var result = await _handler.Handle(new DeleteGroup(groupKey), default);
+        var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         _leadershipRepositoryMock.Verify(r => r.DeleteForGroupAsync(groupKey, default), Times.Once);
@@ -67,7 +67,7 @@ public class DeleteGroupHandlerTests
         // Arrange
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroup(groupKey);
+        var command = new DeleteGroupCommand(groupKey);
 
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
             .ReturnsAsync(group);
@@ -92,7 +92,7 @@ public class DeleteGroupHandlerTests
     {
         // Arrange
         var groupKey = Guid.NewGuid();
-        var command = new DeleteGroup(groupKey);
+        var command = new DeleteGroupCommand(groupKey);
 
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
             .ReturnsAsync((Group)null!);
@@ -113,7 +113,7 @@ public class DeleteGroupHandlerTests
     public async Task Handle_WhenGroupKeyIsEmpty_ShouldReturnBadRequest()
     {
         // Arrange
-        var command = new DeleteGroup(Guid.Empty);
+        var command = new DeleteGroupCommand(Guid.Empty);
 
         // Act
         var result = await _handler.Handle(command, default);
@@ -134,7 +134,7 @@ public class DeleteGroupHandlerTests
         // Arrange
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroup(groupKey);
+        var command = new DeleteGroupCommand(groupKey);
 
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
             .ReturnsAsync(group);
@@ -162,7 +162,7 @@ public class DeleteGroupHandlerTests
         // Arrange
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroup(groupKey);
+        var command = new DeleteGroupCommand(groupKey);
         var expected = new Exception("Test exception");
 
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))

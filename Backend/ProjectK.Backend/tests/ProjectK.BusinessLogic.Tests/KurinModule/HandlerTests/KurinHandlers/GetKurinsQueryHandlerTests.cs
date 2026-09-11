@@ -24,7 +24,7 @@ public class GetKurinsHandlerTests
     private readonly IMapper _mapper;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly GetKurinsHandler _handler;
+    private readonly GetKurinsQueryHandler _handler;
 
     public GetKurinsHandlerTests()
     {
@@ -37,7 +37,7 @@ public class GetKurinsHandlerTests
 
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _handler = new GetKurinsHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetKurinsQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -57,7 +57,7 @@ public class GetKurinsHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(kurins);
 
-        var query = new GetKurins();
+        var query = new GetKurinsQuery();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -85,7 +85,7 @@ public class GetKurinsHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Kurin>());
 
-        var query = new GetKurins();
+        var query = new GetKurinsQuery();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -106,7 +106,7 @@ public class GetKurinsHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
-        var query = new GetKurins();
+        var query = new GetKurinsQuery();
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() =>
@@ -130,7 +130,7 @@ public class GetKurinsHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(kurins);
 
-        var query = new GetKurins();
+        var query = new GetKurinsQuery();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -155,8 +155,8 @@ public class GetKurinsHandlerTests
         _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(kurins);
 
-        await _handler.Handle(new GetKurins(), CancellationToken.None);
-        await _handler.Handle(new GetKurins(), CancellationToken.None);
+        await _handler.Handle(new GetKurinsQuery(), CancellationToken.None);
+        await _handler.Handle(new GetKurinsQuery(), CancellationToken.None);
 
         _kurinRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

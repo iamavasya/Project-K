@@ -3,7 +3,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRouteSnapshot, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { EntityGuard } from './entity.guard';
-import { EntityService } from '../services/entity.service';
+import { EntityService } from '../services/entity-service/entity.service';
 
 describe('EntityGuard', () => {
   let guard: EntityGuard;

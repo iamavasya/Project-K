@@ -20,7 +20,7 @@ public class DeleteKurinHandlerTests
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
-    private readonly DeleteKurinHandler _handler;
+    private readonly DeleteKurinCommandHandler _handler;
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
@@ -50,7 +50,7 @@ public class DeleteKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
-        _handler = new DeleteKurinHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class DeleteKurinHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var kurin = new Kurin(1) { KurinKey = kurinKey };
-        var command = new DeleteKurin(kurinKey);
+        var command = new DeleteKurinCommand(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(kurin);
@@ -98,7 +98,7 @@ public class DeleteKurinHandlerTests
             .Callback(() => order.Add("save"))
             .ReturnsAsync(1);
 
-        await _handler.Handle(new DeleteKurin(kurinKey), default);
+        await _handler.Handle(new DeleteKurinCommand(kurinKey), default);
 
         _usersMock.Verify(u => u.DetachFromKurinAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
         order.Should().Equal("detach", "save");
@@ -109,7 +109,7 @@ public class DeleteKurinHandlerTests
     {
         // Arrange
         var kurinKey = Guid.NewGuid();
-        var command = new DeleteKurin(kurinKey);
+        var command = new DeleteKurinCommand(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync((Kurin)null!);
@@ -128,7 +128,7 @@ public class DeleteKurinHandlerTests
     public async Task Handle_WhenKurinKeyIsEmpty_ShouldReturnInvalidData()
     {
         // Arrange
-        var command = new DeleteKurin(Guid.Empty);
+        var command = new DeleteKurinCommand(Guid.Empty);
 
         // Act
         var result = await _handler.Handle(command, default);
@@ -147,7 +147,7 @@ public class DeleteKurinHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var kurin = new Kurin(1) { KurinKey = kurinKey };
-        var command = new DeleteKurin(kurinKey);
+        var command = new DeleteKurinCommand(kurinKey);
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))
             .ReturnsAsync(kurin);
@@ -170,7 +170,7 @@ public class DeleteKurinHandlerTests
         // Arrange
         var kurinKey = Guid.NewGuid();
         var kurin = new Kurin(1) { KurinKey = kurinKey };
-        var command = new DeleteKurin(kurinKey);
+        var command = new DeleteKurinCommand(kurinKey);
         var expectedException = new Exception("Test exception");
 
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default))

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AuthState } from '../models/auth-state.model';
-import { AuthService } from '../services/authService/auth.service';
-import { PermissionService } from '../services/permission.service';
+import { AuthService } from '../services/auth-service/auth.service';
+import { PermissionService } from '../services/permission-service/permission.service';
 import { kurinAccessGuard } from './kurin.guard';
 
 describe('kurinAccessGuard', () => {

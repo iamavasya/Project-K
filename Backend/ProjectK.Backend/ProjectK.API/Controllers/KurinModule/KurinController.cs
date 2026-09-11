@@ -66,7 +66,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBadgeReviewQueue(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetBadgeReviewQueue(kurinKey));
+        var response = await _mediator.Send(new GetBadgeReviewQueueQuery(kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -80,7 +80,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid kurinKey)
     {
-        var request = new GetKurinByKey(kurinKey);
+        var request = new GetKurinByKeyQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -106,7 +106,7 @@ public class KurinController : ControllerBase
         }
 
         await using var content = request.File.OpenReadStream();
-        var result = await _mediator.Send(new PreviewRosterImport(content), cancellationToken);
+        var result = await _mediator.Send(new PreviewRosterImportQuery(content), cancellationToken);
         return result.ToActionResult(this);
     }
 
@@ -128,7 +128,7 @@ public class KurinController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new ImportRoster(
+            new ImportRosterCommand(
                 kurinKey,
                 request.Rows,
                 request.Mapping,
@@ -158,7 +158,7 @@ public class KurinController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new ExportRegistry(kurinKey, request.Columns ?? []),
+            new ExportRegistryQuery(kurinKey, request.Columns ?? []),
             cancellationToken);
 
         if (result.Type != ResultType.Success || result.Data is null)
@@ -214,7 +214,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll()
     {
-        var request = new GetKurins();
+        var request = new GetKurinsQuery();
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -229,7 +229,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] int kurinNumber)
     {
-        var request = new UpsertKurin(kurinNumber);
+        var request = new UpsertKurinCommand(kurinNumber);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -246,7 +246,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Upsert(Guid kurinKey, [FromBody] UpdateKurinRequest request)
     {
-        var command = new UpsertKurin(
+        var command = new UpsertKurinCommand(
             kurinKey,
             request.Number,
             request.Stanytsia,
@@ -270,7 +270,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid kurinKey)
     {
-        var request = new DeleteKurin(kurinKey);
+        var request = new DeleteKurinCommand(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -307,7 +307,7 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> Join(Guid kurinKey, [FromBody] JoinKurinRequest request)
     {
         var response = await _mediator.Send(
-            new JoinKurin(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId));
+            new JoinKurinCommand(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId));
         return response.ToActionResult(this);
     }
 
@@ -327,7 +327,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> FindCandidate(Guid kurinKey, [FromQuery] string publicId)
     {
-        var response = await _mediator.Send(new FindMemberByPublicId(kurinKey, publicId));
+        var response = await _mediator.Send(new FindMemberByPublicIdQuery(kurinKey, publicId));
         return response.ToActionResult(this);
     }
 
@@ -346,7 +346,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> FormerMembers(Guid kurinKey)
     {
-        var response = await _mediator.Send(new GetFormerMembers(kurinKey));
+        var response = await _mediator.Send(new GetFormerMembersQuery(kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -362,7 +362,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Leave(Guid kurinKey, Guid memberKey)
     {
-        var response = await _mediator.Send(new LeaveKurin(memberKey, kurinKey));
+        var response = await _mediator.Send(new LeaveKurinCommand(memberKey, kurinKey));
         return response.ToActionResult(this);
     }
 
@@ -377,7 +377,7 @@ public class KurinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MoveToGroup(Guid kurinKey, Guid memberKey, [FromBody] MoveToGroupRequest request)
     {
-        var response = await _mediator.Send(new MoveToGroup(memberKey, kurinKey, request.GroupKey));
+        var response = await _mediator.Send(new MoveToGroupCommand(memberKey, kurinKey, request.GroupKey));
         return response.ToActionResult(this);
     }
 }

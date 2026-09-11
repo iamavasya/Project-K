@@ -34,7 +34,7 @@ public class UpsertMemberHandlerTests
     private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
-    private readonly UpsertMemberHandler _handler;
+    private readonly UpsertMemberCommandHandler _handler;
 
     public UpsertMemberHandlerTests()
     {
@@ -53,7 +53,7 @@ public class UpsertMemberHandlerTests
             .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AccountAvailability.Available);
 
-        _handler = new UpsertMemberHandler(
+        _handler = new UpsertMemberCommandHandler(
             _mediatorMock.Object,
             _uowMock.Object,
             mapperConfig.CreateMapper(),
@@ -97,7 +97,7 @@ public class UpsertMemberHandlerTests
         var member = GivenWrittenMember(isCreated: true);
 
         var result = await _handler.Handle(
-            new UpsertMember { KurinKey = Guid.NewGuid(), FirstName = "Ivan", LastName = "Petrenko" },
+            new UpsertMemberCommand { KurinKey = Guid.NewGuid(), FirstName = "Ivan", LastName = "Petrenko" },
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
@@ -117,7 +117,7 @@ public class UpsertMemberHandlerTests
                 ResultType.BadRequest, "ContactInfoLinked", "nope"));
 
         var result = await _handler.Handle(
-            new UpsertMember { KurinKey = Guid.NewGuid(), FirstName = "Ivan" },
+            new UpsertMemberCommand { KurinKey = Guid.NewGuid(), FirstName = "Ivan" },
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
@@ -134,7 +134,7 @@ public class UpsertMemberHandlerTests
             .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
 
         var result = await _handler.Handle(
-            new UpsertMember
+            new UpsertMemberCommand
             {
                 KurinKey = Guid.NewGuid(),
                 CreateUserAccount = true,
@@ -160,7 +160,7 @@ public class UpsertMemberHandlerTests
             .ReturnsAsync(AccountAvailability.EmailTaken);
 
         var result = await _handler.Handle(
-            new UpsertMember
+            new UpsertMemberCommand
             {
                 KurinKey = Guid.NewGuid(),
                 CreateUserAccount = true,
@@ -184,7 +184,7 @@ public class UpsertMemberHandlerTests
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
 
         var result = await _handler.Handle(
-            new UpsertMember
+            new UpsertMemberCommand
             {
                 MemberKey = memberKey,
                 KurinKey = Guid.NewGuid(),
@@ -208,7 +208,7 @@ public class UpsertMemberHandlerTests
         var member = GivenWrittenMember(isCreated: false);
 
         await _handler.Handle(
-            new UpsertMember
+            new UpsertMemberCommand
             {
                 MemberKey = memberKey,
                 KurinKey = Guid.NewGuid(),
@@ -235,7 +235,7 @@ public class UpsertMemberHandlerTests
             .ReturnsAsync(new ServiceResult<string?>(ResultType.Success, "new.png"));
 
         await _handler.Handle(
-            new UpsertMember
+            new UpsertMemberCommand
             {
                 MemberKey = member.MemberKey,
                 KurinKey = Guid.NewGuid(),
@@ -270,7 +270,7 @@ public class UpsertMemberHandlerTests
                 new MemberProfileWriteResult(member.MemberKey, false, true, null)));
 
         await _handler.Handle(
-            new UpsertMember { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), FirstName = "Changed" },
+            new UpsertMemberCommand { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), FirstName = "Changed" },
             CancellationToken.None);
 
         _eventsMock.Verify(x => x.PublishAsync(

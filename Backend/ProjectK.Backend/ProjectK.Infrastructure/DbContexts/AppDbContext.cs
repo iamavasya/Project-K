@@ -259,7 +259,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
             // NoAction (not SetNull) so Kurin keeps a single cascade path to AgendaItems: Category→Kurin
             // is Cascade, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
-            // DeleteAgendaCategory nulls out referencing items itself before removing the group.
+            // DeleteAgendaCategoryCommand nulls out referencing items itself before removing the group.
             entity.HasOne(e => e.Category)
                   .WithMany()
                   .HasForeignKey(e => e.AgendaCategoryKey)

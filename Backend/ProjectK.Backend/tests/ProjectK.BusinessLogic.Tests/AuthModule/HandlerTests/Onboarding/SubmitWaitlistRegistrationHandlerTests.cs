@@ -17,7 +17,7 @@ public class SubmitWaitlistRegistrationHandlerTests
     private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IWaitlistRepository> _waitlistRepository = new();
     private readonly Mock<IMemberRepository> _memberRepository = new();
-    private readonly SubmitWaitlistRegistrationHandler _handler;
+    private readonly SubmitWaitlistRegistrationCommandHandler _handler;
 
     public SubmitWaitlistRegistrationHandlerTests()
     {
@@ -31,7 +31,7 @@ public class SubmitWaitlistRegistrationHandlerTests
             .Setup(x => x.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member?)null);
 
-        _handler = new SubmitWaitlistRegistrationHandler(_unitOfWork.Object, _memberDirectory.Object);
+        _handler = new SubmitWaitlistRegistrationCommandHandler(_unitOfWork.Object, _memberDirectory.Object);
     }
 
     [Fact]

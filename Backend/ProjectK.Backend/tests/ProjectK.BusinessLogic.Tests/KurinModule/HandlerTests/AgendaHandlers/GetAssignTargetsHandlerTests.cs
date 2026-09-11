@@ -23,7 +23,7 @@ public class GetAssignTargetsHandlerTests
     private readonly Mock<IGroupRepository> _groupRepo = new();
     private readonly Mock<IMemberRepository> _memberRepo = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepo = new();
-    private readonly GetAssignTargetsHandler _handler;
+    private readonly GetAssignTargetsQueryHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _g1 = Guid.NewGuid();
@@ -49,7 +49,7 @@ public class GetAssignTargetsHandlerTests
         _leadershipRepo.Setup(r => r.GetLeadershipRefsForKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<LeadershipRef>());
 
-        _handler = new GetAssignTargetsHandler(_uow.Object, _memberDirectory.Object, _access.Object);
+        _handler = new GetAssignTargetsQueryHandler(_uow.Object, _memberDirectory.Object, _access.Object);
     }
 
     private void SetupViewer(bool canSeeWholeKurin, IReadOnlyCollection<Guid> visibilityGroups)
@@ -66,7 +66,7 @@ public class GetAssignTargetsHandlerTests
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
-        var result = await _handler.Handle(new GetAssignTargets(_kurinKey), default);
+        var result = await _handler.Handle(new GetAssignTargetsQuery(_kurinKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.CanTargetKurin.Should().BeTrue();
@@ -80,7 +80,7 @@ public class GetAssignTargetsHandlerTests
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("Mentor cannot target the whole kurin."));
 
-        var result = await _handler.Handle(new GetAssignTargets(_kurinKey), default);
+        var result = await _handler.Handle(new GetAssignTargetsQuery(_kurinKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.CanTargetKurin.Should().BeFalse();
