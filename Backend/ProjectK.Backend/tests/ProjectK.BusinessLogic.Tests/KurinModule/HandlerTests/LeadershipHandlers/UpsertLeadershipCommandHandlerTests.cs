@@ -1,366 +1,459 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers;
+
+public class UpsertLeadershipHandlerTests
 {
-    public class UpsertLeadershipHandlerTests
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<ProjectK.Common.Interfaces.Modules.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
+    private readonly UpsertLeadershipCommandHandler _handler;
+
+    public UpsertLeadershipHandlerTests()
     {
-        private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-        private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
-        private readonly Mock<IMapper> _mapperMock = new();
-        private readonly UpsertLeadershipHandler _handler;
-
-        public UpsertLeadershipHandlerTests()
+        _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
-            _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-            _handler = new UpsertLeadershipHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        }
+            ProjectK.Common.Models.Authorization.SystemRole.ForOffice(
+                ProjectK.Common.Models.Enums.LeadershipType.KV,
+                ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi)
+        });
+        _handler = new UpsertLeadershipCommandHandler(
+            _unitOfWorkMock.Object,
+            _mapperMock.Object,
+            _currentUserContextMock.Object);
+    }
 
-        private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()
-        {
-            Type = type,
-            EntityKey = Guid.NewGuid(),
-            StartDate = new DateOnly(2024, 1, 1),
-            EndDate = null,
-            LeadershipHistories = new List<LeadershipHistoryMemberDto>()
-        };
+    private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()
+    {
+        Type = type,
+        EntityKey = Guid.NewGuid(),
+        StartDate = new DateOnly(2024, 1, 1),
+        EndDate = null,
+        LeadershipHistories = new List<LeadershipHistoryMemberDto>()
+    };
 
-        private static Leadership BuildLeadershipEntity(Guid? key = null) => new()
-        {
-            LeadershipKey = key ?? Guid.NewGuid(),
-            StartDate = new DateOnly(2024, 1, 1)
-        };
+    private static Leadership BuildLeadershipEntity(Guid? key = null) => new()
+    {
+        LeadershipKey = key ?? Guid.NewGuid(),
+        StartDate = new DateOnly(2024, 1, 1)
+    };
 
-        private void SetupCreateMapping(UpsertLeadership command, Leadership entity)
-        {
-            _mapperMock
-                .Setup(m => m.Map<Leadership>(command))
-                .Returns(() =>
-                {
-                    // emulate mapping from command to new entity
-                    entity.LeadershipKey = command.LeadershipKey ?? entity.LeadershipKey;
-                    entity.StartDate = command.StartDate;
-                    entity.EndDate = command.EndDate;
-                    return entity;
-                });
-
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
-                .Returns((Leadership src) => new LeadershipResponse
-                {
-                    LeadershipKey = src.LeadershipKey,
-                    Type = src.Type,
-                    KurinKey = src.KurinKey,
-                    GroupKey = src.GroupKey,
-                    StartDate = src.StartDate,
-                    EndDate = src.EndDate,
-                    LeadershipHistories = new List<LeadershipHistoryMemberDto>()
-                });
-        }
-
-        private void SetupUpdateMapping(UpsertLeadership command, Leadership existing)
-        {
-            _mapperMock
-                .Setup(m => m.Map(command, existing))
-                .Returns(() =>
-                {
-                    existing.StartDate = command.StartDate;
-                    existing.EndDate = command.EndDate;
-                    return existing;
-                });
-
-            _mapperMock
-                .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
-                .Returns((Leadership src) => new LeadershipResponse
-                {
-                    LeadershipKey = src.LeadershipKey,
-                    Type = src.Type,
-                    KurinKey = src.KurinKey,
-                    GroupKey = src.GroupKey,
-                    StartDate = src.StartDate,
-                    EndDate = src.EndDate,
-                    LeadershipHistories = new List<LeadershipHistoryMemberDto>()
-                });
-        }
-
-        [Fact]
-        public async Task Handle_ShouldCreateLeadership_WhenNoExistingFound()
-        {
-            var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadership(requestDto);
-            var entity = BuildLeadershipEntity();
-
-            _leadershipRepoMock
-                .Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Leadership?)null);
-
-            SetupCreateMapping(command, entity);
-
-            _unitOfWorkMock
-                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Created, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(entity.LeadershipKey, result.Data!.LeadershipKey);
-            Assert.Equal("GetLeadershipByKey", result.CreatedAtActionName);
-            Assert.NotNull(result.CreatedAtRouteValues);
-
-            _leadershipRepoMock.Verify(r => r.Add(entity, It.IsAny<CancellationToken>()), Times.Once);
-            _leadershipRepoMock.Verify(r => r.Update(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldCreateLeadership_WhenProvidedKeyNotFound()
-        {
-            var providedKey = Guid.NewGuid();
-            var requestDto = BuildRequest("group");
-            var command = new UpsertLeadership(requestDto, providedKey);
-            var entity = BuildLeadershipEntity(providedKey);
-
-            _leadershipRepoMock
-                .Setup(r => r.GetByKeyAsync(providedKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Leadership?)null);
-
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Created, result.Type);
-            Assert.Equal(providedKey, result.Data!.LeadershipKey);
-            _leadershipRepoMock.Verify(r => r.Add(It.Is<Leadership>(l => l.LeadershipKey == providedKey), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldAssignKurinKey_OnKurinTypeCreation()
-        {
-            var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadership(requestDto);
-            var entity = BuildLeadershipEntity();
-
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Created, result.Type);
-            Assert.Equal(LeadershipType.Kurin, result.Data!.Type);
-            Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
-            Assert.Null(result.Data.GroupKey);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldAssignGroupKey_OnGroupTypeCreation()
-        {
-            var requestDto = BuildRequest("group");
-            var command = new UpsertLeadership(requestDto);
-            var entity = BuildLeadershipEntity();
-
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Created, result.Type);
-            Assert.Equal(LeadershipType.Group, result.Data!.Type);
-            Assert.Equal(requestDto.EntityKey, result.Data.GroupKey);
-            Assert.Null(result.Data.KurinKey);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldAssignKurinKey_OnKvTypeCreation()
-        {
-            var requestDto = BuildRequest("kv"); // KV behaves like Kurin for key assignment
-            var command = new UpsertLeadership(requestDto);
-            var entity = BuildLeadershipEntity();
-
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Created, result.Type);
-            Assert.Equal(LeadershipType.KV, result.Data!.Type);
-            Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
-            Assert.Null(result.Data.GroupKey);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldUpdateLeadership_WhenExistingFound()
-        {
-            var existing = BuildLeadershipEntity();
-            existing.Type = LeadershipType.Group;
-            existing.GroupKey = Guid.NewGuid();
-
-            var requestDto = BuildRequest("kurin"); // change type
-            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
-
-            _leadershipRepoMock
-                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-
-            SetupUpdateMapping(command, existing);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.Equal(existing.LeadershipKey, result.Data!.LeadershipKey);
-            Assert.Equal(LeadershipType.Kurin, result.Data.Type);
-            Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
-            Assert.Null(result.Data.GroupKey);
-
-            _leadershipRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
-            _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldCloseOldActiveHistoryAndStartNewOne_WhenRoleMemberChanges()
-        {
-            var oldMemberKey = Guid.NewGuid();
-            var newMemberKey = Guid.NewGuid();
-            var existing = BuildLeadershipEntity();
-            existing.Type = LeadershipType.Kurin;
-            existing.KurinKey = Guid.NewGuid();
-            existing.LeadershipHistories.Add(new LeadershipHistory
+    private void SetupCreateMapping(UpsertLeadershipCommand command, Leadership entity)
+    {
+        _mapperMock
+            .Setup(m => m.Map<Leadership>(command))
+            .Returns(() =>
             {
-                LeadershipHistoryKey = Guid.NewGuid(),
-                LeadershipKey = existing.LeadershipKey,
-                Leadership = existing,
-                MemberKey = oldMemberKey,
-                Role = LeadershipRole.Kurinnuy,
-                StartDate = new DateOnly(2024, 1, 1),
-                EndDate = null
+                // emulate mapping from command to new entity
+                entity.LeadershipKey = command.LeadershipKey ?? entity.LeadershipKey;
+                entity.StartDate = command.StartDate;
+                entity.EndDate = command.EndDate;
+                return entity;
             });
 
-            var requestDto = BuildRequest("kurin");
-            requestDto.EntityKey = existing.KurinKey;
-            requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+        _mapperMock
+            .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
+            .Returns((Leadership src) => new LeadershipResponse
             {
-                new()
+                LeadershipKey = src.LeadershipKey,
+                Type = src.Type,
+                KurinKey = src.KurinKey,
+                GroupKey = src.GroupKey,
+                StartDate = src.StartDate,
+                EndDate = src.EndDate,
+                LeadershipHistories = new List<LeadershipHistoryMemberDto>()
+            });
+    }
+
+    private void SetupUpdateMapping(UpsertLeadershipCommand command, Leadership existing)
+    {
+        _mapperMock
+            .Setup(m => m.Map(command, existing))
+            .Returns(() =>
+            {
+                existing.StartDate = command.StartDate;
+                existing.EndDate = command.EndDate;
+                return existing;
+            });
+
+        _mapperMock
+            .Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()))
+            .Returns((Leadership src) => new LeadershipResponse
+            {
+                LeadershipKey = src.LeadershipKey,
+                Type = src.Type,
+                KurinKey = src.KurinKey,
+                GroupKey = src.GroupKey,
+                StartDate = src.StartDate,
+                EndDate = src.EndDate,
+                LeadershipHistories = new List<LeadershipHistoryMemberDto>()
+            });
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCreateLeadership_WhenNoExistingFound()
+    {
+        var requestDto = BuildRequest("kurin");
+        var command = new UpsertLeadershipCommand(requestDto);
+        var entity = BuildLeadershipEntity();
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Leadership?)null);
+
+        SetupCreateMapping(command, entity);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        Assert.NotNull(result.Data);
+        Assert.Equal(entity.LeadershipKey, result.Data!.LeadershipKey);
+        Assert.Equal("GetLeadershipByKey", result.CreatedAtActionName);
+        Assert.NotNull(result.CreatedAtRouteValues);
+
+        _leadershipRepoMock.Verify(r => r.Add(entity, It.IsAny<CancellationToken>()), Times.Once);
+        _leadershipRepoMock.Verify(r => r.Update(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCreateLeadership_WhenProvidedKeyNotFound()
+    {
+        var providedKey = Guid.NewGuid();
+        var requestDto = BuildRequest("group");
+        var command = new UpsertLeadershipCommand(requestDto, providedKey);
+        var entity = BuildLeadershipEntity(providedKey);
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(providedKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Leadership?)null);
+
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        Assert.Equal(providedKey, result.Data!.LeadershipKey);
+        _leadershipRepoMock.Verify(r => r.Add(It.Is<Leadership>(l => l.LeadershipKey == providedKey), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldAssignKurinKey_OnKurinTypeCreation()
+    {
+        var requestDto = BuildRequest("kurin");
+        var command = new UpsertLeadershipCommand(requestDto);
+        var entity = BuildLeadershipEntity();
+
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        Assert.Equal(LeadershipType.Kurin, result.Data!.Type);
+        Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
+        Assert.Null(result.Data.GroupKey);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldAssignGroupKey_OnGroupTypeCreation()
+    {
+        var requestDto = BuildRequest("group");
+        var command = new UpsertLeadershipCommand(requestDto);
+        var entity = BuildLeadershipEntity();
+
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        Assert.Equal(LeadershipType.Group, result.Data!.Type);
+        Assert.Equal(requestDto.EntityKey, result.Data.GroupKey);
+        Assert.Null(result.Data.KurinKey);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldAssignKurinKey_OnKvTypeCreation()
+    {
+        var requestDto = BuildRequest("kv"); // KV behaves like Kurin for key assignment
+        var command = new UpsertLeadershipCommand(requestDto);
+        var entity = BuildLeadershipEntity();
+
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        Assert.Equal(LeadershipType.KV, result.Data!.Type);
+        Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
+        Assert.Null(result.Data.GroupKey);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldUpdateLeadership_WhenExistingFound()
+    {
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Group;
+        existing.GroupKey = Guid.NewGuid();
+
+        var requestDto = BuildRequest("kurin"); // change type
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.Equal(existing.LeadershipKey, result.Data!.LeadershipKey);
+        Assert.Equal(LeadershipType.Kurin, result.Data.Type);
+        Assert.Equal(requestDto.EntityKey, result.Data.KurinKey);
+        Assert.Null(result.Data.GroupKey);
+
+        _leadershipRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+        _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_SeatedBySystem_ShouldSucceedWithoutAnAssigner()
+    {
+        // Account activation seats the new kurin leader while the caller is still anonymous.
+        _currentUserContextMock.Setup(x => x.Roles).Returns(Array.Empty<string>());
+
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.KV;
+        existing.KurinKey = Guid.NewGuid();
+
+        var requestDto = BuildRequest("kv");
+        requestDto.EntityKey = existing.KurinKey;
+        requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+        {
+            new()
+            {
+                Role = LeadershipRole.Zvyazkovyi.ToString(),
+                Member = new MemberLookupDto
                 {
-                    Role = LeadershipRole.Kurinnuy.ToString(),
-                    Member = new MemberLookupDto
-                    {
-                        MemberKey = newMemberKey,
-                        FirstName = "New",
-                        LastName = "Member"
-                    }
+                    MemberKey = Guid.NewGuid(),
+                    FirstName = "New",
+                    LastName = "Leader"
                 }
-            };
-            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
+            }
+        };
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey) { SeatedBySystem = true };
 
-            _leadershipRepoMock
-                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
-            SetupUpdateMapping(command, existing);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.Equal(today, existing.LeadershipHistories.Single(h => h.MemberKey == oldMemberKey).EndDate);
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.Contains(existing.LeadershipHistories, h => h.Role == LeadershipRole.Zvyazkovyi && h.EndDate == null);
+    }
 
-            var newHistory = Assert.Single(existing.LeadershipHistories, h => h.MemberKey == newMemberKey);
-            Assert.Equal(LeadershipRole.Kurinnuy, newHistory.Role);
-            Assert.Equal(today, newHistory.StartDate);
-            Assert.Null(newHistory.EndDate);
-        }
+    [Theory]
+    [InlineData("Kurin.Pysar", ResultType.Forbidden)]
+    [InlineData("Kurin.Kurinnuy", ResultType.Success)]
+    public async Task Handle_SeatingSkarbnyk_ShouldDependOnWhetherTheCallerHeadsTheProvid(
+        string callerRole,
+        ResultType expected)
+    {
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { callerRole });
 
-        [Fact]
-        public async Task Handle_ShouldReturnInternalServerError_WhenNoChangesPersisted_OnCreate()
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Kurin;
+        existing.KurinKey = Guid.NewGuid();
+
+        var requestDto = BuildRequest("kurin");
+        requestDto.EntityKey = existing.KurinKey;
+        requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
         {
-            var requestDto = BuildRequest("kurin");
-            var command = new UpsertLeadership(requestDto);
-            var entity = BuildLeadershipEntity();
+            new()
+            {
+                Role = LeadershipRole.Skarbnyk.ToString(),
+                Member = new MemberLookupDto
+                {
+                    MemberKey = Guid.NewGuid(),
+                    FirstName = "Seated",
+                    LastName = "Member"
+                }
+            }
+        };
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
 
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
-            var result = await _handler.Handle(command, CancellationToken.None);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            Assert.Equal(ResultType.InternalServerError, result.Type);
-            Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
-        }
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        [Fact]
-        public async Task Handle_ShouldReturnInternalServerError_WhenNoChangesPersisted_OnUpdate()
+        Assert.Equal(expected, result.Type);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCloseOldActiveHistoryAndStartNewOne_WhenRoleMemberChanges()
+    {
+        var oldMemberKey = Guid.NewGuid();
+        var newMemberKey = Guid.NewGuid();
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Kurin;
+        existing.KurinKey = Guid.NewGuid();
+        existing.LeadershipHistories.Add(new LeadershipHistory
         {
-            var existing = BuildLeadershipEntity();
-            existing.Type = LeadershipType.Kurin;
-            existing.KurinKey = Guid.NewGuid();
+            LeadershipHistoryKey = Guid.NewGuid(),
+            LeadershipKey = existing.LeadershipKey,
+            Leadership = existing,
+            MemberKey = oldMemberKey,
+            Role = LeadershipRole.Kurinnuy,
+            StartDate = new DateOnly(2024, 1, 1),
+            EndDate = null
+        });
 
-            var requestDto = BuildRequest("group");
-            var command = new UpsertLeadership(requestDto, existing.LeadershipKey);
-
-            _leadershipRepoMock
-                .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
-
-            SetupUpdateMapping(command, existing);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.Equal(ResultType.InternalServerError, result.Type);
-            Assert.Null(result.Data);
-            _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldThrowArgumentException_WhenInvalidType()
+        var requestDto = BuildRequest("kurin");
+        requestDto.EntityKey = existing.KurinKey;
+        requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
         {
-            var requestDto = BuildRequest("INVALID_TYPE");
-            var command = new UpsertLeadership(requestDto);
+            new()
+            {
+                Role = LeadershipRole.Kurinnuy.ToString(),
+                Member = new MemberLookupDto
+                {
+                    MemberKey = newMemberKey,
+                    FirstName = "New",
+                    LastName = "Member"
+                }
+            }
+        };
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
 
-            var entity = BuildLeadershipEntity();
-            // Mapping for creation still needed before it attempts Enum.Parse
-            _mapperMock
-                .Setup(m => m.Map<Leadership>(command))
-                .Returns(entity);
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, CancellationToken.None));
-        }
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        [Fact]
-        public async Task Handle_ShouldTreatGuidEmptyLeadershipKey_AsCreate()
-        {
-            var requestDto = BuildRequest("group");
-            // Mimic constructing with an empty leadership key (edge case)
-            var command = new UpsertLeadership(requestDto, Guid.Empty);
-            var entity = BuildLeadershipEntity();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.Equal(today, existing.LeadershipHistories.Single(h => h.MemberKey == oldMemberKey).EndDate);
 
-            SetupCreateMapping(command, entity);
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var newHistory = Assert.Single(existing.LeadershipHistories, h => h.MemberKey == newMemberKey);
+        Assert.Equal(LeadershipRole.Kurinnuy, newHistory.Role);
+        Assert.Equal(today, newHistory.StartDate);
+        Assert.Null(newHistory.EndDate);
+    }
 
-            var result = await _handler.Handle(command, CancellationToken.None);
+    [Fact]
+    public async Task Handle_ShouldReturnInternalServerError_WhenNoChangesPersisted_OnCreate()
+    {
+        var requestDto = BuildRequest("kurin");
+        var command = new UpsertLeadershipCommand(requestDto);
+        var entity = BuildLeadershipEntity();
 
-            Assert.Equal(ResultType.Created, result.Type);
-            _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Once);
-            _leadershipRepoMock.Verify(r => r.Update(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.InternalServerError, result.Type);
+        Assert.Null(result.Data);
+        _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnInternalServerError_WhenNoChangesPersisted_OnUpdate()
+    {
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Kurin;
+        existing.KurinKey = Guid.NewGuid();
+
+        var requestDto = BuildRequest("group");
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.InternalServerError, result.Type);
+        Assert.Null(result.Data);
+        _mapperMock.Verify(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowArgumentException_WhenInvalidType()
+    {
+        var requestDto = BuildRequest("INVALID_TYPE");
+        var command = new UpsertLeadershipCommand(requestDto);
+
+        var entity = BuildLeadershipEntity();
+        // Mapping for creation still needed before it attempts Enum.Parse
+        _mapperMock
+            .Setup(m => m.Map<Leadership>(command))
+            .Returns(entity);
+
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTreatGuidEmptyLeadershipKey_AsCreate()
+    {
+        var requestDto = BuildRequest("group");
+        // Mimic constructing with an empty leadership key (edge case)
+        var command = new UpsertLeadershipCommand(requestDto, Guid.Empty);
+        var entity = BuildLeadershipEntity();
+
+        SetupCreateMapping(command, entity);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Created, result.Type);
+        _leadershipRepoMock.Verify(r => r.Add(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Once);
+        _leadershipRepoMock.Verify(r => r.Update(It.IsAny<Leadership>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

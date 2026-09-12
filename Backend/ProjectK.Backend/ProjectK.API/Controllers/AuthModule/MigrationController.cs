@@ -1,30 +1,39 @@
+using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
+using ProjectK.API.Authorization;
+using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration.PreflightReport;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Extensions;
-using System.Threading.Tasks;
 
-namespace ProjectK.API.Controllers.AuthModule
+namespace ProjectK.API.Controllers.AuthModule;
+
+/// <summary>
+/// Read-only reporting on data that predates the office-based role model. Admin only.
+/// </summary>
+[Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+[Route("api/auth/migration")]
+[ApiController]
+public class MigrationController : ControllerBase
 {
-    [Authorize(Policy = "RequireAdmin")]
-    [Route("api/auth/migration")]
-    [ApiController]
-    public class MigrationController : ControllerBase
+    private readonly IMediator _mediator;
+
+    public MigrationController(IMediator _mediator)
     {
-        private readonly IMediator _mediator;
+        this._mediator = _mediator;
+    }
 
-        public MigrationController(IMediator _mediator)
-        {
-            this._mediator = _mediator;
-        }
-
-        [HttpGet("preflight")]
-        public async Task<IActionResult> GetPreflightReport()
-        {
-            var query = new GetMigrationPreflightReportQuery();
-            var response = await _mediator.Send(query);
-            return response.ToActionResult(this);
-        }
+    /// <summary>
+    /// Reports what the legacy role migration would change, without changing anything.
+    /// </summary>
+    [HttpGet("preflight")]
+    [ProducesResponseType(typeof(MigrationPreflightReport), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPreflightReport()
+    {
+        var query = new GetMigrationPreflightReportQuery();
+        var response = await _mediator.Send(query);
+        return response.ToActionResult(this);
     }
 }

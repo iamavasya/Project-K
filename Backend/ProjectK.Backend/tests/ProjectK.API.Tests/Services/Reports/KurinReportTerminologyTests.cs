@@ -1,5 +1,6 @@
-using ProjectK.API.Services.Reports;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Reports;
+using ProjectK.Infrastructure.Reports;
 
 namespace ProjectK.API.Tests.Services.Reports;
 
@@ -24,10 +25,25 @@ public sealed class KurinReportTerminologyTests
         Assert.Equal(expected, KurinReportTerminology.AwardLevel(level));
     }
 
+    /// <summary>
+    /// The звіт says what the реєстр says. It used to have wording of its own — «Скоб» here,
+    /// «пл. скоб / вірл.» on screen — so both are pinned to <see cref="PlastLevelNames"/> and a
+    /// change to one is a change to both.
+    /// </summary>
+    [Theory]
+    [InlineData(PlastLevel.Entry)]
+    [InlineData(PlastLevel.Uchasnyk)]
+    [InlineData(PlastLevel.Skob)]
+    [InlineData(PlastLevel.SeniorKerivnytstva)]
+    public void PlastLevel_ShouldSayWhatTheRegistrySays(PlastLevel level)
+    {
+        Assert.Equal(PlastLevelNames.Of(level), KurinReportTerminology.PlastLevel(level));
+    }
+
     [Fact]
     public void PlastLevel_ShouldUseHumanReadableLabels()
     {
-        Assert.Equal("Скоб", KurinReportTerminology.PlastLevel(PlastLevel.Skob));
+        Assert.Equal("пл. скоб / вірл.", KurinReportTerminology.PlastLevel(PlastLevel.Skob));
         Assert.Equal("-", KurinReportTerminology.PlastLevel(null));
     }
 }

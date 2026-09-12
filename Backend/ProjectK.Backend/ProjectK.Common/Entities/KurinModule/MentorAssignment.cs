@@ -1,20 +1,19 @@
-using ProjectK.Infrastructure.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
+using ProjectK.Common.Entities;
 
-namespace ProjectK.Common.Entities.KurinModule
+namespace ProjectK.Common.Entities.KurinModule;
+
+public class MentorAssignment : Entity
 {
-    public class MentorAssignment : Entity
-    {
-        [Key]
-        public Guid MentorAssignmentKey { get; set; } = Guid.NewGuid();
+    [Key]
+    public Guid MentorAssignmentKey { get; set; } = Guid.NewGuid();
 
-        public Guid MentorUserKey { get; set; }
+    public Guid MentorUserKey { get; set; }
 
-        public Guid GroupKey { get; set; }
-        public Group Group { get; set; } = null!;
+    public Guid GroupKey { get; set; }
+    public Group Group { get; set; } = null!;
 
-        public DateTime AssignedAtUtc { get; set; }
-        public DateTime? RevokedAtUtc { get; set; }
-    }
+    public DateTime AssignedAtUtc { get; set; }
+    public DateTime? RevokedAtUtc { get; set; }
 }

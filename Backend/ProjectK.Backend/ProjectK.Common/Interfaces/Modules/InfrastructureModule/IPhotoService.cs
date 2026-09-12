@@ -1,17 +1,20 @@
-﻿using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
+namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+
+public interface IPhotoService
 {
-    public interface IPhotoService
-    {
-        Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken);
-        Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, BlobUploadContext uploadContext, CancellationToken cancellationToken);
-        Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken);
-        Task<IEnumerable<string>> GetOrphanFilesAsync(CancellationToken cancellationToken);
-    }
+    // Stream overloads let callers feed the request/file stream straight into image processing
+    // without first buffering the whole original file into a byte[] in memory.
+    Task<PhotoUploadResult> UploadPhotoAsync(Stream photoStream, string fileName, CancellationToken cancellationToken);
+    Task<PhotoUploadResult> UploadPhotoAsync(Stream photoStream, string fileName, BlobUploadContext uploadContext, CancellationToken cancellationToken);
+    Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken);
+    Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, BlobUploadContext uploadContext, CancellationToken cancellationToken);
+    Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken);
 }

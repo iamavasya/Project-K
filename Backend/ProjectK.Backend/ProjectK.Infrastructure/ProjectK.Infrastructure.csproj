@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.3.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
@@ -20,10 +21,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+    <!-- The Telegram dev-alert sink lives here now. -->
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <!-- The kurin report PDF is rendered here now. -->
+    <PackageReference Include="QuestPDF" Version="2026.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
     <PackageReference Include="Resend" Version="0.5.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProjectK.BusinessLogic\ProjectK.BusinessLogic.csproj" />
     <ProjectReference Include="..\ProjectK.Common\ProjectK.Common.csproj" />
   </ItemGroup>
 

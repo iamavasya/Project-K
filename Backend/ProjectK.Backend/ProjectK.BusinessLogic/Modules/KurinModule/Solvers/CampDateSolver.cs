@@ -1,4 +1,4 @@
-﻿
+
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Optimization.Scheduling;
 

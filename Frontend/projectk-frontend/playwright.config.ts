@@ -17,7 +17,9 @@ export default defineConfig({
   use: {
     baseURL,
     extraHTTPHeaders: { 'X-RateLimit-Bypass': 'e2e-bypass-key' },
-    trace: 'on-first-retry',
+    // retain-on-failure, not on-first-retry: retries are 0 locally, so a first-retry trace is only
+    // ever produced in CI. Every local flake so far had to be diagnosed without one.
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
   },

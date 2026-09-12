@@ -1,0 +1,95 @@
+services:
+  projectk-web:
+    image: ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:-0.14.2-beta}
+    environment:
+      # Relative on purpose: nginx inside this container proxies /api to the API, so the browser
+      # never needs a second host or port and the API is not reachable from outside at all.
+      PROJECTK_API_URL: ${PROJECTK_API_URL:-/api}
+      PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Self-Host}
+      PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-Лілейка}
+    # The only port the bundle publishes. Put a TLS-terminating reverse proxy in front of it
+    # before exposing the host to the internet (README, "Before exposing to the internet").
+    ports:
+      - "${PROJECTK_WEB_PORT:-8080}:80"
+    depends_on:
+      projectk-api:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx listens on IPv4 only, while localhost
+      # resolves to ::1 first inside the container and the probe is refused.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  projectk-api:
+    image: ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:-0.14.2-beta}
+    environment:
+      ASPNETCORE_ENVIRONMENT: SelfHost
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: ${PROJECTK_DB_CONNECTION_STRING}
+      ConnectionStrings__BlobStorage: ${PROJECTK_BLOB_CONNECTION_STRING}
+      # Photos are read by the browser straight from the blob store, through nginx's /blob prefix
+      # (Azurite itself is not published). Has to be the address people open the app by.
+      BlobStorage__PublicBaseUrl: ${PROJECTK_BLOB_PUBLIC_BASE_URL:-http://localhost:8080/blob/devstoreaccount1/photos}
+      BlobStorage__ContainerName: ${PROJECTK_BLOB_CONTAINER:-photos}
+      EnvCorsOrigin: ${PROJECTK_CORS_ORIGIN:-http://localhost:8080}
+      Email__BaseUrl: ${PROJECTK_PUBLIC_URL:-http://localhost:8080}
+      # Refused at startup when it is the example value or shorter than 32 characters.
+      Jwt__Key: ${PROJECTK_JWT_KEY}
+      Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}
+      Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
+      # nginx is the only thing that reaches this container, and it writes X-Real-IP from the
+      # actual connection; that is the address sign-in attempts are rate-limited by.
+      Security__ClientIp__Header: X-Real-IP
+      Telegram__DevAlerts__Enabled: "false"
+      Telegram__PublicChannel__Enabled: "false"
+      # «Повідомити про проблему» opens a GitHub issue with this token; empty means the report
+      # is written to the API log instead.
+      Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
+      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
+    # Not published: reached only through projectk-web's nginx on the compose network.
+    depends_on:
+      projectk-sql:
+        condition: service_healthy
+      projectk-azurite:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  projectk-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${PROJECTK_SQL_EDITION:-Developer}
+      MSSQL_SA_PASSWORD: ${PROJECTK_SQL_PASSWORD}
+    # Not published. To reach the database from the host for a backup or a query, add a
+    # docker-compose.override.yml with a ports entry for this service and bind it to 127.0.0.1.
+    volumes:
+      - projectk-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  projectk-azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --silent --skipApiVersionCheck
+    # Not published: photos are served through projectk-web's /blob prefix.
+    volumes:
+      - projectk-azurite-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const net=require('net');const s=net.connect(10000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  projectk-sql-data:
+    name: projectk-sql-data
+  projectk-azurite-data:
+    name: projectk-azurite-data

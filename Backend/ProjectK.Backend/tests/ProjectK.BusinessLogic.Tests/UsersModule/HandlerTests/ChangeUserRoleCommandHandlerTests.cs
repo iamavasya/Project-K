@@ -1,157 +1,109 @@
-using Moq;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command;
-using ProjectK.BusinessLogic.Modules.UsersModule.Command.Handlers;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using Moq;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests
+namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
+
+// ChangeUserRole now only toggles the system Admin role, and only an admin may call it.
+// Kurin roles come from діловодські offices (Leadership screen) and are synced, not set here.
+public class ChangeUserRoleCommandHandlerTests
 {
-    public class ChangeUserRoleCommandHandlerTests
+    private readonly Mock<UserManager<AppUser>> _userManagerMock;
+    private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<ILogger<ChangeUserRoleCommandHandler>> _loggerMock;
+    private readonly Mock<IActivityLogger> _activityLoggerMock;
+    private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWorkMock;
+    private readonly ChangeUserRoleCommandHandler _handler;
+
+    public ChangeUserRoleCommandHandlerTests()
     {
-        private readonly Mock<UserManager<AppUser>> _userManagerMock;
-        private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-        private readonly Mock<ILogger<ChangeUserRoleCommandHandler>> _loggerMock;
-        private readonly Mock<IActivityLogger> _activityLoggerMock;
-        private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWorkMock;
-        private readonly ChangeUserRoleCommandHandler _handler;
+        var store = new Mock<IUserStore<AppUser>>();
+        _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
+        _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _loggerMock = new Mock<ILogger<ChangeUserRoleCommandHandler>>();
+        _activityLoggerMock = new Mock<IActivityLogger>();
+        _unitOfWorkMock = new Mock<ProjectK.Common.Interfaces.IUnitOfWork>();
 
-        public ChangeUserRoleCommandHandlerTests()
-        {
-            var store = new Mock<IUserStore<AppUser>>();
-            _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
-            _currentUserContextMock = new Mock<ICurrentUserContext>();
-            _loggerMock = new Mock<ILogger<ChangeUserRoleCommandHandler>>();
-            _activityLoggerMock = new Mock<IActivityLogger>();
-            _unitOfWorkMock = new Mock<ProjectK.Common.Interfaces.IUnitOfWork>();
+        _handler = new ChangeUserRoleCommandHandler(
+            _userManagerMock.Object,
+            _currentUserContextMock.Object,
+            _loggerMock.Object,
+            _activityLoggerMock.Object,
+            _unitOfWorkMock.Object);
+    }
 
-            _handler = new ChangeUserRoleCommandHandler(
-                _userManagerMock.Object,
-                _currentUserContextMock.Object,
-                _loggerMock.Object,
-                _activityLoggerMock.Object,
-                _unitOfWorkMock.Object);
-        }
+    [Fact]
+    public async Task Handle_ShouldReturnForbidden_WhenCallerIsNotAdmin()
+    {
+        var targetUserId = Guid.NewGuid();
+        _currentUserContextMock.Setup(c => c.IsInRole("Admin")).Returns(false);
+        _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
+            .ReturnsAsync(new AppUser { Id = targetUserId });
 
-        [Fact]
-        public async Task Handle_ShouldReturnForbidden_WhenUserIsNotAdminOrManager()
-        {
-            // Arrange
-            var targetUserId = Guid.NewGuid();
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Manager.ToString())).Returns(false);
+        var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Admin), CancellationToken.None);
 
-            _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
-                .ReturnsAsync(new AppUser { Id = targetUserId });
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.Data.Should().BeFalse();
+    }
 
-            var command = new ChangeUserRoleCommand(targetUserId, UserRole.Manager);
+    [Fact]
+    public async Task Handle_ShouldGrantAdmin_WhenAdminPromotesMember()
+    {
+        var targetUserId = Guid.NewGuid();
+        _currentUserContextMock.Setup(c => c.IsInRole("Admin")).Returns(true);
+        var user = new AppUser { Id = targetUserId };
+        _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString())).ReturnsAsync(user);
+        _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Member" });
+        _userManagerMock.Setup(m => m.AddToRoleAsync(user, "Admin")).ReturnsAsync(IdentityResult.Success);
 
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Admin), CancellationToken.None);
 
-            // Assert
-            result.Type.Should().Be(ResultType.Forbidden);
-            result.Data.Should().BeFalse();
-        }
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().BeTrue();
+        _userManagerMock.Verify(m => m.AddToRoleAsync(user, "Admin"), Times.Once);
+    }
 
-        [Fact]
-        public async Task Handle_ShouldReturnForbidden_WhenManagerPromotesToAdmin()
-        {
-            // Arrange
-            var targetUserId = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid();
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Manager.ToString())).Returns(true);
-            _currentUserContextMock.Setup(c => c.KurinKey).Returns(kurinKey);
+    [Fact]
+    public async Task Handle_ShouldRevokeAdmin_WhenAdminDemotesToMember()
+    {
+        var targetUserId = Guid.NewGuid();
+        _currentUserContextMock.Setup(c => c.IsInRole("Admin")).Returns(true);
+        var user = new AppUser { Id = targetUserId };
+        _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString())).ReturnsAsync(user);
+        _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Admin" });
+        _userManagerMock.Setup(m => m.RemoveFromRoleAsync(user, "Admin")).ReturnsAsync(IdentityResult.Success);
+        _userManagerMock.Setup(m => m.AddToRoleAsync(user, "Member")).ReturnsAsync(IdentityResult.Success);
 
-            _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
-                .ReturnsAsync(new AppUser { Id = targetUserId, KurinKey = kurinKey });
+        var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Member), CancellationToken.None);
 
-            var command = new ChangeUserRoleCommand(targetUserId, UserRole.Admin);
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().BeTrue();
+        _userManagerMock.Verify(m => m.RemoveFromRoleAsync(user, "Admin"), Times.Once);
+    }
 
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
+    [Fact]
+    public async Task Handle_ShouldNoop_WhenTargetAlreadyAdmin()
+    {
+        var targetUserId = Guid.NewGuid();
+        _currentUserContextMock.Setup(c => c.IsInRole("Admin")).Returns(true);
+        var user = new AppUser { Id = targetUserId };
+        _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString())).ReturnsAsync(user);
+        _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Admin" });
 
-            // Assert
-            result.Type.Should().Be(ResultType.Forbidden);
-            result.CreatedAtActionName.Should().Contain("cannot promote to Admin");
-        }
+        var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Admin), CancellationToken.None);
 
-        [Fact]
-        public async Task Handle_ShouldReturnSuccess_WhenAdminChangesRole()
-        {
-            // Arrange
-            var targetUserId = Guid.NewGuid();
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(true);
-
-            var user = new AppUser { Id = targetUserId };
-            _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
-                .ReturnsAsync(user);
-
-            _userManagerMock.Setup(m => m.GetRolesAsync(user))
-                .ReturnsAsync(new List<string> { UserRole.User.ToString() });
-
-            _userManagerMock.Setup(m => m.RemoveFromRolesAsync(user, It.IsAny<IEnumerable<string>>()))
-                .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(m => m.AddToRoleAsync(user, UserRole.Manager.ToString()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var command = new ChangeUserRoleCommand(targetUserId, UserRole.Manager);
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task Handle_ShouldTransferManagerRole_WhenManagerPromotesUserToManager()
-        {
-            var currentManagerId = Guid.NewGuid();
-            var targetUserId = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid();
-            var currentManager = new AppUser { Id = currentManagerId, KurinKey = kurinKey };
-            var targetUser = new AppUser { Id = targetUserId, KurinKey = kurinKey };
-
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Admin.ToString())).Returns(false);
-            _currentUserContextMock.Setup(c => c.IsInRole(UserRole.Manager.ToString())).Returns(true);
-            _currentUserContextMock.Setup(c => c.KurinKey).Returns(kurinKey);
-            _currentUserContextMock.Setup(c => c.UserId).Returns(currentManagerId);
-
-            _userManagerMock.Setup(m => m.FindByIdAsync(targetUserId.ToString()))
-                .ReturnsAsync(targetUser);
-            _userManagerMock.Setup(m => m.FindByIdAsync(currentManagerId.ToString()))
-                .ReturnsAsync(currentManager);
-            _userManagerMock.Setup(m => m.GetRolesAsync(targetUser))
-                .ReturnsAsync(new List<string> { UserRole.User.ToString() });
-            _userManagerMock.Setup(m => m.GetRolesAsync(currentManager))
-                .ReturnsAsync(new List<string> { UserRole.Manager.ToString() });
-            _userManagerMock.Setup(m => m.RemoveFromRolesAsync(targetUser, It.IsAny<IEnumerable<string>>()))
-                .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(m => m.AddToRoleAsync(targetUser, UserRole.Manager.ToString()))
-                .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(m => m.RemoveFromRolesAsync(currentManager, It.IsAny<IEnumerable<string>>()))
-                .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(m => m.AddToRoleAsync(currentManager, UserRole.Mentor.ToString()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Manager), CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().BeTrue();
-            _userManagerMock.Verify(m => m.AddToRoleAsync(targetUser, UserRole.Manager.ToString()), Times.Once);
-            _userManagerMock.Verify(m => m.AddToRoleAsync(currentManager, UserRole.Mentor.ToString()), Times.Once);
-        }
+        result.Type.Should().Be(ResultType.Success);
+        _userManagerMock.Verify(m => m.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
     }
 }

@@ -1,140 +1,138 @@
-﻿using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries;
-using ProjectK.BusinessLogic.Modules.AuthModule.Queries.Handlers;
+using Moq;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.CheckEntityAccess
+namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.CheckEntityAccess;
+
+public class CheckEntityAccessQueryHandlerTests
 {
-    public class CheckEntityAccessQueryHandlerTests
+    private readonly Mock<IResourceAccessService> _resourceAccessServiceMock;
+    private readonly CheckEntityAccessQueryHandler _handler;
+
+    public CheckEntityAccessQueryHandlerTests()
     {
-        private readonly Mock<IResourceAccessService> _resourceAccessServiceMock;
-        private readonly CheckEntityAccessQueryHandler _handler;
+        _resourceAccessServiceMock = new Mock<IResourceAccessService>();
+        _handler = new CheckEntityAccessQueryHandler(_resourceAccessServiceMock.Object);
+    }
 
-        public CheckEntityAccessQueryHandlerTests()
+    [Fact]
+    public async Task Handle_ShouldReturnTrue_WhenResourceAccessServiceAllows()
+    {
+        var memberKey = Guid.NewGuid();
+        var query = new CheckEntityAccessQuery
         {
-            _resourceAccessServiceMock = new Mock<IResourceAccessService>();
-            _handler = new CheckEntityAccessQueryHandler(_resourceAccessServiceMock.Object);
-        }
+            EntityType = "member",
+            EntityKey = memberKey.ToString(),
+            ActiveKurinKey = Guid.NewGuid().ToString() // should be ignored
+        };
 
-        [Fact]
-        public async Task Handle_ShouldReturnTrue_WhenResourceAccessServiceAllows()
+        _resourceAccessServiceMock
+            .Setup(x => x.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
+
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.True(result.Data);
+
+        _resourceAccessServiceMock.Verify(x =>
+            x.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFalse_WhenResourceAccessServiceDenies()
+    {
+        var groupKey = Guid.NewGuid();
+        var query = new CheckEntityAccessQuery
         {
-            var memberKey = Guid.NewGuid();
-            var query = new CheckEntityAccessQuery
-            {
-                EntityType = "member",
-                EntityKey = memberKey.ToString(),
-                ActiveKurinKey = Guid.NewGuid().ToString() // should be ignored
-            };
+            EntityType = "group",
+            EntityKey = groupKey.ToString(),
+            ActiveKurinKey = Guid.NewGuid().ToString() // should be ignored
+        };
 
-            _resourceAccessServiceMock
-                .Setup(x => x.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ResourceAccessDecision.Allow());
+        _resourceAccessServiceMock
+            .Setup(x => x.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("Different scope."));
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.True(result.Data);
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.False(result.Data);
+    }
 
-            _resourceAccessServiceMock.Verify(x =>
-                x.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey, It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldReturnFalse_WhenResourceAccessServiceDenies()
+    [Fact]
+    public async Task Handle_ShouldReturnBadRequest_WhenEntityTypeIsInvalid()
+    {
+        var entityKey = Guid.NewGuid();
+        var query = new CheckEntityAccessQuery
         {
-            var groupKey = Guid.NewGuid();
-            var query = new CheckEntityAccessQuery
-            {
-                EntityType = "group",
-                EntityKey = groupKey.ToString(),
-                ActiveKurinKey = Guid.NewGuid().ToString() // should be ignored
-            };
+            EntityType = "invalid",
+            EntityKey = entityKey.ToString(),
+            ActiveKurinKey = Guid.NewGuid().ToString()
+        };
 
-            _resourceAccessServiceMock
-                .Setup(x => x.CheckAccessAsync(ResourceType.Group, ResourceAction.Read, groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ResourceAccessDecision.Deny("Different scope."));
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        Assert.Equal(ResultType.BadRequest, result.Type);
+        Assert.False(result.Data);
 
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.False(result.Data);
-        }
+        _resourceAccessServiceMock.Verify(x =>
+            x.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 
-        [Fact]
-        public async Task Handle_ShouldReturnBadRequest_WhenEntityTypeIsInvalid()
+    [Fact]
+    public async Task Handle_ShouldReturnBadRequest_WhenEntityKeyIsInvalidGuid()
+    {
+        var query = new CheckEntityAccessQuery
         {
-            var entityKey = Guid.NewGuid();
-            var query = new CheckEntityAccessQuery
-            {
-                EntityType = "invalid",
-                EntityKey = entityKey.ToString(),
-                ActiveKurinKey = Guid.NewGuid().ToString()
-            };
+            EntityType = "member",
+            EntityKey = "not-a-guid",
+            ActiveKurinKey = Guid.NewGuid().ToString()
+        };
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.Equal(ResultType.BadRequest, result.Type);
-            Assert.False(result.Data);
+        Assert.Equal(ResultType.BadRequest, result.Type);
+        Assert.False(result.Data);
 
-            _resourceAccessServiceMock.Verify(x =>
-                x.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
+        _resourceAccessServiceMock.Verify(x =>
+            x.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 
-        [Fact]
-        public async Task Handle_ShouldReturnBadRequest_WhenEntityKeyIsInvalidGuid()
+    [Fact]
+    public async Task Handle_ShouldMapKurinAliasKv_ToKurinResourceType()
+    {
+        var kurinKey = Guid.NewGuid();
+        var query = new CheckEntityAccessQuery
         {
-            var query = new CheckEntityAccessQuery
-            {
-                EntityType = "member",
-                EntityKey = "not-a-guid",
-                ActiveKurinKey = Guid.NewGuid().ToString()
-            };
+            EntityType = "kv",
+            EntityKey = kurinKey.ToString(),
+            ActiveKurinKey = Guid.NewGuid().ToString()
+        };
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        _resourceAccessServiceMock
+            .Setup(x => x.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Read, kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
 
-            Assert.Equal(ResultType.BadRequest, result.Type);
-            Assert.False(result.Data);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            _resourceAccessServiceMock.Verify(x =>
-                x.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.True(result.Data);
 
-        [Fact]
-        public async Task Handle_ShouldMapKurinAliasKv_ToKurinResourceType()
-        {
-            var kurinKey = Guid.NewGuid();
-            var query = new CheckEntityAccessQuery
-            {
-                EntityType = "kv",
-                EntityKey = kurinKey.ToString(),
-                ActiveKurinKey = Guid.NewGuid().ToString()
-            };
+        _resourceAccessServiceMock.Verify(x =>
+            x.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Read, kurinKey, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
-            _resourceAccessServiceMock
-                .Setup(x => x.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Read, kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ResourceAccessDecision.Allow());
-
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.True(result.Data);
-
-            _resourceAccessServiceMock.Verify(x =>
-                x.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Read, kurinKey, It.IsAny<CancellationToken>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public void Constructor_ShouldInitializeResourceAccessServiceCorrectly()
-        {
-            var handler = new CheckEntityAccessQueryHandler(_resourceAccessServiceMock.Object);
-            Assert.NotNull(handler);
-        }
+    [Fact]
+    public void Constructor_ShouldInitializeResourceAccessServiceCorrectly()
+    {
+        var handler = new CheckEntityAccessQueryHandler(_resourceAccessServiceMock.Object);
+        Assert.NotNull(handler);
     }
 }

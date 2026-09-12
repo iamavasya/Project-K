@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -22,11 +23,13 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -66,7 +69,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -84,7 +87,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var memberKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: Guid.NewGuid(),
             targetMemberKey: memberKey,
             targetMemberKurinKey: Guid.NewGuid(),
@@ -104,7 +107,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.User,
+            role: "Member",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -124,7 +127,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var groupKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -147,7 +150,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         var kurinKey = Guid.NewGuid();
 
         await using var host = await MemberProgressSecurityTestHost.StartAsync(
-            role: UserRole.Mentor,
+            role: "KV.Vykhovnyk",
             userKurinKey: kurinKey,
             targetMemberKey: memberKey,
             targetMemberKurinKey: kurinKey,
@@ -192,7 +195,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         public HttpClient Client { get; }
 
         public static async Task<MemberProgressSecurityTestHost> StartAsync(
-            UserRole? role,
+            string? role,
             Guid userKurinKey,
             Guid targetMemberKey,
             Guid targetMemberKurinKey,
@@ -220,65 +223,24 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     MemberProgressAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
+            var scopeReader = new Mock<IResourceScopeReader>();
+            scopeReader
+                .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
-
-            builder.Services.Configure<SecurityPatchOptions>(options =>
-            {
-                options.EnableResourceGuard = true;
-            });
-
-            var memberRepository = new Mock<IMemberRepository>();
-            memberRepository
-                .Setup(repo => repo.GetByKeyAsync(targetMemberKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Member
-                {
-                    MemberKey = targetMemberKey,
-                    KurinKey = targetMemberKurinKey,
-                    GroupKey = targetMemberGroupKey,
-                    UserKey = Guid.NewGuid()
-                });
-
-            memberRepository
-                .Setup(repo => repo.GetAllByKurinKeyAsync(userKurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(
-                [
-                    new Member
-                    {
-                        MemberKey = Guid.NewGuid(),
-                        KurinKey = userKurinKey,
-                        GroupKey = currentUserGroupKey,
-                        UserKey = userId
-                    }
-                ]);
-
-            var unitOfWork = new Mock<IUnitOfWork>();
-            unitOfWork.SetupGet(x => x.Members).Returns(memberRepository.Object);
-
-            var mentorAssignments = new Mock<IMentorAssignmentRepository>();
-            mentorAssignments.Setup(m => m.GetByMentorUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<MentorAssignment>());
-            unitOfWork.SetupGet(x => x.MentorAssignments).Returns(mentorAssignments.Object);
+            scopeReader
+                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { currentUserGroupKey });
 
             var mediator = new Mock<IMediator>();
             mediator
-                .Setup(x => x.Send(It.IsAny<GetBadgeProgresses>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetBadgeProgressesQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Success, []));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -291,7 +253,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -304,13 +266,13 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<GetProbeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetProbeProgressQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     ProbeProgressResponse.CreateNotStarted(targetMemberKey, targetMemberKurinKey, "probe-1")));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatus>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatusCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     new ProbeProgressResponse
@@ -322,10 +284,12 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                         Status = ProbeProgressStatus.Completed
                     }));
 
-            builder.Services.AddScoped(_ => unitOfWork.Object);
+            builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MemberProgressController).Assembly);
@@ -348,7 +312,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
         }
     }
 
-    private sealed record MemberProgressAuthState(UserRole? Role, Guid UserId, Guid KurinKey);
+    private sealed record MemberProgressAuthState(string? Role, Guid UserId, Guid KurinKey);
 
     private sealed class MemberProgressAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -373,7 +337,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, _authState.UserId.ToString()),
                 new("sub", _authState.UserId.ToString()),
                 new("kurinKey", _authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

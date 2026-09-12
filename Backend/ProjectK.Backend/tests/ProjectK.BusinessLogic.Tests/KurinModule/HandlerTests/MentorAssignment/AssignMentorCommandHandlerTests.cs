@@ -1,96 +1,87 @@
 using FluentAssertions;
-using Microsoft.AspNetCore.Identity;
 using Moq;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using Xunit;
+using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
 
 public class AssignMentorCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IGroupRepository> _groupRepoMock = new();
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
-    private readonly Mock<UserManager<AppUser>> _userManagerMock;
+    private readonly Mock<IBackendCache> _cacheMock = new();
 
     public AssignMentorCommandHandlerTests()
     {
-        var userStoreMock = new Mock<IUserStore<AppUser>>();
-        _userManagerMock = new Mock<UserManager<AppUser>>(
-            userStoreMock.Object,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!);
-
         _uowMock.SetupGet(x => x.Groups).Returns(_groupRepoMock.Object);
-        _uowMock.SetupGet(x => x.Members).Returns(_memberRepoMock.Object);
         _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
         _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }
 
-    [Fact]
-    public async Task Handle_WhenAssignedUserHasUserRole_ShouldPromoteToMentor()
+    private static (Group group, Member member) BuildFixture(Guid groupKey, Guid kurinKey, Guid mentorUserKey)
     {
-        var groupKey = Guid.NewGuid();
-        var kurinKey = Guid.NewGuid();
-        var mentorUserKey = Guid.NewGuid();
-
         var group = new Group("G", kurinKey) { GroupKey = groupKey, KurinKey = kurinKey };
-        var mentorMember = new Member { MemberKey = Guid.NewGuid(), UserKey = mentorUserKey, KurinKey = kurinKey, FirstName = "A", LastName = "B", Email = "a@b.com", PhoneNumber = "1", DateOfBirth = new DateOnly(2000, 1, 1) };
-        var user = new AppUser { Id = mentorUserKey, Email = "a@b.com", UserName = "a@b.com", FirstName = "A", LastName = "B" };
-
-        _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        _memberRepoMock.Setup(x => x.GetByUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>())).ReturnsAsync(mentorMember);
-        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((ProjectK.Common.Entities.KurinModule.MentorAssignment?)null);
-
-        _userManagerMock.Setup(x => x.FindByIdAsync(mentorUserKey.ToString())).ReturnsAsync(user);
-        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { UserRole.User.ToString() });
-        _userManagerMock.Setup(x => x.RemoveFromRolesAsync(user, It.IsAny<IEnumerable<string>>())).ReturnsAsync(IdentityResult.Success);
-        _userManagerMock.Setup(x => x.AddToRoleAsync(user, UserRole.Mentor.ToString())).ReturnsAsync(IdentityResult.Success);
-
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object);
-        var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.Success);
-        _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<ProjectK.Common.Entities.KurinModule.MentorAssignment>(), It.IsAny<CancellationToken>()), Times.Once);
-        _userManagerMock.Verify(x => x.RemoveFromRolesAsync(user, It.IsAny<IEnumerable<string>>()), Times.Once);
-        _userManagerMock.Verify(x => x.AddToRoleAsync(user, UserRole.Mentor.ToString()), Times.Once);
+        var member = new Member { MemberKey = Guid.NewGuid(), UserKey = mentorUserKey, FirstName = "A", LastName = "B", Email = "a@b.com", PhoneNumber = "1", DateOfBirth = new DateOnly(2000, 1, 1) };
+        return (group, member);
     }
 
     [Fact]
-    public async Task Handle_WhenAssignedUserIsManager_ShouldNotChangeRoles()
+    public async Task Handle_WhenAssigned_ShouldCreateAssignmentAndSyncMemberRoles()
     {
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
         var mentorUserKey = Guid.NewGuid();
-
-        var group = new Group("G", kurinKey) { GroupKey = groupKey, KurinKey = kurinKey };
-        var mentorMember = new Member { MemberKey = Guid.NewGuid(), UserKey = mentorUserKey, KurinKey = kurinKey, FirstName = "A", LastName = "B", Email = "a@b.com", PhoneNumber = "1", DateOfBirth = new DateOnly(2000, 1, 1) };
-        var user = new AppUser { Id = mentorUserKey, Email = "a@b.com", UserName = "a@b.com", FirstName = "A", LastName = "B" };
+        var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
 
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        _memberRepoMock.Setup(x => x.GetByUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>())).ReturnsAsync(mentorMember);
-        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((ProjectK.Common.Entities.KurinModule.MentorAssignment?)null);
 
-        _userManagerMock.Setup(x => x.FindByIdAsync(mentorUserKey.ToString())).ReturnsAsync(user);
-        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { UserRole.Manager.ToString() });
-
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _userManagerMock.Object);
+        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        _userManagerMock.Verify(x => x.RemoveFromRolesAsync(It.IsAny<AppUser>(), It.IsAny<IEnumerable<string>>()), Times.Never);
-        _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+        _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Access comes from the assignment itself, read when the next token is minted.
+        _cacheMock.Verify(x => x.Invalidate(It.IsAny<CachePolicy>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAlreadyActivelyAssigned_ShouldReturnConflictAndChangeNothing()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var mentorUserKey = Guid.NewGuid();
+        var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
+
+        _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
+
+        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MentorAssignmentEntity { MentorAssignmentKey = Guid.NewGuid(), MentorUserKey = mentorUserKey, GroupKey = groupKey, AssignedAtUtc = DateTime.UtcNow });
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+        _cacheMock.Verify(x => x.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
     }
 }

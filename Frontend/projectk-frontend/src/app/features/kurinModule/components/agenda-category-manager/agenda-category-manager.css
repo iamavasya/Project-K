@@ -1,0 +1,30 @@
+.cat-manager { display: flex; flex-direction: column; gap: 0.9rem; }
+.cat-manager__head { align-items: center; display: flex; gap: 1rem; justify-content: space-between; }
+.cat-manager__hint { color: var(--p-text-muted-color); font-size: 0.85rem; }
+.cat-manager__empty { color: var(--p-text-muted-color); font-size: 0.9rem; margin: 0; }
+
+.cat-list { display: flex; flex-direction: column; gap: 0.4rem; list-style: none; margin: 0; padding: 0; }
+.cat-list__item { align-items: center; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius, 8px); display: flex; gap: 0.6rem; padding: 0.5rem 0.75rem; }
+.cat-list__item.is-archived { opacity: 0.6; }
+.cat-list__dot { border-radius: 50%; flex: 0 0 auto; height: 0.85rem; width: 0.85rem; }
+.cat-list__icon { color: var(--p-text-muted-color); }
+.cat-list__name { font-weight: 600; }
+.cat-list__meta { color: var(--p-text-muted-color); display: flex; gap: 0.8rem; font-size: 0.78rem; margin-inline-start: auto; }
+.cat-list__meta span { align-items: center; display: inline-flex; gap: 0.25rem; }
+.cat-list__badge { background: var(--p-content-hover-background); border-radius: var(--p-border-radius-sm, 6px); padding: 0.05rem 0.4rem; }
+.cat-list__actions { display: flex; gap: 0.1rem; }
+
+.cat-form { display: flex; flex-direction: column; gap: 0.9rem; padding-top: 0.25rem; }
+.cat-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.cat-label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
+.cat-row { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+.cat-form input, .cat-form textarea { width: 100%; }
+.cat-toggle-row { align-items: center; display: flex; justify-content: space-between; }
+.cat-toggle-row label { font-size: 0.9rem; }
+
+.cat-swatches { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.cat-swatch { border: 2px solid transparent; border-radius: 50%; cursor: pointer; height: 1.5rem; width: 1.5rem; }
+.cat-swatch.is-active { border-color: var(--p-text-color); box-shadow: 0 0 0 2px var(--p-content-background); }
+.cat-icon-option { align-items: center; display: inline-flex; gap: 0.4rem; }
+
+@media (max-width: 640px) { .cat-row { grid-template-columns: 1fr; } }

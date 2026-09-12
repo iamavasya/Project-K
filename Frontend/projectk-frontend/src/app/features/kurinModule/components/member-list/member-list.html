@@ -1,0 +1,216 @@
+<div class="mt-4">
+  @if (type() === 'leadership') {
+    <div class="card">
+      <p-table #dt [value]="leadershipHistories" styleClass="member-list-table member-list-table--leadership" stripedRows [rowHover]="true" [globalFilterFields]="['member.lastName', 'member.firstName', 'roleNameUA']">
+        <ng-template #caption>
+          <div class="flex items-center gap-2">
+            @if (leadershipType() === 'kurin') { <h3 class="text-xl font-bold">Провід куреня</h3> }
+            @else if (leadershipType() === 'group') { <h3 class="text-xl font-bold">Провід гуртка</h3> }
+            @else { <h3 class="text-xl font-bold">Кадра виховників</h3> }
+            
+            @if(leadership) {
+              <span class="text-sm text-gray-500">
+                Каденція: {{ leadership.startDate | date:'dd.MM.yyyy' }} 
+                @if(leadership.endDate) { - {{ leadership.endDate | date:'dd.MM.yyyy' }} }
+                @else { - дотепер }
+              </span>
+            }
+
+          
+          <div class="flex items-center gap-2 ml-auto">
+              @if (showArchived) {
+                <p-iconfield iconPosition="left">
+                  <p-inputicon>
+                      <i class="pi pi-search"></i>
+                  </p-inputicon>
+                  <input 
+                      pInputText 
+                      type="text" 
+                      (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
+                      placeholder="Пошук..." 
+                      class="p-inputtext-sm w-40 sm:w-60" />
+                </p-iconfield>
+              }
+            @if (canSetupLeadership) {
+              <p-button icon="pi pi-cog" [rounded]="true" [text]="true" 
+                      pTooltip="Налаштувати провід" tooltipPosition="left"
+                      (onClick)="onLeadershipSettingsSelect()" />
+            }
+            <p-toggleswitch pTooltip="Архівні записи" tooltipPosition="bottom" [(ngModel)]="showArchived" (onChange)="refreshList()" />
+          </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th id="role" style="width: 30%">Роль</th>
+            <th id="member" style="width: 40%">Учасник</th>
+            <th id="period" style="width: 30%">Період</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-history>
+          <tr class="cursor-pointer leadership-row" (click)="onMemberSelect(history.member)">
+            <td data-mobile-label="Роль">
+              <p-tag [value]="getRoleDisplayName(history.role)" 
+                [severity]="getRoleSeverity(history)"
+                [rounded]="true" />
+            </td>
+            
+            <td data-mobile-label="Учасник">
+              <span class="font-medium">{{ history.member.lastName }} {{ history.member.firstName }}</span>
+            </td>
+
+            <td class="text-sm text-gray-600" data-mobile-label="Період">
+              {{ history.startDate | date:'dd.MM.yy' }} 
+              @if (history.endDate) {
+                 - {{ history.endDate | date:'dd.MM.yy' }}
+              } @else {
+                 <span class="text-green-600 font-bold"> (дотепер)</span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="3" class="lil-empty-cell">
+              <app-empty-state
+                art="list"
+                title="Проводу ще немає"
+                [body]="canSetupLeadership
+                  ? 'Признач першу особу — і каденція почнеться.'
+                  : 'Призначення зʼявляться тут.'" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  } 
+
+  @else {
+    @if (type() === 'group' && hasUpcomingBirthdays) {
+      <app-upcoming-birthdays-tile class="mb-4 block" [members]="membersLookup" [daysAhead]="upcomingBirthdaysDaysAhead" />
+    }
+
+    @if (type() === 'group' && showGroupCardView) {
+      <div class="member-view-shell">
+        <div class="member-list-heading mb-4 flex flex-wrap items-center gap-3">
+          <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3>
+
+          <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+            <p-iconfield iconPosition="left" class="member-list-search">
+              <p-inputicon>
+                <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="memberSearchQuery"
+                placeholder="Пошук..."
+                class="member-list-search-input p-inputtext-sm"
+              />
+            </p-iconfield>
+
+            <div class="member-card-toggle flex items-center gap-2">
+              <span class="text-sm">Картками</span>
+              <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
+            </div>
+          </div>
+        </div>
+
+        @if (filteredMembersLookup.length) {
+          <div class="member-cards-grid grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
+            @for (member of filteredMembersLookup; track member.memberKey) {
+              <app-mini-member-card [member]="member" (navigate)="onMemberSelect($event)" />
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            title="Нічого не знайшлось"
+            body="Спробуй коротший запит — або перевір гурток." />
+        }
+      </div>
+    } @else {
+      <p-table #memberTable 
+               dataKey="memberKey"
+               styleClass="member-list-table member-list-table--members"
+               [value]="membersLookup"
+               stripedRows
+               [globalFilterFields]="['lastName', 'firstName']"
+               [paginator]="true"
+               [rows]="20"
+               [rowsPerPageOptions]="[20, 50, 100]"
+               selectionMode="single"
+               [(selection)]="selectedMember" 
+               (onRowSelect)="onMemberSelect($any($event).data)">
+        
+        <ng-template #caption>
+          <div class="member-list-heading flex flex-wrap items-center gap-3">
+              @if (type() === 'kurin') { <h3 class="member-list-title text-xl font-bold">Всі учасники куреня</h3> }
+              @else { <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3> }
+
+              <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+                <p-iconfield iconPosition="left" class="member-list-search">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." class="member-list-search-input p-inputtext-sm" />
+                </p-iconfield>
+
+                @if (type() === 'group') {
+                  <div class="member-card-toggle flex items-center gap-2">
+                    <span class="text-sm">Картками</span>
+                    <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
+                  </div>
+                }
+              </div>
+          </div>
+        </ng-template>
+
+        <ng-template #header>
+          <tr>
+            <th id="fullName" pSortableColumn="fullNameSort">
+              Прізвище та Ім'я <p-sortIcon field="fullNameSort" />
+            </th>
+            <th id="statusRole" pSortableColumn="roleSortWeight">
+              Статус <p-sortIcon field="roleSortWeight" />
+            </th> </tr>
+        </ng-template>
+
+        <ng-template #body let-member>
+          <tr [pSelectableRow]="member" class="member-row">
+            <td data-mobile-label="Учасник">
+              <span class="member-name-cell">
+                <span>{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</span>
+                <app-profile-verification-badge [status]="member.profileVerificationStatus" />
+              </span>
+            </td>
+            <td data-mobile-label="Статус">
+              @if (getMemberRoleTags(member).length) {
+                <div class="member-role-tags">
+                  @for (tag of getMemberRoleTags(member); track tag.label) {
+                    <p-tag [value]="tag.label" [severity]="tag.severity" [rounded]="true" />
+                  }
+                </div>
+              } @else {
+                <span class="text-gray-400">Учасник</span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="lil-empty-cell">
+              <app-empty-state
+                art="list"
+                title="Тут ще нікого немає"
+                body="Додай першого юнака — і реєстр почне жити." />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  }
+</div>

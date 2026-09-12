@@ -1,0 +1,12 @@
+@if (isVisible) {
+    <span
+        class="profile-verification-badge"
+        [class.profile-verification-badge--current]="isCurrent"
+        [class.profile-verification-badge--stale]="isStale"
+        [pTooltip]="tooltip"
+        [showDelay]="1000"
+        tooltipPosition="top"
+        aria-hidden="true">
+        <span class="pi pi-verified"></span>
+    </span>
+}

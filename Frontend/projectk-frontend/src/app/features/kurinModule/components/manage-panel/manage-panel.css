@@ -1,0 +1,76 @@
+.manage-panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-top: 0.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  color: var(--lil-faint);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* The inputs carry pInputText, so Optimus UI already gives them the preset's border,
+   radius and focus ring. Only the width is ours. */
+.field input,
+.field textarea {
+  width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.req {
+  color: var(--p-red-600);
+  font-weight: 700;
+}
+
+.error {
+  color: var(--p-red-600);
+  font-size: 0.8125rem;
+  margin-top: -0.25rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.delete-confirm {
+  padding: 0.5rem 0 1rem;
+}
+
+.delete-confirm p {
+  color: var(--p-text-color);
+  margin: 0;
+}
+
+.delete-confirm__warning,
+.empty-fields-note,
+.confirm-note {
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+  margin-top: 0.35rem;
+}
+
+p-dialog ::ng-deep .p-dialog-content {
+  padding-top: 0.75rem;
+}
+
+p-dialog ::ng-deep .p-dialog-header {
+  padding-bottom: 0.4rem;
+}
+
+p-dialog ::ng-deep .p-dialog-footer {
+  display: none;
+}

@@ -1,290 +1,202 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.RefreshToken.Handlers;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
-using System.Security.Claims;
 
-namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken
+namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken;
+
+public class RefreshTokenCommandHandlerTests
 {
-    public class RefreshTokenCommandHandlerTests
+    private readonly Mock<UserManager<AppUser>> _userManagerMock;
+    private readonly Mock<IJwtService> _jwtServiceMock;
+    private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
+    private readonly RefreshTokenCommandHandler _handler;
+
+    public RefreshTokenCommandHandlerTests()
     {
-        private readonly Mock<UserManager<AppUser>> _userManagerMock;
-        private readonly Mock<IJwtService> _jwtServiceMock;
-        private readonly RefreshTokenCommandHandler _handler;
+        var userStoreMock = new Mock<IUserStore<AppUser>>();
+        _userManagerMock = new Mock<UserManager<AppUser>>(
+            userStoreMock.Object, null, null, null, null, null, null, null, null);
+        _jwtServiceMock = new Mock<IJwtService>();
+        _refreshTokensMock = new Mock<IRefreshTokenStore>();
+        _handler = new RefreshTokenCommandHandler(
+            _userManagerMock.Object, _jwtServiceMock.Object, _refreshTokensMock.Object,
+            FakeAccessContext.With());
+    }
 
-        public RefreshTokenCommandHandlerTests()
+    /// <summary>SEC-4.3: a token issued before the suspension must not keep the session alive.</summary>
+    [Theory]
+    [InlineData(OnboardingStatus.Suspended)]
+    [InlineData(OnboardingStatus.Archived)]
+    public async Task Handle_ShouldRefuse_WhenTheAccountIsSuspended(OnboardingStatus status)
+    {
+        var user = CreateUser(kurinKey: Guid.NewGuid());
+        user.OnboardingStatus = status;
+        var session = GivenActiveSession("issued-before-suspension", user);
+        GivenIssuedTokens(user, "access", "rotated");
+
+        var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        Assert.Equal(ResultType.Unauthorized, result.Type);
+        _refreshTokensMock.Verify(
+            store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRotateTheSession_WhenTheTokenIsActive()
+    {
+        var user = CreateUser(kurinKey: Guid.NewGuid());
+        var session = GivenActiveSession("valid-refresh-token", user);
+        var issued = GivenIssuedTokens(user, "new-access-token", "new-refresh-token");
+
+        var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        Assert.Equal("new-access-token", result.Data!.AccessToken);
+        Assert.Equal(issued.Token, result.Data.RefreshToken.Token);
+
+        // The token that was presented is spent, and its replacement takes its place.
+        _refreshTokensMock.Verify(store => store.RevokeAsync(session.Token, It.IsAny<CancellationToken>()), Times.Once);
+        _refreshTokensMock.Verify(
+            store => store.IssueAsync(user.Id, issued.Token, issued.Expires, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotTouchTheAccountsOtherSessions()
+    {
+        var user = CreateUser(kurinKey: Guid.NewGuid());
+        var session = GivenActiveSession("this-browser", user);
+        GivenIssuedTokens(user, "access", "rotated");
+
+        await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        // The whole point of a row per session: refreshing on one device must not sign the same
+        // person out on another.
+        _refreshTokensMock.Verify(
+            store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldScopeTheAccessTokenToTheUsersKurin()
+    {
+        var kurinKey = Guid.NewGuid();
+        var user = CreateUser(kurinKey);
+        var session = GivenActiveSession("valid-refresh-token", user);
+        GivenIssuedTokens(user, "scoped-access", "rotated", roles: ["Admin", "KV.Zvyazkovyi"]);
+
+        await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        _jwtServiceMock.Verify(
+            service => service.GenerateAccessToken(
+                user.Id.ToString(), user.Email, It.IsAny<IEnumerable<string>>(), kurinKey.ToString()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnUnauthorized_WhenTheTokenIsNotAnActiveSession()
+    {
+        // Revoked, expired and never-issued all look the same from here: the store answers null.
+        _refreshTokensMock
+            .Setup(store => store.FindActiveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserRefreshToken?)null);
+
+        var result = await _handler.Handle(new RefreshTokenCommand("spent-token"), CancellationToken.None);
+
+        Assert.Equal(ResultType.Unauthorized, result.Type);
+        Assert.Null(result.Data);
+        _refreshTokensMock.Verify(
+            store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _jwtServiceMock.Verify(service => service.GenerateRefreshToken(), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnUnauthorized_WhenAnotherRefreshAlreadySpentTheToken()
+    {
+        // Two refreshes race on the same cookie: both find it active, only one revokes it. The
+        // loser must not mint a second session that nobody holds and logout cannot reach.
+        var user = CreateUser(kurinKey: Guid.NewGuid());
+        var session = GivenActiveSession("contested", user);
+        GivenIssuedTokens(user, "access", "rotated");
+        _refreshTokensMock
+            .Setup(store => store.RevokeAsync(session.Token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        Assert.Equal(ResultType.Unauthorized, result.Type);
+        _refreshTokensMock.Verify(
+            store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnUnauthorized_WhenTheAccountIsGone()
+    {
+        var session = new UserRefreshToken { UserId = Guid.NewGuid(), Token = "orphan" };
+        _refreshTokensMock
+            .Setup(store => store.FindActiveAsync(session.Token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+        _userManagerMock.Setup(manager => manager.FindByIdAsync(session.UserId.ToString()))
+            .ReturnsAsync((AppUser?)null);
+
+        var result = await _handler.Handle(new RefreshTokenCommand(session.Token), CancellationToken.None);
+
+        Assert.Equal(ResultType.Unauthorized, result.Type);
+        _refreshTokensMock.Verify(
+            store => store.IssueAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    private static AppUser CreateUser(Guid kurinKey) => new()
+    {
+        Id = Guid.NewGuid(),
+        Email = "test@example.com",
+        KurinKey = kurinKey,
+        FirstName = "John",
+        LastName = "Doe"
+    };
+
+    private UserRefreshToken GivenActiveSession(string token, AppUser user)
+    {
+        var session = new UserRefreshToken { UserId = user.Id, Token = token };
+        _refreshTokensMock
+            .Setup(store => store.FindActiveAsync(token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+        _refreshTokensMock
+            .Setup(store => store.RevokeAsync(token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _userManagerMock.Setup(manager => manager.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+        return session;
+    }
+
+    private Common.Models.Dtos.AuthModule.RefreshToken GivenIssuedTokens(
+        AppUser user,
+        string accessToken,
+        string refreshToken,
+        List<string>? roles = null)
+    {
+        var issued = new Common.Models.Dtos.AuthModule.RefreshToken
         {
-            var userStoreMock = new Mock<IUserStore<AppUser>>();
-            _userManagerMock = new Mock<UserManager<AppUser>>(
-                userStoreMock.Object, null, null, null, null, null, null, null, null);
-            _jwtServiceMock = new Mock<IJwtService>();
-            _handler = new RefreshTokenCommandHandler(_userManagerMock.Object, _jwtServiceMock.Object);
-        }
+            Token = refreshToken,
+            Expires = DateTime.UtcNow.AddDays(7),
+            Created = DateTime.UtcNow
+        };
 
-        [Fact]
-        public async Task Handle_ShouldReturnSuccess_WhenValidRefreshToken()
-        {
-            // Arrange
-            var refreshTokenValue = "valid-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-            var userId = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                Email = "test@example.com",
-                RefreshToken = refreshTokenValue,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
-                KurinKey = kurinKey,
-                FirstName = "John",
-                LastName = "Doe"
-            };
+        _userManagerMock.Setup(manager => manager.GetRolesAsync(user)).ReturnsAsync(roles ?? ["User"]);
+        _jwtServiceMock
+            .Setup(service => service.GenerateAccessToken(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
+            .Returns(accessToken);
+        _jwtServiceMock.Setup(service => service.GenerateRefreshToken()).Returns(issued);
 
-            var accessToken = "new-access-token";
-            var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
-            {
-                Token = "new-refresh-token",
-                Expires = DateTime.UtcNow.AddDays(7),
-                Created = DateTime.UtcNow
-            };
-            var roles = new List<string> { "User" };
-
-            SetupUserManagerUsers(new List<AppUser> { user });
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
-            _userManagerMock.Setup(x => x.UpdateAsync(user))
-                .ReturnsAsync(IdentityResult.Success);
-            _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, kurinKey.ToString()))
-                .Returns(accessToken);
-            _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-                .Returns(newRefreshToken);
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(accessToken, result.Data.AccessToken);
-            Assert.Equal(newRefreshToken, result.Data.RefreshToken);
-
-            _userManagerMock.Verify(x => x.GetRolesAsync(user), Times.Once);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, kurinKey.ToString()), Times.Once);
-            _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldReturnSuccess_WhenValidRefreshTokenAndEmptyKurinKey()
-        {
-            // Arrange
-            var refreshTokenValue = "valid-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-            var userId = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                Email = "test@example.com",
-                RefreshToken = refreshTokenValue,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
-                KurinKey = Guid.Empty,
-                FirstName = "John",
-                LastName = "Doe"
-            };
-
-            var accessToken = "new-access-token";
-            var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
-            {
-                Token = "new-refresh-token",
-                Expires = DateTime.UtcNow.AddDays(7),
-                Created = DateTime.UtcNow
-            };
-            var roles = new List<string> { "Admin" };
-
-            SetupUserManagerUsers(new List<AppUser> { user });
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
-            _userManagerMock.Setup(x => x.UpdateAsync(user))
-                .ReturnsAsync(IdentityResult.Success);
-            _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, null))
-                .Returns(accessToken);
-            _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-                .Returns(newRefreshToken);
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(accessToken, result.Data.AccessToken);
-            Assert.Equal(newRefreshToken, result.Data.RefreshToken);
-
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, null), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldReturnUnauthorized_WhenUserNotFound()
-        {
-            // Arrange
-            var refreshTokenValue = "invalid-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-
-            SetupUserManagerUsers(new List<AppUser>());
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Null(result.Data);
-
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
-            _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()), Times.Never);
-            _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldReturnUnauthorized_WhenRefreshTokenExpired()
-        {
-            // Arrange
-            var refreshTokenValue = "expired-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-            var userId = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                Email = "test@example.com",
-                RefreshToken = refreshTokenValue,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1), // Expired
-                KurinKey = Guid.NewGuid(),
-                FirstName = "John",
-                LastName = "Doe"
-            };
-
-            SetupUserManagerUsers(new List<AppUser> { user });
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ResultType.Unauthorized, result.Type);
-            Assert.Null(result.Data);
-
-            _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
-            _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()), Times.Never);
-            _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldUpdateUserRefreshTokenAndExpiryTime()
-        {
-            // Arrange
-            var refreshTokenValue = "valid-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-            var userId = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                Email = "test@example.com",
-                RefreshToken = refreshTokenValue,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
-                KurinKey = Guid.NewGuid(),
-                FirstName = "John",
-                LastName = "Doe"
-            };
-
-            var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
-            {
-                Token = "new-refresh-token",
-                Expires = DateTime.UtcNow.AddDays(14),
-                Created = DateTime.UtcNow
-            };
-
-            SetupUserManagerUsers(new List<AppUser> { user });
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(new List<string> { "User" });
-            _userManagerMock.Setup(x => x.UpdateAsync(user))
-                .ReturnsAsync(IdentityResult.Success);
-            _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
-                .Returns("access-token");
-            _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-                .Returns(newRefreshToken);
-
-            // Act
-            await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(newRefreshToken.Token, user.RefreshToken);
-            Assert.Equal(newRefreshToken.Expires, user.RefreshTokenExpiryTime);
-            _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_ShouldReturnSuccess_WithMultipleRoles()
-        {
-            // Arrange
-            var refreshTokenValue = "valid-refresh-token";
-            var command = new RefreshTokenCommand(refreshTokenValue);
-            var userId = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                Email = "admin@example.com",
-                RefreshToken = refreshTokenValue,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7),
-                KurinKey = kurinKey,
-                FirstName = "Admin",
-                LastName = "User"
-            };
-
-            var roles = new List<string> { "Admin", "User", "Manager" };
-            var accessToken = "admin-access-token";
-            var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
-            {
-                Token = "admin-refresh-token",
-                Expires = DateTime.UtcNow.AddDays(7),
-                Created = DateTime.UtcNow
-            };
-
-            SetupUserManagerUsers(new List<AppUser> { user });
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(roles);
-            _userManagerMock.Setup(x => x.UpdateAsync(user))
-                .ReturnsAsync(IdentityResult.Success);
-            _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, kurinKey.ToString()))
-                .Returns(accessToken);
-            _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-                .Returns(newRefreshToken);
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ResultType.Success, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(accessToken, result.Data.AccessToken);
-            _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), user.Email, roles, kurinKey.ToString()), Times.Once);
-        }
-
-        private void SetupUserManagerUsers(List<AppUser> users)
-        {
-            var queryable = users.AsQueryable();
-            _userManagerMock.Setup(x => x.Users).Returns(queryable);
-        }
+        return issued;
     }
 }

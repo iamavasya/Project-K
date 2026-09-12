@@ -1,0 +1,126 @@
+using FluentAssertions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using static ArchUnitNET.Fluent.ArchRuleDefinition;
+
+namespace ProjectK.Architecture.Tests;
+
+/// <summary>
+/// The boundary v0.20.0 is building. Each rule is asserted against a baseline of the types already
+/// known to cross the line: a new crossing fails immediately. The release is finished when every
+/// list is empty, and an empty baseline is as strict as it looks — nothing may cross at all.
+/// <para>
+/// The rules read IL, not signatures — a handler that only ever touches a member through
+/// <c>_unitOfWork.Members</c> inside a method body is caught just the same, and every entry below
+/// is exactly that case.
+/// </para>
+/// <para>
+/// Asserted as a subset rather than an exact match, and that is not laziness. Reading IL means the
+/// answer depends on what the compiler emitted: <c>KurinReportDataService</c> crosses the line in a
+/// Debug build and does not in a Release one, where the reference is optimised away. An
+/// exact-match baseline therefore passed locally and failed in CI, which builds Release — these
+/// tests were never green there. What the boundary actually needs is "nothing new", and that holds
+/// in both. A baseline entry that has genuinely been fixed is removed by hand.
+/// </para>
+/// </summary>
+public class MemberBoundaryRules
+{
+    /// <summary>
+    /// Everyone outside the member's own module who still reads member data directly. Emptied by
+    /// MM-03: every one of them now asks <c>IMemberDirectory</c>. It stays empty — MM-06 removes the
+    /// last way back in by taking <c>Members</c> off <c>IUnitOfWork</c>.
+    /// </summary>
+    private static readonly string[] ReachesMemberDataDirectly = [];
+
+    /// <summary>
+    /// Empty, and the release's point: who may act on whom is decided from membership and offices.
+    /// The member record is not read anywhere on the way to that decision, and this list going
+    /// non-empty means it is again.
+    /// </summary>
+    private static readonly string[] AuthorizationStillKnowsAboutMember = [];
+
+    /// <summary>
+    /// The kurin's report still reads probe and вмілість rows itself. It needs everyone's progress
+    /// at once, which the directory does not offer yet — MM-13a adds that read and empties this list.
+    /// </summary>
+    private static readonly string[] ReadsProgressDataDirectly =
+    [
+        "ProjectK.BusinessLogic.Modules.KurinModule.Reports.KurinReportDataService"
+    ];
+
+    [Fact]
+    public void MemberData_ShouldBeReachedOnlyFromItsOwnModule()
+    {
+        var rule = Types()
+            .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API|Common\.Entities)\..*")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.KurinModule(\..*)?")
+            // Another module's entity may hold a MemberKey, never a Member navigation: that would be
+            // a foreign key across the boundary, and the join it promises disappears with the module.
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.KurinModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.KurinModule(\..*)?")
+            // AutoMapper profiles translate between an entity and its response, so naming both sides
+            // is what they are for; they are not one module reading another's data.
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")
+            .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
+
+        ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
+            ReachesMemberDataDirectly,
+            "the member module's boundary may shrink but never grow — update the baseline in the same commit");
+    }
+
+    [Fact]
+    public void Authorization_ShouldNotKnowAboutMember()
+    {
+        var rule = Types()
+            .That().ImplementInterface(typeof(IResourceAccessService))
+            .Or().ImplementInterface(typeof(IResourceScopeReader))
+            .Or().ImplementInterface(typeof(ILoginResponseFactory))
+            .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
+
+        ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
+            AuthorizationStillKnowsAboutMember,
+            "who may act is decided from Membership and offices, never from the person's own record");
+    }
+
+    /// <summary>
+    /// The other side of the same boundary. A person's dossier shows what they have taken and
+    /// earned, and it gets it by asking the probes and вмілості module rather than by reading its
+    /// tables — which is the only version of that read that still works once the module is elsewhere.
+    /// </summary>
+    [Fact]
+    public void ProgressData_ShouldBeReachedOnlyFromItsOwnModule()
+    {
+        var rule = Types()
+            .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API|Common\.Entities)\..*")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.ProbesAndBadgesModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")
+            .Should().NotDependOnAny(
+                typeof(ProbeProgress),
+                typeof(BadgeProgress),
+                typeof(IProbeProgressRepository),
+                typeof(IBadgeProgressRepository));
+
+        ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
+            ReadsProgressDataDirectly,
+            "what a person has earned is asked of the module that holds it, through IMemberProgressDirectory");
+    }
+
+    [Fact]
+    public void Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox()
+    {
+        var rule = Types()
+            .That().ResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.(KurinModule|ProbesAndBadgesModule)(\..*)?")
+            .Should().NotDependOnAny(typeof(INotificationService));
+
+        ProjectKArchitecture.Violations(rule).Should().BeEmpty(
+            "a module states that something happened and lets whoever cares react; "
+            + "writing the inbox entry itself is what made the wording travel with the domain");
+    }
+}

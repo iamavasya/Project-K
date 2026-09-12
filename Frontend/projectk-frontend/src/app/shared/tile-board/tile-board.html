@@ -1,0 +1,82 @@
+@if (canReorder()) {
+    <div class="tile-board-toolbar">
+        @if (editMode()) {
+            <p-button
+                type="button"
+                severity="secondary"
+                variant="text"
+                icon="pi pi-refresh"
+                label="Скинути до стандартного"
+                (onClick)="reset()" />
+        }
+        <p-button
+            type="button"
+            [severity]="editMode() ? 'primary' : 'secondary'"
+            [icon]="editMode() ? 'pi pi-check' : 'pi pi-th-large'"
+            [label]="editMode() ? 'Готово' : 'Налаштувати вигляд'"
+            (onClick)="toggleEditMode()" />
+    </div>
+}
+
+<div
+    cdkDropList
+    cdkDropListOrientation="mixed"
+    class="tile-board"
+    [class.tile-board--editing]="editMode()"
+    [cdkDropListDisabled]="!editMode() || !canReorder()"
+    (cdkDropListDropped)="onDrop($event)">
+    @for (tile of orderedTiles(); track tile.key; let i = $index; let count = $count) {
+        <div
+            cdkDrag
+            class="tile-slot"
+            [class]="spanClass(tile)"
+            [cdkDragDisabled]="!isReorderable(tile)"
+            role="listitem"
+            [attr.aria-label]="ariaLabel(tile, i, count)">
+            @if (editMode() && canReorder()) {
+                <div class="tile-slot__controls" [class.tile-slot__controls--pinned]="tile.pinned">
+                    @if (!tile.pinned) {
+                        <button
+                            type="button"
+                            class="tile-slot__handle"
+                            cdkDragHandle
+                            aria-label="Перетягнути тайл">
+                            <span class="pi pi-bars"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="tile-slot__nudge"
+                            [disabled]="i === 0"
+                            (click)="moveTile(i, -1)"
+                            aria-label="Пересунути вгору">
+                            <span class="pi pi-chevron-up"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="tile-slot__nudge"
+                            [disabled]="i === count - 1"
+                            (click)="moveTile(i, 1)"
+                            aria-label="Пересунути вниз">
+                            <span class="pi pi-chevron-down"></span>
+                        </button>
+                    } @else {
+                        <span class="tile-slot__pinned-badge">
+                            <span class="pi pi-lock"></span>
+                            Закріплено
+                        </span>
+                    }
+                </div>
+            }
+
+            <div class="tile-slot__body">
+                <ng-container [ngTemplateOutlet]="tile.template" />
+            </div>
+        </div>
+    }
+</div>
+
+<div class="tile-board__live-region" aria-live="polite" role="status">
+    @if (editMode()) {
+        Режим налаштування ввімкнено. Використовуйте стрілки, щоб змінити порядок блоків.
+    }
+</div>

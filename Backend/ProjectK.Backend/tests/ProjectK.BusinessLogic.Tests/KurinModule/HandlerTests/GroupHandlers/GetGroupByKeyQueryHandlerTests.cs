@@ -1,9 +1,12 @@
-﻿using AutoMapper;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.API.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -11,154 +14,150 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
+
+public class GetGroupByKeyHandlerTests
 {
-    public class GetGroupByKeyHandlerTests
+    private readonly IMapper _mapper;
+    private readonly Mock<IGroupRepository> _groupRepositoryMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly GetGroupByKeyQueryHandler _handler;
+
+    public GetGroupByKeyHandlerTests()
     {
-        private readonly IMapper _mapper;
-        private readonly Mock<IGroupRepository> _groupRepositoryMock;
-        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly GetGroupByKeyHandler _handler;
+        var loggerFactory = LoggerFactory.Create(builder => { });
+        var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
+        _mapper = config.CreateMapper();
 
-        public GetGroupByKeyHandlerTests()
+        _groupRepositoryMock = new Mock<IGroupRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+
+        _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
+
+        _handler = new GetGroupByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+    }
+
+    private static IBackendCache CreateCache() =>
+        new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
+
+    [Fact]
+    public async Task Handle_WhenGroupExists_ShouldReturnSuccessWithMappedResponse()
+    {
+        // Arrange
+        var kurin = new Kurin(17) { KurinKey = Guid.NewGuid() };
+        var groupKey = Guid.NewGuid();
+        var group = new Group("Alpha", kurin.KurinKey)
         {
-            var loggerFactory = LoggerFactory.Create(builder => { });
-            var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
-            _mapper = config.CreateMapper();
+            GroupKey = groupKey,
+            Kurin = kurin,
+            Description = "Group description"
+        };
+        var query = new GetGroupByKeyQuery(groupKey);
 
-            _groupRepositoryMock = new Mock<IGroupRepository>();
-            _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
 
-            _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            _handler = new GetGroupByKeyHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
-        }
+        // Assert
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().NotBeNull();
+        result.Data.GroupKey.Should().Be(groupKey);
+        result.Data.KurinKey.Should().Be(kurin.KurinKey);
+        result.Data.Name.Should().Be("Alpha");
+        result.Data.Description.Should().Be("Group description");
+        result.Data.KurinNumber.Should().Be(kurin.Number);
 
-        private static IBackendCache CreateCache() =>
-            new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MemoryBackendCache>.Instance);
+        _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
+    }
 
-        [Fact]
-        public async Task Handle_WhenGroupExists_ShouldReturnSuccessWithMappedResponse()
+    [Fact]
+    public async Task Handle_WhenGroupDoesNotExist_ShouldReturnNotFound()
+    {
+        // Arrange
+        var groupKey = Guid.NewGuid();
+        var query = new GetGroupByKeyQuery(groupKey);
+
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Group)null!);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Type.Should().Be(ResultType.NotFound);
+        result.Data.Should().BeNull();
+
+        _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
+    {
+        // Arrange
+        var groupKey = Guid.NewGuid();
+        var query = new GetGroupByKeyQuery(groupKey);
+        var expected = new Exception("DB failure");
+
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expected);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            _handler.Handle(query, CancellationToken.None));
+
+        ex.Should().BeSameAs(expected);
+        _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenMappingWorks_ShouldMapCorrectly()
+    {
+        // Arrange
+        var kurin = new Kurin(99) { KurinKey = Guid.NewGuid() };
+        var group = new Group("Bravo", kurin.KurinKey)
         {
-            // Arrange
-            var kurin = new Kurin(17) { KurinKey = Guid.NewGuid() };
-            var groupKey = Guid.NewGuid();
-            var group = new Group("Alpha", kurin.KurinKey)
-            {
-                GroupKey = groupKey,
-                Kurin = kurin,
-                Description = "Group description"
-            };
-            var query = new GetGroupByKey(groupKey);
+            GroupKey = Guid.NewGuid(),
+            Kurin = kurin
+        };
+        var query = new GetGroupByKeyQuery(group.GroupKey);
 
-            _groupRepositoryMock
-                .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
 
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().NotBeNull();
-            result.Data.GroupKey.Should().Be(groupKey);
-            result.Data.KurinKey.Should().Be(kurin.KurinKey);
-            result.Data.Name.Should().Be("Alpha");
-            result.Data.Description.Should().Be("Group description");
-            result.Data.KurinNumber.Should().Be(kurin.Number);
+        // Assert
+        result.Type.Should().Be(ResultType.Success);
+        var directlyMapped = _mapper.Map<GroupResponse>(group);
+        result.Data.Should().BeEquivalentTo(directlyMapped);
+    }
 
-            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_WhenGroupDoesNotExist_ShouldReturnNotFound()
+    [Fact]
+    public async Task Handle_WhenCalledTwiceWithSameGroupKey_ShouldUseCache()
+    {
+        var kurin = new Kurin(99) { KurinKey = Guid.NewGuid() };
+        var group = new Group("Bravo", kurin.KurinKey)
         {
-            // Arrange
-            var groupKey = Guid.NewGuid();
-            var query = new GetGroupByKey(groupKey);
+            GroupKey = Guid.NewGuid(),
+            Kurin = kurin
+        };
 
-            _groupRepositoryMock
-                .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Group)null!);
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
 
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+        await _handler.Handle(new GetGroupByKeyQuery(group.GroupKey), CancellationToken.None);
+        await _handler.Handle(new GetGroupByKeyQuery(group.GroupKey), CancellationToken.None);
 
-            // Assert
-            result.Type.Should().Be(ResultType.NotFound);
-            result.Data.Should().BeNull();
-
-            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
-        {
-            // Arrange
-            var groupKey = Guid.NewGuid();
-            var query = new GetGroupByKey(groupKey);
-            var expected = new Exception("DB failure");
-
-            _groupRepositoryMock
-                .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(expected);
-
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() =>
-                _handler.Handle(query, CancellationToken.None));
-
-            ex.Should().BeSameAs(expected);
-            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Handle_WhenMappingWorks_ShouldMapCorrectly()
-        {
-            // Arrange
-            var kurin = new Kurin(99) { KurinKey = Guid.NewGuid() };
-            var group = new Group("Bravo", kurin.KurinKey)
-            {
-                GroupKey = Guid.NewGuid(),
-                Kurin = kurin
-            };
-            var query = new GetGroupByKey(group.GroupKey);
-
-            _groupRepositoryMock
-                .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            // Assert
-            result.Type.Should().Be(ResultType.Success);
-            var directlyMapped = _mapper.Map<GroupResponse>(group);
-            result.Data.Should().BeEquivalentTo(directlyMapped);
-        }
-
-        [Fact]
-        public async Task Handle_WhenCalledTwiceWithSameGroupKey_ShouldUseCache()
-        {
-            var kurin = new Kurin(99) { KurinKey = Guid.NewGuid() };
-            var group = new Group("Bravo", kurin.KurinKey)
-            {
-                GroupKey = Guid.NewGuid(),
-                Kurin = kurin
-            };
-
-            _groupRepositoryMock
-                .Setup(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(group);
-
-            await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
-            await _handler.Handle(new GetGroupByKey(group.GroupKey), CancellationToken.None);
-
-            _groupRepositoryMock.Verify(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()), Times.Once);
-        }
+        _groupRepositoryMock.Verify(r => r.GetByKeyAsync(group.GroupKey, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

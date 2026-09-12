@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
-import { HealthBannerService } from './health-banner.service';
+import { HealthBannerService } from './health-banner-service/health-banner.service';
 
 @Injectable()
 export class HealthInterceptor implements HttpInterceptor {

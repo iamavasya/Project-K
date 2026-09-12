@@ -30,7 +30,8 @@
               }
             ],
             "styles": [
-              "node_modules/primeicons/primeicons.css",
+              "node_modules/@openng/icons/openng-icons.css",
+              "node_modules/lucide-static/font/lucide.css",
               "src/styles.css"
             ]
           },
@@ -104,7 +105,6 @@
             },
             "tailscale": {
               "buildTarget": "projectk-frontend:build:tailscale"
-
             }
           },
           "defaultConfiguration": "development"
@@ -138,7 +138,8 @@
           "options": {
             "lintFilePatterns": [
               "src/**/*.ts",
-              "src/**/*.html"
+              "src/**/*.html",
+              "e2e/**/*.ts"
             ]
           }
         }

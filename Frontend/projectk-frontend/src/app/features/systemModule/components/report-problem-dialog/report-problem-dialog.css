@@ -1,0 +1,149 @@
+.report-problem__hint {
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+:host ::ng-deep .report-problem__public {
+  margin-bottom: 1rem;
+}
+
+.report-problem__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.report-problem__field label,
+.report-problem__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.report-problem__required {
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-left: 0.35rem;
+}
+
+:host ::ng-deep .report-problem .ql-editor {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .report-problem .ql-editor img {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  max-height: 14rem;
+  max-width: 100%;
+}
+
+.report-problem__attach {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.report-problem__attach-button {
+  align-items: center;
+  border: 1px dashed var(--p-content-border-color);
+  border-radius: 8px;
+  color: var(--p-primary-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+}
+
+.report-problem__attach-button.is-disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.report-problem__attach-button input {
+  display: none;
+}
+
+.report-problem__attach-count {
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+}
+
+.report-problem__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.report-problem__thumbs li {
+  position: relative;
+}
+
+.report-problem__thumbs img {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  height: 4.5rem;
+  object-fit: cover;
+  width: 7rem;
+}
+
+.report-problem__thumb-remove {
+  align-items: center;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 50%;
+  color: var(--p-text-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.7rem;
+  height: 1.4rem;
+  justify-content: center;
+  position: absolute;
+  right: -0.4rem;
+  top: -0.4rem;
+  width: 1.4rem;
+}
+
+.report-problem__error {
+  color: var(--p-red-500, #c0392b);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.report-problem__done {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0 0.5rem;
+  text-align: center;
+}
+
+.report-problem__done .pi {
+  color: var(--p-primary-color);
+  font-size: 2.25rem;
+}
+
+.report-problem__done h3 {
+  margin: 0;
+}
+
+.report-problem__done p {
+  color: var(--p-text-muted-color);
+  margin: 0;
+  max-width: 28rem;
+}
+
+.report-problem__done a {
+  color: var(--p-primary-color);
+  font-weight: 600;
+}

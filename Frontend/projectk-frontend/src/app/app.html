@@ -1,11 +1,9 @@
 @if (!isPublicShellRoute()) {
-  <app-cold-start-banner></app-cold-start-banner>
-  <app-toolbar-header></app-toolbar-header>
+  <app-cold-start-banner />
+  <app-toolbar-header />
 }
-<p-toast></p-toast>
-<app-mfa-setup-dialog #mfaDialog></app-mfa-setup-dialog>
-@if (!isPublicShellRoute()) {
-  <app-breadcrumb></app-breadcrumb>
-}
+<p-toast />
+<app-mfa-setup-dialog #mfaDialog />
+<app-dev-role-switcher />
 <!--Test trigger workflow-->
 <router-outlet />

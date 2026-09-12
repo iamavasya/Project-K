@@ -1,0 +1,136 @@
+<main class="welcome-page">
+  <header class="welcome-brand">
+    <a class="welcome-brand__lockup" routerLink="/">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <g transform="rotate(45 50 50)">
+          <path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51" />
+          <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51" />
+          <path d="M33 60 H67" />
+          <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z" />
+          <path class="lil-mark-center" d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" />
+        </g>
+      </svg>
+      <span class="lil-wordmark">Лілейка</span>
+    </a>
+
+    <div class="welcome-brand__actions">
+      <p-button label="Увійти" routerLink="/login" size="small" />
+    </div>
+  </header>
+
+  <section class="first-front-block">
+    <div class="hero-copy">
+      <h1>Весь курінь під рукою</h1>
+      <h3>Керуй, точкуй, свисти <span>алярми.</span></h3>
+
+      <div class="hero-actions" aria-label="Основні дії">
+        <p-button
+          label="Увійти"
+          routerLink="/login"
+          styleClass="welcome-button"
+          size="small"
+        />
+        <p-button
+          label="Подати заявку"
+          routerLink="/join"
+          styleClass="welcome-button"
+          severity="secondary"
+          size="small"
+        />
+      </div>
+
+      <div class="made-by-banner">
+        <span class="pi pi-sparkles" aria-hidden="true"></span>
+        <span>Зроблено пластунами для пластунів</span>
+      </div>
+    </div>
+
+    <div class="hero-image">
+      <img src="assets/images/scouts-main.png" alt="Пластуни" />
+    </div>
+  </section>
+
+  <div class="welcome-divider">
+    <p-divider />
+  </div>
+
+  <!-- A picture of the product, framed as one: the window chrome is there because a tester took
+       the old flat screenshot for the app and kept pressing it. -->
+  <section class="product-preview" aria-label="Як виглядає Лілейка">
+    <div class="preview-window">
+      <div class="preview-window__bar" aria-hidden="true">
+        <span class="preview-window__dot"></span>
+        <span class="preview-window__dot"></span>
+        <span class="preview-window__dot"></span>
+        <span class="preview-window__title">{{ screens[active()].title }}</span>
+      </div>
+      <div class="preview-window__screen">
+        @for (screen of screens; track screen.src; let i = $index) {
+          <img
+            [src]="screen.src"
+            [alt]="screen.alt"
+            [class.preview-window__frame--active]="i === active()"
+            class="preview-window__frame"
+            width="1440"
+            height="900"
+            [attr.loading]="i === 0 ? 'eager' : 'lazy'" />
+        }
+      </div>
+    </div>
+    <div class="preview-dots" role="tablist" aria-label="Кадри">
+      @for (screen of screens; track screen.src; let i = $index) {
+        <button
+          type="button"
+          role="tab"
+          class="preview-dots__dot"
+          [class.preview-dots__dot--active]="i === active()"
+          [attr.aria-selected]="i === active()"
+          [attr.aria-label]="screen.title"
+          (click)="show(i)"></button>
+      }
+    </div>
+  </section>
+
+  <section class="feature-section">
+    <div class="feature-copy">
+      <h2>Менеджити куренем <span>легко.</span></h2>
+      <p>
+        Слідкуйте за учасниками, впорядковуйте документи та керуйте ефективно.
+      </p>
+    </div>
+
+    <div class="feature-grid" aria-label="Можливості Лілейки">
+      <article class="feature-card">
+        <span class="feature-icon pi pi-user" aria-hidden="true"></span>
+        <h3>Реєстр куреня</h3>
+        <p>
+          Ведення реєстру ще ніколи не було простішим. Видно юнаків,
+          впорядників та інструкторів.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-icon pi pi-calendar" aria-hidden="true"></span>
+        <h3>Календарі</h3>
+        <p>
+          Заходи куреня в календарі і на дошці задач, з призначенням для гуртка чи юнака.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-icon pi pi-file" aria-hidden="true"></span>
+        <h3>Документація</h3>
+        <p-tag value="Незабаром" severity="info" class="feature-tag" />
+        <p>
+          Статути, накази, звіти чи хроніка. Все зручно лежить в одному місці.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="welcome-footer">
+    <span>Лілейка — система управління куренем · <a routerLink="/about">Про Лілейку</a> · <a routerLink="/privacy">Конфіденційність</a></span>
+    <span class="welcome-footer__tech">{{ techLine }}</span>
+  </footer>
+</main>

@@ -1,26 +1,36 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
 public class ReviewBadgeProgressHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberDirectory> _memberDirectoryMock;
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly ReviewBadgeProgressHandler _handler;
+    private readonly Mock<IDomainEventPublisher> _eventsMock;
+    private readonly ReviewBadgeProgressCommandHandler _handler;
 
     public ReviewBadgeProgressHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _memberDirectoryMock = new Mock<IMemberDirectory>();
         _badgeProgressRepositoryMock = new Mock<IBadgeProgressRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-
+        _eventsMock = new Mock<IDomainEventPublisher>();
         _unitOfWorkMock.SetupGet(x => x.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -30,7 +40,68 @@ public class ReviewBadgeProgressHandlerTests
             .Returns((string role) => string.Equals(role, "mentor", StringComparison.OrdinalIgnoreCase));
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "mentor" });
 
-        _handler = new ReviewBadgeProgressHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object);
+        _handler = new ReviewBadgeProgressCommandHandler(
+            _unitOfWorkMock.Object,
+            _memberDirectoryMock.Object,
+            _currentUserContextMock.Object,
+            _eventsMock.Object);
+    }
+
+    /// <summary>
+    /// The trail says who signed it off, by name. It used to say <c>UserId.ToString()</c> — the
+    /// screens printed the guid, and nobody noticed because it never failed, it only read as
+    /// gibberish. Found on the stabilisation pass, not by a test.
+    /// </summary>
+    [Fact]
+    public async Task Handle_ShouldRecordTheReviewersName_NotTheirKey()
+    {
+        var memberKey = Guid.NewGuid();
+        var reviewerUserKey = Guid.NewGuid();
+        const string badgeId = "badge-1";
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(reviewerUserKey);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(
+                Guid.NewGuid(), reviewerUserKey, Guid.NewGuid(), null,
+                "Іван", "Петренко", "ivan@example.com", null));
+
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        await _handler.Handle(new ReviewBadgeProgressCommand(memberKey, badgeId, true, null), CancellationToken.None);
+
+        Assert.Equal("Іван Петренко", progress.ReviewedByName);
+        Assert.DoesNotContain(reviewerUserKey.ToString(), progress.ReviewedByName);
+        Assert.Equal("Іван Петренко", progress.AuditEvents.Last().ActorName);
+    }
+
+    /// <summary>
+    /// A reviewer with no member record still has to be recorded as somebody. The marker says so in
+    /// as many words, rather than leaving a bare guid that reads like a name gone wrong.
+    /// </summary>
+    [Fact]
+    public async Task Handle_WhenTheReviewerHasNoMemberRecord_ShouldSaySoRatherThanPrintABareKey()
+    {
+        var memberKey = Guid.NewGuid();
+        var reviewerUserKey = Guid.NewGuid();
+        const string badgeId = "badge-1";
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(reviewerUserKey);
+        _memberDirectoryMock
+            .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemberSummary?)null);
+
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        await _handler.Handle(new ReviewBadgeProgressCommand(memberKey, badgeId, true, null), CancellationToken.None);
+
+        Assert.Equal($"user:{reviewerUserKey}", progress.ReviewedByName);
     }
 
     [Fact]
@@ -45,7 +116,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -63,6 +134,44 @@ public class ReviewBadgeProgressHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldNotifyMemberOwner_WhenSubmittedProgressIsApproved()
+    {
+        // Arrange
+        var actorUserKey = Guid.NewGuid();
+        var ownerUserKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var badgeId = "badge-review-approved";
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ownerUserKey);
+
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(ResultType.Success, result.Type);
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<BadgeProgressReviewed>(raised =>
+                raised.BadgeProgressKey == progress.BadgeProgressKey
+                && raised.BadgeId == badgeId
+                && raised.MemberKey == memberKey
+                && raised.MemberUserKey == ownerUserKey
+                && raised.IsApproved
+                && !raised.ConfirmationWithdrawn
+                && raised.ActorUserKey == actorUserKey),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_ShouldRemoveConfirmedProgress_WhenRequestedAsReject()
     {
         // Arrange
@@ -74,7 +183,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: false, note: "remove");
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "remove");
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -93,6 +202,66 @@ public class ReviewBadgeProgressHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldNotifyMemberOwnerWithWarn_WhenConfirmedProgressIsRemoved()
+    {
+        // Arrange
+        var ownerUserKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var badgeId = "badge-review-removed";
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Confirmed);
+
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ownerUserKey);
+
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "remove");
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(ResultType.Success, result.Type);
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<BadgeProgressReviewed>(raised =>
+                raised.MemberUserKey == ownerUserKey
+                && !raised.IsApproved
+                && raised.ConfirmationWithdrawn),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSkipNotification_WhenMemberHasNoLinkedUser()
+    {
+        // Arrange
+        var memberKey = Guid.NewGuid();
+        var badgeId = "badge-no-user";
+        var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);
+
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+        _memberDirectoryMock
+            .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)null);
+
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: false, note: "reject");
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(ResultType.Success, result.Type);
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.IsAny<BadgeProgressReviewed>(),
+            It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_ShouldReturnConflict_WhenTryingToApproveAlreadyConfirmedProgress()
     {
         // Arrange
@@ -104,7 +273,7 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
 
-        var request = new ReviewBadgeProgress(memberKey, badgeId, isApproved: true, note: null);
+        var request = new ReviewBadgeProgressCommand(memberKey, badgeId, isApproved: true, note: null);
 
         // Act
         var result = await _handler.Handle(request, CancellationToken.None);

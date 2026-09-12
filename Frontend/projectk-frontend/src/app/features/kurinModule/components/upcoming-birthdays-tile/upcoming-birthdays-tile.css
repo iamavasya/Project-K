@@ -1,0 +1,30 @@
+/* Terracotta, not pink: BRANDBOOK §2 allows one warm accent and no third colour, and
+   §4 keeps shadows to modals. This tile is the one terracotta spot on the group page. */
+.birthdays-tile {
+    border: 1px solid var(--lil-clay-100);
+    background: var(--lil-clay-50);
+}
+
+.birthday-icon-shell {
+    color: var(--lil-clay-700);
+    background: var(--p-content-background);
+    border: 1px solid var(--lil-clay-100);
+}
+
+.birthdays-title {
+    color: var(--lil-clay-700);
+}
+
+.birthday-row {
+    border: 1px solid var(--lil-clay-100);
+    background: var(--p-content-background);
+}
+
+.birthday-name {
+    color: var(--p-text-color);
+}
+
+.birthday-date,
+.birthdays-note {
+    color: var(--p-text-muted-color);
+}

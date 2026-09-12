@@ -1,31 +1,39 @@
 using System.Net;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
-
 using Moq;
-using MediatR;
-using Microsoft.AspNetCore.Identity;
+using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.AuthModule;
+using ProjectK.BusinessLogic.Behaviors;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -57,7 +65,7 @@ public class OnboardingBaselineHttpIntegrationTests
     [Fact]
     public async Task AdminApproveWaitlist_ShouldReturnOk_WhenBootstrapApprovalFlowIsImplemented()
     {
-        await using var host = await OnboardingBaselineTestHost.StartAsync(UserRole.Admin);
+        await using var host = await OnboardingBaselineTestHost.StartAsync("Admin");
 
         var response = await host.Client.PostAsync($"/api/auth/onboarding/waitlist/{Guid.NewGuid():D}/approve", content: null);
 
@@ -85,7 +93,7 @@ public class OnboardingBaselineHttpIntegrationTests
     {
         // This test represents the target behavior where a mentor can access a group they are explicitly assigned to,
         // even if it's not their primary group.
-        await using var host = await OnboardingBaselineTestHost.StartAsync(UserRole.Mentor);
+        await using var host = await OnboardingBaselineTestHost.StartAsync("Group.Hurtkoviy");
 
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -141,7 +149,7 @@ public class OnboardingBaselineHttpIntegrationTests
 
         public HttpClient Client { get; }
 
-        public static async Task<OnboardingBaselineTestHost> StartAsync(UserRole? role = null)
+        public static async Task<OnboardingBaselineTestHost> StartAsync(string? role = null)
         {
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions
             {
@@ -202,8 +210,8 @@ public class OnboardingBaselineHttpIntegrationTests
                 .ReturnsAsync((Guid key, CancellationToken _) => new Group("Test", Guid.NewGuid()) { GroupKey = key });
 
             mockUnitOfWork.Setup(u => u.WaitlistEntries).Returns(mockWaitlistRepo.Object);
-            mockUnitOfWork.Setup(u => u.Members).Returns(mockMemberRepo.Object);
             mockUnitOfWork.Setup(u => u.Invitations).Returns(mockInvitationRepo.Object);
+            mockUnitOfWork.Setup(u => u.Memberships).Returns(new Mock<IMembershipRepository>().Object);
             mockUnitOfWork.Setup(u => u.Kurins).Returns(mockKurinRepo.Object);
             mockUnitOfWork.Setup(u => u.Groups).Returns(mockGroupRepo.Object);
 
@@ -214,11 +222,30 @@ public class OnboardingBaselineHttpIntegrationTests
             mockUserManager.Setup(m => m.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
             mockUserManager.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(new AppUser { Id = dummyInvitation.TargetUserKey.Value, Email = "test@example.com" });
             mockUserManager.Setup(m => m.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
+            var mockMemberUnitOfWork = new Mock<IMemberUnitOfWork>();
+            mockMemberUnitOfWork.Setup(u => u.Members).Returns(mockMemberRepo.Object);
+            builder.Services.AddSingleton(mockMemberUnitOfWork.Object);
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
+            // Activation answers with a session now; the factory is the part of sign-in the host does not build.
+            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            mockLoginResponses
+                .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email ?? string.Empty });
+            builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
+            builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
+            builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
+            builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();
+            builder.Services.AddScoped<IMembershipDirectory, MembershipDirectory>();
 
-            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly));
+            builder.Services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly);
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            });
+            builder.Services.AddValidatorsFromAssembly(typeof(SubmitWaitlistRegistrationCommand).Assembly);
 
             builder.Services
                 .AddAuthentication(options =>
@@ -230,20 +257,7 @@ public class OnboardingBaselineHttpIntegrationTests
                     OnboardingBaselineAuthHandler.SchemeName,
                     _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(AuthController).Assembly)
@@ -274,7 +288,7 @@ public class OnboardingBaselineHttpIntegrationTests
         }
     }
 
-    private sealed record OnboardingBaselineAuthState(UserRole? Role);
+    private sealed record OnboardingBaselineAuthState(string? Role);
 
     private sealed class OnboardingBaselineAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -291,7 +305,7 @@ public class OnboardingBaselineHttpIntegrationTests
         public bool IsAuthenticated => _authState.Role != null;
         public Guid? UserId => IsAuthenticated ? _userId : null;
         public Guid? KurinKey => null;
-        public IReadOnlyCollection<string> Roles => _authState.Role != null ? [_authState.Role.Value.ToString()] : [];
+        public IReadOnlyCollection<string> Roles => _authState.Role != null ? [_authState.Role] : [];
         public bool IsInRole(string role) => Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -304,7 +318,7 @@ public class OnboardingBaselineHttpIntegrationTests
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new(ClaimTypes.Role, _authState.Role.Value.ToClaimValue())
+                new(ClaimTypes.Role, _authState.Role)
             };
 
             var identity = new ClaimsIdentity(claims, SchemeName);

@@ -1,0 +1,35 @@
+@if (state$ | async; as state) {
+    @if (state.accessToken) {
+    <p-toolbar>
+        <ng-template #start>
+            <div class="toolbar-start">
+                <p-button icon="pi pi-bars" (onClick)="toggleSidebar()" text severity="secondary" />
+                <app-breadcrumb class="toolbar-breadcrumb" />
+            </div>
+        </ng-template>
+
+        <ng-template #end>
+            <div class="toolbar-actions">
+                <app-kurin-switcher />
+                @if (state.kurinKey && isAdmin()) {
+                    <p-button (onClick)="backToKurinPanel()" label="До адміністрації" variant="text" severity="secondary" icon="pi pi-arrow-left" iconPos="left" />
+                }
+                <p-button
+                    [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+                    [attr.aria-label]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
+                    [pTooltip]="themeService.isDark() ? 'Світла тема' : 'Темна тема'"
+                    tooltipPosition="bottom"
+                    text
+                    severity="secondary"
+                    (onClick)="themeService.toggle()" />
+                @if (state.accessToken) {
+                    <app-notification-bell />
+                    <app-logout-component />
+                }
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    <app-sidebar-menu [visible]="sidebarVisible" [state$]="state$" (visibleChange)="sidebarVisible = $event" />
+    }
+}

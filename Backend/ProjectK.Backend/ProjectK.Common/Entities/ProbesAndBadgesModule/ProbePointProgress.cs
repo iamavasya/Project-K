@@ -1,11 +1,12 @@
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Infrastructure.Entities;
+using ProjectK.Common.Entities;
 
 namespace ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 public class ProbePointProgress : Entity
 {
     public Guid ProbePointProgressKey { get; set; } = Guid.NewGuid();
+    /// <summary>The person this progress belongs to. A key, not a relationship: the member lives
+    /// in another module and is read through its contract.</summary>
     public Guid MemberKey { get; set; }
     public Guid KurinKey { get; set; }
     public string ProbeId { get; set; } = string.Empty;
@@ -15,6 +16,4 @@ public class ProbePointProgress : Entity
     public Guid? SignedByUserKey { get; set; }
     public string? SignedByName { get; set; }
     public string? SignedByRole { get; set; }
-
-    public Member Member { get; set; } = null!;
 }

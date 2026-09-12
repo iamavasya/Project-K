@@ -7,6 +7,9 @@ public enum ResourceType
     Kurin,
     PlanningSession,
     Leadership,
+    MemberWarning,
+    MemberAward,
     ProbeProgress,
-    BadgeProgress
+    BadgeProgress,
+    AgendaItem
 }

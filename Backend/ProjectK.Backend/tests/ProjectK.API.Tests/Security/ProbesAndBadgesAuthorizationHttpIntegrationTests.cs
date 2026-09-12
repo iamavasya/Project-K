@@ -11,11 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
 
@@ -41,29 +43,35 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
     [InlineData("/api/catalog/probes")]
     public async Task AuthenticatedUser_Request_ShouldReturn200(string route)
     {
-        await using var host = await CatalogSecurityTestHost.StartAsync(UserRole.User.ToClaimValue());
+        await using var host = await CatalogSecurityTestHost.StartAsync("Member");
 
         var response = await host.Client.GetAsync(route);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    /// <summary>
+    /// The catalogues are reference data behind <c>RequireUser</c>, which means "authenticated" —
+    /// the role is not consulted. This asserted 403 while the test host defined its own, stricter
+    /// <c>RequireUser</c> that listed known roles; production never behaved that way, so the test was
+    /// green about a rule the system did not have. Anonymous access is still refused, above.
+    /// </summary>
     [Theory]
     [InlineData("/api/catalog/badges/meta")]
     [InlineData("/api/catalog/probes")]
-    public async Task AuthenticatedUnknownRole_Request_ShouldReturn403(string route)
+    public async Task AuthenticatedWithUnknownRole_CanReadTheCatalogue(string route)
     {
         await using var host = await CatalogSecurityTestHost.StartAsync(roleClaim: "Guest");
 
         var response = await host.Client.GetAsync(route);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task AuthenticatedUser_BadgesImage_ShouldReturn200()
     {
-        await using var host = await CatalogSecurityTestHost.StartAsync(UserRole.User.ToClaimValue());
+        await using var host = await CatalogSecurityTestHost.StartAsync("Member");
 
         var response = await host.Client.GetAsync("/badges_images/test.png");
 
@@ -156,20 +164,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 })
                 .AddScheme<AuthenticationSchemeOptions, CatalogAuthHandler>(CatalogAuthHandler.SchemeName, _ => { });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("RequireAdmin",
-                    policy => policy.RequireRole(UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireManager",
-                    policy => policy.RequireRole(UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireMentor",
-                    policy => policy.RequireRole(UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-
-                options.AddPolicy("RequireUser",
-                    policy => policy.RequireRole(UserRole.User.ToClaimValue(), UserRole.Mentor.ToClaimValue(), UserRole.Manager.ToClaimValue(), UserRole.Admin.ToClaimValue()));
-            });
+            builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
             builder.Services.AddSingleton(badgesCatalogService.Object);
             builder.Services.AddSingleton(probesCatalogService.Object);

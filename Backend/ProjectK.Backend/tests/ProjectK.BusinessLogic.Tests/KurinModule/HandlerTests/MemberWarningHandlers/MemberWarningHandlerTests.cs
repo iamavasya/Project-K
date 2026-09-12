@@ -1,31 +1,40 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHandlers;
 
 public class MemberWarningHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMemberUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMemberRepository> _memberRepositoryMock;
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
 
-    private readonly AssignMemberWarningHandler _assignHandler;
-    private readonly CancelMemberWarningHandler _cancelHandler;
+    private readonly AssignMemberWarningCommandHandler _assignHandler;
+    private readonly FixedTimeProvider _clock;
+    private readonly CancelMemberWarningCommandHandler _cancelHandler;
 
     public MemberWarningHandlerTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _unitOfWorkMock = new Mock<IMemberUnitOfWork>();
         _memberRepositoryMock = new Mock<IMemberRepository>();
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _eventsMock = new Mock<IDomainEventPublisher>();
         _mapperMock = new Mock<AutoMapper.IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
@@ -34,8 +43,13 @@ public class MemberWarningHandlerTests
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
 
-        _assignHandler = new AssignMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
-        _cancelHandler = new CancelMemberWarningHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object);
+        _assignHandler = new AssignMemberWarningCommandHandler(
+            _unitOfWorkMock.Object,
+            _currentUserContextMock.Object,
+            _eventsMock.Object,
+            _mapperMock.Object);
+        _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
+        _cancelHandler = new CancelMemberWarningCommandHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock);
     }
 
     [Fact]
@@ -46,7 +60,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey });
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -58,7 +72,7 @@ public class MemberWarningHandlerTests
             .Callback<MemberWarning, CancellationToken>((warning, _) => created = warning);
 
         var before = DateTime.UtcNow;
-        var result = await _assignHandler.Handle(new AssignMemberWarning(memberKey, MemberWarningLevel.Level1), CancellationToken.None);
+        var result = await _assignHandler.Handle(new AssignMemberWarningCommand(memberKey, MemberWarningLevel.Level1), CancellationToken.None);
         var after = DateTime.UtcNow;
 
         result.Type.Should().Be(ResultType.Created);
@@ -79,13 +93,13 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey });
 
         _memberWarningRepositoryMock
             .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var result = await _assignHandler.Handle(new AssignMemberWarning(memberKey, MemberWarningLevel.Level2), CancellationToken.None);
+        var result = await _assignHandler.Handle(new AssignMemberWarningCommand(memberKey, MemberWarningLevel.Level2), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);
         _memberWarningRepositoryMock.Verify(x => x.Create(It.IsAny<MemberWarning>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -101,7 +115,7 @@ public class MemberWarningHandlerTests
 
         _memberRepositoryMock
             .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Member { MemberKey = memberKey, KurinKey = Guid.NewGuid() });
+            .ReturnsAsync(new Member { MemberKey = memberKey });
 
         var activeWarning = new MemberWarning
         {
@@ -122,7 +136,7 @@ public class MemberWarningHandlerTests
             .Setup(x => x.Create(It.IsAny<MemberWarning>(), It.IsAny<CancellationToken>()))
             .Callback<MemberWarning, CancellationToken>((warning, _) => created = warning);
 
-        var result = await _assignHandler.Handle(new AssignMemberWarning(memberKey, MemberWarningLevel.Level2), CancellationToken.None);
+        var result = await _assignHandler.Handle(new AssignMemberWarningCommand(memberKey, MemberWarningLevel.Level2), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
         activeWarning.RevokedAtUtc.Should().BeNull();
@@ -133,6 +147,69 @@ public class MemberWarningHandlerTests
         created.MemberKey.Should().Be(memberKey);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Assign_LinkedMember_ShouldNotifyMemberOwner()
+    {
+        var memberKey = Guid.NewGuid();
+        var memberUserKey = Guid.NewGuid();
+        var actorUserKey = Guid.NewGuid();
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey, UserKey = memberUserKey });
+        _memberWarningRepositoryMock
+            .Setup(x => x.GetActiveByMemberKeyAsync(memberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        MemberWarning? created = null;
+        _memberWarningRepositoryMock
+            .Setup(x => x.Create(It.IsAny<MemberWarning>(), It.IsAny<CancellationToken>()))
+            .Callback<MemberWarning, CancellationToken>((warning, _) => created = warning);
+
+        var result = await _assignHandler.Handle(new AssignMemberWarningCommand(memberKey, MemberWarningLevel.Level1), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        created.Should().NotBeNull();
+        _eventsMock.Verify(x => x.PublishAsync(
+            It.Is<MemberWarningAssigned>(raised =>
+                raised.MemberWarningKey == created!.MemberWarningKey
+                && raised.MemberKey == memberKey
+                && raised.MemberUserKey == memberUserKey
+                && raised.Level == MemberWarningLevel.Level1
+                && raised.ActorUserKey == actorUserKey),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Cancel_ShouldRefuse_WhenTheWarningHasAlreadyExpired()
+    {
+        // The clock is fixed, so the expiry branch is reachable without dating the fixture
+        // relative to the real "now".
+        var memberKey = Guid.NewGuid();
+        var warningKey = Guid.NewGuid();
+        var userKey = _currentUserContextMock.Object.UserId!.Value;
+        var now = _clock.GetUtcNow().UtcDateTime;
+
+        _memberWarningRepositoryMock
+            .Setup(x => x.GetByKeyAsync(warningKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberWarning
+            {
+                MemberWarningKey = warningKey,
+                MemberKey = memberKey,
+                Level = MemberWarningLevel.Level1,
+                IssuedAtUtc = now.AddMonths(-4),
+                ExpiresAtUtc = now.AddMinutes(-1),
+                IssuedByUserKey = userKey
+            });
+
+        var result = await _cancelHandler.Handle(new CancelMemberWarningCommand(memberKey, warningKey), CancellationToken.None);
+
+        result.Type.Should().NotBe(ResultType.Success);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -153,7 +230,7 @@ public class MemberWarningHandlerTests
                 IssuedByUserKey = Guid.NewGuid()
             });
 
-        var result = await _cancelHandler.Handle(new CancelMemberWarning(memberKey, warningKey), CancellationToken.None);
+        var result = await _cancelHandler.Handle(new CancelMemberWarningCommand(memberKey, warningKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -180,7 +257,7 @@ public class MemberWarningHandlerTests
             .Setup(x => x.GetByKeyAsync(warningKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(warning);
 
-        var result = await _cancelHandler.Handle(new CancelMemberWarning(memberKey, warningKey), CancellationToken.None);
+        var result = await _cancelHandler.Handle(new CancelMemberWarningCommand(memberKey, warningKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         warning.RevokedAtUtc.Should().NotBeNull();

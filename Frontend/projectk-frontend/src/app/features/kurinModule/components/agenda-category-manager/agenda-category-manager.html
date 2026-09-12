@@ -1,0 +1,110 @@
+<div class="cat-manager">
+  <div class="cat-manager__head">
+    <span class="cat-manager__hint">Групи об'єднують події одного типу та задають колір, іконку, ліміт місць і шаблон.</span>
+    <p-button label="Нова група" icon="pi pi-plus" size="small" (onClick)="openCreate()" />
+  </div>
+
+  @if (loading()) {
+    <p class="cat-manager__empty">Завантаження…</p>
+  } @else if (categories().length === 0) {
+    <p class="cat-manager__empty">Ще немає груп подій. Створіть першу — наприклад «Табір» чи «Сходини».</p>
+  } @else {
+    <ul class="cat-list">
+      @for (category of categories(); track category.agendaCategoryKey) {
+        <li class="cat-list__item" [class.is-archived]="category.isArchived">
+          <span class="cat-list__dot" [style.background]="category.colorHex"></span>
+          @if (category.icon) { <i class="cat-list__icon" [class]="category.icon"></i> }
+          <span class="cat-list__name">{{ category.name }}</span>
+          <span class="cat-list__meta">
+            @if (category.capacity) { <span><i class="pi pi-users"></i> {{ category.capacity }}</span> }
+            @if (category.rsvpRequired) { <span><i class="pi pi-check-square"></i> RSVP</span> }
+            @if (category.isArchived) { <span class="cat-list__badge">В архіві</span> }
+          </span>
+          <span class="cat-list__actions">
+            <p-button icon="pi pi-pencil" severity="secondary" variant="text" size="small" (onClick)="openEdit(category)" />
+            <p-button icon="pi pi-trash" severity="danger" variant="text" size="small" (onClick)="remove(category)" />
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  [draggable]="false"
+  [header]="editing ? 'Редагувати групу' : 'Нова група подій'">
+  <div class="cat-form">
+    <div class="cat-field">
+      <label class="cat-label" for="cat-name">Назва</label>
+      <input id="cat-name" pInputText [(ngModel)]="form.name" maxlength="100" placeholder="Табір, Захід, Сходини…" />
+    </div>
+
+    <div class="cat-row">
+      <div class="cat-field">
+        <span class="cat-label">Колір</span>
+        <div class="cat-swatches">
+          @for (color of colors; track color) {
+            <button
+              type="button"
+              class="cat-swatch"
+              [class.is-active]="form.colorHex === color"
+              [style.background]="color"
+              (click)="form.colorHex = color"
+              [attr.aria-label]="color"></button>
+          }
+        </div>
+      </div>
+
+      <div class="cat-field">
+        <label class="cat-label" for="cat-icon">Іконка</label>
+        <p-select id="cat-icon" [options]="icons" [(ngModel)]="form.icon" optionLabel="label" optionValue="value" appendTo="body" [showClear]="true">
+          <ng-template let-opt pTemplate="item">
+            <span class="cat-icon-option"><i [class]="opt.value"></i> {{ opt.label }}</span>
+          </ng-template>
+        </p-select>
+      </div>
+    </div>
+
+    <div class="cat-field">
+      <label class="cat-label" for="cat-desc">Шаблон опису</label>
+      <textarea id="cat-desc" pTextarea [(ngModel)]="form.defaultDescription" rows="2" maxlength="2000" placeholder="Текст, який підставиться в нову подію"></textarea>
+    </div>
+
+    <div class="cat-row">
+      <div class="cat-field">
+        <label class="cat-label" for="cat-capacity">Ліміт місць</label>
+        <p-inputNumber inputId="cat-capacity" [(ngModel)]="form.capacity" [min]="1" [showButtons]="false" placeholder="Без ліміту" />
+      </div>
+      <div class="cat-field">
+        <label class="cat-label" for="cat-duration">Тривалість (хв)</label>
+        <p-inputNumber inputId="cat-duration" [(ngModel)]="form.defaultDurationMinutes" [min]="1" [showButtons]="false" placeholder="—" />
+      </div>
+    </div>
+
+    <div class="cat-field">
+      <label class="cat-label" for="cat-reminder">Нагадати за (хв до початку)</label>
+      <p-inputNumber inputId="cat-reminder" [(ngModel)]="form.reminderLeadMinutes" [min]="0" [showButtons]="false" placeholder="Без нагадування" />
+    </div>
+
+    <div class="cat-toggle-row">
+      <label for="cat-waitlist">Черга при переповненні</label>
+      <p-toggleswitch inputId="cat-waitlist" [(ngModel)]="form.waitlistEnabled" />
+    </div>
+    <div class="cat-toggle-row">
+      <label for="cat-rsvp">Питати відповідь (RSVP)</label>
+      <p-toggleswitch inputId="cat-rsvp" [(ngModel)]="form.rsvpRequired" />
+    </div>
+    <div class="cat-toggle-row">
+      <label for="cat-archived">В архіві (сховати з пікера)</label>
+      <p-toggleswitch inputId="cat-archived" [(ngModel)]="form.isArchived" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="dialogVisible = false" />
+    <p-button label="Зберегти" icon="pi pi-check" [disabled]="saving()" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

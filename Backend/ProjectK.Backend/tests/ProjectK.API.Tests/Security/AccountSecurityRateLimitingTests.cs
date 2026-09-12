@@ -2,8 +2,12 @@ using System.Reflection;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.UsersModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.UserModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -25,7 +29,7 @@ public class AccountSecurityRateLimitingTests
         yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa));
         yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes));
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
-        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus));
+        yield return Row<Action<AuthController, IMfaEnforcementPolicy>>(nameof(AuthController.GetMfaStatus));
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings));
         yield return Row<Action<UserController, UpdateAccountProfileRequestDto>>(nameof(UserController.UpdateAccountProfile));
@@ -35,8 +39,8 @@ public class AccountSecurityRateLimitingTests
         yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa));
         yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa));
 
-        yield return Row<Action<OnboardingController, ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.RequestPasswordResetCommand>>(nameof(OnboardingController.RequestPasswordReset));
-        yield return Row<Action<OnboardingController, ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.ResetPasswordCommand>>(nameof(OnboardingController.ResetPassword));
+        yield return Row<Action<OnboardingController, RequestPasswordResetCommand>>(nameof(OnboardingController.RequestPasswordReset));
+        yield return Row<Action<OnboardingController, ResetPasswordCommand>>(nameof(OnboardingController.ResetPassword));
     }
 
     private static object[] Row<TDelegate>(string methodName)

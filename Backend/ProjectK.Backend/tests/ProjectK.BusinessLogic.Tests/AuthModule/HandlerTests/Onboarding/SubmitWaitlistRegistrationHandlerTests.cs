@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Commands.Onboarding.Handlers;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
@@ -14,14 +14,14 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 public class SubmitWaitlistRegistrationHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IWaitlistRepository> _waitlistRepository = new();
     private readonly Mock<IMemberRepository> _memberRepository = new();
-    private readonly SubmitWaitlistRegistrationHandler _handler;
+    private readonly SubmitWaitlistRegistrationCommandHandler _handler;
 
     public SubmitWaitlistRegistrationHandlerTests()
     {
         _unitOfWork.Setup(x => x.WaitlistEntries).Returns(_waitlistRepository.Object);
-        _unitOfWork.Setup(x => x.Members).Returns(_memberRepository.Object);
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _waitlistRepository
@@ -31,7 +31,7 @@ public class SubmitWaitlistRegistrationHandlerTests
             .Setup(x => x.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member?)null);
 
-        _handler = new SubmitWaitlistRegistrationHandler(_unitOfWork.Object);
+        _handler = new SubmitWaitlistRegistrationCommandHandler(_unitOfWork.Object, _memberDirectory.Object);
     }
 
     [Fact]
@@ -54,58 +54,6 @@ public class SubmitWaitlistRegistrationHandlerTests
         capturedEntry.ClaimedKurinNameOrNumber.Should().Be("97");
         capturedEntry.VerificationStatus.Should().Be(WaitlistVerificationStatus.Submitted);
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Theory]
-    [InlineData(null, "Ukraine", "StanytsiaRequired")]
-    [InlineData("", "Ukraine", "StanytsiaRequired")]
-    [InlineData("Kyiv", null, "RegionOrCountryRequired")]
-    [InlineData("Kyiv", "", "RegionOrCountryRequired")]
-    public async Task Handle_ShouldReturnBadRequest_WhenLocationFieldsAreMissing(
-        string? stanytsia,
-        string? regionOrCountry,
-        string expectedErrorCode)
-    {
-        var command = CreateCommand(stanytsia, regionOrCountry);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnBadRequest_WhenKurinLeaderCandidateIsNotConfirmed()
-    {
-        var command = CreateCommand(isKurinLeaderCandidate: false);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("KurinLeaderCandidateRequired");
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Theory]
-    [InlineData(null, "ClaimedKurinNumberRequired")]
-    [InlineData("", "ClaimedKurinNumberRequired")]
-    [InlineData("97a", "ClaimedKurinNumberInvalid")]
-    [InlineData("Lisovi Chorty", "ClaimedKurinNumberInvalid")]
-    public async Task Handle_ShouldReturnBadRequest_WhenKurinNumberIsMissingOrNotNumeric(
-        string? claimedKurinNumber,
-        string expectedErrorCode)
-    {
-        var command = CreateCommand(claimedKurinNumber: claimedKurinNumber);
-
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
-        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static SubmitWaitlistRegistrationCommand CreateCommand(

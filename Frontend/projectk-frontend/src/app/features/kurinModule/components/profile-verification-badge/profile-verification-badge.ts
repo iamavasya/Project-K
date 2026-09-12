@@ -1,0 +1,39 @@
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
+
+@Component({
+  selector: 'app-profile-verification-badge',
+  imports: [TooltipModule],
+  templateUrl: './profile-verification-badge.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './profile-verification-badge.css'
+})
+export class ProfileVerificationBadgeComponent {
+  readonly status = input<MemberProfileVerificationStatus | string | null>();
+  readonly enabled = input(true);
+
+  get isVisible(): boolean {
+    return this.enabled() && (this.isCurrent || this.isStale);
+  }
+
+  get isCurrent(): boolean {
+    return this.status() === MemberProfileVerificationStatus.VerifiedCurrent;
+  }
+
+  get isStale(): boolean {
+    return this.status() === MemberProfileVerificationStatus.VerifiedStale;
+  }
+
+  get tooltip(): string | undefined {
+    if (this.isCurrent) {
+      return 'Дані верифіковано';
+    }
+
+    if (this.isStale) {
+      return 'Дані змінено після верифікації';
+    }
+
+    return undefined;
+  }
+}

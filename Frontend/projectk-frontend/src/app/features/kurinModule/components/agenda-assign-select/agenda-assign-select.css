@@ -1,0 +1,4 @@
+:host { display: block; width: 100%; }
+/* Fixed to the field width: selected chips wrap onto new lines instead of stretching the control. */
+:host ::ng-deep .agenda-assign-select { width: 100%; max-width: 100%; }
+:host ::ng-deep .agenda-assign-select .p-treeselect-label { flex-wrap: wrap; }

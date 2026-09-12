@@ -1,7 +1,6 @@
-namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule
+namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+
+public interface IMfaService
 {
-    public interface IMfaService
-    {
-        string GenerateQrCodeBase64(string authenticatorUri);
-    }
+    string GenerateQrCodeBase64(string authenticatorUri);
 }

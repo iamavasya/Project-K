@@ -1,0 +1,70 @@
+@if (visible()) {
+  <aside class="dev-switch" [class.dev-switch--open]="open()" aria-label="Дев-інструмент: перемикач ролей">
+    <button type="button" class="dev-switch__tab" (click)="toggle()" [attr.aria-expanded]="open()">
+      <span class="pi pi-wrench" aria-hidden="true"></span>
+      <span class="dev-switch__tab-text">{{ borrowed() ? 'Роль' : 'Dev' }}</span>
+    </button>
+
+    @if (open()) {
+      <div class="dev-switch__panel">
+        <p class="dev-switch__kicker">Дев-інструмент</p>
+        <h2 class="dev-switch__title">Зайти як</h2>
+        <p class="dev-switch__now">
+          Зараз: <strong>{{ currentEmail() }}</strong>
+          @if (borrowed(); as role) { <span class="dev-switch__badge">позичена роль</span> }
+        </p>
+
+        @if (personKey()) {
+          <button
+            type="button"
+            class="dev-switch__option dev-switch__option--person"
+            [class.dev-switch__option--current]="borrowed() === 'Person'"
+            [disabled]="busy() !== null"
+            (click)="switchToPerson()">
+            <span class="pi pi-id-card" aria-hidden="true"></span>
+            <span class="dev-switch__option-text">
+              <span class="dev-switch__option-label">Ця людина</span>
+              <span class="dev-switch__option-hint">{{ personName() ?? 'з відкритої картки' }}</span>
+            </span>
+            @if (busy() === 'Person') {
+              <span class="pi pi-spin pi-spinner" aria-hidden="true"></span>
+            }
+          </button>
+        }
+
+        <ul class="dev-switch__list">
+          @for (option of roles; track option.role) {
+            <li>
+              <button
+                type="button"
+                class="dev-switch__option"
+                [class.dev-switch__option--current]="borrowed() === option.role"
+                [disabled]="busy() !== null"
+                (click)="switchTo(option.role)">
+                <span [class]="option.icon" aria-hidden="true"></span>
+                <span class="dev-switch__option-text">
+                  <span class="dev-switch__option-label">{{ option.label }}</span>
+                  <span class="dev-switch__option-hint">{{ option.hint }}</span>
+                </span>
+                @if (busy() === option.role) {
+                  <span class="pi pi-spin pi-spinner" aria-hidden="true"></span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+
+        @if (borrowed()) {
+          <button type="button" class="dev-switch__return" [disabled]="busy() !== null" (click)="returnToAdmin()">
+            <span class="pi pi-undo" aria-hidden="true"></span>
+            Повернутись до адміна
+          </button>
+        }
+
+        <p class="dev-switch__note">
+          Береться акаунт того, хто тримає цей уряд у курені на екрані, або людини з відкритої картки. Є лише на локальних стендах.
+        </p>
+      </div>
+    }
+  </aside>
+}

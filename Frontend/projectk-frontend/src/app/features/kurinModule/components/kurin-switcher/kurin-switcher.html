@@ -1,0 +1,38 @@
+@if (isVisible) {
+  <p-button
+    (onClick)="switcher.toggle($event)"
+    [label]="currentLabel"
+    icon="pi pi-angle-down"
+    iconPos="right"
+    variant="text"
+    severity="secondary"
+    pTooltip="Курінь, у якому ти зараз дієш"
+    tooltipPosition="bottom"
+    aria-haspopup="true" />
+
+  <p-popover #switcher>
+    <ul class="kurin-switcher-list">
+      @for (option of options(); track option.kurinKey) {
+        <li>
+          <button
+            type="button"
+            class="kurin-switcher-option"
+            [class.is-current]="isCurrent(option)"
+            [disabled]="switchingTo() !== null"
+            (click)="switchTo(option, switcher)">
+            <span class="kurin-switcher-name">
+              к. ч. {{ option.kurinNumber }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+            </span>
+            <span class="kurin-switcher-meta">
+              <p-tag [value]="branchLabels[option.branch]" severity="secondary" />
+              <span class="kurin-switcher-kind">{{ kindLabels[option.kind] }}</span>
+            </span>
+            @if (isCurrent(option)) {
+              <i class="pi pi-check kurin-switcher-mark" aria-label="Поточний курінь"></i>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  </p-popover>
+}

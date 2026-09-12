@@ -1,14 +1,15 @@
+import { RouterModule } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+
 import { App } from './app';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, RouterTestingModule],
+      imports: [App, RouterModule],
       providers: [MessageService, provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });

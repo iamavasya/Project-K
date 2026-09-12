@@ -1,18 +1,19 @@
-import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BreadcrumbComponent } from './features/kurinModule/common/components/breadcrumb/breadcrumb';
-import { ToolbarHeader } from "./features/kurinModule/common/components/toolbar-header/toolbar-header";
+import { ToolbarHeaderComponent } from "./features/kurinModule/components/toolbar-header/toolbar-header";
 import { ColdStartBannerComponent } from './features/systemModule/components/cold-start-banner/cold-start-banner';
-import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog.component';
-import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer.service';
-import { ToastModule } from 'primeng/toast';
+import { MfaSetupDialogComponent } from './features/authModule/components/mfa-setup-dialog/mfa-setup-dialog';
+import { DevRoleSwitcherComponent } from './features/systemModule/components/dev-role-switcher/dev-role-switcher';
+import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer-service/mfa-enforcer.service';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BreadcrumbComponent, ToolbarHeader, ColdStartBannerComponent, MfaSetupDialogComponent, ToastModule],
+  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, DevRoleSwitcherComponent, ToastModule],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
 })
 export class App implements AfterViewInit {
@@ -21,7 +22,7 @@ export class App implements AfterViewInit {
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly router = inject(Router);
 
-  @ViewChild('mfaDialog') mfaDialog!: MfaSetupDialogComponent;
+  readonly mfaDialog = viewChild.required<MfaSetupDialogComponent>('mfaDialog');
 
   constructor() {
     this.updateShellVisibility(this.router.url);
@@ -34,7 +35,7 @@ export class App implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.mfaEnforcer.checkAndEnforce(this.mfaDialog);
+    this.mfaEnforcer.checkAndEnforce(this.mfaDialog());
   }
 
   private updateShellVisibility(url: string): void {

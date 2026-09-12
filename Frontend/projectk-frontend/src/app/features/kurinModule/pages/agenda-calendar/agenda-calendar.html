@@ -1,0 +1,45 @@
+<div class="agenda-page">
+  <section class="kurin-tile">
+    <div class="agenda-header">
+      <h1 class="agenda-title">Календар</h1>
+      @if (canManage()) {
+        <p-button label="Нова подія" icon="pi pi-plus" (click)="openCreate()" />
+      }
+    </div>
+
+    <div class="agenda-toolbar">
+      <div class="agenda-toolbar__nav">
+        <p-button icon="pi pi-chevron-left" severity="secondary" [text]="true" [rounded]="true" (click)="prev()" ariaLabel="Назад" />
+        <p-button label="Сьогодні" severity="secondary" [outlined]="true" size="small" (click)="today()" />
+        <p-button icon="pi pi-chevron-right" severity="secondary" [text]="true" [rounded]="true" (click)="next()" ariaLabel="Далі" />
+        <span class="agenda-toolbar__title">{{ viewTitle() }}</span>
+      </div>
+      <p-selectButton
+        [options]="viewOptions"
+        [ngModel]="currentView()"
+        (onChange)="changeView($event.value)"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false" />
+    </div>
+
+    <div class="agenda-calendar-host" #calHost>
+      <full-calendar [options]="calendarOptions()" />
+    </div>
+  </section>
+</div>
+
+<!-- Rendered for everyone: managers get the edit form, plain members a read-only view with RSVP. The
+     dialog only mounts the mentor-only assign-select in edit mode, so viewers never hit its 403. -->
+<app-agenda-item-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [kurinKey]="kurinKey()"
+  [item]="editing()"
+  [defaultKind]="'Event'"
+  [canManage]="canManage()"
+  [presetStart]="presetStart()"
+  [presetEnd]="presetEnd()"
+  [presetAllDay]="presetAllDay()"
+  (saved)="onSaved()" />
+

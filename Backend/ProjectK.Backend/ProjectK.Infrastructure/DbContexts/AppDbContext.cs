@@ -1,366 +1,486 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Planning;
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.InfrastructureModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.Infrastructure.DbContexts
+namespace ProjectK.Infrastructure.DbContexts;
+
+public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 {
-    public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
+    // Kurin module DbSet
+    public DbSet<Kurin> Kurins { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    public DbSet<Member> Members { get; set; }
+    public DbSet<Membership> Memberships { get; set; }
+    public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
+    public DbSet<Leadership> Leaderships { get; set; }
+    public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
+    public DbSet<PlanningSession> PlanningSessions { get; set; }
+    public DbSet<PlanningParticipant> PlanningParticipants { get; set; }
+    public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
+    public DbSet<AgendaItem> AgendaItems { get; set; }
+    public DbSet<AgendaAssignment> AgendaAssignments { get; set; }
+    public DbSet<AgendaCategory> AgendaCategories { get; set; }
+    public DbSet<AgendaResponse> AgendaResponses { get; set; }
+    public DbSet<BadgeProgress> BadgeProgresses { get; set; }
+    public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
+    public DbSet<ProbeProgress> ProbeProgresses { get; set; }
+    public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
+    public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
+    public DbSet<MentorAssignment> MentorAssignments { get; set; }
+    public DbSet<MemberWarning> MemberWarnings { get; set; }
+    public DbSet<MemberAward> MemberAwards { get; set; }
+
+    // Auth module DbSet
+    public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
+    public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
+    public DbSet<AppNotification> AppNotifications { get; set; }
+    public DbSet<SystemSetting> SystemSettings { get; set; }
+    public DbSet<UserTileLayout> UserTileLayouts { get; set; }
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        // Kurin module DbSet
-        public DbSet<Kurin> Kurins { get; set; }
-        public DbSet<Group> Groups { get; set; }
-        public DbSet<Member> Members { get; set; }
-        public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
-        public DbSet<Leadership> Leaderships { get; set; }
-        public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
-        public DbSet<PlanningSession> PlanningSessions { get; set; }
-        public DbSet<PlanningParticipant> PlanningParticipants { get; set; }
-        public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
-        public DbSet<BadgeProgress> BadgeProgresses { get; set; }
-        public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
-        public DbSet<ProbeProgress> ProbeProgresses { get; set; }
-        public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
-        public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
-        public DbSet<MentorAssignment> MentorAssignments { get; set; }
-        public DbSet<MemberWarning> MemberWarnings { get; set; }
-        public DbSet<MemberAward> MemberAwards { get; set; }
+    }
 
-        // Auth module DbSet
-        public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
-        public DbSet<Invitation> Invitations { get; set; }
-        public DbSet<PublicAnnouncementDraft> PublicAnnouncementDrafts { get; set; }
-
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    /// <summary>
+    /// Stamps a new member's public code before it is written. It sits here rather than in a use
+    /// case because a member is also opened by the seeders and by account activation, and a person
+    /// without a code cannot be found by the one thing another kurin can ask for.
+    /// </summary>
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries<Member>())
         {
+            if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
+            {
+                entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+            }
         }
 
-        protected override void OnModelCreating(ModelBuilder builder)
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Kurin module entity configuration
+        builder.Entity<Kurin>(entity =>
         {
-            base.OnModelCreating(builder);
+            entity.Property(e => e.Branch).HasConversion<int>();
+            entity.HasKey(e => e.KurinKey);
+            entity.HasIndex(e => e.Number).IsUnique();
+            entity.Property(e => e.Stanytsia)
+                .HasMaxLength(120);
+            entity.Property(e => e.RegionOrCountry)
+                .HasMaxLength(120);
+            entity.Property(e => e.NamedAfter)
+                .HasMaxLength(200);
+            entity.Property(e => e.Description)
+                .HasMaxLength(4000);
+        });
 
-            // Kurin module entity configuration
-            builder.Entity<Kurin>(entity =>
-            {
-                entity.HasKey(e => e.KurinKey);
-                entity.HasIndex(e => e.Number).IsUnique();
-                entity.Property(e => e.Stanytsia)
-                    .HasMaxLength(120);
-                entity.Property(e => e.RegionOrCountry)
-                    .HasMaxLength(120);
-                entity.Property(e => e.NamedAfter)
-                    .HasMaxLength(200);
-                entity.Property(e => e.Description)
-                    .HasMaxLength(4000);
-            });
+        builder.Entity<Group>(entity =>
+        {
+            entity.HasKey(e => e.GroupKey);
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000);
+            entity.Property(e => e.SilhouetteBlobName)
+                .HasMaxLength(500);
+            entity.HasOne(e => e.Kurin)
+                  .WithMany(k => k.Groups)
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<Group>(entity =>
-            {
-                entity.HasKey(e => e.GroupKey);
-                entity.Property(e => e.Description)
-                    .HasMaxLength(1000);
-                entity.Property(e => e.SilhouetteBlobName)
-                    .HasMaxLength(500);
-                entity.HasOne(e => e.Kurin)
-                      .WithMany(k => k.Groups)
-                      .HasForeignKey(e => e.KurinKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<Member>(entity =>
+        {
+            entity.HasKey(e => e.MemberKey);
+            entity.Property(e => e.PublicId)
+                  .HasMaxLength(20)
+                  .IsRequired();
+            entity.HasIndex(e => e.PublicId)
+                  .IsUnique();
+            entity.HasOne(entity => entity.User)
+                  .WithOne()
+                  .HasForeignKey<Member>(e => e.UserKey)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
 
-            builder.Entity<Member>(entity =>
-            {
-                entity.HasKey(e => e.MemberKey);
-                entity.HasOne(entity => entity.Group)
-                      .WithMany(g => g.Members)
-                      .HasForeignKey(e => e.GroupKey)
-                      .OnDelete(DeleteBehavior.NoAction);
-                entity.HasOne(entity => entity.Kurin)
-                        .WithMany(k => k.Members)
-                        .HasForeignKey(e => e.KurinKey)
-                        .OnDelete(DeleteBehavior.NoAction);
-                entity.HasOne(entity => entity.User)
-                      .WithOne()
-                      .HasForeignKey<Member>(e => e.UserKey)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });
+        builder.Entity<Membership>(entity =>
+        {
+            entity.HasKey(e => e.MembershipKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.HasOne(e => e.Kurin)
+                  .WithMany(k => k.Memberships)
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Group)
+                  .WithMany()
+                  .HasForeignKey(e => e.GroupKey)
+                  .OnDelete(DeleteBehavior.NoAction);
 
-            builder.Entity<MemberWarning>(entity =>
-            {
-                entity.HasKey(e => e.MemberWarningKey);
-                entity.Property(e => e.Level)
-                    .HasConversion<int>();
-                entity.HasIndex(e => new { e.MemberKey, e.Level });
-                entity.HasIndex(e => e.ExpiresAtUtc);
-                entity.HasOne(e => e.Member)
-                      .WithMany(m => m.MemberWarnings)
-                      .HasForeignKey(e => e.MemberKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            // The reads this table exists for: everyone in a kurin, every kurin of one person,
+            // and the scope of the account making a request.
+            entity.HasIndex(e => new { e.KurinKey, e.LeftAtUtc });
+            entity.HasIndex(e => new { e.MemberKey, e.LeftAtUtc });
+            entity.HasIndex(e => new { e.UserKey, e.LeftAtUtc });
 
-            builder.Entity<MemberAward>(entity =>
-            {
-                entity.HasKey(e => e.MemberAwardKey);
-                entity.Property(e => e.Level)
-                    .HasConversion<int>();
-                entity.Property(e => e.Status)
-                    .HasConversion<int>();
-                entity.HasIndex(e => new { e.MemberKey, e.Level });
-                entity.HasOne(e => e.Member)
-                      .WithMany(m => m.MemberAwards)
-                      .HasForeignKey(e => e.MemberKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            // A person belongs to a kurin once at a time. Past memberships are excluded, so
+            // rejoining after leaving is allowed and being in it twice at once is not.
+            entity.HasIndex(e => new { e.MemberKey, e.KurinKey })
+                  .IsUnique()
+                  .HasFilter("[LeftAtUtc] IS NULL");
+        });
 
-            builder.Entity<PlastLevelHistory>(entity =>
-            {
-                entity.HasKey(e => e.PlastLevelHistoryKey);
-                entity.HasOne(e => e.Member)
-                      .WithMany(m => m.PlastLevelHistory)
-                      .HasForeignKey(e => e.MemberKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-                entity.Property(e => e.PlastLevel)
-                      .HasConversion<int>();
-            });
+        builder.Entity<MemberWarning>(entity =>
+        {
+            entity.HasIndex(e => new { e.KurinKey, e.RevokedAtUtc });
+            entity.HasKey(e => e.MemberWarningKey);
+            entity.Property(e => e.Level)
+                .HasConversion<int>();
+            entity.HasIndex(e => new { e.MemberKey, e.Level });
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.HasOne(e => e.Member)
+                  .WithMany(m => m.MemberWarnings)
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<Leadership>(entity =>
-            {
-                entity.HasKey(e => e.LeadershipKey);
-                entity.Property(e => e.Type)
-                      .HasConversion<int>();
-                entity.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey });
-                entity.HasOne(e => e.Kurin)
-                    .WithMany(k => k.Leaderships)
-                    .HasForeignKey(e => e.KurinKey)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(e => e.Group)
-                    .WithOne(g => g.Leadership)
-                    .HasForeignKey<Leadership>(e => e.GroupKey)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
+        builder.Entity<MemberAward>(entity =>
+        {
+            entity.HasKey(e => e.MemberAwardKey);
+            entity.Property(e => e.Level)
+                .HasConversion<int>();
+            entity.Property(e => e.Status)
+                .HasConversion<int>();
+            entity.HasIndex(e => new { e.MemberKey, e.Level });
+            entity.HasOne(e => e.Member)
+                  .WithMany(m => m.MemberAwards)
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<LeadershipHistory>(entity =>
-            {
-                entity.HasKey(e => e.LeadershipHistoryKey);
-                entity.HasOne(e => e.Member)
-                      .WithMany(m => m.LeadershipHistories)
-                      .HasForeignKey(e => e.MemberKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.Leadership)
-                      .WithMany(l => l.LeadershipHistories)
-                      .HasForeignKey(e => e.LeadershipKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(e => new { e.LeadershipKey, e.Role, e.StartDate });
-                entity.HasIndex(e => new { e.MemberKey, e.StartDate });
-            });
+        builder.Entity<PlastLevelHistory>(entity =>
+        {
+            entity.HasKey(e => e.PlastLevelHistoryKey);
+            entity.HasOne(e => e.Member)
+                  .WithMany(m => m.PlastLevelHistory)
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.PlastLevel)
+                  .HasConversion<int>();
+        });
 
-            builder.Entity<PlanningSession>(entity =>
-            {
-                entity.HasKey(e => e.PlanningSessionKey);
-                entity.HasOne(e => e.Kurin)
-                      .WithMany(k => k.PlanningSessions)
-                      .HasForeignKey(e => e.KurinKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<Leadership>(entity =>
+        {
+            entity.HasKey(e => e.LeadershipKey);
+            entity.Property(e => e.Type)
+                  .HasConversion<int>();
+            entity.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey });
+            entity.HasOne(e => e.Kurin)
+                .WithMany(k => k.Leaderships)
+                .HasForeignKey(e => e.KurinKey)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Group)
+                .WithOne(g => g.Leadership)
+                .HasForeignKey<Leadership>(e => e.GroupKey)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
-            builder.Entity<PlanningParticipant>(entity =>
-            {
-                entity.HasKey(e => e.PlanningParticipantKey);
-                entity.HasOne(e => e.PlanningSession)
-                      .WithMany(ps => ps.Participants)
-                      .HasForeignKey(e => e.PlanningSessionKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<LeadershipHistory>(entity =>
+        {
+            entity.HasKey(e => e.LeadershipHistoryKey);
+            entity.HasOne(e => e.Member)
+                  .WithMany(m => m.LeadershipHistories)
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Leadership)
+                  .WithMany(l => l.LeadershipHistories)
+                  .HasForeignKey(e => e.LeadershipKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.LeadershipKey, e.Role, e.StartDate });
+            entity.HasIndex(e => new { e.MemberKey, e.StartDate });
+        });
 
-            builder.Entity<ParticipantBusyRange>(entity =>
-            {
-                entity.HasKey(e => e.ParticipantBusyRangeKey);
-                entity.HasOne(e => e.PlanningParticipant)
-                      .WithMany(pp => pp.BusyRanges)
-                      .HasForeignKey(e => e.PlanningParticipantKey)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<PlanningSession>(entity =>
+        {
+            entity.HasKey(e => e.PlanningSessionKey);
+            entity.HasOne(e => e.Kurin)
+                  .WithMany(k => k.PlanningSessions)
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<BadgeProgress>(entity =>
-            {
-                entity.HasKey(e => e.BadgeProgressKey);
-                entity.Property(e => e.BadgeId)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.Status)
-                    .HasConversion<int>();
-                entity.HasIndex(e => new { e.MemberKey, e.BadgeId })
-                    .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.BadgeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<PlanningParticipant>(entity =>
+        {
+            entity.HasKey(e => e.PlanningParticipantKey);
+            entity.HasOne(e => e.PlanningSession)
+                  .WithMany(ps => ps.Participants)
+                  .HasForeignKey(e => e.PlanningSessionKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<BadgeProgressAuditEvent>(entity =>
-            {
-                entity.HasKey(e => e.BadgeProgressAuditEventKey);
-                entity.Property(e => e.FromStatus)
-                    .HasConversion<int?>();
-                entity.Property(e => e.ToStatus)
-                    .HasConversion<int>();
-                entity.Property(e => e.Action)
-                    .HasMaxLength(100)
-                    .IsRequired();
-                entity.Property(e => e.ActorRole)
-                    .HasMaxLength(50)
-                    .IsRequired();
-                entity.HasOne(e => e.BadgeProgress)
-                    .WithMany(p => p.AuditEvents)
-                    .HasForeignKey(e => e.BadgeProgressKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(e => e.BadgeProgressKey);
-            });
+        builder.Entity<ParticipantBusyRange>(entity =>
+        {
+            entity.HasKey(e => e.ParticipantBusyRangeKey);
+            entity.HasOne(e => e.PlanningParticipant)
+                  .WithMany(pp => pp.BusyRanges)
+                  .HasForeignKey(e => e.PlanningParticipantKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            builder.Entity<ProbeProgress>(entity =>
-            {
-                entity.HasKey(e => e.ProbeProgressKey);
-                entity.Property(e => e.ProbeId)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.Status)
-                    .HasConversion<int>();
-                entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
-                    .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbeProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<AgendaItem>(entity =>
+        {
+            entity.HasKey(e => e.AgendaItemKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.RecurrenceFrequency).HasConversion<int>();
+            entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.HasOne(e => e.Kurin)
+                  .WithMany(k => k.AgendaItems)
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // The calendar queries by kurin and date window, so index both.
+            entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
+            // NoAction (not SetNull) so Kurin keeps a single cascade path to AgendaItems: Category→Kurin
+            // is Cascade, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
+            // DeleteAgendaCategoryCommand nulls out referencing items itself before removing the group.
+            entity.HasOne(e => e.Category)
+                  .WithMany()
+                  .HasForeignKey(e => e.AgendaCategoryKey)
+                  .OnDelete(DeleteBehavior.NoAction);
+        });
 
-            builder.Entity<ProbeProgressAuditEvent>(entity =>
-            {
-                entity.HasKey(e => e.ProbeProgressAuditEventKey);
-                entity.Property(e => e.FromStatus)
-                    .HasConversion<int?>();
-                entity.Property(e => e.ToStatus)
-                    .HasConversion<int>();
-                entity.Property(e => e.Action)
-                    .HasMaxLength(100)
-                    .IsRequired();
-                entity.Property(e => e.ActorRole)
-                    .HasMaxLength(50)
-                    .IsRequired();
-                entity.HasOne(e => e.ProbeProgress)
-                    .WithMany(p => p.AuditEvents)
-                    .HasForeignKey(e => e.ProbeProgressKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(e => e.ProbeProgressKey);
-            });
+        builder.Entity<AgendaCategory>(entity =>
+        {
+            entity.HasKey(e => e.AgendaCategoryKey);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ColorHex).HasMaxLength(32).IsRequired();
+            entity.Property(e => e.Icon).HasMaxLength(64);
+            entity.Property(e => e.DefaultDescription).HasMaxLength(2000);
+            // Cascade: an event group belongs to its kurin and dies with it (so the seeder's kurin reset
+            // and any kurin delete clear categories automatically). The item→category side is NoAction to
+            // keep this the only cascade path to AgendaItems.
+            entity.HasOne(e => e.Kurin)
+                  .WithMany()
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
+        });
 
-            builder.Entity<ProbePointProgress>(entity =>
-            {
-                entity.HasKey(e => e.ProbePointProgressKey);
-                entity.Property(e => e.ProbeId)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.PointId)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.SignedByRole)
-                    .HasMaxLength(50);
-                entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
-                    .IsUnique();
-                entity.HasOne(e => e.Member)
-                    .WithMany(m => m.ProbePointProgresses)
-                    .HasForeignKey(e => e.MemberKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+        builder.Entity<AgendaResponse>(entity =>
+        {
+            entity.HasKey(e => e.AgendaResponseKey);
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.HasOne(e => e.AgendaItem)
+                  .WithMany(a => a.Responses)
+                  .HasForeignKey(e => e.AgendaItemKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // One answer per user per item; the RSVP list also queries by item.
+            entity.HasIndex(e => new { e.AgendaItemKey, e.UserKey }).IsUnique();
+        });
 
-            builder.Entity<MentorAssignment>(entity =>
-            {
-                entity.HasKey(e => e.MentorAssignmentKey);
-                entity.HasOne(e => e.Group)
-                    .WithMany(g => g.MentorAssignments)
-                    .HasForeignKey(e => e.GroupKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
-            });
+        builder.Entity<AgendaAssignment>(entity =>
+        {
+            entity.HasKey(e => e.AgendaAssignmentKey);
+            entity.Property(e => e.TargetType).HasConversion<int>();
+            entity.HasOne(e => e.AgendaItem)
+                  .WithMany(a => a.Assignments)
+                  .HasForeignKey(e => e.AgendaItemKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // One target appears once per item; also the lookup path for "what is assigned to me".
+            entity.HasIndex(e => new { e.AgendaItemKey, e.TargetType, e.TargetKey }).IsUnique();
+            entity.HasIndex(e => new { e.TargetType, e.TargetKey });
+        });
 
-            builder.Entity<WaitlistEntry>(entity =>
-            {
-                entity.HasKey(e => e.WaitlistEntryKey);
-                entity.Property(e => e.Stanytsia)
-                    .HasMaxLength(120);
-                entity.Property(e => e.RegionOrCountry)
-                    .HasMaxLength(120);
-                entity.Property(e => e.VerificationStatus)
-                    .HasConversion<string>();
-                entity.HasIndex(e => e.Email).IsUnique();
-            });
+        builder.Entity<BadgeProgress>(entity =>
+        {
+            entity.HasKey(e => e.BadgeProgressKey);
+            entity.Property(e => e.BadgeId)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.Status)
+                .HasConversion<int>();
+            entity.HasIndex(e => new { e.MemberKey, e.BadgeId })
+                .IsUnique();
+        });
 
-            builder.Entity<Invitation>(entity =>
-            {
-                entity.HasKey(e => e.InvitationKey);
-                entity.HasOne(e => e.WaitlistEntry)
-                    .WithMany()
-                    .HasForeignKey(e => e.WaitlistEntryKey)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.TargetUser)
-                    .WithMany()
-                    .HasForeignKey(e => e.TargetUserKey)
-                    .OnDelete(DeleteBehavior.SetNull);
-                entity.HasIndex(e => e.Token).IsUnique();
-            });
+        builder.Entity<BadgeProgressAuditEvent>(entity =>
+        {
+            entity.HasKey(e => e.BadgeProgressAuditEventKey);
+            entity.Property(e => e.FromStatus)
+                .HasConversion<int?>();
+            entity.Property(e => e.ToStatus)
+                .HasConversion<int>();
+            entity.Property(e => e.Action)
+                .HasMaxLength(100)
+                .IsRequired();
+            entity.Property(e => e.ActorRole)
+                .HasMaxLength(50)
+                .IsRequired();
+            entity.HasOne(e => e.BadgeProgress)
+                .WithMany(p => p.AuditEvents)
+                .HasForeignKey(e => e.BadgeProgressKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.BadgeProgressKey);
+        });
 
-            builder.Entity<PublicAnnouncementDraft>(entity =>
-            {
-                entity.HasKey(e => e.PublicAnnouncementDraftKey);
-                entity.Property(e => e.Status)
-                    .HasConversion<int>();
-                entity.Property(e => e.SourceType)
-                    .HasConversion<int>();
-                entity.Property(e => e.ParseMode)
-                    .HasConversion<int>();
-                entity.Property(e => e.ImagePlacement)
-                    .HasConversion<int>();
-                entity.Property(e => e.Title)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                entity.Property(e => e.Body)
-                    .HasMaxLength(4096)
-                    .IsRequired();
-                entity.Property(e => e.RenderedText)
-                    .HasMaxLength(4096);
-                entity.Property(e => e.SourceId)
-                    .HasMaxLength(200);
-                entity.Property(e => e.SourceUrl)
-                    .HasMaxLength(1000);
-                entity.Property(e => e.Environment)
-                    .HasMaxLength(100);
-                entity.Property(e => e.Version)
-                    .HasMaxLength(100);
-                entity.Property(e => e.Codename)
-                    .HasMaxLength(200);
-                entity.Property(e => e.ImageBlobKey)
-                    .HasMaxLength(500);
-                entity.Property(e => e.ImageUrl)
-                    .HasMaxLength(1000);
-                entity.Property(e => e.ImageAltText)
-                    .HasMaxLength(500);
-                entity.Property(e => e.TemplateKey)
-                    .HasMaxLength(100);
-                entity.Property(e => e.TelegramMessageId)
-                    .HasMaxLength(100);
-                entity.Property(e => e.LastPublishError)
-                    .HasMaxLength(1000);
-                entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
-                entity.HasIndex(e => new { e.SourceType, e.SourceId });
-            });
-        }
+        builder.Entity<ProbeProgress>(entity =>
+        {
+            entity.HasKey(e => e.ProbeProgressKey);
+            entity.Property(e => e.ProbeId)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.Status)
+                .HasConversion<int>();
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
+                .IsUnique();
+        });
+
+        builder.Entity<ProbeProgressAuditEvent>(entity =>
+        {
+            entity.HasKey(e => e.ProbeProgressAuditEventKey);
+            entity.Property(e => e.FromStatus)
+                .HasConversion<int?>();
+            entity.Property(e => e.ToStatus)
+                .HasConversion<int>();
+            entity.Property(e => e.Action)
+                .HasMaxLength(100)
+                .IsRequired();
+            entity.Property(e => e.ActorRole)
+                .HasMaxLength(50)
+                .IsRequired();
+            entity.HasOne(e => e.ProbeProgress)
+                .WithMany(p => p.AuditEvents)
+                .HasForeignKey(e => e.ProbeProgressKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.ProbeProgressKey);
+        });
+
+        builder.Entity<ProbePointProgress>(entity =>
+        {
+            entity.HasKey(e => e.ProbePointProgressKey);
+            entity.Property(e => e.ProbeId)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.PointId)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.SignedByRole)
+                .HasMaxLength(50);
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
+                .IsUnique();
+        });
+
+        builder.Entity<MentorAssignment>(entity =>
+        {
+            entity.HasKey(e => e.MentorAssignmentKey);
+            entity.HasOne(e => e.Group)
+                .WithMany(g => g.MentorAssignments)
+                .HasForeignKey(e => e.GroupKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
+            entity.HasIndex(e => e.MentorUserKey)
+                .HasFilter("[RevokedAtUtc] IS NULL");
+        });
+
+        builder.Entity<UserRefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.UserRefreshTokenKey);
+            entity.Property(e => e.Token)
+                .HasMaxLength(512)
+                .IsRequired();
+            // Looked up by token on every refresh, and swept per user on a password change.
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<WaitlistEntry>(entity =>
+        {
+            entity.HasKey(e => e.WaitlistEntryKey);
+            entity.Property(e => e.Stanytsia)
+                .HasMaxLength(120);
+            entity.Property(e => e.RegionOrCountry)
+                .HasMaxLength(120);
+            entity.Property(e => e.VerificationStatus)
+                .HasConversion<string>();
+            entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        builder.Entity<Invitation>(entity =>
+        {
+            entity.HasKey(e => e.InvitationKey);
+            entity.HasOne(e => e.WaitlistEntry)
+                .WithMany()
+                .HasForeignKey(e => e.WaitlistEntryKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.TargetUser)
+                .WithMany()
+                .HasForeignKey(e => e.TargetUserKey)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.Token).IsUnique();
+        });
+
+        builder.Entity<AppNotification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationKey);
+            entity.Property(e => e.Type)
+                .HasConversion<int>();
+            entity.Property(e => e.Severity)
+                .HasConversion<int>();
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.Body)
+                .HasMaxLength(1000)
+                .IsRequired();
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(100);
+            entity.Property(e => e.Route)
+                .HasMaxLength(1000);
+            entity.Property(e => e.PayloadJson)
+                .HasMaxLength(2000);
+            entity.Property(e => e.DeduplicationKey)
+                .HasMaxLength(300);
+            entity.HasIndex(e => new { e.RecipientUserKey, e.CreatedAtUtc });
+            entity.HasIndex(e => new { e.RecipientUserKey, e.ReadAtUtc });
+            entity.HasIndex(e => new { e.RecipientUserKey, e.DeduplicationKey })
+                .HasFilter("[DeduplicationKey] IS NOT NULL AND [ReadAtUtc] IS NULL");
+        });
+
+        builder.Entity<UserTileLayout>(entity =>
+        {
+            entity.HasKey(e => e.UserTileLayoutKey);
+            entity.Property(e => e.BoardKey)
+                .HasMaxLength(64)
+                .IsRequired();
+            entity.Property(e => e.TileOrderJson)
+                .HasMaxLength(2000)
+                .IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.UserKey, e.BoardKey }).IsUnique();
+        });
     }
 }

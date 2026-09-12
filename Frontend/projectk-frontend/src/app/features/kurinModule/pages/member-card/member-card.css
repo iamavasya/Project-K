@@ -1,0 +1,227 @@
+.member-tile {
+    background: var(--p-content-background);
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius-lg) !important;
+    box-shadow: none;
+}
+
+.member-profile-tile {
+    position: relative;
+}
+
+.member-photo-frame {
+    background: var(--p-surface-ground);
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 13px;
+}
+
+.member-photo {
+    border: 1px solid var(--p-content-border-color);
+}
+
+.member-name,
+.member-summary-value {
+    color: var(--p-text-color);
+}
+
+.member-name {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.45rem;
+    letter-spacing: -0.02em;
+}
+
+.member-middle-name,
+.member-summary-label {
+    color: var(--p-text-muted-color);
+}
+
+.member-summary-line {
+    line-height: 1.35rem;
+}
+
+.member-warning-indicator {
+    align-items: center;
+    background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
+    border: 1px solid color-mix(in srgb, var(--p-red-600) 30%, transparent);
+    border-radius: 9999px;
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.2rem 0.45rem;
+}
+
+.member-warning-dot {
+    background: var(--p-content-border-color);
+    border-radius: 9999px;
+    height: 0.45rem;
+    width: 0.45rem;
+}
+
+.member-warning-dot--active {
+    background: color-mix(in srgb, var(--p-red-600) 75%, var(--p-red-300) 25%);
+}
+
+.member-actions {
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.member-section-title,
+.dialog-skill-row {
+    color: var(--p-text-color);
+}
+
+.member-section-title {
+    letter-spacing: -0.01em;
+}
+
+.member-section-subtitle,
+.member-warning-text,
+.dialog-action-note,
+.dialog-skill-meta {
+    color: var(--p-text-muted-color);
+}
+
+.member-empty-state {
+    background: transparent;
+    border: 1px dashed var(--p-content-border-color);
+    border-radius: var(--lil-radius-lg) !important;
+    color: var(--lil-faint);
+}
+
+.probe-summary-row {
+    background: transparent;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius) !important;
+}
+
+.probe-summary-row--completed {
+    background: color-mix(in srgb, var(--p-primary-50) 55%, var(--p-content-background) 45%);
+    border-color: color-mix(in srgb, var(--p-primary-color) 26%, var(--p-content-border-color) 74%);
+}
+
+.probe-summary-row--disabled {
+    border-style: dashed;
+    opacity: 0.5;
+}
+
+.probe-state-icon {
+    align-items: center;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 9999px;
+    color: var(--lil-faint);
+    display: inline-flex;
+    height: 1.125rem;
+    justify-content: center;
+    width: 1.125rem;
+}
+
+.probe-state-icon--completed {
+    background: var(--p-primary-50);
+    border-color: color-mix(in srgb, var(--p-primary-color) 40%, transparent);
+    color: var(--p-primary-color);
+}
+
+.probe-row-meta {
+    color: var(--p-text-muted-color);
+}
+
+.dialog-section-title {
+    color: var(--lil-faint);
+    letter-spacing: 0.18em;
+}
+
+.dialog-skill-row {
+    background: transparent;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius) !important;
+}
+
+.dialog-skill-row--pending {
+    background: var(--lil-clay-50);
+    border-color: var(--lil-clay-100);
+    border-style: dashed;
+}
+
+.dialog-skill-thumb {
+    background: var(--p-surface-ground);
+    border: 1px solid var(--p-content-border-color);
+}
+
+.add-skill-search-wrap {
+    max-width: 40rem;
+}
+
+.add-skill-row {
+    background: transparent;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius) !important;
+}
+
+.add-skill-row:hover {
+    background: var(--p-surface-ground);
+}
+
+.dialog-existing-status {
+    color: var(--lil-clay-700);
+}
+
+.dialog-success-text {
+    color: color-mix(in srgb, var(--p-green-700) 82%, var(--p-text-color) 18%);
+}
+
+.dialog-error-text {
+    color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
+}
+
+.dialog-warn-text {
+    color: var(--lil-clay-700);
+}
+
+.dialog-inline-action-btn {
+    height: 2rem;
+    min-width: 2rem;
+    width: 2rem;
+}
+
+.skills-preview-grid > *:nth-child(n + 3) {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .skills-preview-grid > *:nth-child(n + 3) {
+        display: block;
+    }
+
+    .skills-preview-grid > *:nth-child(n + 4) {
+        display: none;
+    }
+}
+
+@media (min-width: 1280px) {
+    .skills-preview-grid > *:nth-child(n + 4) {
+        display: block;
+    }
+
+    .skills-preview-grid > *:nth-child(n + 5) {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .member-actions {
+        margin-top: 0.25rem;
+    }
+}
+
+/*
+ * Прогрес проби. Смуга тонка навмисно — вона супроводжує число поруч, а не заступає його. Кольори
+ * з токенів; свого hex тут немає (BRANDBOOK §0, правило 9).
+ */
+.probe-progress__bar {
+  --p-progressbar-height: 6px;
+  border-radius: 8px;
+  overflow: hidden;
+}

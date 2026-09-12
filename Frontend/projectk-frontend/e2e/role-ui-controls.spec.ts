@@ -11,7 +11,10 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     await page.goto('/kurin');
     await expect(page.locator('.edit-profile-button')).toBeVisible();
     await expect(page.locator('.table-caption').getByRole('button')).toBeVisible();
-    await expect(page.locator('app-member-list + div').getByRole('button')).toBeVisible();
+    // Named, not just "the button under the list": taking someone in by code sits beside adding
+    // a new person, and a positional selector would match both.
+    await expect(page.locator('app-member-list + div')
+      .getByRole('button', { name: /Додати учасника/ })).toBeVisible();
 
     await page.goto(`/group/${groupKey}`);
     await expect(page.locator('.group-actions button')).toBeVisible();
@@ -48,13 +51,13 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     const level3 = page.locator('#warning-Level3');
 
     await openWarningPanel(page);
-    await expect(level1).toBeVisible();
+    await expect(level1).toBeEnabled();
     await expect(level3).toBeDisabled();
 
     if (await level2.isDisabled()) {
-      await level1.check();
+      await level1.check({ force: true });
       await expect(level2).toBeEnabled();
-      await level2.check();
+      await level2.check({ force: true });
       await expect(level3).toBeEnabled();
     }
   });

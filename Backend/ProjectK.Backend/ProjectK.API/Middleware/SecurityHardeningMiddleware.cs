@@ -1,13 +1,13 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Helpers;
-using ProjectK.Common.Models.Enums;
-using System.Security.Claims;
 using ProjectK.Common.Extensions;
-using ProjectK.API.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Infrastructure.Services.GeoIP;
 
 namespace ProjectK.API.Middleware;
 
@@ -25,7 +25,7 @@ public sealed class SecurityHardeningMiddleware
     public async Task InvokeAsync(HttpContext context, GeoIPService geoIPService, IActivityLogger activityLogger)
     {
         var remoteIp = context.Connection.RemoteIpAddress?.ToString();
-        
+
         if (remoteIp == null)
         {
             await _next(context);
@@ -35,7 +35,10 @@ public sealed class SecurityHardeningMiddleware
         // 1. Geo-blocking (RU/BY check)
         if (_options.Value.EnableGeoBlocking)
         {
-            var countryCode = await geoIPService.GetCountryCodeAsync(remoteIp);
+            var headerName = _options.Value.GeoCountryHeader;
+            var forwardedCountry = context.Request.Headers[headerName].ToString();
+
+            var countryCode = await geoIPService.GetCountryCodeAsync(forwardedCountry, remoteIp);
             if (countryCode != null && _options.Value.BlockedCountries.Contains(countryCode, StringComparer.OrdinalIgnoreCase))
             {
                 activityLogger.ReportGeoBlocked(remoteIp, countryCode);

@@ -1,6 +1,6 @@
 import { CanActivateFn, Router } from "@angular/router";
-import { AuthService } from "../services/authService/auth.service";
-import { PermissionService } from "../services/permission.service";
+import { AuthService } from "../services/auth-service/auth.service";
+import { PermissionService } from "../services/permission-service/permission.service";
 import { inject } from "@angular/core";
 
 export const kurinAccessGuard = (resource: string): CanActivateFn => {
@@ -17,10 +17,10 @@ export const kurinAccessGuard = (resource: string): CanActivateFn => {
         if (resource == 'panel' && kurinKey) {
             return router.createUrlTree(['/kurin']);
         }
-        if (resource == 'planning' && kurinKey && permissionService.getRole() === 'user') {
-            return router.createUrlTree(['/kurin']);
-        }
-        if (resource == 'planning-create' && !permissionService.canManagePlanning()) {
+        // Planning is readable by anyone in the kurin — the backend settles it with the resource
+        // check, and gating the route on leadership only hid a page the API was willing to serve.
+        // Opening and deleting sessions stay gated, by their own controls.
+        if (resource == 'planning-create' && !permissionService.canCreatePlanning()) {
             return router.createUrlTree(['/forbidden']);
         }
         return true;

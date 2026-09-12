@@ -1,29 +1,27 @@
-﻿using ProjectK.Infrastructure.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Entities;
 
-namespace ProjectK.Common.Entities.KurinModule
+namespace ProjectK.Common.Entities.KurinModule;
+
+public class Group : Entity
 {
-    public class Group : Entity
-    {
-        public Guid GroupKey { get; set; } = Guid.NewGuid();
-        public Guid KurinKey { get; set; }
-        public string Name { get; set; }
-        public string? Description { get; set; }
-        public string? SilhouetteBlobName { get; set; }
-        public Kurin Kurin { get; set; }
-        public ICollection<Member> Members { get; set; } = new List<Member>();
-        public ICollection<MentorAssignment> MentorAssignments { get; set; } = new List<MentorAssignment>();
-        public Leadership Leadership { get; set; }
+    public Guid GroupKey { get; set; } = Guid.NewGuid();
+    public Guid KurinKey { get; set; }
+    public string Name { get; set; }
+    public string? Description { get; set; }
+    public string? SilhouetteBlobName { get; set; }
+    public Kurin Kurin { get; set; }
+    public ICollection<MentorAssignment> MentorAssignments { get; set; } = new List<MentorAssignment>();
+    public Leadership Leadership { get; set; }
 
-        public Group(string name, Guid kurinKey, string? description = null)
-        {
-            Name = name;
-            KurinKey = kurinKey;
-            Description = description;
-        }
+    public Group(string name, Guid kurinKey, string? description = null)
+    {
+        Name = name;
+        KurinKey = kurinKey;
+        Description = description;
     }
 }

@@ -1,0 +1,134 @@
+<main class="about-page">
+  <header class="about-brand">
+    <a class="about-brand__lockup" routerLink="/">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <g transform="rotate(45 50 50)">
+          <path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51" />
+          <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51" />
+          <path d="M33 60 H67" />
+          <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z" />
+          <path class="lil-mark-center" d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" />
+        </g>
+      </svg>
+      <span class="lil-wordmark">Лілейка</span>
+    </a>
+    <p-button label="До застосунку" routerLink="/" size="small" severity="secondary" [outlined]="true" />
+  </header>
+
+  <section class="about-hero kurin-tile">
+    @if (!photoMissing()) {
+      <img
+        class="about-hero__photo"
+        src="/assets/images/author-rostyslav.jpg"
+        alt="Ростислав Муха"
+        width="220"
+        height="220"
+        (error)="photoMissing.set(true)" />
+    }
+    <div class="about-hero__copy">
+      <p class="about-kicker">Про систему</p>
+      <h1>Лілейка: щоб курінь був під рукою, а не в десяти таблицях</h1>
+      <p class="about-lead">
+        Систему створив <strong>Ростислав Муха</strong>, Full-Stack .NET Software Engineer,
+        член станиці Тернопіль. Один автор, відкритий код і три роки від ідеї до першого живого куреня.
+      </p>
+      <div class="about-links">
+        <a class="about-link" [href]="links.site" target="_blank" rel="noopener">
+          <span class="pi pi-globe" aria-hidden="true"></span> rostyslav-mukha.dev
+        </a>
+        <a class="about-link" [href]="links.github" target="_blank" rel="noopener">
+          <span class="pi pi-github" aria-hidden="true"></span> GitHub
+        </a>
+        <a class="about-link" [href]="links.releases" target="_blank" rel="noopener">
+          <span class="pi pi-tag" aria-hidden="true"></span> Релізи
+        </a>
+        <a class="about-link" routerLink="/privacy">
+          <span class="pi pi-lock" aria-hidden="true"></span> Конфіденційність
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-grid">
+    <article class="kurin-tile">
+      <h2>Ідея</h2>
+      <p>
+        Ідея зʼявилася 2023 року як студентський проєкт для тренування. Але проблема в ньому була
+        справжня: усе важливе для станиці, куреня чи гуртка лежить у хаотично розкиданих файлах,
+        таблицях і месенджерах. Склад в одному місці, проби в іншому, історія відзначень у чиїйсь
+        памʼяті.
+      </p>
+      <p>
+        Пластова система для прихильника цифровізації одразу стала цікавим челенджем: не ще один
+        сервіс, а інструмент, який курінь відкриває на сходинах і не закриває роками.
+      </p>
+    </article>
+
+    <article class="kurin-tile">
+      <h2>Для кого</h2>
+      <p>
+        Для щоденного використання в гуртку й курені. Для юнака, який бачить свою пробу й вмілості.
+        Для впорядника, який підписує точки і веде гурток. Для звʼязкового, який тримає реєстр,
+        календар і планування всього куреня.
+      </p>
+      <p>
+        Зручно і безпечно однаково: двофакторна автентифікація для проводу, права з урядів, а не з
+        налаштувань, і можливість поставити систему на власний сервер.
+      </p>
+    </article>
+  </section>
+
+  <section class="about-story">
+    <h2>Історія</h2>
+    <p class="about-story__lead">
+      Розробка йде з вересня 2024 року, спершу як монолітний застосунок на .NET з Razor Pages.
+      Архітектура кілька разів переписувалася, і в серпні 2025 року система була переписана з нуля:
+      ASP.NET Core API і Angular. Далі альфа, бета і 1.0.
+    </p>
+
+    <p-timeline [value]="milestones" align="alternate" styleClass="about-timeline">
+      <ng-template #marker let-milestone>
+        <span class="about-timeline__marker">
+          <span [class]="milestone.icon" aria-hidden="true"></span>
+        </span>
+      </ng-template>
+      <ng-template #opposite let-milestone>
+        <span class="about-timeline__when">{{ milestone.when }}</span>
+      </ng-template>
+      <ng-template #content let-milestone>
+        <div class="about-timeline__card kurin-tile">
+          <span class="about-timeline__when about-timeline__when--inline">{{ milestone.when }}</span>
+          <h3>{{ milestone.title }}</h3>
+          <p>{{ milestone.body }}</p>
+          @if (milestone.releases?.length) {
+            <div class="about-timeline__releases">
+              @for (release of milestone.releases; track release.tag) {
+                <p-tag [value]="releaseLabel(release)" severity="secondary" />
+              }
+            </div>
+          }
+        </div>
+      </ng-template>
+    </p-timeline>
+  </section>
+
+  <footer class="about-version kurin-tile">
+    <div>
+      <p class="about-kicker">Версія</p>
+      <p class="about-version__line">
+        Застосунок <strong>{{ frontendVersion }}</strong>
+        @if (frontendCodeName) { <span class="about-version__code">«{{ frontendCodeName }}»</span> }
+      </p>
+      @if (apiVersion(); as version) {
+        <p class="about-version__line about-version__line--muted">
+          API {{ version }}
+          @if (apiCodeName(); as code) { «{{ code }}» }
+        </p>
+      }
+    </div>
+    <a class="about-link" [href]="links.releases" target="_blank" rel="noopener">
+      Що змінилось у кожній версії <span class="pi pi-arrow-right" aria-hidden="true"></span>
+    </a>
+  </footer>
+</main>

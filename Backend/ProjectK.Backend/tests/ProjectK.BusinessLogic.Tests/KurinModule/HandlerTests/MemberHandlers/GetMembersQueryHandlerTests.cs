@@ -1,232 +1,222 @@
-﻿using AutoMapper;
-using FluentAssertions;
-using Moq;
-using ProjectK.API.MappingProfiles;
-using ProjectK.API.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Infrastructure.Services.BlobStorageService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
+using AutoMapper;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Moq;
+using ProjectK.BusinessLogic.MappingProfiles;
+using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.BlobStorageService;
+using Xunit;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
+
+public class GetMembersHandlerTests
 {
-    public class GetMembersHandlerTests
+    private readonly Mock<IMemberUnitOfWork> _uowMock;
+    private readonly Mock<IMemberRepository> _memberRepoMock;
+    private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
+    private readonly IMapper _mapper;
+    private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly GetMembersQueryHandler _handler;
+
+    public GetMembersHandlerTests()
     {
-        private readonly Mock<IUnitOfWork> _uowMock;
-        private readonly Mock<IMemberRepository> _memberRepoMock;
-        private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
-        private readonly IMapper _mapper;
-        private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-        private readonly GetMembersHandler _handler;
+        _memberRepoMock = new Mock<IMemberRepository>();
+        _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
+        _uowMock = new Mock<IMemberUnitOfWork>();
+        _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
 
-        public GetMembersHandlerTests()
+        _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests
+
+        var loggerFactory = LoggerFactory.Create(builder => { });
+
+        var options = new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" };
+        var mapperConfig = new MapperConfiguration(cfg =>
         {
-            _memberRepoMock = new Mock<IMemberRepository>();
-            _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
-            _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-            _uowMock.Setup(u => u.MentorAssignments).Returns(_mentorRepoMock.Object);
-            _memberRepoMock.Setup(r => r.GetMentorCandidatesLookupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<MemberLookupDto>());
-            
-            _currentUserContextMock = new Mock<ICurrentUserContext>();
-            _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests
-
-            var loggerFactory = LoggerFactory.Create(builder => { });
-
-            var mapperConfig = new MapperConfiguration(cfg =>
+            cfg.ConstructServicesUsing(t =>
             {
-                cfg.ConstructServicesUsing(t =>
-                {
-                    if (t == typeof(ProfilePhotoUrlResolver))
-                        return new ProfilePhotoUrlResolver(new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" });
-                    return Activator.CreateInstance(t)!;
-                });
-                cfg.AddProfile(new KurinModuleProfile());
-            }, loggerFactory);
-            _mapper = mapperConfig.CreateMapper();
+                if (t == typeof(ProfilePhotoUrlResolver))
+                    return new ProfilePhotoUrlResolver(options);
+                if (t == typeof(MemberListItemPhotoUrlResolver))
+                    return new MemberListItemPhotoUrlResolver(options);
+                return Activator.CreateInstance(t)!;
+            });
+            cfg.AddProfile(new KurinModuleProfile());
+        }, loggerFactory);
+        _mapper = mapperConfig.CreateMapper();
 
-            _handler = new GetMembersHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object);
-        }
+        _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object);
+    }
 
-        private static Member MakeMember(Guid groupKey, Guid kurinKey, string first, string last, string? blob = null) =>
-            new()
-            {
-                MemberKey = Guid.NewGuid(),
-                GroupKey = groupKey,
-                KurinKey = kurinKey,
-                FirstName = first,
-                MiddleName = "M",
-                LastName = last,
-                Email = $"{first.ToLower()}@example.com",
-                PhoneNumber = "123456",
-                DateOfBirth = new DateOnly(2000, 1, 1),
-                ProfilePhotoBlobName = blob
-            };
-
-        [Fact]
-        public async Task Handle_GroupKeyOnly_ShouldReturnMembersFromGroup()
+    private static MemberListItemDto MakeItem(Guid groupKey, Guid kurinKey, string first, string last,
+        string? blob = null, Guid? userKey = null, string? role = null) =>
+        new()
         {
-            var groupKey = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid(); // not used (handler treats KurinKey == empty for group path)
-            var members = new List<Member>
-            {
-                MakeMember(groupKey, kurinKey, "A","One","a.png"),
-                MakeMember(groupKey, kurinKey, "B","Two", null)
-            };
+            MemberKey = Guid.NewGuid(),
+            GroupKey = groupKey,
+            KurinKey = kurinKey,
+            UserKey = userKey,
+            UserRole = role,
+            FirstName = first,
+            MiddleName = "M",
+            LastName = last,
+            Email = $"{first.ToLower()}@example.com",
+            PhoneNumber = "123456",
+            DateOfBirth = new DateOnly(2000, 1, 1),
+            ProfilePhotoBlobName = blob
+        };
 
-            _memberRepoMock
-                .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(members);
-
-            var query = new GetMembers(groupKey, Guid.Empty);
-
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().HaveCount(2);
-            var list = result.Data!.ToList();
-            list[0].FirstName.Should().Be("A");
-            list[0].ProfilePhotoUrl.Should().Be("https://cdn.test/a.png");
-            list[1].FirstName.Should().Be("B");
-            list[1].ProfilePhotoUrl.Should().BeNull();
-
-            _memberRepoMock.Verify(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()), Times.Once);
-            _memberRepoMock.Verify(r => r.GetAllByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_KurinKeyOnly_ShouldReturnMembersFromKurin()
+    [Fact]
+    public async Task Handle_GroupKeyOnly_ShouldReturnMembersFromGroup()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var members = new List<MemberListItemDto>
         {
-            var kurinKey = Guid.NewGuid();
-            var m1 = MakeMember(Guid.NewGuid(), kurinKey, "C", "Three");
-            var m2 = MakeMember(Guid.NewGuid(), kurinKey, "D", "Four");
-            var members = new List<Member> { m1, m2 };
+            MakeItem(groupKey, kurinKey, "A","One","a.png"),
+            MakeItem(groupKey, kurinKey, "B","Two", null)
+        };
 
-            _memberRepoMock
-                .Setup(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(members);
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(members);
 
-            var query = new GetMembers(Guid.Empty, kurinKey);
+        var query = new GetMembersQuery(groupKey, Guid.Empty);
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().HaveCount(2);
-            result.Data!.Select(x => x.FirstName).Should().BeEquivalentTo(new[] { "C", "D" });
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().HaveCount(2);
+        var list = result.Data!.ToList();
+        list[0].FirstName.Should().Be("A");
+        list[0].ProfilePhotoUrl.Should().Be("https://cdn.test/a.png");
+        list[1].FirstName.Should().Be("B");
+        list[1].ProfilePhotoUrl.Should().BeNull();
 
-            _memberRepoMock.Verify(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()), Times.Once);
-            _memberRepoMock.Verify(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
+        _memberRepoMock.Verify(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Once);
+        _memberRepoMock.Verify(r => r.GetListItemsByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-        [Fact]
-        public async Task Handle_ShouldIncludeUserRole_WhenMemberHasLinkedUser()
+    [Fact]
+    public async Task Handle_KurinKeyOnly_ShouldReturnMembersFromKurin()
+    {
+        var kurinKey = Guid.NewGuid();
+        var members = new List<MemberListItemDto>
         {
-            var kurinKey = Guid.NewGuid();
-            var userKey = Guid.NewGuid();
-            var member = MakeMember(Guid.NewGuid(), kurinKey, "Lead", "Mentor");
-            member.UserKey = userKey;
+            MakeItem(Guid.NewGuid(), kurinKey, "C", "Three"),
+            MakeItem(Guid.NewGuid(), kurinKey, "D", "Four")
+        };
 
-            _memberRepoMock
-                .Setup(r => r.GetAllByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Member> { member });
-            _memberRepoMock
-                .Setup(r => r.GetMentorCandidatesLookupAsync(kurinKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<MemberLookupDto>
-                {
-                    new()
-                    {
-                        MemberKey = member.MemberKey,
-                        UserKey = userKey,
-                        FirstName = member.FirstName,
-                        MiddleName = member.MiddleName,
-                        LastName = member.LastName,
-                        UserRole = UserRole.Mentor.ToString()
-                    }
-                });
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(members);
 
-            var result = await _handler.Handle(new GetMembers(Guid.Empty, kurinKey), CancellationToken.None);
+        var query = new GetMembersQuery(Guid.Empty, kurinKey);
 
-            result.Type.Should().Be(ResultType.Success);
-            result.Data!.Single().UserRole.Should().Be(UserRole.Mentor.ToString());
-        }
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-        [Fact]
-        public async Task Handle_BothKeysProvided_ShouldReturnBadRequest()
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().HaveCount(2);
+        result.Data!.Select(x => x.FirstName).Should().BeEquivalentTo(new[] { "C", "D" });
+
+        _memberRepoMock.Verify(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Once);
+        _memberRepoMock.Verify(r => r.GetListItemsByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIncludeUserRole_WhenMemberHasLinkedUser()
+    {
+        var kurinKey = Guid.NewGuid();
+        var userKey = Guid.NewGuid();
+        var member = MakeItem(Guid.NewGuid(), kurinKey, "Lead", "Mentor", userKey: userKey, role: "Group.Hurtkoviy");
+
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByKurinKeyAsync(kurinKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MemberListItemDto> { member });
+
+        var result = await _handler.Handle(new GetMembersQuery(Guid.Empty, kurinKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.Single().UserRole.Should().Be("Group.Hurtkoviy");
+    }
+
+    [Fact]
+    public async Task Handle_BothKeysProvided_ShouldReturnBadRequest()
+    {
+        var query = new GetMembersQuery(Guid.NewGuid(), Guid.NewGuid());
+
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.Data.Should().BeNull();
+
+        _memberRepoMock.Verify(r => r.GetListItemsByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Never);
+        _memberRepoMock.Verify(r => r.GetListItemsByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_GroupKeyOnly_NoMembers_ShouldReturnEmptySuccess()
+    {
+        var groupKey = Guid.NewGuid();
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MemberListItemDto>());
+
+        var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().NotBeNull();
+        result.Data.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_WhenRepositoryThrows_ShouldPropagateException()
+    {
+        var groupKey = Guid.NewGuid();
+        var expected = new Exception("DB error");
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expected);
+
+        var query = new GetMembersQuery(groupKey, Guid.Empty);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(query, CancellationToken.None));
+        ex.Should().BeSameAs(expected);
+    }
+
+    [Fact]
+    public async Task Handle_MappingConsistency_ShouldMatchDirectMapping()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var members = new List<MemberListItemDto>
         {
-            var query = new GetMembers(Guid.NewGuid(), Guid.NewGuid());
+            MakeItem(groupKey, kurinKey, "X","One","pic1.jpg"),
+            MakeItem(groupKey, kurinKey, "Y","Two","pic 2.png")
+        };
 
-            var result = await _handler.Handle(query, CancellationToken.None);
+        _memberRepoMock
+            .Setup(r => r.GetListItemsByGroupKeyAsync(groupKey, It.IsAny<MemberFieldVisibility>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(members);
 
-            result.Type.Should().Be(ResultType.BadRequest);
-            result.Data.Should().BeNull();
+        var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
 
-            _memberRepoMock.Verify(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
-            _memberRepoMock.Verify(r => r.GetAllByKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_GroupKeyOnly_NoMembers_ShouldReturnEmptySuccess()
-        {
-            var groupKey = Guid.NewGuid();
-            _memberRepoMock
-                .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Member>());
-
-            var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            result.Data.Should().NotBeNull();
-            result.Data.Should().BeEmpty();
-        }
-
-        [Fact]
-        public async Task Handle_WhenRepositoryThrows_ShouldPropagateException()
-        {
-            var groupKey = Guid.NewGuid();
-            var expected = new Exception("DB error");
-            _memberRepoMock
-                .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(expected);
-
-            var query = new GetMembers(groupKey, Guid.Empty);
-
-            var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(query, CancellationToken.None));
-            ex.Should().BeSameAs(expected);
-        }
-
-        [Fact]
-        public async Task Handle_MappingConsistency_ShouldMatchDirectMapping()
-        {
-            var groupKey = Guid.NewGuid();
-            var kurinKey = Guid.NewGuid();
-            var members = new List<Member>
-            {
-                MakeMember(groupKey, kurinKey, "X","One","pic1.jpg"),
-                MakeMember(groupKey, kurinKey, "Y","Two","pic 2.png")
-            };
-
-            _memberRepoMock
-                .Setup(r => r.GetAllAsync(groupKey, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(members);
-
-            var result = await _handler.Handle(new GetMembers(groupKey, Guid.Empty), CancellationToken.None);
-
-            result.Type.Should().Be(ResultType.Success);
-            var direct = _mapper.Map<IEnumerable<MemberResponse>>(members);
-            result.Data.Should().BeEquivalentTo(direct);
-        }
+        result.Type.Should().Be(ResultType.Success);
+        var direct = _mapper.Map<IEnumerable<MemberResponse>>(members);
+        result.Data.Should().BeEquivalentTo(direct);
     }
 }

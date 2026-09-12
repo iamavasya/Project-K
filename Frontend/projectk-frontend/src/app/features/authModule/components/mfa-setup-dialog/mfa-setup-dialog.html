@@ -1,0 +1,80 @@
+<p-dialog
+  header="Налаштування MFA"
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="!mandatory"
+  [closeOnEscape]="!mandatory"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(92vw, 34rem)' }"
+  styleClass="mfa-dialog"
+>
+  <div class="mfa-setup">
+    <div class="mfa-copy">
+      <h2>Захистіть обліковий запис</h2>
+      <p>
+        Відскануйте QR-код у Google Authenticator,
+        потім введіть 6-значний код підтвердження.
+      </p>
+    </div>
+
+    @if (loadingSetup) {
+      <div class="mfa-loading">
+        Завантаження...
+      </div>
+    }
+
+    @if (!loadingSetup && setup && recoveryCodes.length === 0) {
+      <div class="mfa-qr">
+        <img [src]="setup.qrCodeBase64" alt="QR-код для налаштування MFA" />
+      </div>
+
+      <div class="mfa-key">
+        <span>Ключ для ручного введення</span>
+        <code>{{ setup.sharedKey }}</code>
+      </div>
+
+      <div class="mfa-code">
+        <label for="mfa-code">Код із застосунку</label>
+        <p-inputotp
+          inputId="mfa-code"
+          name="mfa-code"
+          [ngModel]="verificationCode"
+          (ngModelChange)="onCodeChange($event)"
+          [length]="6"
+          [integerOnly]="true"
+          styleClass="mfa-otp"
+        />
+      </div>
+
+      <div class="mfa-actions">
+        <p-button
+          label="Увімкнути MFA"
+          icon="pi pi-shield"
+          [loading]="saving"
+          [disabled]="!canEnable"
+          (onClick)="enable()"
+          styleClass="w-full"
+        />
+      </div>
+    }
+
+    @if (recoveryCodes.length > 0) {
+      <div class="mfa-recovery">
+      <h2>Резервні коди</h2>
+      <p>Збережіть ці коди зараз. Кожен спрацьовує один раз, якщо ви втратите доступ до застосунку-автентифікатора.</p>
+      <div class="recovery-grid">
+        @for (code of recoveryCodes; track $index) {
+          <code>{{ code }}</code>
+        }
+      </div>
+      <p-button
+        label="Я зберіг(ла) ці коди"
+        icon="pi pi-check"
+        (onClick)="closeAfterSavingCodes()"
+        styleClass="w-full"
+      />
+    </div>
+    }
+  </div>
+</p-dialog>

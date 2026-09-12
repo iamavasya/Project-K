@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  approveWaitlistEntryByEmail,
   assignMentorViaApi,
   createGroupViaApi,
   createLeadershipViaApi,
@@ -13,6 +14,7 @@ import {
 } from './support/api-client';
 import { e2eUsers } from './support/test-users';
 import { loginThroughUi } from './support/login';
+import { fillDatePicker, fillMaskedInput } from './support/ui';
 import { createActivatedMemberAccount, memberFullName, scenarioEmail, scenarioSuffix } from './support/scenarios';
 
 test.describe.configure({ mode: 'serial' });
@@ -41,14 +43,12 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#stanytsia').fill('Flow Stanytsia');
       await page.locator('#regionOrCountry').fill('Flow Region');
       const phoneInput = page.locator('#phone input, input#phone');
-      await phoneInput.click();
-      await phoneInput.pressSequentially('+380501112233', { delay: 10 });
+      await fillMaskedInput(phoneInput, '501112233');
+      await expect(phoneInput).toHaveValue('+38 (050) 111-22-33');
 
       const dateOfBirth = page.locator('#dob input');
-      await dateOfBirth.click();
-      await dateOfBirth.pressSequentially('01.01.2000', { delay: 10 });
-      await dateOfBirth.press('Enter');
-      await dateOfBirth.press('Tab');
+      await fillDatePicker(dateOfBirth, '01.01.2000');
+      await expect(dateOfBirth).toHaveValue('01.01.2000');
 
       await page.locator('#leader').check();
       await page.locator('#kurin').fill(`${kurinNumber}abc`);
@@ -61,19 +61,8 @@ test.describe('Full onboarding organization workflow', () => {
     await test.step('admin sees and approves the waitlist entry', async () => {
       await loginThroughUi(page, e2eUsers.admin);
       await page.goto('/waitlist');
-      const row = page.locator('tbody tr', { hasText: managerEmail }).first();
-      await expect(row).toBeVisible({ timeout: 15_000 });
-      await row.getByRole('button').first().click();
-
-      const confirm = page.getByRole('alertdialog').last();
-      await expect(confirm).toBeVisible();
-      const approval = page.waitForResponse(response =>
-        response.url().includes('/api/auth/onboarding/waitlist/') &&
-        response.url().includes('/approve') &&
-        response.ok()
-      );
-      await confirm.getByRole('button').last().click();
-      await approval;
+      await expect(page.getByRole('heading', { name: 'Заявки на приєднання' })).toBeVisible();
+      await approveWaitlistEntryByEmail(request, e2eUsers.admin, managerEmail);
     });
 
     await test.step('activate the manager from the captured invitation token', async () => {
@@ -91,7 +80,8 @@ test.describe('Full onboarding organization workflow', () => {
       await expect(page).toHaveURL(/\/login/, { timeout: 5_000 });
 
       const login = await loginViaApi(request, managerUser);
-      expect(login.role).toBe('Manager');
+      // Активований керівник саджається Зв'язковим, а це і є повне керування куренем.
+      expect(login.permissions).toContain('Group:Manage:KurinWide');
       expect(login.kurinKey).toBeTruthy();
 
       const kurin = await getKurinByKey(request, managerUser, login.kurinKey!);
@@ -156,7 +146,8 @@ test.describe('Full onboarding organization workflow', () => {
       await assignMentorViaApi(request, managerUser, groupA.groupKey, mentorMember.userKey!);
 
       const mentorLogin = await loginViaApi(request, mentorUser);
-      expect(mentorLogin.role).toBe('Mentor');
+      // Призначення ментора саме по собі синкає офіс Виховника (LeadershipRoleSyncService).
+      expect(mentorLogin.permissions).toContain('Group:Update:OwnGroups');
       expect(mentorLogin.kurinKey).toBe(kurinKey);
 
       await createLeadershipViaApi(request, managerUser, {

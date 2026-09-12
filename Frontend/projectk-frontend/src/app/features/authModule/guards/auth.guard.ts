@@ -1,5 +1,5 @@
 import { CanActivateFn, Router } from "@angular/router";
-import { AuthService } from "../services/authService/auth.service";
+import { AuthService } from "../services/auth-service/auth.service";
 import { inject } from "@angular/core";
 import { map, of, switchMap, take } from "rxjs";
 

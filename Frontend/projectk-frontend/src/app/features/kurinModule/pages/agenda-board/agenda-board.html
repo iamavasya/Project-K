@@ -1,0 +1,74 @@
+<div class="agenda-page">
+  <section class="kurin-tile">
+    <div class="agenda-header">
+      <h1 class="agenda-title">Задачі</h1>
+      @if (canManage()) {
+        <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
+      }
+    </div>
+
+    @if (isEmpty()) {
+      <app-empty-state
+        art="list"
+        title="Дошка порожня"
+        body="Створи першу задачу — і вона зʼявиться у стовпці «Зробити».">
+        @if (canManage()) {
+          <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
+        }
+      </app-empty-state>
+    } @else {
+      <div class="agenda-board" [attr.aria-label]="'Дошка задач'">
+        @for (column of columns(); track column.status) {
+          <div class="agenda-column">
+            <div class="agenda-column__head">
+              <p-tag [severity]="column.severity" [value]="column.label" />
+              <span class="agenda-column__count">{{ column.items.length }}</span>
+            </div>
+            <div
+              class="agenda-column__list"
+              cdkDropList
+              [id]="column.status"
+              [cdkDropListData]="column.items"
+              [cdkDropListConnectedTo]="columnIds"
+              (cdkDropListDropped)="onDrop($event, column.status)">
+              @for (task of column.items; track task.agendaItemKey) {
+                <div class="agenda-card" cdkDrag [cdkDragDisabled]="!task.canChangeStatus">
+                  <div class="agenda-card__title">{{ task.title }}</div>
+                  @if (task.createdByName) {
+                    <div class="agenda-card__meta"><i class="pi pi-user"></i> {{ task.createdByName }}</div>
+                  }
+                  @if (task.assignments.length) {
+                    <div class="agenda-card__targets">
+                      @for (assignment of task.assignments; track assignment.targetKey) {
+                        <span class="agenda-card__chip">{{ assignment.label }}</span>
+                      }
+                    </div>
+                  }
+                  @if (task.canEdit) {
+                    <div class="agenda-card__actions">
+                      <p-button icon="pi pi-pencil" severity="secondary" [rounded]="true" [text]="true" (click)="openEdit(task)" />
+                      <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="remove(task)" />
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
+     assign-targets) for plain users would 403 and bounce them to /forbidden. -->
+@if (canManage()) {
+  <app-agenda-item-dialog
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [kurinKey]="kurinKey()"
+    [item]="editing()"
+    [defaultKind]="'Task'"
+    (saved)="loadData()" />
+  <p-confirmDialog />
+}

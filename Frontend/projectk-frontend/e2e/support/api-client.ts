@@ -8,8 +8,25 @@ interface LoginResponse {
   };
   kurinKey?: string;
   memberKey?: string;
-  role?: string;
+  permissions?: string[];
+  roles?: string[];
   userKey?: string;
+}
+
+export interface KurinScopeOption {
+  kurinKey: string;
+  kurinNumber: number;
+  branch: string;
+  namedAfter?: string | null;
+  kind: string;
+}
+
+export interface MembershipRecord {
+  membershipKey: string;
+  kurinKey: string;
+  kurinNumber: number;
+  branch: string;
+  isCurrent: boolean;
 }
 
 interface GroupResponse {
@@ -37,6 +54,11 @@ interface InvitationResponse {
   token: string;
   waitlistEntryKey: string;
   targetUserKey?: string | null;
+  email: string;
+}
+
+interface WaitlistEntryResponse {
+  waitlistEntryKey: string;
   email: string;
 }
 
@@ -97,6 +119,37 @@ export async function getLatestInvitationByEmail(request: APIRequestContext, ema
   return await response.json() as InvitationResponse;
 }
 
+export async function approveWaitlistEntryByEmail(request: APIRequestContext, admin: E2eUser, email: string): Promise<void> {
+  const login = await loginViaApi(request, admin);
+  expect(login.tokens?.accessToken, `API login for ${admin.email} did not return an access token.`).toBeTruthy();
+
+  const waitlistResponse = await request.get(`${e2eApiUrl}/auth/onboarding/waitlist`, {
+    headers: {
+      Authorization: `Bearer ${login.tokens!.accessToken}`
+    }
+  });
+
+  expect(
+    waitlistResponse.ok(),
+    `Failed to load waitlist entries: ${waitlistResponse.status()} ${await waitlistResponse.text()}`
+  ).toBe(true);
+
+  const entries = await waitlistResponse.json() as WaitlistEntryResponse[];
+  const entry = entries.find(item => item.email.toLowerCase() === email.toLowerCase());
+  expect(entry, `Waitlist entry for ${email} was not found.`).toBeTruthy();
+
+  const approveResponse = await request.post(`${e2eApiUrl}/auth/onboarding/waitlist/${entry!.waitlistEntryKey}/approve`, {
+    headers: {
+      Authorization: `Bearer ${login.tokens!.accessToken}`
+    }
+  });
+
+  expect(
+    approveResponse.ok(),
+    `Failed to approve waitlist entry for ${email}: ${approveResponse.status()} ${await approveResponse.text()}`
+  ).toBe(true);
+}
+
 export async function activateAccount(request: APIRequestContext, token: string, password: string): Promise<void> {
   const response = await request.post(`${e2eApiUrl}/auth/onboarding/activate`, {
     data: {
@@ -126,6 +179,57 @@ export async function getKurinByKey(request: APIRequestContext, user: E2eUser, k
 
   expect(response.ok(), `Failed to load kurin ${kurinKey}: ${response.status()} ${await response.text()}`).toBe(true);
   return await response.json() as KurinResponse;
+}
+
+/**
+ * Signs in and returns both the token and the kurins that account may act in. The two come from one
+ * login on purpose: the suite then asserts against the same session the switcher would be using.
+ */
+export async function getKurinScopeOptions(
+  request: APIRequestContext,
+  user: E2eUser
+): Promise<{ accessToken: string; memberKey: string; options: KurinScopeOption[] }> {
+  const login = await loginViaApi(request, user);
+  expect(login.tokens?.accessToken, `API login for ${user.email} did not return an access token.`).toBeTruthy();
+
+  const accessToken = login.tokens!.accessToken!;
+  const response = await request.get(`${e2eApiUrl}/auth/kurin-scope/options`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  expect(response.ok(), `Failed to read kurin scope options: ${response.status()} ${await response.text()}`).toBe(true);
+  expect(login.memberKey, `API login for ${user.email} did not return a memberKey.`).toBeTruthy();
+  return { accessToken, memberKey: login.memberKey!, options: await response.json() as KurinScopeOption[] };
+}
+
+/** Steps the session into one kurin and returns the roles the server hands back for it. */
+export async function setKurinScopeViaApi(
+  request: APIRequestContext,
+  accessToken: string,
+  kurinKey: string
+): Promise<{ accessToken: string; roles: string[] }> {
+  const response = await request.post(`${e2eApiUrl}/auth/kurin-scope`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    data: { kurinKey }
+  });
+
+  expect(response.ok(), `Failed to scope into ${kurinKey}: ${response.status()} ${await response.text()}`).toBe(true);
+  const body = await response.json() as LoginResponse & { roles?: string[] };
+  return { accessToken: body.tokens!.accessToken!, roles: body.roles ?? [] };
+}
+
+/** The "Членства" folder of someone's dossier — every kurin they belong to or have belonged to. */
+export async function getMembershipsViaApi(
+  request: APIRequestContext,
+  accessToken: string,
+  memberKey: string
+): Promise<MembershipRecord[]> {
+  const response = await request.get(`${e2eApiUrl}/member/${memberKey}/dossier/memberships`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  expect(response.ok(), `Failed to read memberships: ${response.status()} ${await response.text()}`).toBe(true);
+  return await response.json() as MembershipRecord[];
 }
 
 export async function createGroupViaApi(
@@ -341,10 +445,19 @@ export async function getFirstSeededGroupMemberKey(
 
   expect(response.ok(), `Failed to load group members: ${response.status()} ${await response.text()}`).toBe(true);
   const members = await response.json() as MemberResponse[];
-  const member = members.find(item => !!item.memberKey);
-  expect(member, `Seeded group ${groupName} has no members.`).toBeTruthy();
 
-  return member!.memberKey;
+  // Seeded members only, and always the same one. "First in the response" used to be enough until you
+  // notice that manager-crud creates, edits and deletes a member in this very group while four other
+  // specs read from it: whenever the new member happened to come back first, whoever picked it found
+  // it deleted mid-test and landed on /forbidden. Seeded accounts live on @projectk.com; anything a
+  // test makes for itself uses @example.com.
+  const seeded = members
+    .filter(item => !!item.memberKey && (item.email ?? '').endsWith('@projectk.com'))
+    .sort((left, right) => (left.email ?? '').localeCompare(right.email ?? ''));
+
+  expect(seeded[0], `Seeded group ${groupName} has no seeded members.`).toBeTruthy();
+
+  return seeded[0].memberKey;
 }
 
 export async function getPlanningSessions(

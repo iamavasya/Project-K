@@ -1,62 +1,71 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.AuthModule;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Services
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
+
+public interface ILoginResponseFactory
 {
-    public interface ILoginResponseFactory
+    Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken);
+}
+
+public class LoginResponseFactory : ILoginResponseFactory
+{
+    private readonly IAccessContextResolver _access;
+    private readonly IJwtService _jwtService;
+    private readonly IMemberDirectory _members;
+    private readonly IRefreshTokenStore _refreshTokens;
+
+    public LoginResponseFactory(
+        IAccessContextResolver access,
+        IJwtService jwtService,
+        IMemberDirectory members,
+        IRefreshTokenStore refreshTokens)
     {
-        Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken);
+        _access = access;
+        _jwtService = jwtService;
+        _members = members;
+        _refreshTokens = refreshTokens;
     }
 
-    public class LoginResponseFactory : ILoginResponseFactory
+    public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
     {
-        private readonly UserManager<AppUser> _userManager;
-        private readonly IJwtService _jwtService;
-        private readonly IUnitOfWork _unitOfWork;
+        // What this person may do is answered for the kurin they are in, not for the account.
+        // Sign in, refresh and switching kurin all ask the same question here.
+        var access = await _access.ResolveAsync(user, cancellationToken);
+        var kurinKey = access.KurinKey?.ToString();
+        var roles = access.Roles;
 
-        public LoginResponseFactory(
-            UserManager<AppUser> userManager,
-            IJwtService jwtService,
-            IUnitOfWork unitOfWork)
+        var jwt = new JwtResponse
         {
-            _userManager = userManager;
-            _jwtService = jwtService;
-            _unitOfWork = unitOfWork;
-        }
+            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, kurinKey),
+            RefreshToken = _jwtService.GenerateRefreshToken()
+        };
 
-        public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
+        // Adds a session rather than replacing the account's one token: signing in here must not
+        // sign the same person out somewhere else.
+        await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
+
+        var member = await _members.FindByAccountAsync(user.Id, cancellationToken);
+
+        return new LoginUserResponse
         {
-            var kurinKey = user.KurinKey is null || user.KurinKey == Guid.Empty
-                ? null
-                : user.KurinKey.ToString();
-
-            var roles = await _userManager.GetRolesAsync(user);
-            var jwt = new JwtResponse
-            {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, kurinKey),
-                RefreshToken = _jwtService.GenerateRefreshToken()
-            };
-
-            user.RefreshToken = jwt.RefreshToken.Token;
-            user.RefreshTokenExpiryTime = jwt.RefreshToken.Expires;
-            await _userManager.UpdateAsync(user);
-
-            var member = await _unitOfWork.Members.GetByUserKeyAsync(user.Id, cancellationToken);
-
-            return new LoginUserResponse
-            {
-                UserKey = user.Id,
-                MemberKey = member?.MemberKey,
-                Email = user.Email!,
-                Role = roles.FirstOrDefault()!,
-                KurinKey = kurinKey,
-                RequiresMfa = false,
-                Tokens = jwt
-            };
-        }
+            UserKey = user.Id,
+            MemberKey = member?.MemberKey,
+            Email = user.Email!,
+            IsAdmin = access.IsAdmin,
+            Permissions = access.Permissions.Select(permission => permission.ToClaimValue()).ToArray(),
+            Roles = [.. roles],
+            KurinKey = kurinKey,
+            RequiresMfa = false,
+            Tokens = jwt
+        };
     }
 }

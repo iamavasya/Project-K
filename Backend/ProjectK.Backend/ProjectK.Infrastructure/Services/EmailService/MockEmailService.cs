@@ -1,0 +1,34 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+
+namespace ProjectK.Infrastructure.Services.EmailService;
+
+public class MockEmailService : IEmailService
+{
+    private readonly ILogger<MockEmailService> _logger;
+
+    public MockEmailService(ILogger<MockEmailService> logger)
+    {
+        _logger = logger;
+    }
+
+    public Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MOCK EMAIL] To: {To}, Subject: {Subject}, Body: {Body}", to, subject, body);
+        return Task.CompletedTask;
+    }
+
+    public Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        var body = $"Ваш токен запрошення: {token}";
+        return SendEmailAsync(to, "Лілейка · запрошення до системи", body, cancellationToken);
+    }
+
+    public Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
+    {
+        var body = $"Ваш токен відновлення пароля: {token}";
+        return SendEmailAsync(to, "Лілейка · відновлення пароля", body, cancellationToken);
+    }
+}

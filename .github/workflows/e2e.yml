@@ -1,0 +1,85 @@
+name: E2E
+
+# The suite needs SQL, Azurite and a running API, so it is too slow to sit on every push. It runs
+# nightly and before a release instead. It was never wired into CI at all until 0.19.0, which is how
+# it stayed broken for months after the roles refactor.
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    name: Playwright against the e2e stack
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start the e2e stack
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
+        run: |
+          ./scripts/dev.sh tools up
+          ./scripts/dev.sh up e2e --build
+
+      - name: Wait for the stack
+        run: |
+          for _ in $(seq 1 60); do
+            web=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4201/ || true)
+            api=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5206/health || true)
+            [ "$web" = "200" ] && [ "$api" = "200" ] && exit 0
+            sleep 5
+          done
+          echo "Stack did not become healthy" >&2
+          exit 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: Frontend/projectk-frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: Frontend/projectk-frontend
+
+      - name: Install browsers
+        run: npx playwright install --with-deps
+        working-directory: Frontend/projectk-frontend
+
+      - name: Run Playwright
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:4201
+          PLAYWRIGHT_START_FRONTEND: 'false'
+          PLAYWRIGHT_API_URL: http://localhost:5206/api
+        run: npx playwright test
+        working-directory: Frontend/projectk-frontend
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Frontend/projectk-frontend/playwright-report/
+          if-no-files-found: warn
+
+      - name: Collect stack logs on failure
+        if: failure()
+        run: ./scripts/dev.sh logs e2e || true
+
+      - name: Tear down
+        if: always()
+        run: ./scripts/dev.sh down e2e -v || true
+
+      - name: Notify dev Telegram on e2e failure
+        if: failure()
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_DEV_ALERTS_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEV_ALERTS_CHAT_ID }}
+          TELEGRAM_TEXT: |
+            E2E suite failed on ${{ github.ref_name }} (${{ github.sha }}).
+        run: bash .github/scripts/send-telegram-message.sh

@@ -6,12 +6,14 @@ import { cancelManagePanel, chooseMenuItem, dialog, fillManagePanelFields, openR
 describeRole('admin', 'Admin management surfaces', () => {
   test('admin panel exposes kurin manage-panel create update and delete modes', async ({ page }) => {
     await page.goto('/panel');
-    await expect(page.getByRole('heading', { name: 'Administration' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Адміністрація' })).toBeVisible();
 
-    await page.getByRole('button', { name: /Create/ }).click();
+    await page.getByRole('button', { name: /Створити/ }).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeDisabled();
-    await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`, `e2e.manager.${Date.now()}@example.com`]);
+    // Only the number: the admin panel creates the kurin alone, and the Зв'язковий arrives through
+    // an application and an invitation, not through a password typed here (SEC-4.4).
+    await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`]);
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeEnabled();
     await cancelManagePanel(page);
 
@@ -20,7 +22,9 @@ describeRole('admin', 'Admin management surfaces', () => {
     await openRowMenu(row);
     await chooseMenuItem(page, 0);
     await expect(dialog(page)).toBeVisible();
-    await expect(dialog(page).locator('input:disabled')).toHaveCount(2);
+    // Update mode locks the system key only; the number stays editable, and the manager email
+    // field that used to be locked here is gone with the password flow it belonged to.
+    await expect(dialog(page).locator('input:disabled')).toHaveCount(1);
     await cancelManagePanel(page);
 
     await openRowMenu(row);
@@ -52,14 +56,14 @@ describeRole('admin', 'Admin management surfaces', () => {
 
   test('waitlist management renders queue table and conditional action area', async ({ page }) => {
     await page.goto('/waitlist');
-    await expect(page.getByRole('heading', { name: 'Waitlist Management' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Заявки на приєднання' })).toBeVisible();
     await expect(page.locator('.p-datatable')).toBeVisible();
 
     const firstRow = page.locator('tbody tr').first();
     await expect(firstRow).toBeVisible();
     const rowText = await firstRow.textContent();
-    if (rowText?.includes('No waitlist entries found.')) {
-      await expect(firstRow).toContainText('No waitlist entries found.');
+    if (rowText?.includes('Заявок немає')) {
+      await expect(firstRow).toContainText('Заявок немає');
     } else {
       await expect(firstRow.locator('td').nth(5)).toBeVisible();
       await expect(firstRow.locator('td').last()).toBeVisible();

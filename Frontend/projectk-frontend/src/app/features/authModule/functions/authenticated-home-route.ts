@@ -1,16 +1,17 @@
+import { isUsableKey } from '../../../shared/functions/is-usable-key.function';
 import { AuthState } from '../models/auth-state.model';
 
 export function authenticatedHomeRoute(state: AuthState | null | undefined): unknown[] {
-  if (state?.kurinKey) {
+  if (isUsableKey(state?.kurinKey)) {
     return ['/kurin'];
   }
 
-  if (state?.role?.trim().toLowerCase() === 'admin') {
+  if (state?.isAdmin) {
     return ['/panel'];
   }
 
-  if (state?.memberKey) {
-    return ['/member', state.memberKey];
+  if (isUsableKey(state?.memberKey)) {
+    return ['/member', state?.memberKey];
   }
 
   return ['/login'];
