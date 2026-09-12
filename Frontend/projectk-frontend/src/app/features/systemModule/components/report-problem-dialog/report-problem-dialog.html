@@ -1,0 +1,147 @@
+<p-dialog
+  header="Повідомити про проблему"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [style]="{ width: 'min(96vw, 44rem)' }"
+  styleClass="report-problem">
+
+  @if (receipt(); as done) {
+    <div class="report-problem__done">
+      <span class="pi pi-check-circle" aria-hidden="true"></span>
+      <h3>Дякуємо, повідомлення пішло</h3>
+      @if (done.issueUrl) {
+        <p>
+          Його вже видно як
+          <a [href]="done.issueUrl" target="_blank" rel="noopener">issue #{{ done.issueNumber }}</a>
+          на GitHub. Там же зʼявиться відповідь.
+        </p>
+      } @else {
+        <p>Воно записане на сервері; той, хто його тримає, побачить його в журналі.</p>
+      }
+    </div>
+  } @else {
+    <p class="report-problem__hint">
+      Знайшов помилку чи щось працює не так, як мало б? Поясни своїми словами, що ти робив і що
+      побачив. Скриншот можна вставити просто в текст (Ctrl+V) або прикріпити файлом.
+    </p>
+
+    <p-message severity="warn" styleClass="w-full report-problem__public">
+      Повідомлення потрапляє у <strong>публічний</strong> список задач проєкту на GitHub. Не пиши
+      імен, телефонів і пошт, своїх чи чужих; на скриншоті закрий те, чого не має бачити хтось
+      сторонній.
+    </p-message>
+
+    <div class="report-problem__field">
+      <label for="report-title">Коротко, в один рядок</label>
+      <input
+        pInputText
+        id="report-title"
+        class="w-full"
+        maxlength="120"
+        placeholder="Наприклад: «Не зберігається дата народження»"
+        [ngModel]="title()"
+        (ngModelChange)="title.set($event)" />
+    </div>
+
+    <div class="report-problem__field">
+      <span class="report-problem__label" id="report-description-label">Що сталося <span class="report-problem__required">обовʼязково</span></span>
+      <p-editor
+        [formats]="editorFormats"
+        placeholder="Що ти робив, що побачив, і що з цього не так"
+        [style]="{ height: '14rem' }"
+        (onInit)="onEditorInit($any($event))"
+        (onTextChange)="onTextChange()">
+        <ng-template #header>
+          <span class="ql-formats">
+            <button class="ql-bold" type="button" aria-label="Жирний"></button>
+            <button class="ql-italic" type="button" aria-label="Курсив"></button>
+            <button class="ql-code" type="button" aria-label="Код"></button>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-list" value="ordered" type="button" aria-label="Нумерований список"></button>
+            <button class="ql-list" value="bullet" type="button" aria-label="Список"></button>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-code-block" type="button" aria-label="Блок коду"></button>
+            <button class="ql-link" type="button" aria-label="Посилання"></button>
+            <button class="ql-image" type="button" aria-label="Скриншот"></button>
+          </span>
+        </ng-template>
+      </p-editor>
+    </div>
+
+    <div class="report-problem__field">
+      <label for="report-steps">Кроки, щоб відтворити</label>
+      <textarea
+        id="report-steps"
+        pTextarea
+        rows="4"
+        maxlength="4000"
+        class="w-full"
+        placeholder="1. Відкрити картку учасника&#10;2. Натиснути «Редагувати»&#10;3. Змінити дату і зберегти"
+        [ngModel]="steps()"
+        (ngModelChange)="steps.set($event)"></textarea>
+    </div>
+
+    <div class="report-problem__field">
+      <label for="report-expected">Що мало статися</label>
+      <textarea
+        id="report-expected"
+        pTextarea
+        rows="2"
+        maxlength="4000"
+        class="w-full"
+        placeholder="Наприклад: дата зберігається і видна в картці"
+        [ngModel]="expected()"
+        (ngModelChange)="expected.set($event)"></textarea>
+    </div>
+
+    <div class="report-problem__attach">
+      <label class="report-problem__attach-button" [class.is-disabled]="isUploading() || screenshots().length >= maxScreenshots">
+        <span class="pi" [class.pi-paperclip]="!isUploading()" [class.pi-spin]="isUploading()" [class.pi-spinner]="isUploading()" aria-hidden="true"></span>
+        Прикріпити скриншот
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          [disabled]="isUploading() || screenshots().length >= maxScreenshots"
+          (change)="onFilePicked($event)" />
+      </label>
+      <span class="report-problem__attach-count">{{ screenshots().length }} / {{ maxScreenshots }}</span>
+    </div>
+
+    @if (screenshots().length) {
+      <ul class="report-problem__thumbs">
+        @for (url of screenshots(); track url) {
+          <li>
+            <img [src]="url" alt="Скриншот до повідомлення" />
+            <button type="button" class="report-problem__thumb-remove" (click)="removeScreenshot(url)" aria-label="Прибрати скриншот">
+              <span class="pi pi-times" aria-hidden="true"></span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (errorMessage(); as message) {
+      <p class="report-problem__error">{{ message }}</p>
+    }
+  }
+
+  <ng-template #footer>
+    @if (receipt()) {
+      <p-button label="Закрити" (onClick)="close()" />
+    } @else {
+      <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="close()" />
+      <p-button
+        label="Надіслати"
+        icon="pi pi-send"
+        [disabled]="!hasDescription() || isUploading()"
+        [loading]="isSending()"
+        (onClick)="send()" />
+    }
+  </ng-template>
+</p-dialog>

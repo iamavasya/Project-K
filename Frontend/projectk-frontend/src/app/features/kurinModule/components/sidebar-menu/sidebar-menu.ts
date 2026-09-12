@@ -1,4 +1,4 @@
-import { Component, inject, OnChanges, SimpleChanges, ChangeDetectionStrategy, model, input } from '@angular/core';
+import { Component, inject, OnChanges, SimpleChanges, ChangeDetectionStrategy, model, input, signal } from '@angular/core';
 import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
@@ -17,10 +17,11 @@ import { getLeadershipRoleSortWeight } from '../../functions/leadership-role-ord
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
 
 @Component({
   selector: 'app-sidebar-menu',
-  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule],
+  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, ReportProblemDialogComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
@@ -29,6 +30,8 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   private readonly kurinService = inject(KurinService);
   readonly visible = model(false);
+  /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
+  readonly reportVisible = signal(false);
   readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
@@ -289,6 +292,15 @@ export class SidebarMenuComponent implements OnChanges {
       command: () => {
         this.close();
         this.router.navigate(['/settings/account']);
+      }
+    });
+
+    items.push({
+      label: 'Повідомити про проблему',
+      icon: 'icon-bug',
+      command: () => {
+        this.close();
+        this.reportVisible.set(true);
       }
     });
 

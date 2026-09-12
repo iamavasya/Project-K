@@ -38,6 +38,13 @@ export const routes: Routes = [
     data: { breadcrumb: 'Про Лілейку' }
   },
   {
+    path: 'privacy',
+    loadComponent: () => import('./features/systemModule/pages/privacy-page/privacy-page')
+      .then(m => m.PrivacyPageComponent),
+    title: 'Конфіденційність',
+    data: { breadcrumb: 'Конфіденційність' }
+  },
+  {
     path: 'forgot-password',
     loadComponent: () => import('./features/authModule/pages/onboarding/forgot-password/forgot-password')
       .then(m => m.ForgotPasswordComponent),

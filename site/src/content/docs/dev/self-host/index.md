@@ -123,6 +123,15 @@ Traefik або проксі хостера). Далі:
 лише текст листа (`Email__Provider=Mock`). Для живої інсталяції задай Resend:
 `Email__Provider=Resend`, `Email__ApiKey`, `Email__FromEmail` на своєму домені.
 
+## Зворотний звʼязок
+
+«Повідомити про проблему» в сайдбарі застосунку відкриває issue в GitHub. Для цього в `.env`
+потрібен `PROJECTK_FEEDBACK_GITHUB_TOKEN` — fine-grained токен з правом «Issues: write» на
+репозиторій із `PROJECTK_FEEDBACK_GITHUB_REPOSITORY` (типово `iamavasya/Project-K`, тобто
+повідомлення йдуть авторові системи). Без токена повідомлення пишуться в лог API
+(`docker compose logs projectk-api`) і нікуди не надсилаються. Скриншоти з повідомлень лежать у
+теці `feedback-screenshots` того ж публічного сховища, що й фото.
+
 ## Установка прямо з образів GHCR
 
 Bundle — підтримуваний шлях: compose-файл у ньому узгоджений з релізом. Якщо в тебе вже є своя

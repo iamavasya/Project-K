@@ -1,0 +1,47 @@
+name: Помилка
+description: Щось зламалось або працює не так, як мало б
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Дякуємо. Список публічний: без імен, телефонів і пошт, а скриншот без чужих даних.
+        Про вразливість не пиши сюди — повідом приватно через Security → Report a vulnerability.
+  - type: textarea
+    id: what
+    attributes:
+      label: Що сталося
+      description: Що ти робив, що побачив, і що з цього не так.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Кроки, щоб відтворити
+      placeholder: |
+        1. Відкрити картку учасника
+        2. Натиснути «Редагувати»
+        3. Змінити дату і зберегти
+  - type: input
+    id: expected
+    attributes:
+      label: Що мало статися
+  - type: input
+    id: version
+    attributes:
+      label: Версія
+      description: Внизу сайдбару або на сторінці «Про Лілейку».
+      placeholder: v1.0.0
+  - type: dropdown
+    id: where
+    attributes:
+      label: Де
+      options:
+        - Хмарна Лілейка
+        - Власний сервер (self-host)
+        - Локально з репозиторію
+  - type: input
+    id: browser
+    attributes:
+      label: Браузер і пристрій
+      placeholder: Chrome на Android, Safari на iPhone, Firefox на Windows…

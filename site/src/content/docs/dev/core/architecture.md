@@ -176,6 +176,7 @@ Permission                           напр. Group:Manage:KurinWide
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
 | PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів | `API/Program.cs`, `Infrastructure` |
+| Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото

@@ -124,6 +124,10 @@ import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../.
             [loading]="loading"
             styleClass="w-full"
            />
+          <p class="m-0 text-center text-xs text-muted-color">
+            Подаючи заявку, ти погоджуєшся з
+            <a routerLink="/privacy" class="text-primary no-underline">політикою конфіденційності</a>.
+          </p>
         </form>
         }
 

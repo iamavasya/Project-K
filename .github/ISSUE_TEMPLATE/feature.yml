@@ -1,0 +1,25 @@
+name: Пропозиція
+description: Чого бракує куреню, впорядникові чи юнакові
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Яку задачу це розвʼязує
+      description: Не «додайте кнопку», а що ви намагаєтесь зробити і що зараз заважає.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Як це могло б виглядати
+  - type: dropdown
+    id: role
+    attributes:
+      label: Хто це робить
+      options:
+        - Юнак
+        - Впорядник
+        - Звʼязковий / провід куреня
+        - Адміністратор
+        - Хостер

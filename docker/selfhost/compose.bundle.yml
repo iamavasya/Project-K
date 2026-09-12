@@ -44,6 +44,10 @@ services:
       Security__ClientIp__Header: X-Real-IP
       Telegram__DevAlerts__Enabled: "false"
       Telegram__PublicChannel__Enabled: "false"
+      # «Повідомити про проблему» opens a GitHub issue with this token; empty means the report
+      # is written to the API log instead.
+      Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
+      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
     # Not published: reached only through projectk-web's nginx on the compose network.
     depends_on:
       projectk-sql:

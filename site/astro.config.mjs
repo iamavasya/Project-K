@@ -32,9 +32,11 @@ export default defineConfig({
 						{ label: 'За роллю', items: [{ autogenerate: { directory: 'user/roles' } }] },
 						{ label: 'Функції', items: [{ autogenerate: { directory: 'user/features' } }] },
 						{ slug: 'user/account' },
+						{ slug: 'user/report-problem' },
 						{ slug: 'user/admin' },
 						{ slug: 'user/self-host' },
 						{ slug: 'user/about' },
+						{ slug: 'user/privacy' },
 					],
 				},
 				{

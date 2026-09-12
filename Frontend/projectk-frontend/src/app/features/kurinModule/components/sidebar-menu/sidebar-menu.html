@@ -29,3 +29,5 @@
         </div>
     </ng-template>
 </p-drawer>
+
+<app-report-problem-dialog [visible]="reportVisible()" (visibleChange)="reportVisible.set($event)" />
