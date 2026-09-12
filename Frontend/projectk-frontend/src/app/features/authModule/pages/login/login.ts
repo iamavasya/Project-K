@@ -11,6 +11,7 @@ import { InputOtpModule } from '@openng/optimus-ui/inputotp';
 
 import { MessageService } from '@openng/optimus-ui/api';
 import { authenticatedHomeRoute } from '../../functions/authenticated-home-route';
+import { DemoSeat, DemoService } from '../../services/demo-service/demo.service';
 
 const LOGIN_ERROR_TEXT: Record<string, string> = {
   InvalidCredentials: 'Невірний email або пароль.',
@@ -28,6 +29,11 @@ export class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
+  private readonly demo = inject(DemoService);
+
+  /** The demo stand offers three chairs instead of a password. */
+  readonly isDemo = DemoService.isDemo();
+  demoLoading: DemoSeat | null = null;
 
   email = '';
   password = '';
@@ -128,6 +134,24 @@ export class LoginComponent implements OnInit {
   toggleRecoveryCode(): void {
     this.useRecoveryCode = !this.useRecoveryCode;
     this.otpValue = '';
+  }
+
+  enterDemo(seat: DemoSeat): void {
+    if (this.demoLoading) {
+      return;
+    }
+
+    this.demoLoading = seat;
+    this.demo.enter(seat).subscribe({
+      next: () => {
+        this.demoLoading = null;
+        this.navigateToPanel();
+      },
+      error: () => {
+        this.demoLoading = null;
+        this.messageService.add({ severity: 'error', summary: 'Демо зараз недоступне', detail: 'Спробуй за хвилину.' });
+      }
+    });
   }
 
   private navigateToPanel(): void {

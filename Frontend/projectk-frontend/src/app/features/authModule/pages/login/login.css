@@ -100,6 +100,38 @@
   text-decoration: underline;
 }
 
+.demo-entry {
+  border-top: 1px solid var(--p-content-border-color);
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 1.25rem;
+}
+
+.demo-entry h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.demo-entry p {
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.demo-entry__seats {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 480px) {
+  .demo-entry__seats {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .login-panel {
     padding: 1.25rem;

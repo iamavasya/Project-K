@@ -28,7 +28,7 @@ sidebar:
 ./scripts/dev.sh down dev
 ```
 
-Середовище обирається одним аргументом: `dev | e2e | selfhost | tailscale | staging | prod`. Образ .NET
+Середовище обирається одним аргументом: `dev | e2e | demo | selfhost | tailscale | staging | prod`. Образ .NET
 не залежить від середовища (воно задається через `ASPNETCORE_ENVIRONMENT`); SQL і Azurite спільні,
 кожне середовище має власну базу на тому самому сервері. Dev-стек відповідає на
 `http://localhost:4200` (web) і `http://localhost:5205` (API), e2e — на `4201` / `5206`.

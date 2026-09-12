@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.DemoModule;
 using ProjectK.API.Controllers.DevModule;
 using ProjectK.API.Controllers.InfrastructureModule;
 using ProjectK.API.Controllers.KurinModule;
@@ -238,6 +239,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
 
         yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLogin));
+        yield return AnonymousEndpoint<DemoController>(nameof(DemoController.Enter));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.GetLatestInvitationByEmail));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));

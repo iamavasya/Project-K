@@ -98,6 +98,21 @@
       </div>
     </form>
 
+    @if (!showOtpInput && isDemo) {
+      <section class="demo-entry" aria-labelledby="demo-title">
+        <h2 id="demo-title">Демо-курінь</h2>
+        <p>
+          Подивись систему зсередини без заявки: обери, ким зайти. Дані вигадані і щоночі
+          повертаються до початкового стану.
+        </p>
+        <div class="demo-entry__seats">
+          <p-button label="Звʼязковий" icon="pi pi-flag" [outlined]="true" [loading]="demoLoading === 'Zvyazkovyi'" [disabled]="!!demoLoading" (onClick)="enterDemo('Zvyazkovyi')" />
+          <p-button label="Впорядник" icon="pi pi-users" [outlined]="true" [loading]="demoLoading === 'Vykhovnyk'" [disabled]="!!demoLoading" (onClick)="enterDemo('Vykhovnyk')" />
+          <p-button label="Юнак" icon="pi pi-user" [outlined]="true" [loading]="demoLoading === 'Youth'" [disabled]="!!demoLoading" (onClick)="enterDemo('Youth')" />
+        </div>
+      </section>
+    }
+
     @if (!showOtpInput) {
       <p class="join-link">
         <a routerLink="/forgot-password">Забули пароль?</a>

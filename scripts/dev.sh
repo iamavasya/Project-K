@@ -16,7 +16,7 @@
 #   ./scripts/dev.sh logs      <env> [service]          Tail logs
 #   ./scripts/dev.sh ps        <env>                    List stack containers
 #
-#   env = dev | e2e | selfhost | tailscale | staging | prod
+#   env = dev | e2e | demo | selfhost | tailscale | staging | prod
 #
 # Images are tagged locally only and are never pushed to a registry.
 set -euo pipefail
@@ -30,7 +30,7 @@ tools_file="$docker_dir/compose.tools.yml"
 app_file="$docker_dir/compose.app.yml"
 override_file="$docker_dir/compose.dev.override.yml"
 
-valid_envs="dev e2e selfhost tailscale staging prod"
+valid_envs="dev e2e demo selfhost tailscale staging prod"
 
 die() { echo "Error: $*" >&2; exit 1; }
 
@@ -70,8 +70,14 @@ app_compose() {
     files+=(-f "$override_file")
   fi
 
+  # The docs site rides along only where the env file gives it a port (profile "docs").
+  local profiles=()
+  if grep -qE '^PROJECTK_DOCS_PORT=[0-9]+' "$env_file"; then
+    profiles+=(--profile docs)
+  fi
+
   COMPOSE_PROJECT_NAME="projectk-$env" \
-    docker compose --env-file "$env_file" "${files[@]}" "$@"
+    docker compose --env-file "$env_file" "${profiles[@]}" "${files[@]}" "$@"
 }
 
 cmd_tools() {

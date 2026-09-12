@@ -7,6 +7,8 @@ import { LoginComponent } from './login';
 import { AuthState } from '../../models/auth-state.model';
 import { LoginResponse } from '../../models/login-response.model';
 import { AuthService } from '../../services/auth-service/auth.service';
+import { DemoService } from '../../services/demo-service/demo.service';
+import { environment } from '../../../../../environments/environment';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
@@ -276,4 +278,43 @@ describe('LoginComponent', () => {
       ...overrides
     };
   }
+  // The demo's three chairs appear only when env.js says the stand is Demo; a live kurin's login
+  // page must never offer a password-less way in.
+  describe('demo stand', () => {
+    const originalEnv = environment.envName;
+    afterEach(() => { environment.envName = originalEnv; });
+
+    it('offers no demo seats on an ordinary stand', () => {
+      const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(component.isDemo).toBeFalse();
+      expect(text).not.toContain('Демо-курінь');
+    });
+
+    it('signs the visitor in as the chosen seat and goes home', () => {
+      environment.envName = 'Demo';
+      const demo = jasmine.createSpyObj<DemoService>('DemoService', ['enter']);
+      demo.enter.and.returnValue(of({} as LoginResponse));
+      authService.getAuthStateValue.and.returnValue({ kurinKey: 'k1', roles: ['Member'] } as unknown as AuthState);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [LoginComponent],
+        providers: [
+          provideHttpClient(),
+          { provide: AuthService, useValue: authService },
+          { provide: Router, useValue: router },
+          { provide: ActivatedRoute, useValue: {} },
+          { provide: MessageService, useValue: messageService },
+          { provide: DemoService, useValue: demo }
+        ]
+      });
+      const demoFixture = TestBed.createComponent(LoginComponent);
+      demoFixture.detectChanges();
+
+      expect((demoFixture.nativeElement as HTMLElement).textContent).toContain('Демо-курінь');
+      demoFixture.componentInstance.enterDemo('Vykhovnyk');
+
+      expect(demo.enter).toHaveBeenCalledWith('Vykhovnyk');
+      expect(router.navigate).toHaveBeenCalled();
+    });
+  });
 });

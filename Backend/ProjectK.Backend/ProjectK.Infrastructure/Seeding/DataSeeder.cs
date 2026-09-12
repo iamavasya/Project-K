@@ -45,7 +45,9 @@ public static class DataSeeder
         // them was gone at the next `dev.sh up`, and every account that stood in that kurin was
         // left pointing at a key that no longer existed (STAB-07, STAB-05). Those tiers now keep
         // what they have and get their first administrator the way production does.
-        var seedsDemoData = env.IsDevelopment() || env.EnvironmentName == "E2E";
+        // Demo is the public stand: it seeds like Development and is put back to this state every
+        // night by DemoResetBackgroundService.
+        var seedsDemoData = env.IsDevelopment() || env.EnvironmentName == "E2E" || env.EnvironmentName == "Demo";
         if (!seedsDemoData)
         {
             await WarnWhenNoAdministratorAsync(scope.ServiceProvider, userManager);

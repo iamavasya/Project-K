@@ -18,7 +18,7 @@
   ./scripts/dev.ps1 watch dev
   ./scripts/dev.ps1 down e2e -v
 
-  env = dev | e2e | selfhost | tailscale | staging | prod
+  env = dev | e2e | demo | selfhost | tailscale | staging | prod
 #>
 [CmdletBinding()]
 param(
@@ -41,7 +41,7 @@ $toolsFile = Join-Path $dockerDir 'compose.tools.yml'
 $appFile = Join-Path $dockerDir 'compose.app.yml'
 $overrideFile = Join-Path $dockerDir 'compose.dev.override.yml'
 
-$validEnvs = @('dev', 'e2e', 'selfhost', 'tailscale', 'staging', 'prod')
+$validEnvs = @('dev', 'e2e', 'demo', 'selfhost', 'tailscale', 'staging', 'prod')
 
 function Die($msg) { Write-Error $msg; exit 1 }
 
@@ -83,10 +83,14 @@ function Invoke-AppCompose {
   $files = @('-f', $appFile)
   if ($WithOverride) { $files += @('-f', $overrideFile) }
 
+  # The docs site rides along only where the env file gives it a port (profile "docs").
+  $profiles = @()
+  if (Select-String -Path $envFile -Pattern '^PROJECTK_DOCS_PORT=\d+' -Quiet) { $profiles = @('--profile', 'docs') }
+
   $prev = $env:COMPOSE_PROJECT_NAME
   $env:COMPOSE_PROJECT_NAME = "projectk-$env"
   try {
-    & docker compose --env-file $envFile @files @ComposeArgs
+    & docker compose --env-file $envFile @profiles @files @ComposeArgs
     if ($LASTEXITCODE -ne 0) { Die "docker compose exited with code $LASTEXITCODE" }
   }
   finally {

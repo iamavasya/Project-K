@@ -84,7 +84,8 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
             return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, "NoKurin", "There is no kurin to step into.");
         }
 
-        var target = await FindAccountHoldingAsync(request.Role, kurinKey.Value, actorKey, cancellationToken);
+        var target = await new DemoSeatLocator(_userManager, _unitOfWork, _members, _memberships)
+            .FindAsync(request.Role, kurinKey.Value, actorKey, cancellationToken);
         if (target is null)
         {
             return ServiceResult<DevImpersonationResponse>.Failure(
@@ -109,73 +110,5 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         return new ServiceResult<DevImpersonationResponse>(
             ResultType.Success,
             new DevImpersonationResponse(login, ticket, request.Role.ToString(), kurinKey.Value));
-    }
-
-    private async Task<AppUser?> FindAccountHoldingAsync(DevRole role, Guid kurinKey, Guid actorKey, CancellationToken cancellationToken)
-    {
-        if (role == DevRole.Member)
-        {
-            return await FindPlainMemberAsync(kurinKey, actorKey, cancellationToken);
-        }
-
-        var office = role switch
-        {
-            DevRole.Zvyazkovyi => LeadershipRole.Zvyazkovyi,
-            DevRole.Vykhovnyk => LeadershipRole.Vykhovnyk,
-            DevRole.Kurinnyi => LeadershipRole.Kurinnuy,
-            DevRole.Skarbnyk => LeadershipRole.Skarbnyk,
-            _ => throw new ArgumentOutOfRangeException(nameof(role))
-        };
-
-        var holders = await _unitOfWork.Leaderships.GetActiveOfficeMemberKeysAsync([office], kurinKey, cancellationToken: cancellationToken);
-        foreach (var memberKey in holders)
-        {
-            var accountKey = await _members.FindAccountKeyAsync(memberKey, cancellationToken);
-            if (accountKey is null || accountKey == actorKey)
-            {
-                continue;
-            }
-
-            var user = await _userManager.FindByIdAsync(accountKey.Value.ToString());
-            if (user is not null && user.CanSignIn())
-            {
-                return user;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Somebody in the kurin with an account, no admin role, and nothing that grants rights beyond
-    /// their own гурток: no kurin-wide or КВ office, no mentorship. A гуртковий or писар of a гурток
-    /// still counts as a plain youth, and in demo data nearly everyone holds one of those.
-    /// </summary>
-    private async Task<AppUser?> FindPlainMemberAsync(Guid kurinKey, Guid actorKey, CancellationToken cancellationToken)
-    {
-        var accounts = await _memberships.GetAccountKeysInKurinAsync(kurinKey, cancellationToken);
-        foreach (var accountKey in accounts)
-        {
-            if (accountKey == actorKey)
-            {
-                continue;
-            }
-
-            var offices = await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(accountKey, kurinKey, cancellationToken);
-            if (offices.Any(office => office.Type != LeadershipType.Group))
-            {
-                continue;
-            }
-
-            var user = await _userManager.FindByIdAsync(accountKey.ToString());
-            if (user is null || !user.CanSignIn() || await _userManager.IsInRoleAsync(user, SystemRole.Admin))
-            {
-                continue;
-            }
-
-            return user;
-        }
-
-        return null;
     }
 }

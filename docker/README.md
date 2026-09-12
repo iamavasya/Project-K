@@ -1,6 +1,6 @@
 # Контейнери для розробки
 
-Будь-яке середовище — `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod` — можна підняти
+Будь-яке середовище — `dev`, `e2e`, `demo`, `selfhost`, `tailscale`, `staging`, `prod` — можна підняти
 локально в контейнерах, вибираючи його однією змінною. Образи збираються самому або беруться
 готові. Локальні образи **лише тегуються і ніколи не пушаться** в реєстр.
 
@@ -24,7 +24,7 @@ docker/
   compose.app.yml           параметризовані API + Web (на середовище)
   compose.dev.override.yml  hot-reload (dotnet watch / ng serve)
   env/
-    dev.env  e2e.env  selfhost.env  tailscale.env   (у git, локальні дефолти)
+    dev.env  e2e.env  demo.env  selfhost.env  tailscale.env   (у git, локальні дефолти)
     staging.env.example  prod.env.example           (скопіювати → заповнити секрети)
   nginx/                    конфіг nginx, запечений у веб-образ
     projectk-frontend.conf  40-projectk-env.sh
@@ -115,7 +115,15 @@ bash — те саме з `./dev.sh`:
   корені. Рекомендовано.
 - **`./scripts/dev.ps1 <команда>`** / **`./scripts/dev.sh <команда>`** — самі скрипти.
 
-`<env>` — одне з: `dev`, `e2e`, `selfhost`, `tailscale`, `staging`, `prod`.
+`<env>` — одне з: `dev`, `e2e`, `demo`, `selfhost`, `tailscale`, `staging`, `prod`.
+
+Довідка (`site/`, Astro) піднімається поруч зі стеком як сервіс `projectk-docs`, коли в env-файлі
+задано `PROJECTK_DOCS_PORT` (у `tailscale.env` — 4230). Образ збирається з `site/Dockerfile` з
+кореня репозиторію, тож у нього потрапляє поточний стан `docs/` і кореневих документів.
+
+`demo` — публічний демо-курінь: ті самі демо-дані, що й у `dev`, вхід без пароля кнопками на
+сторінці входу (`POST api/demo/login`, контролер існує лише в цьому середовищі), щоночі о 03:00 UTC
+база повертається до засіяного стану (`DemoResetBackgroundService`). Хоститься окремо від проду.
 
 ### Спільна інфраструктура — раз на сесію
 
@@ -157,6 +165,7 @@ bash — те саме з `./dev.sh`:
 |-----------|------------------------|-------------|------|------|---------------------|
 | dev       | Development            | development | 4200 | 5205 | projectK_dev        |
 | e2e       | E2E                    | development | 4201 | 5206 | projectK_e2e        |
+| demo      | Demo                   | production  | 4220 | 5255 | projectK_demo       |
 | selfhost  | SelfHost               | production  | 8080 | 5215 | projectK_selfhost   |
 | tailscale | Tailscale              | tailscale   | 4210 | 5225 | projectK_tailscale  |
 | staging   | Staging                | staging     | 8090 | 5235 | projectK_staging *  |

@@ -230,6 +230,12 @@ public static class Program
                 {
                     manager.FeatureProviders.Add(new DevOnlyControllerFeatureProvider());
                 }
+
+                // The public demo's password-less entry: only where the data is a fixture.
+                if (!DemoOnlyControllerFeatureProvider.Allows(builder.Environment.EnvironmentName))
+                {
+                    manager.FeatureProviders.Add(new DemoOnlyControllerFeatureProvider());
+                }
             })
             .AddJsonOptions(opt =>
             {
