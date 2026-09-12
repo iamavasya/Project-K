@@ -76,6 +76,24 @@ services:
       timeout: 5s
       retries: 10
 
+  # The docs site, next to the app on stands shown to people. Off by default: dev.sh turns the
+  # profile on when the env file sets PROJECTK_DOCS_PORT.
+  projectk-docs:
+    profiles: ["docs"]
+    image: ${PROJECTK_DOCS_IMAGE:-projectk-docs:${PROJECTK_ENV:-dev}-local}
+    build:
+      context: ..
+      dockerfile: site/Dockerfile
+    ports:
+      - "${PROJECTK_DOCS_PORT:-4321}:80"
+    networks:
+      - projectk-dev-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
 networks:
   projectk-dev-net:
     name: projectk-dev-net

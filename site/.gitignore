@@ -22,3 +22,5 @@ pnpm-debug.log*
 
 # generated from ../docs/user by scripts/sync-docs.mjs
 src/content/docs/user/
+# generated from ../docs/dev and the root documents by scripts/sync-docs.mjs
+src/content/docs/dev/
