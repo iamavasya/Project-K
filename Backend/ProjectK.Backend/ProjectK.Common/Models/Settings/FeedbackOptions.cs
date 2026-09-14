@@ -17,7 +17,7 @@ public sealed class GitHubFeedbackOptions
     public string Repository { get; set; } = "iamavasya/Project-K";
 
     /// <summary>Labels put on every issue the app opens, comma-separated.</summary>
-    public string Labels { get; set; } = "from-app";
+    public string Labels { get; set; } = "bug,from client";
 
     public string BaseUrl { get; set; } = "https://api.github.com";
 }
