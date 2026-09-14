@@ -31,4 +31,10 @@ public class MockEmailService : IEmailService
         var body = $"Ваш токен відновлення пароля: {token}";
         return SendEmailAsync(to, "Лілейка · відновлення пароля", body, cancellationToken);
     }
+
+    public Task SendEmailChangeConfirmationEmailAsync(string to, string currentEmail, string confirmationUrl, CancellationToken cancellationToken = default)
+    {
+        var body = $"Підтвердження зміни пошти з {currentEmail}: {confirmationUrl}";
+        return SendEmailAsync(to, "Лілейка · підтвердження зміни пошти", body, cancellationToken);
+    }
 }

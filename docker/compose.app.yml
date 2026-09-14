@@ -30,6 +30,7 @@ services:
       BlobStorage__ContainerName: ${PROJECTK_BLOB_CONTAINER:-photos}
       EnvCorsOrigin: ${PROJECTK_CORS_ORIGIN:-http://localhost:4200}
       Email__BaseUrl: ${PROJECTK_PUBLIC_URL:-http://localhost:4200}
+      Email__ReplyTo: ${PROJECTK_EMAIL_REPLY_TO:-}
       Jwt__Key: ${PROJECTK_JWT_KEY:-local-development-jwt-key-change-me-please-32+}
       Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}
       Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}

@@ -29,6 +29,7 @@ public class ResendEmailServiceTests
         {
             FromEmail = "lileyka@example.com",
             FromName = "Лілейка",
+            ReplyTo = "hello@lileyka.example",
             BaseUrl = "https://lileyka.example"
         });
         _service = new ResendEmailService(resend.Object, settings);
@@ -49,6 +50,11 @@ public class ResendEmailServiceTests
         Assert.Contains("Активувати акаунт", message.HtmlBody);
         Assert.Contains("«Спам»", message.HtmlBody);
         Assert.DoesNotContain("Welcome", message.HtmlBody);
+        Assert.Equal("hello@lileyka.example", message.ReplyTo);
+        // The text part says the same and carries the link, so an HTML-only letter never leaves.
+        Assert.Contains("Активувати акаунт: https://lileyka.example/activate/tok+en", message.TextBody);
+        Assert.Contains("Вас запрошено до Лілейки", message.TextBody);
+        Assert.DoesNotContain("<", message.TextBody);
         _output.WriteLine("INVITATION-HTML-BEGIN");
         _output.WriteLine(message.HtmlBody);
         _output.WriteLine("INVITATION-HTML-END");
@@ -64,6 +70,37 @@ public class ResendEmailServiceTests
         Assert.Contains("reset-password?token=a%2Bb%2Fc%3D&amp;email=marta%2Bplast%40example.com", message.HtmlBody);
         Assert.Contains("Встановити новий пароль", message.HtmlBody);
         Assert.DoesNotContain("Password Reset", message.HtmlBody);
+        Assert.Contains("reset-password?token=a%2Bb%2Fc%3D&email=marta%2Bplast%40example.com", message.TextBody);
+    }
+
+    [Fact]
+    public async Task EmailChange_ShouldNameBothAddresses_InTheSameFrame()
+    {
+        await _service.SendEmailChangeConfirmationEmailAsync("new@example.com", "old@example.com", "https://lileyka.example/settings/account?confirmEmail=true&token=t", CancellationToken.None);
+
+        var message = Assert.Single(_sent);
+        Assert.Equal("Лілейка · підтвердження зміни пошти", message.Subject);
+        Assert.Contains("old@example.com", message.HtmlBody);
+        Assert.Contains("new@example.com", message.HtmlBody);
+        Assert.Contains("email-banner.png", message.HtmlBody);
+        Assert.Contains("Підтвердити пошту: https://lileyka.example/settings/account?confirmEmail=true&token=t", message.TextBody);
+        Assert.DoesNotContain("Confirm email", message.HtmlBody);
+    }
+
+    [Fact]
+    public async Task WithoutReplyTo_ShouldLeaveTheHeaderOut()
+    {
+        var sent = new List<EmailMessage>();
+        var resend = new Mock<IResend>();
+        resend
+            .Setup(r => r.EmailSendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Callback((EmailMessage message, CancellationToken _) => sent.Add(message))
+            .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
+        var service = new ResendEmailService(resend.Object, Options.Create(new EmailSettings { FromEmail = "a@example.com", BaseUrl = "https://lileyka.example" }));
+
+        await service.SendInvitationEmailAsync("marta@example.com", "t", CancellationToken.None);
+
+        Assert.Null(Assert.Single(sent).ReplyTo);
     }
 
     private static int CountOf(string text, string needle)

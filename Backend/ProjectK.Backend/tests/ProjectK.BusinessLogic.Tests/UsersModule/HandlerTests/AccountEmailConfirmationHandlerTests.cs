@@ -102,13 +102,13 @@ public class AccountEmailConfirmationHandlerTests
             x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
-        _emailServiceMock.Verify(x => x.SendEmailAsync(
+        _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(
             newEmail,
-            "ProjectK - Confirm email change",
-            It.Is<string>(body =>
-                body.Contains("http://localhost:4200/settings/account?confirmEmail=true") &&
-                body.Contains("email=new%40example.com") &&
-                body.Contains("token=token%2Bwith%2Fspecial%3D%3D")),
+            currentEmail,
+            It.Is<string>(url =>
+                url.StartsWith("http://localhost:4200/settings/account?confirmEmail=true") &&
+                url.Contains("email=new%40example.com") &&
+                url.Contains("token=token%2Bwith%2Fspecial%3D%3D")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -138,7 +138,7 @@ public class AccountEmailConfirmationHandlerTests
         Assert.Equal(ResultType.Unauthorized, result.Type);
         _userManagerMock.Verify(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-        _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class AccountEmailConfirmationHandlerTests
         // Assert
         Assert.Equal(ResultType.Unauthorized, result.Type);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-        _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class AccountEmailConfirmationHandlerTests
         Assert.Equal(email, user.Email);
         Assert.Equal("new-phone", user.PhoneNumber);
         _userManagerMock.Verify(x => x.GenerateChangeEmailTokenAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
-        _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
