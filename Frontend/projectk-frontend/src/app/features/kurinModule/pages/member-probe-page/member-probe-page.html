@@ -69,7 +69,6 @@
 
                     <p-button label="Здати і закрити пробу"
                         icon="pi pi-check-circle"
-                        severity="contrast"
                         [disabled]="isUpdatingProbeStatus"
                         (onClick)="onCloseProbe()"
                      />
@@ -80,16 +79,6 @@
             @if (showCloseProbeInfo) {
             <p class="probe-close-meta mb-3 text-xs">
                 Дата закриття проби: {{ closedProbeDateLabel }}
-            </p>
-            }
-
-            @if (canManageProbePoints) {
-            <p class="probe-hint-text mb-3 text-xs">
-                Для ролей mentor/manager/admin доступні дії "Підписати" і "Скасувати підпис" для кожної точки окремо.
-            </p>
-            } @else {
-            <p class="probe-hint-text mb-3 text-xs">
-                Відображається read-only перегляд point-level підписів.
             </p>
             }
 
