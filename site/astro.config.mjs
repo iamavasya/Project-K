@@ -21,6 +21,8 @@ export default defineConfig({
 			},
 			favicon: '/favicon.svg',
 			customCss: ['./src/styles/brand.css'],
+			// Two trees in one sidebar config; the middleware shows the developer one only under /dev/.
+			routeMiddleware: './src/route-middleware.ts',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/iamavasya/Project-K' },
 			],
@@ -42,6 +44,7 @@ export default defineConfig({
 				{
 					label: 'Для розробника',
 					items: [
+						{ slug: 'dev' },
 						{ label: 'Основи', items: [{ autogenerate: { directory: 'dev/core' } }] },
 						{ label: 'Гайди', items: [{ autogenerate: { directory: 'dev/guides' } }] },
 						{ label: 'Експлуатація', items: [{ autogenerate: { directory: 'dev/operations' } }] },
