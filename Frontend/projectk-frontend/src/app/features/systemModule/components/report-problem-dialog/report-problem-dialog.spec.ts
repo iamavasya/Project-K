@@ -19,7 +19,10 @@ function fakeQuill(ops: DeltaOp[]) {
     insertText: () => undefined,
     setSelection: () => undefined,
     setContents() { this.ops = [{ insert: '\n' }]; },
-    getModule: () => ({ addHandler: () => undefined })
+    uploader: { options: { mimetypes: ['image/png', 'image/jpeg'] } as { mimetypes?: string[]; handler?: (range: unknown, files: File[]) => void } },
+    getModule(name: string) {
+      return name === 'uploader' ? this.uploader : { addHandler: () => undefined };
+    }
   };
 }
 
@@ -89,6 +92,20 @@ describe('ReportProblemDialogComponent', () => {
 
     expect(component.screenshots()).toEqual(['https://blob/feedback-screenshots/a.png']);
     expect(quill.embeds).toEqual(['https://blob/feedback-screenshots/a.png']);
+  });
+
+  // Quill's clipboard and drop handlers pass image files to its uploader, which by default inlines
+  // them as base64; here that path leads to the server, and WebP is welcome too.
+  it('routes pictures Quill receives from paste or drop through the upload', () => {
+    feedback.uploadScreenshot.and.returnValue(of({ url: 'https://blob/feedback-screenshots/b.png' }));
+    const quill = fakeQuill([{ insert: '\n' }]);
+    component.onEditorInit({ editor: quill as never });
+
+    quill.uploader.options.handler!({ index: 0, length: 0 }, [new File(['x'], 'shot.png', { type: 'image/png' })]);
+
+    expect(feedback.uploadScreenshot).toHaveBeenCalledTimes(1);
+    expect(quill.embeds).toEqual(['https://blob/feedback-screenshots/b.png']);
+    expect(quill.uploader.options.mimetypes).toContain('image/webp');
   });
 
   it('explains a failed upload and a failed send instead of going quiet', () => {

@@ -12,9 +12,16 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { DeltaOp, isDeltaBlank, quillDeltaToMarkdown } from '../../functions/quill-delta-to-markdown.function';
 import { FeedbackService, ProblemReportReceipt } from '../../services/feedback-service/feedback.service';
 
+/** Quill's uploader module: the clipboard and drop handlers hand it every image file. */
+interface QuillUploader {
+  options: { mimetypes?: string[]; handler?: (range: unknown, files: File[]) => void };
+}
+
 /** The slice of Quill this dialog touches; the real instance arrives from the editor's `onInit`. */
 interface QuillLike {
   root: HTMLElement;
+  getModule(name: 'toolbar'): { addHandler(name: string, fn: () => void): void } | undefined;
+  getModule(name: 'uploader'): QuillUploader | undefined;
   getContents(): { ops: DeltaOp[] };
   getSelection(focus?: boolean): { index: number; length: number } | null;
   getLength(): number;
@@ -25,6 +32,9 @@ interface QuillLike {
 }
 
 export const MAX_SCREENSHOTS = 5;
+
+/** What the upload endpoint accepts; Quill's own default stops at PNG and JPEG. */
+export const SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 /**
  * «Повідомити про проблему»: what happened, in the person's words with formatting and pictures,
@@ -66,12 +76,16 @@ export class ReportProblemDialogComponent {
   onEditorInit(event: { editor: QuillLike }): void {
     this.quill = event.editor;
 
-    // The toolbar's picture button and Ctrl+V both go through here: no data: URLs inside the
-    // text, only what the server stored.
-    const toolbar = (this.quill as unknown as { getModule(name: string): { addHandler(name: string, fn: () => void): void } })
-      .getModule('toolbar');
-    toolbar?.addHandler('image', () => this.pickScreenshot());
-    this.quill.root.addEventListener('paste', event => this.onPaste(event));
+    // The toolbar's picture button, Ctrl+V and drag-and-drop all end in the same upload: no data:
+    // URLs inside the text, only what the server stored. Quill's clipboard listener is registered
+    // before any of ours and would otherwise inline the pasted file as base64 through its uploader,
+    // so the uploader itself is pointed at the server.
+    this.quill.getModule('toolbar')?.addHandler('image', () => this.pickScreenshot());
+    const uploader = this.quill.getModule('uploader');
+    if (uploader) {
+      uploader.options.mimetypes = SCREENSHOT_MIME_TYPES;
+      uploader.options.handler = (_range, files) => files.forEach(file => this.attach(file));
+    }
   }
 
   onTextChange(): void {
@@ -89,17 +103,6 @@ export class ReportProblemDialogComponent {
       }
     });
     input.click();
-  }
-
-  onPaste(event: ClipboardEvent): void {
-    const image = Array.from(event.clipboardData?.items ?? []).find(item => item.type.startsWith('image/'));
-    const file = image?.getAsFile();
-    if (!file) {
-      return;
-    }
-
-    event.preventDefault();
-    this.attach(file);
   }
 
   onFilePicked(event: Event): void {

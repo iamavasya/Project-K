@@ -81,9 +81,9 @@ function splitIntoLines(ops: DeltaOp[]): Line[] {
 
   for (const op of ops) {
     if (typeof op.insert !== 'string') {
-      const image = op.insert.image;
-      if (image) {
-        current.push({ text: `![скриншот](${image})`, attributes: {} });
+      const picture = pictureSegment(op.insert.image);
+      if (picture) {
+        current.push(picture);
       }
       continue;
     }
@@ -107,6 +107,17 @@ function splitIntoLines(ops: DeltaOp[]): Line[] {
   }
 
   return lines;
+}
+
+/**
+ * A stored picture becomes a Markdown image. A data: URL is the editor's own inlining of a file,
+ * megabytes of base64 that no tracker wants and the description limit refuses, so it is dropped.
+ */
+function pictureSegment(image: string | undefined): Segment | null {
+  if (!image || image.startsWith('data:')) {
+    return null;
+  }
+  return { text: `![скриншот](${image})`, attributes: {} };
 }
 
 function plainText(segments: Segment[]): string {

@@ -66,6 +66,18 @@ describe('quillDeltaToMarkdown', () => {
     expect(quillDeltaToMarkdown(ops)).toBe('Ось:\n![скриншот](https://blob/feedback-screenshots/a.png)');
   });
 
+  it('leaves inlined base64 pictures out of the report', () => {
+    const ops: DeltaOp[] = [
+      { insert: 'Ось:\n' },
+      { insert: { image: 'data:image/png;base64,iVBORw0KGgo=' } },
+      { insert: '\n' },
+      { insert: { image: 'https://blob/feedback-screenshots/a.png' } },
+      { insert: '\n' }
+    ];
+
+    expect(quillDeltaToMarkdown(ops)).toBe('Ось:\n\n![скриншот](https://blob/feedback-screenshots/a.png)');
+  });
+
   it('treats the editor’s bare trailing newline as nothing written', () => {
     expect(isDeltaBlank([{ insert: '\n' }])).toBeTrue();
     expect(isDeltaBlank([{ insert: '  \n\n' }])).toBeTrue();
