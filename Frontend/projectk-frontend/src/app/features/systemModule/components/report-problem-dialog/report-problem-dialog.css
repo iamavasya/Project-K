@@ -62,6 +62,29 @@
   padding: 0.5rem 0.75rem;
 }
 
+/* The bundled editor styles are still written for Quill 1 markup, where a bullet list was a
+   `<ul>`; Quill 2 puts every list in an `<ol>` and marks the kind on `li[data-list]`, so its
+   bullet items take the ordered `counter(list-0)` marker and render as numbers. The marker is
+   restored by kind, and only `ordered` is left to move the counter. Three classes plus the
+   attribute outweigh the library's `.ql-editor ol li` at every indent level. */
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='bullet'],
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='checked'],
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='unchecked'] {
+  counter-increment: none;
+}
+
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='bullet']::before {
+  content: '\2022';
+}
+
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='checked']::before {
+  content: '\2611';
+}
+
+::ng-deep .report-problem .ql-container .ql-editor li[data-list='unchecked']::before {
+  content: '\2610';
+}
+
 ::ng-deep .report-problem .ql-container .ql-editor img {
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
