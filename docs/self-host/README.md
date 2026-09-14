@@ -113,7 +113,8 @@ Traefik або проксі хостера). Далі:
 
 Без поштового провайдера запрошення й відновлення пароля нікуди не підуть — у логах API буде
 лише текст листа (`Email__Provider=Mock`). Для живої інсталяції задай Resend:
-`Email__Provider=Resend`, `Email__ApiKey`, `Email__FromEmail` на своєму домені.
+`Email__Provider=Resend`, `Email__ApiKey`, `Email__FromEmail` на своєму домені; за бажанням
+`Email__ReplyTo` — скринька, куди люди зможуть відповісти на лист.
 
 ## Зворотний звʼязок
 

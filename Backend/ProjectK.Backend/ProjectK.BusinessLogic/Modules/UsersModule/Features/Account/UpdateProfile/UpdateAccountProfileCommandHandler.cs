@@ -95,7 +95,6 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
 
         var token = await _userManager.GenerateChangeEmailTokenAsync(user, email);
         var confirmationUrl = BuildEmailChangeConfirmationUrl(email, token);
-        var body = BuildEmailChangeConfirmationBody(currentEmail, email, confirmationUrl);
 
         _activityLogger.LogAudit(
             action: "Account.EmailChangeRequested",
@@ -104,11 +103,7 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
             newEmail: email,
             reason: "Email change requested.");
 
-        await _emailService.SendEmailAsync(
-            email,
-            "ProjectK - Confirm email change",
-            body,
-            cancellationToken);
+        await _emailService.SendEmailChangeConfirmationEmailAsync(email, currentEmail, confirmationUrl, cancellationToken);
 
         return new ServiceResult<AccountSettingsDto>(
             ResultType.Success,
@@ -119,20 +114,5 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
     {
         var baseUrl = _emailSettings.BaseUrl.TrimEnd('/');
         return $"{baseUrl}/settings/account?confirmEmail=true&email={WebUtility.UrlEncode(email)}&token={WebUtility.UrlEncode(token)}";
-    }
-
-    private static string BuildEmailChangeConfirmationBody(string currentEmail, string newEmail, string confirmationUrl)
-    {
-        return $@"
-                <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto;'>
-                    <h2>Confirm email change</h2>
-                    <p>We received a request to change your ProjectK account email from <strong>{WebUtility.HtmlEncode(currentEmail)}</strong> to <strong>{WebUtility.HtmlEncode(newEmail)}</strong>.</p>
-                    <div style='margin: 30px 0;'>
-                        <a href='{confirmationUrl}' style='background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Confirm email</a>
-                    </div>
-                    <p>If the button does not work, copy and paste this URL into your browser:</p>
-                    <p>{confirmationUrl}</p>
-                    <p>If you did not request this change, you can ignore this email.</p>
-                </div>";
     }
 }

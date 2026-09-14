@@ -10,7 +10,9 @@ namespace ProjectK.Infrastructure.Services.EmailService;
 /// <summary>
 /// The letters Лілейка sends, in Ukrainian, under one frame: the banner on top, one green button,
 /// a plain copy of the link for clients that strip buttons, and a footer that says why the letter
-/// came. Every colour is inline, because mail clients read no stylesheet.
+/// came. Every colour is inline, because mail clients read no stylesheet. Each letter also carries
+/// a plain-text part with the same words and link: spam filters score an HTML-only message down,
+/// and a text-only client still gets the whole letter.
 /// </summary>
 public class ResendEmailService : IEmailService
 {
@@ -23,13 +25,23 @@ public class ResendEmailService : IEmailService
         _settings = settings.Value;
     }
 
-    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    public Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        return SendAsync(to, subject, body, textBody: null, cancellationToken);
+    }
+
+    private async Task SendAsync(string to, string subject, string htmlBody, string? textBody, CancellationToken cancellationToken)
     {
         var message = new EmailMessage();
         message.From = $"{_settings.FromName} <{_settings.FromEmail}>";
         message.To.Add(to);
         message.Subject = subject;
-        message.HtmlBody = body;
+        message.HtmlBody = htmlBody;
+        message.TextBody = textBody;
+        if (!string.IsNullOrWhiteSpace(_settings.ReplyTo))
+        {
+            message.ReplyTo = _settings.ReplyTo;
+        }
 
         await _resend.EmailSendAsync(message, cancellationToken);
     }
@@ -37,18 +49,18 @@ public class ResendEmailService : IEmailService
     public async Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default)
     {
         var activationUrl = $"{_settings.BaseUrl}/activate/{token}";
-        var body = Frame(
-            title: "Вас запрошено до Лілейки",
-            paragraphs:
+        var letter = new Letter(
+            Title: "Вас запрошено до Лілейки",
+            Paragraphs:
             [
                 "Для вас створено акаунт у Лілейці — системі обліку куреня. Щоб активувати його і встановити пароль, натисніть кнопку нижче.",
                 $"Посилання діє {OnboardingPolicy.InvitationLifetimeDays} днів. Якщо воно прострочиться, нове можна замовити на сторінці входу через «Забули пароль».",
             ],
-            buttonText: "Активувати акаунт",
-            url: activationUrl,
-            footer: "Якщо ви не чекали цього листа, просто не звертайте на нього уваги — без активації акаунт не запрацює.");
+            ButtonText: "Активувати акаунт",
+            Url: activationUrl,
+            Footer: "Якщо ви не чекали цього листа, просто не звертайте на нього уваги — без активації акаунт не запрацює.");
 
-        await SendEmailAsync(to, "Лілейка · запрошення до системи", body, cancellationToken);
+        await SendAsync(to, "Лілейка · запрошення до системи", Frame(letter), PlainText(letter), cancellationToken);
     }
 
     public async Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default)
@@ -56,26 +68,60 @@ public class ResendEmailService : IEmailService
         // Both encoded: a reset token carries '+' and '/', and an address may too, and either
         // one read back from the query string as a space breaks the link for exactly that person.
         var resetUrl = $"{_settings.BaseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(to)}";
-        var body = Frame(
-            title: "Відновлення пароля",
-            paragraphs:
+        var letter = new Letter(
+            Title: "Відновлення пароля",
+            Paragraphs:
             [
                 "Ми отримали запит на зміну пароля до вашого акаунта в Лілейці. Щоб обрати новий пароль, натисніть кнопку нижче.",
                 "Посилання діє обмежений час.",
             ],
-            buttonText: "Встановити новий пароль",
-            url: resetUrl,
-            footer: "Якщо ви не просили змінити пароль, нічого робити не треба — ваш пароль лишається чинним.");
+            ButtonText: "Встановити новий пароль",
+            Url: resetUrl,
+            Footer: "Якщо ви не просили змінити пароль, нічого робити не треба — ваш пароль лишається чинним.");
 
-        await SendEmailAsync(to, "Лілейка · відновлення пароля", body, cancellationToken);
+        await SendAsync(to, "Лілейка · відновлення пароля", Frame(letter), PlainText(letter), cancellationToken);
+    }
+
+    public async Task SendEmailChangeConfirmationEmailAsync(string to, string currentEmail, string confirmationUrl, CancellationToken cancellationToken = default)
+    {
+        var letter = new Letter(
+            Title: "Підтвердження зміни пошти",
+            Paragraphs:
+            [
+                $"Ми отримали запит змінити пошту вашого акаунта в Лілейці з {currentEmail} на {to}. Щоб підтвердити нову адресу, натисніть кнопку нижче.",
+                "Поки ви не підтвердите, вхід лишається за старою адресою.",
+            ],
+            ButtonText: "Підтвердити пошту",
+            Url: confirmationUrl,
+            Footer: "Якщо ви не просили змінити пошту, нічого робити не треба — акаунт лишається за старою адресою.");
+
+        await SendAsync(to, "Лілейка · підтвердження зміни пошти", Frame(letter), PlainText(letter), cancellationToken);
+    }
+
+    /// <summary>What every letter says: a title, the paragraphs, one button with its link, a footer.</summary>
+    private sealed record Letter(string Title, IReadOnlyList<string> Paragraphs, string ButtonText, string Url, string Footer);
+
+    /// <summary>The same letter without markup: the words, the link on its own line, the footer.</summary>
+    private static string PlainText(Letter letter)
+    {
+        var lines = new List<string> { letter.Title, string.Empty };
+        lines.AddRange(letter.Paragraphs.Select(paragraph => paragraph + Environment.NewLine));
+        lines.Add($"{letter.ButtonText}: {letter.Url}");
+        lines.Add(string.Empty);
+        lines.Add("Не бачите наших листів? Перевірте теку «Спам» і додайте адресу відправника до контактів.");
+        lines.Add(string.Empty);
+        lines.Add(letter.Footer);
+        lines.Add("Лілейка · система обліку куреня. Лист надіслано автоматично.");
+        return string.Join(Environment.NewLine, lines);
     }
 
     /// <summary>
     /// One frame for every letter. Table layout on purpose: it is the only thing every mail
     /// client lays out the same way.
     /// </summary>
-    private string Frame(string title, IReadOnlyList<string> paragraphs, string buttonText, string url, string footer)
+    private string Frame(Letter letter)
     {
+        var (title, paragraphs, buttonText, url, footer) = letter;
         var bannerUrl = $"{_settings.BaseUrl}/assets/images/email-banner.png";
         var encodedUrl = WebUtility.HtmlEncode(url);
         var text = string.Join(
@@ -119,7 +165,7 @@ public class ResendEmailService : IEmailService
           <tr>
             <td style='padding:16px 32px 28px;border-top:1px solid #E3E8E6;'>
               <p style='margin:0;font-size:12px;line-height:1.5;color:#8A9490;'>{WebUtility.HtmlEncode(footer)}</p>
-              <p style='margin:8px 0 0;font-size:12px;line-height:1.5;color:#8A9490;'>Лілейка · система обліку куреня. Лист надіслано автоматично, відповідати на нього не потрібно.</p>
+              <p style='margin:8px 0 0;font-size:12px;line-height:1.5;color:#8A9490;'>Лілейка · система обліку куреня. Лист надіслано автоматично.</p>
             </td>
           </tr>
         </table>
