@@ -4,7 +4,8 @@
   margin: 0 0 0.75rem;
 }
 
-:host ::ng-deep .report-problem__public {
+/* The dialog is appended to <body>, outside this host, so the deep rules below carry no :host. */
+::ng-deep .report-problem__public {
   margin-bottom: 1rem;
 }
 
@@ -28,13 +29,38 @@
   margin-left: 0.35rem;
 }
 
-:host ::ng-deep .report-problem .ql-editor {
+::ng-deep .report-problem .ql-container,
+::ng-deep .report-problem .ql-editor {
   font-family: inherit;
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
-:host ::ng-deep .report-problem .ql-editor img {
+/* Quill's own theme is not loaded, only a stray light-grey `code` background reaches the
+   editor; both code formats take the theme's tokens so they read in the dark scheme too. */
+::ng-deep .report-problem .ql-editor code,
+::ng-deep .report-problem .ql-editor .ql-code-block-container {
+  background: var(--p-content-hover-background);
+  border: 1px solid var(--p-content-border-color);
+  color: var(--p-text-color);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+::ng-deep .report-problem .ql-editor code {
+  border-radius: 8px;
+  font-size: 0.875em;
+  padding: 0.1em 0.4em;
+}
+
+::ng-deep .report-problem .ql-editor .ql-code-block-container {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin: 0.35rem 0;
+  overflow-x: auto;
+  padding: 0.5rem 0.75rem;
+}
+
+::ng-deep .report-problem .ql-editor img {
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
   max-height: 14rem;
