@@ -34,8 +34,17 @@ public class ResendEmailService : IEmailService
     {
         var message = new EmailMessage();
         message.From = $"{_settings.FromName} <{_settings.FromEmail}>";
-        message.To.Add(to);
-        message.Subject = subject;
+        if (string.IsNullOrWhiteSpace(_settings.RedirectAllTo))
+        {
+            message.To.Add(to);
+            message.Subject = subject;
+        }
+        else
+        {
+            message.To.Add(_settings.RedirectAllTo);
+            message.Subject = $"{subject} → {to}";
+            message.Headers = new Dictionary<string, string> { ["X-Original-To"] = to };
+        }
         message.HtmlBody = htmlBody;
         message.TextBody = textBody;
         if (!string.IsNullOrWhiteSpace(_settings.ReplyTo))
