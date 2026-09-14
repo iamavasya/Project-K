@@ -21,5 +21,6 @@ npm run build    # dist/
 `Frontend/projectk-frontend/public/assets/demo/*.json` і перезаписуються з docker-стеку `demo`
 командою `node scripts/record-demo-fixtures.mjs` (з теки фронтенду). Збірка сайту разом із демо —
 `bash scripts/build-site.sh` з кореня репозиторію; результат у `dist/`. Для Cloudflare Pages: build
-command `bash scripts/build-site.sh`, output `site/dist`, `NODE_VERSION=22`; `public/_redirects`
+command `bash scripts/build-site.sh`, output `site/dist`, версія Node з `.node-version` у корені
+(без змінної `NODE_VERSION`); `public/_redirects`
 веде глибокі посилання `/demo/*` на оболонку застосунку.

@@ -4,8 +4,10 @@
 # Frontend/projectk-frontend/scripts/record-demo-fixtures.mjs and committed under
 # Frontend/projectk-frontend/public/assets/demo/.
 #
-# Cloudflare Pages: build command `bash scripts/build-site.sh`, output directory `site/dist`,
-# NODE_VERSION=22. Locally: the same command from the repository root; result in site/dist.
+# Cloudflare Pages: build command `bash scripts/build-site.sh`, output directory `site/dist`;
+# the Node version comes from .node-version at the repository root (Angular 22 needs 22.22.3+,
+# and a bare NODE_VERSION=22 may resolve to an older patch). Locally: the same command from the
+# repository root; result in site/dist.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
