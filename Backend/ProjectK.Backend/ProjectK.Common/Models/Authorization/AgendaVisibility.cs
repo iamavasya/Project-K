@@ -25,7 +25,7 @@ public static class AgendaVisibility
     /// before narrowing.
     /// </para>
     /// </summary>
-    public static Expression<Func<AgendaItem, bool>> AssignedToViewer(AgendaViewerScope viewer)
+    public static Expression<Func<AgendaItem, bool>> AddressedToViewer(AgendaViewerScope viewer)
     {
         var groupKeys = viewer.ViewerGroupKeys;
         var leadershipKeys = viewer.ViewerLeadershipKeys;
@@ -37,6 +37,31 @@ public static class AgendaVisibility
             (assignment.TargetType == AgendaTargetType.Leadership && leadershipKeys.Contains(assignment.TargetKey)) ||
             (assignment.TargetType == AgendaTargetType.Member && memberKey != null && assignment.TargetKey == memberKey));
     }
+
+    /// <summary>
+    /// What the viewer sees: everything addressed to them, plus everything they raised themselves. A
+    /// Гуртковий who hands a task to one of his people must still find it on his board, or he has
+    /// no way to follow it; the UI marks such items as not his own to do.
+    /// </summary>
+    public static Expression<Func<AgendaItem, bool>> AssignedToViewer(AgendaViewerScope viewer)
+    {
+        var addressed = AddressedToViewer(viewer);
+        var userKey = viewer.ViewerUserKey;
+        if (userKey is null)
+        {
+            return addressed;
+        }
+
+        var parameter = addressed.Parameters[0];
+        var raisedByViewer = Expression.Equal(
+            Expression.Property(parameter, nameof(AgendaItem.CreatedByUserKey)),
+            Expression.Constant(userKey.Value));
+        return Expression.Lambda<Func<AgendaItem, bool>>(Expression.OrElse(addressed.Body, raisedByViewer), parameter);
+    }
+
+    /// <summary>Whether at least one assignment reaches the viewer; false for an item they only authored.</summary>
+    public static bool IsAddressedTo(AgendaItem item, AgendaViewerScope viewer)
+        => AddressedToViewer(viewer).Compile()(item);
 
     /// <summary>
     /// Evaluates the same rule against an item whose <see cref="AgendaItem.Assignments"/> are loaded.

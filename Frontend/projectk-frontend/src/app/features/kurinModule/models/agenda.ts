@@ -36,6 +36,8 @@ export interface AgendaItemDto {
   createdByName: string | null;
   canEdit: boolean;
   canChangeStatus: boolean;
+  /** False when the viewer sees the item only as its author: it is someone else's to do. */
+  addressedToViewer: boolean;
   categoryKey: string | null;
   categoryName: string | null;
   categoryColorHex: string | null;

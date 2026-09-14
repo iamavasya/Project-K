@@ -42,6 +42,18 @@ public class AgendaPermissionsTests
         AgendaPermissions.IsVisibleTo(item, Viewer()).Should().BeTrue();
     }
 
+    // The author follows what they raised even when it went to someone else; it is visible, but not
+    // addressed to them, which is what the board draws differently.
+    [Fact]
+    public void IsVisibleTo_Author_SeesTheItemTheyRaised_ButItIsNotAddressedToThem()
+    {
+        var item = ItemAssignedTo(AgendaTargetType.Member, Guid.NewGuid(), createdBy: _userKey);
+
+        AgendaPermissions.IsVisibleTo(item, Viewer()).Should().BeTrue();
+        AgendaVisibility.IsAddressedTo(item, Viewer().ToScope()).Should().BeFalse();
+        AgendaPermissions.IsVisibleTo(item, Viewer() with { ViewerUserKey = Guid.NewGuid() }).Should().BeFalse();
+    }
+
     [Fact]
     public void IsVisibleTo_GroupAssignment_VisibleOnlyToThatGroup()
     {

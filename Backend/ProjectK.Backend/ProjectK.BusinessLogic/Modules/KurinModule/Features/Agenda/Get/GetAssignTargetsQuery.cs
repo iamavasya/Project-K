@@ -41,10 +41,27 @@ public sealed class GetAssignTargetsQueryHandler
         var members = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
 
-        // Managers/admins reach every group; mentors/group leaders only their scoped groups.
-        var visibleGroups = viewer.CanSeeWholeKurin
+        // Whoever may aim at the whole kurin sees every group; the rest see their own and the ones they
+        // lead. Each group is then asked the same question the create handler will ask, so the tree never
+        // offers what a save would refuse.
+        var visibleGroups = viewer.CanSeeWholeKurin || kurinDecision.IsAllowed
             ? groups
             : groups.Where(g => viewer.VisibilityGroupKeys.Contains(g.GroupKey)).ToList();
+
+        var targetableGroups = new HashSet<Guid>();
+        foreach (var group in visibleGroups)
+        {
+            var groupDecision = kurinDecision.IsAllowed
+                ? kurinDecision
+                : await _access.AuthorizeTargetAsync(
+                    new AgendaTargetInput { TargetType = AgendaTargetType.Group, TargetKey = group.GroupKey },
+                    ResourceAction.Create,
+                    cancellationToken);
+            if (groupDecision.IsAllowed)
+            {
+                targetableGroups.Add(group.GroupKey);
+            }
+        }
 
         // Проводи share the scope of what they lead: КВ/Курінний провід ⇒ kurin scope, Гуртковий провід
         // ⇒ its group. So the kurin-level offices are targetable exactly when the whole kurin is, and a
@@ -78,13 +95,13 @@ public sealed class GetAssignTargetsQueryHandler
                 {
                     GroupKey = g.GroupKey,
                     Name = g.Name,
-                    CanTargetGroup = true,
+                    CanTargetGroup = targetableGroups.Contains(g.GroupKey),
                     Leadership = groupLeaderships.TryGetValue(g.GroupKey, out var office)
                         ? new AgendaLeadershipTargetDto
                         {
                             LeadershipKey = office.LeadershipKey,
                             Label = AgendaLookups.LabelFor(office.Type, office.GroupKey, groupNames),
-                            CanTarget = true
+                            CanTarget = targetableGroups.Contains(g.GroupKey)
                         }
                         : null,
                     Members = members

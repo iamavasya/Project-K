@@ -27,7 +27,7 @@ public sealed record AgendaViewerContext(
     bool IsLeadership)
 {
     public AgendaViewerScope ToScope() =>
-        new(KurinKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
+        new(KurinKey, ViewerUserKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
 }
 
 public interface IAgendaAccess
@@ -148,7 +148,80 @@ public sealed class AgendaAccess : IAgendaAccess
             _ => ResourceType.Kurin
         };
 
-        return await _resourceAccess.CheckAccessAsync(resourceType, action, target.TargetKey, cancellationToken);
+        return await AuthorizeScopeAsync(resourceType, target.TargetKey, action, cancellationToken);
+    }
+
+    /// <summary>
+    /// The resource guard first: whoever runs a group or the kurin may aim at it. When that says no
+    /// and the action is Create, the провід rule follows: a member of a провід may address what the
+    /// office covers — the whole kurin for the курінний провід and КВ, the own гурток for a гуртковий
+    /// провід — without holding the far wider right to create groups or members there. Which of the
+    /// two the person is comes from their planning reach, the one permission the map already scopes
+    /// that way.
+    /// </summary>
+    private async Task<ResourceAccessDecision> AuthorizeScopeAsync(
+        ResourceType resourceType,
+        Guid key,
+        ResourceAction action,
+        CancellationToken cancellationToken)
+    {
+        var decision = await _resourceAccess.CheckAccessAsync(resourceType, action, key, cancellationToken);
+        if (decision.IsAllowed || action != ResourceAction.Create)
+        {
+            return decision;
+        }
+
+        if (!_currentUser.UserId.HasValue || !_currentUser.HasPermission(ResourceType.AgendaItem, ResourceAction.Create))
+        {
+            return decision;
+        }
+
+        var author = await _members.FindByAccountAsync(_currentUser.UserId.Value, cancellationToken);
+        if (author is null)
+        {
+            return decision;
+        }
+
+        var (kurinKey, groupKey) = await LocateAsync(resourceType, key, author.KurinKey, cancellationToken);
+        if (kurinKey != author.KurinKey)
+        {
+            return decision;
+        }
+
+        var reach = RolePermissionMap.WidestScope(_currentUser.Permissions(), ResourceType.PlanningSession, ResourceAction.Create);
+        if (reach == AccessScope.KurinWide)
+        {
+            return ResourceAccessDecision.Allow("Курінний провід addresses the whole kurin.");
+        }
+
+        if (reach == AccessScope.OwnGroups && groupKey.HasValue && groupKey == author.GroupKey)
+        {
+            return ResourceAccessDecision.Allow("Гуртковий провід addresses its own гурток.");
+        }
+
+        return decision;
+    }
+
+    /// <summary>Where a target lives: its kurin, and its гурток when it has one.</summary>
+    private async Task<(Guid? KurinKey, Guid? GroupKey)> LocateAsync(
+        ResourceType resourceType,
+        Guid key,
+        Guid authorKurinKey,
+        CancellationToken cancellationToken)
+    {
+        switch (resourceType)
+        {
+            case ResourceType.Kurin:
+                return (key, null);
+            case ResourceType.Group:
+                var groups = await _uow.Groups.GetAllAsync(authorKurinKey, cancellationToken);
+                return groups.Any(group => group.GroupKey == key) ? (authorKurinKey, key) : (null, null);
+            case ResourceType.Member:
+                var member = await _members.FindAsync(key, cancellationToken);
+                return member is null ? (null, null) : (member.KurinKey, member.GroupKey);
+            default:
+                return (null, null);
+        }
     }
 }
 

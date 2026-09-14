@@ -32,8 +32,11 @@
               [cdkDropListConnectedTo]="columnIds"
               (cdkDropListDropped)="onDrop($event, column.status)">
               @for (task of column.items; track task.agendaItemKey) {
-                <div class="agenda-card" cdkDrag [cdkDragDisabled]="!task.canChangeStatus">
+                <div class="agenda-card" [class.agenda-card--foreign]="!task.addressedToViewer" cdkDrag [cdkDragDisabled]="!task.canChangeStatus">
                   <div class="agenda-card__title">{{ task.title }}</div>
+                  @if (!task.addressedToViewer) {
+                    <div class="agenda-card__meta agenda-card__meta--foreign"><i class="pi pi-send"></i> Призначено іншим</div>
+                  }
                   @if (task.createdByName) {
                     <div class="agenda-card__meta"><i class="pi pi-user"></i> {{ task.createdByName }}</div>
                   }

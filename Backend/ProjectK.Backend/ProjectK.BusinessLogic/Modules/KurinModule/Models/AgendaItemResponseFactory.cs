@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Authorization;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
@@ -49,6 +50,7 @@ public static class AgendaItemResponseFactory
             CreatedByName = creatorNames.TryGetValue(item.CreatedByUserKey, out var creator) ? creator : null,
             CanEdit = AgendaPermissions.CanManage(item, viewer),
             CanChangeStatus = AgendaPermissions.CanChangeStatus(item, viewer),
+            AddressedToViewer = AgendaVisibility.IsAddressedTo(item, viewer.ToScope()),
             CategoryKey = category?.AgendaCategoryKey,
             CategoryName = category?.Name,
             CategoryColorHex = category?.ColorHex,

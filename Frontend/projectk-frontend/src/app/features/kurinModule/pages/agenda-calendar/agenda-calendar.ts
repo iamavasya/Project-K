@@ -197,6 +197,9 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     if (item.isRecurrenceInstance) {
       classes.push('agenda-ev--series');
     }
+    if (!item.addressedToViewer) {
+      classes.push('agenda-ev--foreign');
+    }
     if (!item.categoryColorHex) {
       classes.push(item.kind === 'Task' ? `agenda-ev--task agenda-ev--${item.status.toLowerCase()}` : 'agenda-ev--event');
     }

@@ -39,6 +39,8 @@
 :host ::ng-deep .agenda-ev--done { background: var(--p-blue-100); border-color: var(--p-blue-300); color: var(--p-blue-800); }
 /* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
 :host ::ng-deep .agenda-ev--series { opacity: 0.92; }
+/* The viewer raised it for someone else: dashed, and paler than what is theirs to attend. */
+:host ::ng-deep .agenda-ev--foreign { border-style: dashed; opacity: 0.75; }
 :host ::ng-deep .agenda-ev--series .fc-event-title::before { content: '↻ '; }
 
 @media (max-width: 640px) {
