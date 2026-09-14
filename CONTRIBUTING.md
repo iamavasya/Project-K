@@ -302,6 +302,14 @@ GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює теку в `site
 в `.gitignore`). Стиль сайту — `site/src/styles/brand.css`; нових кольорів і шрифтів там не вводити,
 токени ті самі, що в `lileyka-theme.css`.
 
+Демо на сайті (`/demo/`) — статична збірка застосунку `ng build --configuration demo`
+(`environment.demo.ts`, `isStaticDemo: true`, base `/demo/`), у якій `DemoApiInterceptor` відповідає
+на всі `/api/` і `/health` із фікстур `public/assets/demo/*.json`. Фікстури не пишуться руками:
+`scripts/record-demo-fixtures.mjs` обходить docker-стек `demo` і зберігає справжні відповіді,
+по файлу на місце (Звʼязковий, Впорядник, Юнак) плюс `public` для сторінок без входу.
+Перезаписувати їх треба після змін в API або в демо-сіді. Збірка сайту з демо —
+`scripts/build-site.sh`; на Cloudflare Pages це build command, вихід `site/dist`.
+
 ## Перевірка
 
 Бейслайни, які має тримати кожна зміна:
@@ -311,7 +319,7 @@ dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
 - бекенд — **1138** тестів (BusinessLogic 554 · API 489 · Infrastructure 82 · Architecture 13)
-- фронт — **712** тестів, лінт **0 помилок** (11 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- фронт — **716** тестів, лінт **0 помилок** (11 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
 ```bash

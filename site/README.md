@@ -13,3 +13,13 @@ npm install
 npm run dev      # http://localhost:4321
 npm run build    # dist/
 ```
+
+## Демо
+
+`/demo/` — статична збірка застосунку (`ng build --configuration demo`), у якій замість API працює
+`DemoApiInterceptor` із записаними відповідями. Фікстури лежать у
+`Frontend/projectk-frontend/public/assets/demo/*.json` і перезаписуються з docker-стеку `demo`
+командою `node scripts/record-demo-fixtures.mjs` (з теки фронтенду). Збірка сайту разом із демо —
+`bash scripts/build-site.sh` з кореня репозиторію; результат у `dist/`. Для Cloudflare Pages: build
+command `bash scripts/build-site.sh`, output `site/dist`, `NODE_VERSION=22`; `public/_redirects`
+веде глибокі посилання `/demo/*` на оболонку застосунку.

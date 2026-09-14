@@ -9,6 +9,8 @@ import { LileykaPreset } from './lileyka-preset';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
+import { DemoApiInterceptor } from './features/systemModule/services/demo-api.interceptor';
+import { environment } from '../environments/environment';
 import { HealthBannerService } from './features/systemModule/services/health-banner-service/health-banner.service';
 import { ThemeService } from './features/systemModule/services/theme-service/theme.service';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -167,6 +169,8 @@ export const appConfig: ApplicationConfig = {
       });
     }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
+    // The static demo has no API: recorded fixtures answer before any other interceptor runs.
+    ...(environment.isStaticDemo ? [{ provide: HTTP_INTERCEPTORS, useClass: DemoApiInterceptor, multi: true }] : []),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }
   ]

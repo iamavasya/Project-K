@@ -7,5 +7,6 @@ export const environment = {
   codeName: 'LocalDevelopment',
   envName: runtimeConfig?.environmentName || 'Staging',
   appName: runtimeConfig?.appName || 'Лілейка',
-  isF1TierBackend: true
+  isF1TierBackend: true,
+  isStaticDemo: false
 };

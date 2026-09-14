@@ -42,3 +42,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# badge pictures for the static demo: fetched by scripts/build-site.sh from the PlastBadgesParser release
+public/assets/demo/badges_images/
