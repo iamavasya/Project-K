@@ -354,7 +354,12 @@ public class KurinController : ControllerBase
     /// Ends a person's membership in this kurin. Their record and their history stay where they
     /// are; only the belonging is closed.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    /// <remarks>
+    /// Only the Звʼязковий closes a membership: a youth does not leave on their own, and a
+    /// Виховник does not release someone from the kurin. Handing a person to another kurin will
+    /// need the Звʼязковий's confirmation too, once that flow exists.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpDelete("{kurinKey:guid}/memberships/{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Delete, "route:memberKey")]
     [ProducesResponseType(StatusCodes.Status200OK)]

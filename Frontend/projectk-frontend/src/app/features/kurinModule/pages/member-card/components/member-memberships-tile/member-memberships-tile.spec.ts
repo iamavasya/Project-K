@@ -43,6 +43,24 @@ describe('MemberMembershipsTileComponent', () => {
     expect(component.past()).toEqual([left]);
   });
 
+  // Перевести в гурток може той, хто веде людину; вивести з куреня — лише Звʼязковий.
+  it('показує «Вивести» лише тому, хто може закрити членство', () => {
+    const kurinKey = crypto.randomUUID();
+    fixture.componentRef.setInput('memberships', [membership({ kurinKey })]);
+    fixture.componentRef.setInput('scopedKurinKey', kurinKey);
+    fixture.componentRef.setInput('canManage', true);
+    fixture.detectChanges();
+    const labels = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.membership-actions button'))
+      .map(b => b.textContent?.trim());
+
+    expect(labels()).toEqual(['Гурток']);
+
+    fixture.componentRef.setInput('canRelease', true);
+    fixture.detectChanges();
+
+    expect(labels()).toEqual(['Гурток', 'Вивести']);
+  });
+
   it('теперішнє членство показує лише рік початку', () => {
     expect(component.period(membership({}))).toBe('з 2022');
   });

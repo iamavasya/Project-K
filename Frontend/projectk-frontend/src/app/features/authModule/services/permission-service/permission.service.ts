@@ -1,6 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { AuthService } from '../auth-service/auth.service';
 
+/** The three провід bodies a leadership record belongs to. */
+export type LeadershipScope = 'kv' | 'kurin' | 'group';
+
 /**
  * Central UI gate. Every predicate is derived from the current user's backend permission strings
  * (format `Resource:Action:Scope`, e.g. `Group:Manage:KurinWide`), so nothing here inspects role
@@ -54,10 +57,23 @@ export class PermissionService {
     return this.isReviewer();
   }
 
-  // Зв'язковий manages every провід; Курінний and Гуртковий seat the offices below them, which the
-  // backend narrows to their own body.
-  canSetupLeadership(): boolean {
-    return this.isAdmin() || this.has('Leadership:Manage:KurinWide') || this.has('Leadership:Update');
+  /**
+   * Who seats a провід, per body, the way the backend's AssignableOffices has it: Звʼязковий and
+   * admin every one; Курінний only the kurin провід; Гуртковий only his гурток's. Checking
+   * `Leadership:Update` alone let a Гуртковий open the kurin провід form and meet a 403.
+   */
+  canSetupLeadership(type: LeadershipScope): boolean {
+    if (this.isAdmin() || this.has('Leadership:Manage:KurinWide')) {
+      return true;
+    }
+    switch (type) {
+      case 'kv':
+        return false;
+      case 'kurin':
+        return this.has('Leadership:Update:KurinWide');
+      case 'group':
+        return this.has('Leadership:Update:OwnGroups');
+    }
   }
 
   canReviewSkills(): boolean {

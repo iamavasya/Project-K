@@ -237,29 +237,6 @@ export class MemberCardComponent implements OnInit {
     }, {});
   }
 
-  publicIdCopied = false;
-
-  /**
-   * Свій код людина бачить у власному профілі й нікого більше про нього не питає. Чужий не
-   * показуємо навіть проводу: код — це те, що віддають, а не те, що про людину дізнаються.
-   */
-  get ownPublicId(): string | null {
-    const own = this.authService.getAuthStateValue()?.memberKey ?? null;
-    return own && own === this.member?.memberKey ? (this.member?.publicId ?? null) : null;
-  }
-
-  copyPublicId(): void {
-    const code = this.ownPublicId;
-    if (!code) {
-      return;
-    }
-
-    navigator.clipboard?.writeText(code).then(
-      () => this.publicIdCopied = true,
-      () => this.publicIdCopied = false
-    );
-  }
-
   /** Курінь, у якому дивиться той, хто дивиться. Дії над членством можливі тільки в ньому. */
   get scopedKurinKey(): string | null {
     return this.authService.getAuthStateValue()?.kurinKey ?? null;
@@ -338,6 +315,11 @@ export class MemberCardComponent implements OnInit {
 
   get canEditMember(): boolean {
     return this.canManageMemberActions;
+  }
+
+  /** Closing a membership is the Звʼязковий's call alone: not the person's, not the Виховник's. */
+  get canReleaseFromKurin(): boolean {
+    return this.permissionService.canManageWholeKurin();
   }
 
   get profileVerifiedAtDisplay(): string | null {
