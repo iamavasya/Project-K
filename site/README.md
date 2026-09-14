@@ -4,13 +4,14 @@
 
 - Довідка **не пишеться тут**: джерело — `../docs/user/*.md` (формат Starlight: frontmatter з `title`,
   картинки поруч у `images/`). Скрипт `scripts/sync-docs.mjs` копіює їх у `src/content/docs/user/`
-  перед `dev` і `build`; ця тека генерується і не комітиться.
+  перед `build`, а в `npm run dev` ще й стежить за `docs/` і кореневими документами: збережений
+  файл зʼявляється на сторінці за мить. Ця тека генерується і не комітиться.
 - Головна сторінка — `src/content/docs/index.mdx`.
 - Стиль — `src/styles/brand.css`, токени з `BRANDBOOK.md` і `lileyka-theme.css` застосунку.
 
 ```bash
 npm install
-npm run dev      # http://localhost:4321
+npm run dev      # http://localhost:4321, з живим оновленням з docs/
 npm run build    # dist/
 ```
 

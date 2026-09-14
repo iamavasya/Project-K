@@ -126,6 +126,26 @@
   border-radius: 12px;
 }
 
+/* Два скриншоти на сусідніх рядках у Markdown — один абзац із двома картинками. Тут це ряд
+   із двох колонок; на телефоні — колонка. У доці ніякого синтаксису, на GitHub ті ж дві картинки. */
+.sl-markdown-content p:has(> img + img) {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.sl-markdown-content p:has(> img + img) img {
+  margin: 0;
+  width: 100%;
+}
+
+@media (max-width: 40rem) {
+  .sl-markdown-content p:has(> img + img) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Портрет на сторінці «Про Лілейку» — єдина не-скриншотна картинка в довідці. */
 .sl-markdown-content img[alt='Ростислав Муха'] {
   max-width: 240px;
