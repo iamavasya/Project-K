@@ -1,0 +1,3 @@
+# Cloudflare Pages: the demo is an Angular SPA under /demo/, so every deep link must land on its
+# shell. Everything else is Astro's static pages and needs no rule.
+/demo/*  /demo/index.html  200

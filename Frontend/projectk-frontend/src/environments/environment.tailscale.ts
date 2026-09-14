@@ -9,5 +9,6 @@ export const environment = {
   codeName: 'TailscaleDevelopment',
   envName: runtimeConfig?.environmentName || 'Development',
   appName: runtimeConfig?.appName || 'Лілейка',
-  isF1TierBackend: false
+  isF1TierBackend: false,
+  isStaticDemo: false
 };
