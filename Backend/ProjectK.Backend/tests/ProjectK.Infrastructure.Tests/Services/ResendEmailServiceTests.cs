@@ -87,6 +87,33 @@ public class ResendEmailServiceTests
         Assert.DoesNotContain("Confirm email", message.HtmlBody);
     }
 
+    // Staging sends every letter to Resend's sink: it shows in the Resend log, with the person it
+    // was meant for in the subject and a header, and reaches nobody.
+    [Fact]
+    public async Task WithRedirect_ShouldSendToTheSink_AndKeepTheRealRecipientVisible()
+    {
+        var sent = new List<EmailMessage>();
+        var resend = new Mock<IResend>();
+        resend
+            .Setup(r => r.EmailSendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Callback((EmailMessage message, CancellationToken _) => sent.Add(message))
+            .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
+        var service = new ResendEmailService(resend.Object, Options.Create(new EmailSettings
+        {
+            FromEmail = "a@example.com",
+            BaseUrl = "https://lileyka.example",
+            RedirectAllTo = "delivered@resend.dev"
+        }));
+
+        await service.SendInvitationEmailAsync("marta@example.com", "t", CancellationToken.None);
+
+        var message = Assert.Single(sent);
+        Assert.Equal(["delivered@resend.dev"], message.To.ToArray());
+        Assert.Equal("Лілейка · запрошення до системи → marta@example.com", message.Subject);
+        Assert.Equal("marta@example.com", message.Headers!["X-Original-To"]);
+        Assert.Contains("/activate/t", message.HtmlBody);
+    }
+
     [Fact]
     public async Task WithoutReplyTo_ShouldLeaveTheHeaderOut()
     {
