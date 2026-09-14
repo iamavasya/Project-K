@@ -30,29 +30,31 @@
 }
 
 ::ng-deep .report-problem .ql-container,
-::ng-deep .report-problem .ql-editor {
+::ng-deep .report-problem .ql-container .ql-editor {
   font-family: inherit;
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
 /* Quill's own theme is not loaded, only a stray light-grey `code` background reaches the
-   editor; both code formats take the theme's tokens so they read in the dark scheme too. */
-::ng-deep .report-problem .ql-editor code,
-::ng-deep .report-problem .ql-editor .ql-code-block-container {
+   editor; both code formats take the theme's tokens so they read in the dark scheme too.
+   `.ql-container` is there for weight: Quill's rule has two classes and a tag as well, and in
+   the production bundle it comes later, so an equal selector would lose. */
+::ng-deep .report-problem .ql-container .ql-editor code,
+::ng-deep .report-problem .ql-container .ql-editor .ql-code-block-container {
   background: var(--p-content-hover-background);
   border: 1px solid var(--p-content-border-color);
   color: var(--p-text-color);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-::ng-deep .report-problem .ql-editor code {
+::ng-deep .report-problem .ql-container .ql-editor code {
   border-radius: 8px;
   font-size: 0.875em;
   padding: 0.1em 0.4em;
 }
 
-::ng-deep .report-problem .ql-editor .ql-code-block-container {
+::ng-deep .report-problem .ql-container .ql-editor .ql-code-block-container {
   border-radius: 8px;
   font-size: 0.875rem;
   margin: 0.35rem 0;
@@ -60,7 +62,7 @@
   padding: 0.5rem 0.75rem;
 }
 
-::ng-deep .report-problem .ql-editor img {
+::ng-deep .report-problem .ql-container .ql-editor img {
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
   max-height: 14rem;
