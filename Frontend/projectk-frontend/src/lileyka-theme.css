@@ -244,6 +244,32 @@ h1, h2, h3 {
   color: var(--p-navigation-item-icon-active-color);
 }
 
+/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. */
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content::after {
+  background: var(--lil-clay-500);
+  border-radius: 50%;
+  content: '';
+  height: 7px;
+  margin-inline-start: auto;
+  margin-inline-end: 0.8125rem;
+  width: 7px;
+}
+
+.lil-attention-anchor {
+  display: inline-flex;
+  position: relative;
+}
+
+.lil-attention-dot {
+  background: var(--lil-clay-500);
+  border-radius: 50%;
+  height: 7px;
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 7px;
+}
+
 .sidebar-version {
   color: var(--lil-faint);
   font-family: ui-monospace, monospace;

@@ -9,4 +9,5 @@ public interface IEmailService
     Task SendInvitationEmailAsync(string to, string token, CancellationToken cancellationToken = default);
     Task SendPasswordResetEmailAsync(string to, string token, CancellationToken cancellationToken = default);
     Task SendEmailChangeConfirmationEmailAsync(string to, string currentEmail, string confirmationUrl, CancellationToken cancellationToken = default);
+    Task SendWaitlistSubmittedEmailAsync(string to, string applicantName, string? claimedKurin, CancellationToken cancellationToken = default);
 }

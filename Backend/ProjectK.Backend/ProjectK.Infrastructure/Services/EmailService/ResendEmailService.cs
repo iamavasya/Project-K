@@ -107,6 +107,23 @@ public class ResendEmailService : IEmailService
         await SendAsync(to, "Лілейка · підтвердження зміни пошти", Frame(letter), PlainText(letter), cancellationToken);
     }
 
+    public async Task SendWaitlistSubmittedEmailAsync(string to, string applicantName, string? claimedKurin, CancellationToken cancellationToken = default)
+    {
+        var kurin = string.IsNullOrWhiteSpace(claimedKurin) ? "курінь не вказано" : $"курінь {claimedKurin}";
+        var letter = new Letter(
+            Title: "Нова заявка на розгляд",
+            Paragraphs:
+            [
+                $"{applicantName} ({kurin}) подає заявку на Лілейку. Заявка чекає на ваше рішення: схвалити і надіслати запрошення або відхилити.",
+                "Поки заявку не розглянуто, людина не може увійти в систему.",
+            ],
+            ButtonText: "Переглянути заявки",
+            Url: $"{_settings.BaseUrl}/waitlist",
+            Footer: "Цей лист приходить кожному адміністратору Лілейки, коли зʼявляється нова заявка.");
+
+        await SendAsync(to, "Лілейка · нова заявка на розгляд", Frame(letter), PlainText(letter), cancellationToken);
+    }
+
     /// <summary>What every letter says: a title, the paragraphs, one button with its link, a footer.</summary>
     private sealed record Letter(string Title, IReadOnlyList<string> Paragraphs, string ButtonText, string Url, string Footer);
 

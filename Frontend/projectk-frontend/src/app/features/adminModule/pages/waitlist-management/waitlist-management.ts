@@ -13,6 +13,7 @@ import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
+import { WaitlistAttentionService } from '../../services/waitlist-attention/waitlist-attention.service';
 import {
   getWaitlistStatusLabel,
   getWaitlistStatusSeverity,
@@ -142,6 +143,7 @@ export class WaitlistManagementComponent implements OnInit {
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
   private authService = inject(AuthService);
+  private waitlistAttention = inject(WaitlistAttentionService);
 
   ngOnInit() {
     this.loadEntries();
@@ -153,6 +155,7 @@ export class WaitlistManagementComponent implements OnInit {
       next: (data) => {
         this.entries = data;
         this.loading = false;
+        this.waitlistAttention.countFrom(data);
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити заявки' });

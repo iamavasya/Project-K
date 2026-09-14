@@ -13,5 +13,6 @@ public enum AppNotificationType
     AgendaItemAssigned = 8,
     AgendaItemUpdated = 9,
     AgendaItemStatusChanged = 10,
-    AgendaItemDeleted = 11
+    AgendaItemDeleted = 11,
+    WaitlistEntrySubmitted = 12
 }
