@@ -17,7 +17,9 @@ echo "== badge pictures for the demo"
 # from the same PlastBadgesParser release the API extracts, once per checkout.
 badges="$frontend/public/assets/demo/badges_images"
 if [ ! -d "$badges" ] || [ -z "$(ls -A "$badges" 2>/dev/null)" ]; then
-  release_url="$(curl -fsSL https://api.github.com/repos/iamavasya/PlastBadgesParser/releases/latest     | grep -o '"browser_download_url": *"[^"]*\.zip"' | head -1 | sed 's/.*"\(https[^"]*\)"//')"
+  release_url="$(curl -fsSL https://api.github.com/repos/iamavasya/PlastBadgesParser/releases/latest \
+    | grep -o '"browser_download_url": *"https[^"]*[.]zip"' | head -1 | grep -o 'https[^"]*')"
+  [ -n "$release_url" ] || { echo "no zip asset on the latest PlastBadgesParser release" >&2; exit 1; }
   echo "   fetching $release_url"
   tmp="$(mktemp -d)"
   curl -fsSL -o "$tmp/badges.zip" "$release_url"
