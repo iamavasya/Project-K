@@ -18,10 +18,43 @@ echo "== badge pictures for the demo"
 # The pictures are heavy (46 MB of Illustrator SVG) and public, so they are not in git: they come
 # from the same PlastBadgesParser release the API extracts, once per checkout.
 badges="$frontend/public/assets/demo/badges_images"
+repo="iamavasya/PlastBadgesParser"
+
+# The API is the obvious way to find the latest asset and the wrong one for a build machine:
+# api.github.com allows 60 unauthenticated calls an hour per address, and shared CI addresses
+# (Cloudflare Pages among them) burn that quota long before this build starts, answering 403.
+# github.com itself has no such quota, and `releases/latest` redirects to the tag, which is all
+# that is needed to name the asset. The API stays as a fallback for the day the name changes.
+resolve_release_url() {
+  local final tag version url api body
+
+  # github.com redirects `releases/latest` to the tag; the tag is all that is needed to name the
+  # asset, and no quota is spent.
+  final="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest" 2>/dev/null || true)"
+  tag="${final##*/tag/}"
+  if [ -n "$tag" ] && [ "$tag" != "$final" ]; then
+    version="${tag#v}"
+    url="https://github.com/$repo/releases/download/$tag/plast-badges-data-$version.zip"
+    if curl -fsSL -o /dev/null -r 0-0 "$url" 2>/dev/null; then
+      printf '%s' "$url"
+      return 0
+    fi
+  fi
+
+  # Fallback for the day the asset is named differently. Rate-limited, so it is not the first try.
+  api="https://api.github.com/repos/$repo/releases/latest"
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    body="$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$api" 2>/dev/null || true)"
+  else
+    body="$(curl -fsSL "$api" 2>/dev/null || true)"
+  fi
+  printf '%s' "$body" \
+    | grep -o '"browser_download_url": *"https[^"]*[.]zip"' | head -1 | grep -o 'https[^"]*' || true
+}
+
 if [ ! -d "$badges" ] || [ -z "$(ls -A "$badges" 2>/dev/null)" ]; then
-  release_url="$(curl -fsSL https://api.github.com/repos/iamavasya/PlastBadgesParser/releases/latest \
-    | grep -o '"browser_download_url": *"https[^"]*[.]zip"' | head -1 | grep -o 'https[^"]*')"
-  [ -n "$release_url" ] || { echo "no zip asset on the latest PlastBadgesParser release" >&2; exit 1; }
+  release_url="$(resolve_release_url || true)"
+  [ -n "$release_url" ] || { echo "no zip asset on the latest $repo release" >&2; exit 1; }
   echo "   fetching $release_url"
   tmp="$(mktemp -d)"
   curl -fsSL -o "$tmp/badges.zip" "$release_url"
