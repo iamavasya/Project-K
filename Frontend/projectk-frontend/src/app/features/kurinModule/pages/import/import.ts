@@ -15,6 +15,7 @@ import {
   ColumnMapping,
   FIELD_OPTIONS,
   REQUIRED_FIELDS,
+  requiredFieldName,
   RosterColumnPreview,
   RosterField,
   RosterImportReport,
@@ -67,6 +68,8 @@ export class RosterImportComponent implements OnInit {
     const used = new Set(Object.values(this.chosen()).map(value => optionByValue(value).field));
     return REQUIRED_FIELDS.filter(field => !used.has(field));
   });
+
+  readonly unmappedRequiredNames = computed(() => this.unmappedRequired().map(requiredFieldName));
 
   readonly canProceed = computed(() => this.unmappedRequired().length === 0);
 

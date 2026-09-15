@@ -63,7 +63,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             .ToList();
 
         var foreignKurinRows = usable
-            .Where(row => row.KurinNumber != kurin.Number)
+            .Where(row => row.KurinNumber is not null && row.KurinNumber != kurin.Number)
             .Select(row => row.Number)
             .ToList();
 
