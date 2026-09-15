@@ -18,8 +18,8 @@
         </p>
         <p class="import__hint">
           Обов'язкові дані: прізвище, ім'я, дата народження, пластовий ступінь <strong>і дата його
-          здобуття</strong>, гурток, курінь. Рядок, у якому чогось із цього немає, не імпортується —
-          і ти побачиш, якого саме.
+          здобуття</strong>, гурток. Курінь вказувати не треба: склад іде в цей курінь. Рядок, у якому
+          чогось із цього немає, не імпортується — і ти побачиш, якого саме.
         </p>
 
         <label class="import__file">
@@ -37,9 +37,16 @@
           де вгадали не так.
         </p>
 
-        @if (unmappedRequired().length) {
-          <p-message severity="warn" styleClass="import__error"
-            text="Ще не вказано обов'язкові колонки. Без них імпорт не запуститься." />
+        @if (unmappedRequiredNames().length) {
+          <p-message severity="warn" styleClass="import__error">
+            <span class="import__missing">
+              Ще не вказано:
+              @for (name of unmappedRequiredNames(); track name) {
+                <strong class="import__missing-field">{{ name }}</strong>
+              }
+              Без цього імпорт не запуститься.
+            </span>
+          </p-message>
         }
 
         <!-- Не scrollable: колонок стільки, скільки у файлі, і таблиця має бути заввишки як

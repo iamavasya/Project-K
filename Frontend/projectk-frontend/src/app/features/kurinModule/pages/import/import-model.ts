@@ -91,12 +91,14 @@ const REQUIRED_LABELS: Record<string, string> = {
   [RosterField.DateOfBirth]: 'Дата народження *',
   [RosterField.PlastLevel]: 'Пластовий ступінь *',
   [RosterField.PlastLevelDate]: 'Дата ступеня *',
-  [RosterField.GroupName]: 'Гурток *',
-  [RosterField.KurinNumber]: 'Курінь *'
+  [RosterField.GroupName]: 'Гурток *'
 };
 
+/* Курінь тут необов'язковий: імпорт завжди йде в той курінь, з якого його запустили, а колонка
+   з іншим числом лише попереджає. */
 const OPTIONAL_LABELS: Record<string, string> = {
   [RosterField.MiddleName]: 'По батькові',
+  [RosterField.KurinNumber]: 'Курінь',
   [RosterField.PhoneNumber]: 'Телефон',
   [RosterField.Email]: 'Пошта',
   [RosterField.Address]: 'Адреса',
@@ -121,6 +123,11 @@ export const FIELD_OPTIONS: FieldOption[] = [
 
 /** Поля, без яких рядок не імпортується — їх треба зіставити, перш ніж рухатись далі. */
 export const REQUIRED_FIELDS: RosterField[] = Object.keys(REQUIRED_LABELS) as RosterField[];
+
+/** Назва обов'язкового поля без зірочки — щоб назвати людині, чого саме ще бракує. */
+export function requiredFieldName(field: RosterField): string {
+  return (REQUIRED_LABELS[field] ?? field).replace(/\s\*$/, '');
+}
 
 export function optionValueOf(field: RosterField, level: PlastLevel | null | undefined): string {
   return field === RosterField.LevelDate && level ? `LevelDate:${level}` : field;

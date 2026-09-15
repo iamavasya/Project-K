@@ -274,6 +274,20 @@ public class ImportRosterHandlerTests
     /// Reports name the kurin in words as often as in numbers, and refusing on that would refuse
     /// most real files.
     /// </summary>
+    /// <summary>
+    /// The import lands in the kurin it was started from, so the file need not say which one;
+    /// a blank kurin cell is neither a rejection nor a foreign-kurin warning.
+    /// </summary>
+    [Fact]
+    public async Task ARowWithoutAKurin_IsImportedHere_WithoutAWarning()
+    {
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "")]);
+
+        report.Data!.CreatedCount.Should().Be(1);
+        report.Data.RejectedCount.Should().Be(0);
+        report.Data.ForeignKurinRows.Should().BeEmpty();
+    }
+
     [Fact]
     public async Task ARowNamingAnotherKurin_IsFlaggedButNotRefused()
     {
