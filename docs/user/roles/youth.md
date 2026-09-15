@@ -32,6 +32,8 @@ sidebar:
 
 ![Calendar](../images/calendar.png)
 
+![Calendar-1](../images/calendar-1.png)
+
 ## Сповіщення
 
 Дзвіночок угорі: коли впорядник підписав точку, розглянув вмілість, додав відзначення чи
