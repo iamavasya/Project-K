@@ -91,7 +91,8 @@ const REQUIRED_LABELS: Record<string, string> = {
   [RosterField.DateOfBirth]: 'Дата народження *',
   [RosterField.PlastLevel]: 'Пластовий ступінь *',
   [RosterField.PlastLevelDate]: 'Дата ступеня *',
-  [RosterField.GroupName]: 'Гурток *'
+  [RosterField.GroupName]: 'Гурток *',
+  [RosterField.Email]: 'Пошта *'
 };
 
 /* Курінь тут необов'язковий: імпорт завжди йде в той курінь, з якого його запустили, а колонка
@@ -100,7 +101,6 @@ const OPTIONAL_LABELS: Record<string, string> = {
   [RosterField.MiddleName]: 'По батькові',
   [RosterField.KurinNumber]: 'Курінь',
   [RosterField.PhoneNumber]: 'Телефон',
-  [RosterField.Email]: 'Пошта',
   [RosterField.Address]: 'Адреса',
   [RosterField.School]: 'Школа'
 };
