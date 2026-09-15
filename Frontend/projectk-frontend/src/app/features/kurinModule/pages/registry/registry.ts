@@ -99,8 +99,8 @@ export class RegistryComponent implements OnInit {
   });
 
   /**
-   * Юнаки й впорядники — окремими таблицями, бо це різні питання до одного складу. Розділяє уряд
-   * у кадрі виховників, який рахує бекенд: гуртковий теж має уряд і теж юнак.
+   * Юнаки й впорядники — окремими таблицями, бо це різні питання до одного складу. Розділяє діловодство
+   * у кадрі виховників, який рахує бекенд: гуртковий теж має діловодство і теж юнак.
    */
   readonly youth = computed(() => this.found().filter(member => !member.isStaff));
   readonly staff = computed(() => this.found().filter(member => member.isStaff));
