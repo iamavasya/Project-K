@@ -85,17 +85,36 @@
 /* Заголовки — щільніші, як у застосунку. */
 .sl-markdown-content h1,
 .sl-markdown-content h2,
-.sl-markdown-content h3,
-.hero h1 {
+.sl-markdown-content h3 {
   font-weight: 800;
   letter-spacing: -0.01em;
 }
 
-/* Hero: підпис — рукописний рядок, як порожні стани в застосунку; це єдине місце для Neucha. */
-.hero .tagline {
+/* Знак поруч зі словом «Лілейка» — це логотип, а логотип набирається Neucha (BRANDBOOK §1). Той
+   самий напис стоїть у шапці довідки й у hero на вітальній, тож правило одне на обидва. У Neucha
+   є лише накреслення 400: підвищена жирність змусила б браузер домальовувати її самому й зіпсувала
+   б форму літер. Розмір трохи більший, бо рукописний шрифт оптично дрібніший за Manrope. */
+.site-title span,
+.hero h1 {
   font-family: var(--lil-font-hand);
-  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
-  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.site-title span {
+  font-size: 1.5rem;
+}
+
+.hero h1 {
+  font-size: clamp(3.25rem, 8vw, 5rem);
+  line-height: 1.05;
+}
+
+/* Підпис під логотипом — звичайний текст: Neucha тримається логотипа й заголовків порожніх
+   станів, більше ніде (BRANDBOOK §3). Два рукописні рядки поспіль читалися б як один блок. */
+.hero .tagline {
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  line-height: 1.4;
 }
 
 /* Картки живуть на рамці 1px, без тіней (BRANDBOOK §правило 4 і 6). */
