@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventContentArg, EventDropArg, EventInput } from '@fullcalendar/core';
 import ukLocale from '@fullcalendar/core/locales/uk';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -80,6 +80,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     // the whole event bar in all views. Month view drags by day; the time views drag by time and day.
     eventDisplay: 'block',
     events: [],
+    eventContent: (arg: EventContentArg) => this.renderEvent(arg),
     datesSet: (arg: DatesSetArg) => this.onDatesSet(arg),
     eventClick: (arg: EventClickArg) => this.onEventClick(arg),
     select: (arg: DateSelectArg) => this.onSelect(arg),
@@ -192,16 +193,34 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     };
   }
 
+  /**
+   * Dot, text, glyph: the dot carries the kind or status colour so a chip reads at a glance
+   * even when a category paints the whole bar; the glyph sits faint at the far end.
+   */
+  private renderEvent(arg: EventContentArg): { domNodes: Node[] } {
+    const item = arg.event.extendedProps['item'] as AgendaItemDto;
+    const dot = document.createElement('span');
+    dot.className = 'agenda-ev__dot';
+    const title = document.createElement('span');
+    title.className = 'agenda-ev__title';
+    title.textContent = arg.timeText ? `${arg.timeText} ${arg.event.title}` : arg.event.title;
+    const icon = document.createElement('i');
+    icon.className = `agenda-ev__icon pi ${item.kind === 'Task' ? 'pi-check-square' : 'pi-calendar'}`;
+    icon.setAttribute('aria-hidden', 'true');
+    return { domNodes: [dot, title, icon] };
+  }
+
   private eventClasses(item: AgendaItemDto): string[] {
-    const classes = ['agenda-ev'];
+    const classes = ['agenda-ev', item.kind === 'Task' ? `agenda-ev--task agenda-ev--${item.status.toLowerCase()}` : 'agenda-ev--event'];
     if (item.isRecurrenceInstance) {
       classes.push('agenda-ev--series');
     }
     if (!item.addressedToViewer) {
       classes.push('agenda-ev--foreign');
     }
+    // A category paints the bar itself; only a plain item takes the kind/status plate.
     if (!item.categoryColorHex) {
-      classes.push(item.kind === 'Task' ? `agenda-ev--task agenda-ev--${item.status.toLowerCase()}` : 'agenda-ev--event');
+      classes.push('agenda-ev--plain');
     }
     return classes;
   }

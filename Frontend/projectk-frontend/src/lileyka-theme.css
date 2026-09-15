@@ -79,6 +79,28 @@
   /* Світла підкладка під захищену чорну графіку — не темніє в темній темі, §7. */
   --lil-plate:    #F7F9F8;
 
+  /* Календар і задачі (BRANDBOOK §2, винятки «дошка задач» і «синій у календарі»): підкладка,
+     рамка для трьох станів задачі та для події; текст — чорнило, як числа днів. Ті самі три пари, що й у тегах
+     статусів на дошці, лише як плашки, щоб задача читалась на сітці місяця в обох темах. */
+  --lil-agenda-todo-bg:       #EEF1F0;
+  --lil-agenda-todo-line:     #C9D0CD;
+  --lil-agenda-todo-fg:       var(--lil-ink);
+  --lil-agenda-progress-bg:   var(--lil-clay-50);
+  --lil-agenda-progress-line: #E8B98F;
+  --lil-agenda-progress-fg:   var(--lil-ink);
+  --lil-agenda-done-bg:       var(--lil-green-50);
+  --lil-agenda-done-line:     var(--lil-green-200);
+  --lil-agenda-done-fg:       var(--lil-ink);
+  --lil-agenda-event-bg:      var(--lil-blue-50);
+  --lil-agenda-event-line:    #B5C8DD;
+  --lil-agenda-event-fg:      var(--lil-ink);
+  /* Крапка-індикатор на початку плашки й напівпрозорий гліф у її кінці. */
+  --lil-agenda-todo-dot:      var(--lil-muted);
+  --lil-agenda-progress-dot:  var(--lil-clay-500);
+  --lil-agenda-done-dot:      var(--p-primary-color);
+  --lil-agenda-event-dot:     var(--lil-blue-700);
+  --lil-agenda-glyph:         rgba(16, 20, 19, 0.22);
+
   --lil-radius:    8px;
   --lil-radius-lg: 12px;
 
@@ -126,6 +148,21 @@
   /* Календарний синій — темна тема (див. світлий :root). */
   --lil-blue-50:  #17222E;
   --lil-blue-700: #A0C3E6;
+
+  /* Календар і задачі — темна тема (див. світлий :root). */
+  --lil-agenda-todo-bg:       #1D2320;
+  --lil-agenda-todo-line:     #3A423E;
+  --lil-agenda-todo-fg:       var(--lil-ink);
+  --lil-agenda-progress-bg:   var(--lil-clay-50);
+  --lil-agenda-progress-line: #5C4230;
+  --lil-agenda-progress-fg:   var(--lil-ink);
+  --lil-agenda-done-bg:       #1D2E27;
+  --lil-agenda-done-line:     #2F5A46;
+  --lil-agenda-done-fg:       var(--lil-ink);
+  --lil-agenda-event-bg:      var(--lil-blue-50);
+  --lil-agenda-event-line:    #2E4560;
+  --lil-agenda-event-fg:      var(--lil-ink);
+  --lil-agenda-glyph:         rgba(233, 237, 234, 0.26);
 
   --p-primary-color: #34C48D;
   --p-primary-contrast-color: #052018;
