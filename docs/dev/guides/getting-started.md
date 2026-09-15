@@ -97,6 +97,6 @@ azurite --location ./azurite --debug ./azurite/debug.log --skipApiVersionCheck
 
 ## Далі
 
-- [Технологічний стек](/dev/guides/tech-stack/)
+- [Технологічний стек](/dev/reference/tech-stack/)
 - [Конвенції](/dev/core/contributing/) — прочитати до першого коміту
 - [Архітектура](/dev/core/architecture/)

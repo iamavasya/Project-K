@@ -2,7 +2,7 @@
 title: Проби та вмілості
 description: Модуль поступу — каталог з пакета, прогрес у базі, аудит змін.
 sidebar:
-  order: 6
+  order: 4
 ---
 
 Модуль відстежує складання **проб** і здобуття **вмілостей** членами куреня. Каталог (вимоги проб,
@@ -30,8 +30,10 @@ sidebar:
 - **BadgeProgress** — вмілість;
 - **ProbeProgressAuditEvent** / **BadgeProgressAuditEvent** — журнал змін.
 
-Права: підписати точку може впорядник свого гуртка або провід куреня (`RolePermissionMap`,
-ресурси `ProbeProgress` і `BadgeProgress` зі скоупом `OwnGroups` / `KurinWide`).
+Права: підписати точку і розглянути вмілість може впорядник у своїх гуртках (`OwnGroups`) або
+Звʼязковий у всьому курені (`KurinWide`) — гранти на `ProbeProgress` і `BadgeProgress` у
+`RolePermissionMap` мають лише вони й адміністратор. Провід куреня (курінний, писар, скарбник) цих
+грантів не має: усі записи `MemberProgressController` захищені `ResourceAuthorize` по учаснику.
 
 ## Фронтенд
 

@@ -291,15 +291,19 @@ features/<x>Module/
 ## Сайт і довідка
 
 `site/` — Astro + Starlight (`npm run dev` → http://localhost:4321, `npm run build` → `site/dist/`).
-Дві гілки: «Для користувача» з `docs/user/` і «Для розробника» з `docs/dev/` (гайди, DevLog) плюс
+Дві гілки: «Для користувача» з `docs/user/` (у тому числі покрокові how-to в `docs/user/howto/`) і
+«Для розробника» з `docs/dev/` (`core/` — основи поруч із кореневими документами, `guides/` — лише
+пояснення розробнику, `reference/` — переліки й каталоги, `history/` — витоки, `devlog/`) плюс
 кореневі документи (`ARCHITECTURE.md`, `CONTRIBUTING.md`, `BRANDBOOK.md`, `SECURITY.md`, `docs/self-host/*`,
 `docs/observability.md`, `docs/data-retention.md`, `docs/quality-baseline.md`), які `sync-docs.mjs`
 підтягує з frontmatter із їхнього `# H1` і позначкою «Джерело» — тож їх не дублюють, а правлять там,
 де вони лежать. Сторінки в `docs/` пишуться у форматі Starlight: кожна починається з frontmatter
 (`title`, `description`, `sidebar.order`), без власного `# H1` — заголовок ставить Starlight;
 картинки лежать поруч у `docs/user/images/` і згадуються відносно (`./images/…`), щоб працювали й на
-GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює теку в `site/src/content/docs/user/` (генерована,
-в `.gitignore`). Стиль сайту — `site/src/styles/brand.css`; нових кольорів і шрифтів там не вводити,
+GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює обидві теки в `site/src/content/docs/{user,dev}/`
+(генеровані, в `.gitignore`). Діаграми — блок ```` ```mermaid ```` у markdown: `astro-mermaid` рендерить
+його в браузері, `brand.css` фарбує в токени обох тем, а `public/scripts/diagram-viewer.js` додає
+кнопку «На весь екран» із зумом і перетягуванням. Стиль сайту — `site/src/styles/brand.css`; нових кольорів і шрифтів там не вводити,
 токени ті самі, що в `lileyka-theme.css`.
 
 Демо на сайті (`/demo/`) — статична збірка застосунку `ng build --configuration demo`
