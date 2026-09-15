@@ -45,8 +45,10 @@ internal sealed class RosterRow
     /// <summary>
     /// Why this row cannot be imported, or null when it can. The required set is IMPORT-01's:
     /// a name, a birthday, and a ступінь **with the day it was reached** — a ступінь without one
-    /// is not a fact the system will store. The kurin is not asked for: the import always lands
-    /// in the kurin it was started from, and a column naming another one is only a warning.
+    /// is not a fact the system will store. An e-mail address is required too: the import is how
+    /// a kurin brings its people in, and a person with no way to sign in is only half brought in.
+    /// The kurin is not asked for: the import always lands in the kurin it was started from, and
+    /// a column naming another one is only a warning.
     /// </summary>
     public string? Rejection()
     {
@@ -56,6 +58,7 @@ internal sealed class RosterRow
         if (Level is null) return "Немає пластового ступеня або його не вдалося розпізнати.";
         if (LevelDate is null) return "Ступінь є, а дати його здобуття немає.";
         if (string.IsNullOrWhiteSpace(GroupName)) return "Не вказано гурток.";
+        if (string.IsNullOrWhiteSpace(Email)) return "Немає пошти: без неї людині не відкрити акаунт.";
         return null;
     }
 

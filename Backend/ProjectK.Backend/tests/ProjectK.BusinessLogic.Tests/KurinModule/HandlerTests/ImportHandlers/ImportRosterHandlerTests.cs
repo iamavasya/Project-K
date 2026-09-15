@@ -59,7 +59,7 @@ public class ImportRosterHandlerTests
         _handler = new ImportRosterCommandHandler(_kurinData.Object, _memberData.Object, _mediator.Object);
     }
 
-    /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь.</summary>
+    /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь, Пошта.</summary>
     private static readonly IReadOnlyList<ColumnMapping> FullMapping =
     [
         new(0, RosterField.LastName),
@@ -68,22 +68,20 @@ public class ImportRosterHandlerTests
         new(3, RosterField.PlastLevel),
         new(4, RosterField.PlastLevelDate),
         new(5, RosterField.GroupName),
-        new(6, RosterField.KurinNumber)
+        new(6, RosterField.KurinNumber),
+        new(7, RosterField.Email)
     ];
 
     private static SheetRow Row(int number, params string[] cells) => new(number, cells);
 
-    /// <summary>The same columns with an address at the end: the file most куріні actually have.</summary>
-    private static readonly IReadOnlyList<ColumnMapping> MappingWithEmail =
-        [.. FullMapping, new(7, RosterField.Email)];
 
     /// <summary>
-    /// A row with an address is a person who gets an account: the file is how a kurin brings its
-    /// people in, and someone with no way to sign in is only half brought in. The dry run promises
-    /// it, the real run does it, and a row without an address is left alone.
+    /// Every imported person gets an account: the file is how a kurin brings its people in, and
+    /// someone with no way to sign in is only half brought in. The dry run promises it, the real
+    /// run does it, and a row without an address is rejected and says why.
     /// </summary>
     [Fact]
-    public async Task ARowWithAnAddress_IsPromisedAnAccount_OnADryRun()
+    public async Task ARowWithAnAddress_IsPromisedAnAccount_OnADryRun_AndOneWithoutIsRejected()
     {
         var report = await _handler.Handle(
             new ImportRosterCommand(
@@ -92,14 +90,17 @@ public class ImportRosterHandlerTests
                     Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com"),
                     Row(3, "Коваль", "Марта", "02.02.2011", "скоб", "22.04.2024", "Ведмеді", "2", "")
                 ],
-                MappingWithEmail,
+                FullMapping,
                 CreateMissingGroups: false,
                 DryRun: true),
             CancellationToken.None);
 
         report.Data!.InvitedCount.Should().Be(1);
         report.Data.Rows.Single(row => row.RowNumber == 2).AccountInvited.Should().BeTrue();
-        report.Data.Rows.Single(row => row.RowNumber == 3).AccountInvited.Should().BeFalse();
+        var without = report.Data.Rows.Single(row => row.RowNumber == 3);
+        without.Outcome.Should().Be(RowOutcome.Rejected);
+        without.AccountInvited.Should().BeFalse();
+        without.Reason.Should().Contain("пошти");
         _mediator.Verify(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -120,7 +121,7 @@ public class ImportRosterHandlerTests
             new ImportRosterCommand(
                 KurinKey,
                 [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")],
-                MappingWithEmail,
+                FullMapping,
                 CreateMissingGroups: false,
                 DryRun: false),
             CancellationToken.None);
@@ -146,7 +147,7 @@ public class ImportRosterHandlerTests
             new ImportRosterCommand(
                 KurinKey,
                 [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")],
-                MappingWithEmail,
+                FullMapping,
                 CreateMissingGroups: false,
                 DryRun: false),
             CancellationToken.None);
@@ -167,7 +168,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ARowWithEverything_IsAPersonToCreate()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
         report.Data.RejectedCount.Should().Be(0);
@@ -180,7 +181,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ALevelWithoutItsDate_IsRejected()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "", "Ведмеді", "2", "ivan@example.com")]);
 
         var row = report.Data!.Rows.Single();
         row.Outcome.Should().Be(RowOutcome.Rejected);
@@ -190,7 +191,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ADateWithoutALevel_IsRejectedToo()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
     }
@@ -200,7 +201,7 @@ public class ImportRosterHandlerTests
     [InlineData("Ім'я відсутнє", "Петренко", "")]
     public async Task ARowWithoutAName_IsRejected(string _, string lastName, string firstName)
     {
-        var report = await RunAsync([Row(2, lastName, firstName, "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, lastName, firstName, "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
     }
@@ -208,7 +209,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task AGurtokTheKurinDoesNotHave_IsRejectedUnlessOpeningItWasAsked()
     {
-        var rows = new[] { Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2") };
+        var rows = new[] { Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2", "ivan@example.com") };
 
         var refused = await RunAsync(rows);
         refused.Data!.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
@@ -231,7 +232,7 @@ public class ImportRosterHandlerTests
             new MemberIdentity(Guid.NewGuid(), "Іван", "Петренко", "ivan@example.com", "0501112233", new DateOnly(2010, 1, 1))
         ];
 
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.AttachedCount.Should().Be(1);
         report.Data.CreatedCount.Should().Be(0);
@@ -246,7 +247,7 @@ public class ImportRosterHandlerTests
             new MemberIdentity(Guid.NewGuid(), "Іван", "Петренко", "ivan@example.com", "0501112233", new DateOnly(2005, 6, 6))
         ];
 
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan.jr@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
     }
@@ -264,7 +265,7 @@ public class ImportRosterHandlerTests
             new MemberSummary(memberKey, null, KurinKey, GroupKey, "Іван", "Петренко", "ivan@example.com", null)
         ];
 
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.AlreadyHereCount.Should().Be(1);
     }
@@ -281,7 +282,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ARowWithoutAKurin_IsImportedHere_WithoutAWarning()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "", "ivan@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
         report.Data.RejectedCount.Should().Be(0);
@@ -291,7 +292,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ARowNamingAnotherKurin_IsFlaggedButNotRefused()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "14")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "14", "ivan@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
         report.Data.ForeignKurinRows.Should().ContainSingle().Which.Should().Be(2);
@@ -305,7 +306,7 @@ public class ImportRosterHandlerTests
     [InlineData("40179")]
     public async Task ABirthdayIsRead_InEveryShapeARosterUses(string birthday)
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", birthday, "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", birthday, "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
     }
@@ -313,7 +314,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ADateNobodyCouldRead_IsARejectionAndNotAGuess()
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "торік", "скоб", "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "торік", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
     }
@@ -341,7 +342,7 @@ public class ImportRosterHandlerTests
     [InlineData("пл. сен. кер.")]
     public async Task ALevelIsRecognised_InTheWordsRostersUse(string level)
     {
-        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", level, "22.04.2024", "Ведмеді", "2")]);
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", level, "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
 
         report.Data!.CreatedCount.Should().Be(1);
     }
@@ -349,7 +350,7 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task ADryRun_WritesNothing()
     {
-        await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2")], createMissingGroups: true);
+        await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2", "ivan@example.com")], createMissingGroups: true);
 
         _mediator.Verify(
             m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
@@ -374,11 +375,14 @@ public class ImportRosterHandlerTests
             .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
                 ResultType.Success,
                 new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
+        _mediator
+            .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
 
         var report = await _handler.Handle(
             new ImportRosterCommand(
                 KurinKey,
-                [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2")],
+                [Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2", "ivan@example.com")],
                 FullMapping,
                 CreateMissingGroups: true,
                 DryRun: false),
@@ -396,8 +400,8 @@ public class ImportRosterHandlerTests
     {
         var report = await RunAsync(
         [
-            Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2"),
-            Row(4, "Коваль", "Марія", "02.02.2011", "учасник", "01.05.2023", "Ведмеді", "2")
+            Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com"),
+            Row(4, "Коваль", "Марія", "02.02.2011", "учасник", "01.05.2023", "Ведмеді", "2", "maria@example.com")
         ]);
 
         report.Data!.CreatedCount.Should().Be(2);
