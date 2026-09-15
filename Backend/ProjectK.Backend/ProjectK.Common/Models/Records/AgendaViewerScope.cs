@@ -8,6 +8,7 @@ namespace ProjectK.Common.Models.Records;
 /// </summary>
 public sealed record AgendaViewerScope(
     Guid KurinKey,
+    Guid? ViewerUserKey,
     Guid? ViewerMemberKey,
     IReadOnlyCollection<Guid> ViewerGroupKeys,
     IReadOnlyCollection<Guid> ViewerLeadershipKeys,

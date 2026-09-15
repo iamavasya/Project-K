@@ -64,7 +64,7 @@ export class MemberListComponent implements OnInit {
   private readonly permissionService = inject(PermissionService);
 
   get canSetupLeadership(): boolean {
-    return this.permissionService.canSetupLeadership();
+    return this.permissionService.canSetupLeadership(this.leadershipType());
   }
 
   membersLookup: MemberLookupDto[] = [];

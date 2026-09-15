@@ -6,7 +6,7 @@ import { MenuItem } from '@openng/optimus-ui/api';
 import { NavigationEnd, Router } from '@angular/router';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
-import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap, tap } from 'rxjs';
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -18,6 +18,7 @@ import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity 
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
+import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -29,6 +30,7 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly permissionService = inject(PermissionService);
   private readonly kurinService = inject(KurinService);
+  private readonly waitlistAttention = inject(WaitlistAttentionService);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
@@ -59,8 +61,15 @@ export class SidebarMenuComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['state$']) {
       this.items$ = combineLatest([this.state$(), this.currentUrl$]).pipe(
-        switchMap(([state, url]) => this.youthProgram$(state?.kurinKey ?? null).pipe(
-          map(isYouthKurin => this.markCurrent(this.buildItems(state, isYouthKurin), url))
+        // An administrator outside a kurin is the one who decides on applications; the count is
+        // re-read on every navigation so the dot goes out right after the decision.
+        tap(([state]) => {
+          if (this.permissionService.isAdmin() && !state?.kurinKey) {
+            this.waitlistAttention.refresh();
+          }
+        }),
+        switchMap(([state, url]) => combineLatest([this.youthProgram$(state?.kurinKey ?? null), this.waitlistAttention.pending$]).pipe(
+          map(([isYouthKurin, pendingWaitlist]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -95,7 +104,7 @@ export class SidebarMenuComponent implements OnChanges {
     }
 
     return items.map(item => item === best
-      ? { ...item, styleClass: 'lil-menu-item--current' }
+      ? { ...item, styleClass: [item.styleClass, 'lil-menu-item--current'].filter(Boolean).join(' ') }
       : item);
   }
 
@@ -125,7 +134,7 @@ export class SidebarMenuComponent implements OnChanges {
     );
   }
 
-  private buildItems(state: AuthState | null, isYouthKurin = true): MenuItem[] {
+  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
@@ -259,6 +268,8 @@ export class SidebarMenuComponent implements OnChanges {
           label: 'Адміністрація',
           icon: 'pi pi-lock',
           routerLink: ['/panel'],
+          // The dot, not a number: «there is something to decide» is all the sidebar has to say.
+          styleClass: pendingWaitlist > 0 ? 'lil-menu-item--attention' : undefined,
           command: () => {
             this.close();
             this.router.navigate(['/panel']);

@@ -18,9 +18,9 @@
 .agenda-rsvp__list li.is-waitlisted .agenda-rsvp__name { color: var(--p-text-muted-color); }
 .agenda-rsvp__name { font-size: 0.85rem; }
 .agenda-rsvp__badge { border-radius: var(--p-border-radius-sm, 6px); font-size: 0.7rem; font-weight: 650; padding: 0.1rem 0.5rem; }
-.agenda-rsvp__badge[data-status="Going"] { background: var(--p-green-100); color: var(--p-green-700); }
-.agenda-rsvp__badge[data-status="Maybe"] { background: var(--p-yellow-100); color: var(--p-yellow-700); }
-.agenda-rsvp__badge[data-status="NotGoing"] { background: var(--p-red-100); color: var(--p-red-700); }
+.agenda-rsvp__badge[data-status="Going"] { background: var(--lil-agenda-done-bg); color: var(--lil-agenda-done-fg); }
+.agenda-rsvp__badge[data-status="Maybe"] { background: var(--lil-agenda-progress-bg); color: var(--lil-agenda-progress-fg); }
+.agenda-rsvp__badge[data-status="NotGoing"] { background: var(--lil-agenda-todo-bg); color: var(--p-text-muted-color); }
 
 .agenda-view { display: flex; flex-direction: column; gap: 0.5rem; }
 .agenda-view__title { font-size: 1.15rem; font-weight: 700; margin: 0; }

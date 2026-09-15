@@ -37,4 +37,10 @@ public class MockEmailService : IEmailService
         var body = $"Підтвердження зміни пошти з {currentEmail}: {confirmationUrl}";
         return SendEmailAsync(to, "Лілейка · підтвердження зміни пошти", body, cancellationToken);
     }
+
+    public Task SendWaitlistSubmittedEmailAsync(string to, string applicantName, string? claimedKurin, CancellationToken cancellationToken = default)
+    {
+        var body = $"Нова заявка: {applicantName}, курінь {claimedKurin ?? "не вказано"}";
+        return SendEmailAsync(to, "Лілейка · нова заявка на розгляд", body, cancellationToken);
+    }
 }

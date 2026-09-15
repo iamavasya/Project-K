@@ -115,6 +115,49 @@ export const LileykaPreset = definePreset(Aura, {
   },
 
   components: {
+    // One green for buttons too: Aura paints `severity="success"` in its own green, which stood
+    // next to the brand primary on «Підписати». Success now reads the primary tokens, so a
+    // confirming action and a primary action are the same green in both schemes.
+    button: {
+      colorScheme: {
+        light: {
+          root: {
+            success: {
+            background: '{primary.color}',
+            hoverBackground: '{primary.hover.color}',
+            activeBackground: '{primary.active.color}',
+            borderColor: '{primary.color}',
+            hoverBorderColor: '{primary.hover.color}',
+            activeBorderColor: '{primary.active.color}',
+            color: '{primary.contrast.color}',
+            hoverColor: '{primary.contrast.color}',
+            activeColor: '{primary.contrast.color}',
+            focusRing: { color: '{primary.color}', shadow: 'none' }
+            }
+          },
+          outlined: { success: { hoverBackground: '{primary.50}', activeBackground: '{primary.100}', borderColor: '{primary.color}', color: '{primary.color}' } },
+          text: { success: { hoverBackground: '{primary.50}', activeBackground: '{primary.100}', color: '{primary.color}' } }
+        },
+        dark: {
+          root: {
+            success: {
+            background: '{primary.color}',
+            hoverBackground: '{primary.hover.color}',
+            activeBackground: '{primary.active.color}',
+            borderColor: '{primary.color}',
+            hoverBorderColor: '{primary.hover.color}',
+            activeBorderColor: '{primary.active.color}',
+            color: '{primary.contrast.color}',
+            hoverColor: '{primary.contrast.color}',
+            activeColor: '{primary.contrast.color}',
+            focusRing: { color: '{primary.color}', shadow: 'none' }
+            }
+          },
+          outlined: { success: { hoverBackground: '#1D2E27', activeBackground: '#245039', borderColor: '{primary.color}', color: '{primary.color}' } },
+          text: { success: { hoverBackground: '#1D2E27', activeBackground: '#245039', color: '{primary.color}' } }
+        }
+      }
+    },
     tag: {
       colorScheme: {
         light: {
@@ -127,10 +170,20 @@ export const LileykaPreset = definePreset(Aura, {
         }
       }
     },
+    // One green: success takes the same tokens as info, or Aura's default green sits next to ours.
     message: {
       colorScheme: {
         light: {
           info: {
+            background: '{primary.50}',
+            borderColor: '{primary.100}',
+            color: '{primary.700}',
+            shadow: 'none',
+            closeButton: { hoverBackground: '{primary.100}', focusRing: { color: '{primary.700}', shadow: 'none' } },
+            outlined: { color: '{primary.700}', borderColor: '{primary.700}' },
+            simple: { color: '{primary.700}' }
+          },
+          success: {
             background: '{primary.50}',
             borderColor: '{primary.100}',
             color: '{primary.700}',
@@ -151,6 +204,15 @@ export const LileykaPreset = definePreset(Aura, {
         },
         dark: {
           info: {
+            background: '#1D2E27',
+            borderColor: '#245039',
+            color: '#9FE3C2',
+            shadow: 'none',
+            closeButton: { hoverBackground: '#245039', focusRing: { color: '#9FE3C2', shadow: 'none' } },
+            outlined: { color: '#9FE3C2', borderColor: '#9FE3C2' },
+            simple: { color: '#9FE3C2' }
+          },
+          success: {
             background: '#1D2E27',
             borderColor: '#245039',
             color: '#9FE3C2',

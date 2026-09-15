@@ -26,8 +26,10 @@
           <span class="membership-actions">
             <p-button label="Гурток" icon="pi pi-sitemap" variant="text" severity="secondary"
               (onClick)="moveToGroup.emit(membership)" />
-            <p-button label="Вивести" icon="pi pi-sign-out" variant="text" severity="secondary"
-              (onClick)="leaveKurin.emit(membership)" />
+            @if (canRelease()) {
+              <p-button label="Вивести" icon="pi pi-sign-out" variant="text" severity="secondary"
+                (onClick)="leaveKurin.emit(membership)" />
+            }
           </span>
         }
       </li>

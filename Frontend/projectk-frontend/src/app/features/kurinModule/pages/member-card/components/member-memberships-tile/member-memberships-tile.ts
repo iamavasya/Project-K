@@ -29,6 +29,8 @@ export class MemberMembershipsTileComponent {
    */
   readonly scopedKurinKey = input<string | null>(null);
   readonly canManage = input(false);
+  /** Whether the viewer may close a membership; the гурток move follows `canManage`. */
+  readonly canRelease = input(false);
 
   readonly moveToGroup = output<MembershipDto>();
   readonly leaveKurin = output<MembershipDto>();

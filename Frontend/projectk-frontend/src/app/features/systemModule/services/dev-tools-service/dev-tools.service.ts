@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { LoginResponse } from '../../../authModule/models/login-response.model';
@@ -82,7 +82,27 @@ export class DevToolsService {
     );
   }
 
+  /**
+   * The ticket lives twelve hours; one left over from yesterday would fail every switch from
+   * now on. A dead ticket (401) is dropped and the borrow goes ahead on the current session,
+   * which either is the administrator's already or gets refused honestly by the API. Any other
+   * failure is a blip: keep the ticket, report the error.
+   */
   private backToAdmin(): Observable<unknown> {
-    return this.hasReturnTicket() ? this.returnToAdmin() : of(null);
+    if (!this.hasReturnTicket() || this.auth.getAuthStateValue()?.isAdmin) {
+      this.forgetTicket();
+      return of(null);
+    }
+
+    return this.returnToAdmin().pipe(
+      catchError((error: unknown) => {
+        if ((error as { status?: number })?.status !== 401) {
+          return throwError(() => error);
+        }
+
+        this.forgetTicket();
+        return of(null);
+      })
+    );
   }
 }

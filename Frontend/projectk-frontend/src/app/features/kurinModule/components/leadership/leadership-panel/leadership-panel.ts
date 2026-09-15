@@ -60,7 +60,7 @@ export class LeadershipPanelComponent implements OnChanges {
   }
 
   get canSetupLeadership(): boolean {
-    return this.permissionService.canSetupLeadership();
+    return this.permissionService.canSetupLeadership(this.leadershipType());
   }
 
   get title(): string {

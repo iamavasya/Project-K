@@ -115,6 +115,17 @@ public class ResendEmailServiceTests
     }
 
     [Fact]
+    public async Task WaitlistSubmitted_ShouldNameTheApplicant_AndLeadToTheWaitlist()
+    {
+        await _service.SendWaitlistSubmittedEmailAsync("admin@example.com", "Марта Коваль", "97", CancellationToken.None);
+
+        var message = Assert.Single(_sent);
+        Assert.Equal("Лілейка · нова заявка на розгляд", message.Subject);
+        Assert.Contains("Марта Коваль (курінь 97)", message.HtmlBody);
+        Assert.Contains("Переглянути заявки: https://lileyka.example/waitlist", message.TextBody);
+    }
+
+    [Fact]
     public async Task WithoutReplyTo_ShouldLeaveTheHeaderOut()
     {
         var sent = new List<EmailMessage>();

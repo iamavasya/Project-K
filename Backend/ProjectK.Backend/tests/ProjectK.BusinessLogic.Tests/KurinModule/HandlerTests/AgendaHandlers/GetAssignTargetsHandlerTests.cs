@@ -78,12 +78,30 @@ public class GetAssignTargetsHandlerTests
     {
         SetupViewer(canSeeWholeKurin: false, visibilityGroups: new[] { _g1 });
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ResourceAccessDecision.Deny("Mentor cannot target the whole kurin."));
+            .ReturnsAsync((AgendaTargetInput target, ResourceAction _, CancellationToken _) =>
+                target.TargetType == AgendaTargetType.Group && target.TargetKey == _g1
+                    ? ResourceAccessDecision.Allow()
+                    : ResourceAccessDecision.Deny("Mentor cannot target the whole kurin."));
 
         var result = await _handler.Handle(new GetAssignTargetsQuery(_kurinKey), default);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.CanTargetKurin.Should().BeFalse();
         result.Data.Groups.Should().ContainSingle().Which.GroupKey.Should().Be(_g1);
+        result.Data.Groups.Single().CanTargetGroup.Should().BeTrue();
+    }
+
+    // A group the viewer merely belongs to, without the right to address it, is listed for its people
+    // but not offered as a target itself — the tree and the create handler agree.
+    [Fact]
+    public async Task Handle_ForGroupMemberWithoutReach_ListsTheGroupAsNotTargetable()
+    {
+        SetupViewer(canSeeWholeKurin: false, visibilityGroups: new[] { _g1 });
+        _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("No permission for Create on Group."));
+
+        var result = await _handler.Handle(new GetAssignTargetsQuery(_kurinKey), default);
+
+        result.Data!.Groups.Single().CanTargetGroup.Should().BeFalse();
     }
 }

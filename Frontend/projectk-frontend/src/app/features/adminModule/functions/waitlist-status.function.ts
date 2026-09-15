@@ -36,6 +36,12 @@ export function getWaitlistStatusSeverity(status: string | number): WaitlistStat
   }
 }
 
+/** Whether an administrator still has to decide on this entry. */
+export function isWaitlistAwaitingDecision(status: string | number): boolean {
+  const normalized = normalizeWaitlistStatus(status);
+  return normalized === 'Submitted' || normalized === 'NeedsManualVerification';
+}
+
 export function isWaitlistInitial(status: string | number): boolean {
   return normalizeWaitlistStatus(status) === 'Submitted';
 }

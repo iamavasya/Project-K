@@ -54,7 +54,8 @@ describe('PermissionService', () => {
     expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageGroups()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeTrue();
-    expect(service.canSetupLeadership()).toBeTrue();
+    expect(service.canSetupLeadership('kv')).toBeTrue();
+    expect(service.canSetupLeadership('group')).toBeTrue();
   });
 
   it('treats a Курінний (lead) as a manager without kurin settings or office assignment', () => {
@@ -62,7 +63,7 @@ describe('PermissionService', () => {
     expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageGroups()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeFalse();
-    expect(service.canSetupLeadership()).toBeFalse();
+    expect(service.canSetupLeadership('kurin')).toBeFalse();
   });
 
   it('treats a Виховник as a group leader but not a whole-kurin manager', () => {
@@ -81,12 +82,14 @@ describe('PermissionService', () => {
     expect(service.canManageGroups()).toBeFalse();
     expect(service.canManageAgenda()).toBeTrue();
     expect(service.canCreatePlanning()).toBeTrue();
-    expect(service.canSetupLeadership()).toBeFalse();
+    expect(service.canSetupLeadership('group')).toBeFalse();
   });
 
   it('lets a Курінний seat offices but not moderate members', () => {
     setState(kurinnyyPerms);
-    expect(service.canSetupLeadership()).toBeTrue();
+    expect(service.canSetupLeadership('kurin')).toBeTrue();
+    expect(service.canSetupLeadership('group')).toBeFalse();
+    expect(service.canSetupLeadership('kv')).toBeFalse();
     expect(service.canLeadGroups()).toBeFalse();
     expect(service.canManageMembers()).toBeFalse();
   });
@@ -106,7 +109,15 @@ describe('PermissionService', () => {
     expect(service.isAdmin()).toBeTrue();
     expect(service.canManageWholeKurin()).toBeTrue();
     expect(service.canManageKurinSettings()).toBeTrue();
-    expect(service.canSetupLeadership()).toBeTrue();
+    expect(service.canSetupLeadership('kv')).toBeTrue();
+  });
+
+  // A Гуртковий seats his own гурток's провід and nothing above it: the kurin провід form is not his.
+  it('lets a Гуртковий seat only his group провід', () => {
+    setState([...providPerms, 'Leadership:Update:OwnGroups']);
+    expect(service.canSetupLeadership('group')).toBeTrue();
+    expect(service.canSetupLeadership('kurin')).toBeFalse();
+    expect(service.canSetupLeadership('kv')).toBeFalse();
   });
 
   it('defaults to no access when there is no auth state', () => {

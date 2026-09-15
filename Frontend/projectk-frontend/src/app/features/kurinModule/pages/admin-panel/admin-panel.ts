@@ -1,3 +1,4 @@
+import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TableModule } from '@openng/optimus-ui/table';
 import { SplitButtonModule } from '@openng/optimus-ui/splitbutton';
@@ -25,6 +26,7 @@ export class AdminPanelComponent implements OnInit {
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
+  readonly waitlistAttention = inject(WaitlistAttentionService);
 
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
@@ -75,6 +77,7 @@ export class AdminPanelComponent implements OnInit {
 
   ngOnInit(): void {
     this.refreshData();
+    this.waitlistAttention.refresh();
   }
 
   onActionClick(item: KurinDto | null, param: ManageAction | 'undef'): void {

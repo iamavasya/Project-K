@@ -26,7 +26,9 @@ sidebar:
 
 Здобуті вмілості видно в картці зі значком і датою.
 
-![Модерація вмілостей](../images/skills-review.png)
+![alt text](../images/badges-review-1.png)
+
+![alt text](../images/badges-review-2.png)
 
 ## Журнал
 

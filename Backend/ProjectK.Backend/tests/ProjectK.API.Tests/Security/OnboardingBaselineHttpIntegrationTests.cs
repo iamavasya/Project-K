@@ -227,6 +227,9 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockMemberUnitOfWork.Object);
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
+            // A new entry tells the administrators through the bell; the host has no notification store.
+            builder.Services.AddSingleton(new Mock<INotificationService>().Object);
+            mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>())).ReturnsAsync(new List<AppUser>());
             // Activation answers with a session now; the factory is the part of sign-in the host does not build.
             var mockLoginResponses = new Mock<ILoginResponseFactory>();
             mockLoginResponses

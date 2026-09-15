@@ -12,7 +12,9 @@ interface TargetNodeData {
 
 /**
  * «Призначити для»: дерево Курінь → Гуртки → Мембери з пошуком (`filter`). Бекенд уже віддає лише ті
- * цілі, які поточний користувач має право призначати, тож тут немає власної перевірки прав.
+ * цілі, які поточний користувач має право призначати, тож тут немає власної перевірки прав. Вузол,
+ * який не можна обрати і під яким нема чого обрати, не малюється зовсім: Гуртковому нема чого
+ * дивитись на «весь курінь», якого він не може вибрати.
  */
 @Component({
   selector: 'app-agenda-assign-select',
@@ -115,7 +117,19 @@ export class AgendaAssignSelectComponent implements OnInit {
       });
     }
 
-    return roots;
+    return this.prune(roots);
+  }
+
+  /** Keeps a node when it can be picked itself or holds something that can; the rest is noise. */
+  private prune(list: TreeNode<TargetNodeData>[]): TreeNode<TargetNodeData>[] {
+    const kept: TreeNode<TargetNodeData>[] = [];
+    for (const node of list) {
+      const children = node.children ? this.prune(node.children) : [];
+      if (node.selectable || children.length > 0) {
+        kept.push({ ...node, children: children.length > 0 ? children : undefined });
+      }
+    }
+    return kept;
   }
 
   private leadershipNode(office: AgendaLeadershipTarget): TreeNode<TargetNodeData> {

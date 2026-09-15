@@ -9,6 +9,7 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { resolveBadgeImageUrl } from '../../functions/member-skills-view-mapper.function';
@@ -45,6 +46,7 @@ interface SkillsReviewItemView {
     SkeletonModule,
     DialogModule,
     TextareaModule,
+    TooltipModule,
     FormsModule,
     EmptyStateComponent
   ],
@@ -76,6 +78,23 @@ export class SkillsReviewPageComponent implements OnInit {
 
   feedbackMessage: string | null = null;
   feedbackSeverity: 'success' | 'info' | 'warn' | 'error' = 'info';
+
+  get queueCountLabel(): string {
+    const count = this.reviewItems.length;
+    if (count === 0) {
+      return 'нічого на розгляді';
+    }
+
+    const rest = count % 10;
+    const teens = count % 100 >= 11 && count % 100 <= 14;
+    let noun = 'заявок';
+    if (!teens && rest === 1) {
+      noun = 'заявка';
+    } else if (!teens && rest >= 2 && rest <= 4) {
+      noun = 'заявки';
+    }
+    return `${count} ${noun} на розгляді`;
+  }
 
   get canReviewSkills(): boolean {
     return this.permissionService.canReviewSkills();
