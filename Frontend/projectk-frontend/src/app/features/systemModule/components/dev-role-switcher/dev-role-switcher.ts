@@ -67,7 +67,7 @@ export class DevRoleSwitcherComponent {
     { role: 'Vykhovnyk', label: 'Впорядник', hint: 'веде гурток, підписує точки', icon: 'pi pi-users' },
     { role: 'Kurinnyi', label: 'Курінний', hint: 'провід куреня', icon: 'pi pi-star' },
     { role: 'Skarbnyk', label: 'Скарбник', hint: 'провід куреня, каса', icon: 'pi pi-wallet' },
-    { role: 'Member', label: 'Юнак', hint: 'без уряду в курені чи КВ', icon: 'pi pi-user' }
+    { role: 'Member', label: 'Юнак', hint: 'без діловодства в курені чи КВ', icon: 'pi pi-user' }
   ];
 
   /** Not a production build, and either an administrator or somebody with a way back. */
@@ -108,7 +108,7 @@ export class DevRoleSwitcherComponent {
     this.busy.set(role);
     this.devTools.impersonate(role).subscribe({
       next: () => this.reload('/kurin'),
-      error: (error: unknown) => this.fail(error, 'У цьому курені ніхто з таким урядом не має акаунта.')
+      error: (error: unknown) => this.fail(error, 'У цьому курені ніхто з таким діловодством не має акаунта.')
     });
   }
 

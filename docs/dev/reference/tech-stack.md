@@ -2,7 +2,7 @@
 title: Технологічний стек
 description: З чого зібрана Лілейка — фронтенд, бекенд, внутрішні пакети, інфраструктура.
 sidebar:
-  order: 2
+  order: 1
 ---
 
 Стан на вересень 2026 (гілка `1.0.0`).
@@ -15,7 +15,8 @@ sidebar:
 - **TailwindCSS 4** для розкладки, візуальна система — токени з `lileyka-theme.css`
   (див. [Брендбук](/dev/core/brandbook/)).
 - **TypeScript 5.9**, **RxJS 7.8**.
-- `ngx-image-cropper` — обрізання фото, **FullCalendar** (MIT-плагіни) — календар.
+- `ngx-image-cropper` — обрізання фото, **FullCalendar** (MIT-плагіни) — календар, **Quill** через
+  `p-editor` — текст звіту про проблему.
 - Тести: **Karma / Jasmine**; e2e — **Playwright** проти контейнерного стеку `e2e`.
 
 ## Бекенд
@@ -28,7 +29,9 @@ sidebar:
 - **Serilog** — структуровані логи (File, Application Insights, енрічер, що ховає чутливе).
 - **QuestPDF** — PDF-звіти куреня.
 - **Azure.Storage.Blobs** — фото й файли (локально — Azurite).
-- **Resend** — пошта (локально — `Mock`).
+- **Resend** — пошта (локально — `Mock`; на staging усе перенаправляється на `delivered@resend.dev`).
+- **GitHub Issues** — звіти про проблеми з застосунку (`Feedback:GitHub`, мітки `bug`, `from client`);
+  без токена — в лог.
 - **Swashbuckle** — Swagger / OpenAPI.
 - Тести: **xUnit**, **FluentAssertions**, **Moq**; архітектурні тести на іменування й межі модулів.
 
@@ -47,6 +50,8 @@ sidebar:
 - **Azurite** — локальна емуляція Azure Blob Storage; **SQL Server** у контейнері, спільний для всіх
   середовищ.
 - **Self-host bundle** — один порт через nginx з проксі `/api`, `/badges_images`, `/blob`.
-- Прод — Azure App Service за Cloudflare; **CI** — GitHub Actions (`dotnet.yml`, `angular.yml`),
-  Dependabot, CodeQL, secret scanning.
-- Сайт і довідка — **Astro + Starlight** (`site/`).
+- Прод: API — Azure App Service за Cloudflare, фронтенд — Azure Static Web Apps; staging — той
+  самий набір в окремій підписці. **CI** — GitHub Actions: `dotnet.yml`, `angular.yml`, `e2e.yml`,
+  `site.yml`, `selfhost-docker.yml`, `codeql.yml`; Dependabot і secret scanning.
+- Сайт, довідка й статичне демо — **Astro + Starlight** (`site/`) на Cloudflare Pages; діаграми в
+  довідці — **Mermaid** (`astro-mermaid`), рендер у браузері.

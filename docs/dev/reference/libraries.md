@@ -2,7 +2,7 @@
 title: Внутрішні бібліотеки
 description: ProjectK.Optimization (закритий пакет планування) і ProjectK.3PDB.Standalone (база третьопробників).
 sidebar:
-  order: 7
+  order: 3
 ---
 
 ## ProjectK.Optimization

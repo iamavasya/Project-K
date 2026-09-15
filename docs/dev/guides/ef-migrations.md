@@ -2,7 +2,7 @@
 title: Міграції EF Core
 description: Як створити, застосувати і відкотити міграцію бази.
 sidebar:
-  order: 4
+  order: 6
 ---
 
 Команди виконуються з теки `Backend/ProjectK.Backend`. Проєкт із міграціями — `ProjectK.Infrastructure`,

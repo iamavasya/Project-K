@@ -22,10 +22,10 @@ const content = resolve(here, '../src/content/docs');
 /** Кореневі документи → сторінки розділу «Для розробника». */
 const rootDocs = [
 	{ from: 'ARCHITECTURE.md', to: 'dev/core/architecture.md', order: 1, description: 'Шари, модулі, шлях запиту, авторизація, середовища.' },
-	{ from: 'CONTRIBUTING.md', to: 'dev/core/contributing.md', order: 2, description: 'Конвенції, за якими пишеться новий код.' },
-	{ from: 'BRANDBOOK.md', to: 'dev/core/brandbook.md', order: 3, description: 'Візуальна система: кольори, шрифти, компоненти, правила.' },
-	{ from: 'SECURITY.md', to: 'dev/core/security.md', order: 4, description: 'Як повідомити про вразливість і які версії підтримуються.' },
-	{ from: 'docs/quality-baseline.md', to: 'dev/core/quality-baseline.md', order: 5, description: 'Тести, лінт і те, що вважається базовою лінією.' },
+	{ from: 'CONTRIBUTING.md', to: 'dev/core/contributing.md', order: 3, description: 'Конвенції, за якими пишеться новий код.' },
+	{ from: 'BRANDBOOK.md', to: 'dev/core/brandbook.md', order: 4, description: 'Візуальна система: кольори, шрифти, компоненти, правила.' },
+	{ from: 'SECURITY.md', to: 'dev/core/security.md', order: 5, description: 'Як повідомити про вразливість і які версії підтримуються.' },
+	{ from: 'docs/quality-baseline.md', to: 'dev/core/quality-baseline.md', order: 6, description: 'Тести, лінт і те, що вважається базовою лінією.' },
 	{ from: 'docs/observability.md', to: 'dev/operations/observability.md', order: 1, description: 'Логи, метрики, здоровʼя сервісу в проді.' },
 	{ from: 'docs/data-retention.md', to: 'dev/operations/data-retention.md', order: 2, description: 'Що система зберігає і як довго.' },
 	{ from: 'docs/self-host/README.md', to: 'dev/self-host/index.md', order: 1, description: 'Поставити Лілейку на власний сервер.' },

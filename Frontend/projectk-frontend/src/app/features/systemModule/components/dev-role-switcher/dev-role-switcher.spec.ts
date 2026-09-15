@@ -106,7 +106,7 @@ describe('DevRoleSwitcherComponent', () => {
     component.switchTo('Skarbnyk');
 
     expect(component.busy()).toBeNull();
-    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ detail: jasmine.stringContaining('ніхто з таким урядом') }));
+    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ detail: jasmine.stringContaining('ніхто з таким діловодством') }));
   });
 
   it('offers the person whose card is open, by name, once the panel opens', () => {

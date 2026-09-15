@@ -56,7 +56,11 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         ConfigureQuestPdfLicense(builder.Configuration);
-        builder.Services.AddApplicationInsightsTelemetry();
+        // Лічильники продуктивності — дві третини всієї телеметрії і жодного нового знання: вони
+        // йдуть за таймером незалежно від навантаження, а CPU, памʼять і HTTP-метрики App Service
+        // і так віддає безкоштовно. Решта модулів (запити, залежності, винятки) лишається.
+        builder.Services.AddApplicationInsightsTelemetry(
+            options => options.EnablePerformanceCounterCollectionModule = false);
 
         builder.Host.UseSerilog((context, services, configuration) =>
         {
