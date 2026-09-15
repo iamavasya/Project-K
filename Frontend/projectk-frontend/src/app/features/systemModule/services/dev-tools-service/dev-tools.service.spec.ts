@@ -18,7 +18,8 @@ describe('DevToolsService', () => {
   } as LoginResponse;
 
   beforeEach(() => {
-    auth = jasmine.createSpyObj<AuthService>('AuthService', ['applyLoginResponse']);
+    auth = jasmine.createSpyObj<AuthService>('AuthService', ['applyLoginResponse', 'getAuthStateValue']);
+    auth.getAuthStateValue.and.returnValue(null);
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useValue: auth }]
     });
@@ -62,6 +63,35 @@ describe('DevToolsService', () => {
     expect(auth.applyLoginResponse).toHaveBeenCalledTimes(2);
     expect(localStorage.getItem('lileyka-dev-return-ticket')).toBe('ticket-2');
     expect(service.borrowedRole()).toBe('Person');
+  });
+
+  it('drops a dead ticket and borrows on the current session instead of failing every switch', () => {
+    localStorage.setItem('lileyka-dev-return-ticket', 'ticket-stale');
+    localStorage.setItem('lileyka-dev-borrowed-role', 'Member');
+
+    service.impersonate('Vykhovnyk').subscribe();
+
+    http.expectOne(`${environment.apiUrl}/dev/return`)
+      .flush({ error: 'InvalidTicket' }, { status: 401, statusText: 'Unauthorized' });
+
+    const borrow = http.expectOne(`${environment.apiUrl}/dev/impersonate`);
+    borrow.flush({ login, returnTicket: 'ticket-fresh', role: 'Vykhovnyk', kurinKey: 'k-1' });
+
+    expect(localStorage.getItem('lileyka-dev-return-ticket')).toBe('ticket-fresh');
+    expect(service.borrowedRole()).toBe('Vykhovnyk');
+  });
+
+  it('does not spend the ticket when the administrator is already themselves', () => {
+    localStorage.setItem('lileyka-dev-return-ticket', 'ticket-leftover');
+    auth.getAuthStateValue.and.returnValue({ isAdmin: true } as ReturnType<AuthService['getAuthStateValue']>);
+
+    service.impersonate('Member').subscribe();
+
+    http.expectNone(`${environment.apiUrl}/dev/return`);
+    http.expectOne(`${environment.apiUrl}/dev/impersonate`)
+      .flush({ login, returnTicket: 'ticket-3', role: 'Member', kurinKey: 'k-1' });
+
+    expect(localStorage.getItem('lileyka-dev-return-ticket')).toBe('ticket-3');
   });
 
   it('borrows one particular person by their member key', () => {
