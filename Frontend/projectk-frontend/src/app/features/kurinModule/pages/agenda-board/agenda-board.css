@@ -1,6 +1,3 @@
-.agenda-page { margin-inline: auto; padding-block: 2rem; width: min(100% - 2rem, 72rem); }
-.agenda-header { align-items: center; display: flex; gap: 1rem; justify-content: space-between; padding-bottom: 1.25rem; }
-.agenda-title { color: var(--p-text-color); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
 .agenda-board { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .agenda-column { display: flex; flex-direction: column; gap: 0.75rem; }
 .agenda-column__head { align-items: center; display: flex; gap: 0.5rem; }

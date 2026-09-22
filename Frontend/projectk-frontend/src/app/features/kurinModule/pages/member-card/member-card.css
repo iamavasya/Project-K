@@ -74,7 +74,8 @@
 }
 
 .member-section-title {
-    letter-spacing: -0.01em;
+    font-size: var(--lil-text-h3);
+    letter-spacing: var(--lil-tracking-h3);
 }
 
 .member-section-subtitle,
@@ -128,9 +129,13 @@
     color: var(--p-text-muted-color);
 }
 
+/* Мікропідпис (§3): підзаголовок у діалозі, а не заголовок картки. */
 .dialog-section-title {
     color: var(--lil-faint);
-    letter-spacing: 0.18em;
+    font-size: var(--lil-text-micro);
+    font-weight: 700;
+    letter-spacing: var(--lil-tracking-micro);
+    text-transform: uppercase;
 }
 
 .dialog-skill-row {

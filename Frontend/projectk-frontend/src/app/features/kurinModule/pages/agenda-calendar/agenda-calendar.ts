@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventContentArg, EventDropArg, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventContentArg, EventDropArg, EventInput, EventMountArg } from '@fullcalendar/core';
 import ukLocale from '@fullcalendar/core/locales/uk';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -81,6 +81,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     eventDisplay: 'block',
     events: [],
     eventContent: (arg: EventContentArg) => this.renderEvent(arg),
+    eventDidMount: (arg: EventMountArg) => this.paintCategory(arg),
     datesSet: (arg: DatesSetArg) => this.onDatesSet(arg),
     eventClick: (arg: EventClickArg) => this.onEventClick(arg),
     select: (arg: DateSelectArg) => this.onSelect(arg),
@@ -186,8 +187,6 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       end,
       allDay,
       editable: item.canEdit,
-      backgroundColor: item.categoryColorHex ?? undefined,
-      borderColor: item.categoryColorHex ?? undefined,
       classNames: this.eventClasses(item),
       extendedProps: { item }
     };
@@ -218,11 +217,22 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     if (!item.addressedToViewer) {
       classes.push('agenda-ev--foreign');
     }
-    // A category paints the bar itself; only a plain item takes the kind/status plate.
-    if (!item.categoryColorHex) {
-      classes.push('agenda-ev--plain');
-    }
+    // A category tints the plate from its colour (see paintCategory); only a plain item takes
+    // the kind/status plate.
+    classes.push(item.categoryColorHex ? 'agenda-ev--category' : 'agenda-ev--plain');
     return classes;
+  }
+
+  /**
+   * Hands the category colour to the stylesheet as a custom property rather than as FullCalendar's
+   * inline background: an inline fill is the same in both themes, while the stylesheet mixes the
+   * colour into the paper by a per-theme amount (BRANDBOOK §2, `--lil-agenda-cat-*-mix`).
+   */
+  private paintCategory(arg: EventMountArg): void {
+    const item = arg.event.extendedProps['item'] as AgendaItemDto | undefined;
+    if (item?.categoryColorHex) {
+      arg.el.style.setProperty('--agenda-cat', item.categoryColorHex);
+    }
   }
 
   private onEventClick(arg: EventClickArg): void {

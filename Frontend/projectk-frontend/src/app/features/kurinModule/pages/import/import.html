@@ -1,7 +1,9 @@
-<section class="import">
-  <header class="import__head">
-    <h1>Імпорт складу</h1>
-    <p>Завантаж таблицю куреня — і склад опиниться в системі. Нічого не запишеться, поки не підтвердиш.</p>
+<section class="import lil-page">
+  <header class="lil-page-head">
+    <div>
+      <h1>Імпорт складу</h1>
+      <p>Завантаж таблицю куреня — і склад опиниться в системі. Нічого не запишеться, поки не підтвердиш.</p>
+    </div>
   </header>
 
   @if (error(); as message) {
@@ -10,7 +12,7 @@
 
   @switch (step()) {
     @case ('upload') {
-      <div class="import__panel">
+      <div class="kurin-tile import__panel">
         <h2>Крок 1 · Файл</h2>
         <p class="import__hint">
           Excel-таблиця (.xlsx), перший рядок — заголовки колонок. Назви колонок можуть бути будь-які:
@@ -31,7 +33,7 @@
     }
 
     @case ('map') {
-      <div class="import__panel">
+      <div class="kurin-tile import__panel">
         <h2>Крок 2 · Що є що</h2>
         <p class="import__hint">
           {{ fileName() }} · {{ rowCount() }} рядків. Ми вгадали, що означає кожна колонка — виправ,
@@ -94,7 +96,7 @@
 
     @case ('review') {
       @if (report(); as result) {
-        <div class="import__panel">
+        <div class="kurin-tile import__panel">
           <h2>Крок 3 · Що станеться</h2>
 
           <ul class="import__tally">
@@ -156,7 +158,7 @@
 
     @case ('done') {
       @if (report(); as result) {
-        <div class="import__panel">
+        <div class="kurin-tile import__panel">
           <h2>Готово</h2>
           <p class="import__hint">
             Заведено {{ result.createdCount }} нових людей і долучено {{ result.attachedCount }} наявних.

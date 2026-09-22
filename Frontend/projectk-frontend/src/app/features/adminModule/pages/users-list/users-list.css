@@ -1,38 +1,6 @@
-.users-list-shell {
-  width: min(100% - 2rem, 72rem);
-  margin: 1.5rem auto 0;
-}
-
-.users-list-caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.users-list-caption > div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.users-list-caption > p-iconfield {
-  flex-shrink: 1;
-  margin-left: auto;
+.users-list-search {
   min-width: 12rem;
-}
-
-.users-list-caption h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.users-list-caption p {
-  margin: 0.15rem 0 0;
-  color: var(--p-text-muted-color);
-  font-size: 0.85rem;
+  width: min(100%, 22rem);
 }
 
 .users-list-actions {
@@ -49,19 +17,7 @@
   min-width: 0 !important;
 }
 
-@media (max-width: 768px) {
-  .users-list-caption {
-    align-items: center;
-    flex-direction: row;
-  }
-}
-
 @media (max-width: 640px) {
-  .users-list-shell {
-    width: min(100% - 1rem, 72rem);
-    margin-top: 1rem;
-  }
-
   :host ::ng-deep .project-table .p-datatable-wrapper {
     overflow-x: visible;
   }

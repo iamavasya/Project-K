@@ -1,22 +1,24 @@
-<section class="settings-page">
-  <header class="settings-header">
+<section class="lil-page">
+  <header class="lil-page-head">
     <div>
-      <p class="settings-eyebrow">Налаштування куреня</p>
+      <p class="lil-page-head__eyebrow">Налаштування куреня</p>
       <h1>{{ kurin?.number || '-' }} курінь</h1>
     </div>
-    <p-button
-      label="Назад"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      variant="text"
-      (onClick)="cancel()" />
+    <div class="lil-page-head__actions">
+      <p-button
+        label="Назад"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        variant="text"
+        (onClick)="cancel()" />
+    </div>
   </header>
 
   @if (errorMessage) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
 
-  <section class="settings-section" aria-labelledby="profile-verification-title">
+  <section class="kurin-tile" aria-labelledby="profile-verification-title">
     <div class="setting-row">
       <div class="setting-copy">
         <h2 id="profile-verification-title">Верифікація профілів</h2>
@@ -33,7 +35,7 @@
   </section>
 
   @if (kurinKey) {
-    <section class="settings-section" aria-labelledby="event-groups-title">
+    <section class="kurin-tile" aria-labelledby="event-groups-title">
       <div class="setting-copy">
         <h2 id="event-groups-title">Групи подій</h2>
         <p>

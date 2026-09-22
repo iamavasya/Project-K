@@ -1,14 +1,3 @@
-.kurin-header,
-.group-panel {
-    margin-inline: auto;
-    width: min(100% - 2rem, 72rem);
-}
-
-.kurin-header {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-}
-
 .kurin-header-main {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -43,11 +32,7 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.35rem 0.65rem;
-    margin: 0;
     color: var(--p-text-color);
-    font-size: 1.8rem;
-    font-weight: 750;
-    line-height: 1.18;
 }
 
 .kurin-title__patron {
@@ -58,8 +43,7 @@
 
 .group-panel {
     display: grid;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: var(--lil-page-gap);
 }
 
 .identity-grid {
@@ -149,38 +133,6 @@
     gap: 1rem;
 }
 
-.table-caption {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.table-caption > div {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    min-width: 0;
-}
-
-.table-caption > p-button {
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-.table-caption h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--p-text-color);
-}
-
-.table-caption p {
-    margin: 0.15rem 0 0;
-    color: var(--p-text-muted-color);
-    font-size: 0.85rem;
-}
-
 .group-name-cell {
     display: grid;
     gap: 0.15rem;
@@ -211,10 +163,6 @@
 }
 
 @media (max-width: 768px) {
-    .kurin-header {
-        margin-top: 1rem;
-    }
-
     .kurin-header-main {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 0.75rem;
@@ -238,8 +186,9 @@
         font-size: 3.65rem;
     }
 
+    /* Поруч стоїть число куреня 6.5rem; повний h1 із ним у рядок не вміщається. */
     .kurin-title {
-        font-size: 1.35rem;
+        font-size: calc(var(--lil-text-h1) * 0.8);
     }
 
     .kurin-title__patron {
@@ -266,26 +215,13 @@
         justify-content: center;
     }
 
-    .table-caption {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
     .profile-form,
     .kurin-side-tiles {
         grid-template-columns: 1fr;
     }
-
-    .table-caption > p-button {
-        margin-left: 0;
-    }
 }
 
 @media (max-width: 640px) {
-    .kurin-tile {
-        padding: 1rem;
-    }
-
     .kurin-header-main {
         gap: 0.6rem;
     }

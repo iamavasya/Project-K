@@ -1,37 +1,17 @@
+/* Крокам майстра не потрібна вся ширина сторінки: текст читається у вужчій колонці. */
 .import {
-  width: min(100% - 2rem, 64rem);
-  margin-inline: auto;
-  padding-block: 1.5rem;
-}
-
-.import__head {
-  margin-bottom: 1.25rem;
-}
-
-.import__head h1 {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.import__head p {
-  margin-top: 0.25rem;
-  color: var(--p-text-muted-color);
-  font-size: 0.875rem;
+  --lil-page-width: 64rem;
 }
 
 .import__panel {
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 12px;
-  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 .import__panel h2 {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
 }
 
 /* Чого ще бракує на кроці зіставлення: назви полів як плашки, щоб їх було видно з першого погляду. */

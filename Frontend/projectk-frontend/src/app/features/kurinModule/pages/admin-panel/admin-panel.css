@@ -1,42 +1,6 @@
-.admin-panel {
-    margin: 2rem auto;
-    width: min(100% - 2rem, 72rem);
-}
-
 .admin-kurin-actions {
     text-align: right;
     width: 12rem;
-}
-
-.table-caption {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.table-caption > div {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    min-width: 0;
-}
-
-.table-caption > p-button {
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-.table-caption h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
-.table-caption p {
-    margin: 0.15rem 0 0;
-    color: var(--p-text-muted-color);
-    font-size: 0.85rem;
 }
 
 .kurin-number-cell {

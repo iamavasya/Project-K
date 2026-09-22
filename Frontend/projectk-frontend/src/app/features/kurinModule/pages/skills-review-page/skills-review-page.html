@@ -1,15 +1,17 @@
-<section class="skills-review">
-  <header class="skills-review__head">
+<section class="lil-page">
+  <header class="lil-page-head">
     <div>
       <h1>Модерація вмілостей</h1>
       <p>Черга заявок на підтвердження в курені</p>
     </div>
-    <p-button
-      label="До куреня"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      (onClick)="goBackToKurin()" />
+    <div class="lil-page-head__actions">
+      <p-button
+        label="До куреня"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [text]="true"
+        (onClick)="goBackToKurin()" />
+    </div>
   </header>
 
   @if (feedbackMessage) {
@@ -24,7 +26,7 @@
     <section class="kurin-tile">
       <p-table [value]="reviewItems" styleClass="project-table">
         <ng-template #caption>
-          <div class="table-caption">
+          <div class="lil-tile-head">
             <div>
               <h2>Черга</h2>
               <p>{{ isLoading ? 'завантажується…' : queueCountLabel }}</p>

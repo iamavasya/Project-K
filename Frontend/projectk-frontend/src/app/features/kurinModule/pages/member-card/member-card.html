@@ -1,7 +1,7 @@
 <p-confirmdialog />
-<div class="w-full px-4 py-6 md:px-8 md:py-10">
+<div class="lil-page">
     @if (member) {
-    <app-tile-board boardKey="member-card" class="member-tiles mx-auto block w-full max-w-6xl">
+    <app-tile-board boardKey="member-card" class="member-tiles block">
         <ng-template [appTileDef]="{ key: 'profile', span: 'full', pinned: true, label: 'Профіль учасника' }">
         <section class="member-tile member-profile-tile rounded-2xl p-4 md:p-5">
             <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">
@@ -16,7 +16,7 @@
 
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-4">
-                        <h1 class="member-name text-xl font-semibold leading-tight md:text-2xl max-h-1">
+                        <h1 class="member-name">
                             {{ member.firstName }} {{ member.lastName }}
                         </h1>
 
@@ -109,7 +109,7 @@
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 class="member-section-title text-lg font-semibold">Здобуті вмілості</h2>
+                        <h2 class="member-section-title">Здобуті вмілості</h2>
                         <p class="member-section-subtitle text-sm">
                             Підтверджені: {{ confirmedSkillsCount }} · Очікують: {{ pendingSkillsCount }}
                         </p>
@@ -156,7 +156,7 @@
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4 flex items-center justify-between gap-3">
                     <div>
-                        <h2 class="member-section-title text-lg font-semibold">Проба</h2>
+                        <h2 class="member-section-title">Проба</h2>
                         <p class="member-section-subtitle text-sm">
                             Завершено: {{ completedProbesCount }}/{{ activeProbesCount }} · Деталі відкриваються на окремій сторінці
                         </p>
@@ -243,7 +243,7 @@
         <ng-template [appTileDef]="{ key: 'memberships', span: 'half', label: 'Членства' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4">
-                    <h2 class="member-section-title text-lg font-semibold">Членства</h2>
+                    <h2 class="member-section-title">Членства</h2>
                     <p class="member-section-subtitle text-sm">Де ця людина є і де була</p>
                 </div>
                 <app-member-memberships-tile
@@ -277,7 +277,7 @@
         } @else {
         <div class="space-y-5">
             <section>
-                <h3 class="dialog-section-title mb-2 text-sm font-semibold uppercase tracking-wide">
+                <h3 class="dialog-section-title mb-2">
                     Підтверджені ({{ confirmedSkillsCount }})
                 </h3>
 
@@ -322,7 +322,7 @@
             </section>
 
             <section>
-                <h3 class="dialog-section-title mb-2 text-sm font-semibold uppercase tracking-wide">
+                <h3 class="dialog-section-title mb-2">
                     Очікують підтвердження ({{ pendingSkillsCount }})
                 </h3>
 

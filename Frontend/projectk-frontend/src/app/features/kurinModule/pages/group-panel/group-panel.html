@@ -1,5 +1,5 @@
-<div class="group-shell">
-    <section class="group-hero group-tile">
+<div class="lil-page">
+    <section class="group-hero kurin-tile">
         <div class="group-hero__main">
             <div class="group-hero__icon">
                 @if (group?.silhouetteUrl) {
@@ -10,7 +10,7 @@
             </div>
 
             <div class="group-hero__copy">
-                <span class="group-hero__eyebrow">Гурток</span>
+                <p class="lil-page-head__eyebrow">Гурток</p>
                 <h1>{{ group?.name || 'Гурток' }}</h1>
                 @if (group?.kurinNumber) {
                     <p>{{ group.kurinNumber }} курінь</p>
@@ -74,11 +74,11 @@
         }
     </section>
 
-    <section class="group-tile">
+    <section class="kurin-tile">
         <app-leadership-panel [leadershipType]="'group'" [typeKey]="groupKey" />
     </section>
 
-    <section class="group-tile">
+    <section class="kurin-tile">
         <app-member-list [type]="'group'" [typeKey]="groupKey" />
     </section>
 </div>

@@ -2,10 +2,10 @@
   <form [formGroup]="leadershipForm" (ngSubmit)="saveCadence()">
     <p-table [value]="leadershipHistories.controls" formArrayName="leadershipHistories" stripedRows>
       <ng-template pTemplate="caption">
-        <div class="flex justify-between items-center flex-wrap gap-2">
-          <h3 class="text-xl font-bold">Склад проводу</h3>
+        <div class="lil-tile-head">
+          <h2>Склад проводу</h2>
 
-          <div class="flex items-center gap-3">
+          <div class="lil-tile-head__actions">
             @if (showArchived) {
               <div>
                 <p-iconfield iconPosition="left">

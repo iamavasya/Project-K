@@ -6,12 +6,12 @@
     [scrollable]="showArchived"
     [scrollHeight]="showArchived ? archiveScrollHeight : undefined">
     <ng-template #caption>
-      <div class="leadership-caption">
+      <div class="lil-tile-head">
         <div>
-          <h3>{{ title }}</h3>
+          <h2>{{ title }}</h2>
         </div>
 
-        <div class="leadership-caption__actions">
+        <div class="lil-tile-head__actions">
           @if (showArchived) {
             <p-iconfield iconPosition="left" class="leadership-search">
               <p-inputicon>

@@ -1,8 +1,3 @@
-.agenda-page { padding: 1rem; }
-.kurin-tile { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius, 12px); display: flex; flex-direction: column; padding: 1.25rem; }
-.agenda-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 1rem; }
-.agenda-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
-
 /* Native Optimus toolbar replaces FullCalendar's own header (headerToolbar: false). */
 .agenda-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; margin-bottom: 0.75rem; }
 .agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
@@ -10,7 +5,7 @@
 
 /* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
    scrolls inside the card instead of the whole page. */
-.agenda-calendar-host { max-block-size: calc(100vh - 16rem); min-block-size: 18rem; overflow: auto; }
+.agenda-calendar-host { max-block-size: calc(100vh - 19rem); min-block-size: 18rem; overflow: auto; }
 :host ::ng-deep full-calendar { display: block; }
 
 /* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
@@ -39,12 +34,23 @@
 :host ::ng-deep .agenda-ev--plain.agenda-ev--inprogress { background: var(--lil-agenda-progress-bg); border-color: var(--lil-agenda-progress-line); color: var(--lil-agenda-progress-fg); }
 :host ::ng-deep .agenda-ev--plain.agenda-ev--done { background: var(--lil-agenda-done-bg); border-color: var(--lil-agenda-done-line); color: var(--lil-agenda-done-fg); }
 
+/* A category colours the plate through `--agenda-cat` (set on the element by eventDidMount), never
+   as a solid fill: the theme says how much of it goes into the paper (`--lil-agenda-cat-*-mix`),
+   so the light theme gets a tint under ink text and the dark one keeps its bars. */
+:host ::ng-deep .agenda-ev--category {
+  background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-bg-mix), var(--p-content-background));
+  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
+  color: var(--p-text-color);
+}
+:host ::ng-deep .agenda-ev--category .fc-event-main { color: inherit; }
+
 /* Inside the chip: dot · text · faint glyph (rendered by eventContent in the component). */
 :host ::ng-deep .agenda-ev .fc-event-main { align-items: center; display: flex; gap: 0.35rem; min-width: 0; padding: 1px 1.5rem 1px 0.35rem; position: relative; }
 :host ::ng-deep .agenda-ev__dot { background: var(--lil-agenda-todo-dot); border-radius: 50%; flex: none; height: 0.5rem; width: 0.5rem; }
 :host ::ng-deep .agenda-ev--inprogress .agenda-ev__dot { background: var(--lil-agenda-progress-dot); }
 :host ::ng-deep .agenda-ev--done .agenda-ev__dot { background: var(--lil-agenda-done-dot); }
 :host ::ng-deep .agenda-ev--event .agenda-ev__dot { background: var(--lil-agenda-event-dot); }
+:host ::ng-deep .agenda-ev--category .agenda-ev__dot { background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-dot-mix), var(--p-text-color)); }
 :host ::ng-deep .agenda-ev__title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :host ::ng-deep .agenda-ev__icon { color: var(--lil-agenda-glyph); font-size: 0.9rem; pointer-events: none; position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); }
 /* Time views stack the title under the time; let the text wrap there instead of clipping. */

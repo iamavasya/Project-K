@@ -3,21 +3,24 @@
     <div class="card">
       <p-table #dt [value]="leadershipHistories" styleClass="member-list-table member-list-table--leadership" stripedRows [rowHover]="true" [globalFilterFields]="['member.lastName', 'member.firstName', 'roleNameUA']">
         <ng-template #caption>
-          <div class="flex items-center gap-2">
-            @if (leadershipType() === 'kurin') { <h3 class="text-xl font-bold">Провід куреня</h3> }
-            @else if (leadershipType() === 'group') { <h3 class="text-xl font-bold">Провід гуртка</h3> }
-            @else { <h3 class="text-xl font-bold">Кадра виховників</h3> }
+          <div class="lil-tile-head">
+            <div>
+            @if (leadershipType() === 'kurin') { <h2>Провід куреня</h2> }
+            @else if (leadershipType() === 'group') { <h2>Провід гуртка</h2> }
+            @else { <h2>Кадра виховників</h2> }
             
             @if(leadership) {
-              <span class="text-sm text-gray-500">
+              <p>
                 Каденція: {{ leadership.startDate | date:'dd.MM.yyyy' }} 
                 @if(leadership.endDate) { - {{ leadership.endDate | date:'dd.MM.yyyy' }} }
                 @else { - дотепер }
-              </span>
+              </p>
             }
 
           
-          <div class="flex items-center gap-2 ml-auto">
+            </div>
+
+          <div class="lil-tile-head__actions">
               @if (showArchived) {
                 <p-iconfield iconPosition="left">
                   <p-inputicon>
@@ -95,10 +98,10 @@
 
     @if (type() === 'group' && showGroupCardView) {
       <div class="member-view-shell">
-        <div class="member-list-heading mb-4 flex flex-wrap items-center gap-3">
-          <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3>
+        <div class="lil-tile-head mb-4">
+          <h2 class="member-list-title">Учасники гуртка</h2>
 
-          <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+          <div class="member-list-controls lil-tile-head__actions">
             <p-iconfield iconPosition="left" class="member-list-search">
               <p-inputicon>
                 <i class="pi pi-search"></i>
@@ -146,11 +149,11 @@
                (onRowSelect)="onMemberSelect($any($event).data)">
         
         <ng-template #caption>
-          <div class="member-list-heading flex flex-wrap items-center gap-3">
-              @if (type() === 'kurin') { <h3 class="member-list-title text-xl font-bold">Всі учасники куреня</h3> }
-              @else { <h3 class="member-list-title text-xl font-bold">Учасники гуртка</h3> }
+          <div class="lil-tile-head">
+              @if (type() === 'kurin') { <h2 class="member-list-title">Всі учасники куреня</h2> }
+              @else { <h2 class="member-list-title">Учасники гуртка</h2> }
 
-              <div class="member-list-controls ml-auto flex flex-wrap items-center gap-3">
+              <div class="member-list-controls lil-tile-head__actions">
                 <p-iconfield iconPosition="left" class="member-list-search">
                     <p-inputicon>
                         <i class="pi pi-search"></i>

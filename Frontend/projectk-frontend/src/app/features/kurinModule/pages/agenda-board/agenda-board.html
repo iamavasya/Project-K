@@ -1,11 +1,17 @@
-<div class="agenda-page">
-  <section class="kurin-tile">
-    <div class="agenda-header">
-      <h1 class="agenda-title">Задачі</h1>
-      @if (canManage()) {
-        <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
-      }
+<div class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <h1>Задачі</h1>
     </div>
+    <!-- Порожній стан нижче має ту саму дію, тож у шапці вона є лише коли є що показати (§10). -->
+    @if (canManage() && !isEmpty()) {
+      <div class="lil-page-head__actions">
+        <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
+      </div>
+    }
+  </header>
+
+  <section class="kurin-tile">
 
     @if (isEmpty()) {
       <app-empty-state
