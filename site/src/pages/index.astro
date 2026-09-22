@@ -1,0 +1,760 @@
+---
+/*
+ * Вітальна сторінка сайту. Не Starlight: довідці потрібен її каркас, показу продукту — свій ритм,
+ * і splash-шаблон не дає ні липкого кадру, ні власної сітки. Starlight лишається на /user/** і
+ * /dev/**; сюди він не заходить, тому шапку, підвал і перемикач теми сторінка тримає сама.
+ *
+ * Рух — за BRANDBOOK §4.1: кадром керує прокрутка, стани міняються за 200ms, з руху лише opacity
+ * і зсув по одній осі. Стовпчик написано першим, липкість накладена зверху — тому там, де
+ * animation-timeline немає або людина просила менше руху, сторінка лишається читною сама собою.
+ *
+ * Кадри беруться з тих самих знімків, що й довідка (sync-docs.mjs кладе docs/user у
+ * src/content/docs/user), тож показ не розходиться з тим, що людина потім побачить у довідці.
+ */
+import { Image } from 'astro:assets';
+import '../styles/brand.css';
+
+// Два файли знака, не один перефарбований: у темної версії власні кольори (BRANDBOOK §1), і
+// підмінити їх через currentColor не можна — центральна пелюстка там світліша за решту.
+import mark from '../assets/lileyka-mark.svg';
+import markDark from '../assets/lileyka-mark-dark.svg';
+import shotImport from '../content/docs/user/images/import.png';
+import shotRegistry from '../content/docs/user/images/registry.png';
+import shotMember from '../content/docs/user/images/member-card.png';
+import shotProbe from '../content/docs/user/images/probe.png';
+import shotCalendar from '../content/docs/user/images/calendar-1.png';
+
+const title = 'Лілейка — система для куреня';
+const description =
+	'Реєстр, проби й вмілості, календар і планування в одному місці. Зроблено для куреня НСОУ «Пласт».';
+
+// П'ять станів одного кадру — день, за який курінь опиняється в системі. Порядок не випадковий:
+// кожен наступний можливий лише тому, що стався попередній.
+const acts = [
+	{
+		shot: shotImport,
+		alt: 'Імпорт складу: таблиця куреня, зіставлення колонок і попередній перегляд',
+		step: 'Крок 1',
+		title: 'Склад уже є — у таблиці',
+		body: 'Курені ведуть склад у тому, що мають: Excel зі своїми колонками, часто у трьох версіях. Лілейка читає цю таблицю як є — формат вигадувати не треба.',
+	},
+	{
+		shot: shotRegistry,
+		alt: 'Реєстр куреня: юнаки, гуртки, ступені, пошук і вивантаження',
+		step: 'Крок 2',
+		title: 'За кілька хвилин — реєстр',
+		body: 'Перед записом видно, що саме станеться: скільки людей нових, скільки вже в курені, кому піде лист. Нічого не записується, поки не підтвердиш.',
+	},
+	{
+		shot: shotMember,
+		alt: 'Картка людини: ступені, відзначення, гурток і членство',
+		step: 'Крок 3',
+		title: 'У кожного — своя картка',
+		body: 'Історія належить людині, а не куреню: вийшла з куреня — проби, вмілості й ступені лишаються з нею. Курінь бачить свій відтинок.',
+	},
+	{
+		shot: shotProbe,
+		alt: 'Проба: розділи, точки вимог і поступ підписання',
+		step: 'Крок 4',
+		title: 'Проба — там, де сходини',
+		body: 'Вимоги проб і вмілостей з офіційних програм. Впорядник підписує точку з телефона на сходинах, юнак одразу бачить свій поступ.',
+	},
+	{
+		shot: shotCalendar,
+		alt: 'Календар куреня: сходини, табори й задачі з відгуками',
+		step: 'Крок 5',
+		title: 'І все це має дату',
+		body: 'Сходини, табори й задачі в одному календарі — з повторами, призначенням на гурток і відгуками, хто буде.',
+	},
+];
+
+const audience = [
+	{ who: 'Юнакові', what: 'Своя картка: проба, вмілості, відзначення. Видно, що вже здобуто і що далі.' },
+	{ who: 'Впорядникові', what: 'Гурток під рукою: підписати точку, відмітити присутність, побачити, хто відстає.' },
+	{ who: 'Звʼязковому', what: 'Весь курінь: реєстр, провід, календар і планування. Права йдуть з урядів, а не з налаштувань.' },
+];
+
+const inside = [
+	{ name: 'Реєстр', what: 'Склад куреня з історією: гуртки, уряди, ступені. Імпорт із наявної таблиці.' },
+	{ name: 'Проби й вмілості', what: 'Вимоги з офіційних програм, підпис точок і поступ кожного.' },
+	{ name: 'Календар і планування', what: 'Сходини, табори й задачі з повторами та відгуками.' },
+	{ name: 'Безпека', what: 'Другий фактор для проводу, доступ за урядом, можливість поставити на власний сервер.' },
+];
+---
+
+<!doctype html>
+<html lang="uk">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta property="og:title" content="Лілейка" />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		{/* Тема ставиться до першого малювання, інакше світла сторінка встигне блимнути перед темною.
+		    Ключ той самий, що в Starlight, тож перехід у довідку не скидає вибір. */}
+		<script is:inline>
+			(() => {
+				try {
+					const saved = localStorage.getItem('starlight-theme');
+					const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+					document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+				} catch {
+					document.documentElement.dataset.theme = 'light';
+				}
+			})();
+		</script>
+	</head>
+
+	<body>
+		<a class="skip" href="#tour">Перейти до показу</a>
+
+		<header class="bar">
+			<a class="bar__logo" href="/">
+				<img class="lil-mark lil-mark--light" src={mark.src} alt="" width="28" height="28" />
+				<img class="lil-mark lil-mark--dark" src={markDark.src} alt="" width="28" height="28" />
+				<span>Лілейка</span>
+			</a>
+			<nav class="bar__nav">
+				<a href="/user/start/what-is/">Довідка</a>
+				<a href="/demo/">Демо</a>
+				<a href="https://github.com/iamavasya/Project-K" rel="noopener">GitHub</a>
+				<button type="button" class="bar__theme" data-theme-toggle aria-label="Змінити тему">
+					<span data-theme-label>Тема</span>
+				</button>
+			</nav>
+		</header>
+
+		<main>
+			<section class="hero">
+				{/* Лочап за §1: знак і слово поруч, горизонтально. Знак тут декоративний — слово
+				    поруч читається вголос, тож alt порожній, інакше «Лілейка» прозвучить двічі. */}
+				<h1 class="hero__lockup">
+					<img class="lil-mark lil-mark--light" src={mark.src} alt="" />
+					<img class="lil-mark lil-mark--dark" src={markDark.src} alt="" />
+					<span>Лілейка</span>
+				</h1>
+				<p class="hero__lead">Весь курінь під рукою.</p>
+				<p class="hero__sub">
+					Реєстр, проби й вмілості, календар і планування — в одному місці.
+					Зроблено для куреня НСОУ «Пласт».
+				</p>
+				<div class="hero__actions">
+					<a class="btn btn--primary" href="/demo/">Спробувати демо</a>
+					<a class="btn" href="/user/start/what-is/">Як це працює</a>
+				</div>
+				<p class="hero__note">Демо відкривається без заявки й без пароля.</p>
+			</section>
+
+			<section class="tour" id="tour" aria-label="Перший день куреня в системі">
+				<div class="tour__stage" aria-hidden="true">
+					{acts.map((act, i) => (
+						<figure class={`tour__shot tour__shot--${i + 1}`}>
+							<Image src={act.shot} alt="" widths={[720, 1080, 1440]} sizes="(max-width: 960px) 92vw, 56vw" loading={i === 0 ? 'eager' : 'lazy'} />
+						</figure>
+					))}
+				</div>
+
+				<div class="tour__steps">
+					{acts.map((act, i) => (
+						<div class={`tour__step tour__step--${i + 1}`}>
+							<div class="tour__copy">
+								<p class="tour__kicker">{act.step}</p>
+								<h2>{act.title}</h2>
+								<p>{act.body}</p>
+							</div>
+							{/* Той самий кадр у потоці — його бачать там, де липкої сцени немає. */}
+							<figure class="tour__inline">
+								<Image src={act.shot} alt={act.alt} widths={[720, 1080]} sizes="92vw" loading="lazy" />
+							</figure>
+						</div>
+					))}
+				</div>
+			</section>
+
+			<section class="band">
+				<p class="band__hand">А далі — як у курені заведено.</p>
+				<p class="band__text">
+					Лілейка не переказує курінь на свій лад: уряди лишаються урядами, гуртки — гуртками,
+					а права рахуються з того, хто яке діловодство несе.
+				</p>
+			</section>
+
+			<section class="cols" aria-labelledby="audience">
+				<h2 id="audience">Для кого</h2>
+				<div class="cols__grid">
+					{audience.map((a) => (
+						<article class="card">
+							<h3>{a.who}</h3>
+							<p>{a.what}</p>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<section class="cols" aria-labelledby="inside">
+				<h2 id="inside">Що всередині</h2>
+				<div class="cols__grid cols__grid--four">
+					{inside.map((f) => (
+						<article class="card">
+							<h3>{f.name}</h3>
+							<p>{f.what}</p>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<section class="start" aria-labelledby="start">
+				<h2 id="start">Як почати</h2>
+				<ol class="start__list">
+					<li>Звʼязковий куреня подає заявку — Лілейка приймає курені, не окремих пластунів.</li>
+					<li>Після схвалення приходить лист: обираєш пароль і одразу потрапляєш у свій курінь.</li>
+					<li>Далі — <a href="/user/start/first-login/">перший вхід</a>, <a href="/user/start/roles/">ролі та уряди</a> і <a href="/user/roles/leader/">як завести курінь</a>.</li>
+				</ol>
+				<div class="hero__actions">
+					<a class="btn btn--primary" href="/demo/">Спробувати демо</a>
+					<a class="btn" href="/user/start/what-is/">Читати довідку</a>
+				</div>
+			</section>
+		</main>
+
+		<footer class="foot">
+			<p>
+				<a href="/user/about/">Про Лілейку</a> · <a href="/user/privacy/">Політика конфіденційності</a> ·
+				<a href="/dev/self-host/">Власний сервер</a> ·
+				<a href="https://github.com/iamavasya/Project-K" rel="noopener">GitHub</a>
+			</p>
+			<p class="foot__fine">Лілейка — незалежний проєкт. Офіційна емблема НСОУ «Пласт» не використовується.</p>
+		</footer>
+
+		<script is:inline>
+			(() => {
+				const button = document.querySelector('[data-theme-toggle]');
+				const label = document.querySelector('[data-theme-label]');
+				if (!button || !label) return;
+
+				const paint = () => {
+					label.textContent = document.documentElement.dataset.theme === 'dark' ? 'Світла' : 'Темна';
+				};
+
+				button.addEventListener('click', () => {
+					const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+					document.documentElement.dataset.theme = next;
+					try {
+						localStorage.setItem('starlight-theme', next);
+					} catch {
+						// Приватне вікно — тема діє до перезавантаження, і цього досить.
+					}
+					paint();
+				});
+
+				paint();
+			})();
+		</script>
+	</body>
+</html>
+
+<style>
+	/* ── Основа ────────────────────────────────────────────────────────────────
+	   Кольори беруться з brand.css: там уже лежать обидві теми за тими самими
+	   токенами, що в застосунку, тож тут нових кольорів не зʼявляється. */
+	:root {
+		--lil-ink: var(--sl-color-white);
+		--lil-soft: var(--sl-color-gray-1);
+		--lil-muted: var(--sl-color-gray-2);
+		--lil-line: var(--sl-color-gray-5);
+		--lil-surface: var(--sl-color-gray-6);
+		--lil-paper: var(--sl-color-black);
+		--lil-primary: var(--sl-color-accent);
+		--lil-wide: min(100% - 2.5rem, 72rem);
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	body {
+		margin: 0;
+		background: var(--lil-paper);
+		color: var(--lil-ink);
+		font-family: var(--sl-font);
+		font-size: 1rem;
+		line-height: 1.6;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	h1,
+	h2,
+	h3 {
+		letter-spacing: -0.01em;
+		text-wrap: balance;
+	}
+
+	h2 {
+		font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+		font-weight: 800;
+		margin: 0 0 1.5rem;
+	}
+
+	a {
+		color: var(--lil-primary);
+	}
+
+	.skip {
+		position: absolute;
+		left: -999px;
+	}
+
+	.skip:focus {
+		left: 1rem;
+		top: 1rem;
+		z-index: 10;
+		background: var(--lil-paper);
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--lil-line);
+		border-radius: 8px;
+	}
+
+	/* ── Шапка ─────────────────────────────────────────────────────────────── */
+	.bar {
+		position: sticky;
+		top: 0;
+		z-index: 5;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		width: var(--lil-wide);
+		margin-inline: auto;
+		padding: 0.875rem 0;
+		background: color-mix(in srgb, var(--lil-paper) 88%, transparent);
+		backdrop-filter: blur(8px);
+		border-bottom: 1px solid var(--lil-line);
+	}
+
+	.bar__logo {
+		display: flex;
+		align-items: center;
+		/* Той самий відступ, що в герої: 0.4× висоти знака (§1), знак тут 28px. */
+		gap: calc(28px * 0.4);
+		color: var(--lil-ink);
+		text-decoration: none;
+	}
+
+	.bar__logo span {
+		font-family: var(--lil-font-hand);
+		font-size: 1.4rem;
+	}
+
+	.bar__nav {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		font-size: 0.925rem;
+	}
+
+	.bar__nav a {
+		color: var(--lil-soft);
+		text-decoration: none;
+		transition: color 200ms ease;
+	}
+
+	.bar__nav a:hover {
+		color: var(--lil-primary);
+	}
+
+	.bar__theme {
+		font: inherit;
+		font-size: 0.875rem;
+		color: var(--lil-soft);
+		background: none;
+		border: 1px solid var(--lil-line);
+		border-radius: 8px;
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+		transition: border-color 200ms ease, color 200ms ease;
+	}
+
+	.bar__theme:hover {
+		border-color: var(--lil-primary);
+		color: var(--lil-primary);
+	}
+
+	@media (max-width: 620px) {
+		.bar__nav a[href*='github'] {
+			display: none;
+		}
+	}
+
+	/* ── Герой ─────────────────────────────────────────────────────────────── */
+	.hero {
+		width: var(--lil-wide);
+		margin: clamp(3.5rem, 9vw, 6.5rem) auto clamp(3rem, 7vw, 5rem);
+		text-align: center;
+	}
+
+	.hero h1 {
+		font-family: var(--lil-font-hand);
+		font-weight: 400;
+		font-size: clamp(3.25rem, 8vw, 5rem);
+		line-height: 1.05;
+		margin: 0 0 0.75rem;
+	}
+
+	/* Лочап (§1): знак і слово горизонтально, відступ між ними — 0.4× висоти знака. Вертикального
+	   варіанта немає, тож на вузьких екранах лочап не ламається на два рядки, а меншає цілком. */
+	.hero__lockup {
+		--mark: clamp(3.5rem, 8.8vw, 5.5rem);
+		--lockup-gap: calc(var(--mark) * 0.4);
+		/* Слово стоїть праворуч від знака, тож лочап, відцентрований як ціле, лишає саме слово
+		   правіше за центр сторінки — а весь текст під ним центрований по ній. Зсуваємо лочап
+		   ліворуч на половину того, що займає знак із відступом: центр слова сходиться з центром
+		   решти героя, знак звисає ліворуч. Менший множник — менший звис, 0 повертає як було. */
+		--lockup-shift: calc((var(--mark) + var(--lockup-gap)) / 2);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--lockup-gap);
+		/* Вільне поле навколо знака — висота нижнього вістря, ≈20% (§1). */
+		padding-block: calc(var(--mark) * 0.1);
+		translate: calc(var(--lockup-shift) * -1) 0;
+	}
+
+	.hero__lockup .lil-mark {
+		flex: none;
+		width: var(--mark);
+		height: var(--mark);
+	}
+
+	/* Знак має два файли, а не один перефарбований: тема ставиться на <html> до першого малювання,
+	   тож підміна тут не блимає. */
+	.lil-mark--dark {
+		display: none;
+	}
+
+	:root[data-theme='dark'] .lil-mark--light {
+		display: none;
+	}
+
+	:root[data-theme='dark'] .lil-mark--dark {
+		display: initial;
+	}
+
+	.hero__lead {
+		font-size: clamp(1.4rem, 3.6vw, 2rem);
+		font-weight: 800;
+		letter-spacing: -0.01em;
+		margin: 0 0 1rem;
+	}
+
+	.hero__sub {
+		max-width: 34rem;
+		margin: 0 auto 2rem;
+		color: var(--lil-muted);
+		font-size: 1.075rem;
+	}
+
+	.hero__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		justify-content: center;
+	}
+
+	.hero__note {
+		margin: 1.25rem 0 0;
+		color: var(--lil-muted);
+		font-size: 0.9rem;
+	}
+
+	.btn {
+		display: inline-block;
+		padding: 0.7rem 1.4rem;
+		border: 1px solid var(--lil-line);
+		border-radius: 8px;
+		color: var(--lil-ink);
+		text-decoration: none;
+		font-weight: 600;
+		transition: background-color 200ms ease, border-color 200ms ease;
+	}
+
+	.btn:hover {
+		background: var(--lil-surface);
+		border-color: var(--lil-primary);
+	}
+
+	.btn--primary {
+		background: var(--lil-primary);
+		border-color: var(--lil-primary);
+		color: var(--lil-paper);
+	}
+
+	.btn--primary:hover {
+		background: var(--sl-color-accent-high);
+		border-color: var(--sl-color-accent-high);
+		color: var(--lil-paper);
+	}
+
+	/* ── Тур ────────────────────────────────────────────────────────────────
+	   Стовпчик пишеться першим і працює сам: кожен крок — текст плюс кадр під
+	   ним. Липка сцена вмикається нижче, і тільки там, де браузер її вміє.   */
+	.tour {
+		width: var(--lil-wide);
+		margin-inline: auto;
+		padding-block: clamp(2rem, 5vw, 4rem);
+	}
+
+	.tour__stage {
+		display: none;
+	}
+
+	.tour__step + .tour__step {
+		margin-top: clamp(3rem, 8vw, 5.5rem);
+	}
+
+	.tour__kicker {
+		margin: 0 0 0.5rem;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--lil-muted);
+	}
+
+	.tour__copy h2 {
+		margin: 0 0 0.75rem;
+	}
+
+	.tour__copy p {
+		margin: 0;
+		color: var(--lil-muted);
+		font-size: 1.075rem;
+		max-width: 34rem;
+	}
+
+	.tour__inline,
+	.tour__shot {
+		margin: 1.75rem 0 0;
+	}
+
+	.tour__inline :global(img),
+	.tour__shot :global(img) {
+		width: 100%;
+		height: auto;
+		border: 1px solid var(--lil-line);
+		border-radius: 12px;
+		/* §4: тінь на скриншоті продукту дозволена саме в маркетингу. */
+		box-shadow: 0 20px 52px rgba(16, 20, 19, 0.1);
+	}
+
+	/* ── Липка сцена ────────────────────────────────────────────────────────
+	   Вмикається лише там, де є scroll-driven анімації, і лише коли людина не
+	   просила менше руху. Скрізь інде лишається стовпчик вище (BRANDBOOK §4.1). */
+	@supports (animation-timeline: view()) and (timeline-scope: --t) {
+		@media (prefers-reduced-motion: no-preference) and (min-width: 960px) {
+			.tour {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+				gap: clamp(2rem, 5vw, 4rem);
+				align-items: start;
+				timeline-scope: --t1, --t2, --t3, --t4, --t5;
+			}
+
+			.tour__steps {
+				order: -1;
+			}
+
+			.tour__inline {
+				display: none;
+			}
+
+			.tour__stage {
+				display: block;
+				position: sticky;
+				top: 14vh;
+				height: 72svh;
+				order: 1;
+			}
+
+			.tour__shot {
+				position: absolute;
+				inset: 0;
+				margin: 0;
+				display: grid;
+				align-content: center;
+				opacity: 0;
+			}
+
+			.tour__step {
+				min-height: 78svh;
+				display: grid;
+				align-content: center;
+				view-timeline-axis: block;
+			}
+
+			.tour__step--1 { view-timeline-name: --t1; }
+			.tour__step--2 { view-timeline-name: --t2; }
+			.tour__step--3 { view-timeline-name: --t3; }
+			.tour__step--4 { view-timeline-name: --t4; }
+			.tour__step--5 { view-timeline-name: --t5; }
+
+			.tour__shot--1 { animation-timeline: --t1; }
+			.tour__shot--2 { animation-timeline: --t2; }
+			.tour__shot--3 { animation-timeline: --t3; }
+			.tour__shot--4 { animation-timeline: --t4; }
+			.tour__shot--5 { animation-timeline: --t5; }
+
+			.tour__shot {
+				animation-name: shot;
+				animation-fill-mode: both;
+				animation-timing-function: linear;
+				animation-range: cover 0% cover 100%;
+			}
+
+			/* Рух — тільки прозорість і зсув по одній осі, не більше 24px (§4.1).
+			   Плато навмисно вузьке. Діапазон `cover` сусідніх кроків перекривається на висоту
+			   кроку, тож ширше плато лишало б два кадри на повній непрозорості одночасно — і
+			   замість переходу була б різка підміна. При 40–60% згасання одного припадає рівно
+			   на появу наступного. */
+			@keyframes shot {
+				0% {
+					opacity: 0;
+					translate: 0 16px;
+				}
+				40%,
+				60% {
+					opacity: 1;
+					translate: 0 0;
+				}
+				100% {
+					opacity: 0;
+					translate: 0 -16px;
+				}
+			}
+
+			/* Останній кадр не згасає: інакше в кінці туру лишалася б порожня рамка, поки секція
+			   ще липка. Він тримається, доки сцена не від'їде разом із секцією. */
+			.tour__shot--5 {
+				animation-name: shot-last;
+			}
+
+			@keyframes shot-last {
+				0% {
+					opacity: 0;
+					translate: 0 16px;
+				}
+				40%,
+				100% {
+					opacity: 1;
+					translate: 0 0;
+				}
+			}
+
+			.tour__copy {
+				transition: opacity 200ms ease;
+			}
+		}
+	}
+
+	/* ── Смуга з рукописним рядком ─────────────────────────────────────────
+	   Neucha поза логотипом дозволена в порожніх станах і тут, у маркетингу. */
+	.band {
+		width: var(--lil-wide);
+		margin: clamp(3.5rem, 8vw, 6rem) auto;
+		padding: clamp(2rem, 5vw, 3rem);
+		border: 1px solid var(--lil-line);
+		border-radius: 12px;
+		background: var(--lil-surface);
+		text-align: center;
+	}
+
+	.band__hand {
+		font-family: var(--lil-font-hand);
+		font-size: clamp(1.5rem, 4vw, 2.1rem);
+		margin: 0 0 0.75rem;
+	}
+
+	.band__text {
+		max-width: 40rem;
+		margin: 0 auto;
+		color: var(--lil-muted);
+	}
+
+	/* ── Картки ────────────────────────────────────────────────────────────── */
+	.cols {
+		width: var(--lil-wide);
+		margin: clamp(3rem, 7vw, 5rem) auto;
+	}
+
+	.cols__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		gap: 1rem;
+	}
+
+	.card {
+		padding: 1.25rem;
+		border: 1px solid var(--lil-line);
+		border-radius: 12px;
+		transition: border-color 200ms ease, background-color 200ms ease;
+	}
+
+	.card:hover {
+		border-color: var(--lil-primary);
+		background: var(--lil-surface);
+	}
+
+	.card h3 {
+		margin: 0 0 0.5rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+	}
+
+	.card p {
+		margin: 0;
+		color: var(--lil-muted);
+		font-size: 0.95rem;
+	}
+
+	/* ── Як почати ─────────────────────────────────────────────────────────── */
+	.start {
+		width: var(--lil-wide);
+		margin: clamp(3rem, 7vw, 5rem) auto clamp(4rem, 9vw, 6rem);
+	}
+
+	.start__list {
+		max-width: 40rem;
+		margin: 0 0 2rem;
+		padding-left: 1.25rem;
+		color: var(--lil-muted);
+	}
+
+	.start__list li + li {
+		margin-top: 0.75rem;
+	}
+
+	.start .hero__actions {
+		justify-content: flex-start;
+	}
+
+	/* ── Підвал ────────────────────────────────────────────────────────────── */
+	.foot {
+		width: var(--lil-wide);
+		margin-inline: auto;
+		padding: 2rem 0 3rem;
+		border-top: 1px solid var(--lil-line);
+		color: var(--lil-muted);
+		font-size: 0.9rem;
+	}
+
+	.foot p {
+		margin: 0 0 0.5rem;
+	}
+
+	.foot__fine {
+		color: var(--sl-color-gray-3);
+		font-size: 0.825rem;
+	}
+</style>
