@@ -7,7 +7,7 @@ describeRole('admin', 'Admin CRUD operations', () => {
     await expect(page).toHaveURL(/\/users/);
     
     // Verify table is visible
-    await expect(page.locator('h2', { hasText: 'Користувачі' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Користувачі' })).toBeVisible();
     await expect(page.locator('.p-datatable')).toBeVisible();
 
     // Verify search works visually

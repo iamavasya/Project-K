@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { getSeededGroupKey } from './support/api-client';
 import { describeRole } from './support/role-test';
-import { chooseMenuItem, fillMemberRequiredFields, openRowMenu } from './support/ui';
+import { fillMemberRequiredFields, openRowMenu } from './support/ui';
 
 describeRole('manager', 'Manager CRUD operations', ({ user }) => {
   test('manager can open seeded group and update description', async ({ page, request }) => {
@@ -12,7 +12,9 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
     await expect(page.locator('body')).toContainText('Gurtok 1');
 
     await openRowMenu(page.locator('.group-actions'));
-    await chooseMenuItem(page, 0);
+    // By name, not by index: the menu is rebuilt as each check-access answer arrives, so for a
+    // moment after the page opens its first item can be «Додати учасника» instead of the edit.
+    await page.getByRole('menuitem', { name: 'Редагувати профіль' }).click();
     await page.locator('textarea[formControlName="description"]').fill(description);
     await page.locator('.group-profile-actions').getByRole('button').last().click();
 
@@ -50,11 +52,11 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
 
     await page.locator('.member-actions button').click();
 
-    const deleteButton = page.getByRole('button', { name: 'Delete Profile' });
+    const deleteButton = page.getByRole('button', { name: 'Видалити профіль' });
     await expect(deleteButton).toBeEnabled();
     await deleteButton.click();
 
-    const confirmButton = page.getByRole('button', { name: 'Delete', exact: true });
+    const confirmButton = page.getByRole('button', { name: 'Видалити', exact: true });
     await expect(confirmButton).toBeVisible();
     await confirmButton.click();
 
