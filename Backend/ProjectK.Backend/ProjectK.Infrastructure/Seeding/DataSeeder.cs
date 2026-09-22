@@ -15,6 +15,13 @@ namespace ProjectK.Infrastructure.Seeding;
 
 public static class DataSeeder
 {
+    /// <summary>
+    /// The address of the administrator this file creates for the tiers that seed demo data. It is
+    /// the only administrator whose password lives in the repository, so everything below tells it
+    /// apart from an administrator the instance was configured with.
+    /// </summary>
+    private const string SeededAdministratorEmail = "admin@projectk.com";
+
     public static async Task SeedAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
@@ -54,7 +61,7 @@ public static class DataSeeder
             return;
         }
 
-        await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
+        await EnsureSeededAdministratorAsync(scope.ServiceProvider, userManager);
 
         // 3. The load-test account: passwordless, reachable only through LoadTestLoginKey.
         await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.Member);
@@ -72,6 +79,45 @@ public static class DataSeeder
             await E2eFixtureSeeder.SeedAsync(scope.ServiceProvider);
         }
     }
+
+    /// <summary>
+    /// Creates the well-known administrator for a tier that seeds demo data, unless this instance
+    /// already has an administrator of its own.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="EnsureUser"/> recognises an account by its address and nothing else, so moving the
+    /// real administrator to a real address left nothing at <see cref="SeededAdministratorEmail"/> —
+    /// and the next start quietly created a second administrator there, with the password that sits
+    /// in this file. The tier gate above keeps that out of a deployed instance; this keeps it out of
+    /// any database that already has an administrator, whichever tier the process believes it is.
+    /// </remarks>
+    internal static async Task EnsureSeededAdministratorAsync(IServiceProvider services, UserManager<AppUser> userManager)
+    {
+        if (await HasConfiguredAdministratorAsync(userManager))
+        {
+            services.GetService<ILoggerFactory>()
+                ?.CreateLogger(nameof(DataSeeder))
+                .LogInformation(
+                    "An administrator is already configured; the seeded {Email} account is not created.",
+                    SeededAdministratorEmail);
+            return;
+        }
+
+        await EnsureUser(userManager, SeededAdministratorEmail, "System", "Admin", UserRole.Admin, "Admin@12345");
+    }
+
+    /// <summary>
+    /// True when the administrator role is held under any address other than the one this file
+    /// seeds — an administrator the instance was configured with, rather than one it was born with.
+    /// </summary>
+    internal static async Task<bool> HasConfiguredAdministratorAsync(UserManager<AppUser> userManager)
+    {
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        return administrators.Any(administrator => !IsSeededAdministrator(administrator));
+    }
+
+    private static bool IsSeededAdministrator(AppUser user) =>
+        string.Equals(user.Email, SeededAdministratorEmail, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Said out loud at startup, because a deployment with no administrator is one nobody can
@@ -110,11 +156,18 @@ public static class DataSeeder
             .Distinct()
             .ToListAsync();
 
+        // An administrator is not demo data. The seeded one was spared here by address alone, which
+        // spared exactly the account that is cheapest to recreate and none of the ones that are not:
+        // an administrator configured by hand, who happens to stand in kurin 1, was deleted outright.
+        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRole.Admin))
+            .Select(administrator => administrator.Id)
+            .ToHashSet();
+
         var usersToDelete = await userManager.Users
-            .Where(u => u.KurinKey == kurinKey && u.Email != "admin@projectk.com")
+            .Where(u => u.KurinKey == kurinKey)
             .ToListAsync();
 
-        foreach (var user in usersToDelete)
+        foreach (var user in usersToDelete.Where(u => !administratorIds.Contains(u.Id)))
         {
             await userManager.DeleteAsync(user);
         }
