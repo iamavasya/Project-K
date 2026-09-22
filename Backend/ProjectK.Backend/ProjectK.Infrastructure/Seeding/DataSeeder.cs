@@ -229,6 +229,36 @@ public static class DataSeeder
             .ToListAsync();
         dbContext.MentorAssignments.RemoveRange(mentorAssignments);
 
+        // The agenda is seeded too, and unlike people it is not keyed on anything that would
+        // stop a second run from adding the same сходини again — so it is wiped with the rest.
+        var agendaItemKeys = await dbContext.AgendaItems
+            .Where(a => a.KurinKey == kurinKey)
+            .Select(a => a.AgendaItemKey)
+            .ToListAsync();
+
+        if (agendaItemKeys.Count > 0)
+        {
+            var agendaResponses = await dbContext.AgendaResponses
+                .Where(r => agendaItemKeys.Contains(r.AgendaItemKey))
+                .ToListAsync();
+            dbContext.AgendaResponses.RemoveRange(agendaResponses);
+
+            var agendaAssignments = await dbContext.AgendaAssignments
+                .Where(a => agendaItemKeys.Contains(a.AgendaItemKey))
+                .ToListAsync();
+            dbContext.AgendaAssignments.RemoveRange(agendaAssignments);
+
+            var agendaItems = await dbContext.AgendaItems
+                .Where(a => a.KurinKey == kurinKey)
+                .ToListAsync();
+            dbContext.AgendaItems.RemoveRange(agendaItems);
+        }
+
+        var agendaCategories = await dbContext.AgendaCategories
+            .Where(c => c.KurinKey == kurinKey)
+            .ToListAsync();
+        dbContext.AgendaCategories.RemoveRange(agendaCategories);
+
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.
         var memberships = await dbContext.Memberships
@@ -312,7 +342,7 @@ public static class DataSeeder
     /// Finds the member by email, creating the member row and its linked account when missing.
     /// Keyed on email so re-running a seeder does not give one account a second member row.
     /// </summary>
-    internal static async Task<Member> EnsureMemberAsync(
+    internal static Task<Member> EnsureMemberAsync(
         AppDbContext dbContext,
         UserManager<AppUser> userManager,
         string email,
@@ -324,19 +354,61 @@ public static class DataSeeder
         DateOnly dateOfBirth,
         CancellationToken cancellationToken = default)
     {
-        var user = await EnsureUser(userManager, email, firstName, lastName, UserRole.Member, SeededPassword, kurinKey);
+        return EnsureMemberAsync(
+            dbContext,
+            userManager,
+            new SeededPerson(email, firstName, null, lastName, kurinKey, groupKey, phoneNumber, dateOfBirth),
+            cancellationToken);
+    }
 
-        var member = await dbContext.Members.FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
+    /// <summary>
+    /// Everything a seeder says about one person. The optional part is what tells a юнак from the
+    /// виховник who runs their гурток: the kind of membership, when it began, and the details a
+    /// картка shows that fixtures never needed.
+    /// </summary>
+    internal sealed record SeededPerson(
+        string Email,
+        string FirstName,
+        string? MiddleName,
+        string LastName,
+        Guid KurinKey,
+        Guid? GroupKey,
+        string PhoneNumber,
+        DateOnly DateOfBirth,
+        MembershipKind Kind = MembershipKind.Youth,
+        DateTime? JoinedAtUtc = null,
+        string? Address = null,
+        string? School = null);
+
+    internal static async Task<Member> EnsureMemberAsync(
+        AppDbContext dbContext,
+        UserManager<AppUser> userManager,
+        SeededPerson person,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword, person.KurinKey);
+
+        // The account settings page reads the phone from the account, not the card.
+        if (!string.Equals(user!.PhoneNumber, person.PhoneNumber, StringComparison.Ordinal))
+        {
+            user.PhoneNumber = person.PhoneNumber;
+            await userManager.UpdateAsync(user);
+        }
+
+        var member = await dbContext.Members.FirstOrDefaultAsync(m => m.Email == person.Email, cancellationToken);
         if (member == null)
         {
             member = new Member
             {
-                FirstName = firstName,
-                LastName = lastName,
-                Email = email,
-                PhoneNumber = phoneNumber,
-                DateOfBirth = dateOfBirth,
-                UserKey = user!.Id
+                FirstName = person.FirstName,
+                MiddleName = person.MiddleName,
+                LastName = person.LastName,
+                Email = person.Email,
+                PhoneNumber = person.PhoneNumber,
+                DateOfBirth = person.DateOfBirth,
+                Address = person.Address,
+                School = person.School,
+                UserKey = user.Id
             };
             dbContext.Members.Add(member);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -354,10 +426,10 @@ public static class DataSeeder
             {
                 MemberKey = member.MemberKey,
                 UserKey = member.UserKey,
-                KurinKey = kurinKey,
-                GroupKey = groupKey,
-                Kind = MembershipKind.Youth,
-                JoinedAtUtc = DateTime.UtcNow
+                KurinKey = person.KurinKey,
+                GroupKey = person.GroupKey,
+                Kind = person.Kind,
+                JoinedAtUtc = person.JoinedAtUtc ?? DateTime.UtcNow
             });
             await dbContext.SaveChangesAsync(cancellationToken);
         }
