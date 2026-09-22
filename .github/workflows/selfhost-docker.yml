@@ -26,13 +26,24 @@ jobs:
 
       - name: Resolve release info
         shell: bash
+        env:
+          # Through the environment, not ${{ }} inside the script: a release name is free text and
+          # would otherwise be pasted into the shell as code. Empty on a workflow_dispatch run.
+          RAW_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_NAME: ${{ github.event.release.name }}
         run: |
           set -euo pipefail
+          # Kept identical in dotnet.yml and angular.yml; change one, change all three.
           if [ "${{ github.event_name }}" = "release" ]; then
-            RAW_TAG="${{ github.event.release.tag_name }}"
             VERSION="${RAW_TAG#v}"
-            RELEASE_NAME='${{ github.event.release.name }}'
-            CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
+            if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?([-.][0-9A-Za-z.-]+)?$'; then
+              echo "::error::Release tag '$RAW_TAG' is not a version like v1.0, v1.0.0 or v1.0.0-beta"
+              exit 1
+            fi
+            # The code name is whatever the release name carries in quotes, and a release no longer
+            # has to carry one: with no quotes this stays empty, and everything that prints a
+            # release drops the quotes along with it.
+            CODE_NAME=$(printf '%s' "$RELEASE_NAME" | sed -n 's/.*"\([^"]*\)".*/\1/p')
           else
             VERSION="${{ github.event.inputs.version }}"
             VERSION="${VERSION#v}"
@@ -41,7 +52,8 @@ jobs:
 
           echo "PROJECTK_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "IMAGE_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "RELEASE_INFO_VERSION=v$VERSION" >> "$GITHUB_ENV"
+          # No "v": one spelling everywhere, the same one the image tag and /health carry.
+          echo "RELEASE_INFO_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "RELEASE_INFO_CODENAME=$CODE_NAME" >> "$GITHUB_ENV"
 
       - name: Inject versioning into Docker build context

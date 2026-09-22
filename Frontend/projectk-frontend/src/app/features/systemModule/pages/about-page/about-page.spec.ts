@@ -59,7 +59,27 @@ describe('AboutPageComponent', () => {
 
     expect(component.releaseLabel({ tag: 'v0.13.0-beta', codeName: 'Queen Ant' })).toBe('v0.13.0-beta «Queen Ant»');
     expect(component.releaseLabel({ tag: 'v0.1.0-alpha.1' })).toBe('v0.1.0-alpha.1');
+    // Two-part tags count: since 1.0 a release is vX.Y, and the patch number appears only when
+    // there is a patch. This assertion used to demand three parts and would have failed on v1.0.
     const tags = component.milestones.flatMap(m => m.releases ?? []).map(r => r.tag);
-    expect(tags.every(tag => /^v\d+\.\d+\.\d+(-(alpha|beta)(\.\d+)?)?$/.test(tag))).toBeTrue();
+    expect(tags.every(tag => /^v\d+\.\d+(\.\d+)?(-(alpha|beta)(\.\d+)?)?$/.test(tag))).toBeTrue();
+  });
+
+  it('shows the version alone when the release carries no code name', () => {
+    fixture.detectChanges();
+    http.expectOne(() => true).flush({ version: '1.0', codeName: null });
+    fixture.detectChanges();
+
+    expect(component.apiVersion()).toBe('1.0');
+    expect(component.apiCodeName()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('«»');
+  });
+
+  it('hides the placeholder code name a local build carries', () => {
+    fixture.detectChanges();
+    http.expectOne(() => true).flush({ version: '0.0.0-dev', codeName: 'LocalDevelopment' });
+    fixture.detectChanges();
+
+    expect(component.apiCodeName()).toBeNull();
   });
 });

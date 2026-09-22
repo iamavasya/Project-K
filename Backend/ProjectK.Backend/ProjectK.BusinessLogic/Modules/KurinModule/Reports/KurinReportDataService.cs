@@ -5,6 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -133,7 +134,8 @@ public sealed class KurinReportDataService
                 ResolveCurrentUserName(usersByKey),
                 ResolveCurrentUserEmail(usersByKey),
                 ResolveReleaseInfo("Version"),
-                ResolveReleaseInfo("Codename", "CodeName")),
+                // Not through ResolveReleaseInfo: its "unknown" fallback would print as a code name.
+                ReleaseDisplay.CodeName(_configuration["ReleaseInfo:Codename"] ?? _configuration["ReleaseInfo:CodeName"])),
             new KurinReportKurin(
                 kurin.KurinKey,
                 kurin.Number,
