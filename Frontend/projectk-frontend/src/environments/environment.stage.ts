@@ -1,4 +1,4 @@
-const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string } }).__PROJECTK_CONFIG__;
+const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string; docsUrl?: string } }).__PROJECTK_CONFIG__;
 
 export const environment = {
   production: true,
@@ -7,6 +7,7 @@ export const environment = {
   codeName: 'LocalDevelopment',
   envName: runtimeConfig?.environmentName || 'Staging',
   appName: runtimeConfig?.appName || 'Лілейка',
+  docsUrl: runtimeConfig?.docsUrl || 'https://dev.projectk-docs-and-demo.pages.dev/',
   isF1TierBackend: true,
   isStaticDemo: false
 };

@@ -27,6 +27,8 @@ export class WelcomePageComponent {
   // The one place BRANDBOOK §0 still allows the technical name next to the version.
   readonly techLine = `ProjectK · ${environment.envName} · ${environment.version}`;
 
+  readonly docsUrl = environment.docsUrl;
+
   readonly screens: PreviewScreen[] = [
     { src: 'assets/images/software-screens/kurin.png', alt: 'Сторінка куреня: гуртки, КВ і провід', title: 'Курінь' },
     { src: 'assets/images/software-screens/registry.png', alt: 'Реєстр куреня: юнаки за гуртками зі ступенями', title: 'Реєстр' },
@@ -51,6 +53,11 @@ export class WelcomePageComponent {
     if (this.timer) {
       this.startClock();
     }
+  }
+
+  /** The guide lives on another site, so it opens beside the app rather than in place of it. */
+  openDocs(): void {
+    window.open(this.docsUrl, '_blank', 'noopener');
   }
 
   private startClock(): void {

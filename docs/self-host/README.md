@@ -155,7 +155,7 @@ Compose-файл bundle запускає лише готові образи:
 - `projectk-sql` — SQL Server;
 - `projectk-azurite` — емулятор сховища Azurite.
 
-Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_APP_NAME` при старті
+Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME`, `PROJECTK_APP_NAME` і `PROJECTK_DOCS_URL` (корінь сайту довідки; «Довідка» на вітальній веде на нього, у сайдбарі — на сторінку `/user/start/what-is/`; типово — `https://projectk-docs-and-demo.pages.dev/`) при старті
 контейнера і записує в `env.js`, тож один образ працює на будь-якому домені без перезбірки.
 
 ## Томи

@@ -1,4 +1,4 @@
-const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string } }).__PROJECTK_CONFIG__;
+const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string; docsUrl?: string } }).__PROJECTK_CONFIG__;
 
 export const environment = {
   production: false,
@@ -9,6 +9,7 @@ export const environment = {
   codeName: 'TailscaleDevelopment',
   envName: runtimeConfig?.environmentName || 'Development',
   appName: runtimeConfig?.appName || 'Лілейка',
+  docsUrl: runtimeConfig?.docsUrl || 'https://dev.projectk-docs-and-demo.pages.dev/',
   isF1TierBackend: false,
   isStaticDemo: false
 };

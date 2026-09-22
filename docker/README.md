@@ -11,8 +11,11 @@
   `appsettings.<Env>.json`. Рядки підключення, CORS і JWT приходять зі змінних середовища.
 - **Збірка Angular запікається на середовище** (build arg `NG_CONFIG`: `development` / `staging` /
   `tailscale` / `production`), але кілька значень підмінюються на старті через `env.js`: адреса API
-  (`PROJECTK_API_URL`), назва середовища в бейджі сайдбару (`PROJECTK_ENVIRONMENT_NAME`) і назва
-  продукту у вкладці (`PROJECTK_APP_NAME`).
+  (`PROJECTK_API_URL`), назва середовища в бейджі сайдбару (`PROJECTK_ENVIRONMENT_NAME`), назва
+  продукту у вкладці (`PROJECTK_APP_NAME`) і корінь сайту довідки (`PROJECTK_DOCS_URL`): «Довідка»
+  на вітальній веде на нього, а в сайдбарі — на його сторінку `/user/start/what-is/`. Дев-контейнери
+  типово дивляться на dev-деплой `dev.projectk-docs-and-demo.pages.dev`, реліз і self-host — на
+  production `projectk-docs-and-demo.pages.dev`.
 - **SQL Server + Azurite — спільна інфраструктура.** Вони запускаються один раз
   (`compose.tools.yml`) у мережі `projectk-dev-net`. Стек кожного середовища підключається до неї і
   працює зі **своєю базою** на тому ж сервері (`projectK_dev`, `projectK_e2e`, …): інструменти

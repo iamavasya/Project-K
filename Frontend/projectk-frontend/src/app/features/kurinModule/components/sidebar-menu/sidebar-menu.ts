@@ -306,6 +306,17 @@ export class SidebarMenuComponent implements OnChanges {
       }
     });
 
+    // The guide is another site (PROJECTK_DOCS_URL is its root), so it opens in a new tab and never
+    // takes the «current» mark: markCurrent only knows routerLinks. The welcome page sends people
+    // to the root; from inside the app they already know what Лілейка is, so straight to the guide.
+    items.push({
+      label: 'Довідка',
+      icon: 'pi pi-book',
+      url: `${environment.docsUrl.replace(/\/+$/, '')}/user/start/what-is/`,
+      target: '_blank',
+      command: () => this.close()
+    });
+
     items.push({
       label: 'Повідомити про проблему',
       icon: 'icon-bug',
