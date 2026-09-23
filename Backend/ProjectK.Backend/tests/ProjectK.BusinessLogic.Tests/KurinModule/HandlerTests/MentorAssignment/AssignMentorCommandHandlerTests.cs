@@ -84,4 +84,39 @@ public class AssignMentorCommandHandlerTests
         _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Never);
         _cacheMock.Verify(x => x.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Handle_WhenPreviouslyRevoked_ShouldCreateNewAssignmentAndKeepTheOldOne()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var mentorUserKey = Guid.NewGuid();
+        var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
+        var revoked = new MentorAssignmentEntity
+        {
+            MentorAssignmentKey = Guid.NewGuid(),
+            MentorUserKey = mentorUserKey,
+            GroupKey = groupKey,
+            AssignedAtUtc = DateTime.UtcNow.AddMonths(-3),
+            RevokedAtUtc = DateTime.UtcNow.AddMonths(-1)
+        };
+        var revokedAt = revoked.RevokedAtUtc;
+
+        _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
+        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(revoked);
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+
+        var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().NotBe(revoked.MentorAssignmentKey);
+        _mentorAssignmentRepoMock.Verify(x => x.Create(
+            It.Is<MentorAssignmentEntity>(a => a.MentorUserKey == mentorUserKey && a.GroupKey == groupKey && a.RevokedAtUtc == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+        revoked.RevokedAtUtc.Should().Be(revokedAt, "the earlier period stays in the history");
+    }
 }

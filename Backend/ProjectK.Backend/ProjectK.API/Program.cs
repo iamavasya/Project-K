@@ -141,6 +141,9 @@ public static class Program
 
         builder.Services.AddHttpContextAccessor();
 
+        // The body UseExceptionHandler writes for an unhandled exception.
+        builder.Services.AddProblemDetails();
+
         builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
         builder.Services.AddCors(options =>
@@ -326,6 +329,15 @@ public static class Program
                 diagnosticContext.Set("TraceId", System.Diagnostics.Activity.Current?.TraceId.ToString());
             };
         });
+
+        // Without a handler an unhandled exception reaches Kestrel, which answers 500 with the CORS
+        // headers stripped: the browser reports a CORS error and the app cannot read the failure.
+        // The handler keeps them, because CORS writes its headers when the response starts.
+        // Development is left to the developer exception page the host adds there.
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler();
+        }
 
         ValidateTelegramConfiguration(app);
 
