@@ -411,7 +411,7 @@ Frontend/projectk-frontend/
 │   ├── lileyka-mark.svg
 │   ├── lileyka-mark-mono.svg
 │   ├── lileyka-mark-dark.svg
-│   ├── lileyka-banner-1080x288.svg   ← README
+│   ├── lileyka-banner-1080x288.svg   ← простий банер; README бере .github/assets/banners/readme-*.png
 │   ├── lileyka-og-1200x630.svg       ← og:image
 │   └── fonts/                   ← Manrope + Neucha, woff2 (див. §3)
 └── src/
