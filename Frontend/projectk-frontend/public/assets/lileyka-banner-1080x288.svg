@@ -11,7 +11,7 @@
       <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"></path>
       <path d="M33 60 H67"></path>
       <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"></path>
-      <path d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" stroke="#F5C99B"></path>
+      <path d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" stroke="#D9762F"></path>
     </g>
   </g>
   <text x="230" y="140" font-family="Patrick Hand, Comic Sans MS, cursive" font-size="80" fill="#FBF8F1">Лілейка</text>
