@@ -24,7 +24,8 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
-import { leadershipRoleSeverity, leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
+import { leadershipRoleSeverity, leadershipRoleSeverityForRole, leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 
 @Component({
   selector: 'app-member-list',
@@ -128,6 +129,7 @@ export class MemberListComponent implements OnInit {
           fullNameSort: this.getFullNameSortValue(m),
           roleSortWeight: this.getMemberRoleSortWeight(m),
           leadershipHistories: m.leadershipHistories ?? [],
+          mentoredGroupNames: m.mentoredGroupNames ?? [],
           profilePhotoUrl: m.profilePhotoUrl,
           latestPlastLevel: m.latestPlastLevel ?? null,
           latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
@@ -255,22 +257,41 @@ export class MemberListComponent implements OnInit {
    * auto-synced from it — so a second tag built from it said "Зв'язковий" twice, and for Впорядник
    * said it twice in two different colours. It can also carry only one office, so it never told us
    * anything the histories did not.
+   *
+   * The one thing outside the histories is a mentor assignment: a person closed over a гурток is a
+   * впорядник without any office, and the КВ panel, the sidebar and the registry already say so.
+   * The groups join the seated Впорядник tag when there is one, so the office is not named twice.
    */
   getMemberRoleTags(member: MemberLookupDto): { label: string; severity: 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined | null }[] {
-    return (member.leadershipHistories ?? [])
+    const active = (member.leadershipHistories ?? [])
       .filter(history => !history.endDate)
-      .sort(compareLeadershipHistoriesByDefault)
-      .map(history => ({
-        label: this.getMemberRoleLabel(history),
-        severity: leadershipRoleSeverity(history)
-      }));
+      .sort(compareLeadershipHistoriesByDefault);
+    const tags = active.map(history => ({
+      label: this.getMemberRoleLabel(history),
+      severity: leadershipRoleSeverity(history)
+    }));
+
+    const mentoredGroups = member.mentoredGroupNames ?? [];
+    if (!mentoredGroups.length) {
+      return tags;
+    }
+
+    const label = `${leadershipRoleDisplayName(LeadershipRole.Vykhovnyk)}: ${mentoredGroups.join(', ')}`;
+    const seated = active.findIndex(history => history.role === LeadershipRole.Vykhovnyk);
+    if (seated >= 0) {
+      tags[seated] = { ...tags[seated], label };
+    } else {
+      tags.push({ label, severity: leadershipRoleSeverityForRole(LeadershipRole.Vykhovnyk) });
+    }
+
+    return tags;
   }
 
   private getFullNameSortValue(member: Pick<MemberLookupDto, 'lastName' | 'firstName' | 'middleName'>): string {
     return `${member.lastName ?? ''} ${member.firstName ?? ''} ${member.middleName ?? ''}`.trim().toLowerCase();
   }
 
-  private getMemberRoleSortWeight(member: Pick<MemberLookupDto, 'userRole' | 'leadershipHistories'>): number {
+  private getMemberRoleSortWeight(member: Pick<MemberLookupDto, 'userRole' | 'leadershipHistories' | 'mentoredGroupNames'>): number {
     const kvRoleWeight = this.getKvRoleSortWeight(member.userRole);
     const leadershipRoleWeight = (member.leadershipHistories ?? [])
       .filter(history => !history.endDate)
@@ -278,8 +299,11 @@ export class MemberListComponent implements OnInit {
         (lowest, history) => Math.min(lowest, getLeadershipRoleSortWeight(history.role)),
         Number.MAX_SAFE_INTEGER
       );
+    const mentorWeight = member.mentoredGroupNames?.length
+      ? getLeadershipRoleSortWeight(LeadershipRole.Vykhovnyk)
+      : Number.MAX_SAFE_INTEGER;
 
-    return Math.min(kvRoleWeight, leadershipRoleWeight);
+    return Math.min(kvRoleWeight, leadershipRoleWeight, mentorWeight);
   }
 
   private getKvRoleSortWeight(role?: string | null): number {

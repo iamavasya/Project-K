@@ -19,5 +19,10 @@ export interface MemberLookupDto {
     profileVerifiedByUserKey?: string | null;
     profileVerificationNote?: string | null;
     leadershipHistories?: import('../leadership/leadership.dto').LeadershipHistoryDto[];
+    /**
+     * Гуртки, за якими людина закріплена як впорядник. Закріплення — не діловодство: у
+     * `leadershipHistories` його немає, а впорядником людину воно робить так само.
+     */
+    mentoredGroupNames?: string[];
     warnings?: import('../../member-warning.dto').MemberWarningDto[];
 }
