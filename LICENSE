@@ -1,29 +1,93 @@
-Proprietary Software License Agreement
+Lileyka Source-Available License
 
-Copyright (c) 2025 Rostyslav Mukha
+Copyright (c) 2024–2026 Rostyslav Mukha. All rights reserved.
 
-This software and its associated documentation (the "Software") are provided under the terms of this Proprietary Software License Agreement. By using the Software, you agree to the following terms:
+"Лілейка" (Lileyka), also developed under the working name "ProjectK", is an independent project.
+It is not an official product of, and is not endorsed by, the National Scout Organization of
+Ukraine "Plast".
 
-1. Grant of License
-You are granted a non-exclusive, non-transferable, revocable license to use the Software solely for personal or internal business purposes.
+This license covers the source code, algorithms, documentation, designs and other material in this
+repository and in the releases published from it (the "Software"). The Software is owned by
+Rostyslav Mukha (the "Author"). It is licensed, not sold. The source is published so that it can be
+read, run and improved together with the Author, not so that it can be taken apart.
 
-2. Restrictions
-You are expressly prohibited from:
+1. What you may do
 
-- Modifying, adapting, translating, or creating derivative works based on the Software or any part thereof.
-- Redistributing, sublicensing, selling, leasing, renting, or otherwise transferring the Software to any third party.
-- Reverse engineering, decompiling, disassembling, or attempting to extract the source code of the Software, except as required by applicable law.
-- Using any part of the Software in other projects, whether commercial or non-commercial.
-3. Ownership
-The Software is licensed, not sold. All rights, title, and interest in and to the Software remain exclusively with Rostyslav Mukha.
+   a. Read and study the source code.
 
-4. Warranty Disclaimer
-THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+   b. Run the Software as published, for yourself or for your organization, including installing
+      it on your own server ("self-hosting") for a kurin, a stanytsia or another Plast unit. You may
+      use the official release bundles or build the Software from this repository without changes.
 
-5. Limitation of Liability
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   c. Configure the Software through its documented settings (environment variables, `.env` files,
+      configuration files and the setup wizard). Configuration is not modification, as long as the
+      conditions in section 2 are kept.
 
-6. Termination
-This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any of the terms. Upon termination, you must destroy all copies of the Software in your possession or control.
+   d. Contribute. You may fork this repository and change your copy solely in order to propose
+      those changes back to this repository as an issue or a pull request. A fork made for that
+      purpose must not be deployed, published, distributed or used for anything else. Larger ideas
+      should be discussed with the Author in an issue before any work starts.
 
-Copyright (c) 2025 Rostyslav Mukha. All rights reserved.
+2. Conditions
+
+   a. Attribution. The "Про Лілейку" (About) page, the Author's name, the copyright notices and the
+      links to the Author and to this repository must stay in every running copy, unaltered and
+      reachable from the application as published.
+
+   b. Keep this license. Any copy of the Software you hold, including a fork made under 1(d), must
+      include this license file unchanged.
+
+3. What you may not do
+
+   a. Modify the Software for your own use or deployment, or run a modified copy, except for the
+      contribution work allowed in 1(d).
+
+   b. Distribute, publish, sell, rent, sublicense or otherwise make the Software or any modified
+      version of it available to others, other than by pointing to this repository or its releases.
+
+   c. Re-release the Software, in whole or in part, under another name, brand or authorship, or
+      present it as your own work.
+
+   d. Create derivative works, rewrite, port or re-implement the Software or its algorithms, or use
+      any part of its code, algorithms or designs in another project, commercial or not.
+
+   e. Remove, hide or alter the About page, the attribution or the copyright notices.
+
+4. Contributions
+
+   By submitting a contribution (code, documentation, designs or other material) to this
+   repository, you confirm that you have the right to submit it, and you grant the Author a
+   perpetual, worldwide, irrevocable, royalty-free license to use, modify, relicense and distribute
+   it as part of the Software or otherwise. Contributions become part of the Software and are
+   covered by this license. Contributors are credited in the repository history.
+
+5. Ownership
+
+   All rights, title and interest in the Software, its code and algorithms, its designs and the
+   "Лілейка" name and mark remain with the Author. Nothing in this license transfers ownership.
+
+6. Third-party components
+
+   The Software uses third-party libraries, fonts and services under their own licenses. This
+   license does not change those licenses and applies only to the Author's own work.
+
+7. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+   NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NON-INFRINGEMENT.
+
+8. Limitation of liability
+
+   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+   THE USE OF OR OTHER DEALINGS IN THE SOFTWARE.
+
+9. Termination
+
+   Your rights under this license end automatically if you break any of its terms. When they end,
+   you must stop running the Software and delete every copy you hold. Sections 3 to 8 survive
+   termination.
+
+For permission to do anything this license does not allow, contact the Author:
+https://rostyslav-mukha.dev
