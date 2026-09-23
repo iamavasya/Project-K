@@ -1,12 +1,16 @@
-<div class="agenda-page">
-  <section class="kurin-tile">
-    <div class="agenda-header">
-      <h1 class="agenda-title">Календар</h1>
-      @if (canManage()) {
-        <p-button label="Нова подія" icon="pi pi-plus" (click)="openCreate()" />
-      }
+<div class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <h1>Календар</h1>
     </div>
+    @if (canManage()) {
+      <div class="lil-page-head__actions">
+        <p-button label="Нова подія" icon="pi pi-plus" (click)="openCreate()" />
+      </div>
+    }
+  </header>
 
+  <section class="kurin-tile">
     <div class="agenda-toolbar">
       <div class="agenda-toolbar__nav">
         <p-button icon="pi pi-chevron-left" severity="secondary" [text]="true" [rounded]="true" (click)="prev()" ariaLabel="Назад" />

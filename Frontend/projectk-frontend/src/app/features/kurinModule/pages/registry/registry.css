@@ -1,57 +1,8 @@
-.registry {
-  width: min(100% - 2rem, 84rem);
-  margin-inline: auto;
-  padding-block: 1.5rem;
-}
-
-.registry__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.registry__head h1 {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.registry__head p {
-  margin-top: 0.25rem;
-  color: var(--p-text-muted-color);
-  font-size: 0.875rem;
-}
-
 .registry__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.registry__section {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-block: 2rem 0.75rem;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.registry__section:first-of-type {
-  margin-top: 0;
-}
-
-.registry__count {
-  padding: 0.05rem 0.5rem;
-  border-radius: var(--p-border-radius-sm, 4px);
-  background: var(--p-content-hover-background);
-  color: var(--p-text-muted-color);
-  font-size: 0.8125rem;
-  font-weight: 600;
 }
 
 /* Не заголовок: колишні — довідка, і поки її не розгорнули, вона не має важити як розділ. */
@@ -133,10 +84,6 @@
 }
 
 @media (max-width: 640px) {
-  .registry__head {
-    flex-direction: column;
-  }
-
   .registry__toolbar > * {
     flex: 1 1 100%;
   }

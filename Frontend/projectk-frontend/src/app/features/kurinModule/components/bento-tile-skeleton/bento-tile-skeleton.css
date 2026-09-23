@@ -3,17 +3,18 @@
     --p-skeleton-animation-background: var(--p-skeleton-background);
 }
 
+/* Скелет має ту саму форму, що й плитка, яку він заступає: 12px і без тіні (§4). */
 .bento-tile-skeleton {
     position: relative;
     min-height: 16rem;
     overflow: hidden;
     border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius-lg) !important;
     background: linear-gradient(
         145deg,
         color-mix(in srgb, var(--p-content-background) 94%, var(--p-primary-100) 6%),
         var(--p-content-background)
     );
-    box-shadow: 0 10px 30px -22px color-mix(in srgb, var(--p-primary-color) 55%, transparent);
 }
 
 .bento-tile-skeleton--compact {
@@ -56,7 +57,6 @@
         color-mix(in srgb, var(--p-primary-color) 78%, var(--p-primary-200) 22%),
         color-mix(in srgb, var(--p-primary-color) 45%, var(--p-content-background) 55%)
     );
-    box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--p-primary-color) 55%, transparent);
     opacity: 0.95;
     pointer-events: none;
     z-index: 2;

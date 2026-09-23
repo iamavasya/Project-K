@@ -26,8 +26,8 @@ test.describe('Public onboarding', () => {
 
   test('invalid activation token shows recovery path back to login', async ({ page }) => {
     await page.goto(`/activate/not-a-real-token-${Date.now()}`);
-    await expect(page.getByText('Invalid or Expired Invitation')).toBeVisible();
-    await page.getByRole('button', { name: 'Back to Login' }).click();
+    await expect(page.getByText('Посилання недійсне або прострочене.')).toBeVisible();
+    await page.getByRole('button', { name: 'До входу' }).click();
     await expect(page).toHaveURL(/\/login/);
   });
 });

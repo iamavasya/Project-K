@@ -1,17 +1,17 @@
 <p-confirmdialog />
-<div class="w-full px-4 py-6 md:px-8 md:py-10">
-    <div class="mx-auto w-full max-w-6xl space-y-4">
-        <section class="probe-page-tile rounded-2xl p-4 md:p-5">
+<div>
+    <div class="lil-page">
+        <section class="kurin-tile">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <h1 class="probe-page-title text-xl font-semibold leading-tight md:text-2xl">
+                    <h1 class="probe-page-title">
                         {{ groupedProbe?.title || 'Деталі проби' }}
                     </h1>
-                    <p class="probe-page-subtitle mt-1 text-sm">
+                    <p class="probe-page-subtitle mt-1">
                         Учасник: {{ member?.firstName || '—' }} {{ member?.lastName || '' }}
                     </p>
                     @if (groupedProbe) {
-                    <p class="probe-page-subtitle text-sm">
+                    <p class="probe-page-subtitle">
                         Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
                     </p>
                     }
@@ -19,7 +19,7 @@
                     @if (completionPercent !== null) {
                     <div class="probe-progress mt-3">
                         <p-progressbar [value]="completionPercent" [showValue]="false" styleClass="probe-progress__bar" />
-                        <p class="probe-page-subtitle mt-1 text-sm">
+                        <p class="probe-page-subtitle mt-1">
                             Підписано {{ signedPointsCount }} з {{ probeDetailPointRows.length }} точок · {{ completionPercent }}%
                         </p>
                     </div>
@@ -35,7 +35,7 @@
             </div>
         </section>
 
-        <section class="probe-page-tile rounded-2xl p-4 md:p-5">
+        <section class="kurin-tile">
             @if (isLoading) {
             <div class="space-y-3">
                 @for (item of [1, 2, 3]; track item) {

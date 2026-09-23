@@ -24,6 +24,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Reports;
@@ -82,9 +83,7 @@ public static class Program
                         devAlerts,
                         context.HostingEnvironment.EnvironmentName,
                         context.Configuration["ReleaseInfo:Version"] ?? UnknownValue,
-                        context.Configuration["ReleaseInfo:Codename"]
-                            ?? context.Configuration["ReleaseInfo:CodeName"]
-                            ?? UnknownValue));
+                        ResolveCodeName(context.Configuration)));
             }
         });
 
@@ -365,7 +364,9 @@ public static class Program
         {
             status = "ready",
             version = config["ReleaseInfo:Version"] ?? UnknownValue,
-            codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? UnknownValue,
+            // null, not "unknown", when the release carries no code name: the key stays in the
+            // payload so nothing reading it has to change, and absence reads as absence.
+            codeName = ResolveCodeName(config),
             utc = DateTimeOffset.UtcNow
         }))
         .WithSummary("Reports that the API is up, and which release is running.")
@@ -377,14 +378,17 @@ public static class Program
         await app.RunAsync();
     }
 
+    /// <summary>The code name this build was stamped with, or <c>null</c> when it carries none.</summary>
+    private static string? ResolveCodeName(IConfiguration config) =>
+        ReleaseDisplay.CodeName(config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"]);
+
     private static void PrintTitle(IConfiguration config, IHostEnvironment env)
     {
         var version = config["ReleaseInfo:Version"] ?? "v0.0.0";
-        var codeName = config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"] ?? "Unknown";
 
         AnsiConsole.Write(new FigletText("Project K").Color(Spectre.Console.Color.Green));
 
-        AnsiConsole.Write(new Rule($"[yellow]{version} \"{codeName}\"[/]")
+        AnsiConsole.Write(new Rule($"[yellow]{ReleaseDisplay.Label(version, ResolveCodeName(config))}[/]")
         {
             Justification = Justify.Left
         });

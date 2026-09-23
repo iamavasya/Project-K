@@ -1,12 +1,10 @@
-.probe-page-tile {
-    border: 1px solid var(--p-content-border-color);
-    background: var(--p-content-background);
-    box-shadow: 0 8px 26px -20px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
-}
-
 .probe-page-title,
 .probe-point-title {
     color: var(--p-text-color);
+}
+
+.probe-page-subtitle {
+    font-size: var(--lil-text-caption);
 }
 
 .probe-page-subtitle,

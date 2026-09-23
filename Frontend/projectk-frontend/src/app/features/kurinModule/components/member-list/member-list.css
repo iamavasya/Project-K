@@ -7,17 +7,8 @@
     background: transparent;
 }
 
-.member-list-heading {
-    color: var(--p-text-color);
-}
-
 .member-list-title {
     color: var(--p-text-color);
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.75rem;
-    margin: 0;
 }
 
 .member-list-controls {
@@ -92,13 +83,6 @@
         content: attr(data-mobile-label);
         font-size: 0.75rem;
         font-weight: 650;
-    }
-
-    .member-list-heading,
-    :host ::ng-deep .member-list-table .p-datatable-header .member-list-heading {
-        align-items: stretch;
-        flex-direction: column;
-        flex-wrap: nowrap;
     }
 
     .member-list-controls,

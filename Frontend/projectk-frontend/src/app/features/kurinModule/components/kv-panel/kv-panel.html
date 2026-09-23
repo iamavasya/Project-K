@@ -1,12 +1,12 @@
 <div class="kv-panel">
   <p-table [value]="kvRows" styleClass="kv-table project-table" [loading]="isLoading">
     <ng-template #caption>
-      <div class="kv-caption">
+      <div class="lil-tile-head">
         <div>
-          <h3>КВ</h3>
+          <h2>КВ</h2>
         </div>
 
-        <div class="kv-caption__actions">
+        <div class="lil-tile-head__actions">
           <div class="kv-archive-toggle">
             <span>Архів</span>
             <p-toggleswitch [(ngModel)]="showArchived" />

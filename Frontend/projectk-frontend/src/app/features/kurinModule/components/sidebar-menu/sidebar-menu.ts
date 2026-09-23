@@ -18,6 +18,7 @@ import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity 
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
+import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 
 @Component({
@@ -41,13 +42,12 @@ export class SidebarMenuComponent implements OnChanges {
 
   kurinKey: string | null = null;
 
-  // e.g. v0.15.0-beta.pre-4 "Liberty Queen Ant" | Self-Host Environment
-  // The codename is hidden for local/dev placeholder builds.
+  // e.g. 0.15.0-beta.pre-4 "Liberty Queen Ant" | Self-Host Environment, or just
+  // 1.0 | Production Environment for a release published without a code name.
   readonly versionLabel: string = (() => {
-    const code = environment.codeName && !/development/i.test(environment.codeName)
-      ? ` "${environment.codeName}"`
-      : '';
-    return `${environment.version}${code} | ${environment.envName} Environment`;
+    const code = displayCodeName(environment.codeName);
+    const quoted = code === null ? '' : ` "${code}"`;
+    return `${environment.version}${quoted} | ${environment.envName} Environment`;
   })();
 
   // defer, so the seed URL is read when something subscribes rather than when this field
@@ -304,6 +304,17 @@ export class SidebarMenuComponent implements OnChanges {
         this.close();
         this.router.navigate(['/settings/account']);
       }
+    });
+
+    // The guide is another site (PROJECTK_DOCS_URL is its root), so it opens in a new tab and never
+    // takes the «current» mark: markCurrent only knows routerLinks. The welcome page sends people
+    // to the root; from inside the app they already know what Лілейка is, so straight to the guide.
+    items.push({
+      label: 'Довідка',
+      icon: 'pi pi-book',
+      url: `${environment.docsUrl.replace(/\/+$/, '')}/user/start/what-is/`,
+      target: '_blank',
+      command: () => this.close()
     });
 
     items.push({

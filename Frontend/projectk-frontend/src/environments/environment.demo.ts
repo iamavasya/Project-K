@@ -8,6 +8,8 @@ export const environment = {
   codeName: 'Demo',
   envName: 'Demo',
   appName: 'Лілейка',
+  // The demo is served from the docs site itself, under /demo/, so the site root is one level up.
+  docsUrl: '/',
   isF1TierBackend: false,
   isStaticDemo: true
 };

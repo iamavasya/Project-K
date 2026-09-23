@@ -10,7 +10,7 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
 
     await page.goto('/kurin');
     await expect(page.locator('.edit-profile-button')).toBeVisible();
-    await expect(page.locator('.table-caption').getByRole('button')).toBeVisible();
+    await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeVisible();
     // Named, not just "the button under the list": taking someone in by code sits beside adding
     // a new person, and a positional selector would match both.
     await expect(page.locator('app-member-list + div')
@@ -73,7 +73,7 @@ describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));
-    await expect(page.locator('.skills-review-page__title')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Модерація вмілостей' })).toBeVisible();
     await expect(page.locator('.p-message-warn')).toBeHidden();
   });
 });
@@ -89,6 +89,6 @@ describeRole('member', 'Member role UI controls', ({ user }) => {
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));
     await expect(page.locator('.p-message-warn')).toBeVisible();
-    await expect(page.locator('.skills-review-page__row-actions')).toBeHidden();
+    await expect(page.locator('.skills-review__row-actions')).toBeHidden();
   });
 });

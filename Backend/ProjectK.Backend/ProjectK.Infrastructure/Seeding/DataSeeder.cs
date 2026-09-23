@@ -15,6 +15,13 @@ namespace ProjectK.Infrastructure.Seeding;
 
 public static class DataSeeder
 {
+    /// <summary>
+    /// The address of the administrator this file creates for the tiers that seed demo data. It is
+    /// the only administrator whose password lives in the repository, so everything below tells it
+    /// apart from an administrator the instance was configured with.
+    /// </summary>
+    private const string SeededAdministratorEmail = "admin@projectk.com";
+
     public static async Task SeedAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
@@ -54,7 +61,7 @@ public static class DataSeeder
             return;
         }
 
-        await EnsureUser(userManager, "admin@projectk.com", "System", "Admin", UserRole.Admin, "Admin@12345");
+        await EnsureSeededAdministratorAsync(scope.ServiceProvider, userManager);
 
         // 3. The load-test account: passwordless, reachable only through LoadTestLoginKey.
         await EnsurePasswordlessUser(userManager, "loadtest@projectk.com", "Load", "Tester", UserRole.Member);
@@ -72,6 +79,45 @@ public static class DataSeeder
             await E2eFixtureSeeder.SeedAsync(scope.ServiceProvider);
         }
     }
+
+    /// <summary>
+    /// Creates the well-known administrator for a tier that seeds demo data, unless this instance
+    /// already has an administrator of its own.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="EnsureUser"/> recognises an account by its address and nothing else, so moving the
+    /// real administrator to a real address left nothing at <see cref="SeededAdministratorEmail"/> —
+    /// and the next start quietly created a second administrator there, with the password that sits
+    /// in this file. The tier gate above keeps that out of a deployed instance; this keeps it out of
+    /// any database that already has an administrator, whichever tier the process believes it is.
+    /// </remarks>
+    internal static async Task EnsureSeededAdministratorAsync(IServiceProvider services, UserManager<AppUser> userManager)
+    {
+        if (await HasConfiguredAdministratorAsync(userManager))
+        {
+            services.GetService<ILoggerFactory>()
+                ?.CreateLogger(nameof(DataSeeder))
+                .LogInformation(
+                    "An administrator is already configured; the seeded {Email} account is not created.",
+                    SeededAdministratorEmail);
+            return;
+        }
+
+        await EnsureUser(userManager, SeededAdministratorEmail, "System", "Admin", UserRole.Admin, "Admin@12345");
+    }
+
+    /// <summary>
+    /// True when the administrator role is held under any address other than the one this file
+    /// seeds — an administrator the instance was configured with, rather than one it was born with.
+    /// </summary>
+    internal static async Task<bool> HasConfiguredAdministratorAsync(UserManager<AppUser> userManager)
+    {
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        return administrators.Any(administrator => !IsSeededAdministrator(administrator));
+    }
+
+    private static bool IsSeededAdministrator(AppUser user) =>
+        string.Equals(user.Email, SeededAdministratorEmail, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Said out loud at startup, because a deployment with no administrator is one nobody can
@@ -110,11 +156,18 @@ public static class DataSeeder
             .Distinct()
             .ToListAsync();
 
+        // An administrator is not demo data. The seeded one was spared here by address alone, which
+        // spared exactly the account that is cheapest to recreate and none of the ones that are not:
+        // an administrator configured by hand, who happens to stand in kurin 1, was deleted outright.
+        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRole.Admin))
+            .Select(administrator => administrator.Id)
+            .ToHashSet();
+
         var usersToDelete = await userManager.Users
-            .Where(u => u.KurinKey == kurinKey && u.Email != "admin@projectk.com")
+            .Where(u => u.KurinKey == kurinKey)
             .ToListAsync();
 
-        foreach (var user in usersToDelete)
+        foreach (var user in usersToDelete.Where(u => !administratorIds.Contains(u.Id)))
         {
             await userManager.DeleteAsync(user);
         }
@@ -229,6 +282,36 @@ public static class DataSeeder
             .ToListAsync();
         dbContext.MentorAssignments.RemoveRange(mentorAssignments);
 
+        // The agenda is seeded too, and unlike people it is not keyed on anything that would
+        // stop a second run from adding the same сходини again — so it is wiped with the rest.
+        var agendaItemKeys = await dbContext.AgendaItems
+            .Where(a => a.KurinKey == kurinKey)
+            .Select(a => a.AgendaItemKey)
+            .ToListAsync();
+
+        if (agendaItemKeys.Count > 0)
+        {
+            var agendaResponses = await dbContext.AgendaResponses
+                .Where(r => agendaItemKeys.Contains(r.AgendaItemKey))
+                .ToListAsync();
+            dbContext.AgendaResponses.RemoveRange(agendaResponses);
+
+            var agendaAssignments = await dbContext.AgendaAssignments
+                .Where(a => agendaItemKeys.Contains(a.AgendaItemKey))
+                .ToListAsync();
+            dbContext.AgendaAssignments.RemoveRange(agendaAssignments);
+
+            var agendaItems = await dbContext.AgendaItems
+                .Where(a => a.KurinKey == kurinKey)
+                .ToListAsync();
+            dbContext.AgendaItems.RemoveRange(agendaItems);
+        }
+
+        var agendaCategories = await dbContext.AgendaCategories
+            .Where(c => c.KurinKey == kurinKey)
+            .ToListAsync();
+        dbContext.AgendaCategories.RemoveRange(agendaCategories);
+
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.
         var memberships = await dbContext.Memberships
@@ -312,7 +395,7 @@ public static class DataSeeder
     /// Finds the member by email, creating the member row and its linked account when missing.
     /// Keyed on email so re-running a seeder does not give one account a second member row.
     /// </summary>
-    internal static async Task<Member> EnsureMemberAsync(
+    internal static Task<Member> EnsureMemberAsync(
         AppDbContext dbContext,
         UserManager<AppUser> userManager,
         string email,
@@ -324,19 +407,61 @@ public static class DataSeeder
         DateOnly dateOfBirth,
         CancellationToken cancellationToken = default)
     {
-        var user = await EnsureUser(userManager, email, firstName, lastName, UserRole.Member, SeededPassword, kurinKey);
+        return EnsureMemberAsync(
+            dbContext,
+            userManager,
+            new SeededPerson(email, firstName, null, lastName, kurinKey, groupKey, phoneNumber, dateOfBirth),
+            cancellationToken);
+    }
 
-        var member = await dbContext.Members.FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
+    /// <summary>
+    /// Everything a seeder says about one person. The optional part is what tells a юнак from the
+    /// виховник who runs their гурток: the kind of membership, when it began, and the details a
+    /// картка shows that fixtures never needed.
+    /// </summary>
+    internal sealed record SeededPerson(
+        string Email,
+        string FirstName,
+        string? MiddleName,
+        string LastName,
+        Guid KurinKey,
+        Guid? GroupKey,
+        string PhoneNumber,
+        DateOnly DateOfBirth,
+        MembershipKind Kind = MembershipKind.Youth,
+        DateTime? JoinedAtUtc = null,
+        string? Address = null,
+        string? School = null);
+
+    internal static async Task<Member> EnsureMemberAsync(
+        AppDbContext dbContext,
+        UserManager<AppUser> userManager,
+        SeededPerson person,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword, person.KurinKey);
+
+        // The account settings page reads the phone from the account, not the card.
+        if (!string.Equals(user!.PhoneNumber, person.PhoneNumber, StringComparison.Ordinal))
+        {
+            user.PhoneNumber = person.PhoneNumber;
+            await userManager.UpdateAsync(user);
+        }
+
+        var member = await dbContext.Members.FirstOrDefaultAsync(m => m.Email == person.Email, cancellationToken);
         if (member == null)
         {
             member = new Member
             {
-                FirstName = firstName,
-                LastName = lastName,
-                Email = email,
-                PhoneNumber = phoneNumber,
-                DateOfBirth = dateOfBirth,
-                UserKey = user!.Id
+                FirstName = person.FirstName,
+                MiddleName = person.MiddleName,
+                LastName = person.LastName,
+                Email = person.Email,
+                PhoneNumber = person.PhoneNumber,
+                DateOfBirth = person.DateOfBirth,
+                Address = person.Address,
+                School = person.School,
+                UserKey = user.Id
             };
             dbContext.Members.Add(member);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -354,10 +479,10 @@ public static class DataSeeder
             {
                 MemberKey = member.MemberKey,
                 UserKey = member.UserKey,
-                KurinKey = kurinKey,
-                GroupKey = groupKey,
-                Kind = MembershipKind.Youth,
-                JoinedAtUtc = DateTime.UtcNow
+                KurinKey = person.KurinKey,
+                GroupKey = person.GroupKey,
+                Kind = person.Kind,
+                JoinedAtUtc = person.JoinedAtUtc ?? DateTime.UtcNow
             });
             await dbContext.SaveChangesAsync(cancellationToken);
         }

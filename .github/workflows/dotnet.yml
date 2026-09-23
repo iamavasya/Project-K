@@ -19,15 +19,26 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
+    # Kept identical in angular.yml and selfhost-docker.yml; change one, change all three.
     - name: Extract Release Info
       if: github.event_name == 'release'
       shell: bash
+      env:
+        # Through the environment, not ${{ }} inside the script: a release name is free text and
+        # would otherwise be pasted into the shell as code.
+        RAW_TAG: ${{ github.event.release.tag_name }}
+        RELEASE_NAME: ${{ github.event.release.name }}
       run: |
-        RAW_TAG="${{ github.event.release.tag_name }}"
-        CLEAN_VERSION="${RAW_TAG#v}"
-        RELEASE_NAME='${{ github.event.release.name }}'
-        CODE_NAME=$(echo "$RELEASE_NAME" | grep -oP '"\K[^"]+' || echo "$RELEASE_NAME")
-        echo "VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+        VERSION="${RAW_TAG#v}"
+        if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?([-.][0-9A-Za-z.-]+)?$'; then
+          echo "::error::Release tag '$RAW_TAG' is not a version like v1.0, v1.0.0 or v1.0.0-beta"
+          exit 1
+        fi
+        # The code name is whatever the release name carries in quotes, and a release no longer
+        # has to carry one: with no quotes this stays empty, and everything that prints a release
+        # drops the quotes along with it.
+        CODE_NAME=$(printf '%s' "$RELEASE_NAME" | sed -n 's/.*"\([^"]*\)".*/\1/p')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
 
     - name: Extract Dev Info
@@ -40,11 +51,13 @@ jobs:
     - name: Inject Versioning
       shell: bash
       run: |
+        : "${VERSION:?no version resolved by an earlier step}"
         FILES=$(find Backend/ProjectK.Backend/ProjectK.API/ -name "appsettings*.json")
         echo "Updating files: $FILES"
         for file in $FILES; do
-          sed -i "s/v0.0.0-dev/${{ env.VERSION }}/g" "$file"
-          sed -i "s/LocalDevelopment/${{ env.CODENAME }}/g" "$file"
+          sed -i "s/v0.0.0-dev/${VERSION}/g" "$file"
+          # CODENAME is empty for a release without a code name, which blanks the placeholder.
+          sed -i "s/LocalDevelopment/${CODENAME}/g" "$file"
         done
 
     - name: Setup .NET
@@ -161,27 +174,10 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: .
 
-    # The deploy step returns before the app is serving: startup runs migrations and the seeders
-    # first, so a job that ends there says "deployed" about a process that cannot yet answer. This
-    # was found the hard way — 0.19.1 shipped with a red deploy job over a healthy deploy, because
-    # the step that followed asked a booting process for work and took its 500 as a failed release.
-    # That step is gone; waiting for /health stays, because a green deploy should mean it serves.
-    - name: Wait for the API to come back up
-      if: github.event_name == 'release'
-      shell: bash
-      env:
-        PROJECTK_API_BASE_URL: ${{ vars.PROJECTK_API_BASE_URL }}
-      run: |
-        health="${PROJECTK_API_BASE_URL%/}/health"
-        for attempt in $(seq 1 30); do
-          if curl -fsS --max-time 10 "$health" > /dev/null; then
-            echo "API is serving after ${attempt} attempt(s)."
-            exit 0
-          fi
-          sleep 10
-        done
-        echo "API did not answer ${health} within five minutes." >&2
-        exit 1
+    # No health check after the deploy, on purpose. The *.azurewebsites.net host admits only
+    # Cloudflare (SEC-4.1), and Cloudflare's Bot Fight Mode answers GitHub's runners with a 403
+    # challenge that no rule can skip, so a probe from here never reaches the API. After a release,
+    # check /health on the public host by hand.
 
     - name: Notify dev Telegram on backend deploy failure
       if: failure()

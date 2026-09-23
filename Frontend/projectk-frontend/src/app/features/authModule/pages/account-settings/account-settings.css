@@ -7,7 +7,7 @@
 .settings-shell {
   background: var(--p-content-background);
   border: 1px solid var(--p-content-border-color);
-  border-radius: 8px;
+  border-radius: var(--lil-radius-lg);
   margin: 0 auto;
   max-width: 64rem;
   padding: 1.5rem;
@@ -30,13 +30,10 @@
   margin: 0;
 }
 
-.settings-header h1 {
-  font-size: 1.75rem;
-  line-height: 1.2;
-}
-
+/* Розділи тут — блоки всередині однієї панелі, тож їхні h2 набрані як заголовки карток (§3). */
 .section-copy h2 {
-  font-size: 1.1rem;
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
 }
 
 .settings-header p,

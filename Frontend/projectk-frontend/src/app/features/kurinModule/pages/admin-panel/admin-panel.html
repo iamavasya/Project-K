@@ -1,7 +1,9 @@
-<div class="admin-panel">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Адміністрація</h2>
-        <div class="flex gap-2">
+<div class="lil-page">
+    <header class="lil-page-head">
+        <div>
+            <h1>Адміністрація</h1>
+        </div>
+        <div class="lil-page-head__actions">
             <span class="lil-attention-anchor">
                 <p-button label="Заявки" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']" />
                 @if (waitlistAttention.pending() > 0) {
@@ -10,12 +12,14 @@
             </span>
             <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']" />
         </div>
-    </div>
+    </header>
+
+    <section class="kurin-tile">
     <p-table [value]="data" styleClass="project-table">
         <ng-template #caption>
-            <div class="table-caption">
+            <div class="lil-tile-head">
                 <div>
-                    <h3>Курені</h3>
+                    <h2>Курені</h2>
                     <p>{{ data.length }} у системі</p>
                 </div>
                 @if (data.length > 0) {
@@ -53,6 +57,7 @@
             </app-empty-state>
         </div>
     }
+    </section>
 </div>
 <app-manage-panel [(visible)]="managePanelVisible"
   [parameter]="managePanelParameter"

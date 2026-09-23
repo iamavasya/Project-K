@@ -1,3 +1,4 @@
+<div class="lil-page">
 <section class="kurin-tile kurin-header">
     <div class="kurin-header-main">
         <div class="kurin-number-slot">
@@ -94,7 +95,7 @@
     <section class="kurin-tile">
         <p-table [value]="groups" styleClass="project-table">
             <ng-template #caption>
-                <div class="table-caption">
+                <div class="lil-tile-head">
                     <div>
                         <h2>Гуртки</h2>
                         <p>{{ groups.length }} активних</p>
@@ -170,6 +171,7 @@
             </div>
         }
     </section>
+</div>
 </div>
 
 <app-manage-panel [(visible)]="groupPanelVisible"

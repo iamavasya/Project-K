@@ -55,6 +55,7 @@ public static class DependencyInjection
         // Probe and badge catalogues
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
+        services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
 
         // What each module will answer about a person on someone else's behalf.
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();

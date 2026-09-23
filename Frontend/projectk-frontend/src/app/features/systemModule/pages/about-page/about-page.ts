@@ -5,6 +5,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TimelineModule } from '@openng/optimus-ui/timeline';
 import { environment } from '../../../../../environments/environment';
+import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 
 /** A git tag as it is spelled in the repository, plus the code name the release carried, if any. */
 export interface ProjectRelease {
@@ -25,7 +26,8 @@ export interface ProjectMilestone {
 /** What `/health` says about the running API; the frontend build carries its own copy. */
 interface HealthResponse {
   version?: string;
-  codeName?: string;
+  /** Null when the release was published without a code name. */
+  codeName?: string | null;
 }
 
 /**
@@ -44,7 +46,7 @@ export class AboutPageComponent {
   private readonly http = inject(HttpClient);
 
   readonly frontendVersion = environment.version;
-  readonly frontendCodeName = /development/i.test(environment.codeName) ? null : environment.codeName;
+  readonly frontendCodeName = displayCodeName(environment.codeName);
   readonly apiVersion = signal<string | null>(null);
   readonly apiCodeName = signal<string | null>(null);
   readonly photoMissing = signal(false);
@@ -145,7 +147,7 @@ export class AboutPageComponent {
       when: 'Далі',
       title: '1.0, реліз довіри',
       body: 'Не нові можливості, а надійність: аудит безпеки, документація людям, перший живий курінь.',
-      releases: [{ tag: 'v1.0.0' }],
+      releases: [{ tag: 'v1.0' }],
       icon: 'pi pi-star'
     }
   ];
@@ -154,7 +156,7 @@ export class AboutPageComponent {
     this.http.get<HealthResponse>(this.healthUrl(environment.apiUrl)).subscribe({
       next: health => {
         this.apiVersion.set(health.version ?? null);
-        this.apiCodeName.set(health.codeName && !/development/i.test(health.codeName) ? health.codeName : null);
+        this.apiCodeName.set(displayCodeName(health.codeName));
       },
       // No API in reach is not an error on this page; the build's own version is still shown.
       error: () => undefined

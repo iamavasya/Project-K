@@ -44,7 +44,7 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#regionOrCountry').fill('Flow Region');
       const phoneInput = page.locator('#phone input, input#phone');
       await fillMaskedInput(phoneInput, '501112233');
-      await expect(phoneInput).toHaveValue('+38 (050) 111-22-33');
+      await expect(phoneInput).toHaveValue('+380 50 111 22 33');
 
       const dateOfBirth = page.locator('#dob input');
       await fillDatePicker(dateOfBirth, '01.01.2000');
@@ -55,7 +55,7 @@ test.describe('Full onboarding organization workflow', () => {
       await expect(page.locator('#kurin')).toHaveValue(kurinNumber);
       await expect(submit).toBeEnabled();
       await submit.click();
-      await expect(page.locator('form')).toContainText(/Дякуємо|Р”СЏРєСѓС”РјРѕ/);
+      await expect(page.getByRole('alert').filter({ hasText: 'Дякуємо' })).toBeVisible();
     });
 
     await test.step('admin sees and approves the waitlist entry', async () => {
@@ -72,12 +72,15 @@ test.describe('Full onboarding organization workflow', () => {
       await page.evaluate(() => localStorage.clear());
       await page.context().clearCookies();
       await page.goto(`/activate/${invitation.token}`);
-      await expect(page.getByText('Account Activation')).toBeVisible();
+      await expect(page.getByText('Активація акаунта')).toBeVisible();
 
       await page.locator('p-password').first().locator('input').fill(password);
       await page.locator('p-password').nth(1).locator('input').fill(password);
       await page.locator('form').getByRole('button').last().click();
-      await expect(page).toHaveURL(/\/login/, { timeout: 5_000 });
+      // Activation applies the session itself now (PROD-01): the new leader lands inside the app,
+      // not on the sign-in page.
+      await expect(page).not.toHaveURL(/\/activate\//, { timeout: 10_000 });
+      await expect(page).not.toHaveURL(/\/login/);
 
       const login = await loginViaApi(request, managerUser);
       // Активований керівник саджається Зв'язковим, а це і є повне керування куренем.
