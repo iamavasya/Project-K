@@ -394,7 +394,12 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .WithMany(g => g.MentorAssignments)
                 .HasForeignKey(e => e.GroupKey)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey }).IsUnique();
+            // Revoking keeps the row as history, so the pair may repeat: one active assignment at a
+            // time, any number of revoked ones. Unfiltered, re-assigning a mentor to a group they
+            // had been removed from failed on this index with a 500.
+            entity.HasIndex(e => new { e.MentorUserKey, e.GroupKey })
+                .IsUnique()
+                .HasFilter("[RevokedAtUtc] IS NULL");
             entity.HasIndex(e => e.MentorUserKey)
                 .HasFilter("[RevokedAtUtc] IS NULL");
         });

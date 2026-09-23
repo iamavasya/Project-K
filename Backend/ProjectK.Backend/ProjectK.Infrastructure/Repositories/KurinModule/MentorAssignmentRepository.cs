@@ -54,7 +54,10 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
     public async Task<MentorAssignment?> GetSpecificAssignmentAsync(Guid mentorUserKey, Guid groupKey, CancellationToken cancellationToken = default)
     {
         return await Context.MentorAssignments
-            .FirstOrDefaultAsync(ma => ma.MentorUserKey == mentorUserKey && ma.GroupKey == groupKey, cancellationToken);
+            .Where(ma => ma.MentorUserKey == mentorUserKey && ma.GroupKey == groupKey)
+            .OrderBy(ma => ma.RevokedAtUtc == null ? 0 : 1)
+            .ThenByDescending(ma => ma.RevokedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 }
