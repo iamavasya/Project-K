@@ -423,7 +423,7 @@ Frontend/projectk-frontend/
         └── app.config.ts        ← preset: LileykaPreset
 ```
 
-**Назва системи** береться з `environment.appName` (runtime-конфіг `PROJECTK_APP_NAME`). Дефолт — «Лілейка» в усіх середовищах: `src/environments/*.ts`, `docker/compose.app.yml`, `docker/nginx/40-projectk-env.sh`, `docker/selfhost/compose*.yml`. Самохостер може перезаписати змінною; у коді дефолт більше не «ProjectK».
+**Назва системи** — «Лілейка», стала: `environment.appName` у `src/environments/*.ts`, без runtime-перевизначення. Змінну `PROJECTK_APP_NAME` прибрано в 1.0 — ліцензія не дозволяє запускати систему під іншою назвою, тож і налаштування для цього бути не повинно.
 
 ### Що йде в preset, а що в CSS
 
