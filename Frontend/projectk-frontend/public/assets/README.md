@@ -30,7 +30,7 @@
 | `lileyka-mark-mono.svg` | 100×100 | друк / один колір | усе `currentColor` (свідомий моно-виняток) |
 | `favicon.svg` | 64×64 | `<link rel="icon">` | білий знак, центр терракотою `#D9762F` на зеленій плашці `r=14` |
 | `favicon-16.svg` | 16px | малий фавікон | той самий знак, товща лінія для читабельності |
-| `lileyka-banner-1080x288.svg` | 1080×288 | банер README | центр `#D9762F`, та сама терракота, що й скрізь |
+| `lileyka-banner-1080x288.svg` | 1080×288 | простий банер (README тепер бере `.github/assets/banners/readme-*.png`) | центр `#D9762F`, та сама терракота, що й скрізь |
 | `lileyka-og-1200x630.svg` | 1200×630 | `og:image` | кремове тло, теракотовий центр |
 | `images/email-banner.png` | 1200×320 | шапка листів | рендериться `scripts/render-email-banner.mjs`, віддається з `{BaseUrl}/assets/images/` |
 | `images/scouts-main.png` | — | фото на вітальній сторінці | не брендовий знак |
