@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
@@ -9,8 +9,8 @@ public class AgendaCategoryRepository : BaseEntityRepository<AgendaCategory>, IA
 {
 
     public AgendaCategoryRepository(AppDbContext context) : base(context)
-        {
-        }
+    {
+    }
 
     public override Task<IEnumerable<AgendaCategory>> GetAllAsync(CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Use GetForKurinAsync instead.");

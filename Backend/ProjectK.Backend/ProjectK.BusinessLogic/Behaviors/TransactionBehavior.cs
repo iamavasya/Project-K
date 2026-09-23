@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ProjectK.Common.Interfaces;
 
 namespace ProjectK.BusinessLogic.Behaviors;

@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.KurinModule;

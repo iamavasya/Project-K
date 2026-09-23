@@ -1,11 +1,10 @@
-using ProjectK.Common.Entities.AuthModule;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectK.Common.Entities.AuthModule;
 
-namespace ProjectK.Common.Interfaces.Modules.AuthModule
+namespace ProjectK.Common.Interfaces.Modules.AuthModule;
+
+public interface IWaitlistRepository : IBaseEntityRepository<WaitlistEntry>
 {
-    public interface IWaitlistRepository : IBaseEntityRepository<WaitlistEntry>
-    {
-        Task<WaitlistEntry?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-    }
+    Task<WaitlistEntry?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

@@ -18,14 +18,14 @@ public class ProgressCleanupHandlerTests
     private readonly Mock<IProbeProgressRepository> _probes = new();
     private readonly Mock<IProbePointProgressRepository> _points = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly ProgressCleanupHandler _handler;
+    private readonly ProgressCleanupEventHandler _handler;
 
     public ProgressCleanupHandlerTests()
     {
         _unitOfWork.Setup(u => u.ProbeProgresses).Returns(_probes.Object);
         _unitOfWork.Setup(u => u.ProbePointProgresses).Returns(_points.Object);
         _unitOfWork.Setup(u => u.BadgeProgresses).Returns(_badges.Object);
-        _handler = new ProgressCleanupHandler(_unitOfWork.Object);
+        _handler = new ProgressCleanupEventHandler(_unitOfWork.Object);
     }
 
     [Fact]

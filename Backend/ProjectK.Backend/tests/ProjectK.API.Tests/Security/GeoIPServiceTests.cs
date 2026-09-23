@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;

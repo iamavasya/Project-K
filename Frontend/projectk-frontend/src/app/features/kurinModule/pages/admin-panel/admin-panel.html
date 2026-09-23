@@ -1,0 +1,67 @@
+<div class="lil-page">
+    <header class="lil-page-head">
+        <div>
+            <h1>Адміністрація</h1>
+        </div>
+        <div class="lil-page-head__actions">
+            <span class="lil-attention-anchor">
+                <p-button label="Заявки" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']" />
+                @if (waitlistAttention.pending() > 0) {
+                    <span class="lil-attention-dot" role="img" aria-label="Є заявки на розгляд"></span>
+                }
+            </span>
+            <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']" />
+        </div>
+    </header>
+
+    <section class="kurin-tile">
+    <p-table [value]="data" styleClass="project-table">
+        <ng-template #caption>
+            <div class="lil-tile-head">
+                <div>
+                    <h2>Курені</h2>
+                    <p>{{ data.length }} у системі</p>
+                </div>
+                @if (data.length > 0) {
+                    <p-button (onClick)="onActionClick(null, 'create')" label="Створити курінь" icon="pi pi-plus" />
+                }
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th scope="col">Курінь</th>
+                <th scope="col" class="admin-kurin-actions">Дії</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-item>
+            <tr class="admin-kurin-row">
+                <td data-mobile-label="Курінь">
+                    <div class="kurin-number-cell">
+                        <span>{{ item.number }}</span>
+                        <small>число куреня</small>
+                    </div>
+                </td>
+                <td class="admin-kurin-actions" data-mobile-label="Дії">
+                    <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+    @if (data.length === 0) {
+        <div class="admin-panel__empty">
+            <app-empty-state
+                art="list"
+                title="Куренів ще немає"
+                body="Створи перший — і система оживе.">
+                <p-button (onClick)="onActionClick(null, 'create')" label="Створити курінь" icon="pi pi-plus" />
+            </app-empty-state>
+        </div>
+    }
+    </section>
+</div>
+<app-manage-panel [(visible)]="managePanelVisible"
+  [parameter]="managePanelParameter"
+  [entity]="selectedItem"
+  [config]="managePanelConfig"
+  (actionPerformed)="onManageAction($event)"
+ />

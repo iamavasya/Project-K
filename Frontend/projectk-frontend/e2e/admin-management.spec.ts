@@ -11,7 +11,9 @@ describeRole('admin', 'Admin management surfaces', () => {
     await page.getByRole('button', { name: /Створити/ }).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeDisabled();
-    await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`, `e2e.manager.${Date.now()}@example.com`]);
+    // Only the number: the admin panel creates the kurin alone, and the Зв'язковий arrives through
+    // an application and an invitation, not through a password typed here (SEC-4.4).
+    await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`]);
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeEnabled();
     await cancelManagePanel(page);
 
@@ -20,7 +22,9 @@ describeRole('admin', 'Admin management surfaces', () => {
     await openRowMenu(row);
     await chooseMenuItem(page, 0);
     await expect(dialog(page)).toBeVisible();
-    await expect(dialog(page).locator('input:disabled')).toHaveCount(2);
+    // Update mode locks the system key only; the number stays editable, and the manager email
+    // field that used to be locked here is gone with the password flow it belonged to.
+    await expect(dialog(page).locator('input:disabled')).toHaveCount(1);
     await cancelManagePanel(page);
 
     await openRowMenu(row);

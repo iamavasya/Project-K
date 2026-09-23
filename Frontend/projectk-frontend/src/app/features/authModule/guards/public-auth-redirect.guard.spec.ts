@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom, isObservable, of } from 'rxjs';
 import { AuthState } from '../models/auth-state.model';
-import { AuthService } from '../services/authService/auth.service';
+import { AuthService } from '../services/auth-service/auth.service';
 import { publicAuthRedirectGuard } from './public-auth-redirect.guard';
 
 describe('publicAuthRedirectGuard', () => {

@@ -7,12 +7,12 @@
 
 ## Що це за система
 
-Застосунок для управління пластовим куренем: членство, проводи (уряди), реєстр складу, календар і
+Застосунок для управління пластовим куренем: членство, провід (діловодства), реєстр складу, календар і
 планування, проби та вмілості, онбординг нових людей.
 
-Ключова відмінність від типової рольової системи: **доступ визначається урядом, який людина
-обіймає**, а не роллю акаунта. Акаунт знає лише, адміністратор це чи ні. Усе решта — «чи може ця
-людина редагувати цього члена» — виводиться з уряду. Тому `LeadershipController` змінює не довідник,
+Ключова відмінність від типової рольової системи: **доступ визначається діловодством, яке людина
+тримає**, а не роллю акаунта. Акаунт знає лише, адміністратор це чи ні. Усе решта — «чи може ця
+людина редагувати цього члена» — виводиться з діловодства. Тому `LeadershipController` змінює не довідник,
 а права.
 
 ---
@@ -27,7 +27,8 @@ scripts/                       dev.sh / dev.ps1 — підняти будь-як
 ```
 
 Три залежності живуть як зовнішні пакети, не як проєкти в солюшені: `ProjectK.Optimization`
-(кеш і профілювання), `ProjectK.ProbeAndBadges.DependencyInjection` (каталоги проб і вмілостей),
+(закритий двигун підбору дати табору в плануванні — `CampDateSolver`),
+`ProjectK.ProbeAndBadges.DependencyInjection` (каталоги проб і вмілостей),
 `ProjectK.ProbeAndBadges.Abstractions`. Каталоги **читаються, а не редагуються** через застосунок —
 тому `BadgesCatalogController` і `ProbesCatalogController` не мають операцій запису.
 
@@ -56,7 +57,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 |---|---|
 | `AuthModule` | вхід, MFA, онбординг, скидання пароля, налаштування інстансу, первинна настройка |
 | `UsersModule` | акаунти: безпека, профіль акаунта, збережені розкладки дашборда |
-| `KurinModule` | курінь, гуртки, члени, уряди, календар, планування, відзнаки, перестороги |
+| `KurinModule` | курінь, гуртки, члени, провід, календар, планування, відзнаки, перестороги |
 | `ProbesAndBadgesModule` | каталоги проб і вмілостей та поступ конкретного члена |
 | `InfrastructureModule` | сповіщення |
 
@@ -78,7 +79,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 |---|---|---|
 | `IMemberDirectory` | мембер | хто ця людина; пошук за публічним кодом |
 | `IMembershipDirectory` | курінь | де людина належить і належала |
-| `IOfficeDirectory` | курінь | які уряди акаунт обіймає в цьому курені |
+| `IOfficeDirectory` | курінь | які діловодства акаунт тримає в цьому курені |
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла |
 
 Межі тримає не домовленість, а `ProjectK.Architecture.Tests`: правила читають IL, тож звернення до
@@ -99,6 +100,8 @@ HTTP
   ↓  Serilog request logging, forwarded headers, rate limiting
   ↓  автентифікація JWT (access у заголовку, refresh у httpOnly-cookie)
   ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
+  ↓     другий фактор: пароль → короткий mfaToken (5 хв, окрема audience) → код + mfaToken;
+  ↓     код без mfaToken відхиляється — другий фактор ніколи не буває єдиним
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
   ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
   ↓  контролер: жодних рішень, лише _mediator.Send(...)
@@ -127,15 +130,15 @@ HTTP
 
 ```
 активний курінь у токені            у якому курені людина зараз діє
-        ↓ IOfficeDirectory           уряди цього акаунта саме в цьому курені
-LeadershipRole + LeadershipType      уряд, який людина обіймає
+        ↓ IOfficeDirectory           діловодства цього акаунта саме в цьому курені
+LeadershipRole + LeadershipType      діловодство, яке людина тримає
         ↓ SystemRole.ForOffice()
-SystemRole                           роль доступу, дзеркало уряду
+SystemRole                           роль доступу, дзеркало діловодства
         ↓ RolePermissionMap
 Permission                           напр. Group:Manage:KurinWide
 ```
 
-Уряди — джерело; ролі доступу **виводяться з них на кожен вхід**, а не зберігаються на акаунті.
+Діловодства — джерело; ролі доступу **виводяться з них на кожен вхід**, а не зберігаються на акаунті.
 Другого списку «хто керує куренем» немає: усе виводиться з `RolePermissionMap`.
 
 Ключове тут — слово «активний». Ролі рахуються для одного куреня за раз (`IAccessContextResolver`),
@@ -146,7 +149,7 @@ Permission                           напр. Group:Manage:KurinWide
 відкрите будь-кому, хто має **активне** членство в тому курені, і лише адміністратор може стояти
 поза всіма.
 
-Авторизація навмисно не знає про мембера: усе, що їй потрібно, вона читає через членства й уряди за
+Авторизація навмисно не знає про мембера: усе, що їй потрібно, вона читає через членства й діловодства за
 ключем акаунта. Це не побажання, а правило `Authorization_ShouldNotKnowAboutMember` в арх-тестах.
 
 Політики оголошені **один раз** — `AuthorizationPolicies.AddProjectPolicies()`; і хост, і тестові
@@ -160,12 +163,13 @@ Permission                           напр. Group:Manage:KurinWide
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля — усі | `Infrastructure/Repositories/AuthModule` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена | `Infrastructure/Repositories/AuthModule` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
 | PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів | `API/Program.cs`, `Infrastructure` |
+| Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
@@ -199,14 +203,60 @@ Angular 22, standalone-компоненти, signals (декораторів н�
 
 | Середовище | Для чого |
 |---|---|
-| `Development` | локальна розробка; Swagger увімкнено |
-| `E2E` | стек під Playwright; додається `E2ETestController` з фікстурами |
-| `SelfHost` | самостійне розгортання; доступний майстер первинної настройки |
-| `Staging` | перевірка релізу; Swagger увімкнено |
-| `Tailscale` | закритий доступ через tailnet |
-| `Production` | прод; Swagger вимкнено, `LoadTestLoginKey` порожній |
+| `Development` | локальна розробка; Swagger увімкнено; сідер заводить демо-курінь і `admin@projectk.com` |
+| `E2E` | стек під Playwright; лише тут у застосунку існує `E2ETestController` з фікстурами — в інших середовищах його прибирає з моделі `E2EOnlyControllerFeatureProvider` |
+| `SelfHost` | самостійне розгортання; сідер не заводить нікого |
+| `Staging` | перевірка релізу; Swagger увімкнено; демо-даних немає, дані переживають перезапуск |
+| `Tailscale` | закритий доступ через tailnet — стенд для людей, не демо: сідер його не чіпає, дані переживають перезапуск |
+| `Production` | прод; Swagger вимкнено, `LoadTestLoginKey` порожній; **демо-акаунтів немає** |
+
+Майстер первинної настройки (`api/auth/setup`) відкритий у **кожному** середовищі, доки в базі
+немає жодного адміністратора, і зачиняється, щойно він зʼявився. Тому середовища з сідером його
+ніколи не бачать, а свіжий `Production` чи `SelfHost` отримує першого адміністратора саме тут — а
+не з пароля, записаного в репозиторії, як було до 1.0.
 
 Підняти будь-яке: `./scripts/dev.sh up <env>`. Деталі — у [docker/README.md](docker/README.md).
+
+Демо-курінь і демо-акаунти сідер заводить (і стирає при кожному старті) **лише** в `Development` і
+`E2E`. Раніше це стосувалося й `Staging` та `Tailscale`, і стенд, який показували людям, губив усе
+введене при наступному запуску.
+
+**Дев-інструменти.** На `Development`, `E2E` і `Tailscale` в застосунку є `DevToolsController`
+(`api/dev/impersonate`, `api/dev/impersonate/member`, `api/dev/return`) і перемикач ролей на правому
+краю екрана: адміністратор заходить як той, хто тримає обране діловодство у курені на екрані (Звʼязковий,
+впорядник, курінний, скарбник), як юнак без діловодства або як та людина, чия картка відкрита, і
+повертається за 12-годинним квитком (`IJwtService`, окрема audience). Перемикання з однієї позиченої
+ролі в іншу йде через повернення: фронт спершу віддає квиток (`api/dev/return`), потім позичає знову,
+бо позичена сесія не адмін і сама позичати не може. На решті тирів `DevOnlyControllerFeatureProvider` знімає контролер з моделі, а фронт не
+рендерить перемикач у production-збірці.
+
+**Довірений пристрій для MFA.** Після вдалого другого кроку (`mfa/login-verify`) API кладе
+HttpOnly-cookie `mfaTrust` (`MfaTrustCookie`, шлях `/api/auth`) з JWT-квитком окремої audience
+`mfa-trust` на `Security:MfaTrustDays` (7). Квиток несе security stamp акаунта; `LoginUserCommandHandler`
+пропускає другий крок, лише коли квиток чинний, виданий цьому акаунту і stamp не змінився — зміна
+пароля чи скидання MFA ротує stamp і знімає довіру з усіх пристроїв. Вихід cookie не чіпає.
+
+**Активація акаунта.** `POST onboarding/activate` відповідає `LoginUserResponse` і ставить refresh-cookie:
+людина, яка щойно обрала пароль, потрапляє одразу в застосунок, а не на форму входу.
+
+**Сайт.** `site/` — візитка, довідка і статичне демо на Astro + Starlight, окрема статика на
+Cloudflare Pages. Довідка не пишеться на сайті: «Для користувача» — `docs/user/*` (початок, ролі,
+функції, покрокові how-to); «Для розробника» — `docs/dev/*` (основи з діаграмами архітектури,
+гайди, довідник, історія, DevLog) плюс кореневі `ARCHITECTURE`, `CONTRIBUTING`, `BRANDBOOK`,
+`SECURITY`, `docs/self-host/*`, які `site/scripts/sync-docs.mjs` збирає в `site/src/content/docs/`
+перед `dev` і `build`, дописуючи frontmatter і переписуючи посилання між ними. Дерево розробника в
+бічній панелі згорнуте, пряма адреса — `/dev/`. Діаграми — Mermaid у markdown, рендер у браузері
+з кнопкою «На весь екран». Стиль — `site/src/styles/brand.css` з тими ж токенами, що й
+`lileyka-theme.css`.
+
+**Адреса відвідувача.** Рейт-ліміт входу, гео-блок і журнал зміни IP читають
+`Connection.RemoteIpAddress`. Звідки він береться — `Security:ClientIp`: `Header` називає заголовок,
+який пише єдиний проксі попереду (`CF-Connecting-IP` за Cloudflare у `Production`/`Staging`,
+`X-Real-IP` від nginx у self-host bundle), і `ClientIpMiddleware` кладе його значення в адресу
+зʼєднання одразу після `UseForwardedHeaders`; `TrustedProxies` — адреси або мережі, чий
+`X-Forwarded-For` приймається. Без `Header` адреса — те, що лишив `X-Forwarded-For`, а він
+приймається від будь-кого, поки список довірених проксі порожній. Запуск відмовляється від
+`Jwt:Key`, коротшого за 32 символи або з шаблонним словом із прикладів (`JwtKeyRules`).
 
 ---
 

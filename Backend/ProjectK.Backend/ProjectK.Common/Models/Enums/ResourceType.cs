@@ -1,4 +1,4 @@
-﻿namespace ProjectK.Common.Models.Enums;
+namespace ProjectK.Common.Models.Enums;
 
 public enum ResourceType
 {

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Helpers;

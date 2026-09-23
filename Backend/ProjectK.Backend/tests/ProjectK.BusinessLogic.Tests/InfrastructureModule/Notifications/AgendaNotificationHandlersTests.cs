@@ -36,7 +36,7 @@ public class AgendaNotificationHandlersTests
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
         var actor = Guid.NewGuid();
-        var handler = new AgendaItemAssignedNotificationHandler(_notifications.Object);
+        var handler = new AgendaItemAssignedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new AgendaItemAssigned(itemKey, kurinKey, kind, "Прибирання оселі", [first, second], actor)),
@@ -68,7 +68,7 @@ public class AgendaNotificationHandlersTests
     [Fact]
     public async Task Assigned_WithNobodyToTell_ShouldSendNothing()
     {
-        var handler = new AgendaItemAssignedNotificationHandler(_notifications.Object);
+        var handler = new AgendaItemAssignedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new AgendaItemAssigned(
@@ -86,7 +86,7 @@ public class AgendaNotificationHandlersTests
     {
         var itemKey = Guid.NewGuid();
         var recipient = Guid.NewGuid();
-        var handler = new AgendaItemChangedNotificationHandler(_notifications.Object);
+        var handler = new AgendaItemChangedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new AgendaItemChanged(
@@ -108,7 +108,7 @@ public class AgendaNotificationHandlersTests
     {
         var itemKey = Guid.NewGuid();
         var recipient = Guid.NewGuid();
-        var handler = new AgendaItemRemovedNotificationHandler(_notifications.Object);
+        var handler = new AgendaItemRemovedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new AgendaItemRemoved(
@@ -135,7 +135,7 @@ public class AgendaNotificationHandlersTests
     {
         var itemKey = Guid.NewGuid();
         var creator = Guid.NewGuid();
-        var handler = new AgendaItemStatusChangedNotificationHandler(_notifications.Object);
+        var handler = new AgendaItemStatusChangedEventHandler(_notifications.Object);
 
         await handler.Handle(
             Raised(new AgendaItemStatusChanged(

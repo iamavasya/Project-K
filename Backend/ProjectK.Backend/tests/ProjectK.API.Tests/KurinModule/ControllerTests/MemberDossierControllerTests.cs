@@ -19,14 +19,14 @@ public class MemberDossierControllerTests
 {
     private readonly Mock<IMediator> _mediator = new();
     private readonly MemberController _controller;
-    private GetMemberDossier? _sent;
+    private GetMemberDossierQuery? _sent;
 
     public MemberDossierControllerTests()
     {
         _controller = new MemberController(_mediator.Object);
         _mediator
-            .Setup(m => m.Send(It.IsAny<GetMemberDossier>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((request, _) => _sent = (GetMemberDossier)request)
+            .Setup(m => m.Send(It.IsAny<GetMemberDossierQuery>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((request, _) => _sent = (GetMemberDossierQuery)request)
             .ReturnsAsync(() => new ServiceResult<MemberDossierResponse>(ResultType.Success, Box()));
     }
 
@@ -69,7 +69,7 @@ public class MemberDossierControllerTests
     public async Task AFolderRoute_ShouldPassOnARefusal_RatherThanAnEmptyFolder()
     {
         _mediator
-            .Setup(m => m.Send(It.IsAny<GetMemberDossier>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.Send(It.IsAny<GetMemberDossierQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MemberDossierResponse>.Failure(
                 ResultType.BadRequest, "UnknownDossierFolder", "No such folder: salary."));
 

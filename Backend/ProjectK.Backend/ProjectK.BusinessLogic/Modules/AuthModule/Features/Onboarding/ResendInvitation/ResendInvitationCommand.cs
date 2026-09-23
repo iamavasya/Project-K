@@ -1,11 +1,10 @@
+using System;
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.Common.Models.Records;
-using System;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation
-{
-    public record ResendInvitationCommand(Guid WaitlistEntryKey) : IRequest<ServiceResult<Guid>>, ITransactionalRequest;
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation;
 
-    public record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<bool>>, ITransactionalRequest;
-}
+public record ResendInvitationCommand(Guid WaitlistEntryKey) : IRequest<ServiceResult<Guid>>, ITransactionalRequest;
+
+public record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<bool>>, ITransactionalRequest;

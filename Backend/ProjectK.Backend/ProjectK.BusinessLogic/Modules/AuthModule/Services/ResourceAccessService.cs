@@ -1,9 +1,9 @@
-﻿using ProjectK.Common.Interfaces;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Services.Caching;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

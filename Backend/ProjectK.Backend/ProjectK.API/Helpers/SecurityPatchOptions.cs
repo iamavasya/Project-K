@@ -1,4 +1,4 @@
-﻿namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Helpers;
 
 /// <summary>
 /// Optional security-hardening settings, bound from the "SecurityPatch" configuration section.

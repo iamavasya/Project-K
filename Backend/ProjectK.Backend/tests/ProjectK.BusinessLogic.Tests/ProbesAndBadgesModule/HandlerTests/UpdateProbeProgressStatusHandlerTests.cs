@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -8,9 +8,9 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -22,7 +22,7 @@ public class UpdateProbeProgressStatusHandlerTests
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<IProbesCatalogService> _probesCatalogServiceMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly UpdateProbeProgressStatusHandler _handler;
+    private readonly UpdateProbeProgressStatusCommandHandler _handler;
 
     public UpdateProbeProgressStatusHandlerTests()
     {
@@ -49,7 +49,7 @@ public class UpdateProbeProgressStatusHandlerTests
         _currentUserContextMock.Setup(x => x.IsInRole("User")).Returns(false);
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "Mentor" });
 
-        _handler = new UpdateProbeProgressStatusHandler(
+        _handler = new UpdateProbeProgressStatusCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
@@ -63,7 +63,7 @@ public class UpdateProbeProgressStatusHandlerTests
         var memberKey = Guid.NewGuid();
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
 
-        var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.InProgress, "unsign");
+        var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.InProgress, "unsign");
 
         _memberDirectoryMock
             .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -119,7 +119,7 @@ public class UpdateProbeProgressStatusHandlerTests
         var memberKey = Guid.NewGuid();
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
 
-        var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
+        var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberDirectoryMock
             .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -162,7 +162,7 @@ public class UpdateProbeProgressStatusHandlerTests
         var memberKey = Guid.NewGuid();
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
 
-        var request = new UpdateProbeProgressStatus(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
+        var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberDirectoryMock
             .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))

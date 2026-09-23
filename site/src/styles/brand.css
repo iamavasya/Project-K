@@ -1,0 +1,411 @@
+/*
+ * Лілейка на Starlight. Кольори й шрифти ті самі, що в застосунку (BRANDBOOK.md, lileyka-theme.css):
+ * один зелений, чорнило, поверхня; терракота тут не потрібна взагалі. Starlight тримає темну
+ * палітру на :root, світлу — під [data-theme='light'], тому «white» у темній темі — це колір тексту.
+ */
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/neucha-400-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/neucha-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --sl-font: 'Manrope', system-ui, -apple-system, sans-serif;
+  --lil-font-hand: 'Neucha', cursive;
+
+  /* Темна тема */
+  --sl-color-accent-low: #084733;
+  --sl-color-accent: #34C48D;
+  --sl-color-accent-high: #A6D0BD;
+  --sl-color-white: #E9EDEA;
+  --sl-color-gray-1: #DDE2DF;
+  --sl-color-gray-2: #9BA8A2;
+  --sl-color-gray-3: #6C7570;
+  --sl-color-gray-4: #3A433F;
+  --sl-color-gray-5: #232A27;
+  --sl-color-gray-6: #161B19;
+  --sl-color-black: #0D1110;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #CFE5D9;
+  --sl-color-accent: #0E6E4E;
+  --sl-color-accent-high: #084733;
+  --sl-color-white: #101413;
+  --sl-color-gray-1: #2E3633;
+  --sl-color-gray-2: #6E7873;
+  --sl-color-gray-3: #9AA39F;
+  --sl-color-gray-4: #C9D0CD;
+  --sl-color-gray-5: #E4E8E6;
+  --sl-color-gray-6: #F7F9F8;
+  --sl-color-gray-7: #FFFFFF;
+  --sl-color-black: #FFFFFF;
+}
+
+/* Заголовки — щільніші, як у застосунку. */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Знак поруч зі словом «Лілейка» — це логотип, а логотип набирається Neucha (BRANDBOOK §1). Той
+   самий напис стоїть у шапці довідки й у hero на вітальній, тож правило одне на обидва. У Neucha
+   є лише накреслення 400: підвищена жирність змусила б браузер домальовувати її самому й зіпсувала
+   б форму літер. Розмір трохи більший, бо рукописний шрифт оптично дрібніший за Manrope. */
+.site-title span,
+.hero h1 {
+  font-family: var(--lil-font-hand);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.site-title span {
+  font-size: 1.5rem;
+}
+
+.hero h1 {
+  font-size: clamp(3.25rem, 8vw, 5rem);
+  line-height: 1.05;
+}
+
+/* Підпис під логотипом — звичайний текст: Neucha тримається логотипа й заголовків порожніх
+   станів, більше ніде (BRANDBOOK §3). Два рукописні рядки поспіль читалися б як один блок. */
+.hero .tagline {
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  line-height: 1.4;
+}
+
+/* Картки живуть на рамці 1px, без тіней (BRANDBOOK §правило 4 і 6). */
+.card {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.card .title {
+  font-weight: 700;
+}
+
+/* Кнопки в hero: 8px радіус, без тіней. */
+.sl-link-button {
+  border-radius: 8px;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+/* Таблиці довідки на рамці, з мʼякшою шапкою. */
+.sl-markdown-content table {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+}
+
+.sl-markdown-content img {
+  border-radius: 12px;
+}
+
+/* Два скриншоти на сусідніх рядках у Markdown — один абзац із двома картинками. Тут це ряд
+   із двох колонок; на телефоні — колонка. У доці ніякого синтаксису, на GitHub ті ж дві картинки. */
+.sl-markdown-content p:has(> img + img) {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.sl-markdown-content p:has(> img + img) img {
+  margin: 0;
+  width: 100%;
+}
+
+@media (max-width: 40rem) {
+  .sl-markdown-content p:has(> img + img) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Портрет на сторінці «Про Лілейку» — єдина не-скриншотна картинка в довідці. */
+.sl-markdown-content img[alt='Ростислав Муха'] {
+  max-width: 240px;
+}
+
+/* Діаграми Mermaid. SVG тягнеться на ширину колонки; на телефоні блок гортається вбік, а не
+   стискає текст до нечитабельного. Кольори — токени брендбуку для обох тем: вбудовані теми Mermaid
+   лавандові/фіолетові, тож вузли, рамки, лінії й підписи перефарбовуються тут. */
+.sl-markdown-content .mermaid {
+  margin-block: 1.5rem;
+  overflow-x: auto;
+}
+
+.sl-markdown-content .mermaid svg {
+  height: auto;
+  max-width: 100%;
+  min-width: 36rem;
+}
+
+.mermaid svg .node rect,
+.mermaid svg .node circle,
+.mermaid svg .node polygon,
+.mermaid svg .node path,
+.mermaid svg rect.actor {
+  fill: #FFFFFF !important;
+  stroke: #C9D0CD !important;
+}
+
+.mermaid svg .cluster rect {
+  fill: #F7F9F8 !important;
+  stroke: #E4E8E6 !important;
+}
+
+.mermaid svg .nodeLabel,
+.mermaid svg .cluster-label .nodeLabel,
+.mermaid svg .edgeLabel,
+.mermaid svg .edgeLabel p,
+.mermaid svg .label,
+.mermaid svg .messageText,
+.mermaid svg text.actor,
+.mermaid svg text.actor > tspan,
+.mermaid svg .loopText,
+.mermaid svg .noteText {
+  color: #101413 !important;
+  fill: #101413 !important;
+}
+
+.mermaid svg .edgeLabel,
+.mermaid svg .edgeLabel p,
+.mermaid svg .edgeLabel rect {
+  background: #F7F9F8 !important;
+  fill: #F7F9F8 !important;
+}
+
+.mermaid svg .edgeLabel p {
+  color: #6E7873 !important;
+}
+
+.mermaid svg .flowchart-link,
+.mermaid svg .messageLine0,
+.mermaid svg .messageLine1 {
+  stroke: #6E7873 !important;
+  fill: none !important;
+}
+
+.mermaid svg .marker,
+.mermaid svg .marker path,
+.mermaid svg defs marker path {
+  fill: #6E7873 !important;
+  stroke: #6E7873 !important;
+}
+
+.mermaid svg .actor-line {
+  stroke: #C9D0CD !important;
+}
+
+.mermaid svg .sequenceNumber {
+  fill: #FFFFFF !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .node rect,
+:root[data-theme='dark'] .mermaid svg .node circle,
+:root[data-theme='dark'] .mermaid svg .node polygon,
+:root[data-theme='dark'] .mermaid svg .node path,
+:root[data-theme='dark'] .mermaid svg rect.actor {
+  fill: #161B19 !important;
+  stroke: #3A423E !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .cluster rect {
+  fill: #0D1110 !important;
+  stroke: #232A27 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .nodeLabel,
+:root[data-theme='dark'] .mermaid svg .cluster-label .nodeLabel,
+:root[data-theme='dark'] .mermaid svg .edgeLabel,
+:root[data-theme='dark'] .mermaid svg .label,
+:root[data-theme='dark'] .mermaid svg .messageText,
+:root[data-theme='dark'] .mermaid svg text.actor,
+:root[data-theme='dark'] .mermaid svg text.actor > tspan,
+:root[data-theme='dark'] .mermaid svg .loopText,
+:root[data-theme='dark'] .mermaid svg .noteText {
+  color: #E9EDEA !important;
+  fill: #E9EDEA !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .edgeLabel,
+:root[data-theme='dark'] .mermaid svg .edgeLabel p,
+:root[data-theme='dark'] .mermaid svg .edgeLabel rect {
+  background: #161B19 !important;
+  fill: #161B19 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .edgeLabel p {
+  color: #9BA8A2 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .flowchart-link,
+:root[data-theme='dark'] .mermaid svg .messageLine0,
+:root[data-theme='dark'] .mermaid svg .messageLine1 {
+  stroke: #9BA8A2 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .marker,
+:root[data-theme='dark'] .mermaid svg .marker path,
+:root[data-theme='dark'] .mermaid svg defs marker path {
+  fill: #9BA8A2 !important;
+  stroke: #9BA8A2 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .actor-line {
+  stroke: #3A423E !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .sequenceNumber {
+  fill: #0D1110 !important;
+}
+
+/* Повноекранний перегляд діаграм (public/scripts/diagram-viewer.js): кнопка над діаграмою і
+   оверлей із зумом та перетягуванням. Кольори — токени Starlight, які вже мапляться на брендбук. */
+.diagram-viewer__host {
+  position: relative;
+}
+
+.diagram-viewer__open {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  color: var(--sl-color-gray-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  inset-block-start: 0.5rem;
+  inset-inline-end: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  position: absolute;
+  z-index: 1;
+}
+
+.diagram-viewer__open:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+
+.diagram-viewer {
+  background: var(--sl-color-bg);
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  position: fixed;
+  z-index: 100;
+}
+
+.diagram-viewer[hidden] {
+  display: none;
+}
+
+.diagram-viewer__bar {
+  align-items: center;
+  border-bottom: 1px solid var(--sl-color-gray-5);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+}
+
+.diagram-viewer__hint {
+  color: var(--sl-color-gray-2);
+  font-size: 0.8125rem;
+}
+
+.diagram-viewer__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.diagram-viewer__actions button {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  color: var(--sl-color-white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-width: 2.5rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.diagram-viewer__actions button:hover {
+  border-color: var(--sl-color-accent);
+}
+
+.diagram-viewer__stage {
+  cursor: grab;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+}
+
+.diagram-viewer__stage.is-dragging {
+  cursor: grabbing;
+}
+
+.diagram-viewer__canvas {
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  position: absolute;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.diagram-viewer__canvas svg {
+  display: block;
+}
+
+@media (max-width: 40rem) {
+  .diagram-viewer__hint {
+    display: none;
+  }
+}

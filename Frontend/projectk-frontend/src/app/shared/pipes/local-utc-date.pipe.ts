@@ -1,6 +1,6 @@
 import { formatDate } from '@angular/common';
 import { Pipe, PipeTransform } from '@angular/core';
-import { parseUtcDateTime } from '../functions/utcDateTime.function';
+import { parseUtcDateTime } from '../functions/utc-date-time.function';
 
 @Pipe({
   name: 'localUtcDate'

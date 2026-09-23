@@ -1,59 +1,58 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using ProjectK.Common.Interfaces;
 
-namespace ProjectK.Infrastructure.BackgroundServices
+namespace ProjectK.Infrastructure.BackgroundServices;
+
+public class MemberWarningExpiryBackgroundService : BackgroundService
 {
-    public class MemberWarningExpiryBackgroundService : BackgroundService
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<MemberWarningExpiryBackgroundService> _logger;
+    private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
+
+    public MemberWarningExpiryBackgroundService(IServiceProvider serviceProvider, ILogger<MemberWarningExpiryBackgroundService> logger)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<MemberWarningExpiryBackgroundService> _logger;
-        private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
 
-        public MemberWarningExpiryBackgroundService(IServiceProvider serviceProvider, ILogger<MemberWarningExpiryBackgroundService> logger)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("Member Warning Expiry Service is starting.");
+
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _serviceProvider = serviceProvider;
-            _logger = logger;
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Member Warning Expiry Service is starting.");
-
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    await ExpireWarningsAsync(stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occurred executing Member Warning Expiry Service.");
-                }
-
-                await Task.Delay(_checkInterval, stoppingToken);
+                await ExpireWarningsAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred executing Member Warning Expiry Service.");
             }
 
-            _logger.LogInformation("Member Warning Expiry Service is stopping.");
+            await Task.Delay(_checkInterval, stoppingToken);
         }
 
-        private async Task ExpireWarningsAsync(CancellationToken cancellationToken)
+        _logger.LogInformation("Member Warning Expiry Service is stopping.");
+    }
+
+    private async Task ExpireWarningsAsync(CancellationToken cancellationToken)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IMemberUnitOfWork>();
+
+        var now = DateTime.UtcNow;
+
+        var expiredWarningsCount = await unitOfWork.MemberWarnings.ExpireActiveWarningsAsync(now, cancellationToken);
+
+        if (expiredWarningsCount > 0)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IMemberUnitOfWork>();
-
-            var now = DateTime.UtcNow;
-
-            var expiredWarningsCount = await unitOfWork.MemberWarnings.ExpireActiveWarningsAsync(now, cancellationToken);
-
-            if (expiredWarningsCount > 0)
-            {
-                _logger.LogInformation("Expired {Count} member warnings.", expiredWarningsCount);
-            }
+            _logger.LogInformation("Expired {Count} member warnings.", expiredWarningsCount);
         }
     }
 }

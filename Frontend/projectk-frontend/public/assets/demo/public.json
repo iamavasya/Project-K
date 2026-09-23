@@ -1,0 +1,1 @@
+{"seat":"public","recordedAt":"2026-09-13T17:43:35.984Z","entries":[{"m":"GET","p":"/api/auth/setup/status","s":200,"b":{"isInitialized":true}},{"m":"GET","p":"/health","s":200,"b":{"status":"ready","version":"v0.0.0-demo","codeName":"Demo","utc":"2026-09-13T17:43:33.0542055+00:00"}}]}

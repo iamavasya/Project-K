@@ -1,17 +1,16 @@
-﻿using MediatR;
-using ProjectK.Common.Models.Records;
 using System;
+using MediatR;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration
-{
-    public record SubmitWaitlistRegistrationCommand(
-        string FirstName,
-        string LastName,
-        string Email,
-        string PhoneNumber,
-        DateTime DateOfBirth,
-        string? Stanytsia,
-        string? RegionOrCountry,
-        bool IsKurinLeaderCandidate,
-        string? ClaimedKurinNameOrNumber) : IRequest<ServiceResult<Guid>>;
-}
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+
+public record SubmitWaitlistRegistrationCommand(
+    string FirstName,
+    string LastName,
+    string Email,
+    string PhoneNumber,
+    DateTime DateOfBirth,
+    string? Stanytsia,
+    string? RegionOrCountry,
+    bool IsKurinLeaderCandidate,
+    string? ClaimedKurinNameOrNumber) : IRequest<ServiceResult<Guid>>;

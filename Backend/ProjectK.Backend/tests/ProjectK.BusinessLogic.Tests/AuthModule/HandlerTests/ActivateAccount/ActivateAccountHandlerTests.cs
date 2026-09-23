@@ -1,9 +1,12 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -13,9 +16,8 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 using ProjectK.Common.Models.Records;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.ActivateAccount;
 
@@ -34,9 +36,10 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
     private readonly FixedTimeProvider _clock = new(Now);
-    private readonly ActivateAccountHandler _handler;
+    private readonly ActivateAccountCommandHandler _handler;
 
     public ActivateAccountHandlerTests()
     {
@@ -53,7 +56,11 @@ public class ActivateAccountHandlerTests
         _userManager.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        _handler = new ActivateAccountHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock);
+        _loginResponses
+            .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email! });
+
+        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock, _loginResponses.Object);
     }
 
     private Invitation GivenInvitation(Guid userKey, DateTime? expiresAtUtc = null)
@@ -158,7 +165,7 @@ public class ActivateAccountHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         _userManager.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), SystemRole.Member), Times.Once);
-        _mediator.Verify(x => x.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mediator.Verify(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()), Times.Never);
         invitation.UsedAtUtc.Should().NotBeNull();
     }
 
@@ -179,10 +186,10 @@ public class ActivateAccountHandlerTests
             .Setup(x => x.GetByEmailAsync("leader@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member?)null);
 
-        UpsertLeadership? seated = null;
+        UpsertLeadershipCommand? seated = null;
         _mediator
-            .Setup(x => x.Send(It.IsAny<UpsertLeadership>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((request, _) => seated = (UpsertLeadership)request)
+            .Setup(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((request, _) => seated = (UpsertLeadershipCommand)request)
             .ReturnsAsync(new ServiceResult<LeadershipResponse>(ResultType.Success));
 
         var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);

@@ -1,8 +1,9 @@
-﻿using MediatR;
-using ProjectK.API.Extensions;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProjectK.API.Authorization;
+using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
@@ -12,9 +13,8 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Update
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.API.Authorization;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
@@ -43,7 +43,7 @@ public class MemberProgressController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBadgeProgresses(Guid memberKey)
     {
-        var response = await _mediator.Send(new GetBadgeProgresses(memberKey));
+        var response = await _mediator.Send(new GetBadgeProgressesQuery(memberKey));
         return response.ToActionResult(this);
     }
 
@@ -62,7 +62,7 @@ public class MemberProgressController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SubmitBadgeProgress(Guid memberKey, string badgeId, [FromBody] SubmitBadgeProgressRequest request)
     {
-        var response = await _mediator.Send(new SubmitBadgeProgress(memberKey, badgeId, request?.Note));
+        var response = await _mediator.Send(new SubmitBadgeProgressCommand(memberKey, badgeId, request?.Note));
         return response.ToActionResult(this);
     }
 
@@ -78,7 +78,7 @@ public class MemberProgressController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ReviewBadgeProgress(Guid memberKey, string badgeId, [FromBody] ReviewBadgeProgressRequest request)
     {
-        var response = await _mediator.Send(new ReviewBadgeProgress(memberKey, badgeId, request.IsApproved, request.Note));
+        var response = await _mediator.Send(new ReviewBadgeProgressCommand(memberKey, badgeId, request.IsApproved, request.Note));
         return response.ToActionResult(this);
     }
 
@@ -93,7 +93,7 @@ public class MemberProgressController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProbeProgress(Guid memberKey, string probeId)
     {
-        var response = await _mediator.Send(new GetProbeProgress(memberKey, probeId));
+        var response = await _mediator.Send(new GetProbeProgressQuery(memberKey, probeId));
         return response.ToActionResult(this);
     }
 
@@ -112,7 +112,7 @@ public class MemberProgressController : ControllerBase
         string probeId,
         [FromBody] UpdateProbeProgressStatusRequest request)
     {
-        var response = await _mediator.Send(new UpdateProbeProgressStatus(memberKey, probeId, request.Status, request.Note));
+        var response = await _mediator.Send(new UpdateProbeProgressStatusCommand(memberKey, probeId, request.Status, request.Note));
         return response.ToActionResult(this);
     }
 
@@ -134,7 +134,7 @@ public class MemberProgressController : ControllerBase
         string pointId,
         [FromBody] UpdateProbePointSignatureRequest? request)
     {
-        var response = await _mediator.Send(new UpdateProbePointSignature(memberKey, probeId, pointId, true, request?.Note));
+        var response = await _mediator.Send(new UpdateProbePointSignatureCommand(memberKey, probeId, pointId, true, request?.Note));
         return response.ToActionResult(this);
     }
 
@@ -153,7 +153,7 @@ public class MemberProgressController : ControllerBase
         string pointId,
         [FromBody] UpdateProbePointSignatureRequest? request)
     {
-        var response = await _mediator.Send(new UpdateProbePointSignature(memberKey, probeId, pointId, false, request?.Note));
+        var response = await _mediator.Send(new UpdateProbePointSignatureCommand(memberKey, probeId, pointId, false, request?.Note));
         return response.ToActionResult(this);
     }
 }

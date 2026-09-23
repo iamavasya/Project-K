@@ -1,4 +1,4 @@
-const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string } }).__PROJECTK_CONFIG__;
+const runtimeConfig = (globalThis as { __PROJECTK_CONFIG__?: { apiUrl?: string; environmentName?: string; appName?: string; docsUrl?: string } }).__PROJECTK_CONFIG__;
 
 export const environment = {
   production: false,
@@ -7,5 +7,10 @@ export const environment = {
   codeName: 'LocalDevelopment',
   envName: runtimeConfig?.environmentName || 'Development',
   appName: runtimeConfig?.appName || 'Лілейка',
-  isF1TierBackend: false
+  // The docs site's root (runtime PROJECTK_DOCS_URL): the welcome page links to it as is, the
+  // sidebar appends the guide's own page. Production points at the site's production deployment;
+  // every other tier reads the dev-branch deployment, which is where docs land first.
+  docsUrl: runtimeConfig?.docsUrl || 'https://dev.projectk-docs-and-demo.pages.dev/',
+  isF1TierBackend: false,
+  isStaticDemo: false
 };

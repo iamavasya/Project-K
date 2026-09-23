@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -6,9 +6,9 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -19,7 +19,7 @@ public class UpdateProbePointSignatureHandlerTests
     private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly UpdateProbePointSignatureHandler _handler;
+    private readonly UpdateProbePointSignatureCommandHandler _handler;
 
     public UpdateProbePointSignatureHandlerTests()
     {
@@ -39,7 +39,7 @@ public class UpdateProbePointSignatureHandlerTests
         _currentUserContextMock.Setup(x => x.IsInRole("User")).Returns(false);
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "Mentor" });
 
-        _handler = new UpdateProbePointSignatureHandler(
+        _handler = new UpdateProbePointSignatureCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object);
@@ -50,7 +50,7 @@ public class UpdateProbePointSignatureHandlerTests
     {
         // Arrange
         var memberKey = Guid.NewGuid();
-        var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
+        var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
         _memberDirectoryMock
             .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -103,7 +103,7 @@ public class UpdateProbePointSignatureHandlerTests
         // Arrange
         var memberKey = Guid.NewGuid();
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
-        var request = new UpdateProbePointSignature(memberKey, "probe-1", "point-1", false, null);
+        var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
         _memberDirectoryMock
             .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))

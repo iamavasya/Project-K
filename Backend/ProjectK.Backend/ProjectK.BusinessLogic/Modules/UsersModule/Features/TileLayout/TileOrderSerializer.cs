@@ -1,29 +1,28 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
-namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout
+namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
+
+public static class TileOrderSerializer
 {
-    public static class TileOrderSerializer
+    public static IReadOnlyList<string> Deserialize(string? json)
     {
-        public static IReadOnlyList<string> Deserialize(string? json)
+        if (string.IsNullOrWhiteSpace(json))
         {
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return [];
-            }
-
-            try
-            {
-                return JsonSerializer.Deserialize<List<string>>(json) ?? [];
-            }
-            catch (JsonException)
-            {
-                return [];
-            }
+            return [];
         }
 
-        public static string Serialize(IReadOnlyList<string> tileKeys)
+        try
         {
-            return JsonSerializer.Serialize(tileKeys);
+            return JsonSerializer.Deserialize<List<string>>(json) ?? [];
         }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    public static string Serialize(IReadOnlyList<string> tileKeys)
+    {
+        return JsonSerializer.Serialize(tileKeys);
     }
 }

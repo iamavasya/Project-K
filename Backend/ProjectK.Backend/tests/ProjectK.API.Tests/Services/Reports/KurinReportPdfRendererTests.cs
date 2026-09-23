@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Infrastructure.Reports;
 using QuestPDF.Infrastructure;

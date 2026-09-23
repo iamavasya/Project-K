@@ -12,12 +12,12 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 /// severity and the route live here rather than in the module that raised the event: the курінь does
 /// not know there is an inbox, and this file is the only place that has to change when the wording does.
 /// </summary>
-public sealed class MemberProfileWentStaleNotificationHandler
+public sealed class MemberProfileWentStaleEventHandler
     : INotificationHandler<DomainEventNotification<MemberProfileWentStale>>
 {
     private readonly INotificationService _notifications;
 
-    public MemberProfileWentStaleNotificationHandler(INotificationService notifications)
+    public MemberProfileWentStaleEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -43,12 +43,12 @@ public sealed class MemberProfileWentStaleNotificationHandler
     }
 }
 
-public sealed class MemberProfileVerifiedNotificationHandler
+public sealed class MemberProfileVerifiedEventHandler
     : INotificationHandler<DomainEventNotification<MemberProfileVerified>>
 {
     private readonly INotificationService _notifications;
 
-    public MemberProfileVerifiedNotificationHandler(INotificationService notifications)
+    public MemberProfileVerifiedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -74,13 +74,13 @@ public sealed class MemberProfileVerifiedNotificationHandler
     }
 }
 
-public sealed class MemberAwardSubmittedNotificationHandler
+public sealed class MemberAwardSubmittedEventHandler
     : INotificationHandler<DomainEventNotification<MemberAwardSubmitted>>
 {
     private readonly INotificationService _notifications;
     private readonly IReviewNotificationRecipientResolver _recipients;
 
-    public MemberAwardSubmittedNotificationHandler(
+    public MemberAwardSubmittedEventHandler(
         INotificationService notifications,
         IReviewNotificationRecipientResolver recipients)
     {
@@ -122,12 +122,12 @@ public sealed class MemberAwardSubmittedNotificationHandler
     }
 }
 
-public sealed class MemberAwardReviewedNotificationHandler
+public sealed class MemberAwardReviewedEventHandler
     : INotificationHandler<DomainEventNotification<MemberAwardReviewed>>
 {
     private readonly INotificationService _notifications;
 
-    public MemberAwardReviewedNotificationHandler(INotificationService notifications)
+    public MemberAwardReviewedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -155,12 +155,12 @@ public sealed class MemberAwardReviewedNotificationHandler
     }
 }
 
-public sealed class MemberWarningAssignedNotificationHandler
+public sealed class MemberWarningAssignedEventHandler
     : INotificationHandler<DomainEventNotification<MemberWarningAssigned>>
 {
     private readonly INotificationService _notifications;
 
-    public MemberWarningAssignedNotificationHandler(INotificationService notifications)
+    public MemberWarningAssignedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }
@@ -195,13 +195,13 @@ public sealed class MemberWarningAssignedNotificationHandler
         };
 }
 
-public sealed class BadgeProgressSubmittedNotificationHandler
+public sealed class BadgeProgressSubmittedEventHandler
     : INotificationHandler<DomainEventNotification<BadgeProgressSubmitted>>
 {
     private readonly INotificationService _notifications;
     private readonly IReviewNotificationRecipientResolver _recipients;
 
-    public BadgeProgressSubmittedNotificationHandler(
+    public BadgeProgressSubmittedEventHandler(
         INotificationService notifications,
         IReviewNotificationRecipientResolver recipients)
     {
@@ -243,12 +243,12 @@ public sealed class BadgeProgressSubmittedNotificationHandler
     }
 }
 
-public sealed class BadgeProgressReviewedNotificationHandler
+public sealed class BadgeProgressReviewedEventHandler
     : INotificationHandler<DomainEventNotification<BadgeProgressReviewed>>
 {
     private readonly INotificationService _notifications;
 
-    public BadgeProgressReviewedNotificationHandler(INotificationService notifications)
+    public BadgeProgressReviewedEventHandler(INotificationService notifications)
     {
         _notifications = notifications;
     }

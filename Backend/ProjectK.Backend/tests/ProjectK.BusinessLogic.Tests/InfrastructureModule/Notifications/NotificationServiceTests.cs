@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
@@ -6,8 +6,8 @@ using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
 

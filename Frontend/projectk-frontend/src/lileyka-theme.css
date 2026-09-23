@@ -79,11 +79,65 @@
   /* Світла підкладка під захищену чорну графіку — не темніє в темній темі, §7. */
   --lil-plate:    #F7F9F8;
 
+  /* Календар і задачі (BRANDBOOK §2, винятки «дошка задач» і «синій у календарі»): підкладка,
+     рамка для трьох станів задачі та для події; текст — чорнило, як числа днів. Ті самі три пари, що й у тегах
+     статусів на дошці, лише як плашки, щоб задача читалась на сітці місяця в обох темах. */
+  --lil-agenda-todo-bg:       #EEF1F0;
+  --lil-agenda-todo-line:     #C9D0CD;
+  --lil-agenda-todo-fg:       var(--lil-ink);
+  --lil-agenda-progress-bg:   var(--lil-clay-50);
+  --lil-agenda-progress-line: #E8B98F;
+  --lil-agenda-progress-fg:   var(--lil-ink);
+  --lil-agenda-done-bg:       var(--lil-green-50);
+  --lil-agenda-done-line:     var(--lil-green-200);
+  --lil-agenda-done-fg:       var(--lil-ink);
+  --lil-agenda-event-bg:      var(--lil-blue-50);
+  --lil-agenda-event-line:    #B5C8DD;
+  --lil-agenda-event-fg:      var(--lil-ink);
+  /* Крапка-індикатор на початку плашки й напівпрозорий гліф у її кінці. */
+  --lil-agenda-todo-dot:      var(--lil-muted);
+  --lil-agenda-progress-dot:  var(--lil-clay-500);
+  --lil-agenda-done-dot:      var(--p-primary-color);
+  --lil-agenda-event-dot:     var(--lil-blue-700);
+  --lil-agenda-glyph:         rgba(16, 20, 19, 0.22);
+
+  /* A category's own colour never fills a calendar plate as it is: the plate mixes it into the
+     paper by these amounts, so the same seven colours read as tints here and as solid bars in
+     the dark theme. The dot keeps the pure colour, which is where the category is recognised. */
+  --lil-agenda-cat-bg-mix:    14%;
+  --lil-agenda-cat-line-mix:  42%;
+  --lil-agenda-cat-dot-mix:   100%;
+
   --lil-radius:    8px;
   --lil-radius-lg: 12px;
 
   --lil-font-ui:   Manrope, system-ui, -apple-system, sans-serif;
   --lil-font-hand: Neucha, cursive;
+
+  /* Типографічна шкала (BRANDBOOK §3). Голі h1/h2/h3 нижче набрані нею, тож сторінки не
+     повторюють ці числа — вони обирають роль (.lil-page-head, .lil-tile-head). */
+  --lil-text-h1:      1.75rem;    /* 28 */
+  --lil-text-h2:      1.5rem;     /* 24 */
+  --lil-text-h3:      1.0625rem;  /* 17 — заголовок картки */
+  --lil-text-body:    0.9375rem;  /* 15 */
+  --lil-text-caption: 0.8125rem;  /* 13 — підпис, мета */
+  --lil-text-micro:   0.6875rem;  /* 11 — uppercase */
+  --lil-weight-heading: 800;
+  --lil-weight-ui:      600;
+  --lil-tracking-h1:    -0.025em;
+  --lil-tracking-h2:    -0.02em;
+  --lil-tracking-h3:    -0.01em;
+  --lil-tracking-micro: 0.18em;
+  --lil-leading-heading: 1.15;
+  --lil-leading-body:    1.5;
+
+  /* Геометрія сторінки (BRANDBOOK §4): одна колонка на всі екрани, ширші — лише .lil-page--wide. */
+  --lil-page-width:      72rem;
+  --lil-page-width-wide: 84rem;
+  --lil-page-gutter:     1rem;
+  --lil-page-block:      2rem;
+  --lil-page-gap:        1.25rem;
+  --lil-tile-pad:        1.25rem;
 
   --p-primary-color: var(--lil-green-600);
   --p-primary-contrast-color: #FFFFFF;
@@ -127,6 +181,27 @@
   --lil-blue-50:  #17222E;
   --lil-blue-700: #A0C3E6;
 
+  /* Календар і задачі — темна тема (див. світлий :root). */
+  --lil-agenda-todo-bg:       #1D2320;
+  --lil-agenda-todo-line:     #3A423E;
+  --lil-agenda-todo-fg:       var(--lil-ink);
+  --lil-agenda-progress-bg:   var(--lil-clay-50);
+  --lil-agenda-progress-line: #5C4230;
+  --lil-agenda-progress-fg:   var(--lil-ink);
+  --lil-agenda-done-bg:       #1D2E27;
+  --lil-agenda-done-line:     #2F5A46;
+  --lil-agenda-done-fg:       var(--lil-ink);
+  --lil-agenda-event-bg:      var(--lil-blue-50);
+  --lil-agenda-event-line:    #2E4560;
+  --lil-agenda-event-fg:      var(--lil-ink);
+  --lil-agenda-glyph:         rgba(233, 237, 234, 0.26);
+
+  /* Dark surfaces take the category colour almost whole; 70% is where the gold of «Табори»
+     still clears 4.5:1 under the light ink. The dot is lightened so it shows on its own bar. */
+  --lil-agenda-cat-bg-mix:    70%;
+  --lil-agenda-cat-line-mix:  84%;
+  --lil-agenda-cat-dot-mix:   45%;
+
   --p-primary-color: #34C48D;
   --p-primary-contrast-color: #052018;
   --p-primary-hover-color: #4FD49E;
@@ -156,15 +231,36 @@ a:hover {
   color: var(--p-primary-hover-color);
 }
 
+/* Заголовки правильні без класів: Tailwind-preflight скидає їх до розміру тексту, і без цього
+   правила кожна сторінка виставляла б числа сама. Колір не задається навмисно — заголовок
+   успадковує його від контейнера, інакше вордмарк на зеленому банері став би чорнильним. */
 h1, h2, h3 {
-  letter-spacing: -0.02em;
+  margin: 0;
+  font-weight: var(--lil-weight-heading);
+  line-height: var(--lil-leading-heading);
   text-wrap: pretty;
+}
+
+h1 {
+  font-size: var(--lil-text-h1);
+  letter-spacing: var(--lil-tracking-h1);
+}
+
+h2 {
+  font-size: var(--lil-text-h2);
+  letter-spacing: var(--lil-tracking-h2);
+}
+
+h3 {
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
 }
 
 .lil-wordmark,
 .lil-empty__title {
   font-family: var(--lil-font-hand);
   font-weight: 400;
+  letter-spacing: 0;
 }
 
 .lil-wordmark {
@@ -244,6 +340,32 @@ h1, h2, h3 {
   color: var(--p-navigation-item-icon-active-color);
 }
 
+/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. */
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content::after {
+  background: var(--lil-clay-500);
+  border-radius: 50%;
+  content: '';
+  height: 7px;
+  margin-inline-start: auto;
+  margin-inline-end: 0.8125rem;
+  width: 7px;
+}
+
+.lil-attention-anchor {
+  display: inline-flex;
+  position: relative;
+}
+
+.lil-attention-dot {
+  background: var(--lil-clay-500);
+  border-radius: 50%;
+  height: 7px;
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 7px;
+}
+
 .sidebar-version {
   color: var(--lil-faint);
   font-family: ui-monospace, monospace;
@@ -277,7 +399,129 @@ h1, h2, h3 {
   border: 1px solid var(--p-content-border-color);
   border-radius: var(--lil-radius-lg) !important;
   box-shadow: none !important;
-  padding: 1.25rem;
+  padding: var(--lil-tile-pad);
+}
+
+/* ── Сторінка (BRANDBOOK §5 «Сторінка») ───────────────────────────────────────
+   Одна колонка, шапка над плитками, плитки з однаковим відступом між собою.
+   Сторінка не пише власної ширини й не повторює розмірів заголовків. */
+.lil-page {
+  width: min(100% - 2 * var(--lil-page-gutter), var(--lil-page-width));
+  margin-inline: auto;
+  padding-block: var(--lil-page-block);
+  display: grid;
+  gap: var(--lil-page-gap);
+}
+
+.lil-page--wide {
+  --lil-page-width: var(--lil-page-width-wide);
+}
+
+.lil-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lil-page-head > div:first-child {
+  min-width: 0;
+}
+
+.lil-page-head p {
+  margin: 0.25rem 0 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+/* Специфічність (0,2,0) навмисно: інакше `.lil-page-head p` і `p`-правила профільних шапок
+   (гурток) перебивали б розмір і відступ надпису. */
+.lil-page .lil-page-head__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--lil-faint);
+  font-size: var(--lil-text-micro);
+  font-weight: 700;
+  letter-spacing: var(--lil-tracking-micro);
+  text-transform: uppercase;
+}
+
+.lil-page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Шапка картки (BRANDBOOK §5 «Картка») ─────────────────────────────────────
+   Один клас на всі плитки й на caption кожної p-table. Заголовок — 17px/800 незалежно від
+   того, h2 це чи h3: рівень семантичний, розмір дає роль. */
+.lil-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lil-tile-head > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.lil-tile-head h2,
+.lil-tile-head h3 {
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
+}
+
+.lil-tile-head p {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.lil-tile-head__actions,
+.lil-tile-head > p-button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Лічильник поруч із заголовком — плашка, а не частина тексту. */
+.lil-count {
+  padding: 0.05rem 0.5rem;
+  border-radius: 6px;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .lil-page-head,
+  .lil-tile-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lil-page-head__actions,
+  .lil-tile-head__actions,
+  .lil-tile-head > p-button {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --lil-page-block: 1rem;
+    --lil-tile-pad: 1rem;
+  }
 }
 
 :root .p-toolbar {

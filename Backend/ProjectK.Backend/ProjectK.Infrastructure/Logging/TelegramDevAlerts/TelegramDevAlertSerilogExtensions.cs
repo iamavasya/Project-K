@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Settings;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Events;
@@ -12,7 +12,7 @@ public static class TelegramDevAlertSerilogExtensions
         TelegramDevAlertOptions options,
         string environmentName,
         string version,
-        string codename)
+        string? codename)
     {
         return sinkConfiguration.Sink(
             new TelegramDevAlertSink(options, environmentName, version, codename),

@@ -1,4 +1,4 @@
-import { isUsableKey } from '../../../shared/functions/isUsableKey.function';
+import { isUsableKey } from '../../../shared/functions/is-usable-key.function';
 import { AuthState } from '../models/auth-state.model';
 
 export function authenticatedHomeRoute(state: AuthState | null | undefined): unknown[] {

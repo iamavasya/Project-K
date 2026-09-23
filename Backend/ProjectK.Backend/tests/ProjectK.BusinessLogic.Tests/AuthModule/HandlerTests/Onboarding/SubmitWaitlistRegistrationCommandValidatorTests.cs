@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using FluentValidation.TestHelper;
-using Xunit;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 

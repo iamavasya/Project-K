@@ -1,10 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ProjectK.Common.Interfaces
+namespace ProjectK.Common.Interfaces;
+
+public interface IDemoDataSeeder
 {
-    public interface IDemoDataSeeder
-    {
-        Task SeedAsync(CancellationToken cancellationToken = default);
-    }
+    Task SeedAsync(CancellationToken cancellationToken = default);
 }

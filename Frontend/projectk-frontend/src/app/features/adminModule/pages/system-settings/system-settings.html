@@ -1,0 +1,39 @@
+<section class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Глобальні налаштування</p>
+      <h1>Система</h1>
+    </div>
+    <div class="lil-page-head__actions">
+      <p-button
+        label="Назад"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        variant="text"
+        (onClick)="back()" />
+    </div>
+  </header>
+
+  <section class="kurin-tile" aria-labelledby="security-title">
+    <div class="lil-tile-head settings-section-title">
+      <div>
+        <h2 id="security-title">Безпека</h2>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-copy">
+        <h3>Обов'язкова MFA для привілейованих ролей</h3>
+        <p>
+          Вимагати двофакторну автентифікацію для адміністраторів і менеджерів.
+          Якщо вимкнено — MFA необов'язкова.
+        </p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="enforcePrivilegedMfa"
+        (onChange)="onMfaToggle($event)"
+        [disabled]="loading"
+        inputId="enforcePrivilegedMfa" />
+    </div>
+  </section>
+</section>

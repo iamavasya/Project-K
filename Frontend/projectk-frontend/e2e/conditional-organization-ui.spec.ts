@@ -9,13 +9,13 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
     await page.goto('/kurin');
 
     await expect(page.locator('.edit-profile-button')).toBeVisible();
-    await expect(page.locator('.group-panel .table-caption').getByRole('button')).toBeVisible();
+    await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeVisible();
     // Named, not just "the button under the list": taking someone in by code sits beside adding
     // a new person, and a positional selector would match both.
     await expect(page.locator('app-member-list + div')
       .getByRole('button', { name: /Додати учасника/ })).toBeVisible();
-    await expect(page.locator('app-kv-panel .kv-caption__actions button:has(.pi-plus)')).toBeVisible();
-    await expect(page.locator('app-leadership-panel .leadership-caption__actions button:has(.pi-cog)').first()).toBeVisible();
+    await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeVisible();
+    await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeVisible();
   });
 
   test('manager group action menu exposes profile members mentors and silhouette actions', async ({ page, request }) => {
@@ -50,10 +50,10 @@ describeRole('mentor', 'Mentor conditional organization UI', ({ user }) => {
     await page.goto('/kurin');
 
     await expect(page.locator('.edit-profile-button')).toBeHidden();
-    await expect(page.locator('.group-panel .table-caption').getByRole('button')).toBeHidden();
+    await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeHidden();
     await expect(page.locator('app-member-list + div').getByRole('button')).toBeHidden();
-    await expect(page.locator('app-kv-panel .kv-caption__actions button:has(.pi-plus)')).toBeHidden();
-    await expect(page.locator('app-leadership-panel .leadership-caption__actions button:has(.pi-cog)').first()).toBeHidden();
+    await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeHidden();
+    await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeHidden();
   });
 
   // Виховник керує всім своїм гуртком, тож у призначеному гуртку меню дає повний набір дій.
@@ -86,10 +86,10 @@ describeRole('member', 'Member conditional organization UI', ({ user }) => {
 
     await page.goto('/kurin');
     await expect(page.locator('.edit-profile-button')).toBeHidden();
-    await expect(page.locator('.group-panel .table-caption').getByRole('button')).toBeHidden();
+    await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeHidden();
     await expect(page.locator('app-member-list + div').getByRole('button')).toBeHidden();
-    await expect(page.locator('app-kv-panel .kv-caption__actions button:has(.pi-plus)')).toBeHidden();
-    await expect(page.locator('app-leadership-panel .leadership-caption__actions button:has(.pi-cog)').first()).toBeHidden();
+    await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeHidden();
+    await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeHidden();
 
     await page.goto(`/group/${groupKey}`);
     await expect(page.locator('body')).toContainText('Gurtok 1');

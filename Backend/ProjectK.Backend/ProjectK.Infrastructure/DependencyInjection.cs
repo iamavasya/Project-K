@@ -1,25 +1,27 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Logging;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Infrastructure.Repositories;
-using ProjectK.Infrastructure.Repositories.InfrastructureModule;
-using ProjectK.Infrastructure.Services;
-using ProjectK.Infrastructure.Seeding;
-using ProjectK.Infrastructure.Services.EmailService;
-using ProjectK.Infrastructure.Services.GeoIP;
-using ProjectK.Infrastructure.Services.JwtService;
-using ProjectK.Infrastructure.UnitOfWork;
-using Resend;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Seeding;
+using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Services.EmailService;
+using ProjectK.Infrastructure.Services.Feedback;
+using ProjectK.Infrastructure.Services.GeoIP;
+using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.Spreadsheets;
+using ProjectK.Infrastructure.UnitOfWork;
+using Resend;
 
 namespace ProjectK.Infrastructure;
 
@@ -47,6 +49,7 @@ public static class DependencyInjection
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();
+        services.AddHostedService<DemoResetBackgroundService>();
 
         services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
@@ -59,8 +62,26 @@ public static class DependencyInjection
         services.AddSingleton<IActivityLogger, ActivityLogger>();
 
         AddEmail(services, configuration);
+        AddFeedback(services, configuration);
 
         return services;
+    }
+
+    /// <summary>
+    /// Problem reports go to GitHub Issues when a token is configured, to the log otherwise. The
+    /// choice is made once at startup: a self-host without a token must not fail at report time.
+    /// </summary>
+    private static void AddFeedback(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<FeedbackOptions>(configuration.GetSection("Feedback"));
+
+        if (string.IsNullOrWhiteSpace(configuration["Feedback:GitHub:Token"]))
+        {
+            services.AddScoped<IProblemReporter, LogProblemReporter>();
+            return;
+        }
+
+        services.AddHttpClient<IProblemReporter, GitHubProblemReporter>();
     }
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)

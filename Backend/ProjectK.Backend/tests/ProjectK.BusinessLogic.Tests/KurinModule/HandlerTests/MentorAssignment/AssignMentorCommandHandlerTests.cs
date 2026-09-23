@@ -2,24 +2,24 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Models.Records;
 using Xunit;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
 
 public class AssignMentorCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock = new();
-        private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IGroupRepository> _groupRepoMock = new();
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
@@ -48,7 +48,7 @@ public class AssignMentorCommandHandlerTests
         var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
 
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        
+
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -71,7 +71,7 @@ public class AssignMentorCommandHandlerTests
         var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
 
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
-        
+
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MentorAssignmentEntity { MentorAssignmentKey = Guid.NewGuid(), MentorUserKey = mentorUserKey, GroupKey = groupKey, AssignedAtUtc = DateTime.UtcNow });
         _memberDirectory

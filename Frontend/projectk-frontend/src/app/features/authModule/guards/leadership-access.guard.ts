@@ -1,12 +1,16 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { PermissionService } from '../services/permission.service';
+import { LeadershipScope, PermissionService } from '../services/permission-service/permission.service';
 
-export const leadershipAccessGuard: CanActivateFn = () => {
+const scopes: readonly LeadershipScope[] = ['kv', 'kurin', 'group'];
+
+/** The провід form: the `:type` in the address decides whose body it is, and the gate follows it. */
+export const leadershipAccessGuard: CanActivateFn = (route) => {
   const permissionService = inject(PermissionService);
   const router = inject(Router);
 
-  if (permissionService.canSetupLeadership()) {
+  const type = route.paramMap.get('type') as LeadershipScope | null;
+  if (type && scopes.includes(type) && permissionService.canSetupLeadership(type)) {
     return true;
   }
 

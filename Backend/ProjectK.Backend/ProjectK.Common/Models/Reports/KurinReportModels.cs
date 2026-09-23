@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Reports;
 
@@ -28,7 +28,8 @@ public sealed record KurinReportHeader(
     string GeneratedByName,
     string? GeneratedByEmail,
     string BackendVersion,
-    string BackendCodename);
+    // Null for a release published without a code name; the footer then prints the version alone.
+    string? BackendCodename);
 
 public sealed record KurinReportKurin(
     Guid KurinKey,

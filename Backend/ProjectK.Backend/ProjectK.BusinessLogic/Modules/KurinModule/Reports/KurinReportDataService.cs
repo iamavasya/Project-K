@@ -1,16 +1,17 @@
-﻿using ProjectK.Common.Models.Records;
+using Microsoft.Extensions.Configuration;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
-using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Roster;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Reports;
 
@@ -133,7 +134,8 @@ public sealed class KurinReportDataService
                 ResolveCurrentUserName(usersByKey),
                 ResolveCurrentUserEmail(usersByKey),
                 ResolveReleaseInfo("Version"),
-                ResolveReleaseInfo("Codename", "CodeName")),
+                // Not through ResolveReleaseInfo: its "unknown" fallback would print as a code name.
+                ReleaseDisplay.CodeName(_configuration["ReleaseInfo:Codename"] ?? _configuration["ReleaseInfo:CodeName"])),
             new KurinReportKurin(
                 kurin.KurinKey,
                 kurin.Number,

@@ -1,0 +1,38 @@
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+/* Заголовок блоку всередині плитки — розмір заголовка картки (§3), рівень h2 лишається семантичним. */
+.setting-copy h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
+}
+
+.setting-copy p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .setting-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-actions {
+    justify-content: stretch;
+  }
+}

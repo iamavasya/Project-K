@@ -2,8 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ClientCacheService } from '../../features/kurinModule/common/services/client-cache/client-cache.service';
-import { ENTITY_CACHE_TTL_MS, LAYOUT_CACHE_PREFIX } from '../../features/kurinModule/common/services/client-cache/cache-policy';
+import { ClientCacheService } from '../../features/kurinModule/services/client-cache/client-cache.service';
+import { ENTITY_CACHE_TTL_MS, LAYOUT_CACHE_PREFIX } from '../../features/kurinModule/services/client-cache/cache-policy';
 import { TILE_LAYOUT_SCHEMA_VERSION } from './tile-board.models';
 import { readStoredOrder, removeStoredOrder, writeStoredOrder } from './tile-layout-storage';
 

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AuthInterceptor } from './auth.interceptor';
-import { AuthService } from './authService/auth.service';
+import { AuthService } from './auth-service/auth.service';
 import { Router } from '@angular/router';
 import { throwError } from 'rxjs';
 

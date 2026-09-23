@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -23,7 +23,7 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
     private readonly TelegramDevAlertOptions _options;
     private readonly string _environmentName;
     private readonly string _version;
-    private readonly string _codename;
+    private readonly string? _codename;
     private readonly SemaphoreSlim _sendLock = new(1, 1);
 
     private DateTimeOffset _lastSentAt = DateTimeOffset.MinValue;
@@ -32,7 +32,7 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
         TelegramDevAlertOptions options,
         string environmentName,
         string version,
-        string codename)
+        string? codename)
     {
         _options = options;
         _environmentName = environmentName;
@@ -117,8 +117,13 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
         var builder = new StringBuilder()
             .AppendLine($"[ProjectK] {_environmentName.ToUpperInvariant()} {logEvent.Level}")
             .AppendLine($"Event: {eventType}")
-            .AppendLine($"Version: {_version}")
-            .AppendLine($"Codename: {_codename}");
+            .AppendLine($"Version: {_version}");
+
+        // Releases may carry no code name; then the line is left out rather than sent empty.
+        if (!string.IsNullOrWhiteSpace(_codename))
+        {
+            builder.AppendLine($"Codename: {_codename}");
+        }
 
         if (!string.IsNullOrWhiteSpace(action))
         {

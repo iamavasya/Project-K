@@ -1,17 +1,16 @@
-﻿using ProjectK.Common.Models.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.Common.Models.Dtos.KurinModule.Requests
+namespace ProjectK.Common.Models.Dtos.KurinModule.Requests;
+
+public class ParticipantInputDto
 {
-    public class ParticipantInputDto
-    {
-        public Guid MemberKey { get; set; }
-        public string FullName { get; set; }
-        public double RoleWeight { get; set; }
-        public List<DateRangeDto> BusyRanges { get; set; } = [];
-    }
+    public Guid MemberKey { get; set; }
+    public string FullName { get; set; }
+    public double RoleWeight { get; set; }
+    public List<DateRangeDto> BusyRanges { get; set; } = [];
 }

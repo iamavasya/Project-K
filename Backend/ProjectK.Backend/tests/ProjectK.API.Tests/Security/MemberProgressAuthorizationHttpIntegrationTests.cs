@@ -1,5 +1,3 @@
-﻿using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Models.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -15,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -24,14 +23,15 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -236,11 +236,11 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
             var mediator = new Mock<IMediator>();
             mediator
-                .Setup(x => x.Send(It.IsAny<GetBadgeProgresses>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetBadgeProgressesQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Success, []));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<SubmitBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -253,7 +253,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<ReviewBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
                     ResultType.Success,
                     new BadgeProgressResponse
@@ -266,13 +266,13 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     }));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<GetProbeProgress>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<GetProbeProgressQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     ProbeProgressResponse.CreateNotStarted(targetMemberKey, targetMemberKurinKey, "probe-1")));
 
             mediator
-                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatus>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatusCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
                     ResultType.Success,
                     new ProbeProgressResponse

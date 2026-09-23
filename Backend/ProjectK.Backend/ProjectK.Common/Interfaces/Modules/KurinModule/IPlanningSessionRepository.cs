@@ -1,15 +1,14 @@
-﻿using ProjectK.Common.Entities.KurinModule.Planning;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Entities.KurinModule.Planning;
 
-namespace ProjectK.Common.Interfaces.Modules.KurinModule
+namespace ProjectK.Common.Interfaces.Modules.KurinModule;
+
+public interface IPlanningSessionRepository : IBaseEntityRepository<PlanningSession>
 {
-    public interface IPlanningSessionRepository : IBaseEntityRepository<PlanningSession>
-    {
-        Task<PlanningSession?> GetByKeyWithDetailsAsync(Guid entityKey, CancellationToken cancellationToken = default);
-        Task<IEnumerable<PlanningSession>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
-    }
+    Task<PlanningSession?> GetByKeyWithDetailsAsync(Guid entityKey, CancellationToken cancellationToken = default);
+    Task<IEnumerable<PlanningSession>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

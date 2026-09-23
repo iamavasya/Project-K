@@ -17,7 +17,7 @@ public sealed class ResendInvitationHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IAppUserRepository> _users = new();
     private readonly Mock<IEmailService> _emailService = new();
-    private readonly ResendInvitationHandler _handler;
+    private readonly ResendInvitationCommandHandler _handler;
 
     public ResendInvitationHandlerTests()
     {
@@ -25,7 +25,7 @@ public sealed class ResendInvitationHandlerTests
         _unitOfWork.SetupGet(unitOfWork => unitOfWork.WaitlistEntries).Returns(_waitlistEntries.Object);
         _unitOfWork.SetupGet(unitOfWork => unitOfWork.Users).Returns(_users.Object);
         _unitOfWork.Setup(unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _handler = new ResendInvitationHandler(_unitOfWork.Object, _emailService.Object, TimeProvider.System);
+        _handler = new ResendInvitationCommandHandler(_unitOfWork.Object, _emailService.Object, TimeProvider.System);
     }
 
     /// <summary>

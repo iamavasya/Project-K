@@ -4,7 +4,7 @@ import {
   clearStaleAppShellMarker,
   isStaleAppShellError,
   recoverFromStaleAppShell
-} from './stale-app-shell.function';
+} from '../functions/stale-app-shell.function';
 
 function navigationError(error: unknown, url = '/kurin/registry'): NavigationError {
   return { id: 1, url, error, type: 1 } as unknown as NavigationError;

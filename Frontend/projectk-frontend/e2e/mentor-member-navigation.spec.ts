@@ -13,10 +13,13 @@ test.describe('Mentor and Member navigation checks', () => {
       await expect(page).toHaveURL(new RegExp(`/group/${groupKey}`));
       await expect(page.getByRole('button', { name: /Редагувати/ })).toBeHidden();
 
+      // Planning is the one thing a Виховник may start here: RolePermissionMap gives every провід
+      // member PlanningSession:Create, scoped to their own гуртки. This used to assert the opposite
+      // — the pre-refactor world where UserRole.Mentor could only read — and passed only while the
+      // fixture was seated without its office.
       await page.goto(`/planning/${kurinKey}`);
       await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
-      await expect(page.getByRole('button', { name: /Створити/ })).toBeHidden();
-      await expect(page.getByRole('button', { name: /РќРѕРІРёР№/ })).toBeHidden();
+      await expect(page.getByRole('button', { name: /Створити/ }).first()).toBeVisible();
     });
   });
 

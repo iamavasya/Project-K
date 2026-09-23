@@ -1,4 +1,4 @@
-﻿namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 
 /// <summary>
 /// A review is a verdict, and the verdict has to be said. It used to be a plain <c>bool</c>: a body

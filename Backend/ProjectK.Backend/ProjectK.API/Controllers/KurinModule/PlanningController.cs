@@ -1,15 +1,15 @@
-﻿using MediatR;
-using ProjectK.API.Extensions;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectK.API.Authorization;
+using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
-using ProjectK.API.Authorization;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -33,7 +33,7 @@ public class PlanningController : ControllerBase
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSession request)
+    public async Task<IActionResult> CreatePlanningSession([FromBody] CreatePlanningSessionCommand request)
     {
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
@@ -53,7 +53,7 @@ public class PlanningController : ControllerBase
     [ProducesResponseType(typeof(PlanningSessionResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
     {
-        var request = new GetPlanningSessionByKey(planningSessionKey);
+        var request = new GetPlanningSessionByKeyQuery(planningSessionKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -68,7 +68,7 @@ public class PlanningController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<PlanningSessionResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)
     {
-        var request = new GetPlanningSessions(kurinKey);
+        var request = new GetPlanningSessionsQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
@@ -87,7 +87,7 @@ public class PlanningController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeletePlanningSession(Guid planningSessionKey)
     {
-        var request = new DeletePlanningSession(planningSessionKey);
+        var request = new DeletePlanningSessionCommand(planningSessionKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }

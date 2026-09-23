@@ -1,4 +1,4 @@
-﻿namespace ProjectK.BusinessLogic.Behaviors;
+namespace ProjectK.BusinessLogic.Behaviors;
 
 /// <summary>
 /// Opt-in marker. A request carrying it runs inside a single database transaction

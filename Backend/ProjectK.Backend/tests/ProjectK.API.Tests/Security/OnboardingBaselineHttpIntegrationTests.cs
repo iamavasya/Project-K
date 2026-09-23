@@ -1,39 +1,39 @@
-﻿using System.Net;
-using ProjectK.Common.Models.Authorization;
+using System.Net;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using System.Security.Claims;
-using FluentValidation;
-using ProjectK.BusinessLogic.Behaviors;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
-
 using Moq;
-using MediatR;
-using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.AuthModule;
+using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.API.Authorization;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -227,6 +227,15 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockMemberUnitOfWork.Object);
             builder.Services.AddSingleton(mockUnitOfWork.Object);
             builder.Services.AddSingleton(mockEmailService.Object);
+            // A new entry tells the administrators through the bell; the host has no notification store.
+            builder.Services.AddSingleton(new Mock<INotificationService>().Object);
+            mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>())).ReturnsAsync(new List<AppUser>());
+            // Activation answers with a session now; the factory is the part of sign-in the host does not build.
+            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            mockLoginResponses
+                .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email ?? string.Empty });
+            builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();

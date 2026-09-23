@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
@@ -15,7 +15,7 @@ public static class CurrentUserPermissionExtensions
     public static IReadOnlyCollection<Permission> Permissions(this ICurrentUserContext user) =>
         RolePermissionMap.Resolve(user.Roles ?? Array.Empty<string>());
 
-    /// <summary>True for the whole-kurin managers (Зв'язковий, Курінний, admin).</summary>
+    /// <summary>True for the whole-kurin managers (Зв'язковий and admin; a Курінний leads but does not manage).</summary>
     public static bool CanManageWholeKurin(this ICurrentUserContext user) =>
         RolePermissionMap.GrantsWholeKurinManagement(user.Roles ?? Array.Empty<string>());
 

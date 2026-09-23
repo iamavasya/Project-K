@@ -30,11 +30,14 @@ services:
       BlobStorage__ContainerName: ${PROJECTK_BLOB_CONTAINER:-photos}
       EnvCorsOrigin: ${PROJECTK_CORS_ORIGIN:-http://localhost:4200}
       Email__BaseUrl: ${PROJECTK_PUBLIC_URL:-http://localhost:4200}
+      Email__ReplyTo: ${PROJECTK_EMAIL_REPLY_TO:-}
       Jwt__Key: ${PROJECTK_JWT_KEY:-local-development-jwt-key-change-me-please-32+}
       Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}
       Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
       Telegram__DevAlerts__Enabled: "false"
       Telegram__PublicChannel__Enabled: "false"
+      Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
+      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
       # LAN/test convenience: skip privileged-MFA for Admin/Manager (mirrors appsettings.E2E.json).
       # Defaults off; opt in per env with PROJECTK_BYPASS_MFA=true. Never enable for staging/prod.
       E2E__BypassPrivilegedMfa: ${PROJECTK_BYPASS_MFA:-false}
@@ -59,6 +62,7 @@ services:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Development}
       PROJECTK_APP_NAME: ${PROJECTK_APP_NAME:-Лілейка}
+      PROJECTK_DOCS_URL: ${PROJECTK_DOCS_URL:-https://dev.projectk-docs-and-demo.pages.dev/}
     ports:
       - "${PROJECTK_WEB_PORT:-4200}:80"
     depends_on:
@@ -69,6 +73,24 @@ services:
     healthcheck:
       # 127.0.0.1, not localhost: nginx listens on IPv4 only, while localhost
       # resolves to ::1 first inside the container and the probe is refused.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # The docs site, next to the app on stands shown to people. Off by default: dev.sh turns the
+  # profile on when the env file sets PROJECTK_DOCS_PORT.
+  projectk-docs:
+    profiles: ["docs"]
+    image: ${PROJECTK_DOCS_IMAGE:-projectk-docs:${PROJECTK_ENV:-dev}-local}
+    build:
+      context: ..
+      dockerfile: site/Dockerfile
+    ports:
+      - "${PROJECTK_DOCS_PORT:-4321}:80"
+    networks:
+      - projectk-dev-net
+    healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 15s
       timeout: 5s

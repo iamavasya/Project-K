@@ -17,10 +17,10 @@ public sealed class SilentDefaultsAreRefusedTests
 {
     private static readonly DateTime Now = new(2026, 9, 10, 12, 0, 0, DateTimeKind.Utc);
 
-    private static UpsertMemberAwardValidator AwardValidator()
+    private static UpsertMemberAwardCommandValidator AwardValidator()
         => new(new FixedTimeProvider(Now));
 
-    private static UpsertMemberAward Award(DateTime? date = null, MemberAwardLevel? level = null) => new()
+    private static UpsertMemberAwardCommand Award(DateTime? date = null, MemberAwardLevel? level = null) => new()
     {
         MemberKey = Guid.NewGuid(),
         Level = level ?? MemberAwardLevel.First,
@@ -45,7 +45,7 @@ public sealed class SilentDefaultsAreRefusedTests
         var result = AwardValidator().Validate(Award(date: default(DateTime)));
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error => error.PropertyName == nameof(UpsertMemberAward.DateAcquired));
+        result.Errors.Should().Contain(error => error.PropertyName == nameof(UpsertMemberAwardCommand.DateAcquired));
     }
 
     [Fact]
@@ -82,9 +82,9 @@ public sealed class SilentDefaultsAreRefusedTests
     [Fact]
     public void BadgeReview_ShouldRefuseAnUnsaidVerdict()
     {
-        var validator = new ReviewBadgeProgressValidator();
+        var validator = new ReviewBadgeProgressCommandValidator();
 
-        validator.Validate(new ReviewBadgeProgress(Guid.NewGuid(), "badge-1", null, null))
+        validator.Validate(new ReviewBadgeProgressCommand(Guid.NewGuid(), "badge-1", null, null))
             .IsValid.Should().BeFalse();
     }
 
@@ -93,18 +93,18 @@ public sealed class SilentDefaultsAreRefusedTests
     [InlineData(false)]
     public void BadgeReview_ShouldAcceptEitherVerdict(bool approved)
     {
-        var validator = new ReviewBadgeProgressValidator();
+        var validator = new ReviewBadgeProgressCommandValidator();
 
-        validator.Validate(new ReviewBadgeProgress(Guid.NewGuid(), "badge-1", approved, null))
+        validator.Validate(new ReviewBadgeProgressCommand(Guid.NewGuid(), "badge-1", approved, null))
             .IsValid.Should().BeTrue();
     }
 
     [Fact]
     public void AwardReview_ShouldRefuseAnUnsaidVerdict()
     {
-        var validator = new ReviewMemberAwardValidator();
+        var validator = new ReviewMemberAwardCommandValidator();
 
-        validator.Validate(new ReviewMemberAward { MemberAwardKey = Guid.NewGuid(), IsApproved = null })
+        validator.Validate(new ReviewMemberAwardCommand { MemberAwardKey = Guid.NewGuid(), IsApproved = null })
             .IsValid.Should().BeFalse();
     }
 
@@ -113,9 +113,9 @@ public sealed class SilentDefaultsAreRefusedTests
     [InlineData(false)]
     public void AwardReview_ShouldAcceptEitherVerdict(bool approved)
     {
-        var validator = new ReviewMemberAwardValidator();
+        var validator = new ReviewMemberAwardCommandValidator();
 
-        validator.Validate(new ReviewMemberAward { MemberAwardKey = Guid.NewGuid(), IsApproved = approved })
+        validator.Validate(new ReviewMemberAwardCommand { MemberAwardKey = Guid.NewGuid(), IsApproved = approved })
             .IsValid.Should().BeTrue();
     }
 }

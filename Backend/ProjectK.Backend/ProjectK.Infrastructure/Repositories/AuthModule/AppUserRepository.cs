@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Enums;
@@ -36,24 +36,23 @@ public sealed class AppUserRepository : IAppUserRepository
             cancellationToken);
     }
 
-    public Task<int> CountActiveBetaAsync(
-        IReadOnlyCollection<Guid>? userKeys,
-        CancellationToken cancellationToken = default)
+    public async Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
-        var query = _context.Users.Where(
-            user => user.IsBetaParticipant && user.OnboardingStatus == OnboardingStatus.Active);
+        var scoped = await _context.Users
+            .Where(user => user.ActiveKurinKey == kurinKey || user.KurinKey == kurinKey)
+            .ToListAsync(cancellationToken);
 
-        if (userKeys is not null)
+        foreach (var user in scoped)
         {
-            if (userKeys.Count == 0)
+            if (user.ActiveKurinKey == kurinKey)
             {
-                return Task.FromResult(0);
+                user.ActiveKurinKey = null;
             }
 
-            var keys = userKeys.Distinct().ToList();
-            query = query.Where(user => keys.Contains(user.Id));
+            if (user.KurinKey == kurinKey)
+            {
+                user.KurinKey = null;
+            }
         }
-
-        return query.CountAsync(cancellationToken);
     }
 }

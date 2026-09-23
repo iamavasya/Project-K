@@ -19,7 +19,7 @@ public sealed class ResendInvitationByEmailHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IEmailService> _emailService = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
-    private readonly ResendInvitationByEmailHandler _handler;
+    private readonly ResendInvitationByEmailCommandHandler _handler;
 
     public ResendInvitationByEmailHandlerTests()
     {
@@ -31,12 +31,12 @@ public sealed class ResendInvitationByEmailHandlerTests
         _invitations
             .Setup(repository => repository.GetActiveForTargetUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Invitation>());
-        _handler = new ResendInvitationByEmailHandler(
+        _handler = new ResendInvitationByEmailCommandHandler(
             _userManager.Object,
             _unitOfWork.Object,
             _emailService.Object,
             TimeProvider.System,
-            NullLogger<ResendInvitationByEmailHandler>.Instance);
+            NullLogger<ResendInvitationByEmailCommandHandler>.Instance);
     }
 
     [Fact]

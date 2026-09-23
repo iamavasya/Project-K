@@ -4,8 +4,8 @@ version: 2
 # ProjectK.ProbeAndBadges.*) from a private NuGet feed via NUGET_AUTH_TOKEN.
 # Dependabot cannot resolve those without a matching `registries:` block; if the
 # nuget updater errors on them, add a private registry here or scope it with
-# `ignore`. Public transitive packages still update fine. See
-# docs/planning/github-security.md.
+# `ignore`. Public transitive packages still update fine. Reporting and scope
+# are described in SECURITY.md.
 updates:
   - package-ecosystem: nuget
     directory: /Backend/ProjectK.Backend

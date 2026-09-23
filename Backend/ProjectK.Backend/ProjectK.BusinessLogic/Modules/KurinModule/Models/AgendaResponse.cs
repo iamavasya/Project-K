@@ -22,6 +22,8 @@ public record AgendaItemResponse
     public string? CreatedByName { get; set; }
     public bool CanEdit { get; set; }
     public bool CanChangeStatus { get; set; }
+    /// <summary>False when the viewer sees the item only because they raised it: it is someone else's to do.</summary>
+    public bool AddressedToViewer { get; set; }
 
     /// <summary>Event group, resolved for display; null when the item is uncategorised.</summary>
     public Guid? CategoryKey { get; set; }

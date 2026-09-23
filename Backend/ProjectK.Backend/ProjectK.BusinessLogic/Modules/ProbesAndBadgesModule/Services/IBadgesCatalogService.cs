@@ -1,13 +1,12 @@
 using ProjectK.ProbeAndBadges.Abstractions;
 
-namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+
+public interface IBadgesCatalogService
 {
-    public interface IBadgesCatalogService
-    {
-        BadgesMetadata GetBadgesMetadata();
+    BadgesMetadata GetBadgesMetadata();
 
-        IReadOnlyList<Badge> GetBadges(int take);
+    IReadOnlyList<Badge> GetBadges(int take);
 
-        Badge? GetBadgeById(string id);
-    }
+    Badge? GetBadgeById(string id);
 }

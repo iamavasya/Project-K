@@ -95,7 +95,7 @@ public sealed class KurinReportDataServiceTests
             Type = type,
             KurinKey = type == LeadershipType.Group ? null : inKurinKey ?? _kurinKey,
             GroupKey = groupKey,
-            // Без власної назви — так їх і заводять UpsertLeadership і сідери. Назва, якщо є,
+            // Без власної назви — так їх і заводять UpsertLeadershipCommand і сідери. Назва, якщо є,
             // перебиває все інше, і фікстура з нею не перевіряла б нічого.
             Name = null,
             StartDate = new DateOnly(2024, 1, 1)

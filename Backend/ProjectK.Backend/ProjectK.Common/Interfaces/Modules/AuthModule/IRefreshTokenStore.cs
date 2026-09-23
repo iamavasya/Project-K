@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.AuthModule;
 
 namespace ProjectK.Common.Interfaces.Modules.AuthModule;
 

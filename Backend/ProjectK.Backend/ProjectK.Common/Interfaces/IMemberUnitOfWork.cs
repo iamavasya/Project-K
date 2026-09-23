@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 
 namespace ProjectK.Common.Interfaces;
 

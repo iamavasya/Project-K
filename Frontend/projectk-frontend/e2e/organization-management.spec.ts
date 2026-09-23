@@ -10,7 +10,7 @@ describeRole('manager', 'Organization management surfaces', ({ user }) => {
     const editedGroupName = `${groupName} Edited`;
 
     await page.goto('/kurin');
-    await page.locator('.group-panel .table-caption').getByRole('button').click();
+    await page.locator('.group-panel').getByRole('button', { name: 'Створити' }).click();
     await expect(dialog(page)).toBeVisible();
     await fillManagePanelFields(page, [groupName]);
     await submitManagePanel(page);
@@ -37,12 +37,12 @@ describeRole('manager', 'Organization management surfaces', ({ user }) => {
     const kvPanel = page.locator('app-kv-panel');
     await expect(kvPanel).toBeVisible();
 
-    await kvPanel.locator('.kv-caption__actions').getByRole('button').first().click();
+    await kvPanel.locator('.lil-tile-head__actions').getByRole('button').first().click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.kv-dialog-actions').getByRole('button').last()).toBeDisabled();
     await dialog(page).locator('.kv-dialog-actions').getByRole('button').first().click();
 
-    await kvPanel.locator('.kv-caption__actions').getByRole('button').nth(1).click();
+    await kvPanel.locator('.lil-tile-head__actions').getByRole('button').nth(1).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.kv-dialog-actions').getByRole('button').last()).toBeDisabled();
     await dialog(page).locator('.kv-dialog-actions').getByRole('button').first().click();

@@ -1,5 +1,5 @@
-﻿using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Entities;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Entities.ProbesAndBadgesModule;
 

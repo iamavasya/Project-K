@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -20,6 +21,7 @@ public class AccessContextResolverTests
     private readonly Mock<UserManager<AppUser>> _userManager;
     private readonly Mock<IOfficeDirectory> _offices = new();
     private readonly Mock<IMembershipDirectory> _memberships = new();
+    private readonly Mock<IKurinRepository> _kurins = new();
     private readonly AccessContextResolver _resolver;
 
     public AccessContextResolverTests()
@@ -29,7 +31,15 @@ public class AccessContextResolverTests
         _memberships
             .Setup(d => d.GetCurrentForAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _resolver = new AccessContextResolver(_userManager.Object, _offices.Object, _memberships.Object);
+
+        // Every kurin exists unless a test says otherwise.
+        _kurins
+            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
+
+        _resolver = new AccessContextResolver(_userManager.Object, _offices.Object, _memberships.Object, unitOfWork.Object);
     }
 
     private AppUser Account(Guid? kurinKey = null, Guid? activeKurinKey = null, bool isAdmin = false)
@@ -188,6 +198,42 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().Be(newer);
+    }
+
+    /// <summary>
+    /// STAB-05: the chosen kurin is a bare key and can outlive the kurin. A choice that points at
+    /// nothing is no choice — the person stands where their memberships say, or nowhere.
+    /// </summary>
+    [Fact]
+    public async Task HavingChosenAKurinThatNoLongerExists_ShouldStandWhereTheirMembershipsAre()
+    {
+        var gone = Guid.NewGuid();
+        var real = Guid.NewGuid();
+        var user = Account(activeKurinKey: gone);
+        _kurins.Setup(r => r.ExistsAsync(gone, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        BelongsTo(user, (real, DateTime.UtcNow.AddYears(-1)));
+        HoldsInKurin(user, real, new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
+
+        var access = await _resolver.ResolveAsync(user);
+
+        access.KurinKey.Should().Be(real);
+        access.Roles.Should().Contain(SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
+        _offices.Verify(
+            d => d.GetForAccountInKurinAsync(user.Id, gone, It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task HavingChosenAKurinThatNoLongerExists_AndBelongingNowhere_ShouldStandNowhere()
+    {
+        var gone = Guid.NewGuid();
+        var user = Account(kurinKey: gone, activeKurinKey: gone, isAdmin: true);
+        _kurins.Setup(r => r.ExistsAsync(gone, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var access = await _resolver.ResolveAsync(user);
+
+        access.KurinKey.Should().BeNull();
+        access.IsAdmin.Should().BeTrue();
     }
 
     /// <summary>Belonging nowhere is still an answer — an admin between kurins, or a fresh account.</summary>

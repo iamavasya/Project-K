@@ -17,7 +17,7 @@ namespace ProjectK.API.Tests.Security;
 /// account gets a 403 nothing else explains.
 /// <para>
 /// The rule pinned here is the one that broke: <b>reading a record must never require more than
-/// changing it.</b> <c>GetLeadershipByKey</c> demanded whole-kurin management while
+/// changing it.</b> <c>GetLeadershipByKeyQuery</c> demanded whole-kurin management while
 /// <c>UpdateLeadership</c> asked only for a signed-in user, so Курінний — who may seat the offices
 /// below him — could not open the record he was allowed to edit. The edit page died on its first
 /// request and every existing test stayed green.

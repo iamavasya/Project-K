@@ -1,0 +1,231 @@
+.about-page {
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 0 1rem 3.5rem;
+  width: min(100% - 2rem, 72rem);
+}
+
+.about-brand {
+  align-items: center;
+  border-bottom: 1px solid var(--p-surface-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 1.25rem 0;
+}
+
+.about-brand__lockup {
+  align-items: center;
+  color: var(--p-text-color);
+  display: inline-flex;
+  gap: 0.7rem;
+  text-decoration: none;
+}
+
+.about-brand__lockup svg {
+  color: var(--p-primary-color);
+  height: 1.9rem;
+  width: 1.9rem;
+}
+
+.about-brand__lockup .lil-wordmark {
+  font-size: 1.8125rem;
+  line-height: 1;
+}
+
+.kurin-tile {
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.about-hero {
+  align-items: center;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: auto 1fr;
+  padding: 1.75rem;
+}
+
+.about-hero__photo {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 50%;
+  height: 13.75rem;
+  object-fit: cover;
+  width: 13.75rem;
+}
+
+.about-kicker {
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.about-hero h1 {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin: 0 0 1rem;
+  text-wrap: pretty;
+}
+
+.about-lead {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  margin: 0 0 1.25rem;
+}
+
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.about-link {
+  align-items: center;
+  color: var(--p-primary-color);
+  display: inline-flex;
+  font-weight: 650;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
+.about-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.about-grid h2,
+.about-story h2 {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+}
+
+.about-grid p {
+  line-height: 1.55;
+  margin: 0 0 0.75rem;
+}
+
+.about-grid p:last-child {
+  margin-bottom: 0;
+}
+
+.about-story__lead {
+  color: var(--p-text-muted-color);
+  line-height: 1.55;
+  margin: 0 0 1.75rem;
+  max-width: 48rem;
+}
+
+.about-timeline__marker {
+  align-items: center;
+  background: var(--p-primary-color);
+  border-radius: 50%;
+  color: var(--p-primary-contrast-color);
+  display: inline-flex;
+  font-size: 0.8rem;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.about-timeline__when {
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+/* The date lives in the opposite column on wide screens and inside the card on narrow ones. */
+.about-timeline__when--inline {
+  display: none;
+  margin-bottom: 0.35rem;
+}
+
+.about-timeline__card {
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.about-timeline__card h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 0.35rem;
+}
+
+.about-timeline__card p {
+  line-height: 1.5;
+  margin: 0;
+}
+
+.about-timeline__releases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.about-version {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.about-version__line {
+  margin: 0;
+}
+
+.about-version__line--muted {
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.about-version__code {
+  color: var(--p-text-muted-color);
+}
+
+@media (max-width: 48rem) {
+  .about-page {
+    gap: 2.5rem;
+  }
+
+  .about-hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .about-links {
+    justify-content: center;
+  }
+
+  /* One column, marker on the left: alternating sides has no room on a phone. */
+  :host ::ng-deep .about-timeline .p-timeline-event-opposite {
+    display: none;
+  }
+
+  :host ::ng-deep .about-timeline .p-timeline-event:nth-child(even) {
+    flex-direction: row;
+  }
+
+  .about-timeline__when--inline {
+    display: block;
+  }
+}

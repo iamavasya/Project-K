@@ -1,5 +1,4 @@
-﻿using System.Net;
-using ProjectK.Common.Models.Authorization;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -11,12 +10,13 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Helpers;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.ProbeAndBadges.Abstractions;
-using ProjectK.API.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 

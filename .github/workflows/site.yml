@@ -1,0 +1,29 @@
+name: Site
+
+# Builds the public site (Astro + the static demo) the way Cloudflare Pages does, so a broken
+# docs page or demo build is caught on the pull request. Deployment itself is Cloudflare Pages'
+# Git integration on the production branch; this workflow only proves the build.
+on:
+  push:
+    branches: [ "main", "dev" ]
+    paths: [ "site/**", "docs/**", "Frontend/projectk-frontend/**", "scripts/build-site.sh", "*.md", ".github/workflows/site.yml" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths: [ "site/**", "docs/**", "Frontend/projectk-frontend/**", "scripts/build-site.sh", "*.md", ".github/workflows/site.yml" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Build site and demo
+        run: bash scripts/build-site.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/dist
+          retention-days: 7

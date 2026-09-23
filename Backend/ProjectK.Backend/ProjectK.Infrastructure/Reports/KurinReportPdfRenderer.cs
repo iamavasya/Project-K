@@ -1,8 +1,9 @@
-﻿using QuestPDF.Fluent;
+using System.Globalization;
+using ProjectK.Common.Models;
+using ProjectK.Common.Models.Reports;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Globalization;
-using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.Infrastructure.Reports;
 
@@ -159,7 +160,7 @@ public sealed class KurinReportPdfRenderer
                     column.Item().AlignRight().Text(report.Header.GeneratedByEmail).FontSize(8).FontColor(Colors.Grey.Darken1);
                 }
 
-                column.Item().AlignRight().Text($"{report.Header.BackendVersion} \"{report.Header.BackendCodename}\"")
+                column.Item().AlignRight().Text(ReleaseDisplay.Label(report.Header.BackendVersion, report.Header.BackendCodename))
                     .FontSize(8)
                     .FontColor(Colors.Grey.Darken1);
             });
@@ -181,7 +182,6 @@ public sealed class KurinReportPdfRenderer
                     ("Станиця", report.Kurin.Stanytsia ?? "-"),
                     ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
                     ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
-                    ("ЗБТ", report.Kurin.IsZbtKurin ? $"Так, ліміт {report.Kurin.ZbtUserCap}" : "Ні"),
                     ("Опис", report.Kurin.Description ?? "-")
                 }));
             });

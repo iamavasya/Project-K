@@ -1,4 +1,4 @@
-﻿using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.MemberModule;

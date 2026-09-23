@@ -1,0 +1,28 @@
+.settings-section-title {
+  margin: 0 0 1rem;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.setting-copy h3 {
+  margin: 0 0 0.5rem;
+}
+
+.setting-copy p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .setting-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

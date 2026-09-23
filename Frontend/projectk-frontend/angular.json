@@ -31,6 +31,7 @@
             ],
             "styles": [
               "node_modules/@openng/icons/openng-icons.css",
+              "node_modules/lucide-static/font/lucide.css",
               "src/styles.css"
             ]
           },
@@ -42,6 +43,28 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "15kB",
+                  "maximumError": "40kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "demo": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.demo.ts"
+                }
+              ],
+              "baseHref": "/demo/",
               "budgets": [
                 {
                   "type": "initial",
