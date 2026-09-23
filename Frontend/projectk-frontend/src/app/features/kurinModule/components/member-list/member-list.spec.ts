@@ -146,6 +146,22 @@ describe('MemberListComponent', () => {
       expect(manager!.roleSortWeight).toBeLessThan(kurinnuy!.roleSortWeight!);
     });
 
+    it('should sort a mentor without an office among the staff, not the youth', () => {
+      memberServiceSpy.getAll.and.returnValue(of([
+        { ...mockMembers[0], memberKey: 'mentor', userRole: null, leadershipHistories: [], mentoredGroupNames: ['Кельти'] },
+        { ...mockMembers[0], memberKey: 'youth', userRole: null, leadershipHistories: [], mentoredGroupNames: [] }
+      ]));
+      fixture.componentRef.setInput('type', 'kurin');
+      fixture.componentRef.setInput('typeKey', 'k1');
+
+      component.ngOnInit();
+
+      const mentor = component.membersLookup.find(member => member.memberKey === 'mentor');
+      const youth = component.membersLookup.find(member => member.memberKey === 'youth');
+      expect(mentor!.mentoredGroupNames).toEqual(['Кельти']);
+      expect(mentor!.roleSortWeight).toBeLessThan(youth!.roleSortWeight!);
+    });
+
     it('should load leadership for leadership type', () => {
       fixture.componentRef.setInput('type', 'leadership');
       fixture.componentRef.setInput('leadershipType', 'kurin');
@@ -293,6 +309,42 @@ describe('MemberListComponent', () => {
 
       expect(tags).toEqual([
         jasmine.objectContaining({ label: 'Впорядник' })
+      ]);
+    });
+
+    it('getMemberRoleTags should call a mentor without an office a Впорядник of their groups', () => {
+      const tags = component.getMemberRoleTags({
+        memberKey: 'm1',
+        firstName: 'John',
+        lastName: 'Doe',
+        leadershipHistories: [],
+        mentoredGroupNames: ['Кельти', 'Вовки']
+      } as MemberLookupDto);
+
+      expect(tags).toEqual([
+        jasmine.objectContaining({ label: 'Впорядник: Кельти, Вовки', severity: 'info' })
+      ]);
+    });
+
+    it('getMemberRoleTags should add the groups to a seated Впорядник instead of a second tag', () => {
+      const tags = component.getMemberRoleTags({
+        memberKey: 'm1',
+        firstName: 'John',
+        lastName: 'Doe',
+        leadershipHistories: [{
+          leadershipHistoryKey: 'lh-1',
+          leadershipKey: 'l1',
+          role: LeadershipRole.Vykhovnyk,
+          leadershipType: 'KV',
+          startDate: '2025-01-01',
+          endDate: null,
+          member: { memberKey: 'm1', firstName: 'John', lastName: 'Doe', middleName: null }
+        }],
+        mentoredGroupNames: ['Кельти']
+      } as MemberLookupDto);
+
+      expect(tags).toEqual([
+        jasmine.objectContaining({ label: 'Впорядник: Кельти' })
       ]);
     });
   });
