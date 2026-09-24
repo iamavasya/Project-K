@@ -20,6 +20,7 @@
                                 [severity]="profileVerificationActionSeverity"
                                 [loading]="profileVerificationSubmitting"
                                 [pTooltip]="profileVerificationActionTooltip"
+                                [ariaLabel]="profileVerificationActionTooltip"
                                 tooltipPosition="top"
                                 [showDelay]="2000"
                                 (onClick)="onProfileVerificationAction()"
@@ -33,7 +34,7 @@
                         </p>
                     }
                 }
-                <div class="flex flex-column md:flex-row gap-4 m-5">
+                <div class="flex flex-col md:flex-row gap-4 my-4 md:m-5">
                     <div class="flex flex-col gap-2">
                         <p-floatlabel variant="on">
                             <input 
@@ -122,7 +123,7 @@
                             chooseLabel="Завантажити фото"
                             (onSelect)="fileChangeEvent($event)"
                              />
-                        <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{width: '400px'}">
+                        <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{ width: 'min(92vw, 400px)' }">
                             <image-cropper [imageFile]="imageFile"
                                 [maintainAspectRatio]="true"
                                 [aspectRatio]="1 / 1"
@@ -242,7 +243,7 @@
     </p-accordion>
     <div>
         <div class="upsert-member-actions">
-            <p-button label="{{ isCreate ? 'Create' : 'Update' }} Member" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)" />
+            <p-button [label]="isCreate ? 'Додати учасника' : 'Зберегти'" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)" />
             @if (canDeleteMember()) {
                 <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Видалити профіль" icon="pi pi-trash" />
             }

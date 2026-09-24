@@ -49,7 +49,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
               </td>
               <td class="planning-actions-col" data-mobile-label="Дії">
                 <div class="planning-actions">
-                  <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік"/>
+                  <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік" ariaLabel="Переглянути графік"/>
                   @if (session.canDelete) {
                     <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
                   }
