@@ -11,8 +11,9 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { MessageService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { failureDetail } from '../../../../../shared/functions/failure-detail.function';
+import { PasswordRulesComponent } from '../../../../../shared/password-rules/password-rules';
+import { passwordRulesValidator } from '../../../../../shared/functions/password-rules.function';
 
 /**
  * Where the invitation letter lands. The password chosen here signs the person in on the spot:
@@ -21,11 +22,9 @@ import { failureDetail } from '../../../../../shared/functions/failure-detail.fu
  */
 @Component({
   selector: 'app-account-activation',
-  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, MessageModule, ToastModule],
-  providers: [MessageService],
+  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, CardModule, MessageModule, PasswordRulesComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast />
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card header="Активація акаунта" [style]="{ width: 'min(100%, 420px)' }">
         @if (loading && !validationData) {
@@ -56,11 +55,12 @@ import { failureDetail } from '../../../../../shared/functions/failure-detail.fu
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
                 <label for="password">Новий пароль</label>
-                <p-password id="password" formControlName="password" [feedback]="true" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
+                <p-password inputId="password" formControlName="password" [feedback]="false" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
+                <app-password-rules [password]="form.value.password" />
               </div>
               <div class="flex flex-col gap-2">
                 <label for="confirmPassword">Повторіть пароль</label>
-                <p-password id="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
+                <p-password inputId="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
                 @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
                   <p-message severity="error" text="Паролі не збігаються." />
                 }
@@ -95,7 +95,7 @@ export class AccountActivationComponent implements OnInit {
 
   constructor() {
     this.form = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, passwordRulesValidator]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });
   }
