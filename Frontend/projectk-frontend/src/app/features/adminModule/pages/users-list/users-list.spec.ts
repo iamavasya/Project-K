@@ -4,7 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { UserService } from '../../services/user-service/user.service';
 import { UserDto } from '../../models/user.dto';
 import { of, throwError } from 'rxjs';
-import { Confirmation, ConfirmationService } from '@openng/optimus-ui/api';
+import { Confirmation, ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 
 describe('UsersListComponent', () => {
   let component: UsersListComponent;
@@ -49,6 +49,8 @@ describe('UsersListComponent', () => {
       imports: [UsersListComponent],
       providers: [
         provideHttpClient(),
+        // Застосунок дає його на рівні app.config; сторінка лише споживає.
+        MessageService,
         { provide: UserService, useValue: mockUserService }
       ],
     })

@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 /** What the person wrote, already as Markdown, plus where they were. */
 export interface ProblemReportPayload {
@@ -32,7 +33,7 @@ export class FeedbackService {
   uploadScreenshot(file: File): Observable<{ url: string }> {
     const form = new FormData();
     form.append('file', file, file.name || 'screenshot.png');
-    return this.http.post<{ url: string }>(`${this.apiUrl}/screenshots`, form);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/screenshots`, form, { context: requestFeedback('errors') });
   }
 
   reportProblem(payload: ProblemReportPayload): Observable<ProblemReportReceipt> {

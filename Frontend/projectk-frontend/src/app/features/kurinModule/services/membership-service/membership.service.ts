@@ -5,6 +5,7 @@ import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { MEMBER_CACHE_PREFIX, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX } from '../client-cache/cache-policy';
 import { MembershipKind } from '../../models/enums/membership-kind.enum';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 /** Картка людини, яку провід бачить перед тим, як прийняти її за кодом. Куренів вона не називає. */
 export interface MemberCardDto {
@@ -50,7 +51,8 @@ export class MembershipService {
   findCandidate(kurinKey: string, publicId: string): Observable<MembershipCandidateDto> {
     return this.http.get<MembershipCandidateDto>(
       `${this.apiUrl}/${kurinKey}/memberships/candidate`,
-      { params: { publicId } }
+      // Неправильний і неіснуючий код діалог показує одним рядком під полем.
+      { params: { publicId }, context: requestFeedback('auto', [400, 404]) }
     );
   }
 

@@ -10,6 +10,8 @@ import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@a
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
 import { DemoApiInterceptor } from './features/systemModule/services/demo-api.interceptor';
+import { RequestFeedbackInterceptor } from './features/systemModule/services/request-feedback.interceptor';
+import { UserActionService } from './features/systemModule/services/user-action-service/user-action.service';
 import { environment } from '../environments/environment';
 import { HealthBannerService } from './features/systemModule/services/health-banner-service/health-banner.service';
 import { ThemeService } from './features/systemModule/services/theme-service/theme.service';
@@ -169,7 +171,11 @@ export const appConfig: ApplicationConfig = {
       });
     }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
-    // The static demo has no API: recorded fixtures answer before any other interceptor runs.
+    provideAppInitializer(() => inject(UserActionService).start()),
+    // Стоїть першим і бачить остаточну відповідь — після оновлення сесії й повтору, які роблять
+    // інтерцептори нижче. Спінер гасне й тост зʼявляється один раз, коли все справді скінчилось.
+    { provide: HTTP_INTERCEPTORS, useClass: RequestFeedbackInterceptor, multi: true },
+    // The static demo has no API: recorded fixtures answer before any interceptor that talks to it.
     ...(environment.isStaticDemo ? [{ provide: HTTP_INTERCEPTORS, useClass: DemoApiInterceptor, multi: true }] : []),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }

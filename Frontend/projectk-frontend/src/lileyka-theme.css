@@ -410,6 +410,10 @@ h3 {
   margin-inline: auto;
   padding-block: var(--lil-page-block);
   display: grid;
+  /* Без явної колонки трек росте до ширини найширшої дитини: таблиця реєстру робила сторінку
+     на телефоні втричі ширшою за екран. minmax(0, 1fr) тримає колонку в ширині сторінки, а
+     широкий вміст прокручується у своїй плитці. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lil-page-gap);
 }
 
@@ -531,6 +535,36 @@ h3 {
   border-radius: 0;
   box-shadow: none;
   min-height: 56px;
+}
+
+/* Кнопка, чий запит ще в дорозі (UserActionService): спінер на місці іконки, повторне натискання
+   гаситься в самому сервісі. Якщо компонент крутить власний [loading], видно лише його спінер. */
+.p-button.lil-busy {
+  cursor: progress;
+}
+
+.p-button.lil-busy > .p-button-icon,
+.p-button-loading > .lil-busy-icon {
+  display: none;
+}
+
+/* Підказки при наведенні на дотиковому екрані не мають наведення, лише шкодять: iOS вважає
+   першим дотиком «наведення», якщо на нього щось зʼявилось, і клік губиться, а підказка без
+   mouseleave лишається висіти над сусідньою кнопкою. Зміст підказки несе aria-label. */
+@media (hover: none) {
+  .p-tooltip {
+    display: none !important;
+  }
+}
+
+/* Тост завширшки 25rem ширший за телефон: на вузькому екрані він іде від краю до краю. */
+@media (max-width: 640px) {
+  .p-toast.p-toast-top-right {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    top: 0.75rem !important;
+    width: auto;
+  }
 }
 
 .project-table .p-datatable-thead > tr > th {

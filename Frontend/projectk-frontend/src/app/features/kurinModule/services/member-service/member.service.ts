@@ -10,6 +10,7 @@ import { mapMemberForView } from '../../functions/member-view-mapper.function';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { ENTITY_CACHE_TTL_MS, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 import { toDateOnlyString } from '../../functions/to-date-only-string.function';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 @Injectable({
   providedIn: 'root'
@@ -78,14 +79,17 @@ export class MemberService {
   }
 
   verifyProfile(memberKey: string, note?: string | null): Observable<MemberDto> {
-    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { note: note ?? null }).pipe(
+    return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { note: note ?? null }, {
+      // 400 — верифікацію вимкнено в куреня; форма пояснює це сама.
+      context: requestFeedback('auto', [400])
+    }).pipe(
       tap(() => this.invalidateMemberCache()),
       map(member => mapMemberForView(member))
     );
   }
 
   resetProfileVerification(memberKey: string): Observable<MemberDto> {
-    return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`).pipe(
+    return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { context: requestFeedback('auto', [400]) }).pipe(
       tap(() => this.invalidateMemberCache()),
       map(member => mapMemberForView(member))
     );

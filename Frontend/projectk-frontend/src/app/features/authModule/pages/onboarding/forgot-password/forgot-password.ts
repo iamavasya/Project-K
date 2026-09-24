@@ -5,7 +5,6 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { catchError, forkJoin, of } from 'rxjs';
 import { OnboardingService } from '../../../services/onboarding-service/onboarding.service';
 
@@ -17,11 +16,9 @@ import { OnboardingService } from '../../../services/onboarding-service/onboardi
  */
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, InputTextModule, ButtonModule, CardModule, ToastModule, RouterLink],
-  providers: [MessageService],
+  imports: [ReactiveFormsModule, InputTextModule, ButtonModule, CardModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast />
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card
         header="Відновлення пароля"
