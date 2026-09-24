@@ -36,7 +36,7 @@
               }
             @if (canSetupLeadership) {
               <p-button icon="pi pi-cog" [rounded]="true" [text]="true" 
-                      pTooltip="Налаштувати провід" tooltipPosition="left"
+                      pTooltip="Налаштувати провід" ariaLabel="Налаштувати провід" tooltipPosition="left"
                       (onClick)="onLeadershipSettingsSelect()" />
             }
             <p-toggleswitch pTooltip="Архівні записи" tooltipPosition="bottom" [(ngModel)]="showArchived" (onChange)="refreshList()" />
@@ -144,9 +144,7 @@
                [paginator]="true"
                [rows]="20"
                [rowsPerPageOptions]="[20, 50, 100]"
-               selectionMode="single"
-               [(selection)]="selectedMember" 
-               (onRowSelect)="onMemberSelect($any($event).data)">
+               [rowHover]="true">
         
         <ng-template #caption>
           <div class="lil-tile-head">
@@ -182,10 +180,10 @@
         </ng-template>
 
         <ng-template #body let-member>
-          <tr [pSelectableRow]="member" class="member-row">
+          <tr class="member-row cursor-pointer" (click)="onMemberRowClick($event, member)">
             <td data-mobile-label="Учасник">
               <span class="member-name-cell">
-                <span>{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</span>
+                <a class="member-name-link" [routerLink]="['/member', member.memberKey]">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</a>
                 <app-profile-verification-badge [status]="member.profileVerificationStatus" />
               </span>
             </td>

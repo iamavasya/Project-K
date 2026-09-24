@@ -89,9 +89,9 @@
     </ng-template>
 
     <ng-template #body let-member>
-      <tr>
+      <tr class="registry__row" (click)="openCard($event, member)">
         <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
-          {{ fullName(member) }}
+          <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
         </td>
         @for (column of visibleColumns(); track column.id) {
           <td [attr.data-mobile-label]="column.header">
@@ -101,6 +101,8 @@
               } @else {
                 <span class="registry__blank">—</span>
               }
+            } @else if (contactHref(member, column); as href) {
+              <a [href]="href">{{ cell(member, column) }}</a>
             } @else {
               @if (cell(member, column)) {
                 {{ cell(member, column) }}
@@ -163,9 +165,9 @@
     </ng-template>
 
     <ng-template #body let-member>
-      <tr>
+      <tr class="registry__row" (click)="openCard($event, member)">
         <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
-          {{ fullName(member) }}
+          <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
         </td>
         @for (column of staffColumns(); track column.id) {
           <td [attr.data-mobile-label]="column.header">
@@ -175,6 +177,8 @@
               } @else {
                 <span class="registry__blank">—</span>
               }
+            } @else if (contactHref(member, column); as href) {
+              <a [href]="href">{{ cell(member, column) }}</a>
             } @else {
               @if (cell(member, column)) {
                 {{ cell(member, column) }}

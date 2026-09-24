@@ -3,13 +3,20 @@
     max-width: 24rem;
     border: 1px solid var(--p-content-border-color);
     background: var(--p-content-background);
-    box-shadow: 0 8px 20px -16px color-mix(in srgb, var(--p-primary-color) 40%, transparent);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
 }
 
+/* BRANDBOOK §0.7: ховер — рамка, без зсуву. Зсув під пальцем на телефоні ще й збивав дотик. */
 .mini-member-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--p-primary-color) 52%, transparent);
+    border-color: var(--p-primary-color);
+}
+
+/* На дотиковому екрані наведення немає: кнопка «Перейти» видна одразу. */
+@media (hover: none) {
+    .mini-member-card__overlay {
+        opacity: 1;
+    }
 }
 
 .mini-member-card__photo-shell {

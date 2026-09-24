@@ -3,6 +3,7 @@ import { of, throwError } from 'rxjs';
 
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { Confirmation, ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { provideRouter } from '@angular/router';
 import { FormerMemberDto, MembershipService } from '../../services/membership-service/membership.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MemberService } from '../../services/member-service/member.service';
@@ -83,6 +84,7 @@ describe('RegistryComponent', () => {
       providers: [
         // Застосунок дає його на рівні app.config; компонент лише споживає.
         MessageService,
+        provideRouter([]),
         { provide: MembershipService, useValue: membership },
         { provide: MemberService, useValue: { getAll: () => of(people) } },
         {

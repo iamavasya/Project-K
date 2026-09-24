@@ -9,16 +9,11 @@
     border-radius: 1rem;
     border: 1px solid transparent;
     background: color-mix(in srgb, var(--p-content-background) 94%, var(--p-primary-100) 6%);
-    transition:
-        border-color 160ms ease,
-        box-shadow 160ms ease,
-        transform 160ms ease;
+    transition: border-color 160ms ease;
 }
 
 .award-preview-item:hover {
     border-color: color-mix(in srgb, var(--p-primary-color) 34%, transparent);
-    box-shadow: 0 10px 24px color-mix(in srgb, var(--p-primary-color) 12%, transparent);
-    transform: translateY(-1px);
 }
 
 .award-preview-item--pending {
