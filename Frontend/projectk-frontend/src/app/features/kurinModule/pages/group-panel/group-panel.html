@@ -96,6 +96,8 @@
                 [maintainAspectRatio]="true"
                 [aspectRatio]="1 / 1"
                 format="png"
+                [resizeToWidth]="1024"
+                [onlyScaleDown]="true"
                 (imageCropped)="onSilhouetteCropped($event)" />
         </div>
 

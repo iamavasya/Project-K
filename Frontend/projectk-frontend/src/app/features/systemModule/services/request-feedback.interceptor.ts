@@ -54,7 +54,7 @@ export class RequestFeedbackInterceptor implements HttpInterceptor {
           if (error instanceof HttpErrorResponse && handled.includes(error.status)) {
             return;
           }
-          const toast = errorToast(error, isMutation);
+          const toast = errorToast(error, isMutation, req.body instanceof FormData);
           if (toast) {
             this.showUnlessComponentDid(toast);
           }
@@ -83,7 +83,7 @@ export class RequestFeedbackInterceptor implements HttpInterceptor {
   }
 }
 
-function errorToast(error: unknown, isMutation: boolean): ToastMessageOptions | null {
+function errorToast(error: unknown, isMutation: boolean, carriesFile: boolean): ToastMessageOptions | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;
   }
@@ -92,8 +92,12 @@ function errorToast(error: unknown, isMutation: boolean): ToastMessageOptions | 
   switch (true) {
     case error.status === 401:
       return null;
-    case error.status === 0:
+    case error.status === 0 && !navigator.onLine:
       return { severity: 'error', summary: 'Звʼязку немає', detail: 'Перевір інтернет і спробуй ще раз.' };
+    case error.status === 0 && carriesFile:
+      return { severity: 'warn', summary: 'Файл не надіслано', detail: 'Сервер не прийняв файл — найімовірніше, він завеликий. Обери менший.' };
+    case error.status === 0:
+      return { severity: 'error', summary: 'Сервер не відповів', detail: 'Спробуй ще раз за хвилину.' };
     case error.status === 403:
       return { severity: 'error', summary: 'Немає доступу', detail: failureDetail(error) };
     case error.status === 404:

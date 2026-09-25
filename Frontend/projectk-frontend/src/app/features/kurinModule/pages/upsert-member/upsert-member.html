@@ -127,7 +127,10 @@
                             <image-cropper [imageFile]="imageFile"
                                 [maintainAspectRatio]="true"
                                 [aspectRatio]="1 / 1"
-                                format="png"
+                                format="jpeg"
+                                [imageQuality]="85"
+                                [resizeToWidth]="1024"
+                                [onlyScaleDown]="true"
                                 (imageCropped)="imageCropped($event)" />
             
                             <div class="flex justify-content-end gap-2 mt-3">

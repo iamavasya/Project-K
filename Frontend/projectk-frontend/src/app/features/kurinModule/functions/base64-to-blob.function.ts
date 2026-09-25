@@ -6,5 +6,6 @@ export function base64ToBlob(base64: string): Blob {
   for (let i = 0; i < byteString.length; i++) {
     int8Array[i] = byteString.codePointAt(i)!;
   }
-  return new Blob([int8Array], { type: 'image/png' });
+  const mimeType = /^data:([^;,]+)/.exec(base64)?.[1] ?? 'image/png';
+  return new Blob([int8Array], { type: mimeType });
 }
