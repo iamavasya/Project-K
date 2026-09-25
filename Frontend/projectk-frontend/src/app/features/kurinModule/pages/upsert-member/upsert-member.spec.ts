@@ -588,7 +588,7 @@ describe('UpsertMemberComponent', () => {
       component.imageCropped(cropEvent);
       
       expect(component.croppedFile).toBeTruthy();
-      expect(component.croppedFile!.name).toBe('orig.png');
+      expect(component.croppedFile!.name).toBe('orig.jpg');
       expect(component.croppedFile!.type).toBe('image/png');
     });
 
@@ -606,7 +606,7 @@ describe('UpsertMemberComponent', () => {
       
       component.imageCropped(cropEvent);
       
-      expect(component.croppedFile!.name).toBe('profile.png');
+      expect(component.croppedFile!.name).toBe('profile.jpg');
     });
 
     it('should use objectUrl from event if available', () => {

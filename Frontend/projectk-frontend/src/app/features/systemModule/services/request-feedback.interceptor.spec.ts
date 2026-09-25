@@ -112,6 +112,21 @@ describe('RequestFeedbackInterceptor', () => {
     expect(shown.map(message => message.severity)).toEqual(['error']);
   }));
 
+  it('tells a rejected upload from a lost connection', fakeAsync(() => {
+    const form = new FormData();
+    form.append('blob', new Blob(['x']));
+    click();
+    http.put('/api/member/1', form).subscribe({ error: () => undefined });
+    backend.expectOne('/api/member/1').error(new ProgressEvent('error'));
+    flush();
+    click();
+    http.put('/api/member/2', {}).subscribe({ error: () => undefined });
+    backend.expectOne('/api/member/2').error(new ProgressEvent('error'));
+    flush();
+
+    expect(shown.map(message => message.summary)).toEqual(['Файл не надіслано', 'Сервер не відповів']);
+  }));
+
   it('leaves 401 to the auth interceptor', fakeAsync(() => {
     click();
     http.post('/api/x', {}).subscribe({ error: () => undefined });
