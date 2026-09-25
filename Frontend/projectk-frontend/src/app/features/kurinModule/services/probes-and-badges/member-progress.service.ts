@@ -10,6 +10,7 @@ import { UpdateProbePointSignatureRequestDto } from '../../models/probes-and-bad
 import { UpdateProbeProgressStatusRequestDto } from '../../models/probes-and-badges/requests/update-probe-progress-status-request.dto';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { ENTITY_CACHE_TTL_MS, MEMBER_PROGRESS_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 @Injectable({
   providedIn: 'root'
@@ -47,7 +48,8 @@ export class MemberProgressService {
   ): Observable<BadgeProgressDto> {
     return this.http.post<BadgeProgressDto>(
       `${this.apiUrl}/${memberKey}/badges/${badgeId}/review`,
-      request
+      request,
+      { context: requestFeedback('auto', [403, 409]) }
     ).pipe(
       tap(() => this.invalidateMemberProgress(memberKey))
     );
@@ -76,7 +78,8 @@ export class MemberProgressService {
   ): Observable<ProbeProgressDto> {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/progress/status`,
-      request
+      request,
+      { context: requestFeedback('auto', [409]) }
     ).pipe(
       tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
@@ -90,7 +93,8 @@ export class MemberProgressService {
   ): Observable<ProbeProgressDto> {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/sign`,
-      request
+      request,
+      { context: requestFeedback('auto', [409]) }
     ).pipe(
       tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
@@ -104,7 +108,8 @@ export class MemberProgressService {
   ): Observable<ProbeProgressDto> {
     return this.http.put<ProbeProgressDto>(
       `${this.apiUrl}/${memberKey}/probes/${probeId}/points/${pointId}/unsign`,
-      request
+      request,
+      { context: requestFeedback('auto', [409]) }
     ).pipe(
       tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );

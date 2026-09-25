@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../auth-service/auth.service';
 import { LoginResponse } from '../../models/login-response.model';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 /** The three chairs the demo offers; the names are what the API's `DemoSeat` is called. */
 export type DemoSeat = 'Zvyazkovyi' | 'Vykhovnyk' | 'Youth';
@@ -23,7 +24,7 @@ export class DemoService {
   }
 
   enter(seat: DemoSeat): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${environment.apiUrl}/demo/login`, { seat }, { withCredentials: true }).pipe(
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/demo/login`, { seat }, { withCredentials: true, context: requestFeedback('errors') }).pipe(
       tap(response => this.auth.applyLoginResponse(response))
     );
   }

@@ -3,6 +3,7 @@ import { LoginResponse } from '../../models/login-response.model';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 export interface WaitlistRegistration {
   firstName: string;
@@ -82,11 +83,11 @@ export class OnboardingService {
   }
 
   requestPasswordReset(email: string): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/password-reset/request`, { email });
+    return this.http.post<boolean>(`${this.apiUrl}/password-reset/request`, { email }, { context: requestFeedback('silent') });
   }
 
   resendInvitationByEmail(email: string): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/invitation/resend`, { email });
+    return this.http.post<boolean>(`${this.apiUrl}/invitation/resend`, { email }, { context: requestFeedback('silent') });
   }
 
   resetPassword(payload: PasswordResetPayload): Observable<boolean> {

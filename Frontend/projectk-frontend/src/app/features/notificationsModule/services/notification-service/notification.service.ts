@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AppNotification } from '../../models/app-notification.model';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 @Injectable({
   providedIn: 'root'
@@ -33,11 +34,11 @@ export class NotificationService {
   }
 
   markAsRead(notificationKey: string): Observable<AppNotification> {
-    return this.http.put<AppNotification>(`${this.apiUrl}/${notificationKey}/read`, {});
+    return this.http.put<AppNotification>(`${this.apiUrl}/${notificationKey}/read`, {}, { context: requestFeedback('silent') });
   }
 
   markAllAsRead(): Observable<number> {
-    return this.http.put<number>(`${this.apiUrl}/read-all`, {}).pipe(
+    return this.http.put<number>(`${this.apiUrl}/read-all`, {}, { context: requestFeedback('errors') }).pipe(
       tap(() => this.unreadCountSubject.next(0))
     );
   }

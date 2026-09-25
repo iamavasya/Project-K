@@ -19,14 +19,14 @@
               size="small"
               [rounded]="true"
               [text]="true"
-              pTooltip="Додати впорядника"
+              pTooltip="Додати впорядника" ariaLabel="Додати впорядника"
               tooltipPosition="bottom"
               (onClick)="openAssignmentDialog()" />
             <p-button
               icon="pi pi-refresh"
               [text]="true"
               [rounded]="true"
-              pTooltip="Передати роль зв'язкового"
+              pTooltip="Передати роль зв'язкового" ariaLabel="Передати роль зв'язкового"
               tooltipPosition="bottom"
               (onClick)="openTransferDialog()" />
           }
@@ -78,7 +78,7 @@
                 icon="pi pi-pencil"
                 [rounded]="true"
                 [text]="true"
-                pTooltip="Налаштувати гуртки"
+                pTooltip="Налаштувати гуртки" ariaLabel="Налаштувати гуртки"
                 tooltipPosition="left"
                 (onClick)="$event.stopPropagation(); openAssignmentDialog(row)" />
             }

@@ -1,4 +1,8 @@
-<article class="mini-member-card group relative overflow-hidden rounded-2xl p-3">
+<article class="mini-member-card group relative overflow-hidden rounded-2xl p-3"
+    tabindex="0"
+    [attr.aria-label]="member().firstName + ' ' + member().lastName"
+    (click)="onCardClick($event)"
+    (keydown.enter)="onCardClick($event)">
     <div class="mini-member-card__photo-shell relative overflow-hidden rounded-xl">
         <img
             src="{{ member().profilePhotoUrl || 'https://placehold.co/480x360?text=Member+Photo' }}"
@@ -52,7 +56,11 @@
         </div>
 
         <p class="mini-member-card__meta text-sm">
-            {{ member().phoneNumber || 'Телефон не вказано' }}
+            @if (phoneLink; as href) {
+                <a [href]="href">{{ member().phoneNumber }}</a>
+            } @else {
+                {{ member().phoneNumber || 'Телефон не вказано' }}
+            }
         </p>
 
         <p class="mini-member-card__meta text-sm">

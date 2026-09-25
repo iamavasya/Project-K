@@ -10,7 +10,6 @@ import { FormsModule } from '@angular/forms';
 import { SelectModule } from "@openng/optimus-ui/select";
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
@@ -19,8 +18,8 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 
 @Component({
   selector: 'app-users-list',
-  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ToastModule, ConfirmDialogModule, TagModule, EmptyStateComponent],
-  providers: [MessageService, ConfirmationService],
+  imports: [TableModule, InputTextModule, IconFieldModule, InputIconModule, FormsModule, SelectModule, ButtonModule, ConfirmDialogModule, TagModule, EmptyStateComponent],
+  providers: [ConfirmationService],
   templateUrl: './users-list.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './users-list.css'

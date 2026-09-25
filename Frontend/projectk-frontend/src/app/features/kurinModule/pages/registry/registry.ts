@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -24,6 +25,7 @@ import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
 import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
 
 /** Рядок таблиці чисельності: скільки юнаків стоїть на цьому ступені. */
 export interface TallyRow {
@@ -49,6 +51,7 @@ const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
     ConfirmDialogModule,
     FormsModule,
     DatePipe,
+    RouterLink,
     EmptyStateComponent
   ],
   templateUrl: './registry.html',
@@ -58,6 +61,7 @@ const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
 })
 export class RegistryComponent implements OnInit {
   private readonly memberService = inject(MemberService);
+  private readonly router = inject(Router);
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly membershipService = inject(MembershipService);
@@ -265,6 +269,29 @@ export class RegistryComponent implements OnInit {
 
   asDate(value: string | Date | null): Date | null {
     return value instanceof Date ? value : null;
+  }
+
+  contactHref(member: MemberDto, column: RegistryColumn): string | null {
+    const value = column.value(member);
+    if (typeof value !== 'string') {
+      return null;
+    }
+    switch (column.kind) {
+      case 'phone':
+        return phoneHref(value);
+      case 'email':
+        return emailHref(value);
+      default:
+        return null;
+    }
+  }
+
+  openCard(event: MouseEvent, member: MemberDto): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('a, button') || window.getSelection()?.toString()) {
+      return;
+    }
+    void this.router.navigate(['/member', member.memberKey]);
   }
 
   onColumnsChange(ids: string[]): void {

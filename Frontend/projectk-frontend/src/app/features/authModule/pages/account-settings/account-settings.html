@@ -103,11 +103,14 @@
               inputId="password-new"
               name="newPassword"
               [(ngModel)]="passwordForm.newPassword"
+              [feedback]="false"
               [toggleMask]="true"
+              autocomplete="new-password"
               styleClass="w-full"
               inputStyleClass="w-full"
               required
             />
+            <app-password-rules [password]="passwordForm.newPassword" />
           </div>
 
           <div class="field">

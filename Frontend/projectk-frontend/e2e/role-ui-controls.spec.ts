@@ -20,7 +20,7 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     await expect(page.locator('.group-actions button')).toBeVisible();
 
     await page.goto(`/group/${groupKey}/member/upsert`);
-    const saveButton = page.getByRole('button', { name: 'Create Member' });
+    const saveButton = page.getByRole('button', { name: 'Додати учасника', exact: true });
     await expect(saveButton).toBeDisabled();
 
     await page.locator('input[name="firstName"]').fill('E2EValidationFirst');

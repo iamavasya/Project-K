@@ -6,7 +6,6 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { DialogModule } from '@openng/optimus-ui/dialog';
@@ -30,7 +29,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     ButtonModule,
     TagModule,
     TooltipModule,
-    ToastModule,
     ProgressBarModule,
     ConfirmDialogModule,
     DialogModule,
@@ -39,12 +37,11 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     LocalUtcDatePipe,
     EmptyStateComponent
 ],
-  providers: [MessageService, ConfirmationService],
+  providers: [ConfirmationService],
   template: `
-    <p-toast />
     <p-confirmDialog />
 
-    <p-dialog [(visible)]="rejectionDialogVisible" header="Відхилити заявку" [modal]="true" [style]="{width: '450px'}">
+    <p-dialog [(visible)]="rejectionDialogVisible" header="Відхилити заявку" [modal]="true" [style]="{ width: 'min(92vw, 450px)' }">
         <div class="flex flex-col gap-4">
             <p>Відхилити заявку <strong>{{ selectedEntry?.firstName }} {{ selectedEntry?.lastName }}</strong>?</p>
             <div class="flex flex-col gap-2">
@@ -98,13 +95,13 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
               <div class="flex gap-2">
                 @if (isInitial(entry.verificationStatus)) {
                   <p-button icon="pi pi-check" severity="success" rounded text
-                            (onClick)="approve(entry)" pTooltip="Схвалити й надіслати запрошення" />
+                            (onClick)="approve(entry)" pTooltip="Схвалити й надіслати запрошення" ariaLabel="Схвалити й надіслати запрошення" />
                   <p-button icon="pi pi-times" severity="danger" rounded text
-                            (onClick)="reject(entry)" pTooltip="Відхилити" />
+                            (onClick)="reject(entry)" pTooltip="Відхилити" ariaLabel="Відхилити" />
                 }
                 @if (isApproved(entry.verificationStatus)) {
                   <p-button icon="pi pi-refresh" severity="secondary" rounded text
-                            (onClick)="resend(entry)" pTooltip="Надіслати запрошення ще раз" />
+                            (onClick)="resend(entry)" pTooltip="Надіслати запрошення ще раз" ariaLabel="Надіслати запрошення ще раз" />
                 }
               </div>
             </td>

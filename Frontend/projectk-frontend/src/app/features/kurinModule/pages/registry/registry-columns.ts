@@ -3,8 +3,7 @@ import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
 
-/** Як малюється клітинка. Дати йдуть через `date`, решта — текстом. */
-export type RegistryColumnKind = 'text' | 'date';
+export type RegistryColumnKind = 'text' | 'date' | 'phone' | 'email';
 
 export interface RegistryColumn {
   readonly id: string;
@@ -70,14 +69,14 @@ export const REGISTRY_COLUMNS: RegistryColumn[] = [
     id: 'phoneNumber',
     header: 'Телефон',
     group: 'Контакти',
-    kind: 'text',
+    kind: 'phone',
     value: member => member.phoneNumber || null
   },
   {
     id: 'email',
     header: 'Пошта',
     group: 'Контакти',
-    kind: 'text',
+    kind: 'email',
     value: member => member.email || null
   },
   {

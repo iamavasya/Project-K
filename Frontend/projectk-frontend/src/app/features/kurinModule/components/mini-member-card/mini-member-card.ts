@@ -8,6 +8,7 @@ import { MemberWarningDto } from '../../models/member-warning.dto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
+import { phoneHref } from '../../../../shared/functions/contact-href.function';
 
 @Component({
   selector: 'app-mini-member-card',
@@ -25,6 +26,18 @@ export class MiniMemberCardComponent {
     MemberWarningLevel.Level2,
     MemberWarningLevel.Level3
   ];
+
+  get phoneLink(): string | null {
+    return phoneHref(this.member().phoneNumber);
+  }
+
+  onCardClick(event: Event): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('a, button')) {
+      return;
+    }
+    this.onNavigate();
+  }
 
   onNavigate(): void {
     this.navigate.emit(this.member());
@@ -55,7 +68,6 @@ export class MiniMemberCardComponent {
 
     return this.getWarningLevelWeight(level) <= this.getWarningLevelWeight(activeLevel);
   }
-
 
   private getWarningLevelWeight(level: MemberWarningLevel): number {
     switch (level) {

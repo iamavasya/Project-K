@@ -4,7 +4,7 @@ import { TableModule } from '@openng/optimus-ui/table';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto';
@@ -43,7 +43,8 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
     UpcomingBirthdaysTileComponent,
     ProfileVerificationBadgeComponent,
     EmptyStateComponent,
-    DatePipe
+    DatePipe,
+    RouterLink
 ],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
@@ -78,8 +79,6 @@ export class MemberListComponent implements OnInit {
   showGroupCardView = false;
   hasUpcomingBirthdays = false;
   memberSearchQuery = '';
-
-  selectedMember: MemberLookupDto | null = null;
 
   ngOnInit(): void {
     const type = this.type();
@@ -234,6 +233,14 @@ export class MemberListComponent implements OnInit {
     if (member) {
       this.router.navigate(['/member', member.memberKey]);
     }
+  }
+
+  onMemberRowClick(event: MouseEvent, member: MemberLookupDto): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('a, button')) {
+      return;
+    }
+    this.onMemberSelect(member);
   }
 
   onLeadershipSettingsSelect(): void {

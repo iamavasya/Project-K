@@ -52,12 +52,16 @@
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Email:</span>
-                            <span class="member-summary-value"> {{ member.email || 'Не вказано' }}</span>
+                            <span class="member-summary-value">
+                                @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
+                            </span>
                         </p>
 
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Телефон:</span>
-                            <span class="member-summary-value"> {{ member.phoneNumber || 'Не вказано' }}</span>
+                            <span class="member-summary-value">
+                                @if (phoneLink; as href) { <a [href]="href">{{ member.phoneNumber }}</a> } @else { {{ member.phoneNumber || 'Не вказано' }} }
+                            </span>
                         </p>
 
                         <p class="member-summary-line text-sm">
