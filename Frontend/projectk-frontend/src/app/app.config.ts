@@ -145,11 +145,6 @@ export const appConfig: ApplicationConfig = {
         // Усі оверлеї (випадайки, календарі, меню) — у body. Всередині діалогу оверлей, доданий
         // «до себе», обрізався контентом діалогу, сам створював прокрутку і від неї ж закривався.
         overlayAppendTo: 'body',
-        // На вузьких екранах випадайка з пошуком стає модальним вікном по центру, щоб її не
-        // треба було цілити пальцем у смужку під полем.
-        overlayOptions: {
-          responsive: { breakpoint: '640px', direction: 'center' }
-        },
         theme: {
           preset: LileykaPreset,
           options: {
