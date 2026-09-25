@@ -1,11 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { PASSWORD_RULES } from '../functions/password-rules.function';
 
-/**
- * Вимоги до нового пароля, видимі завжди, під полем. Раніше їх показував лише оверлей
- * `p-password [feedback]` при фокусі, а на телефоні його закривала клавіатура — людина вгадувала
- * формат, доки сервер не відмовить.
- */
 @Component({
   selector: 'app-password-rules',
   changeDetection: ChangeDetectionStrategy.OnPush,

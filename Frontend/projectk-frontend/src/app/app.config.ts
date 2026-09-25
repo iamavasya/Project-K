@@ -172,10 +172,8 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
     provideAppInitializer(() => inject(UserActionService).start()),
-    // Стоїть першим і бачить остаточну відповідь — після оновлення сесії й повтору, які роблять
-    // інтерцептори нижче. Спінер гасне й тост зʼявляється один раз, коли все справді скінчилось.
     { provide: HTTP_INTERCEPTORS, useClass: RequestFeedbackInterceptor, multi: true },
-    // The static demo has no API: recorded fixtures answer before any interceptor that talks to it.
+    // The static demo has no API: recorded fixtures answer before any other interceptor runs.
     ...(environment.isStaticDemo ? [{ provide: HTTP_INTERCEPTORS, useClass: DemoApiInterceptor, multi: true }] : []),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HealthInterceptor, multi: true }

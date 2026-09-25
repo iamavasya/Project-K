@@ -51,7 +51,6 @@ export class MembershipService {
   findCandidate(kurinKey: string, publicId: string): Observable<MembershipCandidateDto> {
     return this.http.get<MembershipCandidateDto>(
       `${this.apiUrl}/${kurinKey}/memberships/candidate`,
-      // Неправильний і неіснуючий код діалог показує одним рядком під полем.
       { params: { publicId }, context: requestFeedback('auto', [400, 404]) }
     );
   }

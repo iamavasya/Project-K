@@ -286,11 +286,6 @@ export class RegistryComponent implements OnInit {
     }
   }
 
-  /**
-   * Уся стрічка веде на картку, а не лише імʼя: на телефоні рядок стає карткою, і палець
-   * влучає куди завгодно в ній. Посилання всередині (імʼя, телефон, пошта) і виділений текст
-   * лишаються за своїм призначенням.
-   */
   openCard(event: MouseEvent, member: MemberDto): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('a, button') || window.getSelection()?.toString()) {

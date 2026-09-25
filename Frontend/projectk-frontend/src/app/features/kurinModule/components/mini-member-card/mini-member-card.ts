@@ -31,10 +31,6 @@ export class MiniMemberCardComponent {
     return phoneHref(this.member().phoneNumber);
   }
 
-  /**
-   * Уся картка веде до учасника. Кнопка «Перейти» зʼявляється лише при наведенні, а на
-   * телефоні наведення немає — перший дотик тільки показував її, і картка «не натискалась».
-   */
   onCardClick(event: Event): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('a, button')) {
@@ -72,7 +68,6 @@ export class MiniMemberCardComponent {
 
     return this.getWarningLevelWeight(level) <= this.getWarningLevelWeight(activeLevel);
   }
-
 
   private getWarningLevelWeight(level: MemberWarningLevel): number {
     switch (level) {

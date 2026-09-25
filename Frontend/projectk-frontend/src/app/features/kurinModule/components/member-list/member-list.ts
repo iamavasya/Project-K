@@ -80,7 +80,6 @@ export class MemberListComponent implements OnInit {
   hasUpcomingBirthdays = false;
   memberSearchQuery = '';
 
-
   ngOnInit(): void {
     const type = this.type();
     if (!type || !this.typeKey()) return;
@@ -236,10 +235,6 @@ export class MemberListComponent implements OnInit {
     }
   }
 
-  /**
-   * Звичайний клік замість виділення рядка таблиці: повторний дотик до вже виділеного рядка
-   * знімав виділення й нікуди не вів, і на телефоні це виглядало як «не натискається».
-   */
   onMemberRowClick(event: MouseEvent, member: MemberLookupDto): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('a, button')) {

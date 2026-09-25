@@ -10,19 +10,6 @@ import { HANDLED_STATUSES, REQUEST_FEEDBACK } from '../../../shared/functions/re
 const DUPLICATE_WINDOW_MS = 3000;
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/**
- * Відповідь на кожну дію людини — навіть там, де компонент нічого не показує сам.
- *
- * Мутація, яку запустили клік чи сабміт, закінчується тостом «Збережено»; помилка — тостом за
- * статусом (400 — перевір поля, 403 — немає доступу, 5xx — помилка на сервері, 0 — немає
- * звʼязку). Якщо компонент у своєму обробнику вже показав тост, цей мовчить: слова компонента
- * точніші, а два тости про одне — шум. Власний тост лишається місцем для конкретики
- * («Учасника додано»), а решту покриває цей клас. Запит, який не має говорити, позначається
- * `requestFeedback(...)` з `shared/functions/request-feedback.function.ts`.
- *
- * Спінер на кнопці й захист від повторного натискання — у `UserActionService`; тут лише момент,
- * коли запит почався і коли скінчився.
- */
 @Injectable()
 export class RequestFeedbackInterceptor implements HttpInterceptor {
   private readonly messages = inject(MessageService);
@@ -51,7 +38,6 @@ export class RequestFeedbackInterceptor implements HttpInterceptor {
           if (!(event instanceof HttpResponse) || !action) {
             return;
           }
-          // У статичному демо запис нікуди не йде, і демо саме каже про це своїм тостом.
           if (isMutation && feedback === 'auto' && !action.successShown && !environment.isStaticDemo) {
             action.successShown = true;
             this.showUnlessComponentDid({ severity: 'success', summary: req.method === 'DELETE' ? 'Видалено' : 'Збережено' });
@@ -62,8 +48,6 @@ export class RequestFeedbackInterceptor implements HttpInterceptor {
           if (action) {
             this.userActions.resume(action);
           }
-          // Помилку фонового читання сторінка показує сама (порожнім станом чи банером);
-          // тост про неї — лише коли читання попросила людина.
           if (!isMutation && !action) {
             return;
           }
@@ -82,7 +66,6 @@ export class RequestFeedbackInterceptor implements HttpInterceptor {
 
   private showUnlessComponentDid(toast: ToastMessageOptions): void {
     const shownBefore = this.toastsShown;
-    // Обробник компонента виконується одразу після tap — таймер дає йому сказати своє першим.
     setTimeout(() => {
       if (this.toastsShown !== shownBefore) {
         return;
@@ -107,7 +90,6 @@ function errorToast(error: unknown, isMutation: boolean): ToastMessageOptions | 
 
   const failed = isMutation ? 'Не вдалося зберегти' : 'Не вдалося завантажити';
   switch (true) {
-    // 401 — справа AuthInterceptor: він оновлює сесію або веде на вхід.
     case error.status === 401:
       return null;
     case error.status === 0:

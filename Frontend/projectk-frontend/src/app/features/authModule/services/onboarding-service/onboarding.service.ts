@@ -83,7 +83,6 @@ export class OnboardingService {
   }
 
   requestPasswordReset(email: string): Observable<boolean> {
-    // Мовчки: сторінка навмисно не каже, чи є такий акаунт — ні успіхом, ні помилкою.
     return this.http.post<boolean>(`${this.apiUrl}/password-reset/request`, { email }, { context: requestFeedback('silent') });
   }
 

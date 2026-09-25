@@ -80,7 +80,6 @@ export class MemberService {
 
   verifyProfile(memberKey: string, note?: string | null): Observable<MemberDto> {
     return this.http.put<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { note: note ?? null }, {
-      // 400 — верифікацію вимкнено в куреня; форма пояснює це сама.
       context: requestFeedback('auto', [400])
     }).pipe(
       tap(() => this.invalidateMemberCache()),

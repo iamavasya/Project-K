@@ -3,7 +3,6 @@ import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
 
-/** Як малюється клітинка. Дати йдуть через `date`, телефон і пошта — посиланнями, решта — текстом. */
 export type RegistryColumnKind = 'text' | 'date' | 'phone' | 'email';
 
 export interface RegistryColumn {

@@ -49,7 +49,6 @@ describe('UsersListComponent', () => {
       imports: [UsersListComponent],
       providers: [
         provideHttpClient(),
-        // Застосунок дає його на рівні app.config; сторінка лише споживає.
         MessageService,
         { provide: UserService, useValue: mockUserService }
       ],

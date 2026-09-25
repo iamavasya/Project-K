@@ -7,12 +7,10 @@
     transition: border-color 0.2s ease;
 }
 
-/* BRANDBOOK §0.7: ховер — рамка, без зсуву. Зсув під пальцем на телефоні ще й збивав дотик. */
 .mini-member-card:hover {
     border-color: var(--p-primary-color);
 }
 
-/* На дотиковому екрані наведення немає: кнопка «Перейти» видна одразу. */
 @media (hover: none) {
     .mini-member-card__overlay {
         opacity: 1;
@@ -34,7 +32,6 @@
     align-items: center;
     gap: 0.4rem;
 }
-
 
 .mini-member-card__meta {
     color: var(--p-text-muted-color);
