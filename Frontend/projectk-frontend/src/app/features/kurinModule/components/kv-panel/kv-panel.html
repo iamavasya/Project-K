@@ -59,9 +59,7 @@
           <p-tag [value]="getStatusLabel(row.mentor)" [severity]="getStatusSeverity(row.mentor)" [rounded]="true" />
         </td>
         <td data-mobile-label="Гуртки">
-          @if (row.isManager) {
-            <span class="kv-muted">Усі гуртки</span>
-          } @else if (row.groups.length) {
+          @if (row.groups.length) {
             <div class="kv-group-tags">
               @for (group of row.groups; track group.groupKey) {
                 <p-tag [value]="group.name" severity="info" [rounded]="true" />
@@ -73,15 +71,13 @@
         </td>
         @if (canManageKv) {
           <td class="kv-actions" data-mobile-label="Дії">
-            @if (!row.isManager) {
-              <p-button
-                icon="pi pi-pencil"
-                [rounded]="true"
-                [text]="true"
-                pTooltip="Налаштувати гуртки" ariaLabel="Налаштувати гуртки"
-                tooltipPosition="left"
-                (onClick)="$event.stopPropagation(); openAssignmentDialog(row)" />
-            }
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Налаштувати гуртки" ariaLabel="Налаштувати гуртки"
+              tooltipPosition="left"
+              (onClick)="$event.stopPropagation(); openAssignmentDialog(row)" />
           </td>
         }
       </tr>

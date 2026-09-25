@@ -114,11 +114,18 @@ export class KvPanelComponent implements OnChanges {
   }
 
   get kvRows(): MentorAssignmentRow[] {
-    const managerRow = this.manager
-      ? [{ mentor: this.manager, groups: this.groups, isManager: true }]
-      : [];
+    if (!this.manager) {
+      return this.mentorRows;
+    }
 
-    return [...managerRow, ...this.mentorRows];
+    const manager = this.manager;
+    const managerRow: MentorAssignmentRow = {
+      mentor: manager,
+      groups: this.mentorRows.find(row => this.isSameUserMember(row.mentor, manager))?.groups ?? [],
+      isManager: true
+    };
+
+    return [managerRow, ...this.mentorRows.filter(row => !this.isSameUserMember(row.mentor, manager))];
   }
 
   loadData(): void {
@@ -147,7 +154,7 @@ export class KvPanelComponent implements OnChanges {
   }
 
   openAssignmentDialog(row?: MentorAssignmentRow): void {
-    if (!this.canManageKv || row?.isManager) {
+    if (!this.canManageKv) {
       return;
     }
 
