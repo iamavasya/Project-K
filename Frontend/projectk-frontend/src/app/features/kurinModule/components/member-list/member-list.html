@@ -180,7 +180,7 @@
         </ng-template>
 
         <ng-template #body let-member>
-          <tr class="member-row cursor-pointer" (click)="onMemberRowClick($event, member)">
+          <tr class="member-row cursor-pointer" (click)="onMemberRowClick($event, member)" (keydown.enter)="onMemberRowClick($event, member)">
             <td data-mobile-label="Учасник">
               <span class="member-name-cell">
                 <a class="member-name-link" [routerLink]="['/member', member.memberKey]">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</a>

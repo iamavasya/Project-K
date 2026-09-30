@@ -286,7 +286,7 @@ export class RegistryComponent implements OnInit {
     }
   }
 
-  openCard(event: MouseEvent, member: MemberDto): void {
+  openCard(event: Event, member: MemberDto): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('a, button') || window.getSelection()?.toString()) {
       return;

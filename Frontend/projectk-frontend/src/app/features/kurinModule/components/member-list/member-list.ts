@@ -235,7 +235,7 @@ export class MemberListComponent implements OnInit {
     }
   }
 
-  onMemberRowClick(event: MouseEvent, member: MemberLookupDto): void {
+  onMemberRowClick(event: Event, member: MemberLookupDto): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('a, button')) {
       return;

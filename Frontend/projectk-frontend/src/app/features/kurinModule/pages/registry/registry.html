@@ -89,7 +89,7 @@
     </ng-template>
 
     <ng-template #body let-member>
-      <tr class="registry__row" (click)="openCard($event, member)">
+      <tr class="registry__row" (click)="openCard($event, member)" (keydown.enter)="openCard($event, member)">
         <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
           <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
         </td>
@@ -165,7 +165,7 @@
     </ng-template>
 
     <ng-template #body let-member>
-      <tr class="registry__row" (click)="openCard($event, member)">
+      <tr class="registry__row" (click)="openCard($event, member)" (keydown.enter)="openCard($event, member)">
         <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
           <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
         </td>
