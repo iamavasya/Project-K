@@ -13,6 +13,8 @@ import { AccountSettings, AccountSettingsService } from '../../services/account-
 import { AuthService } from '../../services/auth-service/auth.service';
 import { MfaEnforcerService } from '../../services/mfa-enforcer-service/mfa-enforcer.service';
 import { PermissionService } from '../../services/permission-service/permission.service';
+import { PasswordRulesComponent } from '../../../../shared/password-rules/password-rules';
+import { passwordMeetsRules } from '../../../../shared/functions/password-rules.function';
 
 @Component({
   selector: 'app-account-settings',
@@ -23,7 +25,8 @@ import { PermissionService } from '../../services/permission-service/permission.
     ButtonModule,
     DividerModule,
     TagModule,
-    MfaSetupDialogComponent
+    MfaSetupDialogComponent,
+    PasswordRulesComponent
 ],
   templateUrl: './account-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -74,7 +77,7 @@ export class AccountSettingsComponent implements OnInit {
 
   get canChangePassword(): boolean {
     return this.passwordForm.currentPassword.length > 0
-      && this.passwordForm.newPassword.length >= 8
+      && passwordMeetsRules(this.passwordForm.newPassword)
       && this.passwordForm.newPassword === this.passwordForm.confirmPassword
       && !this.changingPassword;
   }

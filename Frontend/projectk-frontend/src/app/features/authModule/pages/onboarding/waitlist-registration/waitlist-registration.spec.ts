@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { MessageService } from '@openng/optimus-ui/api';
 import { of } from 'rxjs';
 import { WaitlistRegistrationComponent } from './waitlist-registration';
 import { OnboardingService } from '../../../services/onboarding-service/onboarding.service';
@@ -13,6 +14,7 @@ describe('WaitlistRegistrationComponent', () => {
       imports: [WaitlistRegistrationComponent],
       providers: [
         provideRouter([]),
+        MessageService,
         { provide: OnboardingService, useValue: { submitWaitlist: () => of(undefined) } }
       ]
     });

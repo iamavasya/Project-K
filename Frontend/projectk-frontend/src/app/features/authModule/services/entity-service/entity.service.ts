@@ -2,6 +2,7 @@ import { inject, Injectable } from "@angular/core";
 import { environment } from "../../../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { requestFeedback } from "../../../../shared/functions/request-feedback.function";
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +21,8 @@ export class EntityService {
             },
             { 
                 headers: { 'Content-Type': 'application/json' },
-                withCredentials: true 
+                withCredentials: true,
+                context: requestFeedback('silent')
             }
             );
     }

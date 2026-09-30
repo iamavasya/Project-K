@@ -653,8 +653,8 @@ export class UpsertMemberComponent implements OnInit {
     if (event.blob) {
       this.croppedFile = new File(
         [event.blob],
-        this.imageFile?.name?.replace(/\.[^.]+$/, '.png') || 'profile.png',
-        { type: event.blob.type || 'image/png' }
+        this.imageFile?.name?.replace(/\.[^.]+$/, '.jpg') || 'profile.jpg',
+        { type: event.blob.type || 'image/jpeg' }
       );
 
       const url = event.objectUrl || URL.createObjectURL(event.blob);

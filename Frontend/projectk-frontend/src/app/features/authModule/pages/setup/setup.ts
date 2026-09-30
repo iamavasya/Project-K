@@ -9,11 +9,14 @@ import { PasswordModule } from '@openng/optimus-ui/password';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { AuthService, InitializeSetupRequest } from '../../services/auth-service/auth.service';
 import { authenticatedHomeRoute } from '../../functions/authenticated-home-route';
+import { PasswordRulesComponent } from '../../../../shared/password-rules/password-rules';
+import { passwordRulesValidator } from '../../../../shared/functions/password-rules.function';
 
 @Component({
   selector: 'app-setup',
   imports: [
     ReactiveFormsModule,
+    PasswordRulesComponent,
     ButtonModule,
     FloatLabel,
     InputTextModule,
@@ -38,7 +41,7 @@ export class SetupComponent {
       email: ['', [Validators.required, Validators.email]],
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, passwordRulesValidator]],
       enforcePrivilegedMfa: [false],
       seedDemoData: [false]
     });

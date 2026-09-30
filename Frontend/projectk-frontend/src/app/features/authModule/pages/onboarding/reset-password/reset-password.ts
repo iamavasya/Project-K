@@ -5,9 +5,10 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { PasswordModule } from '@openng/optimus-ui/password';
 import { MessageService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { OnboardingService } from '../../../services/onboarding-service/onboarding.service';
+import { PasswordRulesComponent } from '../../../../../shared/password-rules/password-rules';
+import { passwordRulesValidator } from '../../../../../shared/functions/password-rules.function';
 
 /**
  * Where the link in the reset email lands: `/reset-password?token=…&email=…`, matching the URL
@@ -15,11 +16,9 @@ import { OnboardingService } from '../../../services/onboarding-service/onboardi
  */
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, PasswordModule, ButtonModule, CardModule, ToastModule, RouterLink, MessageModule],
-  providers: [MessageService],
+  imports: [ReactiveFormsModule, PasswordModule, ButtonModule, CardModule, RouterLink, MessageModule, PasswordRulesComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast />
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card header="Новий пароль" [style]="{ width: 'min(100%, 420px)' }">
         @if (!token || !email) {
@@ -35,9 +34,10 @@ import { OnboardingService } from '../../../services/onboarding-service/onboardi
                 inputId="newPassword"
                 formControlName="newPassword"
                 [toggleMask]="true"
-                [feedback]="true"
+                [feedback]="false"
                 autocomplete="new-password"
               />
+              <app-password-rules [password]="form.value.newPassword" />
             </div>
 
             <div class="flex flex-col gap-2">
@@ -80,7 +80,7 @@ export class ResetPasswordComponent implements OnInit {
 
   form = this.formBuilder.group(
     {
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      newPassword: ['', [Validators.required, passwordRulesValidator]],
       confirmPassword: ['', Validators.required]
     },
     { validators: passwordsMatch }

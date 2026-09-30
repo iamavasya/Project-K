@@ -10,7 +10,6 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { MessageService } from '@openng/optimus-ui/api';
-import { ToastModule } from '@openng/optimus-ui/toast';
 import { RouterLink } from '@angular/router';
 import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../../shared/functions/ukrainian-phone.function';
 
@@ -25,13 +24,10 @@ import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../.
     ButtonModule,
     CardModule,
     MessageModule,
-    ToastModule,
     RouterLink
 ],
-  providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <p-toast />
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card
         header="Приєднатися до списку очікування"

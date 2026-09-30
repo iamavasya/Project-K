@@ -10,6 +10,8 @@ import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@a
 import { AuthInterceptor } from './features/authModule/services/auth.interceptor';
 import { HealthInterceptor } from './features/systemModule/services/health.interceptor';
 import { DemoApiInterceptor } from './features/systemModule/services/demo-api.interceptor';
+import { RequestFeedbackInterceptor } from './features/systemModule/services/request-feedback.interceptor';
+import { UserActionService } from './features/systemModule/services/user-action-service/user-action.service';
 import { environment } from '../environments/environment';
 import { HealthBannerService } from './features/systemModule/services/health-banner-service/health-banner.service';
 import { ThemeService } from './features/systemModule/services/theme-service/theme.service';
@@ -143,11 +145,6 @@ export const appConfig: ApplicationConfig = {
         // Усі оверлеї (випадайки, календарі, меню) — у body. Всередині діалогу оверлей, доданий
         // «до себе», обрізався контентом діалогу, сам створював прокрутку і від неї ж закривався.
         overlayAppendTo: 'body',
-        // На вузьких екранах випадайка з пошуком стає модальним вікном по центру, щоб її не
-        // треба було цілити пальцем у смужку під полем.
-        overlayOptions: {
-          responsive: { breakpoint: '640px', direction: 'center' }
-        },
         theme: {
           preset: LileykaPreset,
           options: {
@@ -169,6 +166,8 @@ export const appConfig: ApplicationConfig = {
       });
     }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
+    provideAppInitializer(() => inject(UserActionService).start()),
+    { provide: HTTP_INTERCEPTORS, useClass: RequestFeedbackInterceptor, multi: true },
     // The static demo has no API: recorded fixtures answer before any other interceptor runs.
     ...(environment.isStaticDemo ? [{ provide: HTTP_INTERCEPTORS, useClass: DemoApiInterceptor, multi: true }] : []),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

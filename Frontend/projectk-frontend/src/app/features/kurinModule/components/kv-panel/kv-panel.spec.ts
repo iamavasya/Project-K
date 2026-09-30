@@ -7,6 +7,7 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { GroupService } from '../../services/group-service/group.service';
 import { MemberService } from '../../services/member-service/member.service';
 import { KvPanelComponent } from './kv-panel';
+import { GroupDto } from '../../models/group.dto';
 
 describe('KvPanelComponent', () => {
   let component: KvPanelComponent;
@@ -82,6 +83,19 @@ describe('KvPanelComponent', () => {
     expect(component.kvRows.map(row => row.mentor.memberKey))
       .toEqual(['manager-member', 'mentor-member']);
     expect(component.kvRows[0].isManager).toBeTrue();
+  });
+
+  it('shows the Звʼязковий once, with the гуртки they are actually assigned to', () => {
+    const manager = { memberKey: 'manager-member', userKey: 'manager-user', firstName: 'Manager', lastName: 'Member', middleName: null, userRole: 'Manager' };
+    const group = { groupKey: 'g1', name: 'Кицьки' } as GroupDto;
+    component.manager = manager;
+    component.mentorRows = [
+      { mentor: { ...manager }, groups: [group] },
+      { mentor: { memberKey: 'mentor-member', userKey: 'mentor-user', firstName: 'Mentor', lastName: 'Member', middleName: null, userRole: 'Mentor' }, groups: [] }
+    ];
+
+    expect(component.kvRows.map(row => row.mentor.memberKey)).toEqual(['manager-member', 'mentor-member']);
+    expect(component.kvRows[0].groups).toEqual([group]);
   });
 
   it('should navigate to the selected member profile', () => {

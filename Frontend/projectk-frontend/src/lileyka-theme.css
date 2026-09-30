@@ -410,6 +410,7 @@ h3 {
   margin-inline: auto;
   padding-block: var(--lil-page-block);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lil-page-gap);
 }
 
@@ -531,6 +532,30 @@ h3 {
   border-radius: 0;
   box-shadow: none;
   min-height: 56px;
+}
+
+.p-button.lil-busy {
+  cursor: progress;
+}
+
+.p-button.lil-busy > .p-button-icon,
+.p-button-loading > .lil-busy-icon {
+  display: none;
+}
+
+@media (hover: none) {
+  .p-tooltip {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .p-toast.p-toast-top-right {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    top: 0.75rem !important;
+    width: auto;
+  }
 }
 
 .project-table .p-datatable-thead > tr > th {

@@ -6,6 +6,7 @@ import { ClientCacheService } from '../../features/kurinModule/services/client-c
 import { ENTITY_CACHE_TTL_MS, LAYOUT_CACHE_PREFIX } from '../../features/kurinModule/services/client-cache/cache-policy';
 import { TILE_LAYOUT_SCHEMA_VERSION } from './tile-board.models';
 import { readStoredOrder, removeStoredOrder, writeStoredOrder } from './tile-layout-storage';
+import { requestFeedback } from '../functions/request-feedback.function';
 
 interface TileLayoutDto {
   boardKey: string;
@@ -60,7 +61,7 @@ export class TileLayoutService {
 
   resetOrder(boardKey: string): Observable<void> {
     removeStoredOrder(boardKey);
-    return this.http.delete<void>(`${this.apiUrl}/${boardKey}`).pipe(
+    return this.http.delete<void>(`${this.apiUrl}/${boardKey}`, { context: requestFeedback('errors') }).pipe(
       tap(() => this.cache.invalidateByPrefix(LAYOUT_CACHE_PREFIX)),
       map(() => undefined)
     );

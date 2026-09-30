@@ -55,6 +55,7 @@ import { GroupDto } from '../../models/group.dto';
 import { ProfileVerificationBadgeComponent } from '../../components/profile-verification-badge/profile-verification-badge';
 import { formatUtcDateTime, parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
 
@@ -209,6 +210,14 @@ export class MemberCardComponent implements OnInit {
 
     this.loadSkills(memberKey);
     this.loadProbes(memberKey);
+  }
+
+  get phoneLink(): string | null {
+    return phoneHref(this.member?.phoneNumber);
+  }
+
+  get emailLink(): string | null {
+    return emailHref(this.member?.email);
   }
 
   /**

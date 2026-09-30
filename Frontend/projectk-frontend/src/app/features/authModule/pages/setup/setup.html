@@ -55,7 +55,7 @@
           <p-password
             inputId="password"
             formControlName="password"
-            [feedback]="true"
+            [feedback]="false"
             [toggleMask]="true"
             autocomplete="new-password"
             styleClass="w-full"
@@ -63,6 +63,7 @@
           />
           <label for="password">Пароль</label>
         </p-floatlabel>
+        <app-password-rules [password]="setupForm.value.password" />
       </div>
 
       <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-5">

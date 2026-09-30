@@ -92,7 +92,7 @@
                   icon="pi pi-plus"
                   class="p-button-rounded p-button-text p-button-success"
                   (click)="addRoleRow(rowControl.get('role')?.value)"
-                  pTooltip="Додати ще">
+                  pTooltip="Додати ще" aria-label="Додати ще">
                 </button>
               }
 
@@ -103,7 +103,7 @@
                   icon="pi pi-trash"
                   class="p-button-rounded p-button-text p-button-danger"
                   (click)="onRemoveRow(i)"
-                  pTooltip="Очистити">
+                  pTooltip="Очистити" aria-label="Очистити">
                 </button>
               }
             </div>

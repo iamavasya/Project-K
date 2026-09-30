@@ -21,6 +21,7 @@ import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { MenuItem } from '@openng/optimus-ui/api';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
+import { IMAGE_TOO_LARGE_DETAIL, isImageTooLarge } from '../../../../shared/functions/image-upload.function';
 
 @Component({
   selector: 'app-group-panel',
@@ -384,6 +385,11 @@ export class GroupPanelComponent implements OnInit {
   }
 
   private uploadSilhouetteFile(file: File | Blob): void {
+    if (isImageTooLarge(file)) {
+      this.silhouetteError = IMAGE_TOO_LARGE_DETAIL;
+      return;
+    }
+
     this.silhouetteSaving = true;
     this.silhouetteError = null;
     this.groupService.uploadSilhouette(this.groupKey, file).subscribe({

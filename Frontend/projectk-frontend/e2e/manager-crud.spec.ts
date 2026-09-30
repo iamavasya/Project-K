@@ -35,7 +35,7 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
       email: `e2e.member.${timestamp}@example.com`
     });
 
-    const saveButton = page.getByRole('button', { name: 'Create Member' });
+    const saveButton = page.getByRole('button', { name: 'Додати учасника', exact: true });
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
 
@@ -44,7 +44,7 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
     await page.locator('.member-actions button').click();
 
     await page.locator('input[name="middleName"]').fill('E2EMiddleEdited');
-    const saveEditButton = page.getByRole('button', { name: 'Update Member' });
+    const saveEditButton = page.getByRole('button', { name: 'Зберегти', exact: true });
     await expect(saveEditButton).toBeEnabled();
     await saveEditButton.click();
 

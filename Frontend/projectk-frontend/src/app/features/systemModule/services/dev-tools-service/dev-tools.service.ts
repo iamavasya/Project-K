@@ -4,6 +4,7 @@ import { catchError, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { LoginResponse } from '../../../authModule/models/login-response.model';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 /**
  * The seats the dev role switcher offers; the office values are what the API's `DevRole` is called,
@@ -52,7 +53,7 @@ export class DevToolsService {
 
   returnToAdmin(): Observable<LoginResponse> {
     const ticket = localStorage.getItem(RETURN_TICKET_KEY) ?? '';
-    return this.http.post<LoginResponse>(`${this.apiUrl}/return`, { ticket }, { withCredentials: true }).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/return`, { ticket }, { withCredentials: true, context: requestFeedback('errors') }).pipe(
       tap(response => {
         this.forgetTicket();
         this.auth.applyLoginResponse(response);
@@ -72,7 +73,7 @@ export class DevToolsService {
    */
   private borrow(url: string, body: object): Observable<DevImpersonationResponse> {
     return this.backToAdmin().pipe(
-      switchMap(() => this.http.post<DevImpersonationResponse>(url, body, { withCredentials: true })),
+      switchMap(() => this.http.post<DevImpersonationResponse>(url, body, { withCredentials: true, context: requestFeedback('errors') })),
       tap(response => {
         // The ticket outlives the borrowed session on purpose: it is the way back.
         localStorage.setItem(RETURN_TICKET_KEY, response.returnTicket);

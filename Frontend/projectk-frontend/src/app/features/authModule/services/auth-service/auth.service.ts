@@ -10,6 +10,7 @@ import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
 import { ClientCacheService } from "../../../kurinModule/services/client-cache/client-cache.service";
 import { KURIN_SCOPED_CACHE_PREFIXES } from "../../../kurinModule/services/client-cache/cache-policy";
+import { requestFeedback } from "../../../../shared/functions/request-feedback.function";
 
 export interface MfaSetupResponse {
   sharedKey: string;
@@ -73,7 +74,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/login`,
       credentials,
-      { withCredentials: true }
+      { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
       tap(response => {
         if (!response.requiresMfa && response.tokens) {
@@ -92,7 +93,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/mfa/login-verify`,
       { email, code, rememberMe: true, mfaToken },
-      { withCredentials: true }
+      { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
       map(response => this.toAuthState(response)),
       tap(state => {
@@ -143,7 +144,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/setup/initialize`,
       command,
-      { withCredentials: true }
+      { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
       tap(response => {
         if (!response.requiresMfa && response.tokens) {
@@ -172,7 +173,11 @@ export class AuthService {
    * meantime is refreshed once; the interceptor deliberately does not do that for this route.
    */
   logout() {
-    const signOut = () => this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true, responseType: 'text' });
+    const signOut = () => this.http.post(`${this.apiUrl}/auth/logout`, {}, {
+      withCredentials: true,
+      responseType: 'text',
+      context: requestFeedback('silent')
+    });
 
     return signOut().pipe(
       catchError((error: unknown) =>
@@ -193,7 +198,7 @@ export class AuthService {
     this.refreshTokenRequest$ = this.http.post<{ accessToken: string }>(
       `${this.apiUrl}/auth/refresh`,
       {},
-      { withCredentials: true }
+      { withCredentials: true, context: requestFeedback('silent') }
     ).pipe(
       tap(res => {
         const state = this.authState$.value;
@@ -251,7 +256,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/kurin-scope`,
       { kurinKey },
-      { withCredentials: true }
+      { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
       map(response => this.toAuthState(response)),
       tap(state => {

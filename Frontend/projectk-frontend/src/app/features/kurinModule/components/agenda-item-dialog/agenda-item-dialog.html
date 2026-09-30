@@ -2,7 +2,7 @@
   [visible]="visible()"
   (visibleChange)="visible.set($event)"
   [modal]="true"
-  [style]="{ width: '34rem' }"
+  [style]="{ width: 'min(92vw, 34rem)' }"
   [draggable]="false"
   [header]="viewOnly() ? 'Подія' : (item() ? 'Редагувати' : 'Нове призначення')"
   (onHide)="onHide()">

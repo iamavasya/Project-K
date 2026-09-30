@@ -17,7 +17,7 @@ test.describe('Route action boundaries', () => {
       const unassignedGroupKey = await getSeededGroupKey(request, user, 'Gurtok 2');
 
       await expectAllowedRoute(page, `/group/${assignedGroupKey}/member/upsert`);
-      await expect(page.getByRole('button', { name: 'Create Member' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'Додати учасника', exact: true })).toBeDisabled();
       await expect(page.getByRole('button', { name: 'Видалити профіль' })).toBeHidden();
 
       await expectForbiddenRoute(page, `/group/${unassignedGroupKey}/member/upsert`);
@@ -52,7 +52,7 @@ test.describe('Route action boundaries', () => {
       expect(login.memberKey, `API login for ${user.email} did not return a memberKey.`).toBeTruthy();
 
       await expectAllowedRoute(page, `/group/${groupKey}/member/upsert/${login.memberKey}`);
-      await expect(page.getByRole('button', { name: 'Update Member' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Зберегти', exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Видалити профіль' })).toBeHidden();
       await expect(page.locator('#email')).toBeHidden();
       await expect(page.locator('#warning-Level1')).toBeHidden();
