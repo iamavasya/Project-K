@@ -24,14 +24,6 @@
                     class="group-silhouette-input"
                     accept="image/png,image/jpeg,image/webp"
                     (change)="onSilhouetteSelected($event)" />
-                @if (canOpenDues && !profileEditMode) {
-                    <p-button
-                        label="Вкладка"
-                        type="button"
-                        severity="secondary"
-                        icon="pi pi-wallet"
-                        (onClick)="openDues()" />
-                }
                 @if (hasGroupEditActions && !profileEditMode) {
                     <p-menu #groupEditMenu [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
                     <p-button

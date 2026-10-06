@@ -141,6 +141,30 @@ export interface DuesTransferDto {
   receivedByName: string | null;
 }
 
+/** What one гурток's youth owe up for one quarter, and how far they have paid it. */
+export interface KurinDuesQuarterGroupDto {
+  groupKey: string;
+  groupName: string;
+  youthCount: number;
+  expectedUp: number;
+  collectedUp: number;
+  debtUp: number;
+  stanytsiaExpected: number;
+  stanytsiaCollected: number;
+}
+
+export interface KurinDuesQuarterDto {
+  quarter: QuarterDto;
+  groups: KurinDuesQuarterGroupDto[];
+  total: KurinDuesQuarterGroupDto;
+}
+
+/** A гурток whose box the caller may open. */
+export interface DuesGroupLinkDto {
+  groupKey: string;
+  groupName: string;
+}
+
 export interface KurinDuesViewerDto {
   canKeep: boolean;
   canVerify: boolean;
@@ -157,6 +181,7 @@ export interface KurinDuesDto {
   box: DuesBoxDto;
   sentToStanytsia: number;
   groups: KurinGroupHandoverDto[];
+  quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];
   entries: DuesEntryDto[];
   people: DuesPersonDto[];

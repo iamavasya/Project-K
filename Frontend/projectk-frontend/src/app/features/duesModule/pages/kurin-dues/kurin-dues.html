@@ -15,6 +15,17 @@
     </div>
     @if (data(); as d) {
       <div class="lil-page-head__actions">
+        @if (yearOptions().length > 1) {
+          <p-select
+            [options]="yearOptions()"
+            [ngModel]="year()?.startYear ?? null"
+            (ngModelChange)="selectedYear.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            ariaLabel="Пластовий рік"
+            styleClass="dues-filter" />
+        }
         @if (d.viewer.canSetRates) {
           <p-button label="Ставки куреня" icon="pi pi-percentage" severity="secondary" (onClick)="rateDialogVisible.set(true)" />
         }
@@ -140,6 +151,71 @@
           </tr>
         </ng-template>
       </p-table>
+    </section>
+
+    <!-- По кварталах -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>По кварталах</h2>
+          <span class="lil-count">{{ yearQuarters().length }}</span>
+          <p>{{ year()?.label }} · скільки юнаків у кожному гуртку, що вони мають віддати на станицю й курінь, і скільки вже здали</p>
+        </div>
+      </div>
+
+      @if (!yearQuarters().length) {
+        <app-empty-state art="calendar" title="Нарахувань ще немає" body="Квартал зʼявиться тут, щойно курінь задасть ставки." />
+      }
+
+      @for (quarter of yearQuarters(); track quarter.quarter.year + '-' + quarter.quarter.number) {
+        <p-table [value]="quarter.groups" styleClass="project-table dues-table dues-quarter" [scrollable]="true" stripedRows>
+          <ng-template #caption>
+            <div class="dues-quarter__head">
+              <h3>{{ quarterLabel(quarter.quarter) }}</h3>
+              <span class="dues-quarter__sum">
+                до станиці {{ money(quarter.total.stanytsiaExpected) }}
+                · зібрано {{ money(quarter.total.stanytsiaCollected) }}
+              </span>
+            </div>
+          </ng-template>
+          <ng-template #header>
+            <tr>
+              <th scope="col" class="dues-name-col">Гурток</th>
+              <th scope="col" class="dues-number">Юнаків</th>
+              <th scope="col" class="dues-number">Має передати</th>
+              <th scope="col" class="dues-number">Здали</th>
+              <th scope="col" class="dues-number">Борг</th>
+              <th scope="col" class="dues-number">До станиці</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-row>
+            <tr class="dues-row">
+              <td class="dues-name-col" data-mobile-label="Гурток">
+                <a class="dues-link" [routerLink]="['/group', row.groupKey, 'dues']">{{ row.groupName }}</a>
+              </td>
+              <td class="dues-number" data-mobile-label="Юнаків">{{ row.youthCount }}</td>
+              <td class="dues-number" data-mobile-label="Має передати">{{ money(row.expectedUp) }}</td>
+              <td class="dues-number" data-mobile-label="Здали">{{ money(row.collectedUp) }}</td>
+              <td class="dues-number" data-mobile-label="Борг">
+                <span class="dues-balance" [class.dues-balance--debt]="row.debtUp > 0" [class.dues-balance--ok]="row.debtUp <= 0">
+                  {{ row.debtUp > 0 ? money(row.debtUp) : 'сплачено' }}
+                </span>
+              </td>
+              <td class="dues-number" data-mobile-label="До станиці">{{ money(row.stanytsiaCollected) }} <span class="dues-blank">/ {{ money(row.stanytsiaExpected) }}</span></td>
+            </tr>
+          </ng-template>
+          <ng-template #footer>
+            <tr class="dues-row dues-row--total">
+              <td class="dues-name-col" data-mobile-label="Гурток">Разом</td>
+              <td class="dues-number" data-mobile-label="Юнаків">{{ quarter.total.youthCount }}</td>
+              <td class="dues-number" data-mobile-label="Має передати">{{ money(quarter.total.expectedUp) }}</td>
+              <td class="dues-number" data-mobile-label="Здали">{{ money(quarter.total.collectedUp) }}</td>
+              <td class="dues-number" data-mobile-label="Борг">{{ quarter.total.debtUp > 0 ? money(quarter.total.debtUp) : 'сплачено' }}</td>
+              <td class="dues-number" data-mobile-label="До станиці">{{ money(quarter.total.stanytsiaCollected) }} <span class="dues-blank">/ {{ money(quarter.total.stanytsiaExpected) }}</span></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
     </section>
 
     <!-- Передачі -->

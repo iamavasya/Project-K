@@ -60,6 +60,11 @@ describe('KurinDuesComponent', () => {
       { groupKey: 'g-sokoly', groupName: 'Соколи', owedUp: 510, transferred: 355, received: 255, outstanding: 155, inTransit: 100 },
       { groupKey: 'g-levy', groupName: 'Леви', owedUp: 0, transferred: 0, received: 0, outstanding: 0, inTransit: 0 }
     ],
+    quarters: [{
+      quarter: q(2026, 4),
+      groups: [{ groupKey: 'g-sokoly', groupName: 'Соколи', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240 }],
+      total: { groupKey: '', groupName: 'Разом', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240 }
+    }],
     transfers: [
       transfer({ duesEntryKey: 't-1', isReceived: true, receivedByName: 'Скарбник' }),
       transfer({ duesEntryKey: 't-2', amount: 100 }),
@@ -128,6 +133,14 @@ describe('KurinDuesComponent', () => {
 
     expect(dues.setTransferReceived).toHaveBeenCalledWith('k1', 't-2', true);
     expect(dues.getKurinDues).toHaveBeenCalledTimes(2);
+  });
+
+  it('розбивка по кварталах показує квартали вибраного року, найновіший першим', () => {
+    create();
+
+    expect(component.yearQuarters().map(q => q.quarter.number)).toEqual([4]);
+    expect(text()).toMatch(/до станиці 2\s160 ₴/);
+    expect(text()).toContain('Має передати');
   });
 
   it('перевірену операцію куреня не дає змінити', () => {

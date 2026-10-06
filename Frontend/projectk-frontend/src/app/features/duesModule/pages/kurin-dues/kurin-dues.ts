@@ -15,7 +15,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
-import { money, quarterKey, quarterLabel, signedMoney } from '../../functions/dues-format.function';
+import { money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
@@ -27,6 +27,7 @@ import {
   DuesEntryDto,
   DuesTransferDto,
   KurinDuesDto,
+  KurinDuesQuarterDto,
   KurinGroupHandoverDto,
   QuarterDto,
   SetKurinDuesRateRequest,
@@ -60,6 +61,7 @@ export class KurinDuesComponent implements OnInit {
   readonly money = money;
   readonly signedMoney = signedMoney;
   readonly quarterLabel = quarterLabel;
+  readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
   readonly kurinKinds = KURIN_DUES_KINDS;
 
@@ -68,6 +70,29 @@ export class KurinDuesComponent implements OnInit {
   readonly data = signal<KurinDuesDto | null>(null);
   readonly loading = signal(true);
   readonly loadFailed = signal(false);
+
+  readonly selectedYear = signal<number | null>(null);
+  readonly year = computed(() => {
+    const data = this.data();
+    if (!data) {
+      return null;
+    }
+    return data.years.find(y => y.startYear === this.selectedYear()) ?? data.years[0] ?? null;
+  });
+  readonly yearOptions = computed(() => (this.data()?.years ?? []).map(y => ({ label: y.label, value: y.startYear })));
+
+  /** The chosen year's quarters that have charges, newest first — a quarter nobody was charged in has no row. */
+  readonly yearQuarters = computed(() => {
+    const year = this.year();
+    const quarters = this.data()?.quarters ?? [];
+    if (!year) {
+      return [];
+    }
+    return year.quarters
+      .map(q => quarters.find(x => x.quarter.year === q.year && x.quarter.number === q.number) ?? null)
+      .filter((q): q is KurinDuesQuarterDto => q !== null)
+      .reverse();
+  });
 
   readonly groupFilter = signal<string | null>(null);
   readonly pendingOnly = signal(false);

@@ -17,6 +17,8 @@ import { getLeadershipRoleSortWeight } from '../../functions/leadership-role-ord
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { DuesGroupLinkDto } from '../../../duesModule/models/group-dues.dto';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
@@ -32,6 +34,7 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   private readonly kurinService = inject(KurinService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
+  private readonly duesService = inject(DuesService);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
@@ -68,8 +71,12 @@ export class SidebarMenuComponent implements OnChanges {
             this.waitlistAttention.refresh();
           }
         }),
-        switchMap(([state, url]) => combineLatest([this.youthProgram$(state?.kurinKey ?? null), this.waitlistAttention.pending$]).pipe(
-          map(([isYouthKurin, pendingWaitlist]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist), url))
+        switchMap(([state, url]) => combineLatest([
+          this.youthProgram$(state?.kurinKey ?? null),
+          this.waitlistAttention.pending$,
+          this.duesGroups$(state?.kurinKey ?? null)
+        ]).pipe(
+          map(([isYouthKurin, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist, duesGroups), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -134,7 +141,19 @@ export class SidebarMenuComponent implements OnChanges {
     );
   }
 
-  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0): MenuItem[] {
+  /**
+   * The гуртки whose box this person keeps, for the «Вкладка гуртка» item. Asked only of those whose
+   * grants say they keep one; a failed read hides the item rather than breaking the menu.
+   */
+  private duesGroups$(kurinKey: string | null): Observable<DuesGroupLinkDto[]> {
+    if (!kurinKey || !this.permissionService.canSeeGroupDues()) {
+      return of([]);
+    }
+
+    return this.duesService.getReadableGroups(kurinKey).pipe(catchError(() => of([])));
+  }
+
+  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
@@ -247,6 +266,33 @@ export class SidebarMenuComponent implements OnChanges {
             this.close();
             this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
           }
+        });
+      }
+
+      // One гурток — straight to its box; several — a fold with one entry each.
+      if (duesGroups.length === 1) {
+        const [group] = duesGroups;
+        items.push({
+          label: 'Вкладка гуртка',
+          icon: 'pi pi-wallet',
+          routerLink: ['/group', group.groupKey, 'dues'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/group', group.groupKey, 'dues']);
+          }
+        });
+      } else if (duesGroups.length > 1) {
+        items.push({
+          label: 'Вкладка гуртків',
+          icon: 'pi pi-wallet',
+          items: duesGroups.map(group => ({
+            label: group.groupName,
+            routerLink: ['/group', group.groupKey, 'dues'],
+            command: () => {
+              this.close();
+              this.router.navigate(['/group', group.groupKey, 'dues']);
+            }
+          }))
         });
       }
 

@@ -66,7 +66,6 @@ export class GroupPanelComponent implements OnInit {
   mentorSaveInProgress = false;
   canCreateMembers = false;
   canEditGroupProfile = false;
-  canOpenDues = false;
   profileEditMode = false;
   profileSaving = false;
   descriptionExpanded = false;
@@ -492,20 +491,6 @@ export class GroupPanelComponent implements OnInit {
         this.canEditGroupProfile = false;
       }
     });
-
-    // The box is kept by the гурток's own провід and впорядник; a youth sees only their balance.
-    this.entityService.checkEntityAccess('GroupDues', this.groupKey, 'Read').subscribe({
-      next: (canRead) => {
-        this.canOpenDues = canRead;
-      },
-      error: () => {
-        this.canOpenDues = false;
-      }
-    });
-  }
-
-  openDues(): void {
-    this.router.navigate(['/group', this.groupKey, 'dues']);
   }
 
   private patchProfileForm(group: GroupDto): void {

@@ -61,6 +61,14 @@ describe('PermissionService', () => {
     expect(service.canSeeKurinDues()).toBeFalse();
   });
 
+  it('shows a гурток box to its keepers, not to a youth with only their own balance', () => {
+    setState([...vykhovnykPerms, 'GroupDues:Read:OwnGroups']);
+    expect(service.canSeeGroupDues()).toBeTrue();
+
+    setState([...memberPerms, 'GroupDues:Read:Own']);
+    expect(service.canSeeGroupDues()).toBeFalse();
+  });
+
   it('treats a Зв\'язковий (steward) as a whole-kurin manager', () => {
     setState(stewardPerms);
     expect(service.canManageWholeKurin()).toBeTrue();

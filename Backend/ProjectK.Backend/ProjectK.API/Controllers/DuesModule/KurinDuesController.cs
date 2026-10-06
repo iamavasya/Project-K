@@ -6,6 +6,7 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Groups;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
@@ -37,6 +38,16 @@ public class KurinDuesController : ControllerBase
     public async Task<IActionResult> Get(Guid kurinKey)
     {
         var result = await _mediator.Send(new GetKurinDuesQuery(kurinKey));
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The гуртки whose box the caller may open — any member may ask; a youth gets none.</summary>
+    [HttpGet("groups")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<DuesGroupLinkDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReadableGroups(Guid kurinKey)
+    {
+        var result = await _mediator.Send(new GetReadableDuesGroupsQuery(kurinKey));
         return result.ToActionResult(this);
     }
 

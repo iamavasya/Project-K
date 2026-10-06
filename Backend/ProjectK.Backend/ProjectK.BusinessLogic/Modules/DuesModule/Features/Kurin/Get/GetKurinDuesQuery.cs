@@ -66,7 +66,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
         var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries);
-        var kurinBox = ledger.KurinBox();
+        var accounts = ledger.Accounts();
+        var kurinBox = ledger.KurinBox(accounts);
         var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
 
         var transfers = entries
@@ -135,6 +136,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             },
             SentToStanytsia = entries.Where(e => e.GroupKey is null && e.Kind == DuesEntryKind.TransferToStanytsia).Sum(e => e.Amount),
             Groups = groups,
+            Quarters = Quarters(accounts, groupNames),
             Transfers = transfers,
             Entries = entries
                 .Where(e => e.GroupKey is null)
@@ -145,6 +147,53 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             People = names.People,
             Viewer = new KurinDuesViewerDto { CanKeep = canKeep.IsAllowed, CanVerify = canVerify.IsAllowed, CanSetRates = canSetRates.IsAllowed }
         });
+    }
+
+    /// <summary>
+    /// The гуртки's quarterly tables folded into the kurin's: per quarter, per гурток, how many youth
+    /// were charged, what they owe up and what of it is paid — and the станиця's part on its own.
+    /// </summary>
+    private static IReadOnlyList<KurinDuesQuarterDto> Quarters(IReadOnlyList<DuesAccount> accounts, IReadOnlyDictionary<Guid, string> groupNames)
+    {
+        var cells = accounts
+            .SelectMany(a => a.Quarters.Select(q => (a.GroupKey, q)))
+            .GroupBy(x => x.q.Quarter.Index)
+            .OrderBy(g => g.Key);
+
+        var result = new List<KurinDuesQuarterDto>();
+        foreach (var quarter in cells)
+        {
+            var groups = quarter
+                .GroupBy(x => x.GroupKey)
+                .Select(g => Row(g.Key, groupNames.GetValueOrDefault(g.Key, "—"), g.Select(x => x.q).ToList()))
+                .OrderBy(r => r.GroupName)
+                .ToList();
+            result.Add(new KurinDuesQuarterDto
+            {
+                Quarter = Quarter(DuesQuarter.FromIndex(quarter.Key)),
+                Groups = groups,
+                Total = Row(Guid.Empty, "Разом", quarter.Select(x => x.q).ToList())
+            });
+        }
+
+        return result;
+    }
+
+    private static KurinDuesQuarterGroupDto Row(Guid groupKey, string name, IReadOnlyList<DuesAccountQuarter> quarters)
+    {
+        var expected = quarters.Sum(q => q.Charged.Stanytsia + q.Charged.Kurin);
+        var collected = quarters.Sum(q => q.Paid.Stanytsia + q.Paid.Kurin);
+        return new KurinDuesQuarterGroupDto
+        {
+            GroupKey = groupKey,
+            GroupName = name,
+            YouthCount = quarters.Count,
+            ExpectedUp = expected,
+            CollectedUp = collected,
+            DebtUp = expected - collected,
+            StanytsiaExpected = quarters.Sum(q => q.Charged.Stanytsia),
+            StanytsiaCollected = quarters.Sum(q => q.Paid.Stanytsia)
+        };
     }
 
     private static IReadOnlyList<PlastYearDto> Years(DuesQuarter first, DuesQuarter current)

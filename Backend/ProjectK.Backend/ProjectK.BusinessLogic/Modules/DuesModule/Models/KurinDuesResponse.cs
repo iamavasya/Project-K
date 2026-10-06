@@ -21,11 +21,55 @@ public sealed class KurinDuesResponse
     public IReadOnlyList<KurinGroupHandoverDto> Groups { get; init; } = [];
     public IReadOnlyList<DuesTransferDto> Transfers { get; init; } = [];
 
+    /// <summary>
+    /// Quarter by quarter, what every гурток owes up for its youth and what of it the youth have paid —
+    /// the kurin's view of the same table each гурток keeps. Oldest quarter first.
+    /// </summary>
+    public IReadOnlyList<KurinDuesQuarterDto> Quarters { get; init; } = [];
+
     /// <summary>The kurin's own operations — not the гуртки's.</summary>
     public IReadOnlyList<DuesEntryDto> Entries { get; init; } = [];
 
     public IReadOnlyList<DuesPersonDto> People { get; init; } = [];
     public KurinDuesViewerDto Viewer { get; init; } = new();
+}
+
+/// <summary>One quarter across the гуртки, with the kurin's total as one more row.</summary>
+public sealed class KurinDuesQuarterDto
+{
+    public QuarterDto Quarter { get; init; } = new();
+    public IReadOnlyList<KurinDuesQuarterGroupDto> Groups { get; init; } = [];
+    public KurinDuesQuarterGroupDto Total { get; init; } = new();
+}
+
+/// <summary>What one гурток's youth owe up for one quarter, and how far they have paid it.</summary>
+public sealed class KurinDuesQuarterGroupDto
+{
+    public Guid GroupKey { get; init; }
+    public string GroupName { get; init; } = string.Empty;
+
+    /// <summary>Youth charged for the quarter in this гурток.</summary>
+    public int YouthCount { get; init; }
+
+    /// <summary>The станиця and kurin parts the гурток has to hand up for the quarter.</summary>
+    public decimal ExpectedUp { get; init; }
+
+    /// <summary>Of that, what the youth have paid so far.</summary>
+    public decimal CollectedUp { get; init; }
+
+    /// <summary>What the youth still owe of it.</summary>
+    public decimal DebtUp { get; init; }
+
+    /// <summary>The станиця part alone: what the kurin owes the станиця for this quarter's youth.</summary>
+    public decimal StanytsiaExpected { get; init; }
+    public decimal StanytsiaCollected { get; init; }
+}
+
+/// <summary>A гурток whose box the caller may open.</summary>
+public sealed class DuesGroupLinkDto
+{
+    public Guid GroupKey { get; init; }
+    public string GroupName { get; init; } = string.Empty;
 }
 
 /// <summary>How one гурток stands with the kurin.</summary>

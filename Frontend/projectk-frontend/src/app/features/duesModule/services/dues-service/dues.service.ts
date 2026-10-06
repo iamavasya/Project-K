@@ -6,6 +6,7 @@ import { ClientCacheService } from '../../../kurinModule/services/client-cache/c
 import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/services/client-cache/cache-policy';
 import {
   GroupDuesDto,
+  DuesGroupLinkDto,
   KurinDuesDto,
   MemberDuesDto,
   SetDuesConcessionRequest,
@@ -46,6 +47,15 @@ export class DuesService {
       `${DUES_CACHE_PREFIX}kurin:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<KurinDuesDto>(`${this.kurinApiUrl}/${kurinKey}/dues`)
+    );
+  }
+
+  /** The гуртки whose box the caller may open; empty for a youth. */
+  getReadableGroups(kurinKey: string): Observable<DuesGroupLinkDto[]> {
+    return this.cache.get(
+      `${DUES_CACHE_PREFIX}groups:${kurinKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<DuesGroupLinkDto[]>(`${this.kurinApiUrl}/${kurinKey}/dues/groups`)
     );
   }
 

@@ -103,6 +103,14 @@ export class PermissionService {
     return this.isAdmin() || this.has('KurinDues:Read');
   }
 
+  /**
+   * Keeps some гурток's box — Виховник, гуртковий, скарбник гуртка — or reads them all. A youth's
+   * `GroupDues:Read:Own` is about their own balance, not a box, so it does not count.
+   */
+  canSeeGroupDues(): boolean {
+    return this.isAdmin() || this.has('GroupDues:Read:OwnGroups') || this.has('GroupDues:Read:KurinWide');
+  }
+
   getRoleSeverity(): string {
     if (this.isAdmin()) {
       return 'danger';

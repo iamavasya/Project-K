@@ -143,6 +143,30 @@
   cursor: pointer;
 }
 
+.dues-quarter + .dues-quarter {
+  margin-top: 1.25rem;
+}
+
+.dues-quarter__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.dues-quarter__sum {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+:host ::ng-deep .project-table .p-datatable-tfoot > tr.dues-row--total > td {
+  border-color: var(--p-surface-border);
+  padding-block: 0.875rem;
+  font-weight: 700;
+  background: var(--p-surface-ground);
+}
+
 @media (max-width: 640px) {
   :host ::ng-deep .dues-table .p-datatable-wrapper {
     overflow-x: visible;
@@ -152,14 +176,16 @@
     display: none;
   }
 
-  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row {
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row {
     display: grid;
     gap: 0.4rem;
     padding: 0.85rem 0;
     border-bottom: 1px solid var(--p-content-border-color);
   }
 
-  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td {
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row > td {
     display: grid;
     grid-template-columns: 6.5rem minmax(0, 1fr);
     gap: 0.6rem;
@@ -171,7 +197,8 @@
     text-align: left;
   }
 
-  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td::before {
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td::before,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row > td::before {
     content: attr(data-mobile-label);
     color: var(--lil-faint);
     font-size: var(--lil-text-micro);
