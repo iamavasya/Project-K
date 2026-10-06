@@ -10,7 +10,7 @@ export const environment = {
   envName: runtimeConfig?.environmentName || 'Development',
   // Fixed, not configurable: the licence forbids running the system under another name.
   appName: 'Лілейка',
-  docsUrl: runtimeConfig?.docsUrl || 'https://dev.projectk-docs-and-demo.pages.dev/',
+  docsUrl: runtimeConfig?.docsUrl || 'https://docs-dev-projectk.rostyslav-mukha.dev/',
   isF1TierBackend: false,
   isStaticDemo: false
 };

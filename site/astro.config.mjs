@@ -7,6 +7,7 @@ import mermaid from 'astro-mermaid';
 // репозиторію і копіюється сюди скриптом `scripts/sync-docs.mjs` перед dev і build, тож одна
 // правда і для сайту, і для тих, хто читає markdown на GitHub.
 export default defineConfig({
+	site: 'https://docs-projectk.rostyslav-mukha.dev',
 	integrations: [
 		// Діаграми в довідці: ```mermaid у markdown рендериться в браузері й перемикає тему разом
 		// із сайтом. Має стояти перед starlight, інакше блок забере підсвітка коду.
