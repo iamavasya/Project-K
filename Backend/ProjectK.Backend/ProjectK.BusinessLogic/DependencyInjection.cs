@@ -76,6 +76,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
         services.AddScoped<GroupDuesAccess>();
+        services.AddScoped<KurinDuesAccess>();
         services.AddScoped<DuesEntryWriter>();
         return services;
     }

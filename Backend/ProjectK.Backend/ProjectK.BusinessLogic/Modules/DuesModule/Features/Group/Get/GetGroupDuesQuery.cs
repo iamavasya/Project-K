@@ -62,26 +62,17 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var concessions = await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken);
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
         var entries = await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken);
-        var memberships = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
-            .ToDictionary(m => m.MembershipKey);
-        var people = await _members.GetByKurinAsync(kurinKey, cancellationToken);
-        var names = people.ToDictionary(p => p.MemberKey, p => p.FullName);
-        var namesByAccount = people.Where(p => p.UserKey.HasValue)
-            .GroupBy(p => p.UserKey!.Value)
-            .ToDictionary(g => g.Key, g => g.First().FullName);
+        var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
 
         var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries);
         var accounts = ledger.Accounts();
         var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
 
-        string NameOf(Guid membershipKey) =>
-            memberships.TryGetValue(membershipKey, out var m) && names.TryGetValue(m.MemberKey, out var name) ? name : "—";
-
         var accountDtos = accounts
             .Where(a => a.GroupKey == group.GroupKey)
             .Select(a =>
             {
-                memberships.TryGetValue(a.MembershipKey, out var membership);
+                names.Memberships.TryGetValue(a.MembershipKey, out var membership);
                 var standing = membership is null || membership.LeftAtUtc.HasValue ? DuesAccountStanding.Left
                     : membership.GroupKey == group.GroupKey ? DuesAccountStanding.Current
                     : DuesAccountStanding.Moved;
@@ -89,7 +80,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
                 {
                     MembershipKey = a.MembershipKey,
                     MemberKey = membership?.MemberKey ?? Guid.Empty,
-                    FullName = NameOf(a.MembershipKey),
+                    FullName = names.OfMembership(a.MembershipKey),
                     Standing = standing,
                     IsConcessionNow = ledger.IsConcession(a.MembershipKey, current),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
@@ -113,25 +104,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             .Where(e => e.GroupKey == group.GroupKey)
             .OrderByDescending(e => e.OccurredOn)
             .ThenByDescending(e => e.CreatedDate)
-            .Select(e => new DuesEntryDto
-            {
-                DuesEntryKey = e.DuesEntryKey,
-                Kind = e.Kind,
-                Method = e.Method,
-                CounterMethod = e.CounterMethod,
-                Amount = e.Amount,
-                OccurredOn = e.OccurredOn,
-                MembershipKey = e.MembershipKey,
-                MemberName = e.MembershipKey is { } mk ? NameOf(mk) : null,
-                CollectedByMemberKey = e.CollectedByMemberKey,
-                CollectedByName = e.CollectedByMemberKey is { } ck ? names.GetValueOrDefault(ck) : null,
-                Note = e.Note,
-                IsVerified = e.IsVerified,
-                VerifiedAtUtc = e.VerifiedAtUtc,
-                VerifiedByName = e.VerifiedByUserKey is { } vk ? namesByAccount.GetValueOrDefault(vk) : null,
-                ReceivedAtUtc = e.ReceivedAtUtc,
-                CreatedAtUtc = e.CreatedDate
-            })
+            .Select(names.ToDto)
             .ToList();
 
         var box = ledger.GroupBox(group.GroupKey, accounts);
@@ -179,7 +152,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
                 Received = handover.Received,
                 Outstanding = handover.Outstanding
             },
-            People = people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList(),
+            People = names.People,
             Viewer = new DuesViewerDto { CanKeep = canKeep.IsAllowed, CanVerify = canVerify.IsAllowed, CanSetKurinRates = canSetKurinRates.IsAllowed }
         });
     }

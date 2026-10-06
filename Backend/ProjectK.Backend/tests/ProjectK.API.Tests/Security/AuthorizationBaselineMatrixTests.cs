@@ -136,6 +136,12 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(GroupDuesController.SetEntryVerified), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, SetKurinDuesRateRequest>>(nameof(KurinDuesController.SetRate), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.Get), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesTransferReceivedRequest>>(nameof(KurinDuesController.SetTransferReceived), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.CreateEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.UpdateEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(KurinDuesController.SetEntryVerified), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

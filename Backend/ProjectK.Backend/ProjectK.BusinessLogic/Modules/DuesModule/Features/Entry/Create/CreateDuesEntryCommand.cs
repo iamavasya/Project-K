@@ -13,14 +13,6 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
 /// <summary>Writes a new operation into a гурток's box. Returns its key.</summary>
 public sealed record CreateDuesEntryCommand(Guid GroupKey, UpsertDuesEntryRequest Request) : IRequest<ServiceResult<Guid>>;
 
-public sealed class UpsertDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
-{
-    public UpsertDuesEntryRequestValidator(TimeProvider time)
-    {
-        DuesEntryRules.Apply(this, time);
-    }
-}
-
 public sealed class CreateDuesEntryCommandValidator : AbstractValidator<CreateDuesEntryCommand>
 {
     public CreateDuesEntryCommandValidator(TimeProvider time)
@@ -60,7 +52,7 @@ public sealed class CreateDuesEntryCommandHandler : IRequestHandler<CreateDuesEn
             return failure!;
         }
 
-        if (await _writer.CheckAsync<Guid>(group, request.Request, cancellationToken) is { } problem)
+        if (await _writer.CheckForGroupAsync<Guid>(group, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }

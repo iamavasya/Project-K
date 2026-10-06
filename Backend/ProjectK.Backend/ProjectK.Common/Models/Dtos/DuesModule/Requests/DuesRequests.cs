@@ -49,3 +49,8 @@ public sealed class SetDuesEntryVerifiedRequest
 {
     public bool IsVerified { get; set; }
 }
+
+public sealed class SetDuesTransferReceivedRequest
+{
+    public bool IsReceived { get; set; }
+}

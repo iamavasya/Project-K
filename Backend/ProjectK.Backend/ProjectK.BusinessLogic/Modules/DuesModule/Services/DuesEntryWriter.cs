@@ -30,7 +30,7 @@ public sealed class DuesEntryWriter
     /// with an account here: a youth of the гурток today, or one who was charged here and moved on —
     /// an old debt is still paid to the гурток it arose in.
     /// </summary>
-    public async Task<ServiceResult<T>?> CheckAsync<T>(Common.Entities.KurinModule.Group group, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<T>?> CheckForGroupAsync<T>(Common.Entities.KurinModule.Group group, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
     {
         if (request.MembershipKey is { } membershipKey)
         {
@@ -46,8 +46,17 @@ public sealed class DuesEntryWriter
             }
         }
 
+        return await CheckCollectorAsync<T>(group.KurinKey, request, cancellationToken);
+    }
+
+    /// <summary>Why the request cannot stand against the kurin's own box, or null.</summary>
+    public Task<ServiceResult<T>?> CheckForKurinAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
+        => CheckCollectorAsync<T>(kurinKey, request, cancellationToken);
+
+    private async Task<ServiceResult<T>?> CheckCollectorAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
+    {
         if (request.CollectedByMemberKey is { } collector
-            && await _members.FindKurinKeyAsync(collector, cancellationToken) != group.KurinKey)
+            && await _members.FindKurinKeyAsync(collector, cancellationToken) != kurinKey)
         {
             return ServiceResult<T>.Failure(ResultType.BadRequest, "CollectorNotInKurin", "Whoever collected it has to be of this kurin.");
         }

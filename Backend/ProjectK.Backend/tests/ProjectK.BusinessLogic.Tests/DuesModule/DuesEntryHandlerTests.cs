@@ -213,6 +213,26 @@ public class DuesEntryHandlerTests
         new UpsertDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
     }
 
+    // The kurin's box takes no personal operations and no transfers to itself; the станиця is its own to hand to.
+    [Theory]
+    [InlineData(DuesEntryKind.TransferToStanytsia, true)]
+    [InlineData(DuesEntryKind.Expense, true)]
+    [InlineData(DuesEntryKind.Contribution, false)]
+    [InlineData(DuesEntryKind.TransferToKurin, false)]
+    public void KurinRules_HoldTheirOwnLine(DuesEntryKind kind, bool valid)
+    {
+        var request = new UpsertDuesEntryRequest
+        {
+            Kind = kind,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 100,
+            OccurredOn = new DateOnly(2026, 5, 1),
+            MembershipKey = DuesEntryRules.PersonalKinds.Contains(kind) ? Guid.NewGuid() : null
+        };
+
+        new UpsertKurinDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
+    }
+
     [Fact]
     public void Rules_RefuseADateInTheFutureAndAPersonOnAnExpense()
     {

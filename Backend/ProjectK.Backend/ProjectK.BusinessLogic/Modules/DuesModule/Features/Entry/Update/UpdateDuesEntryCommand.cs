@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -66,7 +65,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
                 "A verified operation is locked. Add a correction, or have the впорядник unmark it.");
         }
 
-        if (await _writer.CheckAsync<object>(group, request.Request, cancellationToken) is { } problem)
+        if (await _writer.CheckForGroupAsync<object>(group, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }

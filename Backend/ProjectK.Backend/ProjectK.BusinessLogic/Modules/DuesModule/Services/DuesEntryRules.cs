@@ -5,8 +5,8 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
 /// <summary>
-/// What any operation has to satisfy before it reaches a box. Shared by create and update so the
-/// two cannot drift apart.
+/// What any operation has to satisfy before it reaches a box. Shared by create and update, and by
+/// the гурток's box and the kurin's, so none of them can drift apart.
 /// </summary>
 public static class DuesEntryRules
 {
@@ -21,10 +21,19 @@ public static class DuesEntryRules
         DuesEntryKind.TransferToKurin, DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange
     };
 
-    public static void Apply(AbstractValidator<UpsertDuesEntryRequest> validator, TimeProvider time)
+    /// <summary>
+    /// Kinds the kurin's own box may hold. Nothing personal: people pay their гурток, and what
+    /// reaches the kurin arrives as a гурток's transfer, not as an operation written here.
+    /// </summary>
+    public static readonly IReadOnlySet<DuesEntryKind> KurinKinds = new HashSet<DuesEntryKind>
     {
-        validator.RuleFor(r => r.Kind).IsInEnum().Must(GroupKinds.Contains)
-            .WithMessage("A гурток's box does not hold that kind of operation.");
+        DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia
+    };
+
+    public static void Apply(AbstractValidator<UpsertDuesEntryRequest> validator, TimeProvider time, IReadOnlySet<DuesEntryKind> allowedKinds)
+    {
+        validator.RuleFor(r => r.Kind).IsInEnum().Must(allowedKinds.Contains)
+            .WithMessage("This box does not hold that kind of operation.");
         validator.RuleFor(r => r.Method).IsInEnum();
         validator.RuleFor(r => r.Amount).NotEqual(0).WithMessage("An amount is required.");
         validator.RuleFor(r => r.Amount).GreaterThan(0)
@@ -48,5 +57,23 @@ public static class DuesEntryRules
         validator.RuleFor(r => r.CounterMethod).Null()
             .When(r => r.Kind != DuesEntryKind.Exchange);
         validator.RuleFor(r => r.Note).MaximumLength(500);
+    }
+}
+
+/// <summary>An operation as a гурток's box accepts it.</summary>
+public sealed class UpsertDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
+{
+    public UpsertDuesEntryRequestValidator(TimeProvider time)
+    {
+        DuesEntryRules.Apply(this, time, DuesEntryRules.GroupKinds);
+    }
+}
+
+/// <summary>An operation as the kurin's own box accepts it.</summary>
+public sealed class UpsertKurinDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
+{
+    public UpsertKurinDuesEntryRequestValidator(TimeProvider time)
+    {
+        DuesEntryRules.Apply(this, time, DuesEntryRules.KurinKinds);
     }
 }
