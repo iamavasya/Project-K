@@ -280,7 +280,7 @@ describe('LeadershipComponent', () => {
       expect(component.leadershipHistories.length).toBe(1);
     });
 
-    it('onRemoveRow should restore empty row for mandatory roles if last one removed', () => {
+    it('onRemoveRow should restore empty row for single-seat roles if last one removed', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
       expect(component.leadershipHistories.length).toBe(1);
 
@@ -302,6 +302,31 @@ describe('LeadershipComponent', () => {
       component.saveCadence();
       expect(leadershipServiceSpy.create).not.toHaveBeenCalled();
       expect(leadershipServiceSpy.update).not.toHaveBeenCalled();
+    });
+
+    it('зберігає провід, де обсаджено лише частину урядів', () => {
+      component.buildFormRowsFromDefaults('group');
+      const seat = (role: LeadershipRole) => component.leadershipHistories.controls
+        .find(c => c.getRawValue().role === role)!
+        .patchValue({ member: mockMember });
+      seat(LeadershipRole.Hurtkoviy);
+      seat(LeadershipRole.Pysar);
+
+      expect(component.leadershipForm.valid).toBeTrue();
+      component.saveCadence();
+
+      expect(leadershipServiceSpy.create).toHaveBeenCalled();
+      const payload = leadershipServiceSpy.create.calls.mostRecent().args[0];
+      expect(payload.leadershipHistories.map(h => h.role)).toEqual([LeadershipRole.Hurtkoviy, LeadershipRole.Pysar]);
+    });
+
+    it('новий провід без жодної людини не зберігає', () => {
+      component.buildFormRowsFromDefaults('kurin');
+
+      expect(component.canSave).toBeFalse();
+      component.saveCadence();
+
+      expect(leadershipServiceSpy.create).not.toHaveBeenCalled();
     });
 
     it('should call create when no leadershipKey exists', () => {
