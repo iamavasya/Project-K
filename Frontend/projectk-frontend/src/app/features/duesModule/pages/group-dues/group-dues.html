@@ -27,7 +27,7 @@
             styleClass="dues-year" />
         }
         @if (d.viewer.canSetKurinRates) {
-          <p-button label="Ставки куреня" icon="pi pi-flag" severity="secondary" (onClick)="openKurinRateDialog()" />
+          <p-button label="Ставки куреня" icon="pi pi-flag" severity="secondary" (onClick)="kurinRateDialogVisible.set(true)" />
         }
         @if (d.viewer.canKeep) {
           <p-button label="Ставка гуртка" icon="pi pi-percentage" severity="secondary" (onClick)="openRateDialog()" />
@@ -39,7 +39,7 @@
 
   @if (loading() && !data()) {
     <section class="kurin-tile">
-      <div class="dues-stats">
+      <div class="lil-stats">
         @for (item of [1, 2, 3, 4]; track item) {
           <p-skeleton width="100%" height="5.5rem" borderRadius="12px" />
         }
@@ -67,21 +67,21 @@
         </div>
       </div>
 
-      <div class="dues-stats">
-        <div class="dues-stat">
-          <span class="dues-stat__label">У касі</span>
-          <span class="dues-stat__value">{{ money(d.box.total) }}</span>
-          <span class="dues-stat__sub">готівка {{ money(d.box.cash) }} · картка {{ money(d.box.card) }}</span>
+      <div class="lil-stats">
+        <div class="lil-stat">
+          <span class="lil-stat__label">У касі</span>
+          <span class="lil-stat__value">{{ money(d.box.total) }}</span>
+          <span class="lil-stat__sub">готівка {{ money(d.box.cash) }} · картка {{ money(d.box.card) }}</span>
         </div>
-        <div class="dues-stat dues-stat--own">
-          <span class="dues-stat__label">Гурткові</span>
-          <span class="dues-stat__value">{{ money(d.box.own) }}</span>
-          <span class="dues-stat__sub">можна витрачати</span>
+        <div class="lil-stat lil-stat--primary">
+          <span class="lil-stat__label">Гурткові</span>
+          <span class="lil-stat__value">{{ money(d.box.own) }}</span>
+          <span class="lil-stat__sub">можна витрачати</span>
         </div>
-        <div class="dues-stat">
-          <span class="dues-stat__label">До передачі курінному</span>
-          <span class="dues-stat__value">{{ money(d.box.toForward) }}</span>
-          <span class="dues-stat__sub">
+        <div class="lil-stat">
+          <span class="lil-stat__label">До передачі курінному</span>
+          <span class="lil-stat__value">{{ money(d.box.toForward) }}</span>
+          <span class="lil-stat__sub">
             @if (d.box.inTransit > 0) {
               в дорозі {{ money(d.box.inTransit) }}
             } @else {
@@ -89,10 +89,10 @@
             }
           </span>
         </div>
-        <div class="dues-stat">
-          <span class="dues-stat__label">Передано курінному</span>
-          <span class="dues-stat__value">{{ money(d.handover.transferred) }}</span>
-          <span class="dues-stat__sub">підтверджено {{ money(d.handover.received) }}</span>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Передано курінному</span>
+          <span class="lil-stat__value">{{ money(d.handover.transferred) }}</span>
+          <span class="lil-stat__sub">підтверджено {{ money(d.handover.received) }}</span>
         </div>
       </div>
 
@@ -309,7 +309,8 @@
     <app-dues-entry-dialog
       [visible]="entryDialogVisible()"
       (visibleChange)="entryDialogVisible.set($event)"
-      [group]="d"
+      [accounts]="d.accounts"
+      [people]="d.people"
       [entry]="entryToEdit()"
       [saving]="savingEntry()"
       [errorMessage]="entryError()"
@@ -325,11 +326,11 @@
       [resizable]="false"
       [dismissableMask]="!savingRate()"
       [style]="{ width: 'min(92vw, 26rem)' }">
-      <p class="dues-dialog-hint">
+      <p class="lil-dialog-hint">
         Гурткова частина квартальної вкладки. Станичну й курінну задає курінь.
       </p>
-      <div class="dues-dialog-form">
-        <div class="dues-dialog-field">
+      <div class="lil-dialog-form">
+        <div class="lil-dialog-field">
           <label for="dues-rate-from">З кварталу</label>
           <p-select
             inputId="dues-rate-from"
@@ -341,7 +342,7 @@
             appendTo="body"
             styleClass="w-full" />
         </div>
-        <div class="dues-dialog-field">
+        <div class="lil-dialog-field">
           <label for="dues-rate-share">На гурток за квартал, ₴</label>
           <input pInputText id="dues-rate-share" type="number" inputmode="decimal" min="0" step="0.01"
             [ngModel]="rateShare()" (ngModelChange)="rateShare.set($event)" />
@@ -353,58 +354,14 @@
       </ng-template>
     </p-dialog>
 
-    <!-- Ставки куреня -->
-    <p-dialog
-      header="Ставки куреня"
+    <app-kurin-rate-dialog
       [visible]="kurinRateDialogVisible()"
       (visibleChange)="kurinRateDialogVisible.set($event)"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [dismissableMask]="!savingKurinRate()"
-      [style]="{ width: 'min(92vw, 28rem)' }">
-      <p class="dues-dialog-hint">
-        Станична й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише станичну.
-      </p>
-      <div class="dues-dialog-form">
-        <div class="dues-dialog-field">
-          <label for="dues-kurin-from">З кварталу</label>
-          <p-select
-            inputId="dues-kurin-from"
-            [options]="fromQuarterOptions()"
-            [ngModel]="kurinRateFromQuarter()"
-            (ngModelChange)="kurinRateFromQuarter.set($event)"
-            optionLabel="label"
-            optionValue="value"
-            appendTo="body"
-            styleClass="w-full" />
-        </div>
-        <div class="dues-dialog-grid">
-          <div class="dues-dialog-field">
-            <label for="dues-kurin-full">Станиця, повна</label>
-            <input pInputText id="dues-kurin-full" type="number" inputmode="decimal" min="0" step="0.01"
-              [ngModel]="kurinStanytsiaFull()" (ngModelChange)="kurinStanytsiaFull.set($event)" />
-          </div>
-          <div class="dues-dialog-field">
-            <label for="dues-kurin-reduced">Станиця, пільгова</label>
-            <input pInputText id="dues-kurin-reduced" type="number" inputmode="decimal" min="0" step="0.01"
-              [ngModel]="kurinStanytsiaReduced()" (ngModelChange)="kurinStanytsiaReduced.set($event)" />
-          </div>
-          <div class="dues-dialog-field">
-            <label for="dues-kurin-share">Курінь</label>
-            <input pInputText id="dues-kurin-share" type="number" inputmode="decimal" min="0" step="0.01"
-              [ngModel]="kurinShare()" (ngModelChange)="kurinShare.set($event)" />
-          </div>
-        </div>
-        @if (kurinStanytsiaFull() !== null && kurinStanytsiaReduced() !== null && kurinStanytsiaReduced()! > kurinStanytsiaFull()!) {
-          <p class="dues-dialog-error">Пільгова не може бути вищою за повну.</p>
-        }
-      </div>
-      <ng-template #footer>
-        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingKurinRate()" (onClick)="kurinRateDialogVisible.set(false)" />
-        <p-button label="Зберегти" [loading]="savingKurinRate()" [disabled]="!kurinRateValid()" (onClick)="saveKurinRate()" />
-      </ng-template>
-    </p-dialog>
+      [rates]="d.kurinRates"
+      [years]="d.years"
+      [currentQuarter]="d.currentQuarter"
+      [saving]="savingKurinRate()"
+      (save)="saveKurinRate($event)" />
 
     <!-- Пільга -->
     <p-dialog
@@ -417,11 +374,11 @@
       [dismissableMask]="!savingConcession()"
       [style]="{ width: 'min(92vw, 26rem)' }">
       @if (concessionTarget(); as target) {
-        <p class="dues-dialog-hint">
+        <p class="lil-dialog-hint">
           {{ target.fullName }}. Пільга знижує лише станичну частину; курінь і гурток платяться повністю.
         </p>
-        <div class="dues-dialog-form">
-          <div class="dues-dialog-field">
+        <div class="lil-dialog-form">
+          <div class="lil-dialog-field">
             <label for="dues-concession-from">З кварталу</label>
             <p-select
               inputId="dues-concession-from"
@@ -433,7 +390,7 @@
               appendTo="body"
               styleClass="w-full" />
           </div>
-          <div class="dues-dialog-field dues-dialog-field--row">
+          <div class="lil-dialog-field lil-dialog-field--row">
             <p-toggleswitch inputId="dues-concession-on" [ngModel]="concessionOn()" (ngModelChange)="concessionOn.set($event)" />
             <label for="dues-concession-on">{{ concessionOn() ? 'Пільгова вкладка' : 'Повна вкладка' }}</label>
           </div>

@@ -140,6 +140,7 @@ export class SidebarMenuComponent implements OnChanges {
     const isAdmin = this.permissionService.isAdmin();
     const canReviewSkills = this.permissionService.canReviewSkills();
     const canManageKurinSettings = this.permissionService.canManageKurinSettings();
+    const canSeeKurinDues = this.permissionService.canSeeKurinDues();
     const canSeeRegistry = isAdmin
       || this.permissionService.canManageWholeKurin()
       || this.permissionService.canLeadGroups();
@@ -245,6 +246,18 @@ export class SidebarMenuComponent implements OnChanges {
           command: () => {
             this.close();
             this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
+          }
+        });
+      }
+
+      if (canSeeKurinDues) {
+        items.push({
+          label: 'Вкладка куреня',
+          icon: 'pi pi-wallet',
+          routerLink: ['/kurin', kurinKey, 'dues'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin', kurinKey, 'dues']);
           }
         });
       }

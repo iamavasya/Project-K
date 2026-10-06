@@ -1,0 +1,322 @@
+<p-confirmdialog />
+
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Курінь</p>
+      <h1>Вкладка куреня</h1>
+      @if (data(); as d) {
+        <p>
+          зараз {{ quarterLabel(d.currentQuarter) }}
+          · гуртків: {{ d.groups.length }}
+          @if (pendingTransfers().length; as count) { · чекають підтвердження: {{ count }} }
+        </p>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        @if (d.viewer.canSetRates) {
+          <p-button label="Ставки куреня" icon="pi pi-percentage" severity="secondary" (onClick)="rateDialogVisible.set(true)" />
+        }
+        @if (d.viewer.canKeep) {
+          <p-button label="Записати операцію" icon="pi pi-plus" (onClick)="openEntryDialog()" />
+        }
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      <div class="lil-stats">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <p-skeleton width="100%" height="5.5rem" borderRadius="12px" />
+        }
+      </div>
+    </section>
+    <section class="kurin-tile">
+      <p-skeleton width="100%" height="2.75rem" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Касу не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <!-- Каса куреня -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Каса куреня</h2>
+          <p>Курінні гроші й те, що треба віддати в станицю</p>
+        </div>
+      </div>
+
+      <div class="lil-stats">
+        <div class="lil-stat">
+          <span class="lil-stat__label">У касі</span>
+          <span class="lil-stat__value">{{ money(d.box.total) }}</span>
+          <span class="lil-stat__sub">готівка {{ money(d.box.cash) }} · картка {{ money(d.box.card) }}</span>
+        </div>
+        <div class="lil-stat lil-stat--primary">
+          <span class="lil-stat__label">Курінні</span>
+          <span class="lil-stat__value">{{ money(d.box.own) }}</span>
+          <span class="lil-stat__sub">можна витрачати</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">До передачі в станицю</span>
+          <span class="lil-stat__value">{{ money(d.box.toForward) }}</span>
+          <span class="lil-stat__sub">передано {{ money(d.sentToStanytsia) }}</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">В дорозі від гуртків</span>
+          <span class="lil-stat__value">{{ money(d.box.inTransit) }}</span>
+          <span class="lil-stat__sub">
+            @if (outstandingTotal() > 0) { ще в гуртках {{ money(outstandingTotal()) }} } @else { гуртки все передали }
+          </span>
+        </div>
+      </div>
+
+      <p class="dues-rates">
+        @if (rateNow(); as rate) {
+          Станиця {{ money(rate.stanytsiaFull) }}
+          @if (rate.stanytsiaReduced !== rate.stanytsiaFull) { (пільгова {{ money(rate.stanytsiaReduced) }}) }
+          · курінь {{ money(rate.kurinShare) }} за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.
+        } @else {
+          <i class="pi pi-info-circle"></i>
+          Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.
+        }
+      </p>
+    </section>
+
+    <!-- Гуртки -->
+    <section class="kurin-tile">
+      <p-table [value]="d.groups" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Гуртки</h2>
+              <span class="lil-count">{{ d.groups.length }}</span>
+              <p>Скільки кожен зібрав для станиці й куреня і скільки з того віддав. Натисни на рядок — передачі покажуть лише цей гурток.</p>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col" pFrozenColumn class="dues-name-col">Гурток</th>
+            <th scope="col" class="dues-number">Зібрано вгору</th>
+            <th scope="col" class="dues-number">Передано</th>
+            <th scope="col" class="dues-number">Підтверджено</th>
+            <th scope="col" class="dues-number">Ще в гуртку</th>
+            <th scope="col" class="dues-number">В дорозі</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-group>
+          <tr class="dues-row dues-row--group" [class.dues-row--selected]="groupFilter() === group.groupKey"
+              tabindex="0" (click)="toggleGroup(group)" (keydown.enter)="toggleGroup(group)">
+            <td pFrozenColumn class="dues-name-col" data-mobile-label="Гурток">
+              <a class="dues-name dues-link" [routerLink]="['/group', group.groupKey, 'dues']" (click)="$event.stopPropagation()">{{ group.groupName }}</a>
+            </td>
+            <td class="dues-number" data-mobile-label="Зібрано вгору">{{ money(group.owedUp) }}</td>
+            <td class="dues-number" data-mobile-label="Передано">{{ money(group.transferred) }}</td>
+            <td class="dues-number" data-mobile-label="Підтверджено">{{ money(group.received) }}</td>
+            <td class="dues-number" data-mobile-label="Ще в гуртку">
+              <span class="dues-balance" [class.dues-balance--debt]="group.outstanding > 0" [class.dues-balance--ok]="group.outstanding <= 0">
+                {{ group.outstanding > 0 ? money(group.outstanding) : 'усе передано' }}
+              </span>
+            </td>
+            <td class="dues-number" data-mobile-label="В дорозі">
+              @if (group.inTransit > 0) { {{ money(group.inTransit) }} } @else { <span class="dues-blank">—</span> }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              <app-empty-state art="list" title="Гуртків поки немає" body="Курінь без гуртків — як мандрівка без стежки." />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <!-- Передачі -->
+    <section class="kurin-tile">
+      <p-table [value]="filteredTransfers()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Передачі від гуртків</h2>
+              <span class="lil-count">{{ filteredTransfers().length }}</span>
+              <p>Гроші в дорозі, доки курінний скарбник не підтвердить, що отримав</p>
+            </div>
+            <div class="lil-tile-head__actions dues-filters">
+              @if (groupFilterName(); as name) {
+                <p-button [label]="name" icon="pi pi-times" iconPos="right" severity="secondary" size="small" (onClick)="groupFilter.set(null)" />
+              }
+              <span class="dues-toggle">
+                <p-toggleswitch inputId="dues-pending-only" [ngModel]="pendingOnly()" (ngModelChange)="pendingOnly.set($event)" />
+                <label for="dues-pending-only">Лише в дорозі</label>
+              </span>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Гурток</th>
+            <th scope="col" class="dues-number">Сума</th>
+            <th scope="col">Спосіб</th>
+            <th scope="col">Передав</th>
+            <th scope="col">Нотатка</th>
+            <th scope="col">Стан</th>
+            <th scope="col" class="dues-actions-col"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-transfer>
+          <tr class="dues-row">
+            <td data-mobile-label="Дата">{{ transfer.occurredOn | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Гурток">{{ transfer.groupName }}</td>
+            <td data-mobile-label="Сума" class="dues-number dues-amount--in">{{ signedMoney(transfer.amount) }}</td>
+            <td data-mobile-label="Спосіб">{{ methodLabel(transfer) }}</td>
+            <td data-mobile-label="Передав">
+              @if (transfer.collectedByName) { {{ transfer.collectedByName }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Нотатка" class="dues-note">
+              @if (transfer.note) { {{ transfer.note }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Стан">
+              @if (transfer.isReceived) {
+                <p-tag value="отримано" severity="success" [pTooltip]="'Підтвердив ' + (transfer.receivedByName ?? '—')" tooltipPosition="left" />
+              } @else {
+                <p-tag value="в дорозі" severity="secondary" />
+              }
+            </td>
+            <td class="dues-actions-col">
+              @if (d.viewer.canKeep) {
+                @if (transfer.isReceived) {
+                  <p-button icon="pi pi-undo" variant="text" severity="secondary" size="small" ariaLabel="Зняти підтвердження" pTooltip="Зняти підтвердження"
+                    [loading]="busyKey() === transfer.duesEntryKey" (onClick)="setReceived(transfer, false)" />
+                } @else {
+                  <p-button label="Отримано" icon="pi pi-check" severity="secondary" size="small"
+                    [loading]="busyKey() === transfer.duesEntryKey" (onClick)="setReceived(transfer, true)" />
+                }
+              }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="8">
+              @if (d.transfers.length) {
+                <app-empty-state art="trail" title="Нічого не знайшлось" body="Усе отримано — або спробуй інший гурток." />
+              } @else {
+                <app-empty-state art="list" title="Передач ще не було" body="Коли гурток передасть гроші курінному, це зʼявиться тут." />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <!-- Операції куреня -->
+    <section class="kurin-tile">
+      <p-table [value]="filteredEntries()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Операції куреня</h2>
+              <span class="lil-count">{{ filteredEntries().length }}</span>
+              <p>Витрати, передачі в станицю, інший прихід — і чи перевірив їх Звʼязковий</p>
+            </div>
+            <div class="lil-tile-head__actions dues-filters">
+              <p-select [options]="quarterFilterOptions()" [ngModel]="quarterFilter()" (ngModelChange)="quarterFilter.set($event)"
+                optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Квартал" styleClass="dues-filter" />
+              <p-select [options]="kindFilterOptions" [ngModel]="kindFilter()" (ngModelChange)="kindFilter.set($event)"
+                optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Вид операції" styleClass="dues-filter" />
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Вид</th>
+            <th scope="col" class="dues-number">Сума</th>
+            <th scope="col">Спосіб</th>
+            <th scope="col">Хто</th>
+            <th scope="col">Нотатка</th>
+            <th scope="col" class="dues-verified-col">Перевірено</th>
+            <th scope="col" class="dues-actions-col"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-entry>
+          <tr class="dues-row" [class.dues-row--verified]="entry.isVerified">
+            <td data-mobile-label="Дата">{{ entry.occurredOn | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Вид"><p-tag [value]="kindLabel(entry)" severity="secondary" /></td>
+            <td data-mobile-label="Сума" class="dues-number" [class.dues-amount--in]="isIncoming(entry) === true" [class.dues-amount--out]="isIncoming(entry) === false">{{ amountLabel(entry) }}</td>
+            <td data-mobile-label="Спосіб">{{ methodLabel(entry) }}</td>
+            <td data-mobile-label="Хто">
+              @if (entry.collectedByName) { {{ entry.collectedByName }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Нотатка" class="dues-note">
+              @if (entry.note) { {{ entry.note }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Перевірено" class="dues-verified-col">
+              @if (d.viewer.canVerify) {
+                <p-checkbox [binary]="true" [ngModel]="entry.isVerified" (ngModelChange)="setVerified(entry, $event)"
+                  [disabled]="busyKey() === entry.duesEntryKey"
+                  [pTooltip]="entry.isVerified ? ('Перевірив ' + (entry.verifiedByName ?? '—')) : 'Позначити перевіреною'"
+                  tooltipPosition="left" [ariaLabel]="'Перевірено'" />
+              } @else if (entry.isVerified) {
+                <i class="pi pi-lock dues-lock" [pTooltip]="'Перевірив ' + (entry.verifiedByName ?? '—')" tooltipPosition="left"></i>
+              } @else {
+                <span class="dues-blank">—</span>
+              }
+            </td>
+            <td class="dues-actions-col">
+              @if (canEdit(entry)) {
+                <span class="dues-row-actions">
+                  <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openEntryDialog(entry)" />
+                  <p-button icon="pi pi-trash" variant="text" severity="secondary" size="small" ariaLabel="Видалити" pTooltip="Видалити"
+                    [loading]="busyKey() === entry.duesEntryKey" (onClick)="confirmDelete(entry)" />
+                </span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="8">
+              @if (d.entries.length) {
+                <app-empty-state art="trail" title="Нічого не знайшлось" body="Спробуй інший квартал або вид операції." />
+              } @else {
+                <app-empty-state art="list" title="Курінна каса ще порожня" body="Перша записана операція — і історія почнеться." />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <app-dues-entry-dialog
+      [visible]="entryDialogVisible()"
+      (visibleChange)="entryDialogVisible.set($event)"
+      [kinds]="kurinKinds"
+      [people]="d.people"
+      [entry]="entryToEdit()"
+      [saving]="savingEntry()"
+      [errorMessage]="entryError()"
+      (save)="saveEntry($event)" />
+
+    <app-kurin-rate-dialog
+      [visible]="rateDialogVisible()"
+      (visibleChange)="rateDialogVisible.set($event)"
+      [rates]="d.rates"
+      [years]="d.years"
+      [currentQuarter]="d.currentQuarter"
+      [saving]="savingRate()"
+      (save)="saveRate($event)" />
+  }
+</section>

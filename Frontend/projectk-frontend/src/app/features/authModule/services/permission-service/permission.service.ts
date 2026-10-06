@@ -95,6 +95,14 @@ export class PermissionService {
     return this.isAdmin() || this.has('Kurin:Update:KurinWide');
   }
 
+  /**
+   * Keeps or oversees the kurin's box: the курінний скарбник and the Звʼязковий. Youth get no
+   * `KurinDues` grant at all — their `GroupDues:Read:Own` is about their own balance only.
+   */
+  canSeeKurinDues(): boolean {
+    return this.isAdmin() || this.has('KurinDues:Read');
+  }
+
   getRoleSeverity(): string {
     if (this.isAdmin()) {
       return 'danger';

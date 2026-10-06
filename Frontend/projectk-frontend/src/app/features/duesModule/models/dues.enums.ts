@@ -49,6 +49,14 @@ export const GROUP_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Correction
 ];
 
+/** What the kurin's own box records: nothing personal, and what goes up to the станиця. */
+export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
+  DuesEntryKind.Expense,
+  DuesEntryKind.OtherIncome,
+  DuesEntryKind.TransferToStanytsia,
+  DuesEntryKind.Exchange
+];
+
 /** Kinds that bring money into the box, as the history shows them with a plus. */
 export const INCOMING_DUES_KINDS: ReadonlySet<DuesEntryKind> = new Set([
   DuesEntryKind.Contribution,

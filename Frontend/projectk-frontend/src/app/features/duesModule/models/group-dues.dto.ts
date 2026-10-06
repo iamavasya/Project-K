@@ -115,6 +115,54 @@ export interface GroupDuesDto {
   viewer: DuesViewerDto;
 }
 
+/** How one гурток stands with the kurin. */
+export interface KurinGroupHandoverDto {
+  groupKey: string;
+  groupName: string;
+  owedUp: number;
+  transferred: number;
+  received: number;
+  outstanding: number;
+  inTransit: number;
+}
+
+/** A гурток's transfer to the kurin, as the kurin sees it. */
+export interface DuesTransferDto {
+  duesEntryKey: string;
+  groupKey: string;
+  groupName: string;
+  amount: number;
+  method: DuesPaymentMethod;
+  occurredOn: string;
+  collectedByName: string | null;
+  note: string | null;
+  isReceived: boolean;
+  receivedAtUtc: string | null;
+  receivedByName: string | null;
+}
+
+export interface KurinDuesViewerDto {
+  canKeep: boolean;
+  canVerify: boolean;
+  canSetRates: boolean;
+}
+
+/** `GET api/kurin/{kurinKey}/dues` — the kurin's own box, the гуртки's handovers and transfers. */
+export interface KurinDuesDto {
+  kurinKey: string;
+  currentQuarter: QuarterDto;
+  years: PlastYearDto[];
+  rates: KurinDuesRateDto[];
+  /** `toForward` is what still goes to the станиця; `inTransit` — handed over by гуртки, not confirmed yet. */
+  box: DuesBoxDto;
+  sentToStanytsia: number;
+  groups: KurinGroupHandoverDto[];
+  transfers: DuesTransferDto[];
+  entries: DuesEntryDto[];
+  people: DuesPersonDto[];
+  viewer: KurinDuesViewerDto;
+}
+
 export interface UpsertDuesEntryRequest {
   kind: DuesEntryKind;
   method: DuesPaymentMethod;

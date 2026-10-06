@@ -49,6 +49,18 @@ describe('PermissionService', () => {
     service = TestBed.inject(PermissionService);
   });
 
+  // Курінну касу бачать лише ті, кому вона дана грантом: скарбник куреня і Звʼязковий.
+  it('shows the kurin box to its keepers only', () => {
+    setState([...kurinnyyPerms, 'KurinDues:Read:KurinWide', 'KurinDues:Update:KurinWide']);
+    expect(service.canSeeKurinDues()).toBeTrue();
+
+    setState([...memberPerms, 'GroupDues:Read:Own']);
+    expect(service.canSeeKurinDues()).toBeFalse();
+
+    setState(vykhovnykPerms);
+    expect(service.canSeeKurinDues()).toBeFalse();
+  });
+
   it('treats a Зв\'язковий (steward) as a whole-kurin manager', () => {
     setState(stewardPerms);
     expect(service.canManageWholeKurin()).toBeTrue();

@@ -284,6 +284,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Модерація вмілостей', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
   },
   {
+    path: 'kurin/:kurinKey/dues',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/duesModule/pages/kurin-dues/kurin-dues')
+      .then(m => m.KurinDuesComponent),
+    title: 'Вкладка куреня',
+    data: { breadcrumb: 'Вкладка куреня', parent: '/kurin', entityType: 'KurinDues', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
     path: 'kurin/:kurinKey/settings',
     canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/kurin-settings/kurin-settings')

@@ -1,0 +1,52 @@
+<p-dialog
+  header="Ставки куреня"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="!saving()"
+  [closable]="!saving()"
+  [style]="{ width: 'min(92vw, 28rem)' }">
+  <p class="lil-dialog-hint">
+    Станична й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише станичну.
+  </p>
+  <div class="lil-dialog-form">
+    <div class="lil-dialog-field">
+      <label for="kurin-rate-from">З кварталу</label>
+      <p-select
+        inputId="kurin-rate-from"
+        [options]="fromQuarterOptions()"
+        [ngModel]="fromQuarter()"
+        (ngModelChange)="fromQuarter.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+        styleClass="w-full" />
+    </div>
+    <div class="lil-dialog-grid">
+      <div class="lil-dialog-field">
+        <label for="kurin-rate-full">Станиця, повна</label>
+        <input pInputText id="kurin-rate-full" type="number" inputmode="decimal" min="0" step="0.01"
+          [ngModel]="stanytsiaFull()" (ngModelChange)="stanytsiaFull.set($event)" />
+      </div>
+      <div class="lil-dialog-field">
+        <label for="kurin-rate-reduced">Станиця, пільгова</label>
+        <input pInputText id="kurin-rate-reduced" type="number" inputmode="decimal" min="0" step="0.01"
+          [ngModel]="stanytsiaReduced()" (ngModelChange)="stanytsiaReduced.set($event)" />
+      </div>
+      <div class="lil-dialog-field">
+        <label for="kurin-rate-share">Курінь</label>
+        <input pInputText id="kurin-rate-share" type="number" inputmode="decimal" min="0" step="0.01"
+          [ngModel]="kurinShare()" (ngModelChange)="kurinShare.set($event)" />
+      </div>
+    </div>
+    @if (reducedAboveFull()) {
+      <p class="lil-dialog-error">Пільгова не може бути вищою за повну.</p>
+    }
+  </div>
+  <ng-template #footer>
+    <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="saving()" (onClick)="close()" />
+    <p-button label="Зберегти" [loading]="saving()" [disabled]="!valid()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

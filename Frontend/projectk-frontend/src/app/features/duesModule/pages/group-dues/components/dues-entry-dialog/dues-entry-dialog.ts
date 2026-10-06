@@ -17,7 +17,7 @@ import {
   GROUP_DUES_KINDS,
   PERSONAL_DUES_KINDS
 } from '../../../../models/dues.enums';
-import { DuesEntryDto, GroupDuesDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
+import { DuesAccountDto, DuesEntryDto, DuesPersonDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
 
 /** The other side of an exchange: cash goes to the card, the card to cash. */
 export function oppositeMethod(method: DuesPaymentMethod): DuesPaymentMethod {
@@ -25,8 +25,9 @@ export function oppositeMethod(method: DuesPaymentMethod): DuesPaymentMethod {
 }
 
 /**
- * One operation of the гурток's box, new or edited. The dialog only gathers and checks; the page
- * sends it and reloads, because every operation moves balances the page already shows.
+ * One operation of a box, new or edited — a гурток's (with people to name) or the kurin's (without).
+ * The dialog only gathers and checks; the page sends it and reloads, because every operation moves
+ * balances the page already shows.
  */
 @Component({
   selector: 'app-dues-entry-dialog',
@@ -40,7 +41,12 @@ export class DuesEntryDialogComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly visible = model(false);
-  readonly group = input.required<GroupDuesDto>();
+  /** The kinds this box holds; a гурток's by default. */
+  readonly kinds = input<readonly DuesEntryKind[]>(GROUP_DUES_KINDS);
+  /** Whose вкладка a personal operation may be about. Empty for the kurin's box. */
+  readonly accounts = input<DuesAccountDto[]>([]);
+  /** Who may have collected the money. */
+  readonly people = input<DuesPersonDto[]>([]);
   readonly entry = input<DuesEntryDto | null>(null);
   readonly saving = input(false);
   readonly errorMessage = input<string | null>(null);
@@ -48,7 +54,7 @@ export class DuesEntryDialogComponent {
 
   readonly today = new Date();
 
-  readonly kindOptions = GROUP_DUES_KINDS.map(value => ({ value, label: DUES_ENTRY_KIND_LABELS[value] }));
+  readonly kindOptions = computed(() => this.kinds().map(value => ({ value, label: DUES_ENTRY_KIND_LABELS[value] })));
   readonly methodOptions = [DuesPaymentMethod.Cash, DuesPaymentMethod.Card]
     .map(value => ({ value, label: DUES_PAYMENT_METHOD_LABELS[value] }));
 
@@ -72,14 +78,14 @@ export class DuesEntryDialogComponent {
     `З ${DUES_PAYMENT_METHOD_LABELS[this.method()].toLowerCase()} на ${DUES_PAYMENT_METHOD_LABELS[oppositeMethod(this.method())].toLowerCase()}`);
 
   /** Youth of the гурток first; those who moved or left come after, named for what they are. */
-  readonly personOptions = computed(() => this.group().accounts.map(account => ({
+  readonly personOptions = computed(() => this.accounts().map(account => ({
     value: account.membershipKey,
     label: account.standing === 'Current' ? account.fullName
       : account.standing === 'Moved' ? `${account.fullName} · переведений`
       : `${account.fullName} · вибув`
   })));
 
-  readonly collectorOptions = computed(() => this.group().people.map(person => ({ value: person.memberKey, label: person.fullName })));
+  readonly collectorOptions = computed(() => this.people().map(person => ({ value: person.memberKey, label: person.fullName })));
 
   readonly title = computed(() => this.entry() ? 'Змінити операцію' : 'Записати операцію');
 
@@ -140,7 +146,7 @@ export class DuesEntryDialogComponent {
 
   private reset(entry: DuesEntryDto | null): void {
     this.form.reset({
-      kind: entry?.kind ?? DuesEntryKind.Contribution,
+      kind: entry?.kind ?? this.kinds()[0] ?? DuesEntryKind.Contribution,
       method: entry?.method ?? DuesPaymentMethod.Cash,
       amount: entry?.amount ?? null,
       occurredOn: entry ? parseDateOnlyString(entry.occurredOn) : new Date(),

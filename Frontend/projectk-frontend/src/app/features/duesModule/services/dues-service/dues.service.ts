@@ -6,6 +6,7 @@ import { ClientCacheService } from '../../../kurinModule/services/client-cache/c
 import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/services/client-cache/cache-policy';
 import {
   GroupDuesDto,
+  KurinDuesDto,
   SetDuesConcessionRequest,
   SetGroupDuesRateRequest,
   SetKurinDuesRateRequest,
@@ -29,6 +30,34 @@ export class DuesService {
 
   setGroupRate(groupKey: string, request: SetGroupDuesRateRequest): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${groupKey}/dues/rate`, request).pipe(this.invalidate());
+  }
+
+  getKurinDues(kurinKey: string): Observable<KurinDuesDto> {
+    return this.cache.get(
+      `${DUES_CACHE_PREFIX}kurin:${kurinKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<KurinDuesDto>(`${this.kurinApiUrl}/${kurinKey}/dues`)
+    );
+  }
+
+  setTransferReceived(kurinKey: string, entryKey: string, isReceived: boolean): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/transfers/${entryKey}/received`, { isReceived }).pipe(this.invalidate());
+  }
+
+  createKurinEntry(kurinKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
+    return this.http.post(`${this.kurinApiUrl}/${kurinKey}/dues/entries`, request).pipe(this.invalidate());
+  }
+
+  updateKurinEntry(kurinKey: string, entryKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/entries/${entryKey}`, request).pipe(this.invalidate());
+  }
+
+  deleteKurinEntry(kurinKey: string, entryKey: string): Observable<unknown> {
+    return this.http.delete(`${this.kurinApiUrl}/${kurinKey}/dues/entries/${entryKey}`).pipe(this.invalidate());
+  }
+
+  setKurinEntryVerified(kurinKey: string, entryKey: string, isVerified: boolean): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/entries/${entryKey}/verified`, { isVerified }).pipe(this.invalidate());
   }
 
   setKurinRate(kurinKey: string, request: SetKurinDuesRateRequest): Observable<unknown> {

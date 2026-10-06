@@ -9,24 +9,24 @@
   [closable]="!saving()"
   [style]="{ width: 'min(94vw, 32rem)' }">
 
-  <form [formGroup]="form" class="dues-entry-form" (ngSubmit)="submit()">
-    <div class="dues-entry-field dues-entry-field--wide">
+  <form [formGroup]="form" class="lil-dialog-form dues-entry-form" (ngSubmit)="submit()">
+    <div class="lil-dialog-field dues-entry-field--wide">
       <label for="dues-kind">Вид операції</label>
       <p-select
         inputId="dues-kind"
         formControlName="kind"
-        [options]="kindOptions"
+        [options]="kindOptions()"
         optionLabel="label"
         optionValue="value"
         appendTo="body"
         styleClass="w-full" />
       @if (isCorrection()) {
-        <p class="dues-entry-hint">Корекція змінює баланс людини, а гроші в касі не рухає. Мінус зменшує баланс.</p>
+        <p class="lil-dialog-hint dues-entry-hint">Корекція змінює баланс людини, а гроші в касі не рухає. Мінус зменшує баланс.</p>
       }
     </div>
 
     @if (isPersonal()) {
-      <div class="dues-entry-field dues-entry-field--wide">
+      <div class="lil-dialog-field dues-entry-field--wide">
         <label for="dues-person">Чия вкладка</label>
         <p-select
           inputId="dues-person"
@@ -40,12 +40,12 @@
           appendTo="body"
           styleClass="w-full" />
         @if (personError; as message) {
-          <p class="dues-entry-error">{{ message }}</p>
+          <p class="lil-dialog-error">{{ message }}</p>
         }
       </div>
     }
 
-    <div class="dues-entry-field">
+    <div class="lil-dialog-field">
       <label for="dues-amount">Сума, ₴</label>
       <input
         pInputText
@@ -57,11 +57,11 @@
         [invalid]="showError('amount') || !!amountError"
         autocomplete="off" />
       @if (amountError; as message) {
-        <p class="dues-entry-error">{{ message }}</p>
+        <p class="lil-dialog-error">{{ message }}</p>
       }
     </div>
 
-    <div class="dues-entry-field">
+    <div class="lil-dialog-field">
       <label for="dues-date">Дата</label>
       <p-datepicker
         inputId="dues-date"
@@ -73,8 +73,8 @@
         styleClass="w-full" />
     </div>
 
-    <div class="dues-entry-field dues-entry-field--wide">
-      <span id="dues-method-label" class="dues-entry-label">{{ isExchange() ? 'Звідки' : 'Спосіб' }}</span>
+    <div class="lil-dialog-field dues-entry-field--wide">
+      <span id="dues-method-label" class="lil-dialog-label">{{ isExchange() ? 'Звідки' : 'Спосіб' }}</span>
       <p-selectButton
         formControlName="method"
         [options]="methodOptions"
@@ -83,11 +83,11 @@
         [allowEmpty]="false"
         ariaLabelledBy="dues-method-label" />
       @if (isExchange()) {
-        <p class="dues-entry-hint">{{ exchangeHint() }}. Сума в касі не змінюється.</p>
+        <p class="lil-dialog-hint dues-entry-hint">{{ exchangeHint() }}. Сума в касі не змінюється.</p>
       }
     </div>
 
-    <div class="dues-entry-field dues-entry-field--wide">
+    <div class="lil-dialog-field dues-entry-field--wide">
       <label for="dues-collector">Хто збирав</label>
       <p-select
         inputId="dues-collector"
@@ -103,7 +103,7 @@
         styleClass="w-full" />
     </div>
 
-    <div class="dues-entry-field dues-entry-field--wide">
+    <div class="lil-dialog-field dues-entry-field--wide">
       <label for="dues-note">Нотатка</label>
       <textarea
         pTextarea
@@ -116,7 +116,7 @@
     </div>
 
     @if (errorMessage(); as message) {
-      <p class="dues-entry-error dues-entry-field--wide">{{ message }}</p>
+      <p class="lil-dialog-error dues-entry-field--wide">{{ message }}</p>
     }
   </form>
 

@@ -17,6 +17,8 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
+import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
+import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
@@ -30,6 +32,7 @@ import {
   DuesEntryDto,
   GroupDuesDto,
   QuarterDto,
+  SetKurinDuesRateRequest,
   UpsertDuesEntryRequest
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
@@ -41,10 +44,10 @@ interface AccountRow {
   cells: (DuesAccountQuarterDto | null)[];
 }
 
-interface QuarterOption {
-  label: string;
-  value: string;
-  quarter: QuarterDto;
+/** One person's row of the quarterly table: a cell per quarter of the chosen year, or null before they were charged. */
+interface AccountRow {
+  account: DuesAccountDto;
+  cells: (DuesAccountQuarterDto | null)[];
 }
 
 /**
@@ -57,7 +60,7 @@ interface QuarterOption {
   imports: [
     DatePipe, NgTemplateOutlet, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
     InputTextModule, ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
-    EmptyStateComponent, DuesEntryDialogComponent
+    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './group-dues.html',
@@ -106,21 +109,9 @@ export class GroupDuesComponent implements OnInit {
     ...(this.year()?.quarters ?? []).map(q => ({ label: quarterLabel(q), value: quarterKey(q) }))
   ]);
 
-  /** Quarters a rate or a пільга may start from: the years on the table plus the one after now. */
-  readonly fromQuarterOptions = computed<QuarterOption[]>(() => {
+  readonly fromQuarterOptions = computed(() => {
     const data = this.data();
-    if (!data) {
-      return [];
-    }
-    const seen = new Set<string>();
-    const quarters = data.years.flatMap(y => y.quarters);
-    const next = data.currentQuarter.number === 4
-      ? { year: data.currentQuarter.year + 1, number: 1 }
-      : { year: data.currentQuarter.year, number: data.currentQuarter.number + 1 };
-    return [...quarters, next]
-      .filter(q => { const key = quarterKey(q); return seen.has(key) ? false : (seen.add(key), true); })
-      .sort((a, b) => a.year - b.year || a.number - b.number)
-      .map(q => ({ label: quarterLabel(q), value: quarterKey(q), quarter: q }));
+    return data ? fromQuarterOptions(data.years, data.currentQuarter) : [];
   });
 
   readonly rows = computed<AccountRow[]>(() => {
@@ -181,19 +172,7 @@ export class GroupDuesComponent implements OnInit {
 
   // Kurin rate dialog — the Звʼязковий's, offered here so the first гурток does not have to go elsewhere.
   readonly kurinRateDialogVisible = signal(false);
-  readonly kurinRateFromQuarter = signal<string>('');
-  readonly kurinStanytsiaFull = signal<number | null>(null);
-  readonly kurinStanytsiaReduced = signal<number | null>(null);
-  readonly kurinShare = signal<number | null>(null);
   readonly savingKurinRate = signal(false);
-  readonly kurinRateValid = computed(() => {
-    const full = Number(this.kurinStanytsiaFull());
-    const reduced = Number(this.kurinStanytsiaReduced());
-    const share = Number(this.kurinShare());
-    return [full, reduced, share].every(n => Number.isFinite(n) && n >= 0)
-      && this.kurinStanytsiaFull() !== null && this.kurinShare() !== null
-      && reduced <= full;
-  });
 
   // Concession dialog
   readonly concessionDialogVisible = signal(false);
@@ -346,29 +325,13 @@ export class GroupDuesComponent implements OnInit {
 
   // --- Kurin rate ---
 
-  openKurinRateDialog(): void {
+  saveKurinRate(request: SetKurinDuesRateRequest): void {
     const data = this.data();
-    const now = this.kurinRateNow();
-    this.kurinRateFromQuarter.set(data ? quarterKey(data.currentQuarter) : '');
-    this.kurinStanytsiaFull.set(now?.stanytsiaFull ?? null);
-    this.kurinStanytsiaReduced.set(now?.stanytsiaReduced ?? now?.stanytsiaFull ?? null);
-    this.kurinShare.set(now?.kurinShare ?? null);
-    this.kurinRateDialogVisible.set(true);
-  }
-
-  saveKurinRate(): void {
-    const data = this.data();
-    const from = this.fromQuarterOptions().find(o => o.value === this.kurinRateFromQuarter())?.quarter;
-    if (!data || !from || !this.kurinRateValid()) {
+    if (!data) {
       return;
     }
     this.savingKurinRate.set(true);
-    this.dues.setKurinRate(data.kurinKey, {
-      fromQuarter: from,
-      stanytsiaFull: Number(this.kurinStanytsiaFull()),
-      stanytsiaReduced: Number(this.kurinStanytsiaReduced() ?? this.kurinStanytsiaFull()),
-      kurinShare: Number(this.kurinShare())
-    }).subscribe({
+    this.dues.setKurinRate(data.kurinKey, request).subscribe({
       next: () => { this.savingKurinRate.set(false); this.kurinRateDialogVisible.set(false); this.load(); },
       error: () => this.savingKurinRate.set(false)
     });
