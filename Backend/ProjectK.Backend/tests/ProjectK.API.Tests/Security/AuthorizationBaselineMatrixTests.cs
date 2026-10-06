@@ -123,7 +123,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.JoinKurinRequest>>(nameof(KurinController.Join), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), "RequireUser");
+        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

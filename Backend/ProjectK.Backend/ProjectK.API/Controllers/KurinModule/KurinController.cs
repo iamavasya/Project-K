@@ -374,9 +374,14 @@ public class KurinController : ControllerBase
     /// <summary>
     /// Moves a person between гуртки of this kurin, or out of one — a null гурток is allowed.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    /// <remarks>
+    /// Placement is the Звʼязковий's, like closing a membership. <c>Member:Update</c> is not enough:
+    /// everyone holds it on their own record and a Виховник on his гурток, so either could move
+    /// themselves, or someone else, into a гурток they chose.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpPut("{kurinKey:guid}/memberships/{memberKey:guid}/group")]
-    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ResourceAuthorize(ResourceType.Member, ResourceAction.Manage, "route:memberKey")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
