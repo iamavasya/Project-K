@@ -75,6 +75,8 @@ public static class DependencyInjection
     private static IServiceCollection AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
+        services.AddScoped<GroupDuesAccess>();
+        services.AddScoped<DuesEntryWriter>();
         return services;
     }
 

@@ -25,6 +25,8 @@ using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Controllers.DuesModule;
+using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -124,6 +126,16 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
+
+        // Dues: every action is resource-checked against the гурток; the policy is only "signed in".
+        yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, SetGroupDuesRateRequest>>(nameof(GroupDuesController.SetRate), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesConcessionRequest>>(nameof(GroupDuesController.SetConcession), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.CreateEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.UpdateEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(GroupDuesController.SetEntryVerified), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, SetKurinDuesRateRequest>>(nameof(KurinDuesController.SetRate), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

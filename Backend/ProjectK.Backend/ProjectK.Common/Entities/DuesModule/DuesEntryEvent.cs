@@ -6,7 +6,11 @@ namespace ProjectK.Common.Entities.DuesModule;
 /// </summary>
 public class DuesEntryEvent : Entity
 {
-    public Guid DuesEntryEventKey { get; set; } = Guid.NewGuid();
+    /// <summary>
+    /// Left for EF to generate: an event is added through its entry's collection, and a child that
+    /// arrives with a key already set is taken for an existing row and updated, not inserted.
+    /// </summary>
+    public Guid DuesEntryEventKey { get; set; }
     public Guid DuesEntryKey { get; set; }
 
     /// <summary><c>Created</c>, <c>Updated</c>, <c>Deleted</c>, <c>Verified</c>, <c>Unverified</c>, <c>Received</c>, <c>Unreceived</c>.</summary>
