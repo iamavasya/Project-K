@@ -43,6 +43,7 @@ public class GetMemberByKeyHandlerTests
 
         _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
         _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurinsMock.Object);
+        _kurinDataMock.SetupGet(x => x.MentorAssignments).Returns(_mentorRepoMock.Object);
         _membershipsMock
             .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -113,6 +114,46 @@ public class GetMemberByKeyHandlerTests
         _memberRepoMock.Verify(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
         _mapperMock.Verify(m => m.Map<MemberResponse>(member), Times.Once);
         _mapperMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Handle_FillsTheGroupsTheyRunAsVykhovnykInTheKurinTheyAreSeenIn()
+    {
+        var memberKey = Guid.NewGuid();
+        var userKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var member = new Member { MemberKey = memberKey, UserKey = userKey, FirstName = "Ivan", MiddleName = "", LastName = "P", Email = "i@e.com", PhoneNumber = "1" };
+
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = kurinKey, JoinedAtUtc = DateTime.UtcNow }]);
+        _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
+        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(new MemberResponse { MemberKey = memberKey });
+        _mentorRepoMock
+            .Setup(r => r.GetActiveGroupNamesAsync(userKey, kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(["Gurtok 1", "Gurtok 2"]);
+
+        var result = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        result.Data!.MentoredGroupNames.Should().Equal("Gurtok 1", "Gurtok 2");
+    }
+
+    [Fact]
+    public async Task Handle_WithoutAnAccount_RunsNoGroupAndDoesNotAsk()
+    {
+        var memberKey = Guid.NewGuid();
+        var member = new Member { MemberKey = memberKey, FirstName = "Ivan", MiddleName = "", LastName = "P", Email = "i@e.com", PhoneNumber = "1" };
+
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = Guid.NewGuid(), JoinedAtUtc = DateTime.UtcNow }]);
+        _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
+        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(new MemberResponse { MemberKey = memberKey });
+
+        var result = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        result.Data!.MentoredGroupNames.Should().BeEmpty();
+        _mentorRepoMock.VerifyNoOtherCalls();
     }
 
     [Fact]

@@ -16,4 +16,10 @@ public interface IMentorAssignmentRepository : IBaseEntityRepository<MentorAssig
     /// keeps the old one as history: the active assignment wins, otherwise the latest revoked one.
     /// </summary>
     Task<MentorAssignment?> GetSpecificAssignmentAsync(Guid mentorUserKey, Guid groupKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Names of the гуртки this account runs as виховник in one kurin right now. Revoked
+    /// assignments are history and do not count.
+    /// </summary>
+    Task<IReadOnlyList<string>> GetActiveGroupNamesAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default);
 }

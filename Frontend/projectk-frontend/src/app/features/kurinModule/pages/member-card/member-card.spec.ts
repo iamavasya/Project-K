@@ -9,6 +9,7 @@ import { MemberService } from '../../services/member-service/member.service';
 import { MemberDto } from '../../models/member.dto';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MembershipKind } from '../../models/enums/membership-kind.enum';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { BadgesCatalogService } from '../../services/probes-and-badges/badges-catalog.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
@@ -693,6 +694,83 @@ describe('MemberCardComponent', () => {
 
       expect(component.hasYouthProgram).toBeFalse();
     });
+
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    it('старший пластун-впорядник у курені УПЮ — без юнацького й без жодних заглушок', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...member,
+        latestPlastLevel: PlastLevel.Starshoplastun,
+        plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }]
+      }));
+      memberServiceSpy.getMemberships.and.returnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
+      expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getBadgeProgresses).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
+      expect(renderedText()).not.toContain('Здобуті вмілості');
+      expect(renderedText()).not.toContain('Відзначення УПЮ');
+      expect(renderedText().toLowerCase()).not.toContain('скоро');
+    });
+
+    it('юнак у курені УПЮ бачить відзначення УПЮ, а впорядництва в нього немає', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Відзначення УПЮ');
+      expect(renderedText()).not.toContain('Впорядництво');
+    });
+  });
+
+  describe('впорядництво', () => {
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    it('показує чинні уряди КВ і закріплені гуртки, без юнацьких і минулих урядів', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...member,
+        mentoredGroupNames: ['Gurtok 1', 'Gurtok 2'],
+        leadershipHistories: [
+          {
+          leadershipHistoryKey: 'kv-now', leadershipKey: 'l-kv-now', role: 'Zvyazkovyi', leadershipType: 'KV',
+          startDate: '2023-09-01', endDate: null,
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        },
+          {
+          leadershipHistoryKey: 'kv-past', leadershipKey: 'l-kv-past', role: 'Vykhovnyk', leadershipType: 'KV',
+          startDate: '2023-09-01', endDate: '2024-06-01',
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        },
+          {
+          leadershipHistoryKey: 'group-now', leadershipKey: 'l-group-now', role: 'Hurtkoviy', leadershipType: 'Group',
+          startDate: '2023-09-01', endDate: null,
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        }
+        ]
+      }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.staffOffices.map(o => o.leadershipHistoryKey)).toEqual(['kv-now']);
+      expect(renderedText()).toContain('Впорядництво');
+      expect(renderedText()).toContain("Зв'язковий");
+      expect(renderedText()).toContain('Gurtok 1, Gurtok 2');
+    });
+
+    it('впорядник лише із закріпленням теж має плитку', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...member, mentoredGroupNames: ['Gurtok 1'] }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Впорядник гуртка:');
+    });
   });
 });
-

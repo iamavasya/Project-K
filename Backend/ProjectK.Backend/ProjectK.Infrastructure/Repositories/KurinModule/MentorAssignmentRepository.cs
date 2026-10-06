@@ -38,6 +38,16 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<string>> GetActiveGroupNamesAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        return await Context.MentorAssignments
+            .Where(ma => ma.MentorUserKey == mentorUserKey && ma.RevokedAtUtc == null && ma.Group.KurinKey == kurinKey)
+            .Select(ma => ma.Group.Name)
+            .Distinct()
+            .OrderBy(name => name)
+            .ToListAsync(cancellationToken);
+    }
+
     public override async Task<MentorAssignment?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.MentorAssignments

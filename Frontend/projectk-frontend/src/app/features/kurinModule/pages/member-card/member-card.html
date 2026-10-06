@@ -226,8 +226,6 @@
             </section>
         </ng-template>
 
-        }
-
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
             <app-member-awards-tile [awards]="member.awards || []"
@@ -239,10 +237,33 @@
                 (reviewAward)="onReviewAward($event)" />
         </section>
         </ng-template>
+        }
 
-        <ng-template [appTileDef]="{ key: 'placeholder-media', span: 'half', label: 'Медіа (скоро)' }">
-            <app-bento-tile-skeleton class="block h-full" variant="media" />
+        @if (staffOffices.length || mentoredGroupNames.length) {
+        <ng-template [appTileDef]="{ key: 'staff', span: 'half', label: 'Впорядництво' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+                <div class="mb-4">
+                    <h2 class="member-section-title">Впорядництво</h2>
+                    <p class="member-section-subtitle text-sm">Де ця людина зараз у КВ</p>
+                </div>
+
+                <ul class="space-y-2.5">
+                    @for (office of staffOffices; track office.leadershipHistoryKey) {
+                    <li class="flex flex-wrap items-center gap-2">
+                        <p-tag [value]="officeLabel(office.role)" [severity]="officeSeverity(office.role)" />
+                        <span class="member-section-subtitle text-sm">з {{ office.startDate | date: 'yyyy' }}</span>
+                    </li>
+                    }
+                    @if (mentoredGroupNames.length) {
+                    <li class="text-sm">
+                        <span class="member-section-subtitle">Впорядник гуртка:</span>
+                        {{ mentoredGroupNames.join(', ') }}
+                    </li>
+                    }
+                </ul>
+            </section>
         </ng-template>
+        }
 
         <ng-template [appTileDef]="{ key: 'memberships', span: 'half', label: 'Членства' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
@@ -255,8 +276,7 @@
                     [isLoading]="isMembershipsLoading"
                     [loadFailed]="membershipsLoadFailed"
                     [scopedKurinKey]="scopedKurinKey"
-                    [canManage]="canEditMember"
-                    [canRelease]="canReleaseFromKurin"
+                    [canManage]="canManagePlacement"
                     (moveToGroup)="openMoveToGroup($event)"
                     (leaveKurin)="confirmLeaveKurin($event)" />
             </section>

@@ -32,6 +32,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IMembershipRepository _memberships;
+    private readonly IMentorAssignmentRepository _mentorAssignments;
 
     public GetMemberByKeyQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IUnitOfWork kurinData)
     {
@@ -40,6 +41,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         _currentUserContext = currentUserContext;
         _scopeReader = scopeReader;
         _memberships = kurinData.Memberships;
+        _mentorAssignments = kurinData.MentorAssignments;
     }
 
     private async Task ScrubRestrictedDataAsync(
@@ -90,6 +92,13 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         var memberResponse = _mapper.Map<MemberResponse>(member);
         memberResponse.KurinKey = here?.KurinKey ?? Guid.Empty;
         memberResponse.GroupKey = here?.GroupKey ?? Guid.Empty;
+
+        // Assignments are kept per account, so a person without one runs no гурток.
+        if (here is not null && member.UserKey.HasValue)
+        {
+            memberResponse.MentoredGroupNames = [.. await _mentorAssignments
+                .GetActiveGroupNamesAsync(member.UserKey.Value, here.KurinKey, cancellationToken)];
+        }
 
         await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);
 
