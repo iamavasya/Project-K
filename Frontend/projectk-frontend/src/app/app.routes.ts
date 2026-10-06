@@ -3,6 +3,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
+import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
@@ -103,6 +104,14 @@ export const routes: Routes = [
       .then(m => m.ForbiddenComponent),
     title: 'Немає доступу',
     data: { breadcrumb: 'Немає доступу' }
+  },
+  {
+    path: 'no-youth-program',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/authModule/pages/forbidden/forbidden')
+      .then(m => m.ForbiddenComponent),
+    title: 'Тут такого немає',
+    data: { breadcrumb: 'Тут такого немає', reason: 'youthProgram' }
   },
   {
     path: 'users',
@@ -260,7 +269,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/review/skills',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), youthProgramGuard(), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/skills-review-page/skills-review-page')
       .then(m => m.SkillsReviewPageComponent),
     title: 'Перевірка вмінь',

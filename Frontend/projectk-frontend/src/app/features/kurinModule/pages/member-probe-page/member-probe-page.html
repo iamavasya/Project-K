@@ -10,6 +10,9 @@
                     <p class="probe-page-subtitle mt-1">
                         Учасник: {{ member?.firstName || '—' }} {{ member?.lastName || '' }}
                     </p>
+                    @if (isArchive) {
+                    <p class="probe-page-subtitle">Архів юнацтва · тільки перегляд</p>
+                    }
                     @if (groupedProbe) {
                     <p class="probe-page-subtitle">
                         Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
