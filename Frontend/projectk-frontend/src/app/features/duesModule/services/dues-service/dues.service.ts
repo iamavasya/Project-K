@@ -7,6 +7,7 @@ import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/ser
 import {
   GroupDuesDto,
   KurinDuesDto,
+  MemberDuesDto,
   SetDuesConcessionRequest,
   SetGroupDuesRateRequest,
   SetKurinDuesRateRequest,
@@ -25,6 +26,14 @@ export class DuesService {
       `${DUES_CACHE_PREFIX}group:${groupKey}`,
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<GroupDuesDto>(`${this.apiUrl}/${groupKey}/dues`)
+    );
+  }
+
+  getMemberDues(memberKey: string): Observable<MemberDuesDto> {
+    return this.cache.get(
+      `${DUES_CACHE_PREFIX}member:${memberKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<MemberDuesDto>(`${environment.apiUrl}/member/${memberKey}/dues`)
     );
   }
 

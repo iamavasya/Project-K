@@ -23,6 +23,8 @@ import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { KurinDto } from '../../models/kurin.dto';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -37,6 +39,7 @@ describe('MemberCardComponent', () => {
   let authServiceSpy: jasmine.SpyObj<AuthService>;
   let entityServiceSpy: jasmine.SpyObj<EntityService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let duesServiceSpy: jasmine.SpyObj<DuesService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'abc123';
@@ -65,6 +68,8 @@ describe('MemberCardComponent', () => {
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    duesServiceSpy = jasmine.createSpyObj<DuesService>('DuesService', ['getMemberDues']);
+    duesServiceSpy.getMemberDues.and.returnValue(of({ hasAccount: false } as MemberDuesDto));
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
 
     badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
@@ -148,6 +153,7 @@ describe('MemberCardComponent', () => {
         { provide: AuthService, useValue: authServiceSpy },
         { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: DuesService, useValue: duesServiceSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
       ]
     }).compileComponents();
@@ -726,6 +732,60 @@ describe('MemberCardComponent', () => {
 
       expect(renderedText()).toContain('Відзначення УПЮ');
       expect(renderedText()).not.toContain('Впорядництво');
+    });
+  });
+
+  describe('вкладка', () => {
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+    const dues = (over: Partial<MemberDuesDto>): MemberDuesDto => ({
+      hasAccount: true,
+      kurinKey: member.kurinKey,
+      currentQuarter: { year: 2026, number: 4 },
+      balance: -300,
+      quarterRate: { stanytsia: 240, kurin: 15, group: 45, total: 300 },
+      isConcessionNow: false,
+      currentGroupKey: member.groupKey,
+      currentGroupName: 'Соколи',
+      canOpenGroupDues: false,
+      accounts: [],
+      entries: [],
+      ...over
+    });
+
+    it('показує борг і ставку за квартал, без кнопки каси для юнака', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(of(dues({})));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('−300 ₴');
+      expect(renderedText()).toContain('300 ₴ за квартал');
+      expect(renderedText()).toContain('борг');
+      expect(renderedText()).not.toContain('Каса гуртка');
+    });
+
+    it('сплачено — зелена плашка; впорядникові є кнопка в касу гуртка', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Сплачено');
+      expect(renderedText()).toContain('Каса гуртка');
+    });
+
+    // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.
+    it('без доступу або без рахунку плитки немає', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(throwError(() => ({ status: 403 })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.dues).toBeNull();
+      expect(renderedText()).not.toContain('за квартал');
     });
   });
 

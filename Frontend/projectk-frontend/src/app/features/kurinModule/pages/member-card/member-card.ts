@@ -45,6 +45,11 @@ import { hasYouthProgram, KurinBranch } from '../../models/enums/kurin-branch.en
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
+import { money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
+import { DUES_ENTRY_KIND_LABELS, DuesEntryKind, INCOMING_DUES_KINDS } from '../../../duesModule/models/dues.enums';
+import { DuesEntryDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../../services/member-award-service/member-award.service';
 import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
@@ -93,6 +98,7 @@ export class MemberCardComponent implements OnInit {
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
+  duesService = inject(DuesService);
   badgesCatalogService = inject(BadgesCatalogService);
   probesCatalogService = inject(ProbesCatalogService);
   memberProgressService = inject(MemberProgressService);
@@ -123,6 +129,12 @@ export class MemberCardComponent implements OnInit {
 
   isMembershipsLoading = false;
   membershipsLoadFailed = false;
+
+  /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
+  dues: MemberDuesDto | null = null;
+  isDuesLoading = false;
+  readonly money = money;
+  readonly quarterLabel = quarterLabel;
   private memberLoaded = false;
   private membershipsSettled = false;
   private youthProgressRequested = false;
@@ -189,6 +201,45 @@ export class MemberCardComponent implements OnInit {
     });
 
     this.loadMemberships(memberKey);
+    this.loadDues(memberKey);
+  }
+
+  /**
+   * Quietly: a youth may read only their own, so for anyone else's card the server answers 403 and
+   * the tile simply does not appear — that is not an error the viewer needs told about.
+   */
+  private loadDues(memberKey: string): void {
+    this.isDuesLoading = true;
+    this.dues = null;
+    this.duesService.getMemberDues(memberKey).subscribe({
+      next: dues => {
+        this.dues = dues.hasAccount ? dues : null;
+        this.isDuesLoading = false;
+      },
+      error: () => {
+        this.dues = null;
+        this.isDuesLoading = false;
+      }
+    });
+  }
+
+  openGroupDues(groupKey: string): void {
+    this.router.navigate(['/group', groupKey, 'dues']);
+  }
+
+  get duesEntriesPreview(): DuesEntryDto[] {
+    return (this.dues?.entries ?? []).slice(0, 3);
+  }
+
+  duesKindLabel(entry: DuesEntryDto): string {
+    return DUES_ENTRY_KIND_LABELS[entry.kind];
+  }
+
+  /** Signed as it touches the balance: a contribution adds, a refund takes, a correction says itself. */
+  duesAmountLabel(entry: DuesEntryDto): string {
+    const signed = entry.kind === DuesEntryKind.Correction ? entry.amount
+      : INCOMING_DUES_KINDS.has(entry.kind) ? entry.amount : -entry.amount;
+    return signed > 0 ? `+${money(signed)}` : money(signed);
   }
 
   /**

@@ -163,6 +163,31 @@ export interface KurinDuesDto {
   viewer: KurinDuesViewerDto;
 }
 
+export interface MemberDuesAccountDto {
+  groupKey: string;
+  groupName: string;
+  standing: DuesAccountStanding;
+  quarters: DuesAccountQuarterDto[];
+  charged: number;
+  payments: number;
+  balance: number;
+}
+
+/** `GET api/member/{memberKey}/dues` — one person's вкладка in the kurin they are looked at in. */
+export interface MemberDuesDto {
+  hasAccount: boolean;
+  kurinKey: string;
+  currentQuarter: QuarterDto;
+  balance: number;
+  quarterRate: DuesAmountDto | null;
+  isConcessionNow: boolean;
+  currentGroupKey: string | null;
+  currentGroupName: string | null;
+  canOpenGroupDues: boolean;
+  accounts: MemberDuesAccountDto[];
+  entries: DuesEntryDto[];
+}
+
 export interface UpsertDuesEntryRequest {
   kind: DuesEntryKind;
   method: DuesPaymentMethod;
