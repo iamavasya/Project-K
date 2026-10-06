@@ -177,6 +177,14 @@ export const routes: Routes = [
     title: 'Гурток',
     data: { breadcrumb: 'Гурток', parent: '/kurin', entityType: 'group', titleContext: 'group', breadcrumbEntity: 'group' }
   },
+  {
+    path: 'group/:groupKey/dues',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/duesModule/pages/group-dues/group-dues')
+      .then(m => m.GroupDuesComponent),
+    title: 'Вкладка',
+    data: { breadcrumb: 'Вкладка', parent: '/group/:groupKey', entityType: 'GroupDues', entityKeyParam: 'groupKey', entityAction: 'Read', titleContext: 'group' }
+  },
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],

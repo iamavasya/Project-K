@@ -1,0 +1,42 @@
+.dues-entry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.dues-entry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.dues-entry-field--wide {
+  grid-column: 1 / -1;
+}
+
+.dues-entry-field > label,
+.dues-entry-label {
+  color: var(--lil-faint);
+  font-size: var(--lil-text-caption);
+  font-weight: var(--lil-weight-ui);
+}
+
+.dues-entry-hint {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.dues-entry-error {
+  margin: 0;
+  color: var(--p-red-500);
+  font-size: var(--lil-text-caption);
+}
+
+@media (max-width: 480px) {
+  .dues-entry-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,62 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
+import { ClientCacheService } from '../../../kurinModule/services/client-cache/client-cache.service';
+import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/services/client-cache/cache-policy';
+import {
+  GroupDuesDto,
+  SetDuesConcessionRequest,
+  SetGroupDuesRateRequest,
+  SetKurinDuesRateRequest,
+  UpsertDuesEntryRequest
+} from '../../models/group-dues.dto';
+
+@Injectable({ providedIn: 'root' })
+export class DuesService {
+  private readonly http = inject(HttpClient);
+  private readonly cache = inject(ClientCacheService);
+  private readonly apiUrl = `${environment.apiUrl}/group`;
+  private readonly kurinApiUrl = `${environment.apiUrl}/kurin`;
+
+  getGroupDues(groupKey: string): Observable<GroupDuesDto> {
+    return this.cache.get(
+      `${DUES_CACHE_PREFIX}group:${groupKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<GroupDuesDto>(`${this.apiUrl}/${groupKey}/dues`)
+    );
+  }
+
+  setGroupRate(groupKey: string, request: SetGroupDuesRateRequest): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${groupKey}/dues/rate`, request).pipe(this.invalidate());
+  }
+
+  setKurinRate(kurinKey: string, request: SetKurinDuesRateRequest): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/rate`, request).pipe(this.invalidate());
+  }
+
+  setConcession(groupKey: string, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concession`, request).pipe(this.invalidate());
+  }
+
+  createEntry(groupKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/${groupKey}/dues/entries`, request).pipe(this.invalidate());
+  }
+
+  updateEntry(groupKey: string, entryKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${groupKey}/dues/entries/${entryKey}`, request).pipe(this.invalidate());
+  }
+
+  deleteEntry(groupKey: string, entryKey: string): Observable<unknown> {
+    return this.http.delete(`${this.apiUrl}/${groupKey}/dues/entries/${entryKey}`).pipe(this.invalidate());
+  }
+
+  setEntryVerified(groupKey: string, entryKey: string, isVerified: boolean): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${groupKey}/dues/entries/${entryKey}/verified`, { isVerified }).pipe(this.invalidate());
+  }
+
+  /** Every write changes balances and boxes, so every cached read of dues goes. */
+  private invalidate<T>() {
+    return tap<T>(() => this.cache.invalidateByPrefix(DUES_CACHE_PREFIX));
+  }
+}

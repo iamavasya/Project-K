@@ -101,6 +101,15 @@
   --lil-agenda-event-dot:     var(--lil-blue-700);
   --lil-agenda-glyph:         rgba(16, 20, 19, 0.22);
 
+  /* Вкладка: баланс «сплачено» — зелений тінт, «борг» — червоний (danger). Обидва лише під
+     чорнильним текстом балансу; нових кольорів поза цими токенами на екрані вкладки немає. */
+  --lil-dues-paid-bg:   var(--lil-green-50);
+  --lil-dues-paid-line: var(--lil-green-200);
+  --lil-dues-paid-fg:   var(--lil-green-700);
+  --lil-dues-debt-bg:   #FBE5E2;
+  --lil-dues-debt-line: #EEB3AC;
+  --lil-dues-debt-fg:   #9A2B21;
+
   /* A category's own colour never fills a calendar plate as it is: the plate mixes it into the
      paper by these amounts, so the same seven colours read as tints here and as solid bars in
      the dark theme. The dot keeps the pure colour, which is where the category is recognised. */
@@ -195,6 +204,13 @@
   --lil-agenda-event-line:    #2E4560;
   --lil-agenda-event-fg:      var(--lil-ink);
   --lil-agenda-glyph:         rgba(233, 237, 234, 0.26);
+
+  --lil-dues-paid-bg:   #1D2E27;
+  --lil-dues-paid-line: #2F5A46;
+  --lil-dues-paid-fg:   #8FDDB9;
+  --lil-dues-debt-bg:   #2E1A18;
+  --lil-dues-debt-line: #5C2E29;
+  --lil-dues-debt-fg:   #F2A79E;
 
   /* Dark surfaces take the category colour almost whole; 70% is where the gold of «Табори»
      still clears 4.5:1 under the light ink. The dot is lightened so it shows on its own bar. */

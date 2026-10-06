@@ -1,0 +1,503 @@
+<p-confirmdialog />
+
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Гурток {{ data()?.groupName ?? '' }}</p>
+      <h1>Вкладка</h1>
+      @if (data(); as d) {
+        <p>
+          {{ year()?.label }} · зараз {{ quarterLabel(d.currentQuarter) }}
+          · {{ currentRows().length }} у складі
+          @if (debtors(); as count) { · з боргом: {{ count }} }
+        </p>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        @if (yearOptions().length > 1) {
+          <p-select
+            [options]="yearOptions()"
+            [ngModel]="year()?.startYear ?? null"
+            (ngModelChange)="selectedYear.set($event); quarterFilter.set('all')"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            ariaLabel="Пластовий рік"
+            styleClass="dues-year" />
+        }
+        @if (d.viewer.canSetKurinRates) {
+          <p-button label="Ставки куреня" icon="pi pi-flag" severity="secondary" (onClick)="openKurinRateDialog()" />
+        }
+        @if (d.viewer.canKeep) {
+          <p-button label="Ставка гуртка" icon="pi pi-percentage" severity="secondary" (onClick)="openRateDialog()" />
+          <p-button label="Записати операцію" icon="pi pi-plus" (onClick)="openEntryDialog()" />
+        }
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      <div class="dues-stats">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <p-skeleton width="100%" height="5.5rem" borderRadius="12px" />
+        }
+      </div>
+    </section>
+    <section class="kurin-tile">
+      <p-skeleton width="100%" height="2.75rem" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Касу не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <!-- Каса -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Каса</h2>
+          <p>Гурткові гроші й те, що треба віддати курінному</p>
+        </div>
+      </div>
+
+      <div class="dues-stats">
+        <div class="dues-stat">
+          <span class="dues-stat__label">У касі</span>
+          <span class="dues-stat__value">{{ money(d.box.total) }}</span>
+          <span class="dues-stat__sub">готівка {{ money(d.box.cash) }} · картка {{ money(d.box.card) }}</span>
+        </div>
+        <div class="dues-stat dues-stat--own">
+          <span class="dues-stat__label">Гурткові</span>
+          <span class="dues-stat__value">{{ money(d.box.own) }}</span>
+          <span class="dues-stat__sub">можна витрачати</span>
+        </div>
+        <div class="dues-stat">
+          <span class="dues-stat__label">До передачі курінному</span>
+          <span class="dues-stat__value">{{ money(d.box.toForward) }}</span>
+          <span class="dues-stat__sub">
+            @if (d.box.inTransit > 0) {
+              в дорозі {{ money(d.box.inTransit) }}
+            } @else {
+              станиця й курінь з того, що зібрано
+            }
+          </span>
+        </div>
+        <div class="dues-stat">
+          <span class="dues-stat__label">Передано курінному</span>
+          <span class="dues-stat__value">{{ money(d.handover.transferred) }}</span>
+          <span class="dues-stat__sub">підтверджено {{ money(d.handover.received) }}</span>
+        </div>
+      </div>
+
+      <p class="dues-rates">
+        @if (kurinRateNow(); as kurin) {
+          @if (groupRateNow() !== null) {
+            Квартальна вкладка <strong>{{ money(quarterTotal()) }}</strong>
+            = станиця {{ money(kurin.stanytsiaFull) }}
+            @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (пільгова {{ money(kurin.stanytsiaReduced) }}) }
+            · курінь {{ money(kurin.kurinShare) }}
+            · гурток {{ money(groupRateNow()!) }}
+          } @else {
+            Станиця {{ money(kurin.stanytsiaFull) }} · курінь {{ money(kurin.kurinShare) }}.
+            Гурткову частину ще не задано — поки вона нуль.
+          }
+        } @else {
+          <i class="pi pi-info-circle"></i>
+          Курінь ще не задав станичної та курінної частини вкладки.
+          @if (groupRateNow(); as share) {
+            Гурток свою задав: {{ money(share) }} за квартал.
+          } @else {
+            Нарахувань поки немає.
+          }
+        }
+      </p>
+    </section>
+
+    <!-- По кварталах -->
+    <section class="kurin-tile">
+      <p-table
+        [value]="currentRows()"
+        styleClass="project-table dues-table"
+        [scrollable]="true"
+        stripedRows
+        [rowHover]="true">
+
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>По кварталах</h2>
+              <span class="lil-count">{{ currentRows().length }}</span>
+              <p>Сплачено / до оплати. Натисни на рядок — історія покаже операції цієї людини.</p>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #header>
+          <tr>
+            <th scope="col" pFrozenColumn class="dues-name-col">Юнак</th>
+            @for (quarter of year()?.quarters ?? []; track quarter.number) {
+              <th scope="col" class="dues-q-col">{{ quarterShort(quarter) }}</th>
+            }
+            <th scope="col" class="dues-total-col">Разом</th>
+            @if (d.viewer.canKeep) {
+              <th scope="col" class="dues-actions-col"></th>
+            }
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-row>
+          <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td [attr.colspan]="(year()?.quarters?.length ?? 4) + 3">
+              <app-empty-state
+                art="list"
+                title="Тут ще нікого немає"
+                body="Юнаки гуртка зʼявляться тут, щойно курінь задасть ставки вкладки." />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      @if (formerRows().length) {
+        <p class="dues-former-title">
+          Переведені й вибулі з боргом <span class="lil-count">{{ formerRows().length }}</span>
+        </p>
+        <p-table [value]="formerRows()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col" pFrozenColumn class="dues-name-col">Юнак</th>
+              @for (quarter of year()?.quarters ?? []; track quarter.number) {
+                <th scope="col" class="dues-q-col">{{ quarterShort(quarter) }}</th>
+              }
+              <th scope="col" class="dues-total-col">Разом</th>
+              @if (d.viewer.canKeep) {
+                <th scope="col" class="dues-actions-col"></th>
+              }
+            </tr>
+          </ng-template>
+          <ng-template #body let-row>
+            <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
+          </ng-template>
+        </p-table>
+      }
+    </section>
+
+    <!-- Історія -->
+    <section class="kurin-tile">
+      <p-table
+        [value]="filteredEntries()"
+        styleClass="project-table dues-table dues-history"
+        [scrollable]="true"
+        stripedRows
+        [rowHover]="true">
+
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Історія</h2>
+              <span class="lil-count">{{ filteredEntries().length }}</span>
+              <p>Кожна операція, хто її зробив і чи перевірив впорядник</p>
+            </div>
+            <div class="lil-tile-head__actions dues-filters">
+              @if (personFilterName(); as name) {
+                <p-button [label]="name" icon="pi pi-times" iconPos="right" severity="secondary" size="small" (onClick)="personFilter.set(null)" />
+              }
+              <p-select
+                [options]="quarterFilterOptions()"
+                [ngModel]="quarterFilter()"
+                (ngModelChange)="quarterFilter.set($event)"
+                optionLabel="label"
+                optionValue="value"
+                appendTo="body"
+                ariaLabel="Квартал"
+                styleClass="dues-filter" />
+              <p-select
+                [options]="kindFilterOptions"
+                [ngModel]="kindFilter()"
+                (ngModelChange)="kindFilter.set($event)"
+                optionLabel="label"
+                optionValue="value"
+                appendTo="body"
+                ariaLabel="Вид операції"
+                styleClass="dues-filter" />
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #header>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Вид</th>
+            <th scope="col">Хто</th>
+            <th scope="col" class="dues-number">Сума</th>
+            <th scope="col">Спосіб</th>
+            <th scope="col">Збирав</th>
+            <th scope="col">Нотатка</th>
+            <th scope="col" class="dues-verified-col">Перевірено</th>
+            <th scope="col" class="dues-actions-col"></th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-entry>
+          <tr class="dues-row" [class.dues-row--verified]="entry.isVerified">
+            <td data-mobile-label="Дата">{{ entry.occurredOn | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Вид">
+              <p-tag [value]="kindLabel(entry)" severity="secondary" />
+            </td>
+            <td data-mobile-label="Хто">
+              @if (entry.memberName) { {{ entry.memberName }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Сума" class="dues-number" [class.dues-amount--in]="isIncoming(entry) === true" [class.dues-amount--out]="isIncoming(entry) === false">{{ amountLabel(entry) }}</td>
+            <td data-mobile-label="Спосіб">{{ methodLabel(entry) }}</td>
+            <td data-mobile-label="Збирав">
+              @if (entry.collectedByName) { {{ entry.collectedByName }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Нотатка" class="dues-note">
+              @if (entry.note) { {{ entry.note }} } @else { <span class="dues-blank">—</span> }
+            </td>
+            <td data-mobile-label="Перевірено" class="dues-verified-col">
+              @if (d.viewer.canVerify) {
+                <p-checkbox
+                  [binary]="true"
+                  [ngModel]="entry.isVerified"
+                  (ngModelChange)="setVerified(entry, $event)"
+                  [disabled]="busyEntryKey() === entry.duesEntryKey"
+                  [pTooltip]="entry.isVerified ? ('Перевірив ' + (entry.verifiedByName ?? '—')) : 'Позначити перевіреною'"
+                  tooltipPosition="left"
+                  [ariaLabel]="'Перевірено'" />
+              } @else if (entry.isVerified) {
+                <i class="pi pi-lock dues-lock" [pTooltip]="'Перевірив ' + (entry.verifiedByName ?? '—')" tooltipPosition="left"></i>
+              } @else {
+                <span class="dues-blank">—</span>
+              }
+            </td>
+            <td class="dues-actions-col">
+              @if (canEdit(entry)) {
+                <span class="dues-row-actions">
+                  <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openEntryDialog(entry)" />
+                  <p-button icon="pi pi-trash" variant="text" severity="secondary" size="small" ariaLabel="Видалити" pTooltip="Видалити" [loading]="busyEntryKey() === entry.duesEntryKey" (onClick)="confirmDelete(entry)" />
+                </span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="9">
+              @if (d.entries.length) {
+                <app-empty-state art="trail" title="Нічого не знайшлось" body="Спробуй інший квартал або вид операції." />
+              } @else {
+                <app-empty-state art="list" title="Каса ще порожня" body="Перша записана операція — і історія почнеться." />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <app-dues-entry-dialog
+      [visible]="entryDialogVisible()"
+      (visibleChange)="entryDialogVisible.set($event)"
+      [group]="d"
+      [entry]="entryToEdit()"
+      [saving]="savingEntry()"
+      [errorMessage]="entryError()"
+      (save)="saveEntry($event)" />
+
+    <!-- Ставка гуртка -->
+    <p-dialog
+      header="Ставка гуртка"
+      [visible]="rateDialogVisible()"
+      (visibleChange)="rateDialogVisible.set($event)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="!savingRate()"
+      [style]="{ width: 'min(92vw, 26rem)' }">
+      <p class="dues-dialog-hint">
+        Гурткова частина квартальної вкладки. Станичну й курінну задає курінь.
+      </p>
+      <div class="dues-dialog-form">
+        <div class="dues-dialog-field">
+          <label for="dues-rate-from">З кварталу</label>
+          <p-select
+            inputId="dues-rate-from"
+            [options]="fromQuarterOptions()"
+            [ngModel]="rateFromQuarter()"
+            (ngModelChange)="rateFromQuarter.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            styleClass="w-full" />
+        </div>
+        <div class="dues-dialog-field">
+          <label for="dues-rate-share">На гурток за квартал, ₴</label>
+          <input pInputText id="dues-rate-share" type="number" inputmode="decimal" min="0" step="0.01"
+            [ngModel]="rateShare()" (ngModelChange)="rateShare.set($event)" />
+        </div>
+      </div>
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingRate()" (onClick)="rateDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingRate()" [disabled]="rateShare() === null || rateShare()! < 0" (onClick)="saveRate()" />
+      </ng-template>
+    </p-dialog>
+
+    <!-- Ставки куреня -->
+    <p-dialog
+      header="Ставки куреня"
+      [visible]="kurinRateDialogVisible()"
+      (visibleChange)="kurinRateDialogVisible.set($event)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="!savingKurinRate()"
+      [style]="{ width: 'min(92vw, 28rem)' }">
+      <p class="dues-dialog-hint">
+        Станична й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише станичну.
+      </p>
+      <div class="dues-dialog-form">
+        <div class="dues-dialog-field">
+          <label for="dues-kurin-from">З кварталу</label>
+          <p-select
+            inputId="dues-kurin-from"
+            [options]="fromQuarterOptions()"
+            [ngModel]="kurinRateFromQuarter()"
+            (ngModelChange)="kurinRateFromQuarter.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            styleClass="w-full" />
+        </div>
+        <div class="dues-dialog-grid">
+          <div class="dues-dialog-field">
+            <label for="dues-kurin-full">Станиця, повна</label>
+            <input pInputText id="dues-kurin-full" type="number" inputmode="decimal" min="0" step="0.01"
+              [ngModel]="kurinStanytsiaFull()" (ngModelChange)="kurinStanytsiaFull.set($event)" />
+          </div>
+          <div class="dues-dialog-field">
+            <label for="dues-kurin-reduced">Станиця, пільгова</label>
+            <input pInputText id="dues-kurin-reduced" type="number" inputmode="decimal" min="0" step="0.01"
+              [ngModel]="kurinStanytsiaReduced()" (ngModelChange)="kurinStanytsiaReduced.set($event)" />
+          </div>
+          <div class="dues-dialog-field">
+            <label for="dues-kurin-share">Курінь</label>
+            <input pInputText id="dues-kurin-share" type="number" inputmode="decimal" min="0" step="0.01"
+              [ngModel]="kurinShare()" (ngModelChange)="kurinShare.set($event)" />
+          </div>
+        </div>
+        @if (kurinStanytsiaFull() !== null && kurinStanytsiaReduced() !== null && kurinStanytsiaReduced()! > kurinStanytsiaFull()!) {
+          <p class="dues-dialog-error">Пільгова не може бути вищою за повну.</p>
+        }
+      </div>
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingKurinRate()" (onClick)="kurinRateDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingKurinRate()" [disabled]="!kurinRateValid()" (onClick)="saveKurinRate()" />
+      </ng-template>
+    </p-dialog>
+
+    <!-- Пільга -->
+    <p-dialog
+      header="Пільгова вкладка"
+      [visible]="concessionDialogVisible()"
+      (visibleChange)="concessionDialogVisible.set($event)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="!savingConcession()"
+      [style]="{ width: 'min(92vw, 26rem)' }">
+      @if (concessionTarget(); as target) {
+        <p class="dues-dialog-hint">
+          {{ target.fullName }}. Пільга знижує лише станичну частину; курінь і гурток платяться повністю.
+        </p>
+        <div class="dues-dialog-form">
+          <div class="dues-dialog-field">
+            <label for="dues-concession-from">З кварталу</label>
+            <p-select
+              inputId="dues-concession-from"
+              [options]="fromQuarterOptions()"
+              [ngModel]="concessionFromQuarter()"
+              (ngModelChange)="concessionFromQuarter.set($event)"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              styleClass="w-full" />
+          </div>
+          <div class="dues-dialog-field dues-dialog-field--row">
+            <p-toggleswitch inputId="dues-concession-on" [ngModel]="concessionOn()" (ngModelChange)="concessionOn.set($event)" />
+            <label for="dues-concession-on">{{ concessionOn() ? 'Пільгова вкладка' : 'Повна вкладка' }}</label>
+          </div>
+        </div>
+      }
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingConcession()" (onClick)="concessionDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingConcession()" (onClick)="saveConcession()" />
+      </ng-template>
+    </p-dialog>
+  }
+</section>
+
+<ng-template #accountRow let-row>
+  @if (data(); as d) {
+    <tr
+      class="dues-row dues-row--account"
+      [class.dues-row--selected]="personFilter() === row.account.membershipKey"
+      tabindex="0"
+      (click)="togglePerson(row.account)"
+      (keydown.enter)="togglePerson(row.account)">
+      <td pFrozenColumn class="dues-name-col" data-mobile-label="Юнак">
+        <span class="dues-name">{{ row.account.fullName }}</span>
+        <span class="dues-name-meta">
+          @if (standingLabel(row.account); as label) {
+            <p-tag [value]="label" severity="secondary" />
+          }
+          @if (row.account.isConcessionNow) {
+            <p-tag value="пільгова" severity="info" />
+          }
+        </span>
+      </td>
+      @for (cell of row.cells; track $index) {
+        <td class="dues-q-col" [attr.data-mobile-label]="quarterShort(year()!.quarters[$index])">
+          @if (cell) {
+            <div class="dues-q">
+              <span class="dues-q__paid">{{ money(cell.paid.total) }}</span>
+              <span class="dues-q__of">/ {{ money(cell.charged.total) }}</span>
+            </div>
+            <span class="dues-balance" [class.dues-balance--debt]="cell.balance < 0" [class.dues-balance--ok]="cell.balance === 0" [class.dues-balance--surplus]="cell.balance > 0">{{ cell.balance === 0 ? 'сплачено' : money(cell.balance) }}</span>
+          } @else {
+            <span class="dues-blank">—</span>
+          }
+        </td>
+      }
+      <td class="dues-total-col" data-mobile-label="Разом">
+        <span class="dues-balance dues-balance--lg" [class.dues-balance--debt]="row.account.balance < 0" [class.dues-balance--ok]="row.account.balance === 0" [class.dues-balance--surplus]="row.account.balance > 0">
+          {{ row.account.balance > 0 ? '+' + money(row.account.balance) : row.account.balance === 0 ? 'сплачено' : money(row.account.balance) }}
+        </span>
+      </td>
+      @if (d.viewer.canKeep) {
+        <td class="dues-actions-col">
+          @if (row.account.standing === 'Current') {
+            <p-button
+              icon="pi pi-ticket"
+              variant="text"
+              severity="secondary"
+              size="small"
+              ariaLabel="Пільга"
+              pTooltip="Пільга"
+              (onClick)="$event.stopPropagation(); openConcessionDialog(row.account)" />
+          }
+        </td>
+      }
+    </tr>
+  }
+</ng-template>
