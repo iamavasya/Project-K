@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Settings;
@@ -41,6 +42,8 @@ public static class DependencyInjection
         // The member module's facade is the same instance, so its writes still commit with the rest
         // of the request. What it buys is that no one else can reach the member table at all.
         services.AddScoped<IMemberUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
+        // The same for money: only the dues module can reach its tables.
+        services.AddScoped<IDuesUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
 
         services.AddScoped<IJwtService, JwtService>();

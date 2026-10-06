@@ -11,5 +11,11 @@ public enum ResourceType
     MemberAward,
     ProbeProgress,
     BadgeProgress,
-    AgendaItem
+    AgendaItem,
+
+    /// <summary>A гурток's вкладка: its box, its operations, its rate. Keyed by the гурток.</summary>
+    GroupDues,
+
+    /// <summary>The kurin's own box and rates, and what гуртки hand up. Keyed by the kurin.</summary>
+    KurinDues
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
@@ -40,6 +41,14 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
+
+    // Dues module DbSet
+    public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
+    public DbSet<GroupDuesRate> GroupDuesRates { get; set; }
+    public DbSet<DuesConcession> DuesConcessions { get; set; }
+    public DbSet<DuesCharge> DuesCharges { get; set; }
+    public DbSet<DuesEntry> DuesEntries { get; set; }
+    public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
 
     // Auth module DbSet
     public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
@@ -156,6 +165,63 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(m => m.MemberWarnings)
                   .HasForeignKey(e => e.MemberKey)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Dues module. Money is decimal(18,2) everywhere; quarters are DuesQuarter.Index. Kurins, гуртки
+        // and memberships are held by key with no foreign key: money outlives a deleted гурток.
+        builder.Entity<KurinDuesRate>(entity =>
+        {
+            entity.HasKey(e => e.KurinDuesRateKey);
+            entity.Property(e => e.StanytsiaFull).HasPrecision(18, 2);
+            entity.Property(e => e.StanytsiaReduced).HasPrecision(18, 2);
+            entity.Property(e => e.KurinShare).HasPrecision(18, 2);
+            entity.HasIndex(e => new { e.KurinKey, e.FromQuarter }).IsUnique();
+        });
+
+        builder.Entity<GroupDuesRate>(entity =>
+        {
+            entity.HasKey(e => e.GroupDuesRateKey);
+            entity.Property(e => e.GroupShare).HasPrecision(18, 2);
+            entity.HasIndex(e => new { e.GroupKey, e.FromQuarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesConcession>(entity =>
+        {
+            entity.HasKey(e => e.DuesConcessionKey);
+            entity.HasIndex(e => new { e.MembershipKey, e.FromQuarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesCharge>(entity =>
+        {
+            entity.HasKey(e => e.DuesChargeKey);
+            entity.HasIndex(e => new { e.MembershipKey, e.Quarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesEntry>(entity =>
+        {
+            entity.HasKey(e => e.DuesEntryKey);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Method).HasConversion<int>();
+            entity.Property(e => e.CounterMethod).HasConversion<int?>();
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Ignore(e => e.IsVerified);
+            entity.Ignore(e => e.IsDeleted);
+            entity.HasIndex(e => new { e.KurinKey, e.GroupKey });
+            entity.HasIndex(e => e.MembershipKey);
+        });
+
+        builder.Entity<DuesEntryEvent>(entity =>
+        {
+            entity.HasKey(e => e.DuesEntryEventKey);
+            entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+            entity.HasOne(e => e.DuesEntry)
+                .WithMany(e => e.Events)
+                .HasForeignKey(e => e.DuesEntryKey)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<MemberAward>(entity =>

@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
@@ -15,10 +16,12 @@ public sealed record MoveToGroupCommand(Guid MemberKey, Guid KurinKey, Guid? Gro
 public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<object>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IDomainEventPublisher _events;
 
-    public MoveToGroupCommandHandler(IUnitOfWork unitOfWork)
+    public MoveToGroupCommandHandler(IUnitOfWork unitOfWork, IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
+        _events = events;
     }
 
     public async Task<ServiceResult<object>> Handle(MoveToGroupCommand request, CancellationToken cancellationToken)
@@ -49,6 +52,12 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
                     ResultType.BadRequest, "GroupNotInKurin", "That гурток does not belong to this kurin.");
             }
         }
+
+        // Announced before the гурток is overwritten: whoever counts time spent in a гурток (the dues
+        // ledger) has to do it while the old one is still known.
+        await _events.PublishAsync(
+            new MembershipMovedToGroup(membership.MembershipKey, request.KurinKey, membership.GroupKey, request.GroupKey),
+            cancellationToken);
 
         membership.GroupKey = request.GroupKey;
         await _unitOfWork.SaveChangesAsync(cancellationToken);

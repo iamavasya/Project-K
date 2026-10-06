@@ -128,6 +128,15 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
             .Distinct()
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<KurinMembershipRecord>> GetRecordsInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => await Context.Memberships
+            .AsNoTracking()
+            .Where(m => m.KurinKey == kurinKey)
+            .Select(m => new KurinMembershipRecord(m.MembershipKey, m.MemberKey, m.GroupKey, m.Kind, m.JoinedAtUtc, m.LeftAtUtc))
+            .ToListAsync(cancellationToken);
+
     /// <summary>Current memberships first, then the ones already closed, newest joined first.</summary>
     private static IQueryable<MembershipRecord> AsRecords(IQueryable<Membership> memberships)
         => memberships

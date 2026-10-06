@@ -15,6 +15,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
 namespace ProjectK.BusinessLogic;
 
@@ -43,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
 
         services.AddMemberModule();
+        services.AddDuesModule();
 
         // Kurin module
         services.AddScoped<IAgendaAccess, AgendaAccess>();
@@ -70,6 +72,12 @@ public static class DependencyInjection
     /// deleting the line takes the module out and breaks nothing else at compile time except the
     /// contract other modules hold, which is the point.
     /// </summary>
+    private static IServiceCollection AddDuesModule(this IServiceCollection services)
+    {
+        services.AddScoped<IDuesAccrual, DuesAccrual>();
+        return services;
+    }
+
     private static IServiceCollection AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();

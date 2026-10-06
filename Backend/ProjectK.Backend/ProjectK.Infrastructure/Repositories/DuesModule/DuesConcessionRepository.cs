@@ -1,0 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Infrastructure.DbContexts;
+
+namespace ProjectK.Infrastructure.Repositories.DuesModule;
+
+public class DuesConcessionRepository : BaseEntityRepository<DuesConcession>, IDuesConcessionRepository
+{
+    public DuesConcessionRepository(AppDbContext context) : base(context)
+    {
+    }
+
+    public async Task<IReadOnlyList<DuesConcession>> GetForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => await Set
+            .AsNoTracking()
+            .Where(e => e.KurinKey == kurinKey)
+            .OrderBy(e => e.FromQuarter).ThenBy(e => e.CreatedDate)
+            .ToListAsync(cancellationToken);
+}

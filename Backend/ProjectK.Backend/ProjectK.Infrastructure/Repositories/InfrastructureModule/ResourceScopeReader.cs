@@ -38,6 +38,17 @@ public class ResourceScopeReader : IResourceScopeReader
                 .Select(k => new ResourceScope(k.KurinKey, null, null))
                 .FirstOrDefaultAsync(cancellationToken),
 
+            // A box is addressed by what owns it: a гурток's by the гурток, the kurin's by the kurin.
+            ResourceType.GroupDues => await _context.Groups
+                .Where(g => g.GroupKey == resourceKey)
+                .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
+            ResourceType.KurinDues => await _context.Kurins
+                .Where(k => k.KurinKey == resourceKey)
+                .Select(k => new ResourceScope(k.KurinKey, null, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
             ResourceType.PlanningSession => await _context.PlanningSessions
                 .Where(p => p.PlanningSessionKey == resourceKey)
                 .Select(p => new ResourceScope(p.KurinKey, null, p.CreatedByUserKey))

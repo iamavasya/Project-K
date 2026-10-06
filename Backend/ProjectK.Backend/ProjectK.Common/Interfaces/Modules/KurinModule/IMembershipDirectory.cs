@@ -50,4 +50,11 @@ public interface IMembershipDirectory
     Task<IReadOnlyCollection<Guid>> GetAccountKeysInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every membership the kurin has had, current and closed — what the dues module charges from.
+    /// </summary>
+    Task<IReadOnlyCollection<KurinMembershipRecord>> GetInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
 }

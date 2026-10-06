@@ -65,6 +65,11 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         Guid kurinKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Every membership the kurin has had, current and closed.</summary>
+    Task<IReadOnlyCollection<KurinMembershipRecord>> GetRecordsInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Writes the account key onto every current membership of a person. The copy exists so that
     /// authorization never has to read the member record; keeping it correct is this method's job,

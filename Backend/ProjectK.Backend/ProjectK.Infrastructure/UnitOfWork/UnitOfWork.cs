@@ -6,19 +6,21 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.DuesModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork
 {
     private readonly AppDbContext _context;
 
@@ -48,6 +50,11 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     private ISystemSettingRepository _systemSettings;
     private IAppUserRepository _users;
     private IUserTileLayoutRepository _userTileLayouts;
+    private IKurinDuesRateRepository _kurinDuesRates;
+    private IGroupDuesRateRepository _groupDuesRates;
+    private IDuesConcessionRepository _duesConcessions;
+    private IDuesChargeRepository _duesCharges;
+    private IDuesEntryRepository _duesEntries;
 
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
@@ -70,6 +77,11 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
     public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
     public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
+    public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);
+    public IGroupDuesRateRepository GroupDuesRates => _groupDuesRates ??= new GroupDuesRateRepository(_context);
+    public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);
+    public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
+    public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {
