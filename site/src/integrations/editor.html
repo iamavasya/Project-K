@@ -305,6 +305,12 @@
 				$('banner-text').textContent = message ?? '';
 			}
 
+			/** Only a path on this site may become a link or the preview: never another origin or a `javascript:` URL. */
+			function sameSiteHref(url) {
+				const parsed = new URL(url, location.origin);
+				return parsed.origin === location.origin ? parsed.pathname : '/';
+			}
+
 			async function api(path, init) {
 				const res = await fetch(`/__docs/${path}`, init);
 				const body = await res.json().catch(() => ({}));
@@ -361,10 +367,11 @@
 
 				picker.value = source;
 				$('source-path').textContent = source;
-				$('page-url').textContent = page.url;
-				$('open').href = page.url;
-				$('vscode').href = `vscode://file/${(document.body.dataset.repo ?? '') + source}`;
-				preview.src = page.url;
+				const pageHref = sameSiteHref(page.url);
+				$('page-url').textContent = pageHref;
+				$('open').href = pageHref;
+				$('vscode').href = `vscode://file/${encodeURI((document.body.dataset.repo ?? '') + source)}`;
+				preview.src = pageHref;
 				history.replaceState(null, '', `?source=${encodeURIComponent(source)}`);
 				document.title = `${page.title} · Редактор довідки`;
 			}

@@ -22,6 +22,15 @@ interface EntityTarget {
   key: string;
 }
 
+/**
+ * A route path as a whole-string matcher where each `:param` stands for one segment. Everything else
+ * is escaped, so a `.` or `*` in a path matches only itself.
+ */
+export function routePathRegExp(path: string): RegExp {
+  const escaped = path.replaceAll(/[.*+?^${}()|[\]\\/]/g, String.raw`\$&`);
+  return new RegExp(`^${escaped.replaceAll(/:[a-zA-Z0-9]+/g, '[^/]+')}$`);
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -401,19 +410,16 @@ export class BreadcrumbService {
 
     const normalizedPattern = pathPattern.startsWith('/') ? pathPattern.substring(1) : pathPattern;
     
-    const regexPattern = normalizedPattern
-      .replaceAll(/\//g, '\\/')
-      .replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+');
-    
+    const patternRegExp = routePathRegExp(normalizedPattern);
+
     for (const route of this.router.config ?? []) {
       if (!route.path) continue;
-      
+
       if (route.path === normalizedPattern) {
         return route;
       }
-      
-      if (new RegExp(`^${regexPattern}$`).test(route.path) || 
-          new RegExp(`^${route.path.replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+')}$`).test(normalizedPattern)) {
+
+      if (patternRegExp.test(route.path) || routePathRegExp(route.path).test(normalizedPattern)) {
         return route;
       }
     }
