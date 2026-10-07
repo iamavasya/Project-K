@@ -706,6 +706,81 @@ h3 {
   }
 }
 
+/* Точкування: бали й місця. Плюс — зелений тінт вкладки «сплачено», мінус — її «борг»; нових
+   кольорів немає. Місце — плашка-число; перше — primary. Смуга — частка від лідера. */
+.lil-points {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  font-size: var(--lil-text-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lil-points--plus {
+  background: var(--lil-dues-paid-bg);
+  border-color: var(--lil-dues-paid-line);
+  color: var(--lil-dues-paid-fg);
+}
+
+.lil-points--minus {
+  background: var(--lil-dues-debt-bg);
+  border-color: var(--lil-dues-debt-line);
+  color: var(--lil-dues-debt-fg);
+}
+
+.lil-points--zero {
+  color: var(--p-text-muted-color);
+}
+
+.lil-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 50%;
+  font-size: var(--lil-text-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--p-text-muted-color);
+}
+
+.lil-rank--first {
+  background: var(--p-primary-color);
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
+
+.lil-rank--podium {
+  background: var(--p-primary-50);
+  border-color: var(--p-primary-200);
+  color: var(--p-primary-color);
+}
+
+.lil-bar {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--p-surface-ground);
+  overflow: hidden;
+}
+
+.lil-bar__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--p-primary-color);
+  transition: width 0.3s ease;
+}
+
+.lil-bar__fill--muted {
+  background: var(--p-primary-200);
+}
+
 .lil-empty {
   align-items: center;
   border: 1px dashed color-mix(in srgb, var(--lil-muted) 40%, transparent);

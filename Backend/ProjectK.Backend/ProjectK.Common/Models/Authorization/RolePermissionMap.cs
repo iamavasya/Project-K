@@ -16,6 +16,9 @@ namespace ProjectK.Common.Models.Authorization;
 /// <item><b>Скарбник</b> — his провід's grants plus the вкладка: the гурток's box for a гуртковий
 /// скарбник, the kurin's box for a курінний one. Гуртковий and Виховник keep the гурток's box too;
 /// only the Виховник marks an operation verified.</item>
+/// <item><b>Суддя</b> — his провід's grants plus точкування: the гурток's sheets for a гуртковий суддя,
+/// every гурток's and the kurin's rules for a курінний one. Курінний, Гуртковий and Виховник score
+/// within their reach too; the Виховник and the Зв'язковий also keep the КВ's private score.</item>
 /// <item><b>Інструктор</b> and the bare <b>Member</b> — read within the kurin plus own profile/progress.</item>
 /// </list>
 /// </summary>
@@ -27,8 +30,14 @@ public static class RolePermissionMap
     // гурток's debts. These stay out of the baseline read and are granted office by office.
     private static readonly ResourceType[] DuesResources = [ResourceType.GroupDues, ResourceType.KurinDues];
 
+    // A youth's points are his own business and his гурток's провід's; the table of гуртки is
+    // everyone's. So the гурток's score and the КВ's private one stay out of the baseline read.
+    private static readonly ResourceType[] ScoreResources = [ResourceType.GroupScore, ResourceType.KurinScorePrivate];
+
     private static readonly ResourceAction[] DuesKeeping =
         [ResourceAction.Read, ResourceAction.Create, ResourceAction.Update, ResourceAction.Delete];
+
+    private static readonly ResourceAction[] ScoreKeeping = DuesKeeping;
 
     // Baseline every authenticated member carries: read anything in the kurin, edit own profile,
     // submit own badge progress.
@@ -44,23 +53,37 @@ public static class RolePermissionMap
 
     // Курінний: провід baseline plus office assignment, bounded by AssignableOffices.
     private static readonly IReadOnlyList<Permission> KurinnyyGrants =
-        Append(KurinProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.KurinWide));
+        WithActions(
+            Append(KurinProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.KurinWide)),
+            ResourceType.GroupScore, AccessScope.KurinWide, ScoreKeeping);
 
     // Гуртковий: as Курінний, bounded to his гурток, and he keeps the гурток's box.
     private static readonly IReadOnlyList<Permission> HurtkovyyGrants =
-        WithDues(
-            Append(GroupProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.OwnGroups)),
-            ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping);
+        WithActions(
+            WithActions(
+                Append(GroupProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.OwnGroups)),
+                ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping),
+            ResourceType.GroupScore, AccessScope.OwnGroups, ScoreKeeping);
 
     // Гуртковий скарбник: the гурток's провід, and the гурток's box.
     private static readonly IReadOnlyList<Permission> GroupSkarbnykGrants =
-        WithDues(GroupProvidGrants, ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping);
+        WithActions(GroupProvidGrants, ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping);
 
     // Курінний скарбник: the kurin's провід and box; every гурток's box to read what it owes up.
     private static readonly IReadOnlyList<Permission> KurinSkarbnykGrants =
-        WithDues(
-            WithDues(KurinProvidGrants, ResourceType.KurinDues, AccessScope.KurinWide, DuesKeeping),
+        WithActions(
+            WithActions(KurinProvidGrants, ResourceType.KurinDues, AccessScope.KurinWide, DuesKeeping),
             ResourceType.GroupDues, AccessScope.KurinWide, [ResourceAction.Read]);
+
+    // Гуртковий суддя: the гурток's провід, and its точкування.
+    private static readonly IReadOnlyList<Permission> GroupSuddyaGrants =
+        WithActions(GroupProvidGrants, ResourceType.GroupScore, AccessScope.OwnGroups, ScoreKeeping);
+
+    // Курінний суддя: the kurin's провід; every гурток's точкування, and the rules it is scored by.
+    private static readonly IReadOnlyList<Permission> KurinSuddyaGrants =
+        WithActions(
+            WithActions(KurinProvidGrants, ResourceType.GroupScore, AccessScope.KurinWide, ScoreKeeping),
+            ResourceType.KurinScore, AccessScope.KurinWide, [ResourceAction.Manage]);
 
     // Виховник: runs his гурток — members, progress and the group record itself.
     private static readonly IReadOnlyList<Permission> VykhovnykGrants = BuildVykhovnykGrants();
@@ -198,6 +221,16 @@ public static class RolePermissionMap
             return KurinSkarbnykGrants;
         }
 
+        if (role == SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Suddya))
+        {
+            return GroupSuddyaGrants;
+        }
+
+        if (role == SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Suddya))
+        {
+            return KurinSuddyaGrants;
+        }
+
         if (IsProvidOffice(role, LeadershipType.Kurin, LeadershipRole.Kurinnuy))
         {
             return KurinProvidGrants;
@@ -235,7 +268,7 @@ public static class RolePermissionMap
         return combined;
     }
 
-    private static IReadOnlyList<Permission> WithDues(
+    private static IReadOnlyList<Permission> WithActions(
         IReadOnlyList<Permission> grants,
         ResourceType resource,
         AccessScope scope,
@@ -249,12 +282,13 @@ public static class RolePermissionMap
     private static List<Permission> BuildMemberGrants()
     {
         var grants = new List<Permission>();
-        foreach (var resource in AllResources.Except(DuesResources))
+        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources))
         {
             grants.Add(new Permission(resource, ResourceAction.Read, AccessScope.KurinWide));
         }
 
         grants.Add(new Permission(ResourceType.GroupDues, ResourceAction.Read, AccessScope.Own));
+        grants.Add(new Permission(ResourceType.GroupScore, ResourceAction.Read, AccessScope.Own));
         grants.Add(new Permission(ResourceType.Member, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Create, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.Own));
@@ -306,6 +340,10 @@ public static class RolePermissionMap
         // He keeps the гурток's box with the скарбник, and he alone marks an operation verified.
         grants.AddRange(DuesKeeping.Select(action => new Permission(ResourceType.GroupDues, action, AccessScope.OwnGroups)));
         grants.Add(new Permission(ResourceType.GroupDues, ResourceAction.Manage, AccessScope.OwnGroups));
+
+        // He scores his гурток, and with the other впорядники keeps the КВ's own score.
+        grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.GroupScore, action, AccessScope.OwnGroups)));
+        grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.KurinScorePrivate, action, AccessScope.KurinWide)));
         return grants;
     }
 
@@ -316,7 +354,8 @@ public static class RolePermissionMap
         {
             ResourceType.Group, ResourceType.Member, ResourceType.PlanningSession, ResourceType.AgendaItem,
             ResourceType.BadgeProgress, ResourceType.ProbeProgress, ResourceType.Leadership,
-            ResourceType.MemberWarning, ResourceType.MemberAward, ResourceType.GroupDues, ResourceType.KurinDues
+            ResourceType.MemberWarning, ResourceType.MemberAward, ResourceType.GroupDues, ResourceType.KurinDues,
+            ResourceType.GroupScore, ResourceType.KurinScore, ResourceType.KurinScorePrivate
         };
         var manageActions = new[]
         {
@@ -332,7 +371,7 @@ public static class RolePermissionMap
         }
 
         // The baseline leaves money out of what everyone reads; he reads all of it.
-        grants.AddRange(DuesResources.Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
+        grants.AddRange(DuesResources.Concat(ScoreResources).Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
 
         // Kurin settings, but not the irreversible Delete/Manage (Admin-only).
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Create, AccessScope.KurinWide));

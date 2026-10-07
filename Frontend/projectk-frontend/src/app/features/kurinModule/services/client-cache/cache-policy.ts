@@ -13,6 +13,7 @@ export const BADGES_CATALOG_CACHE_PREFIX = 'catalog:badges:';
 export const PROBES_CATALOG_CACHE_PREFIX = 'catalog:probes:';
 export const LAYOUT_CACHE_PREFIX = 'layout:';
 export const DUES_CACHE_PREFIX = 'dues:';
+export const SCORE_CACHE_PREFIX = 'score:';
 
 /**
  * Everything a kurin scope can colour. Catalogues are deliberately absent: they are
@@ -28,5 +29,6 @@ export const KURIN_SCOPED_CACHE_PREFIXES = [
   MEMBER_WARNING_CACHE_PREFIX,
   MEMBER_PROGRESS_CACHE_PREFIX,
   LAYOUT_CACHE_PREFIX,
-  DUES_CACHE_PREFIX
+  DUES_CACHE_PREFIX,
+  SCORE_CACHE_PREFIX
 ];

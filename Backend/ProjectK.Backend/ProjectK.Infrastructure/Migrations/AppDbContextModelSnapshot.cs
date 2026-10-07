@@ -1779,6 +1779,463 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("ProbeProgressAuditEvents");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.KurinScoreSettings", b =>
+                {
+                    b.Property<Guid>("KurinScoreSettingsKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Algorithm")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KurinScoreSettingsKey");
+
+                    b.HasIndex("KurinKey")
+                        .IsUnique();
+
+                    b.ToTable("KurinScoreSettings");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.PrivateScoreCriterion", b =>
+                {
+                    b.Property<Guid>("PrivateScoreCriterionKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PrivateScoreCriterionKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.ToTable("PrivateScoreCriteria");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.PrivateScoreEntry", b =>
+                {
+                    b.Property<Guid>("PrivateScoreEntryKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly>("OccurredOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("PrivateScoreCriterionKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PrivateScoreEntryKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("MembershipKey");
+
+                    b.ToTable("PrivateScoreEntries");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreAttendance", b =>
+                {
+                    b.Property<Guid>("ScoreAttendanceKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AgendaItemKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("MarkedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("MarkedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurrenceStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RemovedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RemovedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreAttendanceKey");
+
+                    b.HasIndex("KurinKey", "AgendaItemKey");
+
+                    b.HasIndex("MembershipKey", "AgendaItemKey", "OccurrenceStartUtc")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ScoreAttendances_OnePerOccurrence")
+                        .HasFilter("[RemovedAtUtc] IS NULL");
+
+                    b.ToTable("ScoreAttendances");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreAttendanceRate", b =>
+                {
+                    b.Property<Guid>("ScoreAttendanceRateKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AgendaCategoryKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AgendaItemKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreAttendanceRateKey");
+
+                    b.HasIndex("AgendaCategoryKey")
+                        .IsUnique()
+                        .HasFilter("[AgendaCategoryKey] IS NOT NULL");
+
+                    b.HasIndex("AgendaItemKey")
+                        .IsUnique()
+                        .HasFilter("[AgendaItemKey] IS NOT NULL");
+
+                    b.HasIndex("KurinKey");
+
+                    b.ToTable("ScoreAttendanceRates", t =>
+                        {
+                            t.HasCheckConstraint("CK_ScoreAttendanceRates_OneTarget", "([AgendaCategoryKey] IS NULL AND [AgendaItemKey] IS NOT NULL) OR ([AgendaCategoryKey] IS NOT NULL AND [AgendaItemKey] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreEntry", b =>
+                {
+                    b.Property<Guid>("ScoreEntryKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AgendaItemKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("GroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("OccurredOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("OccurrenceStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ScoreItemKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreEntryKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("GroupKey", "AgendaItemKey", "OccurrenceStartUtc", "ScoreItemKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ScoreEntries_ItemOncePerGroup")
+                        .HasFilter("[GroupKey] IS NOT NULL AND [AgendaItemKey] IS NOT NULL AND [ScoreItemKey] IS NOT NULL AND [DeletedAtUtc] IS NULL");
+
+                    b.HasIndex("MembershipKey", "AgendaItemKey", "OccurrenceStartUtc", "ScoreItemKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ScoreEntries_ItemOncePerPerson")
+                        .HasFilter("[MembershipKey] IS NOT NULL AND [AgendaItemKey] IS NOT NULL AND [ScoreItemKey] IS NOT NULL AND [DeletedAtUtc] IS NULL");
+
+                    b.ToTable("ScoreEntries", t =>
+                        {
+                            t.HasCheckConstraint("CK_ScoreEntries_OneTarget", "([MembershipKey] IS NULL AND [GroupKey] IS NOT NULL) OR ([MembershipKey] IS NOT NULL AND [GroupKey] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreGroupMove", b =>
+                {
+                    b.Property<Guid>("ScoreGroupMoveKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("FromGroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("MovedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ToGroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreGroupMoveKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("MembershipKey");
+
+                    b.ToTable("ScoreGroupMoves");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreItem", b =>
+                {
+                    b.Property<Guid>("ScoreItemKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreItemKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.ToTable("ScoreItems");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreRule", b =>
+                {
+                    b.Property<Guid>("ScoreRuleKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Variant")
+                        .HasColumnType("int");
+
+                    b.HasKey("ScoreRuleKey");
+
+                    b.HasIndex("KurinKey", "Source", "Variant", "FromDate")
+                        .IsUnique();
+
+                    b.ToTable("ScoreRules");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreStage", b =>
+                {
+                    b.Property<Guid>("ScoreStageKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreStageKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.ToTable("ScoreStages");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreTrailEvent", b =>
+                {
+                    b.Property<Guid>("ScoreTrailEventKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("SubjectKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreTrailEventKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("SubjectKey");
+
+                    b.ToTable("ScoreTrailEvents");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppRole", null)

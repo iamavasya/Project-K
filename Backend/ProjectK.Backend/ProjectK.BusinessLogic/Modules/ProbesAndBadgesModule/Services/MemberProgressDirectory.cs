@@ -1,5 +1,6 @@
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -12,6 +13,24 @@ public sealed class MemberProgressDirectory : IMemberProgressDirectory
     public MemberProgressDirectory(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+    }
+
+    public async Task<KurinProgressFacts> GetFactsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        var badges = await _unitOfWork.BadgeProgresses.GetByKurinKeyAsync(kurinKey, cancellationToken);
+        var points = await _unitOfWork.ProbePointProgresses.GetSignedByKurinKeyAsync(kurinKey, cancellationToken);
+        var probes = await _unitOfWork.ProbeProgresses.GetByKurinKeyAsync(kurinKey, cancellationToken);
+
+        return new KurinProgressFacts(
+            [.. badges
+                .Where(b => b.Status == BadgeProgressStatus.Confirmed && b.ReviewedAtUtc.HasValue)
+                .Select(b => new BadgeConfirmedRecord(b.MemberKey, b.BadgeId, b.ReviewedAtUtc!.Value))],
+            [.. points
+                .Where(p => p.SignedAtUtc.HasValue)
+                .Select(p => new ProbePointSignedRecord(p.MemberKey, p.ProbeId, p.PointId, p.SignedAtUtc!.Value))],
+            [.. probes
+                .Where(p => p.Status == ProbeProgressStatus.Verified && p.VerifiedAtUtc.HasValue)
+                .Select(p => new ProbeClosedRecord(p.MemberKey, p.ProbeId, p.VerifiedAtUtc!.Value))]);
     }
 
     public async Task<MemberProgress> GetForMemberAsync(

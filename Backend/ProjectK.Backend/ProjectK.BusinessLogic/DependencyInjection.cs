@@ -16,6 +16,10 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 namespace ProjectK.BusinessLogic;
 
@@ -45,6 +49,7 @@ public static class DependencyInjection
 
         services.AddMemberModule();
         services.AddDuesModule();
+        services.AddScoreModule();
 
         // Kurin module
         services.AddScoped<IAgendaAccess, AgendaAccess>();
@@ -75,9 +80,20 @@ public static class DependencyInjection
     private static IServiceCollection AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
+        services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<GroupDuesAccess>();
         services.AddScoped<KurinDuesAccess>();
         services.AddScoped<DuesEntryWriter>();
+        return services;
+    }
+
+    private static IServiceCollection AddScoreModule(this IServiceCollection services)
+    {
+        services.AddScoped<ScoreAccess>();
+        services.AddScoped<ScoreSettingsAccess>();
+        services.AddScoped<PrivateScoreAccess>();
+        services.AddScoped<ScoreBookReader>();
+        services.AddScoped<IScoreFactSource, KurinScoreFacts>();
         return services;
     }
 

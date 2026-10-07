@@ -40,3 +40,4 @@
 .agenda-weekday.is-active { background: var(--p-primary-color); border-color: var(--p-primary-color); color: var(--p-primary-contrast-color); }
 
 @media (max-width: 640px) { .agenda-dates { grid-template-columns: 1fr; } }
+:host ::ng-deep .agenda-footer__sheet { margin-inline-end: auto; }

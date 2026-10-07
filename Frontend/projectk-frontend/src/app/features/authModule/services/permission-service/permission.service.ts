@@ -111,6 +111,24 @@ export class PermissionService {
     return this.isAdmin() || this.has('GroupDues:Read:OwnGroups') || this.has('GroupDues:Read:KurinWide');
   }
 
+  /**
+   * Scores somewhere — a суддя, гуртковий, курінний, Виховник or the Звʼязковий. A youth's
+   * `GroupScore:Read:Own` is about their own points, so it does not count.
+   */
+  canScore(): boolean {
+    return this.isAdmin() || this.has('GroupScore:Create');
+  }
+
+  /** Opens the КВ's private book: the Звʼязковий and the впорядники, nobody else at any scope. */
+  canSeePrivateScore(): boolean {
+    return this.isAdmin() || this.has('KurinScorePrivate:Read');
+  }
+
+  /** Sets how the kurin scores: the суддя куреня and the Звʼязковий. */
+  canManageScore(): boolean {
+    return this.isAdmin() || this.has('KurinScore:Manage');
+  }
+
   getRoleSeverity(): string {
     if (this.isAdmin()) {
       return 'danger';

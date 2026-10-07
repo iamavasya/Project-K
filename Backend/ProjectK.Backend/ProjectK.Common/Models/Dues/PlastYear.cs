@@ -21,6 +21,15 @@ public static class PlastYear
     public static int Of(DuesQuarter quarter) =>
         quarter.Number >= OpeningQuarter ? quarter.Year : quarter.Year - 1;
 
+    /// <summary>The calendar year the пластовий рік of that day starts in.</summary>
+    public static int Of(DateOnly date) => Of(DuesQuarter.Of(date));
+
+    /// <summary>The first day of the пластовий рік that starts in <paramref name="startYear"/>.</summary>
+    public static DateOnly FirstDay(int startYear) => new DuesQuarter(startYear, OpeningQuarter).FirstDay;
+
+    /// <summary>Its last day, inclusive.</summary>
+    public static DateOnly LastDay(int startYear) => FirstDay(startYear + 1).AddDays(-1);
+
     /// <summary>The four quarters of the пластовий рік that starts in <paramref name="startYear"/>.</summary>
     public static IReadOnlyList<DuesQuarter> QuartersOf(int startYear)
     {

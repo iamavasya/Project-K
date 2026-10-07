@@ -20,4 +20,10 @@ public interface IMemberProgressDirectory
     /// anyone asks to open it.
     /// </summary>
     Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Everything earned in one kurin that is worth points: вмілості confirmed, points of проби
+    /// signed, проби verified — each with its day. One call for the whole kurin.
+    /// </summary>
+    Task<KurinProgressFacts> GetFactsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

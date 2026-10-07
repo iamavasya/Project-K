@@ -1,0 +1,243 @@
+<p-confirmdialog />
+
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow"><i class="pi pi-lock"></i> Точкування · КВ</p>
+      <h1>Книга КВ</h1>
+      @if (data(); as d) {
+        <p>{{ d.period.label }} · записано про {{ written() }} з {{ d.people.length }} · бачать лише Звʼязковий і впорядники</p>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        <app-score-period-select [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
+        <p-button label="Таблиця" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" [queryParams]="periodParams()" />
+        <p-button label="Критерії" icon="pi pi-tags" severity="secondary" (onClick)="criteriaDialogVisible.set(true)" />
+        <p-button label="Записати" icon="pi pi-plus" (onClick)="openEntryDialog()" />
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      <p-skeleton width="100%" height="2.75rem" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Книгу не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <!-- Юнаки -->
+    <section class="kurin-tile">
+      <p-table [value]="people()" styleClass="project-table private-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Юнаки</h2>
+              <span class="lil-count">{{ people().length }}</span>
+              <p>Публічні бали — як основа, поруч — ваші. Сюди не входить нічого з таблиці, і звідси нічого не йде в неї.</p>
+            </div>
+            <div class="lil-tile-head__actions">
+              <span class="private-search">
+                <i class="pi pi-search"></i>
+                <input pInputText type="search" placeholder="Знайти" [ngModel]="search()" (ngModelChange)="search.set($event)" aria-label="Знайти юнака" />
+              </span>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col" pFrozenColumn class="private-name-col">Юнак</th>
+            <th scope="col" class="private-number">Публічно</th>
+            <th scope="col" class="private-number">КВ</th>
+            @for (criterion of activeCriteria(); track criterion.privateScoreCriterionKey) {
+              <th scope="col" class="private-number">{{ criterion.name }}</th>
+            }
+            @if (hasUncategorised()) {
+              <th scope="col" class="private-number">Без критерію</th>
+            }
+            <th scope="col" class="private-actions-col"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-person>
+          <tr class="private-row">
+            <td pFrozenColumn class="private-name-col" data-mobile-label="Юнак">
+              <a class="private-name score-link" [routerLink]="['/member', person.memberKey]">{{ person.fullName }}</a>
+              <span class="private-group">{{ person.groupName }}</span>
+            </td>
+            <td class="private-number private-muted" data-mobile-label="Публічно">{{ points(person.publicTotal) }}</td>
+            <td class="private-number" data-mobile-label="КВ">
+              <span class="lil-points" [class.lil-points--plus]="person.privateTotal > 0" [class.lil-points--minus]="person.privateTotal < 0" [class.lil-points--zero]="person.privateTotal === 0">{{ points(person.privateTotal) }}</span>
+            </td>
+            @for (criterion of activeCriteria(); track criterion.privateScoreCriterionKey) {
+              <td class="private-number" [attr.data-mobile-label]="criterion.name">
+                @if (byCriterion(person, criterion); as value) {
+                  <span [class.private-minus]="value < 0">{{ points(value) }}</span>
+                } @else {
+                  <span class="private-blank">—</span>
+                }
+              </td>
+            }
+            @if (hasUncategorised()) {
+              <td class="private-number" data-mobile-label="Без критерію">
+                @if (person.uncategorised) { {{ points(person.uncategorised) }} } @else { <span class="private-blank">—</span> }
+              </td>
+            }
+            <td class="private-actions-col">
+              <p-button icon="pi pi-plus" label="Запис" variant="text" severity="secondary" size="small" (onClick)="openEntryDialog(person)" />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td [attr.colspan]="4 + activeCriteria().length">
+              @if (d.people.length) {
+                <app-empty-state art="trail" title="Нікого не знайшлось" body="Спробуй інше імʼя." />
+              } @else {
+                <app-empty-state art="list" title="У курені ще нікого" body="Юнаки зʼявляться тут, щойно їх запишуть." />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <!-- Записи -->
+    <section class="kurin-tile">
+      <p-table [value]="d.entries" styleClass="project-table private-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Записи</h2>
+              <span class="lil-count">{{ d.entries.length }}</span>
+              <p>Хто з КВ що й за що записав</p>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Кому</th>
+            <th scope="col" class="private-number">Бал</th>
+            <th scope="col">За що</th>
+            <th scope="col">Записав</th>
+            <th scope="col" class="private-actions-col"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-entry>
+          <tr class="private-row">
+            <td data-mobile-label="Дата">{{ entry.occurredOn | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Кому">{{ entry.memberName }}</td>
+            <td data-mobile-label="Бал" class="private-number">
+              <span class="lil-points" [class.lil-points--plus]="entry.points > 0" [class.lil-points--minus]="entry.points < 0">{{ points(entry.points) }}</span>
+            </td>
+            <td data-mobile-label="За що" class="private-reason">
+              @if (entry.criterionName) { <p-tag [value]="entry.criterionName" severity="secondary" /> }
+              @if (entry.note) { <span>{{ entry.note }}</span> }
+            </td>
+            <td data-mobile-label="Записав">
+              @if (entry.createdByName) { {{ entry.createdByName }} } @else { <span class="private-blank">—</span> }
+            </td>
+            <td class="private-actions-col">
+              <span class="private-row-actions">
+                <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openEntryDialog(null, entry)" />
+                <p-button icon="pi pi-trash" variant="text" severity="secondary" size="small" ariaLabel="Видалити" pTooltip="Видалити"
+                  [loading]="busyKey() === entry.privateScoreEntryKey" (onClick)="confirmDelete(entry)" />
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              <app-empty-state art="list" title="Книга ще чиста" body="Перший запис — і вона почнеться. Спершу можна завести критерії.">
+                <p-button label="Критерії" icon="pi pi-tags" severity="secondary" (onClick)="criteriaDialogVisible.set(true)" />
+              </app-empty-state>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <!-- Запис -->
+    <p-dialog [header]="entryToEdit() ? 'Змінити запис' : 'Записати'" [visible]="entryDialogVisible()" (visibleChange)="entryDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [dismissableMask]="!savingEntry()" [closable]="!savingEntry()" [style]="{ width: 'min(94vw, 30rem)' }">
+      <div class="lil-dialog-form">
+        @if (entryToEdit() || entryPersonName()) {
+          <p class="private-dialog-target"><i class="pi pi-user"></i> {{ entryPersonName() }}</p>
+        } @else {
+          <div class="lil-dialog-field">
+            <label for="private-person">Кому</label>
+            <p-select inputId="private-person" [options]="personOptions()" [ngModel]="entryPerson()" (ngModelChange)="entryPerson.set($event)"
+              optionLabel="label" optionValue="value" [filter]="true" filterBy="label" placeholder="Обери юнака" appendTo="body" styleClass="w-full" />
+          </div>
+        }
+        <div class="lil-dialog-field">
+          <label for="private-criterion">Критерій</label>
+          <p-select inputId="private-criterion" [options]="criterionOptions()" [ngModel]="entryCriterion()" (ngModelChange)="entryCriterion.set($event)"
+            optionLabel="label" optionValue="value" [showClear]="true" placeholder="Без критерію — тоді потрібна нотатка" appendTo="body" styleClass="w-full" />
+        </div>
+        <div class="lil-dialog-grid private-dialog-grid">
+          <div class="lil-dialog-field">
+            <label for="private-points">Бал</label>
+            <input pInputText id="private-points" type="number" inputmode="numeric" step="1" placeholder="+2 або −1" [ngModel]="entryPoints()" (ngModelChange)="entryPoints.set($event)" />
+          </div>
+          <div class="lil-dialog-field">
+            <label for="private-date">Дата</label>
+            <p-datepicker inputId="private-date" dateFormat="dd.mm.yy" [showIcon]="true" [maxDate]="today" appendTo="body" styleClass="w-full"
+              [ngModel]="entryDate()" (ngModelChange)="entryDate.set($event)" />
+          </div>
+        </div>
+        <div class="lil-dialog-field">
+          <label for="private-note">Нотатка</label>
+          <textarea pTextarea id="private-note" rows="2" maxlength="500" class="w-full" placeholder="Що саме помітив"
+            [ngModel]="entryNote()" (ngModelChange)="entryNote.set($event)"></textarea>
+        </div>
+        @if (entryError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }
+      </div>
+      <ng-template #footer>
+        @if (entryToEdit(); as editing) {
+          <p-button label="Видалити" icon="pi pi-trash" variant="text" severity="danger" styleClass="private-entry-delete" [disabled]="savingEntry()" (onClick)="confirmDelete(editing)" />
+        }
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingEntry()" (onClick)="entryDialogVisible.set(false)" />
+        <p-button [label]="entryToEdit() ? 'Зберегти' : 'Записати'" [loading]="savingEntry()" [disabled]="!entryValid()" (onClick)="saveEntry()" />
+      </ng-template>
+    </p-dialog>
+
+    <!-- Критерії -->
+    <p-dialog header="Критерії КВ" [visible]="criteriaDialogVisible()" (visibleChange)="criteriaDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(94vw, 28rem)' }">
+      <p class="lil-dialog-hint">Свої слова для свого ока: лідерство, ініціатива, товариськість. В архіві критерій лишається в старих записах і зникає з вибору.</p>
+      <div class="lil-dialog-form">
+        <div class="private-criteria-add">
+          <input pInputText maxlength="100" placeholder="Новий критерій" aria-label="Новий критерій" class="w-full"
+            [ngModel]="newCriterion()" (ngModelChange)="newCriterion.set($event)" (keydown.enter)="addCriterion()" />
+          <p-button label="Додати" icon="pi pi-plus" [loading]="savingCriterion()" [disabled]="!newCriterion().trim()" (onClick)="addCriterion()" />
+        </div>
+        @if (d.criteria.length) {
+          <ul class="private-criteria">
+            @for (criterion of d.criteria; track criterion.privateScoreCriterionKey) {
+              <li [class.private-criteria--archived]="criterion.isArchived">
+                <span>{{ criterion.name }} @if (criterion.isArchived) { <p-tag value="архів" severity="secondary" /> }</span>
+                @if (criterion.isArchived) {
+                  <p-button icon="pi pi-undo" variant="text" severity="secondary" size="small" ariaLabel="Повернути" pTooltip="Повернути" (onClick)="setCriterionArchived(criterion, false)" />
+                } @else {
+                  <p-button icon="pi pi-inbox" variant="text" severity="secondary" size="small" ariaLabel="В архів" pTooltip="В архів" (onClick)="setCriterionArchived(criterion, true)" />
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      <ng-template #footer>
+        <p-button label="Готово" (onClick)="criteriaDialogVisible.set(false)" />
+      </ng-template>
+    </p-dialog>
+  }
+</section>

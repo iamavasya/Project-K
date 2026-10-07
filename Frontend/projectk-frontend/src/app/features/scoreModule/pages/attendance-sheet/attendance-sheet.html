@@ -1,0 +1,268 @@
+<p-confirmdialog />
+
+<section class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      @if (data(); as d) {
+        <p class="lil-page-head__eyebrow sheet-eyebrow">
+          @if (d.categoryName) {
+            <span class="sheet-dot" [style.background]="d.categoryColorHex"></span> {{ d.categoryName }}
+          } @else {
+            Подія
+          }
+          @if (d.isRecurring) { · серія }
+        </p>
+        <h1>{{ d.title }}</h1>
+        <p>
+          @if (d.isAllDay) {
+            {{ d.occurrenceStartUtc | date:'dd.MM.yyyy' }}
+          } @else {
+            {{ d.occurrenceStartUtc | date:'dd.MM.yyyy, HH:mm' }}
+            @if (d.occurrenceEndUtc) { – {{ d.occurrenceEndUtc | date:'HH:mm' }} }
+          }
+          · за присутність
+          <span class="lil-points" [class.lil-points--plus]="d.attendancePoints > 0" [class.lil-points--zero]="d.attendancePoints === 0">{{ points(d.attendancePoints) }}</span>
+          @if (d.canManage) {
+            <button type="button" class="sheet-rate-link" (click)="openRateDialog()">{{ d.hasOwnRate ? 'своя ставка' : 'змінити' }}</button>
+          }
+        </p>
+      } @else {
+        <p class="lil-page-head__eyebrow">Подія</p>
+        <h1>Точкування</h1>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        <p-button label="Таблиця" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" />
+        @if (scorableGroups().length) {
+          <p-button label="Бал гуртку" icon="pi pi-users" severity="secondary" (onClick)="giveToGroup()" />
+        }
+        @if (answeredUnmarked().length) {
+          <p-button [label]="'Усі, хто відповів, були (' + answeredUnmarked().length + ')'" icon="pi pi-check-circle" (onClick)="markAnswered()" />
+        }
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      @for (item of [1, 2, 3, 4, 5]; track item) {
+        <p-skeleton width="100%" height="3.25rem" borderRadius="12px" styleClass="mb-2" />
+      }
+    </section>
+  } @else if (forbidden()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Це аркуш судді" body="Відмічати присутність можуть судді, гуртковий, курінний, впорядники і Звʼязковий.">
+        <p-button label="До таблиці" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" />
+      </app-empty-state>
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Аркуш не вдалося прочитати. Може, подія того дня не збирається.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <section class="kurin-tile">
+      <div class="lil-stats">
+        <div class="lil-stat lil-stat--primary">
+          <span class="lil-stat__label">Були</span>
+          <span class="lil-stat__value">{{ markedCount() }}</span>
+          <span class="lil-stat__sub">відмічено на цій події</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Відповіли «Іду»</span>
+          <span class="lil-stat__value">{{ goingCount() }}</span>
+          <span class="lil-stat__sub">підказка, не присутність</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Призначено</span>
+          <span class="lil-stat__value">{{ assignedCount() }}</span>
+          <span class="lil-stat__sub">кому подія адресована</span>
+        </div>
+      </div>
+
+      <div class="sheet-tools">
+        <span class="sheet-search">
+          <i class="pi pi-search"></i>
+          <input pInputText type="search" placeholder="Знайти юнака" [ngModel]="search()" (ngModelChange)="search.set($event)" aria-label="Знайти юнака" />
+        </span>
+        @if (hasOtherGroups()) {
+          <span class="sheet-toggle">
+            <p-toggleswitch inputId="sheet-all-groups" [ngModel]="showOthersGroups()" (ngModelChange)="showOthersGroups.set($event)" />
+            <label for="sheet-all-groups">Показати інші гуртки</label>
+          </span>
+        }
+      </div>
+    </section>
+
+    <!-- Відповіли -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Відповіли</h2>
+          <span class="lil-count">{{ answered().length }}</span>
+          <p>Сказали «Іду» чи «Можливо» — підтверди одним дотиком</p>
+        </div>
+      </div>
+      @if (!answered().length) {
+        <app-empty-state art="list" title="Ніхто не відповідав" body="Або подія без RSVP, або ще рано. Нижче — ті, кому вона призначена." />
+      } @else {
+        <ul class="sheet-list">
+          @for (person of answered(); track person.membershipKey) {
+            <ng-container *ngTemplateOutlet="row; context: { $implicit: person }" />
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Призначені -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Призначені</h2>
+          <span class="lil-count">{{ assigned().length }}</span>
+          <p>Кому подія адресована, але відповіді не було</p>
+        </div>
+      </div>
+      @if (!assigned().length) {
+        <app-empty-state art="list" title="Усі призначені відповіли" body="Або подію ні на кого не призначали." />
+      } @else {
+        <ul class="sheet-list">
+          @for (person of assigned(); track person.membershipKey) {
+            <ng-container *ngTemplateOutlet="row; context: { $implicit: person }" />
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Решта -->
+    @if (others().length) {
+      <section class="kurin-tile">
+        <div class="lil-tile-head">
+          <div>
+            <h2>Решта</h2>
+            <span class="lil-count">{{ others().length }}</span>
+            <p>Прийшли, хоч їх не кликали — на твій розсуд</p>
+          </div>
+          <div class="lil-tile-head__actions">
+            <p-button [label]="othersOpen() ? 'Згорнути' : 'Показати'" [icon]="othersOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" variant="text" severity="secondary" size="small" (onClick)="othersOpen.set(!othersOpen())" />
+          </div>
+        </div>
+        @if (othersOpen() || search()) {
+          <ul class="sheet-list">
+            @for (person of others(); track person.membershipKey) {
+              <ng-container *ngTemplateOutlet="row; context: { $implicit: person }" />
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    <!-- Бали гурткам цілим -->
+    @if (scorableGroups().length) {
+      <section class="kurin-tile">
+        <div class="lil-tile-head">
+          <div>
+            <h2>Гуртку цілим</h2>
+            <p>За гурткову точку, виступ, порядок у таборі — не ділиться на юнаків</p>
+          </div>
+        </div>
+        <ul class="sheet-groups">
+          @for (group of scorableGroups(); track group.groupKey) {
+            <li class="sheet-group">
+              <span class="sheet-group__name">{{ group.groupName }}</span>
+              <span class="sheet-chips">
+                @for (e of group.entries; track e.scoreEntryKey) {
+                  <button type="button" class="sheet-chip" [pTooltip]="(e.itemName ?? e.reason ?? '') + (e.createdByName ? ' · ' + e.createdByName : '')" tooltipPosition="top" (click)="editGroupEntry(group, e)">
+                    <span class="lil-points" [class.lil-points--plus]="e.points > 0" [class.lil-points--minus]="e.points < 0">{{ points(e.points) }}</span>
+                    {{ e.itemName ?? e.reason }}
+                  </button>
+                }
+              </span>
+              <p-button icon="pi pi-plus" label="Бал" variant="text" severity="secondary" size="small" (onClick)="giveToGroup(group)" />
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <app-score-entry-dialog
+      [visible]="entryDialogVisible()"
+      (visibleChange)="entryDialogVisible.set($event)"
+      [target]="entryTarget()"
+      [targets]="entryTargets()"
+      [event]="entryEvent()"
+      [items]="d.items"
+      [existing]="entryExisting()"
+      [entry]="entryToEdit()"
+      [saving]="savingEntry()"
+      [errorMessage]="entryError()"
+      (save)="saveEntry($event)"
+      (remove)="confirmDelete($event)" />
+
+    <p-dialog header="Бал за присутність на цій події" [visible]="rateDialogVisible()" (visibleChange)="rateDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
+      <p class="lil-dialog-hint">
+        @if (d.categoryName) { Група подій «{{ d.categoryName }}» дає своє; тут можна задати інше саме для цієї події. Зміна перераховує й уже поставлені відмітки. } @else { У події немає групи, тож без власної ставки присутність нічого не варта. }
+      </p>
+      <div class="lil-dialog-field">
+        <label for="sheet-rate">Балів за присутність</label>
+        <input pInputText id="sheet-rate" type="number" inputmode="numeric" min="0" max="1000" step="1" [ngModel]="rateDraft()" (ngModelChange)="rateDraft.set($event)" />
+      </div>
+      <ng-template #footer>
+        @if (d.hasOwnRate) {
+          <p-button label="Як у групи" variant="text" severity="secondary" [disabled]="savingRate()" (onClick)="saveRate(true)" />
+        }
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingRate()" (onClick)="rateDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingRate()" (onClick)="saveRate(false)" />
+      </ng-template>
+    </p-dialog>
+  }
+</section>
+
+<ng-template #row let-person>
+  <li class="sheet-row" [class.sheet-row--marked]="person.attendance" [class.sheet-row--readonly]="!person.canScore">
+    <button
+      type="button"
+      class="sheet-mark"
+      [class.sheet-mark--on]="person.attendance"
+      [disabled]="!person.canScore || isBusy(person)"
+      [attr.aria-pressed]="!!person.attendance"
+      [attr.aria-label]="(person.attendance ? 'Зняти відмітку: ' : 'Був: ') + person.fullName"
+      [pTooltip]="person.attendance?.markedByName ? 'Відмітив ' + person.attendance.markedByName : ''"
+      tooltipPosition="top"
+      (click)="toggle(person)">
+      @if (isBusy(person)) {
+        <i class="pi pi-spin pi-spinner"></i>
+      } @else if (person.attendance) {
+        <i class="pi pi-check"></i>
+      }
+    </button>
+
+    <div class="sheet-row__body">
+      <div class="sheet-row__line">
+        <a class="sheet-row__name score-link" [routerLink]="['/member', person.memberKey]">{{ person.fullName }}</a>
+        <span class="sheet-row__group">{{ person.groupName }}</span>
+        @if (rsvpLabel(person); as label) {
+          <p-tag [value]="label" [severity]="person.rsvp === 'Going' ? 'success' : person.rsvp === 'Maybe' ? 'warn' : 'secondary'" />
+        }
+      </div>
+      @if (person.entries.length) {
+        <span class="sheet-chips">
+          @for (e of person.entries; track e.scoreEntryKey) {
+            <button type="button" class="sheet-chip" [disabled]="!person.canScore" [pTooltip]="(e.itemName ?? e.reason ?? '') + (e.createdByName ? ' · ' + e.createdByName : '')" tooltipPosition="top" (click)="giveTo(person, e)">
+              <span class="lil-points" [class.lil-points--plus]="e.points > 0" [class.lil-points--minus]="e.points < 0">{{ points(e.points) }}</span>
+              {{ e.itemName ?? e.reason }}
+            </button>
+          }
+        </span>
+      }
+    </div>
+
+    @if (person.canScore) {
+      <p-button icon="pi pi-plus" label="Бал" variant="text" severity="secondary" size="small" ariaLabel="Дати бал" (onClick)="giveTo(person)" />
+    }
+  </li>
+</ng-template>

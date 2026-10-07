@@ -48,6 +48,14 @@ public sealed class MemberDirectory : IMemberDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetSummariesByKurinKeyAsync(kurinKey, cancellationToken);
 
+    public async Task<IReadOnlyCollection<WarningRecord>> GetActiveWarningsInKurinAsync(
+        Guid kurinKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken = default)
+        => (await _unitOfWork.MemberWarnings.GetActiveByKurinKeyAsync(kurinKey, nowUtc, cancellationToken))
+            .Select(w => new WarningRecord(w.MemberKey, w.Level, w.IssuedAtUtc))
+            .ToList();
+
     public async Task<IReadOnlyCollection<MemberLookupDto>> GetLookupByKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)

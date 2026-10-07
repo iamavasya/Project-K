@@ -44,6 +44,16 @@ public class ResourceScopeReader : IResourceScopeReader
                 .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
                 .FirstOrDefaultAsync(cancellationToken),
 
+            ResourceType.GroupScore => await _context.Groups
+                .Where(g => g.GroupKey == resourceKey)
+                .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
+            ResourceType.KurinScore or ResourceType.KurinScorePrivate => await _context.Kurins
+                .Where(k => k.KurinKey == resourceKey)
+                .Select(k => new ResourceScope(k.KurinKey, null, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
             ResourceType.KurinDues => await _context.Kurins
                 .Where(k => k.KurinKey == resourceKey)
                 .Select(k => new ResourceScope(k.KurinKey, null, null))

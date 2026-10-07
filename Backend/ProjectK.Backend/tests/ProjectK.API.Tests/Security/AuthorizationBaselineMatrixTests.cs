@@ -26,7 +26,9 @@ using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.API.Controllers.DuesModule;
+using ProjectK.API.Controllers.ScoreModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
+using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -144,6 +146,31 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.UpdateEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(KurinDuesController.SetEntryVerified), "RequireUser");
+
+        // Score: the table is every member's; who scores which гурток is asked per person in the handler.
+        yield return Row<Action<KurinScoreController, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.Get), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.GetGroup), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.GetSheet), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string, MarkAttendanceRequest>>(nameof(KurinScoreController.MarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string, Guid>>(nameof(KurinScoreController.UnmarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.CreateEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.UpdateEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid>>(nameof(KurinScoreController.GetSettings), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreAlgorithmRequest>>(nameof(KurinScoreController.SetAlgorithm), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreRuleRequest>>(nameof(KurinScoreController.SetRule), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreAttendanceRateRequest>>(nameof(KurinScoreController.SetAttendanceRate), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreItemRequest>>(nameof(KurinScoreController.CreateItem), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreItemRequest>>(nameof(KurinScoreController.UpdateItem), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreStageRequest>>(nameof(KurinScoreController.CreateStage), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreStageRequest>>(nameof(KurinScoreController.UpdateStage), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteStage), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, ScorePeriodQuery>>(nameof(PrivateScoreController.Get), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, UpsertPrivateScoreEntryRequest>>(nameof(PrivateScoreController.CreateEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid, UpsertPrivateScoreEntryRequest>>(nameof(PrivateScoreController.UpdateEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid>>(nameof(PrivateScoreController.DeleteEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.CreateCriterion), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.UpdateCriterion), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

@@ -14,6 +14,9 @@ public interface IProbeProgressRepository : IBaseEntityRepository<ProbeProgress>
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
 
+    /// <summary>Every row earned in a kurin, untracked and without its audit trail.</summary>
+    Task<IReadOnlyList<ProbeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
     /// <summary>How many rows one person has here, without reading them.</summary>
     Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }

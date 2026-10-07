@@ -254,6 +254,17 @@ export class SidebarMenuComponent implements OnChanges {
         }
       });
 
+      // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
+      items.push({
+        label: 'Точкування',
+        icon: 'pi pi-trophy',
+        routerLink: ['/kurin', kurinKey, 'score'],
+        command: () => {
+          this.close();
+          this.router.navigate(['/kurin', kurinKey, 'score']);
+        }
+      });
+
       // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
       // сторінки, разом із іконками pi-sitemap і pi-address-book.
 

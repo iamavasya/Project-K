@@ -61,6 +61,19 @@ describe('PermissionService', () => {
     expect(service.canSeeKurinDues()).toBeFalse();
   });
 
+  // A суддя scores; a youth with only their own points does not, and only the kurin's суддя sets the rules.
+  it('tells who scores and who sets the rules of точкування', () => {
+    setState([...memberPerms, 'GroupScore:Create:OwnGroups', 'GroupScore:Read:OwnGroups']);
+    expect(service.canScore()).toBeTrue();
+    expect(service.canManageScore()).toBeFalse();
+
+    setState([...kurinnyyPerms, 'GroupScore:Create:KurinWide', 'KurinScore:Manage:KurinWide']);
+    expect(service.canManageScore()).toBeTrue();
+
+    setState([...memberPerms, 'GroupScore:Read:Own']);
+    expect(service.canScore()).toBeFalse();
+  });
+
   it('shows a гурток box to its keepers, not to a youth with only their own balance', () => {
     setState([...vykhovnykPerms, 'GroupDues:Read:OwnGroups']);
     expect(service.canSeeGroupDues()).toBeTrue();

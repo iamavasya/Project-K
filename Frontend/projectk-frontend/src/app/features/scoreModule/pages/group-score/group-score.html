@@ -1,0 +1,222 @@
+<p-confirmdialog />
+
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Гурток {{ data()?.groupName ?? '' }}</p>
+      <h1>Точкування</h1>
+      @if (data(); as d) {
+        <p>
+          {{ d.period.label }}
+          · місце {{ d.standing.place }} з {{ d.groupCount }}
+          · {{ current().length }} у складі
+        </p>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        <app-score-period-select [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
+        <p-button label="Таблиця куреня" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey(), 'score']" [queryParams]="periodParams()" />
+        @if (d.canScore) {
+          <p-button label="Записати бал" icon="pi pi-plus" (onClick)="openEntryDialog()" />
+        }
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      <div class="lil-stats">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <p-skeleton width="100%" height="5.5rem" borderRadius="12px" />
+        }
+      </div>
+    </section>
+    <section class="kurin-tile">
+      <p-skeleton width="100%" height="2.75rem" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Точкування гуртка не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <!-- Становище -->
+    <section class="kurin-tile">
+      <div class="lil-stats">
+        <div class="lil-stat lil-stat--primary">
+          <span class="lil-stat__label">Місце</span>
+          <span class="lil-stat__value">{{ d.standing.place }}</span>
+          <span class="lil-stat__sub">з {{ d.groupCount }} гуртків</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Бал гуртка</span>
+          <span class="lil-stat__value">{{ score(d.standing.score) }}</span>
+          <span class="lil-stat__sub">{{ isAverage() ? 'середнє на юнака' : 'сума балів' }} · інакше {{ score(d.standing.otherScore) }}</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Бали юнаків</span>
+          <span class="lil-stat__value">{{ score(d.standing.youthPoints) }}</span>
+          <span class="lil-stat__sub">юнаків у періоді {{ score(d.standing.youthCount) }}</span>
+        </div>
+        <div class="lil-stat">
+          <span class="lil-stat__label">Гуртку цілим</span>
+          <span class="lil-stat__value">{{ points(d.standing.groupPoints) }}</span>
+          <span class="lil-stat__sub">додається після, не ділиться</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Юнаки -->
+    <section class="kurin-tile">
+      <p-table [value]="d.people" styleClass="project-table score-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Юнаки</h2>
+              <span class="lil-count">{{ d.people.length }}</span>
+              <p>Хто скільки заробив гуртку й з чого. Переведені й вибулі лишаються з тим, що заробили тут.</p>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col" pFrozenColumn class="score-name-col">Юнак</th>
+            <th scope="col" class="score-number">Разом</th>
+            @for (source of sources(); track source) {
+              <th scope="col" class="score-number">{{ sourceLabels[source] }}</th>
+            }
+            @if (d.canScore) {
+              <th scope="col" class="score-actions-col"></th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-person>
+          <tr class="score-row" [class.score-row--gone]="person.standing !== 'Current'">
+            <td pFrozenColumn class="score-name-col" data-mobile-label="Юнак">
+              <a class="score-name score-link" [routerLink]="['/member', person.memberKey]">{{ person.fullName }}</a>
+              @if (standingLabel(person); as label) { <p-tag [value]="label" severity="secondary" /> }
+            </td>
+            <td class="score-number" data-mobile-label="Разом">
+              <span class="lil-points" [class.lil-points--plus]="person.total > 0" [class.lil-points--minus]="person.total < 0" [class.lil-points--zero]="person.total === 0">{{ points(person.total) }}</span>
+            </td>
+            @for (source of sources(); track source) {
+              <td class="score-number" [attr.data-mobile-label]="sourceLabels[source]">
+                @if (bySource(person, source); as value) {
+                  <span [class.score-minus]="value < 0">{{ points(value) }}</span>
+                } @else {
+                  <span class="score-blank">—</span>
+                }
+              </td>
+            }
+            @if (d.canScore) {
+              <td class="score-actions-col">
+                @if (person.standing === 'Current') {
+                  <p-button icon="pi pi-plus" label="Бал" variant="text" severity="secondary" size="small" (onClick)="giveTo(person)" />
+                }
+              </td>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td [attr.colspan]="3 + sources().length">
+              <app-empty-state art="list" title="У гуртку ще нікого" body="Юнаки зʼявляться тут, щойно їх запишуть у гурток." />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <!-- Записи -->
+    <section class="kurin-tile">
+      <p-table [value]="filteredEntries()" styleClass="project-table score-table" [scrollable]="true" stripedRows [rowHover]="true">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Дано вручну</h2>
+              <span class="lil-count">{{ filteredEntries().length }}</span>
+              <p>Позиції з переліку та бали від судді — юнакам і гуртку цілим. Присутність і автоматичні бали тут не показані.</p>
+            </div>
+            <div class="lil-tile-head__actions">
+              <p-select [options]="kindFilterOptions" [ngModel]="kindFilter()" (ngModelChange)="kindFilter.set($event)"
+                optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Кому" styleClass="score-filter" />
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Кому</th>
+            <th scope="col" class="score-number">Бал</th>
+            <th scope="col">За що</th>
+            <th scope="col">Подія</th>
+            <th scope="col">Дав</th>
+            @if (d.canScore) {
+              <th scope="col" class="score-actions-col"></th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-entry>
+          <tr class="score-row">
+            <td data-mobile-label="Дата">{{ entry.occurredOn | date:'dd.MM.yyyy' }}</td>
+            <td data-mobile-label="Кому">
+              @if (entry.isForGroup) { <p-tag value="гурток" severity="secondary" /> } @else { {{ entry.memberName }} }
+            </td>
+            <td data-mobile-label="Бал" class="score-number">
+              <span class="lil-points" [class.lil-points--plus]="entry.points > 0" [class.lil-points--minus]="entry.points < 0">{{ points(entry.points) }}</span>
+            </td>
+            <td data-mobile-label="За що" class="score-reason">
+              @if (entry.itemName) { <p-tag [value]="entry.itemName" severity="secondary" /> } @else { {{ entry.reason }} }
+            </td>
+            <td data-mobile-label="Подія">
+              @if (sheetLink(entry); as link) {
+                <a class="score-link" [routerLink]="link"><i class="pi pi-calendar"></i> {{ entry.occurrenceStartUtc | date:'dd.MM' }}</a>
+              } @else {
+                <span class="score-blank">—</span>
+              }
+            </td>
+            <td data-mobile-label="Дав">
+              @if (entry.createdByName) { {{ entry.createdByName }} } @else { <span class="score-blank">—</span> }
+            </td>
+            @if (d.canScore) {
+              <td class="score-actions-col">
+                <span class="score-row-actions">
+                  <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openEntryDialog(null, entry)" />
+                  <p-button icon="pi pi-trash" variant="text" severity="secondary" size="small" ariaLabel="Видалити" pTooltip="Видалити"
+                    [loading]="busyKey() === entry.scoreEntryKey" (onClick)="confirmDelete(entry)" />
+                </span>
+              </td>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="7">
+              @if (d.entries.length) {
+                <app-empty-state art="trail" title="Нічого не знайшлось" body="Спробуй інший фільтр." />
+              } @else {
+                <app-empty-state art="list" title="Записів ще немає" body="Перший бал від судді — і історія почнеться." />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+
+    <app-score-entry-dialog
+      [visible]="entryDialogVisible()"
+      (visibleChange)="entryDialogVisible.set($event)"
+      [target]="entryTarget()"
+      [targets]="entryTargets()"
+      [items]="d.items"
+      [entry]="entryToEdit()"
+      [saving]="savingEntry()"
+      [errorMessage]="entryError()"
+      (save)="saveEntry($event)"
+      (remove)="confirmDelete($event)" />
+  }
+</section>

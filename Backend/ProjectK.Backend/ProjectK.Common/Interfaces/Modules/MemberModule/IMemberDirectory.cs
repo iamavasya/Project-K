@@ -44,6 +44,15 @@ public interface IMemberDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The перестороги a kurin issued that still stand at <paramref name="nowUtc"/> — not revoked,
+    /// not expired. What точкування takes points for.
+    /// </summary>
+    Task<IReadOnlyCollection<WarningRecord>> GetActiveWarningsInKurinAsync(
+        Guid kurinKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The kurin's members as pickable entries, with the account role each carries. Used where the
     /// caller has to choose a person — assigning a mentor, addressing a notification.
     /// </summary>

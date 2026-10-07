@@ -1,0 +1,250 @@
+<p-confirmdialog />
+
+<section class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Точкування</p>
+      <h1>Налаштування</h1>
+      <p>Як рахується бал гуртка і скільки варте кожне джерело</p>
+    </div>
+    <div class="lil-page-head__actions">
+      <p-button label="До таблиці" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" />
+    </div>
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      <p-skeleton width="100%" height="2.75rem" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="mt-2" />
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Налаштування не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+
+    <!-- Алгоритм -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Бал гуртка</h2>
+          <p>Бали гуртку цілим додаються після і не діляться за будь-якого вибору</p>
+        </div>
+      </div>
+      <div class="settings-algorithm">
+        <p-selectButton [options]="algorithmOptions" [ngModel]="d.algorithm" (ngModelChange)="setAlgorithm($event)"
+          optionLabel="label" optionValue="value" [allowEmpty]="false" [disabled]="savingAlgorithm()" ariaLabel="Алгоритм" />
+        <p class="settings-hint">{{ algorithmHints[d.algorithm] }}</p>
+      </div>
+    </section>
+
+    <!-- Присутність -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Присутність</h2>
+          <span class="lil-count">{{ d.attendanceRates.length }}</span>
+          <p>Скільки варта присутність на події кожної групи. Нуль — не точкується. Окремій події ставку змінюють на її аркуші.</p>
+        </div>
+      </div>
+      @if (!d.attendanceRates.length) {
+        <app-empty-state art="calendar" title="Груп подій ще немає" body="Заведи їх у календарі — сходини, табір, захід — і тут зʼявиться по рядку на кожну." />
+      } @else {
+        <ul class="settings-list">
+          @for (rate of d.attendanceRates; track rate.agendaCategoryKey) {
+            <li class="settings-row">
+              <span class="settings-row__name">
+                <span class="settings-dot" [style.background]="rate.categoryColorHex"></span>
+                {{ rate.categoryName }}
+              </span>
+              <span class="settings-row__input">
+                <input pInputText type="number" inputmode="numeric" min="0" max="1000" step="1" [attr.aria-label]="'Балів за ' + rate.categoryName"
+                  [ngModel]="rateDraft(rate)" (ngModelChange)="setRateDraft(rate, $event)" />
+                <span class="settings-unit">б.</span>
+              </span>
+              <span class="settings-row__actions">
+                @if (rateChanged(rate)) {
+                  <p-button label="Зберегти" icon="pi pi-check" size="small" [loading]="savingRate() === rate.agendaCategoryKey" (onClick)="saveRate(rate)" />
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Автоматичні джерела -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Автоматично</h2>
+          <p>Система сама дає бали за те, що вже знає. Нове правило діє з дати, старі бали не переписує.</p>
+        </div>
+      </div>
+      <ul class="settings-list">
+        @for (row of rules(); track row.source + row.variant) {
+          <li class="settings-row">
+            <span class="settings-row__name">
+              {{ row.label }}
+              <span class="settings-row__hint">{{ row.hint }}</span>
+            </span>
+            <span class="settings-row__value">
+              @if (row.current; as rule) {
+                <span class="lil-points" [class.lil-points--plus]="rule.points > 0" [class.lil-points--minus]="rule.points < 0" [class.lil-points--zero]="rule.points === 0">{{ points(rule.points) }}</span>
+                <span class="settings-row__since">з {{ rule.fromDate | date:'dd.MM.yyyy' }}</span>
+              } @else {
+                <p-tag value="вимкнено" severity="secondary" />
+              }
+            </span>
+            <span class="settings-row__actions">
+              <p-button icon="pi pi-pencil" label="Змінити" variant="text" severity="secondary" size="small" (onClick)="openRuleDialog(row)" />
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- Позиції -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Перелік позицій</h2>
+          <span class="lil-count">{{ activeItems().length }}</span>
+          <p>Що судді дають одним дотиком: однострій, запізнення, вирізнення. На одній події — один раз.</p>
+        </div>
+        <div class="lil-tile-head__actions">
+          <p-button label="Додати" icon="pi pi-plus" severity="secondary" (onClick)="openItemDialog()" />
+        </div>
+      </div>
+      @if (!d.items.length) {
+        <app-empty-state art="list" title="Переліку ще немає" body="Без нього судді дають лише свої бали з поясненням. Додай перші позиції.">
+          <p-button label="Додати позицію" icon="pi pi-plus" (onClick)="openItemDialog()" />
+        </app-empty-state>
+      } @else {
+        <ul class="settings-list">
+          @for (item of activeItems(); track item.scoreItemKey) {
+            <li class="settings-row">
+              <span class="settings-row__name">{{ item.name }}</span>
+              <span class="settings-row__value">
+                <span class="lil-points" [class.lil-points--plus]="item.points > 0" [class.lil-points--minus]="item.points < 0">{{ points(item.points) }}</span>
+              </span>
+              <span class="settings-row__actions">
+                <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openItemDialog(item)" />
+                <p-button icon="pi pi-inbox" variant="text" severity="secondary" size="small" ariaLabel="В архів" pTooltip="В архів" (onClick)="setItemArchived(item, true)" />
+              </span>
+            </li>
+          }
+          @for (item of archivedItems(); track item.scoreItemKey) {
+            <li class="settings-row settings-row--archived">
+              <span class="settings-row__name">{{ item.name }} <p-tag value="архів" severity="secondary" /></span>
+              <span class="settings-row__value">{{ points(item.points) }}</span>
+              <span class="settings-row__actions">
+                <p-button icon="pi pi-undo" variant="text" severity="secondary" size="small" ariaLabel="Повернути" pTooltip="Повернути" (onClick)="setItemArchived(item, false)" />
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Етапи -->
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Етапи</h2>
+          <span class="lil-count">{{ d.stages.length }}</span>
+          <p>Зріз за довільні дати — осінь, до табору, півріччя. Лише подання, бали не чіпає.</p>
+        </div>
+        <div class="lil-tile-head__actions">
+          <p-button label="Додати" icon="pi pi-plus" severity="secondary" (onClick)="openStageDialog()" />
+        </div>
+      </div>
+      @if (!d.stages.length) {
+        <app-empty-state art="calendar" title="Етапів ще немає" body="Рік рахується і без них. Етап потрібен, коли треба підбити підсумок за частину року." />
+      } @else {
+        <ul class="settings-list">
+          @for (stage of d.stages; track stage.scoreStageKey) {
+            <li class="settings-row">
+              <span class="settings-row__name">{{ stage.name }}</span>
+              <span class="settings-row__value settings-row__since">{{ stage.fromDate | date:'dd.MM.yyyy' }} – {{ stage.toDate | date:'dd.MM.yyyy' }}</span>
+              <span class="settings-row__actions">
+                <p-button icon="pi pi-pencil" variant="text" severity="secondary" size="small" ariaLabel="Змінити" pTooltip="Змінити" (onClick)="openStageDialog(stage)" />
+                <p-button icon="pi pi-trash" variant="text" severity="secondary" size="small" ariaLabel="Видалити" pTooltip="Видалити" [loading]="busyStage() === stage.scoreStageKey" (onClick)="confirmDeleteStage(stage)" />
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Правило -->
+    <p-dialog [header]="ruleRow()?.label ?? ''" [visible]="ruleDialogVisible()" (visibleChange)="ruleDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
+      <p class="lil-dialog-hint">{{ ruleRow()?.hint }}. Діє з дати; що зароблено раніше, лишається як було.</p>
+      <div class="lil-dialog-form">
+        <div class="lil-dialog-field">
+          <label for="rule-points">Балів</label>
+          <input pInputText id="rule-points" type="number" inputmode="numeric" step="1" [ngModel]="rulePoints()" (ngModelChange)="rulePoints.set($event)" />
+          @if (ruleRow()?.source === 'Warning') { <p class="lil-dialog-hint settings-dialog-hint">Пересторога лише забирає: нуль або мінус.</p> }
+        </div>
+        <div class="lil-dialog-field">
+          <label for="rule-from">З дати</label>
+          <p-datepicker inputId="rule-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="ruleFrom()" (ngModelChange)="ruleFrom.set($event)" />
+        </div>
+      </div>
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingRule()" (onClick)="ruleDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingRule()" [disabled]="!ruleValid()" (onClick)="saveRule()" />
+      </ng-template>
+    </p-dialog>
+
+    <!-- Позиція -->
+    <p-dialog [header]="itemToEdit() ? 'Змінити позицію' : 'Нова позиція'" [visible]="itemDialogVisible()" (visibleChange)="itemDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
+      <div class="lil-dialog-form">
+        <div class="lil-dialog-field">
+          <label for="item-name">Назва</label>
+          <input pInputText id="item-name" maxlength="100" placeholder="Однострій" [ngModel]="itemName()" (ngModelChange)="itemName.set($event)" />
+        </div>
+        <div class="lil-dialog-field">
+          <label for="item-points">Балів</label>
+          <input pInputText id="item-points" type="number" inputmode="numeric" step="1" placeholder="+1 або −1" [ngModel]="itemPoints()" (ngModelChange)="itemPoints.set($event)" />
+        </div>
+        @if (itemToEdit()) { <p class="lil-dialog-hint settings-dialog-hint">Зміна не переписує вже дані за цією позицією бали.</p> }
+        @if (itemError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }
+      </div>
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingItem()" (onClick)="itemDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingItem()" [disabled]="!itemValid()" (onClick)="saveItem()" />
+      </ng-template>
+    </p-dialog>
+
+    <!-- Етап -->
+    <p-dialog [header]="stageToEdit() ? 'Змінити етап' : 'Новий етап'" [visible]="stageDialogVisible()" (visibleChange)="stageDialogVisible.set($event)"
+      [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 26rem)' }">
+      <div class="lil-dialog-form">
+        <div class="lil-dialog-field">
+          <label for="stage-name">Назва</label>
+          <input pInputText id="stage-name" maxlength="100" placeholder="Осінь" [ngModel]="stageName()" (ngModelChange)="stageName.set($event)" />
+        </div>
+        <div class="lil-dialog-grid settings-stage-grid">
+          <div class="lil-dialog-field">
+            <label for="stage-from">З</label>
+            <p-datepicker inputId="stage-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageFrom()" (ngModelChange)="stageFrom.set($event)" />
+          </div>
+          <div class="lil-dialog-field">
+            <label for="stage-to">По</label>
+            <p-datepicker inputId="stage-to" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageTo()" (ngModelChange)="stageTo.set($event)" />
+          </div>
+        </div>
+        @if (stageError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }
+      </div>
+      <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingStage()" (onClick)="stageDialogVisible.set(false)" />
+        <p-button label="Зберегти" [loading]="savingStage()" [disabled]="!stageValid()" (onClick)="saveStage()" />
+      </ng-template>
+    </p-dialog>
+  }
+</section>

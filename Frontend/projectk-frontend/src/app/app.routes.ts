@@ -185,6 +185,14 @@ export const routes: Routes = [
     title: 'Вкладка',
     data: { breadcrumb: 'Вкладка', parent: '/group/:groupKey', entityType: 'GroupDues', entityKeyParam: 'groupKey', entityAction: 'Read', titleContext: 'group' }
   },
+  {
+    path: 'group/:groupKey/score',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/group-score/group-score')
+      .then(m => m.GroupScoreComponent),
+    title: 'Точкування гуртка',
+    data: { breadcrumb: 'Точкування', parent: '/group/:groupKey', entityType: 'GroupScore', entityKeyParam: 'groupKey', entityAction: 'Read', titleContext: 'group' }
+  },
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
@@ -290,6 +298,38 @@ export const routes: Routes = [
       .then(m => m.KurinDuesComponent),
     title: 'Вкладка куреня',
     data: { breadcrumb: 'Вкладка куреня', parent: '/kurin', entityType: 'KurinDues', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/kurin-score/kurin-score')
+      .then(m => m.KurinScoreComponent),
+    title: 'Точкування',
+    data: { breadcrumb: 'Точкування', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/settings',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/kurin-score-settings/kurin-score-settings')
+      .then(m => m.KurinScoreSettingsComponent),
+    title: 'Налаштування точкування',
+    data: { breadcrumb: 'Налаштування точкування', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Manage', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/private',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/private-score/private-score')
+      .then(m => m.PrivateScoreComponent),
+    title: 'Точкування КВ',
+    data: { breadcrumb: 'Точкування КВ', parent: '/kurin', entityType: 'KurinScorePrivate', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/events/:itemKey/:occurrence',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/attendance-sheet/attendance-sheet')
+      .then(m => m.AttendanceSheetComponent),
+    title: 'Точкування події',
+    data: { breadcrumb: 'Точкування події', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'kurin/:kurinKey/settings',

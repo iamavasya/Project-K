@@ -1,0 +1,117 @@
+<p-dialog
+  [header]="title()"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="!saving()"
+  [closable]="!saving()"
+  [style]="{ width: 'min(94vw, 30rem)' }">
+
+  <div class="lil-dialog-form">
+    @if (targetName(); as name) {
+      <p class="lil-dialog-hint score-entry-target">
+        <i class="pi pi-user"></i> {{ name }}
+        @if (event(); as ev) { <span class="score-entry-event">· {{ ev.title }}</span> }
+      </p>
+    } @else if (canPickTarget()) {
+      <div class="lil-dialog-field">
+        <label for="score-target">Кому</label>
+        <p-select
+          inputId="score-target"
+          [options]="targetOptions()"
+          [ngModel]="targetValue()"
+          (ngModelChange)="targetValue.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="targetOptions().length > 8"
+          filterBy="label"
+          placeholder="Обери юнака або гурток"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+    }
+
+    @if (others().length) {
+      <div class="score-entry-existing">
+        <span class="lil-dialog-label">Уже є на цій події</span>
+        <ul>
+          @for (e of others(); track e.scoreEntryKey) {
+            <li>
+              <span class="lil-points" [class.lil-points--plus]="e.points > 0" [class.lil-points--minus]="e.points < 0">{{ points(e.points) }}</span>
+              <span>{{ e.itemName ?? e.reason }}</span>
+              @if (e.createdByName) { <span class="score-entry-by">· {{ e.createdByName }}</span> }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (hasItems()) {
+      <div class="lil-dialog-field">
+        <span id="score-mode-label" class="lil-dialog-label">Що саме</span>
+        <p-selectButton
+          [options]="modeOptions"
+          [ngModel]="mode()"
+          (ngModelChange)="mode.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          ariaLabelledBy="score-mode-label" />
+      </div>
+    }
+
+    @if (mode() === 'item') {
+      <div class="lil-dialog-field">
+        <label for="score-item">Позиція</label>
+        <p-select
+          inputId="score-item"
+          [options]="itemOptions()"
+          [ngModel]="itemKey()"
+          (ngModelChange)="itemKey.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          optionDisabled="disabled"
+          placeholder="Обери з переліку куреня"
+          appendTo="body"
+          styleClass="w-full" />
+        @if (event()) {
+          <p class="lil-dialog-hint score-entry-hint">Позицію на одній події дають один раз — зайняті вже неактивні.</p>
+        }
+      </div>
+    } @else {
+      <div class="lil-dialog-grid score-entry-grid">
+        <div class="lil-dialog-field">
+          <label for="score-amount">Бал</label>
+          <input pInputText id="score-amount" type="number" inputmode="numeric" step="1" min="-1000" max="1000"
+            [ngModel]="amount()" (ngModelChange)="amount.set($event)" [invalid]="!!amountError()" autocomplete="off" placeholder="+3 або −1" />
+          @if (amountError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }
+        </div>
+        <div class="lil-dialog-field score-entry-reason">
+          <label for="score-reason">За що</label>
+          <textarea pTextarea id="score-reason" rows="2" maxlength="500" class="w-full"
+            [ngModel]="reason()" (ngModelChange)="reason.set($event)" placeholder="Коротко, щоб потім згадати"></textarea>
+        </div>
+      </div>
+    }
+
+    <div class="lil-dialog-field">
+      <label for="score-date">Дата</label>
+      <p-datepicker inputId="score-date" dateFormat="dd.mm.yy" [showIcon]="true" [maxDate]="today" appendTo="body" styleClass="w-full"
+        [ngModel]="occurredOn()" (ngModelChange)="occurredOn.set($event)" />
+    </div>
+
+    @if (errorMessage(); as message) {
+      <p class="lil-dialog-error">{{ message }}</p>
+    }
+  </div>
+
+  <ng-template #footer>
+    @if (entry(); as editing) {
+      <p-button label="Видалити" icon="pi pi-trash" variant="text" severity="danger" styleClass="score-entry-delete" [disabled]="saving()" (onClick)="remove.emit(editing)" />
+    }
+    <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="saving()" (onClick)="close()" />
+    <p-button [label]="entry() ? 'Зберегти' : 'Записати'" [loading]="saving()" [disabled]="!valid()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

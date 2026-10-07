@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
@@ -14,13 +15,14 @@ using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
+using ProjectK.Infrastructure.Repositories.ScoreModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork
 {
     private readonly AppDbContext _context;
 
@@ -55,6 +57,17 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork
     private IDuesConcessionRepository _duesConcessions;
     private IDuesChargeRepository _duesCharges;
     private IDuesEntryRepository _duesEntries;
+    private IKurinScoreSettingsRepository _kurinScoreSettings;
+    private IScoreRuleRepository _scoreRules;
+    private IScoreAttendanceRateRepository _scoreAttendanceRates;
+    private IScoreItemRepository _scoreItems;
+    private IScoreStageRepository _scoreStages;
+    private IScoreAttendanceRepository _scoreAttendances;
+    private IScoreEntryRepository _scoreEntries;
+    private IScoreGroupMoveRepository _scoreGroupMoves;
+    private IScoreTrailEventRepository _scoreTrailEvents;
+    private IPrivateScoreCriterionRepository _privateScoreCriteria;
+    private IPrivateScoreEntryRepository _privateScoreEntries;
 
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
@@ -82,6 +95,17 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork
     public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);
     public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
     public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
+    public IKurinScoreSettingsRepository KurinScoreSettings => _kurinScoreSettings ??= new KurinScoreSettingsRepository(_context);
+    public IScoreRuleRepository ScoreRules => _scoreRules ??= new ScoreRuleRepository(_context);
+    public IScoreAttendanceRateRepository ScoreAttendanceRates => _scoreAttendanceRates ??= new ScoreAttendanceRateRepository(_context);
+    public IScoreItemRepository ScoreItems => _scoreItems ??= new ScoreItemRepository(_context);
+    public IScoreStageRepository ScoreStages => _scoreStages ??= new ScoreStageRepository(_context);
+    public IScoreAttendanceRepository ScoreAttendances => _scoreAttendances ??= new ScoreAttendanceRepository(_context);
+    public IScoreEntryRepository ScoreEntries => _scoreEntries ??= new ScoreEntryRepository(_context);
+    public IScoreGroupMoveRepository ScoreGroupMoves => _scoreGroupMoves ??= new ScoreGroupMoveRepository(_context);
+    public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);
+    public IPrivateScoreCriterionRepository PrivateScoreCriteria => _privateScoreCriteria ??= new PrivateScoreCriterionRepository(_context);
+    public IPrivateScoreEntryRepository PrivateScoreEntries => _privateScoreEntries ??= new PrivateScoreEntryRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {
