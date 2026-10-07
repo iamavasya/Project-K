@@ -1,7 +1,7 @@
 @import "tailwindcss";
-@plugin "@openng/optimus-ui-tailwindcss";
-
 @import "./lileyka-theme.css";
+
+@plugin "@openng/optimus-ui-tailwindcss";
 
 /* After migration to Angular v21 and Optimus UI there was a bug
 where the datepicker panel would not display correctly in some divs
