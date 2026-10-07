@@ -108,3 +108,18 @@ export interface MyScoreDto {
   groupScore: number;
   algorithm: ScoreAlgorithm;
 }
+
+// --- Справи: the провід's queue ---
+
+export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
+
+export interface MyDutyDto {
+  kind: MyDutyKind;
+  kurin: MyKurinRefDto;
+  count: number;
+  groupKey: string | null;
+  groupName: string | null;
+  agendaItemKey: string | null;
+  occurrenceStartUtc: string | null;
+  title: string | null;
+}

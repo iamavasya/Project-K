@@ -24,6 +24,12 @@
         (respond)="respond($event)" />
     </ng-template>
 
+    @if (duties().length) {
+      <ng-template [appTileDef]="{ key: 'my-duties', span: 'half', label: 'Справи' }">
+        <app-my-duties-tile [duties]="duties()" [loading]="dutiesLoading()" [failed]="dutiesFailed()" [namesKurin]="namesKurin()" />
+      </ng-template>
+    }
+
     <ng-template [appTileDef]="{ key: 'my-tasks', span: 'half', label: 'Мої задачі' }">
       <app-my-tasks-tile
         [tasks]="tasks()"

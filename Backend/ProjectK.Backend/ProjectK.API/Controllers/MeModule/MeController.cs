@@ -5,6 +5,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
@@ -74,6 +75,15 @@ public class MeController : ControllerBase
     public async Task<IActionResult> GetDues()
     {
         var result = await _mediator.Send(new GetMyDuesQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>What waits on the person as провід, per kurin where they hold an office; empty for anyone else.</summary>
+    [HttpGet("duties")]
+    [ProducesResponseType(typeof(IReadOnlyList<MyDutyDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDuties()
+    {
+        var result = await _mediator.Send(new GetMyDutiesQuery());
         return result.ToActionResult(this);
     }
 

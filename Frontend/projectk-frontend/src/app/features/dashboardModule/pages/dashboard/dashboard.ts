@@ -13,6 +13,7 @@ import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-nam
 import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MyDuesTileComponent } from '../../components/my-dues-tile/my-dues-tile';
+import { MyDutiesTileComponent } from '../../components/my-duties-tile/my-duties-tile';
 import { MyKurinsTileComponent } from '../../components/my-kurins-tile/my-kurins-tile';
 import { MyProbeTileComponent } from '../../components/my-probe-tile/my-probe-tile';
 import { MyProfileTileComponent } from '../../components/my-profile-tile/my-profile-tile';
@@ -20,7 +21,7 @@ import { MyScoreTileComponent } from '../../components/my-score-tile/my-score-ti
 import { MySkillsTileComponent } from '../../components/my-skills-tile/my-skills-tile';
 import { MyTasksTileComponent, TaskStatusChange } from '../../components/my-tasks-tile/my-tasks-tile';
 import { EventResponseChange, UpcomingEventsTileComponent } from '../../components/upcoming-events-tile/upcoming-events-tile';
-import { MyDuesDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
+import { MyDuesDto, MyDutyDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
@@ -35,7 +36,7 @@ import { greeting, todayLabel } from '../../functions/greeting.function';
   imports: [
     TileBoardComponent, TileDefDirective,
     MyProfileTileComponent, MyKurinsTileComponent, UpcomingEventsTileComponent, MyTasksTileComponent,
-    MyProbeTileComponent, MySkillsTileComponent, MyDuesTileComponent, MyScoreTileComponent
+    MyProbeTileComponent, MySkillsTileComponent, MyDuesTileComponent, MyScoreTileComponent, MyDutiesTileComponent
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -78,6 +79,9 @@ export class DashboardComponent implements OnInit {
   readonly scores = signal<MyScoreDto[]>([]);
   readonly scoresLoading = signal(true);
   readonly scoresFailed = signal(false);
+  readonly duties = signal<MyDutyDto[]>([]);
+  readonly dutiesLoading = signal(true);
+  readonly dutiesFailed = signal(false);
 
   /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
   readonly hasYouthProgram = computed(() => this.growth()?.hasYouthProgram ?? false);
@@ -129,6 +133,14 @@ export class DashboardComponent implements OnInit {
     this.loadGrowth();
     this.loadDues();
     this.loadScores();
+    this.loadDuties();
+  }
+
+  private loadDuties(): void {
+    this.me.getDuties().subscribe({
+      next: duties => { this.duties.set(duties); this.dutiesLoading.set(false); this.dutiesFailed.set(false); },
+      error: () => { this.dutiesLoading.set(false); this.dutiesFailed.set(true); }
+    });
   }
 
   private loadGrowth(): void {

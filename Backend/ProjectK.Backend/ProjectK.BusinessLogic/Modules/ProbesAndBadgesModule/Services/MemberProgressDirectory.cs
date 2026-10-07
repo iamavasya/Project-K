@@ -59,6 +59,11 @@ public sealed class MemberProgressDirectory : IMemberProgressDirectory
                     progress.ReviewedAtUtc))]);
     }
 
+    public async Task<int> CountSubmittedBadgesAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+        => memberKeys.Count == 0
+            ? 0
+            : (await _unitOfWork.BadgeProgresses.GetByMemberKeysAsync(memberKeys, cancellationToken)).Count(b => b.Status == BadgeProgressStatus.Submitted);
+
     public async Task<IReadOnlyCollection<string>> GetSignedPointIdsAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
         => [.. (await _unitOfWork.ProbePointProgresses.GetByMemberAndProbeAsync(memberKey, probeId, cancellationToken))
             .Where(p => p.IsSigned)

@@ -1,0 +1,47 @@
+<section class="kurin-tile duties-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Справи</h2>
+      @if (total(); as count) { <span class="lil-count">{{ count }}</span> }
+      <p>Що чекає на тебе як на провід</p>
+    </div>
+  </div>
+
+  @if (loading() && !duties().length) {
+    @for (item of [1, 2]; track item) {
+      <p-skeleton width="100%" height="3rem" borderRadius="12px" styleClass="mb-2" />
+    }
+  } @else if (failed()) {
+    <p class="duties-tile__note">Справи не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (!rows().length) {
+    <app-empty-state art="list" title="Усе зроблено" body="Нічого не чекає — ні вмілостей, ні каси, ні сходин без відмітки." />
+  } @else {
+    <ul class="duties-tile__list">
+      @for (row of rows(); track rowKey(row)) {
+        <li>
+          @if (row.link; as link) {
+            <a class="duties-tile__row duties-tile__row--link" [routerLink]="link">
+              <ng-container *ngTemplateOutlet="body; context: { row }" />
+              <span class="pi pi-arrow-right duties-tile__go" aria-hidden="true"></span>
+            </a>
+          } @else {
+            <span class="duties-tile__row">
+              <ng-container *ngTemplateOutlet="body; context: { row }" />
+            </span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<ng-template #body let-row="row">
+  <span class="duties-tile__icon" aria-hidden="true"><span [class]="row.icon"></span></span>
+  <span class="duties-tile__body">
+    <span class="duties-tile__label">{{ row.label }}</span>
+    @if (row.detail) { <span class="duties-tile__detail">{{ row.detail }}</span> }
+  </span>
+  @if (row.duty.kind !== 'EventWithoutAttendance') {
+    <span class="duties-tile__count">{{ row.duty.count }}</span>
+  }
+</ng-template>

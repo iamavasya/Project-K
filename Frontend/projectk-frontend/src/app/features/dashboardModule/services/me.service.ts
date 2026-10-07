@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AgendaRsvpStatus } from '../../kurinModule/models/agenda';
-import { MyDuesDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../models/me.dto';
+import { MyDuesDto, MyDutyDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../models/me.dto';
 
 /**
  * What the dashboard reads about the person behind the token, across every kurin. Not cached: a
@@ -36,5 +36,9 @@ export class MeService {
 
   getScore(): Observable<MyScoreDto[]> {
     return this.http.get<MyScoreDto[]>(`${this.apiUrl}/score`);
+  }
+
+  getDuties(): Observable<MyDutyDto[]> {
+    return this.http.get<MyDutyDto[]>(`${this.apiUrl}/duties`);
   }
 }

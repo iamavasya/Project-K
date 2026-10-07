@@ -8,8 +8,15 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 
-/// <summary>One kurin the person stands in, with how the agenda there sees them.</summary>
-public sealed record MeKurinContext(MembershipRecord Membership, AgendaViewerContext Viewer);
+/// <summary>
+/// One kurin the person stands in: how the agenda there sees them, the roles their offices there
+/// amount to, and the гуртки they lead there.
+/// </summary>
+public sealed record MeKurinContext(
+    MembershipRecord Membership,
+    AgendaViewerContext Viewer,
+    IReadOnlyList<string> Roles,
+    IReadOnlySet<Guid> LedGroupKeys);
 
 /// <summary>
 /// How the person is seen by the agenda of every kurin they currently stand in. The token carries the
@@ -64,18 +71,14 @@ public sealed class MeAgendaScopes
             var roles = offices.Select(o => SystemRole.ForOffice(o.Type, o.Role)).ToList();
             var canSeeWholeKurin = RolePermissionMap.GrantsWholeKurinManagement(roles);
 
-            var groups = new HashSet<Guid>();
+            var led = roles.Count > 0 && !canSeeWholeKurin
+                ? (await _scopeReader.GetLedGroupKeysAsync(userKey, membership.KurinKey, cancellationToken)).ToHashSet()
+                : new HashSet<Guid>();
+
+            var groups = new HashSet<Guid>(led);
             if (membership.GroupKey is { } ownGroup)
             {
                 groups.Add(ownGroup);
-            }
-
-            if (roles.Count > 0 && !canSeeWholeKurin)
-            {
-                foreach (var led in await _scopeReader.GetLedGroupKeysAsync(userKey, membership.KurinKey, cancellationToken))
-                {
-                    groups.Add(led);
-                }
             }
 
             contexts.Add(new MeKurinContext(membership, new AgendaViewerContext(
@@ -86,7 +89,7 @@ public sealed class MeAgendaScopes
                 VisibilityGroupKeys: groups,
                 ViewerLeadershipKeys: leadershipKeys,
                 CanSeeWholeKurin: canSeeWholeKurin,
-                IsLeadership: roles.Count > 0)));
+                IsLeadership: roles.Count > 0), roles, led));
         }
 
         return contexts;

@@ -15,6 +15,9 @@ public interface IMemberProgressDirectory
     /// <summary>Everything one person has taken and earned, in one call.</summary>
     Task<MemberProgress> GetForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>How many вмілості of these people are handed in and waiting to be confirmed.</summary>
+    Task<int> CountSubmittedBadgesAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
     /// <summary>The ids of the points of one проба the person has had signed; empty when none.</summary>
     Task<IReadOnlyCollection<string>> GetSignedPointIdsAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
 

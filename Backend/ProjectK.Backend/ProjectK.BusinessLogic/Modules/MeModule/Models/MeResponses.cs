@@ -132,3 +132,34 @@ public sealed class MyScoreDto
     public decimal GroupScore { get; set; }
     public ScoreAlgorithm Algorithm { get; set; }
 }
+
+// --- Справи: the провід's queue ---
+
+/// <summary>What a duty is about; the dashboard knows where each kind is done.</summary>
+public enum MyDutyKind
+{
+    /// <summary>Вмілості handed in and waiting to be confirmed.</summary>
+    BadgesToReview,
+    /// <summary>Transfers from гуртки the kurin's скарбник has not confirmed receiving.</summary>
+    TransfersToConfirm,
+    /// <summary>Entries in a box nobody has verified yet.</summary>
+    EntriesToVerify,
+    /// <summary>A past event worth points where nobody has been marked present.</summary>
+    EventWithoutAttendance
+}
+
+/// <summary>One thing waiting on the person in one kurin, with enough to go straight to it.</summary>
+public sealed class MyDutyDto
+{
+    public MyDutyKind Kind { get; set; }
+    public MyKurinRefDto Kurin { get; set; } = new();
+    /// <summary>How many of them; one for an event.</summary>
+    public int Count { get; set; }
+    /// <summary>The гурток whose box it is; null for the kurin's own box or the whole kurin.</summary>
+    public Guid? GroupKey { get; set; }
+    public string? GroupName { get; set; }
+    /// <summary>For an event: which one and when.</summary>
+    public Guid? AgendaItemKey { get; set; }
+    public DateTime? OccurrenceStartUtc { get; set; }
+    public string? Title { get; set; }
+}

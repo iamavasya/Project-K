@@ -320,7 +320,18 @@ a.lil-sidebar-brand:hover {
   stroke: var(--lil-clay-500);
 }
 
+/* The drawer is a column of brand, menu, version, footer. Only the menu gives way: it takes the
+   room between the banner and the version and scrolls on its own, so the footer never leaves the
+   screen however long the menu grows. */
+:root .p-drawer:has(> .lil-sidebar-brand) {
+  overflow: hidden;
+}
+
 .sidebar-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
   padding: 0.75rem 0.625rem;
 }
 
