@@ -19,8 +19,9 @@ services:
     build:
       context: ..
       dockerfile: Backend/Dockerfile
-      args:
-        NUGET_AUTH_TOKEN: ${PROJECTK_NUGET_AUTH_TOKEN:-${NUGET_AUTH_TOKEN:-}}
+      # A build secret, not an arg: the token never lands in an image layer.
+      secrets:
+        - nuget_auth_token
     environment:
       ASPNETCORE_ENVIRONMENT: ${PROJECTK_ASPNETCORE_ENV}
       ASPNETCORE_URLS: http://+:8080
@@ -99,3 +100,7 @@ networks:
   projectk-dev-net:
     name: projectk-dev-net
     external: true
+
+secrets:
+  nuget_auth_token:
+    environment: NUGET_AUTH_TOKEN

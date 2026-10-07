@@ -30,8 +30,9 @@ services:
     build:
       context: ../..
       dockerfile: Backend/Dockerfile
-      args:
-        NUGET_AUTH_TOKEN: ${PROJECTK_NUGET_AUTH_TOKEN:-${NUGET_AUTH_TOKEN:-}}
+      # A build secret, not an arg: the token never lands in an image layer.
+      secrets:
+        - nuget_auth_token
     environment:
       ASPNETCORE_ENVIRONMENT: SelfHost
       ASPNETCORE_URLS: http://+:8080
@@ -97,3 +98,7 @@ volumes:
     name: projectk-sql-data
   projectk-azurite-data:
     name: projectk-azurite-data
+
+secrets:
+  nuget_auth_token:
+    environment: PROJECTK_NUGET_AUTH_TOKEN
