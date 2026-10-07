@@ -1,0 +1,9 @@
+.dashboard-head h1 {
+  font-size: var(--lil-text-h1);
+  letter-spacing: var(--lil-tracking-h1);
+}
+
+/* Tiles stretch to the row so two half tiles sit level; the board already grows rows to the tallest. */
+:host ::ng-deep .tile-slot__body > * {
+  height: 100%;
+}

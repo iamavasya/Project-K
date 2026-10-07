@@ -3,7 +3,7 @@ import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
 import { MenuItem } from '@openng/optimus-ui/api';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap, tap } from 'rxjs';
@@ -25,7 +25,7 @@ import { WaitlistAttentionService } from '../../../adminModule/services/waitlist
 
 @Component({
   selector: 'app-sidebar-menu',
-  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, ReportProblemDialogComponent],
+  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, RouterLink, ReportProblemDialogComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
@@ -168,6 +168,15 @@ export class SidebarMenuComponent implements OnChanges {
     const items: MenuItem[] = [];
 
     if (memberKey) {
+      items.push({
+        label: 'Головна',
+        icon: 'pi pi-home',
+        routerLink: ['/'],
+        command: () => {
+          this.close();
+          this.router.navigate(['/']);
+        }
+      });
       items.push({
         label: 'Мій профіль',
         icon: 'pi pi-user',

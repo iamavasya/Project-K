@@ -40,9 +40,23 @@ export class App implements AfterViewInit {
 
   private updateShellVisibility(url: string): void {
     const path = url.split('?')[0].split('#')[0];
-    const publicPrefixes = ['/', '/welcome', '/login', '/join', '/activate'];
+    // `/` is the welcome page for a guest and the dashboard for a person with a card: the same
+    // address, so the route that matched says which, not the path.
+    if (path === '/') {
+      this.isPublicShellRoute.set(this.deepestRouteData()['shell'] !== 'app');
+      return;
+    }
+    const publicPrefixes = ['/welcome', '/login', '/join', '/activate'];
     this.isPublicShellRoute.set(
-      publicPrefixes.some(prefix => path === prefix || (prefix !== '/' && path.startsWith(`${prefix}/`)))
+      publicPrefixes.some(prefix => path === prefix || path.startsWith(`${prefix}/`))
     );
+  }
+
+  private deepestRouteData(): Record<string, unknown> {
+    let route = this.router.routerState.snapshot.root;
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+    return route.data;
   }
 }

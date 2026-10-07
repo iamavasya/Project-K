@@ -9,4 +9,5 @@ public record SaveTileLayoutCommand(
     Guid UserKey,
     string BoardKey,
     IReadOnlyList<string> TileKeys,
+    IReadOnlyList<string> HiddenTileKeys,
     int SchemaVersion) : IRequest<ServiceResult<TileLayoutDto>>;

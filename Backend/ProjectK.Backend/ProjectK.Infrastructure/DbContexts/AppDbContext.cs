@@ -667,6 +667,10 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.TileOrderJson)
                 .HasMaxLength(2000)
                 .IsRequired();
+            entity.Property(e => e.HiddenTilesJson)
+                .HasMaxLength(2000)
+                .IsRequired()
+                .HasDefaultValue("[]");
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserKey)

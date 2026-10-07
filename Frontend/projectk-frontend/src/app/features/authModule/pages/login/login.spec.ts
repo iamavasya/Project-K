@@ -110,11 +110,11 @@ describe('LoginComponent', () => {
     component.onSubmit();
 
     expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456', 'challenge');
-    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
-  it('should navigate to active kurin for admin role with selected kurin', () => {
-    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: 'kurin-123' });
+  it('should navigate to active kurin for an admin with a selected kurin and no card', () => {
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: 'kurin-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
 
@@ -126,8 +126,8 @@ describe('LoginComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
   });
 
-  it('should navigate to admin panel for admin role without selected kurin', () => {
-    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: 'member-123', kurinKey: null });
+  it('should navigate to admin panel for an admin without a kurin or a card', () => {
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: null });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
 
@@ -139,7 +139,7 @@ describe('LoginComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/panel']);
   });
 
-  it('should navigate to kurin page when kurin key is present', () => {
+  it('should navigate to the dashboard when a person stands behind the account', () => {
     const state = createAuthState({ memberKey: 'member-123' });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
@@ -149,10 +149,10 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
-  it('should navigate to member page when member key is the only available destination', () => {
+  it('should navigate to the dashboard even with no kurin chosen, when there is a card', () => {
     const state = createAuthState({ memberKey: 'member-123', kurinKey: null });
     authService.login.and.returnValue(of(createLoginResponse()));
     authService.getAuthStateValue.and.returnValue(state);
@@ -162,7 +162,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/member', 'member-123']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
   it('should navigate to kurin page when only kurin key is present', () => {

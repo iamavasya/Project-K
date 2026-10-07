@@ -84,15 +84,15 @@ export class BreadcrumbService {
 
   // Mirrors authenticatedHomeRoute: the icon has to name the place it actually leads to.
   private homeLabel(state: AuthState | null): string {
+    if (isUsableKey(state?.memberKey)) {
+      return 'Головна';
+    }
+
     if (isUsableKey(state?.kurinKey)) {
       return 'Курінь';
     }
 
-    if (this.permissionService.isAdmin()) {
-      return 'Адміністрація';
-    }
-
-    return isUsableKey(state?.memberKey) ? 'Моя картка' : 'На початок';
+    return this.permissionService.isAdmin() ? 'Адміністрація' : 'На початок';
   }
 
   public setParam(key: string, value: string): void {

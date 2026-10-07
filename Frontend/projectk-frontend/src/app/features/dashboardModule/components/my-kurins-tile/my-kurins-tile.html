@@ -1,0 +1,48 @@
+<section class="kurin-tile kurins-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Мої курені</h2>
+      @if (rows().length > 1) { <span class="lil-count">{{ rows().length }}</span> }
+    </div>
+  </div>
+
+  @if (loading() && !rows().length) {
+    <p-skeleton width="100%" height="3.5rem" borderRadius="12px" />
+    <p-skeleton width="100%" height="3.5rem" borderRadius="12px" styleClass="mt-2" />
+  } @else if (!rows().length) {
+    <p class="kurins-tile__empty">Поки ти не стоїш у жодному курені. Провід приймає за кодом з твоєї картки.</p>
+  } @else {
+    <ul class="kurins-tile__list">
+      @for (row of rows(); track row.option.kurinKey) {
+        <li>
+          <button
+            type="button"
+            class="kurins-tile__row"
+            [class.kurins-tile__row--current]="row.isCurrent"
+            [disabled]="switchingTo() !== null"
+            (click)="open.emit(row.option)">
+            <span class="kurins-tile__number" aria-hidden="true">{{ row.option.kurinNumber }}</span>
+            <span class="kurins-tile__body">
+              <span class="kurins-tile__name">{{ kurinLabel(row.option) }}</span>
+              <span class="kurins-tile__meta">
+                <p-tag [value]="branchLabels[row.option.branch]" severity="secondary" />
+                <span>{{ kindLabels[row.option.kind] }}</span>
+                @if (row.groupName) { <span>· {{ row.groupName }}</span> }
+              </span>
+              @if (row.isCurrent && currentOffices().length) {
+                <span class="kurins-tile__offices">{{ currentOffices().join(' · ') }}</span>
+              }
+            </span>
+            @if (switchingTo() === row.option.kurinKey) {
+              <i class="pi pi-spin pi-spinner kurins-tile__mark"></i>
+            } @else if (row.isCurrent) {
+              <span class="kurins-tile__now">зараз</span>
+            } @else {
+              <i class="pi pi-arrow-right kurins-tile__mark" aria-hidden="true"></i>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

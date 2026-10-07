@@ -1,0 +1,31 @@
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head dashboard-head">
+    <div>
+      <p class="lil-page-head__eyebrow">{{ today }}</p>
+      <h1>{{ greeting }}@if (firstName()) {, {{ firstName() }}}</h1>
+      @if (member(); as m) {
+        <p>
+          {{ m.latestPlastLevelDisplay || 'Ступінь не вказано' }}
+          @if (m.groupName) { · {{ m.groupName }} }
+        </p>
+      }
+    </div>
+  </header>
+
+  <app-tile-board [boardKey]="boardKey" [canHide]="true" class="block">
+    <ng-template [appTileDef]="{ key: 'my-profile', span: 'half', label: 'Мій профіль' }">
+      <app-my-profile-tile [member]="member()" [loading]="memberLoading()" />
+    </ng-template>
+
+    <ng-template [appTileDef]="{ key: 'my-kurins', span: 'half', label: 'Мої курені' }">
+      <app-my-kurins-tile
+        [kurins]="kurins()"
+        [memberships]="memberships()"
+        [currentKurinKey]="currentKurinKey()"
+        [currentOffices]="currentOffices()"
+        [switchingTo]="switchingTo()"
+        [loading]="kurinsLoading()"
+        (open)="openKurin($event)" />
+    </ng-template>
+  </app-tile-board>
+</section>

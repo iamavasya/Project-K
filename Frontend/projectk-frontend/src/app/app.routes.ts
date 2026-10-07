@@ -7,8 +7,18 @@ import { youthProgramGuard } from './features/kurinModule/guards/youth-program.g
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
+import { dashboardMatchGuard } from './features/dashboardModule/guards/dashboard-match.guard';
 
 export const routes: Routes = [
+  // One address, two faces: a person with a card gets the dashboard, everyone else the welcome.
+  {
+    path: '',
+    canMatch: [dashboardMatchGuard],
+    loadComponent: () => import('./features/dashboardModule/pages/dashboard/dashboard')
+      .then(m => m.DashboardComponent),
+    title: 'Головна',
+    data: { breadcrumb: 'Головна', shell: 'app' }
+  },
   {
     path: '',
     canActivate: [publicAuthRedirectGuard],

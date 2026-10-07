@@ -1,0 +1,38 @@
+<section class="kurin-tile profile-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Мій профіль</h2>
+    </div>
+  </div>
+
+  @if (loading() && !member()) {
+    <div class="profile-tile__body">
+      <p-skeleton shape="circle" size="4.5rem" />
+      <div class="profile-tile__lines">
+        <p-skeleton width="60%" height="1.25rem" />
+        <p-skeleton width="40%" height="0.9rem" styleClass="mt-2" />
+      </div>
+    </div>
+  } @else if (member(); as m) {
+    <div class="profile-tile__body">
+      @if (m.profilePhotoUrl) {
+        <img class="profile-tile__photo" [src]="m.profilePhotoUrl" [alt]="fullName()" width="72" height="72" />
+      } @else {
+        <span class="profile-tile__initials" aria-hidden="true">{{ initials() }}</span>
+      }
+      <div class="profile-tile__lines">
+        <span class="profile-tile__name">{{ fullName() }}</span>
+        <span class="profile-tile__meta">
+          <p-tag [value]="m.latestPlastLevelDisplay || 'Ступінь не вказано'" severity="secondary" />
+          @if (m.groupName) { <span>{{ m.groupName }}</span> }
+        </span>
+        @if (m.email) { <span class="profile-tile__contact">{{ m.email }}</span> }
+      </div>
+    </div>
+    <div class="profile-tile__actions">
+      <p-button label="Відкрити профіль" icon="pi pi-user" severity="secondary" [routerLink]="['/member', m.memberKey]" />
+    </div>
+  } @else {
+    <p class="profile-tile__empty">Картку не вдалося прочитати. Спробуй за хвилину.</p>
+  }
+</section>

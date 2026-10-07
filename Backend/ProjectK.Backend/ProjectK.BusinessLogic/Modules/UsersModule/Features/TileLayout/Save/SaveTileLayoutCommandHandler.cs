@@ -25,8 +25,11 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
         // Input validation lives in SaveTileLayoutCommandValidator (runs in the pipeline).
         var tileKeys = request.TileKeys ?? [];
 
+        var hiddenKeys = request.HiddenTileKeys ?? [];
+
         var orderJson = TileOrderSerializer.Serialize(tileKeys);
-        if (orderJson.Length > MaxOrderJsonLength)
+        var hiddenJson = TileOrderSerializer.Serialize(hiddenKeys);
+        if (orderJson.Length > MaxOrderJsonLength || hiddenJson.Length > MaxOrderJsonLength)
         {
             return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, "LayoutTooLarge", "Tile layout is too large.");
         }
@@ -42,6 +45,7 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
                 UserKey = request.UserKey,
                 BoardKey = request.BoardKey,
                 TileOrderJson = orderJson,
+                HiddenTilesJson = hiddenJson,
                 SchemaVersion = schemaVersion,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -50,6 +54,7 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
         else
         {
             existing.TileOrderJson = orderJson;
+            existing.HiddenTilesJson = hiddenJson;
             existing.SchemaVersion = schemaVersion;
             existing.UpdatedAtUtc = DateTime.UtcNow;
             _unitOfWork.UserTileLayouts.Update(existing, cancellationToken);
@@ -57,7 +62,7 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var dto = new TileLayoutDto(existing.BoardKey, tileKeys, existing.SchemaVersion, existing.UpdatedAtUtc);
+        var dto = new TileLayoutDto(existing.BoardKey, tileKeys, hiddenKeys, existing.SchemaVersion, existing.UpdatedAtUtc);
         return new ServiceResult<TileLayoutDto>(ResultType.Success, dto);
     }
 }

@@ -218,7 +218,8 @@ public class UserController : ControllerBase
         }
 
         var tileKeys = request.TileKeys ?? new List<string>();
-        var response = await _mediator.Send(new SaveTileLayoutCommand(userKey, boardKey, tileKeys, request.SchemaVersion));
+        var hiddenKeys = request.HiddenTileKeys ?? new List<string>();
+        var response = await _mediator.Send(new SaveTileLayoutCommand(userKey, boardKey, tileKeys, hiddenKeys, request.SchemaVersion));
         return response.ToActionResult(this);
     }
 
