@@ -73,7 +73,7 @@ public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesCon
                 FromQuarter = from,
                 IsConcession = request.Request.IsConcession,
                 SetByUserKey = _currentUser.UserId
-            });
+            }, cancellationToken);
         }
         else
         {

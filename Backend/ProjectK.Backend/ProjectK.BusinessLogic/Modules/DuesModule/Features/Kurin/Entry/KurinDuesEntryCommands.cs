@@ -10,9 +10,6 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
 
-// The kurin's own operations: what the course of the гурток's ones is, minus the person — the
-// kurin's box holds expenses, income, exchanges and what goes to the станиця.
-
 public sealed record CreateKurinDuesEntryCommand(Guid KurinKey, UpsertDuesEntryRequest Request) : IRequest<ServiceResult<Guid>>;
 
 public sealed class CreateKurinDuesEntryCommandValidator : AbstractValidator<CreateKurinDuesEntryCommand>

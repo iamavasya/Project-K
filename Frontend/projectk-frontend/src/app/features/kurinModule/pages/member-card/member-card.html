@@ -299,7 +299,7 @@
                 <ul class="dues-tile-accounts">
                     @for (account of d.accounts; track account.groupKey) {
                     <li>
-                        <span>{{ account.groupName }}@if (account.standing !== 'Current') { <span class="member-section-subtitle">· {{ account.standing === 'Moved' ? 'переведений' : 'вибув' }}</span> }</span>
+                        <span>{{ account.groupName }}@if (duesStandingLabels[account.standing]; as standing) { <span class="member-section-subtitle">· {{ standing }}</span> }</span>
                         <span class="dues-tile-number" [class.dues-tile-number--debt]="account.balance < 0">{{ account.balance === 0 ? 'сплачено' : money(account.balance) }}</span>
                     </li>
                     }

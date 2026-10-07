@@ -45,7 +45,6 @@ public sealed record MembershipRecord(
     DateTime JoinedAtUtc,
     DateTime? LeftAtUtc)
 {
-    /// <summary>Whether the person still belongs there.</summary>
     public bool IsCurrent => LeftAtUtc is null;
 }
 

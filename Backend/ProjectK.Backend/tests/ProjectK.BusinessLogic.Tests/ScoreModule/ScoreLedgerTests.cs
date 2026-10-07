@@ -8,7 +8,7 @@ using Xunit;
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
 /// <summary>
-/// The rules of точкування from <c>todo/tasks/SCORE-01.md</c>, one by one. The period is October 2026:
+/// The rules of точкування, one by one. The period is October 2026:
 /// 31 days, and "today" is its last day unless a test says otherwise.
 /// </summary>
 public class ScoreLedgerTests

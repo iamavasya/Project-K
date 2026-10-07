@@ -9,9 +9,8 @@ import { fromQuarterOptions } from '../../functions/from-quarter-options.functio
 import { KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
 
 /**
- * The станиця and kurin parts of the quarterly вкладка, from a quarter on. The Звʼязковий's dialog,
- * offered on the kurin's page and on a гурток's — so the first гурток to start does not have to go
- * elsewhere to make the numbers exist.
+ * The Звʼязковий's dialog for the станиця and kurin parts of the quarterly вкладка, from a quarter on.
+ * Also offered on a гурток's page, so the first гурток to start can create the rates there.
  */
 @Component({
   selector: 'app-kurin-rate-dialog',

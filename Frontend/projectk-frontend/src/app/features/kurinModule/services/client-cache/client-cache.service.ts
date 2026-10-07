@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { Observable, catchError, shareReplay, throwError } from 'rxjs';
 
 interface CacheEntry<T> {
@@ -61,7 +61,10 @@ export class ClientCacheService {
     this.logDebug('invalidate', { prefix: '*', invalidatedCount });
   }
 
+  /** Every hit and miss, while developing; a production console stays quiet. */
   private logDebug(event: 'hit' | 'miss' | 'invalidate', details: Record<string, unknown>): void {
-    console.debug('[ClientCache]', event, details);
+    if (isDevMode()) {
+      console.debug('[ClientCache]', event, details);
+    }
   }
 }

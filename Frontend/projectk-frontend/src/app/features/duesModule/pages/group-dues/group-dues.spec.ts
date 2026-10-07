@@ -9,6 +9,9 @@ import { DuesService } from '../../services/dues-service/dues.service';
 import { GroupDuesComponent } from './group-dues';
 
 describe('GroupDuesComponent', () => {
+  let keys = 0;
+  const nextKey = () => String(++keys);
+
   let fixture: ComponentFixture<GroupDuesComponent>;
   let component: GroupDuesComponent;
   let dues: jasmine.SpyObj<DuesService>;
@@ -17,7 +20,7 @@ describe('GroupDuesComponent', () => {
   const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, kurin, group, total: stanytsia + kurin + group });
 
   const account = (over: Partial<DuesAccountDto>): DuesAccountDto => ({
-    membershipKey: 'm-' + Math.random(),
+    membershipKey: 'm-' + nextKey(),
     memberKey: 'p',
     fullName: 'Юнак',
     standing: 'Current',
@@ -30,7 +33,7 @@ describe('GroupDuesComponent', () => {
   });
 
   const entry = (over: Partial<DuesEntryDto>): DuesEntryDto => ({
-    duesEntryKey: 'e-' + Math.random(),
+    duesEntryKey: 'e-' + nextKey(),
     kind: DuesEntryKind.Contribution,
     method: DuesPaymentMethod.Cash,
     counterMethod: null,

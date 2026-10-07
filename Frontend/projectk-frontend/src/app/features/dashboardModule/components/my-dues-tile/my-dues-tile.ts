@@ -4,7 +4,6 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
 import { MyDuesDto } from '../../models/me.dto';
 
-/** One kurin's вкладка as the tile says it: the standing in a word, the amount, and the line under it. */
 export interface DuesRow {
   dues: MyDuesDto;
   standing: 'ok' | 'debt' | 'surplus';

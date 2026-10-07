@@ -13,7 +13,6 @@ export interface ScoreSourcePart {
   points: number;
 }
 
-/** One kurin's row of the tile: the points, where they came from, and the гурток's place. */
 export interface ScoreRow {
   score: MyScoreDto;
   parts: ScoreSourcePart[];

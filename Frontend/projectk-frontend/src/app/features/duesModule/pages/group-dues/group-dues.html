@@ -58,7 +58,6 @@
     </section>
   } @else if (data(); as d) {
 
-    <!-- Каса -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -120,7 +119,6 @@
       </p>
     </section>
 
-    <!-- По кварталах -->
     <section class="kurin-tile">
       <p-table
         [value]="currentRows()"
@@ -192,7 +190,6 @@
       }
     </section>
 
-    <!-- Історія -->
     <section class="kurin-tile">
       <p-table
         [value]="filteredEntries()"
@@ -316,7 +313,6 @@
       [errorMessage]="entryError()"
       (save)="saveEntry($event)" />
 
-    <!-- Ставка гуртка -->
     <p-dialog
       header="Ставка гуртка"
       [visible]="rateDialogVisible()"
@@ -363,7 +359,6 @@
       [saving]="savingKurinRate()"
       (save)="saveKurinRate($event)" />
 
-    <!-- Пільга -->
     <p-dialog
       header="Пільгова вкладка"
       [visible]="concessionDialogVisible()"

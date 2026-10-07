@@ -22,9 +22,9 @@ import { ScoreService } from '../../services/score-service/score.service';
 type Shelf = 'answered' | 'assigned' | 'others';
 
 /**
- * Who was at one occurrence of an event. Those who answered «Іду» or «Можливо» come first — one
- * tap confirms them; then those the event was aimed at; then everyone else, behind a search. Marks
- * go straight to the server and the row updates in place: this is used standing up, on a phone.
+ * Who was at one occurrence of an event: those who answered «Іду» or «Можливо» first, then those the
+ * event was aimed at, then everyone else behind a search. Marks go straight to the server and the
+ * row updates in place, without a full reload — it is used on a phone, on the spot.
  */
 @Component({
   selector: 'app-attendance-sheet',
@@ -83,7 +83,6 @@ export class AttendanceSheetComponent implements OnInit {
 
   readonly scorableGroups = computed(() => (this.data()?.groups ?? []).filter(g => g.canScore));
 
-  // Entry dialog
   readonly entryDialogVisible = signal(false);
   readonly entryTarget = signal<ScoreEntryTarget | null>(null);
   readonly entryTargets = signal<ScoreEntryTarget[]>([]);
@@ -97,7 +96,6 @@ export class AttendanceSheetComponent implements OnInit {
     return d ? { agendaItemKey: d.agendaItemKey, occurrenceStartUtc: d.occurrenceStartUtc, title: d.title } : null;
   });
 
-  // Rate dialog (the суддя куреня prices this event over its group)
   readonly rateDialogVisible = signal(false);
   readonly rateDraft = signal<number | null>(null);
   readonly savingRate = signal(false);
@@ -150,8 +148,6 @@ export class AttendanceSheetComponent implements OnInit {
   isBusy(person: SheetPersonDto): boolean {
     return this.busy().has(person.membershipKey);
   }
-
-  // --- Marks ---
 
   toggle(person: SheetPersonDto): void {
     if (person.attendance) {
@@ -206,8 +202,6 @@ export class AttendanceSheetComponent implements OnInit {
       }
     });
   }
-
-  // --- Points ---
 
   giveTo(person: SheetPersonDto, entry: ScoreEntryDto | null = null): void {
     this.entryTarget.set({ membershipKey: person.membershipKey, groupKey: null, name: person.fullName });
@@ -285,8 +279,6 @@ export class AttendanceSheetComponent implements OnInit {
       }
     });
   }
-
-  // --- The event's own rate ---
 
   openRateDialog(): void {
     this.rateDraft.set(this.data()?.attendancePoints ?? 0);

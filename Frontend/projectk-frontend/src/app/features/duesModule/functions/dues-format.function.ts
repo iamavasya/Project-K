@@ -1,4 +1,5 @@
-import { QuarterDto } from '../models/group-dues.dto';
+import { DuesEntryKind, INCOMING_DUES_KINDS } from '../models/dues.enums';
+import { DuesEntryDto, QuarterDto } from '../models/group-dues.dto';
 
 const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -11,6 +12,32 @@ export function money(amount: number): string {
 /** The same with an explicit plus, for movements in and out of the box. */
 export function signedMoney(amount: number): string {
   return amount > 0 ? `+${money(amount)}` : money(amount);
+}
+
+/**
+ * What an operation does to the box, signed: money in is plus, money out is minus, a correction is
+ * as entered. An exchange moves money between cash and card and is neither — null.
+ */
+export function signedDuesAmount(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): number | null {
+  if (entry.kind === DuesEntryKind.Exchange) {
+    return null;
+  }
+  if (entry.kind === DuesEntryKind.Correction) {
+    return entry.amount;
+  }
+  return INCOMING_DUES_KINDS.has(entry.kind) ? entry.amount : -entry.amount;
+}
+
+/** The amount as the history shows it: signed, or bare for an exchange. */
+export function duesAmountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): string {
+  const signed = signedDuesAmount(entry);
+  return signed === null ? money(entry.amount) : signedMoney(signed);
+}
+
+/** Whether the history paints the amount as coming in; null for an exchange. */
+export function isIncomingDues(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): boolean | null {
+  const signed = signedDuesAmount(entry);
+  return signed === null ? null : signed > 0;
 }
 
 const ROMAN = ['I', 'II', 'III', 'IV'];
@@ -31,9 +58,4 @@ export function quarterKey(quarter: QuarterDto): string {
 
 export function sameQuarter(a: QuarterDto, b: QuarterDto): boolean {
   return a.year === b.year && a.number === b.number;
-}
-
-/** Calendar quarter of a date. */
-export function quarterOf(date: Date): QuarterDto {
-  return { year: date.getFullYear(), number: Math.floor(date.getMonth() / 3) + 1 };
 }

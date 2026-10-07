@@ -11,7 +11,6 @@
     margin-bottom: 1rem;
 }
 
-/* Hidden tiles wait in the toolbar while editing: one chip each, a tap brings it back. */
 .tile-board-hidden {
     display: flex;
     flex-wrap: wrap;

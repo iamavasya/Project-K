@@ -25,9 +25,8 @@ import { ScorePeriodQuery } from '../../models/score.dto';
 import { ScoreService } from '../../services/score-service/score.service';
 
 /**
- * The КВ's own book: the Звʼязковий and the впорядники score youths by criteria of their own, out of
- * the table and out of the youths' sight. The public points stand beside as the ground. Nothing here
- * is ever turned into a public point — that is given the ordinary way.
+ * The КВ's private book: the Звʼязковий and the впорядники score youths by their own criteria, hidden
+ * from the table and the youths. Nothing here ever becomes a public point.
  */
 @Component({
   selector: 'app-private-score',
@@ -67,7 +66,6 @@ export class PrivateScoreComponent implements OnInit {
     return (this.data()?.people ?? []).filter(p => !term || p.fullName.toLowerCase().includes(term) || p.groupName.toLowerCase().includes(term));
   });
 
-  // Entry dialog
   readonly entryDialogVisible = signal(false);
   readonly entryToEdit = signal<PrivateScoreEntryDto | null>(null);
   readonly entryPerson = signal<string | null>(null);
@@ -93,7 +91,6 @@ export class PrivateScoreComponent implements OnInit {
       && !!this.entryDate();
   });
 
-  // Criteria dialog
   readonly criteriaDialogVisible = signal(false);
   readonly newCriterion = signal('');
   readonly savingCriterion = signal(false);
@@ -131,8 +128,6 @@ export class PrivateScoreComponent implements OnInit {
   byCriterion(person: PrivateScorePersonDto, criterion: PrivateScoreCriterionDto): number {
     return person.byCriterion[criterion.privateScoreCriterionKey] ?? 0;
   }
-
-  // --- Entries ---
 
   openEntryDialog(person: PrivateScorePersonDto | null = null, entry: PrivateScoreEntryDto | null = null): void {
     this.entryToEdit.set(entry);
@@ -192,8 +187,6 @@ export class PrivateScoreComponent implements OnInit {
       }
     });
   }
-
-  // --- Criteria ---
 
   addCriterion(): void {
     const name = this.newCriterion().trim();

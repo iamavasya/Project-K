@@ -28,8 +28,7 @@ import { greeting, todayLabel } from '../../functions/greeting.function';
 
 /**
  * The first screen of a signed-in person: who they are and where they stand, as tiles they may
- * arrange or put away. Each tile is fed by the page and knows nothing of where its data came from,
- * so a tile is as cheap to add as a template.
+ * arrange or put away. Each tile is fed by the page and knows nothing of where its data came from.
  */
 @Component({
   selector: 'app-dashboard',

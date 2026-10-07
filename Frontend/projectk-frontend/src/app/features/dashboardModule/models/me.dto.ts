@@ -35,8 +35,6 @@ export interface MyTaskDto {
   canChangeStatus: boolean;
 }
 
-// --- Personal growth: проба and вмілості ---
-
 export type MyProbeStatus = 'NotStarted' | 'InProgress' | 'Completed' | 'Verified';
 export type MyBadgeStatus = 'Draft' | 'Submitted' | 'Confirmed' | 'Rejected';
 
@@ -81,8 +79,6 @@ export interface MyGrowthDto {
   badges: MyBadgesDto;
 }
 
-// --- Вкладка ---
-
 export interface MyDuesDto {
   kurin: MyKurinRefDto;
   groupName: string | null;
@@ -93,8 +89,6 @@ export interface MyDuesDto {
   quarterRate: number | null;
   isConcession: boolean;
 }
-
-// --- Точкування ---
 
 export interface MyScoreDto {
   kurin: MyKurinRefDto;
@@ -108,8 +102,6 @@ export interface MyScoreDto {
   groupScore: number;
   algorithm: ScoreAlgorithm;
 }
-
-// --- Справи: the провід's queue ---
 
 export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
 

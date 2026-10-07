@@ -12,9 +12,6 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
-// How the kurin scores: the algorithm, what a mark at each group of events is worth, what the
-// automatic sources are worth from when, the list of positions, the stages. The суддя куреня's.
-
 /// <summary>What every settings write shares: it is the caller's kurin, and they manage its score.</summary>
 public sealed class ScoreSettingsAccess
 {

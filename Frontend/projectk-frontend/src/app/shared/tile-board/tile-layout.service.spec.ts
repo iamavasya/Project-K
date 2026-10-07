@@ -51,8 +51,10 @@ describe('TileLayoutService', () => {
     service.getLayout('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
-    service.getLayout('member-card').subscribe();
+    let second: unknown = null;
+    service.getLayout('member-card').subscribe(layout => (second = layout));
     httpMock.expectNone(apiUrl);
+    expect(second).toEqual({ tileKeys: ['profile', 'skills', 'probes'], hiddenTileKeys: ['probes'] });
   });
 
   it('getLayout mirrors the resolved layout into localStorage', () => {

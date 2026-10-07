@@ -10,7 +10,7 @@ namespace ProjectK.Infrastructure.Tests.ScoreModule;
 /// <summary>
 /// The "only once" rules of точкування are unique indexes, not checks in a handler, so two судді
 /// marking at the same moment still cannot both win. The in-memory provider does not enforce them, so
-/// this pins the model; the migration was run against SQL Server by hand when it was written.
+/// this pins the model.
 /// </summary>
 public class ScoreModelTests
 {

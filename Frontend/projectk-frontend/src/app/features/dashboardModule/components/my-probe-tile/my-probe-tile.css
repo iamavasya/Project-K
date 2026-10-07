@@ -33,7 +33,6 @@
   gap: 0.5rem;
 }
 
-/* The next points, one per line, with the section's code as a small plaque — as the проба itself lists them. */
 .probe-tile__label {
   margin: 0;
   color: var(--lil-faint);

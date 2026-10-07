@@ -8,13 +8,16 @@ import { ScoreService } from '../../services/score-service/score.service';
 import { AttendanceSheetComponent } from './attendance-sheet';
 
 describe('AttendanceSheetComponent', () => {
+  let keys = 0;
+  const nextKey = () => String(++keys);
+
   let fixture: ComponentFixture<AttendanceSheetComponent>;
   let component: AttendanceSheetComponent;
   let scores: jasmine.SpyObj<ScoreService>;
   let messages: jasmine.SpyObj<MessageService>;
 
   const person = (over: Partial<SheetPersonDto>): SheetPersonDto => ({
-    membershipKey: 'm-' + Math.random(),
+    membershipKey: 'm-' + nextKey(),
     memberKey: 'p',
     fullName: 'Юнак',
     groupKey: 'sokoly',

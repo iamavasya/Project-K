@@ -6,8 +6,7 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 /// <summary>
 /// Works a kurin's точкування out from its rows: what each youth earned, from where, for which
-/// гурток, and how the гуртки stand. Pure — it reads nothing and keeps nothing — so every rule about
-/// points is here and testable (<c>todo/tasks/SCORE-01.md</c>).
+/// гурток, and how the гуртки stand. Pure, so every points rule lives here and is testable.
 /// <list type="bullet">
 /// <item>a point belongs to the гурток the youth was in on the day it was earned, and stays there
 /// when they move;</item>

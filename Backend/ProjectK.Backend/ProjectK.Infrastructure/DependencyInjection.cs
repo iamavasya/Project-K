@@ -28,9 +28,7 @@ using Resend;
 namespace ProjectK.Infrastructure;
 
 /// <summary>
-/// Everything this project provides, registered by this project. The API used to list registrations
-/// for all three layers in one file, so adding a service meant editing a project that had no other
-/// reason to know about it.
+/// Registers this project's own services, so the API does not have to know about them.
 /// </summary>
 public static class DependencyInjection
 {

@@ -73,9 +73,9 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             .Select(a =>
             {
                 names.Memberships.TryGetValue(a.MembershipKey, out var membership);
-                var standing = membership is null || membership.LeftAtUtc.HasValue ? DuesAccountStanding.Left
-                    : membership.GroupKey == group.GroupKey ? DuesAccountStanding.Current
-                    : DuesAccountStanding.Moved;
+                var standing = DuesAccountStandings.Of(
+                    hasLeft: membership is null || membership.LeftAtUtc.HasValue,
+                    standsInThisGroup: membership?.GroupKey == group.GroupKey);
                 return new DuesAccountDto
                 {
                     MembershipKey = a.MembershipKey,

@@ -303,7 +303,7 @@ h3 {
   text-decoration: none;
 }
 
-/* The brand is the way home; the hover is the primary's own, a shade darker, no motion. */
+/* Hover is the primary a shade darker, with no motion. */
 a.lil-sidebar-brand:hover {
   background: var(--p-primary-hover-color);
   color: var(--p-primary-contrast-color);
@@ -320,9 +320,8 @@ a.lil-sidebar-brand:hover {
   stroke: var(--lil-clay-500);
 }
 
-/* The drawer is a column of brand, menu, version, footer. Only the menu gives way: it takes the
-   room between the banner and the version and scrolls on its own, so the footer never leaves the
-   screen however long the menu grows. */
+/* Only the menu flexes and scrolls on its own, so the footer never leaves the screen however
+   long the menu grows. */
 :root .p-drawer:has(> .lil-sidebar-brand) {
   overflow: hidden;
 }

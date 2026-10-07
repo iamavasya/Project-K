@@ -12,8 +12,6 @@
   color: var(--p-text-color);
 }
 
-/* --- Таблиці --- */
-
 .dues-table {
   max-width: 100%;
   overflow-x: auto;
@@ -118,8 +116,6 @@
   font-weight: 600;
 }
 
-/* --- Клітинка кварталу й баланс --- */
-
 .dues-q {
   display: flex;
   flex-wrap: wrap;
@@ -171,8 +167,6 @@
   color: var(--p-text-color);
 }
 
-/* --- Фільтри й шапка --- */
-
 .dues-filters {
   display: flex;
   flex-wrap: wrap;
@@ -184,8 +178,6 @@
 :host ::ng-deep .dues-year {
   min-width: 10rem;
 }
-
-/* --- Телефон: рядок стає карткою --- */
 
 @media (max-width: 640px) {
   :host ::ng-deep .dues-table .p-datatable-wrapper {
@@ -233,8 +225,7 @@
     content: none;
   }
 
-  /* A person's card: the name across the top, the four quarters as two-by-two tiles, the total
-     and the пільга button underneath. Six stacked rows per person was a screen each. */
+  /* Quarters as two-by-two tiles: six stacked rows per person filled a whole phone screen. */
   :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row--account {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem 0.625rem;

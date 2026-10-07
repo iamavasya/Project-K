@@ -7,7 +7,6 @@
   grid-column: 1 / -1;
 }
 
-/* A hint under its field, not under the form. */
 .dues-entry-hint {
   margin: 0;
 }

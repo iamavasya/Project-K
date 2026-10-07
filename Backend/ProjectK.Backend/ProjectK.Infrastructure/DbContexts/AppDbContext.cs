@@ -19,7 +19,6 @@ namespace ProjectK.Infrastructure.DbContexts;
 
 public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 {
-    // Kurin module DbSet
     public DbSet<Kurin> Kurins { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
@@ -43,7 +42,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
 
-    // Dues module DbSet
     public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
     public DbSet<GroupDuesRate> GroupDuesRates { get; set; }
     public DbSet<DuesConcession> DuesConcessions { get; set; }
@@ -51,7 +49,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
 
-    // Score module DbSet
     public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
     public DbSet<ScoreRule> ScoreRules { get; set; }
     public DbSet<ScoreAttendanceRate> ScoreAttendanceRates { get; set; }
@@ -64,7 +61,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<PrivateScoreCriterion> PrivateScoreCriteria { get; set; }
     public DbSet<PrivateScoreEntry> PrivateScoreEntries { get; set; }
 
-    // Auth module DbSet
     public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
@@ -98,7 +94,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     {
         base.OnModelCreating(builder);
 
-        // Kurin module entity configuration
         builder.Entity<Kurin>(entity =>
         {
             entity.Property(e => e.Branch).HasConversion<int>();

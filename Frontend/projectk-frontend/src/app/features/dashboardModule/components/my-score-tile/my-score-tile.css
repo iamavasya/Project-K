@@ -28,7 +28,7 @@
   gap: 0.25rem;
 }
 
-/* The person's own number, large: the one figure the tile exists for. A minus is said in the debt red. */
+/* A negative total takes the debt red. */
 .score-tile__total {
   font-size: var(--lil-text-h1);
   font-weight: var(--lil-weight-heading);

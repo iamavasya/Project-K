@@ -77,7 +77,6 @@ export class LeadershipComponent implements OnInit {
   
   allMembers: MemberLookupDto[] = [];
   
-  // Стан фільтрів
   showArchived = false;
   searchTerm = '';
 
@@ -120,7 +119,6 @@ export class LeadershipComponent implements OnInit {
 
   loadAllMembers(): void {
     if (!this.leadershipType) return;
-    // ... (Логіка завантаження мемберів без змін)
     let groupKey: string | undefined = undefined;
     let kurinKey: string | undefined = undefined;
     const type = this.leadershipType.toLowerCase();
@@ -150,7 +148,6 @@ export class LeadershipComponent implements OnInit {
     const rolesForType = LEADERSHIP_ROLE_MAP[typeKey] || [];
     const rolesFromData = new Map<LeadershipRole, LeadershipHistoryDto[]>();
 
-    // Групуємо дані
     data.leadershipHistories.forEach(history => {
       const role = history.role as LeadershipRole;
       if (!rolesFromData.has(role)) rolesFromData.set(role, []);
@@ -166,7 +163,6 @@ export class LeadershipComponent implements OnInit {
         this.leadershipHistories.push(this.createHistoryRow(role, h));
       });
 
-      // Якщо немає активного (без дати кінця) - додаємо пустий рядок для вводу
       const hasActiveMember = histories.some(h => !h.endDate);
       if (!hasActiveMember) {
         this.leadershipHistories.push(this.createHistoryRow(role));
@@ -199,19 +195,15 @@ export class LeadershipComponent implements OnInit {
     });
   }
 
-  // --- UI ФІЛЬТРАЦІЯ ---
-  // Ця функція викликається в HTML для кожного рядка
   isRowVisible(index: number): boolean {
     const control = this.leadershipHistories.at(index);
     const val = control.getRawValue();
     const isArchived = !!val.endDate;
 
-    // 1. Фільтр архіву
     if (!this.showArchived && isArchived) {
-        return false; // Ховаємо
+        return false;
     }
 
-    // 2. Пошук
     if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase();
         const roleName = leadershipRoleDisplayName(val.role).toLowerCase();
@@ -219,28 +211,24 @@ export class LeadershipComponent implements OnInit {
             ? `${val.member.lastName} ${val.member.firstName}`.toLowerCase() 
             : '';
         
-        // Якщо не знайшли ні в ролі, ні в імені - ховаємо
         if (!roleName.includes(term) && !memberName.includes(term)) {
             return false;
         }
     }
 
-    return true; // Показуємо
+    return true;
   }
 
-  // --- ВИДАЛЕННЯ ---
   onRemoveRow(index: number): void {
     const control = this.leadershipHistories.at(index);
     const role = control.getRawValue().role as LeadershipRole;
 
-    // 1. Видаляємо рядок
     this.leadershipHistories.removeAt(index);
 
-    // 2. Одномісний уряд лишається в списку порожнім рядком, щоб його можна було обсадити пізніше
+    // Одномісний уряд лишається в списку порожнім рядком, щоб його можна було обсадити пізніше
     if (!this.canHaveMultipleMembers(role)) {
        const remainingRows = this.getRoleRowsCount(role);
        if (remainingRows === 0) {
-           // Додаємо назад пустий, щоб роль не зникла зі списку
            this.addRoleRow(role);
        }
     }

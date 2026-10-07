@@ -16,15 +16,15 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
+import { duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
+  DUES_STANDING_LABELS,
   DuesEntryKind,
-  GROUP_DUES_KINDS,
-  INCOMING_DUES_KINDS
+  GROUP_DUES_KINDS
 } from '../../models/dues.enums';
 import {
   DuesAccountDto,
@@ -37,12 +37,6 @@ import {
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { DuesEntryDialogComponent } from './components/dues-entry-dialog/dues-entry-dialog';
-
-/** One person's row of the quarterly table: a cell per quarter of the chosen year, or null before they were charged. */
-interface AccountRow {
-  account: DuesAccountDto;
-  cells: (DuesAccountQuarterDto | null)[];
-}
 
 /** One person's row of the quarterly table: a cell per quarter of the chosen year, or null before they were charged. */
 interface AccountRow {
@@ -157,24 +151,20 @@ export class GroupDuesComponent implements OnInit {
     return (kurin?.stanytsiaFull ?? 0) + (kurin?.kurinShare ?? 0) + group;
   });
 
-  // Entry dialog
   readonly entryDialogVisible = signal(false);
   readonly entryToEdit = signal<DuesEntryDto | null>(null);
   readonly savingEntry = signal(false);
   readonly entryError = signal<string | null>(null);
   readonly busyEntryKey = signal<string | null>(null);
 
-  // Rate dialog
   readonly rateDialogVisible = signal(false);
   readonly rateFromQuarter = signal<string>('');
   readonly rateShare = signal<number | null>(null);
   readonly savingRate = signal(false);
 
-  // Kurin rate dialog — the Звʼязковий's, offered here so the first гурток does not have to go elsewhere.
   readonly kurinRateDialogVisible = signal(false);
   readonly savingKurinRate = signal(false);
 
-  // Concession dialog
   readonly concessionDialogVisible = signal(false);
   readonly concessionTarget = signal<DuesAccountDto | null>(null);
   readonly concessionFromQuarter = signal<string>('');
@@ -207,38 +197,24 @@ export class GroupDuesComponent implements OnInit {
     });
   }
 
-  // --- Table ---
-
   togglePerson(account: DuesAccountDto): void {
     this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
   }
 
   standingLabel(account: DuesAccountDto): string | null {
-    return account.standing === 'Moved' ? 'Переведений' : account.standing === 'Left' ? 'Вибув' : null;
+    return DUES_STANDING_LABELS[account.standing];
   }
-
-  // --- History ---
 
   kindLabel(entry: DuesEntryDto): string {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    if (entry.kind === DuesEntryKind.Exchange) {
-      return money(entry.amount);
-    }
-    if (entry.kind === DuesEntryKind.Correction) {
-      return signedMoney(entry.amount);
-    }
-    return signedMoney(INCOMING_DUES_KINDS.has(entry.kind) ? entry.amount : -entry.amount);
+    return duesAmountLabel(entry);
   }
 
-  /** Whether the history shows the amount as money coming in; an exchange is neither. */
   isIncoming(entry: DuesEntryDto): boolean | null {
-    if (entry.kind === DuesEntryKind.Exchange) {
-      return null;
-    }
-    return entry.kind === DuesEntryKind.Correction ? entry.amount > 0 : INCOMING_DUES_KINDS.has(entry.kind);
+    return isIncomingDues(entry);
   }
 
   methodLabel(entry: DuesEntryDto): string {
@@ -301,8 +277,6 @@ export class GroupDuesComponent implements OnInit {
     });
   }
 
-  // --- Rate ---
-
   openRateDialog(): void {
     const data = this.data();
     this.rateFromQuarter.set(data ? quarterKey(data.currentQuarter) : '');
@@ -323,8 +297,6 @@ export class GroupDuesComponent implements OnInit {
     });
   }
 
-  // --- Kurin rate ---
-
   saveKurinRate(request: SetKurinDuesRateRequest): void {
     const data = this.data();
     if (!data) {
@@ -336,8 +308,6 @@ export class GroupDuesComponent implements OnInit {
       error: () => this.savingKurinRate.set(false)
     });
   }
-
-  // --- Concession ---
 
   openConcessionDialog(account: DuesAccountDto): void {
     const data = this.data();
@@ -359,8 +329,6 @@ export class GroupDuesComponent implements OnInit {
       error: () => this.savingConcession.set(false)
     });
   }
-
-  // --- Helpers ---
 
   private quarterOfDate(date: string): QuarterDto {
     const [year, month] = date.split('-').map(Number);

@@ -33,7 +33,6 @@
     </section>
   } @else if (data(); as d) {
 
-    <!-- Юнаки -->
     <section class="kurin-tile">
       <p-table [value]="people()" styleClass="project-table private-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>
@@ -108,7 +107,6 @@
       </p-table>
     </section>
 
-    <!-- Записи -->
     <section class="kurin-tile">
       <p-table [value]="d.entries" styleClass="project-table private-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>
@@ -165,7 +163,6 @@
       </p-table>
     </section>
 
-    <!-- Запис -->
     <p-dialog [header]="entryToEdit() ? 'Змінити запис' : 'Записати'" [visible]="entryDialogVisible()" (visibleChange)="entryDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [dismissableMask]="!savingEntry()" [closable]="!savingEntry()" [style]="{ width: 'min(94vw, 30rem)' }">
       <div class="lil-dialog-form">
@@ -210,7 +207,6 @@
       </ng-template>
     </p-dialog>
 
-    <!-- Критерії -->
     <p-dialog header="Критерії КВ" [visible]="criteriaDialogVisible()" (visibleChange)="criteriaDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(94vw, 28rem)' }">
       <p class="lil-dialog-hint">Свої слова для свого ока: лідерство, ініціатива, товариськість. В архіві критерій лишається в старих записах і зникає з вибору.</p>

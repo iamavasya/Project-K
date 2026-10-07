@@ -7,7 +7,6 @@ import { resolveBadgeImageUrl } from '../../../kurinModule/functions/member-skil
 import { SkillMiniCardComponent } from '../../../kurinModule/pages/member-card/components/skill-mini-card/skill-mini-card';
 import { MyBadgeDto, MyGrowthDto } from '../../models/me.dto';
 
-/** One shelf of the tile: what the badges on it have in common. */
 export interface SkillShelf {
   key: 'onReview' | 'inWork' | 'confirmed';
   label: string;

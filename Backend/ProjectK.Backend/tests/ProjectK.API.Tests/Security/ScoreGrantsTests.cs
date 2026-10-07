@@ -4,7 +4,7 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.API.Tests.Security;
 
 /// <summary>
-/// Who may touch точкування (<c>todo/tasks/SCORE-01.md</c>). The table of гуртки is everyone's; a
+/// Who may touch точкування. The table of гуртки is everyone's; a
 /// youth's points are his own and his гурток's провід's, so a gap here shows the whole kurin who
 /// scored what.
 /// </summary>
@@ -81,7 +81,7 @@ public class ScoreGrantsTests
         }
     }
 
-    // A суддя was a bare провід office until точкування; he keeps everything that office had.
+    // A суддя keeps everything the bare провід office had.
     [Theory]
     [InlineData("Group.Suddya", AccessScope.OwnGroups)]
     [InlineData("Kurin.Suddya", AccessScope.KurinWide)]

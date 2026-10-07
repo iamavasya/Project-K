@@ -26,9 +26,8 @@ export interface ScoreEntryEvent {
 }
 
 /**
- * Points by hand: a position from the kurin's list, or an amount with a reason. The dialog shows
- * what the person already has here, so a second суддя sees the first one's work before adding to
- * it — the screen informs; only a position is the database's to refuse twice.
+ * Points by hand: a position from the kurin's list, or an amount with a reason. Shows what the target
+ * already has here so a second суддя sees it; only a repeated position is refused, by the database.
  */
 @Component({
   selector: 'app-score-entry-dialog',

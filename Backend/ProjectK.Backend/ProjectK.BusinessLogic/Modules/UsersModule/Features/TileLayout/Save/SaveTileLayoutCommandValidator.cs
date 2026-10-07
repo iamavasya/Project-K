@@ -13,7 +13,6 @@ public sealed partial class SaveTileLayoutCommandValidator : AbstractValidator<S
 
     public SaveTileLayoutCommandValidator()
     {
-        // First failing rule per property wins, matching the handler's previous order.
         RuleLevelCascadeMode = CascadeMode.Stop;
 
         RuleFor(command => command.BoardKey)

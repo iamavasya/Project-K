@@ -356,8 +356,7 @@ public class KurinController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Only the Звʼязковий closes a membership: a youth does not leave on their own, and a
-    /// Виховник does not release someone from the kurin. Handing a person to another kurin will
-    /// need the Звʼязковий's confirmation too, once that flow exists.
+    /// Виховник does not release someone from the kurin.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpDelete("{kurinKey:guid}/memberships/{memberKey:guid}")]

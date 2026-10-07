@@ -22,9 +22,8 @@ import { SCORE_ALGORITHM_LABELS, SCORE_SOURCE_LABELS, SCORE_SOURCE_ORDER, ScoreA
 import { ScoreService } from '../../services/score-service/score.service';
 
 /**
- * One гурток's точкування: where it stands, what each youth earned and from where, and every point
- * given by hand — with the dialog to give more. For those who score the гурток; a youth has their
- * own tile on the card instead.
+ * One гурток's точкування: its standing, each youth's points by source, and every manual entry.
+ * For those who score the гурток; a youth sees their own tile on the card instead.
  */
 @Component({
   selector: 'app-group-score',
@@ -68,7 +67,6 @@ export class GroupScoreComponent implements OnInit {
   readonly current = computed(() => (this.data()?.people ?? []).filter(p => p.standing === 'Current'));
   readonly gone = computed(() => (this.data()?.people ?? []).filter(p => p.standing !== 'Current'));
 
-  // Entries
   readonly kindFilter = signal<'all' | 'people' | 'group'>('all');
   readonly kindFilterOptions = [
     { label: 'Усі записи', value: 'all' as const },
@@ -80,7 +78,6 @@ export class GroupScoreComponent implements OnInit {
     return (this.data()?.entries ?? []).filter(e => kind === 'all' || (kind === 'group') === e.isForGroup);
   });
 
-  // Entry dialog
   readonly entryDialogVisible = signal(false);
   readonly entryTarget = signal<ScoreEntryTarget | null>(null);
   readonly entryToEdit = signal<ScoreEntryDto | null>(null);

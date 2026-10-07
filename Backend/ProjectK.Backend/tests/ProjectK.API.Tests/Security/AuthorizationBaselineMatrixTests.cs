@@ -58,8 +58,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// The matrix only guards what it lists, so a whole controller can slip in unchecked — that is how
-    /// the agenda endpoints went unlisted. This fails until every action is accounted for.
+    /// The matrix only guards what it lists, so a whole controller can slip in unchecked. This fails
+    /// until every action is accounted for.
     /// </summary>
     [Fact]
     public void EveryControllerAction_ShouldBeCoveredByTheMatrix()
@@ -92,9 +92,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// Nothing is unlisted any more. Every controller action has a row below, reviewed one by one in
-    /// 0.19.0 — the set is kept so a newly added endpoint has somewhere to be pinned deliberately,
-    /// rather than being added here by reflex.
+    /// Endpoints deliberately left out of the matrix. Empty, and kept so a newly added endpoint has to
+    /// be pinned here on purpose rather than by reflex.
     /// </summary>
     private static readonly IReadOnlySet<string> KnownUnlistedEndpoints = new HashSet<string>();
 
@@ -323,9 +322,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// A row for an action whose name is unique on its controller — most of them. The delegate form
-    /// below stays for the handful that are overloaded; writing one out for all fifty-seven endpoints
-    /// is how they stayed unlisted in the first place.
+    /// A row for an action whose name is unique on its controller. The delegate form below stays for the
+    /// handful that are overloaded.
     /// </summary>
     private static object[] Endpoint<TController>(string methodName, string policy)
     {

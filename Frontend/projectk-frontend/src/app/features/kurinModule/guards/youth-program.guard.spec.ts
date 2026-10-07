@@ -6,6 +6,8 @@ import { KurinBranch } from '../models/enums/kurin-branch.enum';
 import { KurinDto } from '../models/kurin.dto';
 import { youthProgramGuard } from './youth-program.guard';
 
+type GuardResult = Observable<boolean | UrlTree> | boolean | UrlTree;
+
 describe('youthProgramGuard', () => {
   let kurinServiceSpy: jasmine.SpyObj<KurinService>;
   let router: Router;
@@ -18,10 +20,10 @@ describe('youthProgramGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  function run(kurinKey: string | null): Observable<boolean | UrlTree> | boolean | UrlTree {
+  function run(kurinKey: string | null): GuardResult {
     const route = { paramMap: convertToParamMap(kurinKey ? { kurinKey } : {}) } as ActivatedRouteSnapshot;
     return TestBed.runInInjectionContext(() =>
-      youthProgramGuard()(route, {} as RouterStateSnapshot)) as Observable<boolean | UrlTree> | boolean | UrlTree;
+      youthProgramGuard()(route, {} as RouterStateSnapshot)) as GuardResult;
   }
 
   function resolve(result: Observable<boolean | UrlTree> | boolean | UrlTree): boolean | UrlTree {

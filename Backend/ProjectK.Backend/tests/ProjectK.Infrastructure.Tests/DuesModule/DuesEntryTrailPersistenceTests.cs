@@ -8,9 +8,9 @@ using Xunit;
 namespace ProjectK.Infrastructure.Tests.DuesModule;
 
 /// <summary>
-/// The trail is written through the entry's collection on a tracked entry (see DuesEntryTrail). EF takes a child that
-/// shows up with its key already set for an existing row and tries to UPDATE it — which failed
-/// live with a concurrency exception on the first «Перевірено». The key is left to EF now.
+/// The trail is written through the entry's collection on a tracked entry (see DuesEntryTrail). EF takes a
+/// child that shows up with its key already set as an existing row and tries to UPDATE it, which fails
+/// with a concurrency exception — so the key must be left to EF.
 /// </summary>
 public class DuesEntryTrailPersistenceTests
 {

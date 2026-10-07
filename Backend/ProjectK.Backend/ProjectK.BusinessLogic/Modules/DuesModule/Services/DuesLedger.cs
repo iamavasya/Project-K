@@ -5,17 +5,14 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
 /// <summary>
-/// Works a kurin's dues out from its rows: what each account owes quarter by quarter, and what each box
-/// holds. Pure — it reads nothing and keeps nothing — so every rule about money is here and testable.
-/// <para>
-/// The rules, as the провід set them (<c>todo/tasks/DUES-01.md</c>):
+/// Works a kurin's dues out from its rows: what each account owes per quarter and what each box holds.
+/// Pure, so every money rule lives here and is testable.
 /// <list type="bullet">
 /// <item>a payment closes the oldest quarter first, and within a quarter the станиця, then the kurin,
 /// then the гурток;</item>
-/// <item>what is left over is a surplus that pays the quarters still to come;</item>
+/// <item>a leftover is a surplus that pays the quarters still to come;</item>
 /// <item>money a гурток hands up pays the станиця's part before the kurin's.</item>
 /// </list>
-/// </para>
 /// </summary>
 public sealed class DuesLedger
 {
@@ -75,7 +72,6 @@ public sealed class DuesLedger
             .ToList();
     }
 
-    /// <summary>A гурток's box.</summary>
     public GroupDuesBox GroupBox(Guid groupKey, IReadOnlyList<DuesAccount>? accounts = null)
     {
         accounts ??= Accounts();

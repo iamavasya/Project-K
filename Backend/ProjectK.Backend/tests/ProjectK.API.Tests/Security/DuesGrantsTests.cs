@@ -4,7 +4,7 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.API.Tests.Security;
 
 /// <summary>
-/// Who may touch the вкладка (<c>todo/tasks/DUES-01.md</c>). Money is the one thing kept out of the
+/// Who may touch the вкладка. Money is the one thing kept out of the
 /// read-everything baseline, so a gap here shows every youth the гурток's debts.
 /// </summary>
 public class DuesGrantsTests

@@ -12,6 +12,7 @@ import { parseDateOnlyString, toDateOnlyString } from '../../../../../kurinModul
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
+  DUES_STANDING_LABELS,
   DuesEntryKind,
   DuesPaymentMethod,
   GROUP_DUES_KINDS,
@@ -78,12 +79,10 @@ export class DuesEntryDialogComponent {
     `З ${DUES_PAYMENT_METHOD_LABELS[this.method()].toLowerCase()} на ${DUES_PAYMENT_METHOD_LABELS[oppositeMethod(this.method())].toLowerCase()}`);
 
   /** Youth of the гурток first; those who moved or left come after, named for what they are. */
-  readonly personOptions = computed(() => this.accounts().map(account => ({
-    value: account.membershipKey,
-    label: account.standing === 'Current' ? account.fullName
-      : account.standing === 'Moved' ? `${account.fullName} · переведений`
-      : `${account.fullName} · вибув`
-  })));
+  readonly personOptions = computed(() => this.accounts().map(account => {
+    const standing = DUES_STANDING_LABELS[account.standing];
+    return { value: account.membershipKey, label: standing ? `${account.fullName} · ${standing}` : account.fullName };
+  }));
 
   readonly collectorOptions = computed(() => this.people().map(person => ({ value: person.memberKey, label: person.fullName })));
 

@@ -53,8 +53,6 @@ public class KurinScoreController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    // --- The sheet of one occurrence ---
-
     /// <summary>Who may score at least one гурток opens it; the handler says no to everyone else.</summary>
     [HttpGet("events/{agendaItemKey:guid}/{occurrence}")]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
@@ -102,8 +100,6 @@ public class KurinScoreController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    // --- Points by hand ---
-
     [HttpPost("entries")]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
@@ -135,8 +131,6 @@ public class KurinScoreController : ControllerBase
         var result = await _mediator.Send(new DeleteScoreEntryCommand(kurinKey, entryKey));
         return result.ToActionResult(this);
     }
-
-    // --- The rules: the суддя куреня's and the Звʼязковий's ---
 
     [HttpGet("settings")]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Manage, "route:kurinKey")]

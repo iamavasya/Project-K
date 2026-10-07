@@ -134,8 +134,6 @@ public sealed class ScoreBook
             groupNames, rules, rates, items, stages, entries, attendances, firstDay);
     }
 
-    // --- Periods ---
-
     /// <summary>The days a request asks about; null when it names a stage that is not here.</summary>
     public (ScorePeriod Period, ScorePeriodDto Dto)? ResolvePeriod(ScorePeriodQuery query)
     {
@@ -178,8 +176,6 @@ public sealed class ScoreBook
         To = stage.ToDate
     };
 
-    // --- Names ---
-
     public string NameOfMembership(Guid membershipKey) =>
         Memberships.TryGetValue(membershipKey, out var m) && _byMember.TryGetValue(m.MemberKey, out var p) ? p.FullName : "—";
 
@@ -199,8 +195,6 @@ public sealed class ScoreBook
             .Select(m => (m, _byMember.GetValueOrDefault(m.MemberKey)))
             .Where(x => x.Item2 is not null)
             .Select(x => (x.m, x.Item2!));
-
-    // --- Rows as DTOs ---
 
     public ScoreEntryDto ToDto(ScoreEntry e) => new()
     {

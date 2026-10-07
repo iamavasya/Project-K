@@ -63,7 +63,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
                 StanytsiaReduced = request.Request.StanytsiaReduced,
                 KurinShare = request.Request.KurinShare,
                 SetByUserKey = _currentUser.UserId
-            });
+            }, cancellationToken);
         }
         else
         {

@@ -61,9 +61,8 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             canViewPrivate = ledGroups.Contains(theirGroupKey.Value);
         }
 
-        // The code is not a detail about a person, it is the thing they hand over. Leadership of
-        // their own kurin has no use for it — knowing it would let one kurin sign someone into
-        // another without ever asking them — so nobody but the person themselves is told it.
+        // Only the person themselves is told their code: leadership that knew it could sign them into
+        // another kurin without ever asking them.
         if (!isOwner)
         {
             response.PublicId = null;
@@ -84,7 +83,6 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             return new ServiceResult<MemberResponse>(ResultType.NotFound);
         }
 
-        // Where they stand comes from their membership; the record itself no longer says.
         var placement = await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
         var here = placement.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
             ?? placement.FirstOrDefault();

@@ -53,7 +53,6 @@ public class GetMemberByKeyHandlerTests
     [Fact]
     public async Task Handle_WhenMemberExists_ShouldReturnSuccessWithMappedData()
     {
-        // Arrange
         var memberKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -99,10 +98,8 @@ public class GetMemberByKeyHandlerTests
 
         var query = new GetMemberByKeyQuery(memberKey);
 
-        // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
-        // Assert
         result.Type.Should().Be(ResultType.Success);
         result.Data.Should().NotBeNull();
         result.Data!.MemberKey.Should().Be(memberKey);
@@ -159,7 +156,6 @@ public class GetMemberByKeyHandlerTests
     [Fact]
     public async Task Handle_WhenMemberDoesNotExist_ShouldReturnNotFound()
     {
-        // Arrange
         var memberKey = Guid.NewGuid();
         _memberRepoMock
             .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
@@ -167,15 +163,12 @@ public class GetMemberByKeyHandlerTests
 
         var query = new GetMemberByKeyQuery(memberKey);
 
-        // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
-        // Assert
         result.Type.Should().Be(ResultType.NotFound);
         result.Data.Should().BeNull();
 
         _memberRepoMock.Verify(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
-        // Mapper should never be called when entity not found
         _mapperMock.VerifyNoOtherCalls();
     }
 }

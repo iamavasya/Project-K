@@ -25,7 +25,6 @@
     </section>
   } @else if (data(); as d) {
 
-    <!-- Алгоритм -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -40,7 +39,6 @@
       </div>
     </section>
 
-    <!-- Присутність -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -75,7 +73,6 @@
       }
     </section>
 
-    <!-- Автоматичні джерела -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -106,7 +103,6 @@
       </ul>
     </section>
 
-    <!-- Позиції -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -149,7 +145,6 @@
       }
     </section>
 
-    <!-- Етапи -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -179,7 +174,6 @@
       }
     </section>
 
-    <!-- Правило -->
     <p-dialog [header]="ruleRow()?.label ?? ''" [visible]="ruleDialogVisible()" (visibleChange)="ruleDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
       <p class="lil-dialog-hint">{{ ruleRow()?.hint }}. Діє з дати; що зароблено раніше, лишається як було.</p>
@@ -200,7 +194,6 @@
       </ng-template>
     </p-dialog>
 
-    <!-- Позиція -->
     <p-dialog [header]="itemToEdit() ? 'Змінити позицію' : 'Нова позиція'" [visible]="itemDialogVisible()" (visibleChange)="itemDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
       <div class="lil-dialog-form">
@@ -221,7 +214,6 @@
       </ng-template>
     </p-dialog>
 
-    <!-- Етап -->
     <p-dialog [header]="stageToEdit() ? 'Змінити етап' : 'Новий етап'" [visible]="stageDialogVisible()" (visibleChange)="stageDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 26rem)' }">
       <div class="lil-dialog-form">

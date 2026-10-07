@@ -58,7 +58,7 @@ public sealed class SetGroupDuesRateCommandHandler : IRequestHandler<SetGroupDue
                 FromQuarter = from,
                 GroupShare = request.Request.GroupShare,
                 SetByUserKey = _currentUser.UserId
-            });
+            }, cancellationToken);
         }
         else
         {

@@ -97,14 +97,12 @@ export class KurinScoreSettingsComponent implements OnInit {
   readonly activeItems = computed(() => (this.data()?.items ?? []).filter(i => !i.isArchived));
   readonly archivedItems = computed(() => (this.data()?.items ?? []).filter(i => i.isArchived));
 
-  // Rule dialog
   readonly ruleDialogVisible = signal(false);
   readonly ruleRow = signal<RuleRow | null>(null);
   readonly rulePoints = signal<number | null>(null);
   readonly ruleFrom = signal<Date | null>(new Date());
   readonly savingRule = signal(false);
 
-  // Item dialog
   readonly itemDialogVisible = signal(false);
   readonly itemToEdit = signal<ScoreItemDto | null>(null);
   readonly itemName = signal('');
@@ -112,7 +110,6 @@ export class KurinScoreSettingsComponent implements OnInit {
   readonly savingItem = signal(false);
   readonly itemError = signal<string | null>(null);
 
-  // Stage dialog
   readonly stageDialogVisible = signal(false);
   readonly stageToEdit = signal<ScoreStageDto | null>(null);
   readonly stageName = signal('');
@@ -168,8 +165,6 @@ export class KurinScoreSettingsComponent implements OnInit {
     });
   }
 
-  // --- Algorithm ---
-
   setAlgorithm(algorithm: ScoreAlgorithm): void {
     if (algorithm === this.data()?.algorithm) {
       return;
@@ -180,8 +175,6 @@ export class KurinScoreSettingsComponent implements OnInit {
       error: (error: unknown) => { this.savingAlgorithm.set(false); this.fail('Не вдалося змінити алгоритм', error); }
     });
   }
-
-  // --- Attendance rates ---
 
   rateDraft(rate: ScoreAttendanceRateDto): number {
     return this.rateDrafts()[rate.agendaCategoryKey ?? ''] ?? rate.points;
@@ -207,8 +200,6 @@ export class KurinScoreSettingsComponent implements OnInit {
     });
   }
 
-  // --- Rules ---
-
   openRuleDialog(row: RuleRow): void {
     this.ruleRow.set(row);
     this.rulePoints.set(row.current?.points ?? 0);
@@ -227,8 +218,6 @@ export class KurinScoreSettingsComponent implements OnInit {
       error: (error: unknown) => { this.savingRule.set(false); this.fail('Не вдалося зберегти правило', error); }
     });
   }
-
-  // --- Items ---
 
   openItemDialog(item: ScoreItemDto | null = null): void {
     this.itemToEdit.set(item);
@@ -259,8 +248,6 @@ export class KurinScoreSettingsComponent implements OnInit {
       error: (error: unknown) => this.fail('Не вдалося змінити позицію', error)
     });
   }
-
-  // --- Stages ---
 
   openStageDialog(stage: ScoreStageDto | null = null): void {
     this.stageToEdit.set(stage);

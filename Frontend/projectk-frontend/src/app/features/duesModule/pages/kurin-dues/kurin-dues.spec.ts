@@ -8,6 +8,9 @@ import { DuesService } from '../../services/dues-service/dues.service';
 import { KurinDuesComponent } from './kurin-dues';
 
 describe('KurinDuesComponent', () => {
+  let keys = 0;
+  const nextKey = () => String(++keys);
+
   let fixture: ComponentFixture<KurinDuesComponent>;
   let component: KurinDuesComponent;
   let dues: jasmine.SpyObj<DuesService>;
@@ -15,7 +18,7 @@ describe('KurinDuesComponent', () => {
   const q = (year: number, number: number) => ({ year, number });
 
   const transfer = (over: Partial<DuesTransferDto>): DuesTransferDto => ({
-    duesEntryKey: 't-' + Math.random(),
+    duesEntryKey: 't-' + nextKey(),
     groupKey: 'g-sokoly',
     groupName: 'Соколи',
     amount: 255,
@@ -30,7 +33,7 @@ describe('KurinDuesComponent', () => {
   });
 
   const entry = (over: Partial<DuesEntryDto>): DuesEntryDto => ({
-    duesEntryKey: 'e-' + Math.random(),
+    duesEntryKey: 'e-' + nextKey(),
     kind: DuesEntryKind.Expense,
     method: DuesPaymentMethod.Cash,
     counterMethod: null,

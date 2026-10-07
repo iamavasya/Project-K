@@ -10,7 +10,7 @@ import { leadershipAccessGuard } from './features/authModule/guards/leadership-a
 import { dashboardMatchGuard } from './features/dashboardModule/guards/dashboard-match.guard';
 
 export const routes: Routes = [
-  // One address, two faces: a person with a card gets the dashboard, everyone else the welcome.
+  // `/` is the dashboard for a person with a card and the welcome page for everyone else.
   {
     path: '',
     canMatch: [dashboardMatchGuard],

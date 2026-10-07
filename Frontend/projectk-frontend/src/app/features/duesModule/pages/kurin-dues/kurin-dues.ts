@@ -15,12 +15,11 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
-import { money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
+import { duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
   DuesEntryKind,
-  INCOMING_DUES_KINDS,
   KURIN_DUES_KINDS
 } from '../../models/dues.enums';
 import {
@@ -143,14 +142,12 @@ export class KurinDuesComponent implements OnInit {
 
   readonly outstandingTotal = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 
-  // Entry dialog
   readonly entryDialogVisible = signal(false);
   readonly entryToEdit = signal<DuesEntryDto | null>(null);
   readonly savingEntry = signal(false);
   readonly entryError = signal<string | null>(null);
   readonly busyKey = signal<string | null>(null);
 
-  // Rate dialog
   readonly rateDialogVisible = signal(false);
   readonly savingRate = signal(false);
 
@@ -180,8 +177,6 @@ export class KurinDuesComponent implements OnInit {
     });
   }
 
-  // --- Groups and transfers ---
-
   toggleGroup(group: KurinGroupHandoverDto): void {
     this.groupFilter.set(this.groupFilter() === group.groupKey ? null : group.groupKey);
   }
@@ -194,21 +189,16 @@ export class KurinDuesComponent implements OnInit {
     });
   }
 
-  // --- Own operations ---
-
   kindLabel(entry: DuesEntryDto): string {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    if (entry.kind === DuesEntryKind.Exchange) {
-      return money(entry.amount);
-    }
-    return signedMoney(INCOMING_DUES_KINDS.has(entry.kind) ? entry.amount : -entry.amount);
+    return duesAmountLabel(entry);
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {
-    return entry.kind === DuesEntryKind.Exchange ? null : INCOMING_DUES_KINDS.has(entry.kind);
+    return isIncomingDues(entry);
   }
 
   methodLabel(entry: { method: DuesEntryDto['method']; counterMethod?: DuesEntryDto['counterMethod'] }): string {
@@ -270,8 +260,6 @@ export class KurinDuesComponent implements OnInit {
       error: () => this.busyKey.set(null)
     });
   }
-
-  // --- Rates ---
 
   saveRate(request: SetKurinDuesRateRequest): void {
     this.savingRate.set(true);

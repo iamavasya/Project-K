@@ -13,7 +13,6 @@ export interface EventResponseChange {
   status: AgendaRsvpStatus;
 }
 
-/** One event as the tile lists it: the row and the words for its day and time. */
 export interface EventRow {
   event: MyEventDto;
   day: string;

@@ -9,6 +9,5 @@ public enum ScoreAlgorithm
     /// </summary>
     Average = 0,
 
-    /// <summary>All the points together.</summary>
     Sum = 1
 }

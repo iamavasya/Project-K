@@ -56,7 +56,6 @@
     </section>
   } @else if (data(); as d) {
 
-    <!-- Каса куреня -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -102,7 +101,6 @@
       </p>
     </section>
 
-    <!-- Гуртки -->
     <section class="kurin-tile">
       <p-table [value]="d.groups" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>
@@ -153,7 +151,6 @@
       </p-table>
     </section>
 
-    <!-- По кварталах -->
     <section class="kurin-tile">
       <div class="lil-tile-head">
         <div>
@@ -218,7 +215,6 @@
       }
     </section>
 
-    <!-- Передачі -->
     <section class="kurin-tile">
       <p-table [value]="filteredTransfers()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>
@@ -297,7 +293,6 @@
       </p-table>
     </section>
 
-    <!-- Операції куреня -->
     <section class="kurin-tile">
       <p-table [value]="filteredEntries()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>

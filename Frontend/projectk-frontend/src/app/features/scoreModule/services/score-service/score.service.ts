@@ -114,7 +114,7 @@ export class ScoreService {
     return this.http.delete(`${this.url(kurinKey)}/settings/stages/${stageKey}`).pipe(this.invalidate());
   }
 
-  // --- The КВ's own book. Never cached: it is private, and a stale copy is one copy too many. ---
+  // The КВ's own book is never cached: it is private.
 
   getPrivateScore(kurinKey: string, period: ScorePeriodQuery = {}): Observable<PrivateScoreDto> {
     return this.http.get<PrivateScoreDto>(`${this.url(kurinKey)}/private`, { params: periodHttpParams(period) });
@@ -147,7 +147,10 @@ export class ScoreService {
 }
 
 function periodKey(period: ScorePeriodQuery): string {
-  return period.stageKey ? `stage:${period.stageKey}` : period.year ? `year:${period.year}` : 'now';
+  if (period.stageKey) {
+    return `stage:${period.stageKey}`;
+  }
+  return period.year ? `year:${period.year}` : 'now';
 }
 
 function periodHttpParams(period: ScorePeriodQuery): HttpParams {

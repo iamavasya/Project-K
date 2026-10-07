@@ -25,7 +25,6 @@ public sealed class MyEventDto
     public string? CategoryName { get; set; }
     public string? CategoryColorHex { get; set; }
     public string? CategoryIcon { get; set; }
-    /// <summary>Whether the group of events asks for an answer.</summary>
     public bool RsvpRequired { get; set; }
     public AgendaRsvpStatus? MyResponse { get; set; }
 }
@@ -44,8 +43,6 @@ public sealed class MyTaskDto
     /// <summary>Whether the status can be moved from here: the right to, in the kurin the token acts in.</summary>
     public bool CanChangeStatus { get; set; }
 }
-
-// --- Personal growth: проба and вмілості ---
 
 /// <summary>
 /// The youth programme as it stands for the person: the проба they are on and their вмілості. Only
@@ -100,8 +97,6 @@ public sealed class MyBadgeDto
     public DateTime? ReviewedAtUtc { get; set; }
 }
 
-// --- Вкладка ---
-
 /// <summary>The person's вкладка in one kurin: what they owe or have over, and what this quarter costs.</summary>
 public sealed class MyDuesDto
 {
@@ -115,8 +110,6 @@ public sealed class MyDuesDto
     public decimal? QuarterRate { get; set; }
     public bool IsConcession { get; set; }
 }
-
-// --- Точкування ---
 
 /// <summary>The person's own points this пластовий рік in one kurin, and where their гурток stands.</summary>
 public sealed class MyScoreDto
@@ -132,8 +125,6 @@ public sealed class MyScoreDto
     public decimal GroupScore { get; set; }
     public ScoreAlgorithm Algorithm { get; set; }
 }
-
-// --- Справи: the провід's queue ---
 
 /// <summary>What a duty is about; the dashboard knows where each kind is done.</summary>
 public enum MyDutyKind

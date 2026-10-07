@@ -122,11 +122,9 @@ export class BreadcrumbService {
     // groupKey may be injected again after the destination entity is loaded.
     this.paramCache = {};
 
-    // Extract parameters from URL segments
     const urlSegments = (this.router.url ?? '').split('/').filter(s => s);
     const routes = this.router.config ?? [];
     
-    // Try to match URL segments to route patterns to extract parameters
     for (const route of routes) {
       if (!route.path) continue;
       
@@ -137,24 +135,20 @@ export class BreadcrumbService {
         
         for (let i = 0; i < routeSegments.length; i++) {
           if (routeSegments[i].startsWith(':')) {
-            // This is a parameter - extract it
             const paramName = routeSegments[i].substring(1);
             extractedParams[paramName] = urlSegments[i];
           } else if (routeSegments[i] !== urlSegments[i]) {
-            // Static segment doesn't match
             match = false;
             break;
           }
         }
         
         if (match) {
-          // Add extracted parameters to cache
           this.cacheParams(extractedParams);
         }
       }
     }
     
-    // Also add parameters from the activated route
     this.addParamsFromRoute(this.activatedRoute);
   }
   
@@ -163,15 +157,12 @@ export class BreadcrumbService {
       return;
     }
 
-    // Add params from current route
     this.cacheParams(route.snapshot.params);
 
-    // Process children
     if (route.firstChild) {
       this.addParamsFromRoute(route.firstChild);
     }
 
-    // Process siblings
     (route.children ?? []).forEach(child => {
       this.addParamsFromRoute(child);
     });
@@ -181,7 +172,6 @@ export class BreadcrumbService {
     const breadcrumbs: MenuItem[] = [];
     this.entityTargets.clear();
 
-    // Get the current activated route
     let currentRoute: ActivatedRoute = this.activatedRoute;
     if (!currentRoute) {
       return breadcrumbs;
@@ -190,7 +180,6 @@ export class BreadcrumbService {
       currentRoute = currentRoute.firstChild;
     }
 
-    // Process the current route
     this.processRoute(currentRoute, breadcrumbs);
 
     return this.applyEntityLabels(this.dropCrumbsUpToHome(breadcrumbs));
@@ -313,20 +302,16 @@ export class BreadcrumbService {
   private processRoute(route: ActivatedRoute, breadcrumbs: MenuItem[]): void {
     if (!route?.snapshot?.data) return;
 
-    // If this route has breadcrumb data
     if (route.snapshot.data['breadcrumb']) {
-      // Create breadcrumb item for current route
       const currentUrl = this.router.url ?? '';
       const currentItem: MenuItem = {
         label: route.snapshot.data['breadcrumb'],
         routerLink: currentUrl
       };
       
-      // Add to the beginning of the array
       breadcrumbs.unshift(currentItem);
       this.trackEntity(currentUrl, route.snapshot.data);
 
-      // Process parent if exists
       const parentPath = this.resolveParentPath(
         route.snapshot.data['parent'],
         route.snapshot.data['parentFallback']
@@ -355,27 +340,22 @@ export class BreadcrumbService {
   private processParent(parentPath: string, breadcrumbs: MenuItem[]): void {
     if (!parentPath) return;
 
-    // Resolve any parameters in the parent path
     const resolvedPath = this.resolveParameters(parentPath);
 
-    // Find the route configuration for this path
     const route = this.findRouteByPattern(parentPath);
     if (route && route.data?.['breadcrumb']) {
       // A path we could not fill in is a dead link — skip the crumb, but keep walking up
       // so the trail still reaches somewhere the user can actually go.
       if (!resolvedPath.includes(':')) {
-        // Create breadcrumb item for the parent
         const parentItem: MenuItem = {
           label: route.data['breadcrumb'],
           routerLink: resolvedPath
         };
 
-        // Add to the beginning of the array
         breadcrumbs.unshift(parentItem);
         this.trackEntity(resolvedPath, route.data);
       }
 
-      // Process grandparent if exists
       if (route.data['parent'] && this.isParentAllowed(route.data['parentRoles'])) {
         this.processParent(route.data['parent'], breadcrumbs);
       }
@@ -407,7 +387,7 @@ export class BreadcrumbService {
     const paramMatches = path.match(/:[a-zA-Z0-9]+/g) || [];
     
     for (const param of paramMatches) {
-      const paramName = param.substring(1); // Remove the colon
+      const paramName = param.substring(1);
       if (this.paramCache[paramName]) {
         result = result.replace(param, this.paramCache[paramName]);
       }
@@ -419,23 +399,19 @@ export class BreadcrumbService {
   private findRouteByPattern(pathPattern: string): Route | null {
     if (!pathPattern) return null;
 
-    // Remove leading slash if present
     const normalizedPattern = pathPattern.startsWith('/') ? pathPattern.substring(1) : pathPattern;
     
-    // Convert parameters to regex pattern
     const regexPattern = normalizedPattern
-      .replaceAll(/\//g, '\\/') // Escape slashes
-      .replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+'); // Replace params with wildcard pattern
+      .replaceAll(/\//g, '\\/')
+      .replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+');
     
     for (const route of this.router.config ?? []) {
       if (!route.path) continue;
       
-      // Direct match
       if (route.path === normalizedPattern) {
         return route;
       }
       
-      // Pattern match
       if (new RegExp(`^${regexPattern}$`).test(route.path) || 
           new RegExp(`^${route.path.replaceAll(/:[a-zA-Z0-9]+/g, '[^\\/]+')}$`).test(normalizedPattern)) {
         return route;

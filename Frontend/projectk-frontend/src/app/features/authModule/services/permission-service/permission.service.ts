@@ -60,7 +60,7 @@ export class PermissionService {
   /**
    * Who seats a провід, per body, the way the backend's AssignableOffices has it: Звʼязковий and
    * admin every one; Курінний only the kurin провід; Гуртковий only his гурток's. Checking
-   * `Leadership:Update` alone let a Гуртковий open the kurin провід form and meet a 403.
+   * `Leadership:Update` alone would let a Гуртковий open the kurin провід form and meet a 403.
    */
   canSetupLeadership(type: LeadershipScope): boolean {
     if (this.isAdmin() || this.has('Leadership:Manage:KurinWide')) {

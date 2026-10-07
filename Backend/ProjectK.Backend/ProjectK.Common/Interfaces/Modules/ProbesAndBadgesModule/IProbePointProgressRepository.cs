@@ -19,8 +19,8 @@ public interface IProbePointProgressRepository : IBaseEntityRepository<ProbePoin
     Task<IReadOnlyList<ProbePointProgress>> GetSignedByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes these people's signed probe points. The member row no longer owns these through a foreign key,
-    /// so deleting a member — or a whole kurin of them — has to ask for this explicitly.
+    /// Removes these people's signed probe points. No foreign key ties them to the member row, so
+    /// deleting a member — or a whole kurin of them — has to ask for this explicitly.
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
 }

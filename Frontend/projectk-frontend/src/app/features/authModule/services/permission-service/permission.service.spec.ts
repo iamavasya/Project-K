@@ -21,7 +21,6 @@ describe('PermissionService', () => {
     authService.getAuthStateValue.and.returnValue(state);
   }
 
-  // Permission sets that reproduce the office tiers.
   const stewardPerms = [
     'Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Member:Manage:KurinWide',
     'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'

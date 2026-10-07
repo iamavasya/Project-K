@@ -17,7 +17,6 @@ describe('LeadershipComponent', () => {
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let routerSpy: jasmine.SpyObj<Router>;
   
-  // Use BehaviorSubject to simulate route param changes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paramMapSubject = new BehaviorSubject<any>({ get: () => null });
 
@@ -73,7 +72,6 @@ describe('LeadershipComponent', () => {
     fixture = TestBed.createComponent(LeadershipComponent);
     component = fixture.componentInstance;
     
-    // Default mocks
     memberServiceSpy.getAll.and.returnValue(of([mockMember]));
     leadershipServiceSpy.getLeadershipByKey.and.returnValue(of(mockLeadership));
     leadershipServiceSpy.create.and.returnValue(of(mockLeadership));
@@ -173,8 +171,8 @@ describe('LeadershipComponent', () => {
     });
 
     it('should sort histories with active rows before archived rows', () => {
-      const h1 = { ...mockLeadership.leadershipHistories[0], endDate: '2023-02-01', startDate: '2023-01-01' }; // Archived
-      const h2 = { ...mockLeadership.leadershipHistories[0], endDate: null, startDate: '2023-03-01' }; // Active
+      const h1 = { ...mockLeadership.leadershipHistories[0], endDate: '2023-02-01', startDate: '2023-01-01' };
+      const h2 = { ...mockLeadership.leadershipHistories[0], endDate: null, startDate: '2023-03-01' };
       
       const data: LeadershipDto = {
         ...mockLeadership,

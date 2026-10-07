@@ -231,8 +231,6 @@
   overflow: hidden;
 }
 
-/* --- Вкладка на картці --- */
-
 .dues-tile-balance {
     display: flex;
     flex-direction: column;

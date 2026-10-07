@@ -1,12 +1,11 @@
 namespace ProjectK.Common.Models.Dues;
 
 /// <summary>
-/// Which пластовий рік a quarter is shown under. Dues are counted in calendar quarters; the year is
-/// only how the table groups them, so nothing about money depends on this.
+/// Which пластовий рік a quarter is shown under. Dues are counted in calendar quarters; the year only
+/// groups them in the table, so no money depends on it.
 /// <para>
-/// The year starts on 1 September, which falls inside the third quarter. Which side that quarter
-/// lands on was decided, not derived — and may be decided again — so the rule lives here and nowhere
-/// else: change <see cref="OpeningQuarter"/> and every grouping follows.
+/// The year starts on 1 September, inside the third quarter. Which side that quarter lands on is a
+/// decision, not derived, so it lives only in <see cref="OpeningQuarter"/>; every grouping follows it.
 /// </para>
 /// </summary>
 public static class PlastYear

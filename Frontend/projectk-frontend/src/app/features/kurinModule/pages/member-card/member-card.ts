@@ -47,8 +47,8 @@ import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity 
 import { memberBranchHere } from '../../functions/member-branch.function';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
-import { money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
-import { DUES_ENTRY_KIND_LABELS, DuesEntryKind, INCOMING_DUES_KINDS } from '../../../duesModule/models/dues.enums';
+import { duesAmountLabel, money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
+import { DUES_ENTRY_KIND_LABELS, DUES_STANDING_LABELS } from '../../../duesModule/models/dues.enums';
 import { DuesEntryDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../../services/member-award-service/member-award.service';
 import { EntityService } from '../../../authModule/services/entity-service/entity.service';
@@ -235,12 +235,8 @@ export class MemberCardComponent implements OnInit {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
-  /** Signed as it touches the balance: a contribution adds, a refund takes, a correction says itself. */
-  duesAmountLabel(entry: DuesEntryDto): string {
-    const signed = entry.kind === DuesEntryKind.Correction ? entry.amount
-      : INCOMING_DUES_KINDS.has(entry.kind) ? entry.amount : -entry.amount;
-    return signed > 0 ? `+${money(signed)}` : money(signed);
-  }
+  readonly duesAmountLabel = duesAmountLabel;
+  readonly duesStandingLabels = DUES_STANDING_LABELS;
 
   /**
    * Проби й вмілості чекають і на людину, і на її членства: гілку дають ступінь і курінь. Старшим
@@ -414,7 +410,6 @@ export class MemberCardComponent implements OnInit {
     return this.canManageMemberActions;
   }
 
-  /** Closing a membership is the Звʼязковий's call alone: not the person's, not the Виховник's. */
   /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */
   get canManagePlacement(): boolean {
     return this.permissionService.canManageWholeKurin();

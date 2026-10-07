@@ -7,7 +7,6 @@ import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/member
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MembershipDto } from '../../../kurinModule/models/membership.dto';
 
-/** One kurin as the tile lists it: the scope option, with the гурток the person stands in there. */
 export interface KurinRow {
   option: KurinScopeOption;
   groupName: string | null;

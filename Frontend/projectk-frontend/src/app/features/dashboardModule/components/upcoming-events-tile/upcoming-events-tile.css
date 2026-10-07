@@ -33,7 +33,7 @@
   background: var(--p-primary-50);
 }
 
-/* The category's own colour, as a dot: the one place it is shown pure, as on the calendar. */
+/* The only place the category colour is shown pure, as on the calendar. */
 .events-tile__dot {
   width: 0.6rem;
   height: 0.6rem;
@@ -71,7 +71,7 @@
   gap: 0.25rem;
 }
 
-/* Three small answers, the chosen one tinted the way the calendar tints that status. */
+/* The chosen answer is tinted the way the calendar tints that status. */
 .events-tile__answer {
   padding: 0.25rem 0.6rem;
   border: 1px solid var(--p-content-border-color);

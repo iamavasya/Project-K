@@ -26,11 +26,9 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
 {
     private readonly AppDbContext _context;
 
-    // Repositories are created on first access, not up front: a typical request
-    // touches one or two of them, so eagerly newing all 17 was 15-16 wasted
-    // allocations per scoped UnitOfWork. Backing fields (not Lazy<T>) keep it a
-    // single allocation per repo actually used — the UoW is scoped per request
-    // and used single-threaded, so no synchronisation is needed.
+    // Repositories are created on first access, since a request touches one or two of them. Plain
+    // backing fields, not Lazy<T>: the UoW is scoped per request and used single-threaded, so no
+    // synchronisation is needed.
     private IKurinRepository _kurins;
     private IGroupRepository _groups;
     private IMembershipRepository _memberships;

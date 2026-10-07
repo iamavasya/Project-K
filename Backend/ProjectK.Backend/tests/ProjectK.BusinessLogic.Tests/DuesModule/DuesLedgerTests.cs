@@ -8,7 +8,7 @@ using Xunit;
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
 /// <summary>
-/// The money rules from <c>todo/tasks/DUES-01.md</c>, one by one. Rates are the ones the гурток uses
+/// The money rules of the вкладка, one by one. Rates are the ones the гурток uses
 /// today: 240 станиця (180 пільгова), 15 курінь, 45 гурток — 300 a quarter.
 /// </summary>
 public class DuesLedgerTests

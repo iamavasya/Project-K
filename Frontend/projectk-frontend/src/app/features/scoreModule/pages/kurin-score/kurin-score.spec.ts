@@ -8,13 +8,16 @@ import { ScoreService } from '../../services/score-service/score.service';
 import { KurinScoreComponent } from './kurin-score';
 
 describe('KurinScoreComponent', () => {
+  let keys = 0;
+  const nextKey = () => String(++keys);
+
   let fixture: ComponentFixture<KurinScoreComponent>;
   let component: KurinScoreComponent;
   let scores: jasmine.SpyObj<ScoreService>;
   const queryParams = new BehaviorSubject(convertToParamMap({}));
 
   const row = (over: Partial<ScoreGroupRowDto>): ScoreGroupRowDto => ({
-    groupKey: 'g-' + Math.random(),
+    groupKey: 'g-' + nextKey(),
     groupName: 'Гурток',
     place: 1,
     score: 0,

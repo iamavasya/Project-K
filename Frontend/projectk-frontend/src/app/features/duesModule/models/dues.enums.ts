@@ -1,3 +1,5 @@
+import type { DuesAccountStanding } from './group-dues.dto';
+
 /** Mirrors `DuesEntryKind` on the backend; enums travel as strings. */
 export enum DuesEntryKind {
   Contribution = 'Contribution',
@@ -56,6 +58,13 @@ export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.TransferToStanytsia,
   DuesEntryKind.Exchange
 ];
+
+/** How a person stands towards a гурток's box, in a word; one who is still here needs none. */
+export const DUES_STANDING_LABELS: Record<DuesAccountStanding, string | null> = {
+  Current: null,
+  Moved: 'переведений',
+  Left: 'вибув'
+};
 
 /** Kinds that bring money into the box, as the history shows them with a plus. */
 export const INCOMING_DUES_KINDS: ReadonlySet<DuesEntryKind> = new Set([

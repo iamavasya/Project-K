@@ -423,13 +423,9 @@ export class SidebarMenuComponent implements OnChanges {
   }
 
   /**
-   * What the viewer is called in the footer.
-   *
-   * The office comes first, so a Зв'язковий reads "Зв'язковий" rather than the tier "Провід
-   * куреня" — the tier is what the office grants, not what the person is called, and it lumps
-   * Зв'язковий together with Курінний. Colour follows the same rule the member list uses, so an
-   * office is not one colour here and another there. The tiers stay as the fallback for accounts
-   * that hold no office at all.
+   * What the viewer is called in the footer: the office first, so a Зв'язковий reads "Зв'язковий"
+   * rather than the tier "Провід куреня", coloured by the member list's rule. The tiers are the
+   * fallback for accounts that hold no office.
    */
   private currentRoleTag(state: AuthState | null): { label: string; severity: RoleSeverity } {
     if (this.permissionService.isAdmin()) {

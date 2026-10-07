@@ -6,7 +6,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 import { dayLabel, timeLabel } from '../../functions/day-label.function';
 import { MyDutyDto, MyDutyKind } from '../../models/me.dto';
 
-/** One duty as the tile lists it: the words, the number, and where it is done. */
 export interface DutyRow {
   duty: MyDutyDto;
   icon: string;

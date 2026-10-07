@@ -44,7 +44,6 @@
     </section>
   } @else if (data(); as d) {
 
-    <!-- Становище -->
     <section class="kurin-tile">
       <div class="lil-stats">
         <div class="lil-stat lil-stat--primary">
@@ -70,7 +69,6 @@
       </div>
     </section>
 
-    <!-- Юнаки -->
     <section class="kurin-tile">
       <p-table [value]="d.people" styleClass="project-table score-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>
@@ -131,7 +129,6 @@
       </p-table>
     </section>
 
-    <!-- Записи -->
     <section class="kurin-tile">
       <p-table [value]="filteredEntries()" styleClass="project-table score-table" [scrollable]="true" stripedRows [rowHover]="true">
         <ng-template #caption>

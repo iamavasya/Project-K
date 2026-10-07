@@ -18,7 +18,7 @@
   list-style: none;
 }
 
-/* The same block the card shows a youth: paid is green, debt is red, a surplus plain. */
+/* Same colours as on a youth's card: paid green, debt red, surplus plain. */
 .dues-tile__row {
   display: flex;
   flex-direction: column;

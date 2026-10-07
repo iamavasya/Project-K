@@ -22,7 +22,6 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
 
     public async Task<ServiceResult<TileLayoutDto>> Handle(SaveTileLayoutCommand request, CancellationToken cancellationToken)
     {
-        // Input validation lives in SaveTileLayoutCommandValidator (runs in the pipeline).
         var tileKeys = request.TileKeys ?? [];
 
         var hiddenKeys = request.HiddenTileKeys ?? [];

@@ -107,9 +107,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 {
                     GroupKey = a.GroupKey,
                     GroupName = groupNames.GetValueOrDefault(a.GroupKey, "—"),
-                    Standing = a.GroupKey == currentGroup && standing is not null ? DuesAccountStanding.Current
-                        : standing is null ? DuesAccountStanding.Left
-                        : DuesAccountStanding.Moved,
+                    Standing = DuesAccountStandings.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
                         Quarter = Quarter(q.Quarter),

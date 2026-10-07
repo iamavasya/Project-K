@@ -127,7 +127,6 @@ export class AgendaItemDialogComponent {
   });
 
   constructor() {
-    // Populate the form whenever the dialog opens for a specific item (or a fresh create).
     effect(() => {
       if (!this.visible()) {
         return;
@@ -256,7 +255,6 @@ export class AgendaItemDialogComponent {
     });
   }
 
-  /** Delete a mistakenly created event/task, after a confirm. */
   remove(): void {
     const current = this.item();
     if (!current) {
@@ -307,7 +305,6 @@ export class AgendaItemDialogComponent {
     this.rsvp.set(null);
   }
 
-  /** Flip one weekday bit in the weekly recurrence mask. */
   toggleWeekday(bit: number): void {
     this.recurrenceByWeekday ^= bit;
   }

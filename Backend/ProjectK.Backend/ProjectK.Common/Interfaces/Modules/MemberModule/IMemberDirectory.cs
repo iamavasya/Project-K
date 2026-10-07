@@ -15,7 +15,6 @@ namespace ProjectK.Common.Interfaces.Modules.MemberModule;
 /// </summary>
 public interface IMemberDirectory
 {
-    /// <summary>Whether such a member exists at all.</summary>
     Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -27,7 +26,6 @@ public interface IMemberDirectory
     /// <summary>Whether this address already belongs to someone. Guards registration.</summary>
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    /// <summary>The person, or null when there is no such member.</summary>
     Task<MemberSummary?> FindAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>The person an account belongs to, or null when the account has no member yet.</summary>

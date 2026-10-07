@@ -17,7 +17,6 @@ export interface TaskStatusChange {
 
 export interface TaskRow {
   task: MyTaskDto;
-  /** The day it is due, if it has one. */
   due: string | null;
   isOverdue: boolean;
 }

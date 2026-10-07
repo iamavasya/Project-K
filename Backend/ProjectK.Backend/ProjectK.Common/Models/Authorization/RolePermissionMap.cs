@@ -241,8 +241,7 @@ public static class RolePermissionMap
             return GroupProvidGrants;
         }
 
-        // Інструктор and every non-leading office: baseline only. Per-feature grants (e.g. Скарбник →
-        // finances) attach here later without touching the enforcement code.
+        // Інструктор and every non-leading office: baseline only.
         return MemberGrants;
     }
 
