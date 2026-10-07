@@ -31,7 +31,7 @@ public class GetPlanningSessionByKeyQueryHandler : IRequestHandler<GetPlanningSe
 
     public async Task<ServiceResult<PlanningSessionResponse>> Handle(GetPlanningSessionByKeyQuery request, CancellationToken cancellationToken)
     {
-        var entity = await _uow.PlanningSessions.GetByKeyWithDetailsAsync(request.entityKey);
+        var entity = await _uow.PlanningSessions.GetByKeyWithDetailsAsync(request.entityKey, cancellationToken);
 
         if (entity == null)
         {

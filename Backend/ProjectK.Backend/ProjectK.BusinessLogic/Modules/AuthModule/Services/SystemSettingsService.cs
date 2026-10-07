@@ -50,13 +50,13 @@ public class SystemSettingsService : ISystemSettingsService
         if (setting == null)
         {
             setting = new SystemSetting { Key = key, Value = value, UpdatedAtUtc = DateTime.UtcNow };
-            _unitOfWork.SystemSettings.Create(setting);
+            _unitOfWork.SystemSettings.Create(setting, cancellationToken);
         }
         else
         {
             setting.Value = value;
             setting.UpdatedAtUtc = DateTime.UtcNow;
-            _unitOfWork.SystemSettings.Update(setting);
+            _unitOfWork.SystemSettings.Update(setting, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

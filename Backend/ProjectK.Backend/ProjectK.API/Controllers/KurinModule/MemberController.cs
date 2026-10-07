@@ -182,7 +182,7 @@ public class MemberController : ControllerBase
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
         };
-        var response = await _mediator.Send(command);
+        var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
 
@@ -269,7 +269,7 @@ public class MemberController : ControllerBase
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
         };
-        var response = await _mediator.Send(command);
+        var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
 

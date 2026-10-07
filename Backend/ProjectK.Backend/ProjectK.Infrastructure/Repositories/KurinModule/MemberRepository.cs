@@ -392,6 +392,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await Context.Members
             .Include(m => m.MemberWarnings)
             .Include(m => m.MemberAwards)
+            .AsSplitQuery()
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.UserKey == userKey, cancellationToken);
     }

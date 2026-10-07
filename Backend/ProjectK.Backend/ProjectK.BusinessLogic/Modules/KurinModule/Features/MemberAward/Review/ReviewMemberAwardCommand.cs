@@ -66,7 +66,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         award.ReviewedByUserKey = _currentUserContext.UserId;
         award.UpdatedDate = DateTime.UtcNow;
 
-        _unitOfWork.MemberAwards.Update(award);
+        _unitOfWork.MemberAwards.Update(award, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await NotifyMemberOwnerAsync(award, approved, cancellationToken);

@@ -44,7 +44,7 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
                 "Only leadership may remove a confirmed award.");
         }
 
-        _unitOfWork.MemberAwards.Delete(award);
+        _unitOfWork.MemberAwards.Delete(award, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

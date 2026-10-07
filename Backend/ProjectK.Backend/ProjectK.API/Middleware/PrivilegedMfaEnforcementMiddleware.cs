@@ -48,7 +48,7 @@ public class PrivilegedMfaEnforcementMiddleware
         await context.Response.WriteAsJsonAsync(new
         {
             message = "MFA is required for privileged accounts."
-        });
+        }, context.RequestAborted);
     }
 
     private static bool RequiresMfaEnforcement(HttpContext context)

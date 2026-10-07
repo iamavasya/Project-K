@@ -34,6 +34,7 @@ public static class RefreshTokenCookie
         {
             context.Response.Cookies.Delete(Name, new CookieOptions
             {
+                HttpOnly = true,
                 Secure = isSecureRequest,
                 SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
                 Path = path
