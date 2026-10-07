@@ -296,12 +296,12 @@ public static class Program
         builder.Services.AddProjectDependencies(builder.Configuration);
 
         // Which address a request is charged to. X-Forwarded-For is believed from the proxies
-        // named in Security:ClientIp:TrustedProxies вЂ” from anyone when the list is empty, which
+        // named in Security:ClientIp:TrustedProxies — from anyone when the list is empty, which
         // is what App Service needs and what makes the header forgeable by whoever reaches the
         // API directly. That is why Security:ClientIp:Header exists: a header only the one proxy
         // in front can write (Cloudflare's CF-Connecting-IP, nginx's X-Real-IP), applied by
-        // ClientIpMiddleware and read by everything after it. The Azure side of this вЂ” admitting
-        // Cloudflare alone to the App Service вЂ” is SEC-4.1 and lives outside the code.
+        // ClientIpMiddleware and read by everything after it. The Azure side of this — admitting
+        // Cloudflare alone to the App Service — is SEC-4.1 and lives outside the code.
         var clientIp = builder.Configuration.GetSection(ClientIpOptions.SectionName).Get<ClientIpOptions>() ?? new ClientIpOptions();
         builder.Services.Configure<ClientIpOptions>(builder.Configuration.GetSection(ClientIpOptions.SectionName));
         builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>

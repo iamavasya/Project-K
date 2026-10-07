@@ -78,7 +78,7 @@ public class DeleteKurinHandlerTests
 
     /// <summary>
     /// STAB-05: an account's chosen kurin is a bare key, so the handler has to forget it on every
-    /// account that names this kurin вЂ” otherwise they sign in to a kurin that no longer exists.
+    /// account that names this kurin — otherwise they sign in to a kurin that no longer exists.
     /// </summary>
     [Fact]
     public async Task Handle_WhenKurinExists_ShouldDetachEveryAccountThatStoodInIt_BeforeSaving()
