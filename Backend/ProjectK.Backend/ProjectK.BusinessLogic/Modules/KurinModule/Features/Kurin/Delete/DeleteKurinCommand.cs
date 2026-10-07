@@ -69,7 +69,7 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
 
         // Accounts remember which kurin they stood in, and nothing in the schema forgets it for
         // them. Left alone, everyone who had stepped into this kurin would keep signing in to a
-        // key that no longer exists вЂ” shown a kurin, offered no way out of it (STAB-05).
+        // key that no longer exists — shown a kurin, offered no way out of it (STAB-05).
         await _unitOfWork.Users.DetachFromKurinAsync(request.KurinKey, cancellationToken);
 
         _unitOfWork.Kurins.Delete(existing, cancellationToken);

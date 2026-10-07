@@ -30,12 +30,12 @@ resolve_release_url() {
 
   # github.com redirects `releases/latest` to the tag; the tag is all that is needed to name the
   # asset, and no quota is spent.
-  final="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest" 2>/dev/null || true)"
+  final="$(curl --proto =https --tlsv1.2 -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest" 2>/dev/null || true)"
   tag="${final##*/tag/}"
   if [ -n "$tag" ] && [ "$tag" != "$final" ]; then
     version="${tag#v}"
     url="https://github.com/$repo/releases/download/$tag/plast-badges-data-$version.zip"
-    if curl -fsSL -o /dev/null -r 0-0 "$url" 2>/dev/null; then
+    if curl --proto =https --tlsv1.2 -fsSL -o /dev/null -r 0-0 "$url" 2>/dev/null; then
       printf '%s' "$url"
       return 0
     fi
@@ -44,9 +44,9 @@ resolve_release_url() {
   # Fallback for the day the asset is named differently. Rate-limited, so it is not the first try.
   api="https://api.github.com/repos/$repo/releases/latest"
   if [ -n "${GITHUB_TOKEN:-}" ]; then
-    body="$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$api" 2>/dev/null || true)"
+    body="$(curl --proto =https --tlsv1.2 -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$api" 2>/dev/null || true)"
   else
-    body="$(curl -fsSL "$api" 2>/dev/null || true)"
+    body="$(curl --proto =https --tlsv1.2 -fsSL "$api" 2>/dev/null || true)"
   fi
   printf '%s' "$body" \
     | grep -o '"browser_download_url": *"https[^"]*[.]zip"' | head -1 | grep -o 'https[^"]*' || true
@@ -57,7 +57,7 @@ if [ ! -d "$badges" ] || [ -z "$(ls -A "$badges" 2>/dev/null)" ]; then
   [ -n "$release_url" ] || { echo "no zip asset on the latest $repo release" >&2; exit 1; }
   echo "   fetching $release_url"
   tmp="$(mktemp -d)"
-  curl -fsSL -o "$tmp/badges.zip" "$release_url"
+  curl --proto =https --tlsv1.2 -fsSL -o "$tmp/badges.zip" "$release_url"
   mkdir -p "$frontend/public/assets/demo"
   unzip -q -o "$tmp/badges.zip" 'badges_images/*' -d "$frontend/public/assets/demo"
   rm -rf "$tmp"
@@ -66,8 +66,8 @@ echo "   $(ls "$badges" | wc -l | tr -d ' ') pictures"
 
 echo "== demo app (Angular, configuration demo)"
 cd "$frontend"
-if [ ! -d node_modules ]; then npm ci; fi
-npx ng build --configuration demo
+if [ ! -d node_modules ]; then npm ci --ignore-scripts; fi
+npm run build -- --configuration demo
 
 echo "== placing the demo under site/public/demo"
 rm -rf "$site/public/demo"
@@ -82,7 +82,7 @@ cp -R "$site/public/demo/assets" "$site/public/assets"
 
 echo "== site (Astro)"
 cd "$site"
-if [ ! -d node_modules ]; then npm ci; fi
+if [ ! -d node_modules ]; then npm ci --ignore-scripts; fi
 npm run build
 
 echo "== done: $site/dist"

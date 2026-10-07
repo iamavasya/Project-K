@@ -45,6 +45,14 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
     public Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => Context.ProbeProgresses.CountAsync(x => x.MemberKey == memberKey, cancellationToken);
 
+    public async Task<IReadOnlyList<ProbeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        return await Context.ProbeProgresses
+            .Where(x => x.KurinKey == kurinKey)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<ProbeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return await Context.ProbeProgresses

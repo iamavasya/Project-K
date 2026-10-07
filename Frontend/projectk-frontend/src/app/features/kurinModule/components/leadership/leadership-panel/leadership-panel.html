@@ -17,7 +17,9 @@
               <p-inputicon>
                 <i class="pi pi-search"></i>
               </p-inputicon>
+              <label for="leadership-panel-search" class="sr-only">Пошук у проводі</label>
               <input
+                id="leadership-panel-search"
                 pInputText
                 type="text"
                 [(ngModel)]="searchTerm"
@@ -55,7 +57,7 @@
     </ng-template>
 
     <ng-template #body let-history>
-      <tr class="leadership-row" (click)="onMemberSelect(history.member)">
+      <tr class="leadership-row" tabindex="0" (click)="onMemberSelect(history.member)" (keydown.enter)="onMemberSelect(history.member)" (keydown.space)="$event.preventDefault(); onMemberSelect(history.member)">
         <td data-mobile-label="Роль">
           <p-tag [value]="getRoleDisplayName(history.role)" [severity]="getRoleSeverity(history)" [rounded]="true" />
         </td>

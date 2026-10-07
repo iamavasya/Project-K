@@ -1,0 +1,103 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.profile-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+/* One row where the tile is wide enough: photo, words, the way to the card. The words keep a
+   readable width and the button drops under them in a narrow tile instead of crushing the name. */
+.profile-tile__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.profile-tile__lines {
+  flex: 1 1 12rem;
+}
+
+.profile-tile__body > p-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.profile-tile__photo,
+.profile-tile__initials {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--p-content-border-color);
+}
+
+.profile-tile__photo {
+  object-fit: cover;
+}
+
+.profile-tile__initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
+  font-size: var(--lil-text-h3);
+  font-weight: var(--lil-weight-heading);
+  letter-spacing: 0.02em;
+}
+
+.profile-tile__lines {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.profile-tile__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--lil-text-h3);
+  font-weight: var(--lil-weight-heading);
+  letter-spacing: var(--lil-tracking-h3);
+  overflow-wrap: anywhere;
+}
+
+.profile-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.profile-tile__contact {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  overflow-wrap: anywhere;
+}
+
+.profile-tile__empty {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+@media (max-width: 640px) {
+  .profile-tile__body > p-button {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  :host ::ng-deep .profile-tile__open {
+    width: 100%;
+  }
+}

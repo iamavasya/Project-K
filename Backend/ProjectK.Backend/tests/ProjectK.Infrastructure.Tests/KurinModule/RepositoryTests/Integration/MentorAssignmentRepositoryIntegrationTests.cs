@@ -1,0 +1,41 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Repositories.KurinModule;
+using Xunit;
+
+namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
+
+public class MentorAssignmentRepositoryIntegrationTests
+{
+    [Fact]
+    public async Task GetActiveGroupNamesAsync_NamesOnlyCurrentAssignmentsInThatKurin()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var context = new AppDbContext(options);
+
+        var mentor = Guid.NewGuid();
+        var here = new Kurin(1);
+        var elsewhere = new Kurin(2);
+        var bravo = new Group("Bravo", here.KurinKey);
+        var alpha = new Group("Alpha", here.KurinKey);
+        var revoked = new Group("Revoked", here.KurinKey);
+        var foreign = new Group("Foreign", elsewhere.KurinKey);
+        context.AddRange(here, elsewhere, bravo, alpha, revoked, foreign);
+        context.MentorAssignments.AddRange(
+            new MentorAssignment { MentorUserKey = mentor, GroupKey = bravo.GroupKey, AssignedAtUtc = DateTime.UtcNow },
+            new MentorAssignment { MentorUserKey = mentor, GroupKey = alpha.GroupKey, AssignedAtUtc = DateTime.UtcNow },
+            new MentorAssignment { MentorUserKey = mentor, GroupKey = revoked.GroupKey, AssignedAtUtc = DateTime.UtcNow, RevokedAtUtc = DateTime.UtcNow },
+            new MentorAssignment { MentorUserKey = mentor, GroupKey = foreign.GroupKey, AssignedAtUtc = DateTime.UtcNow },
+            new MentorAssignment { MentorUserKey = Guid.NewGuid(), GroupKey = alpha.GroupKey, AssignedAtUtc = DateTime.UtcNow });
+        await context.SaveChangesAsync();
+
+        var names = await new MentorAssignmentRepository(context).GetActiveGroupNamesAsync(mentor, here.KurinKey);
+
+        Assert.Equal(["Alpha", "Bravo"], names);
+    }
+}

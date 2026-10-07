@@ -45,7 +45,6 @@ public sealed record MembershipRecord(
     DateTime JoinedAtUtc,
     DateTime? LeftAtUtc)
 {
-    /// <summary>Whether the person still belongs there.</summary>
     public bool IsCurrent => LeftAtUtc is null;
 }
 
@@ -74,3 +73,15 @@ public sealed record MemberProgress(
 
     public int Count => Probes.Count + Badges.Count;
 }
+
+/// <summary>
+/// One membership of a kurin as another module needs to see it: whose it is, which гурток, what kind,
+/// and for how long. Answered for the whole kurin, past memberships included.
+/// </summary>
+public sealed record KurinMembershipRecord(
+    Guid MembershipKey,
+    Guid MemberKey,
+    Guid? GroupKey,
+    MembershipKind Kind,
+    DateTime JoinedAtUtc,
+    DateTime? LeftAtUtc);

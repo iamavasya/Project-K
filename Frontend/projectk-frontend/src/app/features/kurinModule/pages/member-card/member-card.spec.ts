@@ -9,6 +9,7 @@ import { MemberService } from '../../services/member-service/member.service';
 import { MemberDto } from '../../models/member.dto';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MembershipKind } from '../../models/enums/membership-kind.enum';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { BadgesCatalogService } from '../../services/probes-and-badges/badges-catalog.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
@@ -22,6 +23,8 @@ import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { KurinDto } from '../../models/kurin.dto';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -36,6 +39,7 @@ describe('MemberCardComponent', () => {
   let authServiceSpy: jasmine.SpyObj<AuthService>;
   let entityServiceSpy: jasmine.SpyObj<EntityService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let duesServiceSpy: jasmine.SpyObj<DuesService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'abc123';
@@ -64,6 +68,8 @@ describe('MemberCardComponent', () => {
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
     entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    duesServiceSpy = jasmine.createSpyObj<DuesService>('DuesService', ['getMemberDues']);
+    duesServiceSpy.getMemberDues.and.returnValue(of({ hasAccount: false } as MemberDuesDto));
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
 
     badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
@@ -147,6 +153,7 @@ describe('MemberCardComponent', () => {
         { provide: AuthService, useValue: authServiceSpy },
         { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: DuesService, useValue: duesServiceSpy },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
       ]
     }).compileComponents();
@@ -693,6 +700,137 @@ describe('MemberCardComponent', () => {
 
       expect(component.hasYouthProgram).toBeFalse();
     });
+
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    it('старший пластун-впорядник у курені УПЮ — без юнацького й без жодних заглушок', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...member,
+        latestPlastLevel: PlastLevel.Starshoplastun,
+        plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }]
+      }));
+      memberServiceSpy.getMemberships.and.returnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.hasYouthProgram).toBeFalse();
+      expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getBadgeProgresses).not.toHaveBeenCalled();
+      expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
+      expect(renderedText()).not.toContain('Здобуті вмілості');
+      expect(renderedText()).not.toContain('Відзначення УПЮ');
+      expect(renderedText().toLowerCase()).not.toContain('скоро');
+    });
+
+    it('юнак у курені УПЮ бачить відзначення УПЮ, а впорядництва в нього немає', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Відзначення УПЮ');
+      expect(renderedText()).not.toContain('Впорядництво');
+    });
+  });
+
+  describe('вкладка', () => {
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+    const dues = (over: Partial<MemberDuesDto>): MemberDuesDto => ({
+      hasAccount: true,
+      kurinKey: member.kurinKey,
+      currentQuarter: { year: 2026, number: 4 },
+      balance: -300,
+      quarterRate: { stanytsia: 240, kurin: 15, group: 45, total: 300 },
+      isConcessionNow: false,
+      currentGroupKey: member.groupKey,
+      currentGroupName: 'Соколи',
+      canOpenGroupDues: false,
+      accounts: [],
+      entries: [],
+      ...over
+    });
+
+    it('показує борг і ставку за квартал, без кнопки каси для юнака', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(of(dues({})));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('−300 ₴');
+      expect(renderedText()).toContain('300 ₴ за квартал');
+      expect(renderedText()).toContain('борг');
+      expect(renderedText()).not.toContain('Каса гуртка');
+    });
+
+    it('сплачено — зелена плашка; впорядникові є кнопка в касу гуртка', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Сплачено');
+      expect(renderedText()).toContain('Каса гуртка');
+    });
+
+    // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.
+    it('без доступу або без рахунку плитки немає', () => {
+      memberServiceSpy.getByKey.and.returnValue(of(member));
+      duesServiceSpy.getMemberDues.and.returnValue(throwError(() => ({ status: 403 })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.dues).toBeNull();
+      expect(renderedText()).not.toContain('за квартал');
+    });
+  });
+
+  describe('впорядництво', () => {
+    const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    it('показує чинні уряди КВ і закріплені гуртки, без юнацьких і минулих урядів', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...member,
+        mentoredGroupNames: ['Gurtok 1', 'Gurtok 2'],
+        leadershipHistories: [
+          {
+          leadershipHistoryKey: 'kv-now', leadershipKey: 'l-kv-now', role: 'Zvyazkovyi', leadershipType: 'KV',
+          startDate: '2023-09-01', endDate: null,
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        },
+          {
+          leadershipHistoryKey: 'kv-past', leadershipKey: 'l-kv-past', role: 'Vykhovnyk', leadershipType: 'KV',
+          startDate: '2023-09-01', endDate: '2024-06-01',
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        },
+          {
+          leadershipHistoryKey: 'group-now', leadershipKey: 'l-group-now', role: 'Hurtkoviy', leadershipType: 'Group',
+          startDate: '2023-09-01', endDate: null,
+          member: { memberKey, firstName: member.firstName, middleName: member.middleName, lastName: member.lastName }
+        }
+        ]
+      }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.staffOffices.map(o => o.leadershipHistoryKey)).toEqual(['kv-now']);
+      expect(renderedText()).toContain('Впорядництво');
+      expect(renderedText()).toContain("Зв'язковий");
+      expect(renderedText()).toContain('Gurtok 1, Gurtok 2');
+    });
+
+    it('впорядник лише із закріпленням теж має плитку', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...member, mentoredGroupNames: ['Gurtok 1'] }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(renderedText()).toContain('Впорядник гуртка:');
+    });
   });
 });
-

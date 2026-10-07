@@ -25,6 +25,11 @@ using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.API.Controllers.DuesModule;
+using ProjectK.API.Controllers.ScoreModule;
+using ProjectK.API.Controllers.MeModule;
+using ProjectK.Common.Models.Dtos.DuesModule.Requests;
+using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -53,8 +58,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// The matrix only guards what it lists, so a whole controller can slip in unchecked — that is how
-    /// the agenda endpoints went unlisted. This fails until every action is accounted for.
+    /// The matrix only guards what it lists, so a whole controller can slip in unchecked. This fails
+    /// until every action is accounted for.
     /// </summary>
     [Fact]
     public void EveryControllerAction_ShouldBeCoveredByTheMatrix()
@@ -87,9 +92,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// Nothing is unlisted any more. Every controller action has a row below, reviewed one by one in
-    /// 0.19.0 — the set is kept so a newly added endpoint has somewhere to be pinned deliberately,
-    /// rather than being added here by reflex.
+    /// Endpoints deliberately left out of the matrix. Empty, and kept so a newly added endpoint has to
+    /// be pinned here on purpose rather than by reflex.
     /// </summary>
     private static readonly IReadOnlySet<string> KnownUnlistedEndpoints = new HashSet<string>();
 
@@ -123,7 +127,59 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.JoinKurinRequest>>(nameof(KurinController.Join), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), "RequireUser");
+        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
+
+        // Dues: every action is resource-checked against the гурток; the policy is only "signed in".
+        yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, SetGroupDuesRateRequest>>(nameof(GroupDuesController.SetRate), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesConcessionRequest>>(nameof(GroupDuesController.SetConcession), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.CreateEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.UpdateEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(GroupDuesController.SetEntryVerified), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, SetKurinDuesRateRequest>>(nameof(KurinDuesController.SetRate), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.Get), "RequireUser");
+        yield return Row<Action<MemberDuesController, Guid>>(nameof(MemberDuesController.Get), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.GetReadableGroups), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesTransferReceivedRequest>>(nameof(KurinDuesController.SetTransferReceived), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.CreateEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.UpdateEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteEntry), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(KurinDuesController.SetEntryVerified), "RequireUser");
+
+        // Score: the table is every member's; who scores which гурток is asked per person in the handler.
+        yield return Row<Action<KurinScoreController, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.Get), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.GetGroup), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.GetSheet), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string, MarkAttendanceRequest>>(nameof(KurinScoreController.MarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string, Guid>>(nameof(KurinScoreController.UnmarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.CreateEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.UpdateEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteEntry), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid>>(nameof(KurinScoreController.GetSettings), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreAlgorithmRequest>>(nameof(KurinScoreController.SetAlgorithm), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreRuleRequest>>(nameof(KurinScoreController.SetRule), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, SetScoreAttendanceRateRequest>>(nameof(KurinScoreController.SetAttendanceRate), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreItemRequest>>(nameof(KurinScoreController.CreateItem), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreItemRequest>>(nameof(KurinScoreController.UpdateItem), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, UpsertScoreStageRequest>>(nameof(KurinScoreController.CreateStage), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreStageRequest>>(nameof(KurinScoreController.UpdateStage), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteStage), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, ScorePeriodQuery>>(nameof(PrivateScoreController.Get), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, UpsertPrivateScoreEntryRequest>>(nameof(PrivateScoreController.CreateEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid, UpsertPrivateScoreEntryRequest>>(nameof(PrivateScoreController.UpdateEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid>>(nameof(PrivateScoreController.DeleteEntry), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.CreateCriterion), "RequireUser");
+        yield return Row<Action<PrivateScoreController, Guid, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.UpdateCriterion), "RequireUser");
+
+        // Me: about the caller alone, so signed-in is the whole gate; each kurin's visibility is settled inside.
+        yield return Row<Action<MeController, int>>(nameof(MeController.GetEvents), "RequireUser");
+        yield return Row<Action<MeController, Guid, SetMyEventResponseRequest>>(nameof(MeController.SetEventResponse), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetTasks), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetGrowth), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
@@ -266,9 +322,8 @@ public class AuthorizationBaselineMatrixTests
     }
 
     /// <summary>
-    /// A row for an action whose name is unique on its controller — most of them. The delegate form
-    /// below stays for the handful that are overloaded; writing one out for all fifty-seven endpoints
-    /// is how they stayed unlisted in the first place.
+    /// A row for an action whose name is unique on its controller. The delegate form below stays for the
+    /// handful that are overloaded.
     /// </summary>
     private static object[] Endpoint<TController>(string methodName, string policy)
     {

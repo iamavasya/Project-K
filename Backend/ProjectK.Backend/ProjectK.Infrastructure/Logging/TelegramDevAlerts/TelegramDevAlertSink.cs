@@ -11,13 +11,18 @@ namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
 public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
 {
+    // A message that takes longer than this to redact is dropped rather than sent half-redacted.
+    private static readonly TimeSpan RedactTimeout = TimeSpan.FromMilliseconds(250);
+
     private static readonly Regex EmailRegex = new(
         @"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RedactTimeout);
 
     private static readonly Regex TokenRegex = new(
         @"(?i)(bearer\s+)[a-z0-9._~+/=-]+|(?i)(token|password|secret|apikey|api_key)=([^\s;&]+)",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled,
+        RedactTimeout);
 
     private readonly HttpClient _httpClient;
     private readonly TelegramDevAlertOptions _options;

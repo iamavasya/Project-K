@@ -6,7 +6,7 @@ ARG NG_CONFIG=production
 WORKDIR /src/Frontend/projectk-frontend
 
 COPY Frontend/projectk-frontend/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY Frontend/projectk-frontend/ ./
 RUN npm run build -- --configuration "${NG_CONFIG}"

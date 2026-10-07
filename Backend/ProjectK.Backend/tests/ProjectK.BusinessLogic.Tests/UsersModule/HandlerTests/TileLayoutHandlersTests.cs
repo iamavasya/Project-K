@@ -40,7 +40,7 @@ public class TileLayoutHandlersTests
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         var result = await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile", "skills", "probes" }, 1),
+            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile", "skills", "probes" }, Array.Empty<string>(), 1),
             CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
@@ -67,7 +67,7 @@ public class TileLayoutHandlersTests
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         var result = await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "skills", "profile" }, 1),
+            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "skills", "profile" }, Array.Empty<string>(), 1),
             CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
@@ -91,7 +91,7 @@ public class TileLayoutHandlersTests
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile" }, 0),
+            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile" }, Array.Empty<string>(), 0),
             CancellationToken.None);
 
         Assert.Equal(1, created!.SchemaVersion);

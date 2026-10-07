@@ -65,6 +65,11 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         Guid kurinKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Every membership the kurin has had, current and closed.</summary>
+    Task<IReadOnlyCollection<KurinMembershipRecord>> GetRecordsInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Writes the account key onto every current membership of a person. The copy exists so that
     /// authorization never has to read the member record; keeping it correct is this method's job,
@@ -82,8 +87,8 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens a membership without touching any other. Joining a second kurin is the point of the
-    /// release, so unlike <see cref="PlaceAsync"/> this leaves everywhere else alone.
+    /// Opens a membership without touching any other — unlike <see cref="PlaceAsync"/>, which closes
+    /// the rest.
     /// </summary>
     void Open(Membership membership);
 
@@ -92,9 +97,7 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
     /// <para>
     /// One kurin at a time, deliberately: a member record still names a single kurin, so a
     /// placement that names a different one is a move, and every other current membership is
-    /// closed. When joining and leaving become use cases of their own, this collapses into
-    /// "open a membership" and the closing goes with it.
-    /// </para>
+    /// closed.
     /// The write is left on the unit of work, so it commits with whatever caused it.
     /// </summary>
     Task PlaceAsync(

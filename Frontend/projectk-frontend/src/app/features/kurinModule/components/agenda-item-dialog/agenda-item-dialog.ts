@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -10,6 +11,7 @@ import { SelectModule } from '@openng/optimus-ui/select';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { MessageService } from '@openng/optimus-ui/api';
+import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
 import {
@@ -40,6 +42,8 @@ import {
 export class AgendaItemDialogComponent {
   private readonly agendaService = inject(AgendaService);
   private readonly messages = inject(MessageService);
+  private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   readonly visible = model<boolean>(false);
@@ -98,6 +102,21 @@ export class AgendaItemDialogComponent {
 
   protected readonly canSave = computed(() => this.targets().length > 0);
 
+  /** The sheet of this occurrence, for those who score: a saved event with a day, never a task. */
+  protected readonly canOpenSheet = computed(() => {
+    const current = this.item();
+    return !!current && current.kind === 'Event' && !!current.startUtc && this.permissions.canScore();
+  });
+
+  protected openSheet(): void {
+    const current = this.item();
+    if (!current?.startUtc) {
+      return;
+    }
+    this.visible.set(false);
+    this.router.navigate(['/kurin', this.kurinKey(), 'score', 'events', current.agendaItemKey, current.startUtc]);
+  }
+
   /** View-only mode: a plain member, or anyone opening an item they may not edit. Shows details + RSVP only. */
   protected readonly viewOnly = computed(() => {
     if (!this.canManage()) {
@@ -108,7 +127,6 @@ export class AgendaItemDialogComponent {
   });
 
   constructor() {
-    // Populate the form whenever the dialog opens for a specific item (or a fresh create).
     effect(() => {
       if (!this.visible()) {
         return;
@@ -237,7 +255,6 @@ export class AgendaItemDialogComponent {
     });
   }
 
-  /** Delete a mistakenly created event/task, after a confirm. */
   remove(): void {
     const current = this.item();
     if (!current) {
@@ -288,7 +305,6 @@ export class AgendaItemDialogComponent {
     this.rsvp.set(null);
   }
 
-  /** Flip one weekday bit in the weekly recurrence mask. */
   toggleWeekday(bit: number): void {
     this.recurrenceByWeekday ^= bit;
   }

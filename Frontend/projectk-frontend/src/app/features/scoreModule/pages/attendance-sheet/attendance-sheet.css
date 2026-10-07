@@ -1,0 +1,231 @@
+.sheet-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sheet-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--lil-faint);
+}
+
+.sheet-rate-link {
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--p-primary-color);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet-rate-link:hover {
+  text-decoration: underline;
+}
+
+.sheet-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+.sheet-search {
+  position: relative;
+  flex: 1 1 14rem;
+  max-width: 24rem;
+}
+
+.sheet-search .pi {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  color: var(--lil-faint);
+  pointer-events: none;
+}
+
+.sheet-search input {
+  width: 100%;
+  padding-left: 2.25rem;
+}
+
+.sheet-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet-list,
+.sheet-groups {
+  display: grid;
+  gap: 0.375rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheet-row,
+.sheet-group {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg);
+}
+
+.sheet-row:hover,
+.sheet-group:hover {
+  background: var(--p-surface-ground);
+}
+
+.sheet-row--marked {
+  border-color: var(--lil-dues-paid-line);
+  background: var(--lil-dues-paid-bg);
+}
+
+.sheet-row--marked:hover {
+  background: var(--lil-dues-paid-bg);
+}
+
+.sheet-row--readonly {
+  color: var(--p-text-muted-color);
+}
+
+/* The mark is the biggest thing in the row on purpose: a thumb finds it without looking. */
+.sheet-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 50%;
+  background: var(--p-content-background);
+  color: var(--p-primary-contrast-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sheet-mark:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+}
+
+.sheet-mark--on {
+  background: var(--p-primary-color);
+  border-color: var(--p-primary-color);
+}
+
+.sheet-mark:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sheet-mark:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.sheet-row__body {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.sheet-row__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  min-width: 0;
+}
+
+.sheet-row__name {
+  font-size: var(--lil-text-body);
+  font-weight: 650;
+}
+
+.score-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.score-link:hover {
+  color: var(--p-primary-color);
+  text-decoration: underline;
+}
+
+.sheet-row__group {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.sheet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.sheet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.125rem 0.5rem 0.125rem 0.125rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 999px;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  font: inherit;
+  font-size: var(--lil-text-caption);
+  cursor: pointer;
+}
+
+.sheet-chip:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+}
+
+.sheet-chip:disabled {
+  cursor: default;
+}
+
+.sheet-group__name {
+  grid-column: 1;
+  font-size: var(--lil-text-body);
+  font-weight: 650;
+}
+
+.sheet-group .sheet-chips {
+  grid-column: 2;
+}
+
+@media (max-width: 640px) {
+  .sheet-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .sheet-row > p-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .sheet-group {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sheet-group .sheet-chips {
+    grid-column: 1 / -1;
+  }
+}

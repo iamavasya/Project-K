@@ -1,0 +1,98 @@
+<section class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Курінь</p>
+      <h1>Точкування</h1>
+      @if (data(); as d) {
+        <p>
+          {{ d.period.label }}
+          · гуртків: {{ d.groups.length }}
+          · {{ algorithmLabels[d.algorithm].toLowerCase() }}
+        </p>
+      }
+    </div>
+    @if (data(); as d) {
+      <div class="lil-page-head__actions">
+        <app-score-period-select [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
+        @if (canSeePrivate) {
+          <p-button label="Точкування КВ" icon="pi pi-lock" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score', 'private']" [queryParams]="periodParams()" />
+        }
+        @if (d.viewer.canManage) {
+          <p-button label="Налаштування" icon="pi pi-sliders-h" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score', 'settings']" />
+        }
+      </div>
+    }
+  </header>
+
+  @if (loading() && !data()) {
+    <section class="kurin-tile">
+      @for (item of [1, 2, 3]; track item) {
+        <p-skeleton width="100%" height="4.25rem" borderRadius="12px" styleClass="mb-2" />
+      }
+    </section>
+  } @else if (loadFailed()) {
+    <section class="kurin-tile">
+      <app-empty-state art="trail" title="Щось пішло не так" body="Точкування не вдалося прочитати. Спробуй за хвилину.">
+        <p-button label="Оновити" icon="pi pi-refresh" severity="secondary" (onClick)="load()" />
+      </app-empty-state>
+    </section>
+  } @else if (data(); as d) {
+    <section class="kurin-tile">
+      <div class="lil-tile-head">
+        <div>
+          <h2>Гуртки</h2>
+          <span class="lil-count">{{ d.groups.length }}</span>
+          <p>{{ algorithmHints[d.algorithm] }}</p>
+        </div>
+      </div>
+
+      @if (!d.groups.length) {
+        <app-empty-state art="list" title="Гуртків поки немає" body="Змагатися нема кому: спершу гуртки, потім бали." />
+      } @else {
+        <ol class="score-table">
+          @for (group of d.groups; track group.groupKey) {
+            <li class="score-row" [class.score-row--leader]="group.place === 1 && group.score > 0">
+              <span class="lil-rank" [class.lil-rank--first]="group.place === 1 && group.score > 0" [class.lil-rank--podium]="group.place > 1 && group.place <= 3 && group.score > 0">
+                {{ group.place }}
+              </span>
+
+              <div class="score-row__body">
+                <div class="score-row__line">
+                  @if (group.canOpen) {
+                    <a class="score-row__name score-link" [routerLink]="['/group', group.groupKey, 'score']" [queryParams]="periodParams()">{{ group.groupName }}</a>
+                  } @else {
+                    <span class="score-row__name">{{ group.groupName }}</span>
+                  }
+                  <span class="score-row__meta">
+                    юнаків {{ score(group.youthCount) }}
+                    · {{ otherLabel(group) }}
+                    @if (group.groupPoints !== 0) {
+                      · гуртку <span class="lil-points" [class.lil-points--plus]="group.groupPoints > 0" [class.lil-points--minus]="group.groupPoints < 0">{{ points(group.groupPoints) }}</span>
+                    }
+                  </span>
+                </div>
+                <div class="lil-bar" aria-hidden="true">
+                  <div class="lil-bar__fill" [class.lil-bar__fill--muted]="group.place !== 1" [style.width]="barWidth(group)"></div>
+                </div>
+              </div>
+
+              <span class="score-row__score" [class.score-row__score--minus]="group.score < 0">{{ score(group.score) }}</span>
+            </li>
+          }
+        </ol>
+
+        @if (!scored()) {
+          <p class="score-footnote">
+            <i class="pi pi-info-circle"></i>
+            Балів за цей період ще немає. Присутність відмічають на події в календарі — там же дають додаткові бали.
+          </p>
+        } @else if (d.viewer.canScore) {
+          <p class="score-footnote">
+            <i class="pi pi-calendar"></i>
+            Відмічати присутність і давати бали — на події в календарі, кнопка «Точкування».
+          </p>
+        }
+      }
+    </section>
+  }
+</section>

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { TileLayoutService } from './tile-layout.service';
 import { environment } from '../../../environments/environment';
+import { TileLayout } from './tile-board.models';
 
 describe('TileLayoutService', () => {
   let service: TileLayoutService;
@@ -11,7 +12,7 @@ describe('TileLayoutService', () => {
   const apiUrl = `${environment.apiUrl}/user/me/layouts`;
 
   const sampleLayouts = [
-    { boardKey: 'member-card', tileKeys: ['profile', 'skills', 'probes'], schemaVersion: 1, updatedAtUtc: '2026-07-23T00:00:00Z' }
+    { boardKey: 'member-card', tileKeys: ['profile', 'skills', 'probes'], hiddenTileKeys: ['probes'], schemaVersion: 1, updatedAtUtc: '2026-07-23T00:00:00Z' }
   ];
 
   beforeEach(() => {
@@ -28,69 +29,79 @@ describe('TileLayoutService', () => {
     localStorage.clear();
   });
 
-  it('getOrder returns the matching board keys', () => {
-    const received: (string[] | null)[] = [];
-    service.getOrder('member-card').subscribe(result => received.push(result));
+  it('getLayout returns the matching board, order and hidden apart', () => {
+    const received: (TileLayout | null)[] = [];
+    service.getLayout('member-card').subscribe(result => received.push(result));
 
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
-    expect(received[0]).toEqual(['profile', 'skills', 'probes']);
+    expect(received[0]).toEqual({ tileKeys: ['profile', 'skills', 'probes'], hiddenTileKeys: ['probes'] });
   });
 
-  it('getOrder returns null when board is not present', () => {
-    const received: (string[] | null)[] = [];
-    service.getOrder('kurin-panel').subscribe(result => received.push(result));
+  it('getLayout returns null when board is not present', () => {
+    const received: (TileLayout | null)[] = [];
+    service.getLayout('kurin-panel').subscribe(result => received.push(result));
 
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
     expect(received[0]).toBeNull();
   });
 
-  it('getOrder reuses the cached response within TTL (single HTTP call)', () => {
-    service.getOrder('member-card').subscribe();
+  it('getLayout reuses the cached response within TTL (single HTTP call)', () => {
+    service.getLayout('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
-    service.getOrder('member-card').subscribe();
+    let second: unknown = null;
+    service.getLayout('member-card').subscribe(layout => (second = layout));
     httpMock.expectNone(apiUrl);
+    expect(second).toEqual({ tileKeys: ['profile', 'skills', 'probes'], hiddenTileKeys: ['probes'] });
   });
 
-  it('getOrder mirrors resolved order into localStorage', () => {
-    service.getOrder('member-card').subscribe();
+  it('getLayout mirrors the resolved layout into localStorage', () => {
+    service.getLayout('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
-    expect(service.readCachedOrder('member-card')).toEqual(['profile', 'skills', 'probes']);
+    expect(service.readCachedLayout('member-card')).toEqual({ tileKeys: ['profile', 'skills', 'probes'], hiddenTileKeys: ['probes'] });
   });
 
-  it('saveOrder PUTs the order and invalidates the cache', () => {
-    service.getOrder('member-card').subscribe();
+  // Older builds stored the order alone; it still reads, with nothing hidden.
+  it('readCachedLayout understands a stored plain order', () => {
+    localStorage.setItem('tile-layout:member-card', JSON.stringify(['skills', 'profile']));
+
+    expect(service.readCachedLayout('member-card')).toEqual({ tileKeys: ['skills', 'profile'], hiddenTileKeys: [] });
+  });
+
+  it('saveLayout PUTs order and hidden and invalidates the cache', () => {
+    service.getLayout('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
 
-    service.saveOrder('member-card', ['probes', 'profile', 'skills']).subscribe();
+    service.saveLayout('member-card', { tileKeys: ['probes', 'profile', 'skills'], hiddenTileKeys: ['skills'] }).subscribe();
     const put = httpMock.expectOne(`${apiUrl}/member-card`);
     expect(put.request.method).toBe('PUT');
     expect(put.request.body.tileKeys).toEqual(['probes', 'profile', 'skills']);
-    put.flush({ boardKey: 'member-card', tileKeys: ['probes', 'profile', 'skills'], schemaVersion: 1, updatedAtUtc: '' });
+    expect(put.request.body.hiddenTileKeys).toEqual(['skills']);
+    put.flush({ boardKey: 'member-card', tileKeys: ['probes', 'profile', 'skills'], hiddenTileKeys: ['skills'], schemaVersion: 1, updatedAtUtc: '' });
 
-    service.getOrder('member-card').subscribe();
+    service.getLayout('member-card').subscribe();
     httpMock.expectOne(apiUrl).flush(sampleLayouts);
   });
 
-  it('saveOrder writes the order to localStorage immediately (optimistic)', () => {
-    service.saveOrder('member-card', ['skills', 'profile']).subscribe();
-    expect(service.readCachedOrder('member-card')).toEqual(['skills', 'profile']);
+  it('saveLayout writes to localStorage immediately (optimistic)', () => {
+    service.saveLayout('member-card', { tileKeys: ['skills', 'profile'], hiddenTileKeys: [] }).subscribe();
+    expect(service.readCachedLayout('member-card')?.tileKeys).toEqual(['skills', 'profile']);
     httpMock.expectOne(`${apiUrl}/member-card`).flush({});
   });
 
-  it('resetOrder DELETEs, clears storage and invalidates the cache', () => {
-    service.saveOrder('member-card', ['skills', 'profile']).subscribe();
+  it('resetLayout DELETEs, clears storage and invalidates the cache', () => {
+    service.saveLayout('member-card', { tileKeys: ['skills', 'profile'], hiddenTileKeys: [] }).subscribe();
     httpMock.expectOne(`${apiUrl}/member-card`).flush({});
-    expect(service.readCachedOrder('member-card')).not.toBeNull();
+    expect(service.readCachedLayout('member-card')).not.toBeNull();
 
-    service.resetOrder('member-card').subscribe();
+    service.resetLayout('member-card').subscribe();
     const del = httpMock.expectOne(`${apiUrl}/member-card`);
     expect(del.request.method).toBe('DELETE');
     del.flush(null);
 
-    expect(service.readCachedOrder('member-card')).toBeNull();
+    expect(service.readCachedLayout('member-card')).toBeNull();
   });
 });

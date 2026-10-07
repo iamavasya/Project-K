@@ -3,30 +3,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.DuesModule;
+using ProjectK.Infrastructure.Repositories.ScoreModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork
 {
     private readonly AppDbContext _context;
 
-    // Repositories are created on first access, not up front: a typical request
-    // touches one or two of them, so eagerly newing all 17 was 15-16 wasted
-    // allocations per scoped UnitOfWork. Backing fields (not Lazy<T>) keep it a
-    // single allocation per repo actually used — the UoW is scoped per request
-    // and used single-threaded, so no synchronisation is needed.
+    // Repositories are created on first access, since a request touches one or two of them. Plain
+    // backing fields, not Lazy<T>: the UoW is scoped per request and used single-threaded, so no
+    // synchronisation is needed.
     private IKurinRepository _kurins;
     private IGroupRepository _groups;
     private IMembershipRepository _memberships;
@@ -48,6 +53,22 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     private ISystemSettingRepository _systemSettings;
     private IAppUserRepository _users;
     private IUserTileLayoutRepository _userTileLayouts;
+    private IKurinDuesRateRepository _kurinDuesRates;
+    private IGroupDuesRateRepository _groupDuesRates;
+    private IDuesConcessionRepository _duesConcessions;
+    private IDuesChargeRepository _duesCharges;
+    private IDuesEntryRepository _duesEntries;
+    private IKurinScoreSettingsRepository _kurinScoreSettings;
+    private IScoreRuleRepository _scoreRules;
+    private IScoreAttendanceRateRepository _scoreAttendanceRates;
+    private IScoreItemRepository _scoreItems;
+    private IScoreStageRepository _scoreStages;
+    private IScoreAttendanceRepository _scoreAttendances;
+    private IScoreEntryRepository _scoreEntries;
+    private IScoreGroupMoveRepository _scoreGroupMoves;
+    private IScoreTrailEventRepository _scoreTrailEvents;
+    private IPrivateScoreCriterionRepository _privateScoreCriteria;
+    private IPrivateScoreEntryRepository _privateScoreEntries;
 
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
@@ -70,15 +91,44 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork
     public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
     public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
     public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
+    public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);
+    public IGroupDuesRateRepository GroupDuesRates => _groupDuesRates ??= new GroupDuesRateRepository(_context);
+    public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);
+    public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
+    public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
+    public IKurinScoreSettingsRepository KurinScoreSettings => _kurinScoreSettings ??= new KurinScoreSettingsRepository(_context);
+    public IScoreRuleRepository ScoreRules => _scoreRules ??= new ScoreRuleRepository(_context);
+    public IScoreAttendanceRateRepository ScoreAttendanceRates => _scoreAttendanceRates ??= new ScoreAttendanceRateRepository(_context);
+    public IScoreItemRepository ScoreItems => _scoreItems ??= new ScoreItemRepository(_context);
+    public IScoreStageRepository ScoreStages => _scoreStages ??= new ScoreStageRepository(_context);
+    public IScoreAttendanceRepository ScoreAttendances => _scoreAttendances ??= new ScoreAttendanceRepository(_context);
+    public IScoreEntryRepository ScoreEntries => _scoreEntries ??= new ScoreEntryRepository(_context);
+    public IScoreGroupMoveRepository ScoreGroupMoves => _scoreGroupMoves ??= new ScoreGroupMoveRepository(_context);
+    public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);
+    public IPrivateScoreCriterionRepository PrivateScoreCriteria => _privateScoreCriteria ??= new PrivateScoreCriterionRepository(_context);
+    public IPrivateScoreEntryRepository PrivateScoreEntries => _privateScoreEntries ??= new PrivateScoreEntryRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {
         _context = context;
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken token = default)
+    public async Task<int> SaveChangesAsync(CancellationToken token = default)
     {
-        return _context.SaveChangesAsync(token);
+        try
+        {
+            return await _context.SaveChangesAsync(token);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            // The whole save rolled back; rows it tried to add must not ride along on the next save.
+            foreach (var added in _context.ChangeTracker.Entries().Where(e => e.State == EntityState.Added).ToList())
+            {
+                added.State = EntityState.Detached;
+            }
+
+            throw new DuplicateRowException(exception);
+        }
     }
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default)

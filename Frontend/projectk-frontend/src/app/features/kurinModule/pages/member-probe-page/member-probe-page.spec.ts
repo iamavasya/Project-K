@@ -7,6 +7,7 @@ import { MemberService } from '../../services/member-service/member.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { MemberProbePageComponent } from './member-probe-page';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 
@@ -46,7 +47,8 @@ describe('MemberProbePageComponent', () => {
   }
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
+    memberServiceSpy.getMemberships.and.returnValue(of([]));
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getGroupedById']);
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', [
       'getProbeProgress',
@@ -140,6 +142,34 @@ describe('MemberProbePageComponent', () => {
     fixture.detectChanges();
 
     expect(component.canManageProbePoints).toBeTrue();
+  });
+
+  it('у старшого пластуна проба — архів: видно, але не підписати', () => {
+    memberServiceSpy.getByKey.and.returnValue(of({
+      memberKey,
+      groupKey: 'group-1',
+      kurinKey: 'kurin-1',
+      firstName: 'John',
+      middleName: 'M',
+      lastName: 'Doe',
+      email: 'john@example.com',
+      phoneNumber: '0990000000',
+      dateOfBirth: null,
+      profilePhotoUrl: null,
+      latestPlastLevel: PlastLevel.Starshoplastun,
+      plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }],
+      leadershipHistories: []
+    }));
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.isArchive).toBeTrue();
+    expect(component.canManageProbePoints).toBeFalse();
+    expect(component.probeSections[0].points.length).toBe(2);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Архів юнацтва');
+
+    component.onSignPoint(component.probeSections[0].points[0]);
+    expect(memberProgressServiceSpy.signProbePoint).not.toHaveBeenCalled();
   });
 
   it('onSignPoint should sign point for reviewer without confirm dialog', () => {

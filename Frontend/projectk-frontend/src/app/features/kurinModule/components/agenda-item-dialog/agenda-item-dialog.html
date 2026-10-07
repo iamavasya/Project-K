@@ -174,6 +174,9 @@
   </div>
 
   <ng-template pTemplate="footer">
+    @if (canOpenSheet()) {
+      <p-button label="Точкування" icon="pi pi-trophy" severity="secondary" styleClass="agenda-footer__sheet" (click)="openSheet()" />
+    }
     @if (viewOnly()) {
       <p-button label="Закрити" severity="secondary" variant="text" (click)="close()" />
     } @else {

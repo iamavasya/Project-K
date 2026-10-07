@@ -33,6 +33,14 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
     public Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => Context.BadgeProgresses.CountAsync(x => x.MemberKey == memberKey, cancellationToken);
 
+    public async Task<IReadOnlyList<BadgeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        return await Context.BadgeProgresses
+            .Where(x => x.KurinKey == kurinKey)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<BadgeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return await Context.BadgeProgresses

@@ -1,0 +1,32 @@
+<section class="kurin-tile dues-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Вкладка</h2>
+      <p>
+        @if (owing(); as count) { є борг @if (count > 1) { у {{ count }} куренях } } @else { усе сплачено }
+      </p>
+    </div>
+  </div>
+
+  @if (loading() && !dues().length) {
+    <p-skeleton width="100%" height="4.5rem" borderRadius="12px" />
+  } @else if (failed()) {
+    <p class="dues-tile__note">Вкладку не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else {
+    <ul class="dues-tile__list">
+      @for (row of rows(); track row.dues.kurin.kurinKey) {
+        <li class="dues-tile__row" [class.dues-tile__row--ok]="row.standing === 'ok'" [class.dues-tile__row--debt]="row.standing === 'debt'">
+          <span class="dues-tile__amount">{{ row.amount }}</span>
+          <span class="dues-tile__sub">{{ row.note }}</span>
+          <span class="dues-tile__meta">
+            <span>{{ row.quarter }}</span>
+            @if (rate(row); as rate) { <span>· {{ rate }}</span> }
+            @if (row.dues.groupName) { <span>· {{ row.dues.groupName }}</span> }
+            @if (namesKurin()) { <span>· {{ kurinLabel(row) }}</span> }
+            @if (row.dues.isConcession) { <p-tag value="пільгова" severity="info" styleClass="rounded-full !text-xs" /> }
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
@@ -17,7 +19,6 @@ namespace ProjectK.Infrastructure.DbContexts;
 
 public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 {
-    // Kurin module DbSet
     public DbSet<Kurin> Kurins { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
@@ -41,7 +42,25 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
 
-    // Auth module DbSet
+    public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
+    public DbSet<GroupDuesRate> GroupDuesRates { get; set; }
+    public DbSet<DuesConcession> DuesConcessions { get; set; }
+    public DbSet<DuesCharge> DuesCharges { get; set; }
+    public DbSet<DuesEntry> DuesEntries { get; set; }
+    public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
+
+    public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
+    public DbSet<ScoreRule> ScoreRules { get; set; }
+    public DbSet<ScoreAttendanceRate> ScoreAttendanceRates { get; set; }
+    public DbSet<ScoreItem> ScoreItems { get; set; }
+    public DbSet<ScoreStage> ScoreStages { get; set; }
+    public DbSet<ScoreAttendance> ScoreAttendances { get; set; }
+    public DbSet<ScoreEntry> ScoreEntries { get; set; }
+    public DbSet<ScoreGroupMove> ScoreGroupMoves { get; set; }
+    public DbSet<ScoreTrailEvent> ScoreTrailEvents { get; set; }
+    public DbSet<PrivateScoreCriterion> PrivateScoreCriteria { get; set; }
+    public DbSet<PrivateScoreEntry> PrivateScoreEntries { get; set; }
+
     public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
@@ -75,7 +94,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     {
         base.OnModelCreating(builder);
 
-        // Kurin module entity configuration
         builder.Entity<Kurin>(entity =>
         {
             entity.Property(e => e.Branch).HasConversion<int>();
@@ -156,6 +174,169 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(m => m.MemberWarnings)
                   .HasForeignKey(e => e.MemberKey)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Dues module. Money is decimal(18,2) everywhere; quarters are DuesQuarter.Index. Kurins, гуртки
+        // and memberships are held by key with no foreign key: money outlives a deleted гурток.
+        builder.Entity<KurinDuesRate>(entity =>
+        {
+            entity.HasKey(e => e.KurinDuesRateKey);
+            entity.Property(e => e.StanytsiaFull).HasPrecision(18, 2);
+            entity.Property(e => e.StanytsiaReduced).HasPrecision(18, 2);
+            entity.Property(e => e.KurinShare).HasPrecision(18, 2);
+            entity.HasIndex(e => new { e.KurinKey, e.FromQuarter }).IsUnique();
+        });
+
+        builder.Entity<GroupDuesRate>(entity =>
+        {
+            entity.HasKey(e => e.GroupDuesRateKey);
+            entity.Property(e => e.GroupShare).HasPrecision(18, 2);
+            entity.HasIndex(e => new { e.GroupKey, e.FromQuarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesConcession>(entity =>
+        {
+            entity.HasKey(e => e.DuesConcessionKey);
+            entity.HasIndex(e => new { e.MembershipKey, e.FromQuarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesCharge>(entity =>
+        {
+            entity.HasKey(e => e.DuesChargeKey);
+            entity.HasIndex(e => new { e.MembershipKey, e.Quarter }).IsUnique();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesEntry>(entity =>
+        {
+            entity.HasKey(e => e.DuesEntryKey);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Method).HasConversion<int>();
+            entity.Property(e => e.CounterMethod).HasConversion<int?>();
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Ignore(e => e.IsVerified);
+            entity.Ignore(e => e.IsDeleted);
+            entity.HasIndex(e => new { e.KurinKey, e.GroupKey });
+            entity.HasIndex(e => e.MembershipKey);
+        });
+
+        builder.Entity<DuesEntryEvent>(entity =>
+        {
+            entity.HasKey(e => e.DuesEntryEventKey);
+            entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+            entity.HasOne(e => e.DuesEntry)
+                .WithMany(e => e.Events)
+                .HasForeignKey(e => e.DuesEntryKey)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Score module. Kurins, гуртки, memberships and events are held by key with no foreign key, as
+        // in dues. The two "only once" rules of точкування are unique indexes over the rows still
+        // standing, so they hold whoever writes and however fast.
+        builder.Entity<KurinScoreSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinScoreSettingsKey);
+            entity.Property(e => e.Algorithm).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
+        });
+
+        builder.Entity<ScoreRule>(entity =>
+        {
+            entity.HasKey(e => e.ScoreRuleKey);
+            entity.Property(e => e.Source).HasConversion<int>();
+            entity.HasIndex(e => new { e.KurinKey, e.Source, e.Variant, e.FromDate }).IsUnique();
+        });
+
+        builder.Entity<ScoreAttendanceRate>(entity =>
+        {
+            entity.HasKey(e => e.ScoreAttendanceRateKey);
+            entity.HasIndex(e => e.KurinKey);
+            entity.HasIndex(e => e.AgendaCategoryKey).IsUnique().HasFilter("[AgendaCategoryKey] IS NOT NULL");
+            entity.HasIndex(e => e.AgendaItemKey).IsUnique().HasFilter("[AgendaItemKey] IS NOT NULL");
+            entity.ToTable(t => t.HasCheckConstraint(
+                "CK_ScoreAttendanceRates_OneTarget",
+                "([AgendaCategoryKey] IS NULL AND [AgendaItemKey] IS NOT NULL) OR ([AgendaCategoryKey] IS NOT NULL AND [AgendaItemKey] IS NULL)"));
+        });
+
+        builder.Entity<ScoreItem>(entity =>
+        {
+            entity.HasKey(e => e.ScoreItemKey);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<ScoreStage>(entity =>
+        {
+            entity.HasKey(e => e.ScoreStageKey);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<ScoreAttendance>(entity =>
+        {
+            entity.HasKey(e => e.ScoreAttendanceKey);
+            entity.Ignore(e => e.IsRemoved);
+            entity.HasIndex(e => new { e.MembershipKey, e.AgendaItemKey, e.OccurrenceStartUtc })
+                .IsUnique()
+                .HasFilter("[RemovedAtUtc] IS NULL")
+                .HasDatabaseName("IX_ScoreAttendances_OnePerOccurrence");
+            entity.HasIndex(e => new { e.KurinKey, e.AgendaItemKey });
+        });
+
+        builder.Entity<ScoreEntry>(entity =>
+        {
+            entity.HasKey(e => e.ScoreEntryKey);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Ignore(e => e.IsDeleted);
+            entity.HasIndex(e => new { e.MembershipKey, e.AgendaItemKey, e.OccurrenceStartUtc, e.ScoreItemKey })
+                .IsUnique()
+                .HasFilter("[MembershipKey] IS NOT NULL AND [AgendaItemKey] IS NOT NULL AND [ScoreItemKey] IS NOT NULL AND [DeletedAtUtc] IS NULL")
+                .HasDatabaseName("IX_ScoreEntries_ItemOncePerPerson");
+            entity.HasIndex(e => new { e.GroupKey, e.AgendaItemKey, e.OccurrenceStartUtc, e.ScoreItemKey })
+                .IsUnique()
+                .HasFilter("[GroupKey] IS NOT NULL AND [AgendaItemKey] IS NOT NULL AND [ScoreItemKey] IS NOT NULL AND [DeletedAtUtc] IS NULL")
+                .HasDatabaseName("IX_ScoreEntries_ItemOncePerGroup");
+            entity.HasIndex(e => e.KurinKey);
+            entity.ToTable(t => t.HasCheckConstraint(
+                "CK_ScoreEntries_OneTarget",
+                "([MembershipKey] IS NULL AND [GroupKey] IS NOT NULL) OR ([MembershipKey] IS NOT NULL AND [GroupKey] IS NULL)"));
+        });
+
+        builder.Entity<ScoreGroupMove>(entity =>
+        {
+            entity.HasKey(e => e.ScoreGroupMoveKey);
+            entity.HasIndex(e => e.KurinKey);
+            entity.HasIndex(e => e.MembershipKey);
+        });
+
+        // The КВ's private score: its own two tables, so nothing of it can leak into a public read by
+        // a missed filter — the public ledger simply never loads them.
+        builder.Entity<PrivateScoreCriterion>(entity =>
+        {
+            entity.HasKey(e => e.PrivateScoreCriterionKey);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<PrivateScoreEntry>(entity =>
+        {
+            entity.HasKey(e => e.PrivateScoreEntryKey);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Ignore(e => e.IsDeleted);
+            entity.HasIndex(e => e.KurinKey);
+            entity.HasIndex(e => e.MembershipKey);
+        });
+
+        builder.Entity<ScoreTrailEvent>(entity =>
+        {
+            entity.HasKey(e => e.ScoreTrailEventKey);
+            entity.Property(e => e.Subject).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => e.SubjectKey);
+            entity.HasIndex(e => e.KurinKey);
         });
 
         builder.Entity<MemberAward>(entity =>
@@ -481,6 +662,10 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.TileOrderJson)
                 .HasMaxLength(2000)
                 .IsRequired();
+            entity.Property(e => e.HiddenTilesJson)
+                .HasMaxLength(2000)
+                .IsRequired()
+                .HasDefaultValue("[]");
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserKey)

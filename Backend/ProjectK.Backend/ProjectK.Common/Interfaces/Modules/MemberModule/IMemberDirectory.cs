@@ -1,4 +1,5 @@
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -14,7 +15,6 @@ namespace ProjectK.Common.Interfaces.Modules.MemberModule;
 /// </summary>
 public interface IMemberDirectory
 {
-    /// <summary>Whether such a member exists at all.</summary>
     Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -26,7 +26,6 @@ public interface IMemberDirectory
     /// <summary>Whether this address already belongs to someone. Guards registration.</summary>
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    /// <summary>The person, or null when there is no such member.</summary>
     Task<MemberSummary?> FindAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>The person an account belongs to, or null when the account has no member yet.</summary>
@@ -38,9 +37,21 @@ public interface IMemberDirectory
     /// <summary>The kurin a member belongs to. Null when the member does not exist.</summary>
     Task<Guid?> FindKurinKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>Every ступінь recorded for the person, in no particular order; empty for nobody.</summary>
+    Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
     /// <summary>Everyone in a kurin, in one read.</summary>
     Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
         Guid kurinKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The перестороги a kurin issued that still stand at <paramref name="nowUtc"/> — not revoked,
+    /// not expired. What точкування takes points for.
+    /// </summary>
+    Task<IReadOnlyCollection<WarningRecord>> GetActiveWarningsInKurinAsync(
+        Guid kurinKey,
+        DateTime nowUtc,
         CancellationToken cancellationToken = default);
 
     /// <summary>

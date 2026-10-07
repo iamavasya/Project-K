@@ -9,10 +9,13 @@ public interface IBadgeProgressRepository : IBaseEntityRepository<BadgeProgress>
     Task<IEnumerable<BadgeProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes these people's badge progress. The member row no longer owns these through a foreign key,
-    /// so deleting a member — or a whole kurin of them — has to ask for this explicitly.
+    /// Removes these people's badge progress. No foreign key ties it to the member row, so deleting a
+    /// member — or a whole kurin of them — has to ask for this explicitly.
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>Every row earned in a kurin, untracked and without its audit trail.</summary>
+    Task<IReadOnlyList<BadgeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>How many rows one person has here, without reading them.</summary>
     Task<int> CountByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);

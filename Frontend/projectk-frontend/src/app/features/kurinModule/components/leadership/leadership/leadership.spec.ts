@@ -17,7 +17,6 @@ describe('LeadershipComponent', () => {
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let routerSpy: jasmine.SpyObj<Router>;
   
-  // Use BehaviorSubject to simulate route param changes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paramMapSubject = new BehaviorSubject<any>({ get: () => null });
 
@@ -73,7 +72,6 @@ describe('LeadershipComponent', () => {
     fixture = TestBed.createComponent(LeadershipComponent);
     component = fixture.componentInstance;
     
-    // Default mocks
     memberServiceSpy.getAll.and.returnValue(of([mockMember]));
     leadershipServiceSpy.getLeadershipByKey.and.returnValue(of(mockLeadership));
     leadershipServiceSpy.create.and.returnValue(of(mockLeadership));
@@ -173,8 +171,8 @@ describe('LeadershipComponent', () => {
     });
 
     it('should sort histories with active rows before archived rows', () => {
-      const h1 = { ...mockLeadership.leadershipHistories[0], endDate: '2023-02-01', startDate: '2023-01-01' }; // Archived
-      const h2 = { ...mockLeadership.leadershipHistories[0], endDate: null, startDate: '2023-03-01' }; // Active
+      const h1 = { ...mockLeadership.leadershipHistories[0], endDate: '2023-02-01', startDate: '2023-01-01' };
+      const h2 = { ...mockLeadership.leadershipHistories[0], endDate: null, startDate: '2023-03-01' };
       
       const data: LeadershipDto = {
         ...mockLeadership,
@@ -280,7 +278,7 @@ describe('LeadershipComponent', () => {
       expect(component.leadershipHistories.length).toBe(1);
     });
 
-    it('onRemoveRow should restore empty row for mandatory roles if last one removed', () => {
+    it('onRemoveRow should restore empty row for single-seat roles if last one removed', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
       expect(component.leadershipHistories.length).toBe(1);
 
@@ -302,6 +300,31 @@ describe('LeadershipComponent', () => {
       component.saveCadence();
       expect(leadershipServiceSpy.create).not.toHaveBeenCalled();
       expect(leadershipServiceSpy.update).not.toHaveBeenCalled();
+    });
+
+    it('зберігає провід, де обсаджено лише частину урядів', () => {
+      component.buildFormRowsFromDefaults('group');
+      const seat = (role: LeadershipRole) => component.leadershipHistories.controls
+        .find(c => c.getRawValue().role === role)!
+        .patchValue({ member: mockMember });
+      seat(LeadershipRole.Hurtkoviy);
+      seat(LeadershipRole.Pysar);
+
+      expect(component.leadershipForm.valid).toBeTrue();
+      component.saveCadence();
+
+      expect(leadershipServiceSpy.create).toHaveBeenCalled();
+      const payload = leadershipServiceSpy.create.calls.mostRecent().args[0];
+      expect(payload.leadershipHistories.map(h => h.role)).toEqual([LeadershipRole.Hurtkoviy, LeadershipRole.Pysar]);
+    });
+
+    it('новий провід без жодної людини не зберігає', () => {
+      component.buildFormRowsFromDefaults('kurin');
+
+      expect(component.canSave).toBeFalse();
+      component.saveCadence();
+
+      expect(leadershipServiceSpy.create).not.toHaveBeenCalled();
     });
 
     it('should call create when no leadershipKey exists', () => {

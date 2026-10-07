@@ -1,0 +1,52 @@
+<section class="kurin-tile tasks-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Мої задачі</h2>
+      @if (rows().length) { <span class="lil-count">{{ rows().length }}</span> }
+      <p>Що ще не зроблено</p>
+    </div>
+    @if (boardLink(); as link) {
+      <div class="lil-tile-head__actions">
+        <p-button label="Дошка" icon="pi pi-check-square" variant="text" severity="secondary" size="small" [routerLink]="link" />
+      </div>
+    }
+  </div>
+
+  @if (loading() && !tasks().length) {
+    @for (item of [1, 2]; track item) {
+      <p-skeleton width="100%" height="3.25rem" borderRadius="12px" styleClass="mb-2" />
+    }
+  } @else if (failed()) {
+    <p class="tasks-tile__note">Задачі не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (!rows().length) {
+    <app-empty-state art="list" title="Задач немає" body="Усе зроблено — або ще нічого не доручили." />
+  } @else {
+    <ul class="tasks-tile__list">
+      @for (row of rows(); track row.task.agendaItemKey) {
+        <li class="tasks-tile__row">
+          <span class="tasks-tile__body">
+            <span class="tasks-tile__title">
+              {{ row.task.title }}
+              @if (!row.task.addressedToMe) { <span class="tasks-tile__mine" pTooltip="Ти її поставив, а робить хтось інший" tooltipPosition="top">не моя</span> }
+            </span>
+            <span class="tasks-tile__meta">
+              <p-tag [value]="statusMeta[row.task.status].label" [severity]="statusMeta[row.task.status].severity" />
+              @if (row.due) { <span [class.tasks-tile__overdue]="row.isOverdue">{{ row.isOverdue ? 'прострочено · ' : 'до ' }}{{ row.due }}</span> }
+              @if (namesKurin()) { <span>· к. ч. {{ row.task.kurin.kurinNumber }}</span> }
+            </span>
+          </span>
+          @if (row.task.canChangeStatus) {
+            <p-button
+              [label]="nextLabel(row.task)"
+              [icon]="row.task.status === 'Todo' ? 'pi pi-play' : 'pi pi-check'"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [loading]="savingKey() === row.task.agendaItemKey"
+              (onClick)="changeStatus.emit({ task: row.task, status: next(row.task) })" />
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

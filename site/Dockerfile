@@ -5,7 +5,7 @@ FROM node:26-alpine AS build
 WORKDIR /src/site
 
 COPY site/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY site/ ./
 COPY docs/ /src/docs/

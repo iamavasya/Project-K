@@ -48,6 +48,14 @@ public class MemberWarningRepository : BaseEntityRepository<MemberWarning>, IMem
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<MemberWarning>> GetActiveByKurinKeyAsync(Guid kurinKey, DateTime nowUtc, CancellationToken cancellationToken = default)
+    {
+        return await Context.MemberWarnings
+            .Where(x => x.KurinKey == kurinKey && x.RevokedAtUtc == null && x.ExpiresAtUtc > nowUtc)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<MemberWarning>> GetActiveByMemberKeyAsync(Guid memberKey, DateTime nowUtc, CancellationToken cancellationToken = default)
     {
         return await Context.MemberWarnings

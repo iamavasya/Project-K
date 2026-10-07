@@ -1,0 +1,37 @@
+<section class="kurin-tile skills-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Вмілості</h2>
+      @if (growth()?.badges?.confirmedCount; as count) { <span class="lil-count">{{ count }}</span> }
+      <p>{{ summary() || 'Що вмієш і що в дорозі' }}</p>
+    </div>
+    @if (cardLink(); as link) {
+      <div class="lil-tile-head__actions">
+        <p-button label="Усі вмілості" icon="pi pi-arrow-right" iconPos="right" variant="text" severity="secondary" size="small" [routerLink]="link" />
+      </div>
+    }
+  </div>
+
+  @if (loading() && !growth()) {
+    <div class="skills-tile__grid">
+      @for (item of [1, 2, 3]; track item) {
+        <p-skeleton width="100%" height="6.25rem" borderRadius="12px" />
+      }
+    </div>
+  } @else if (failed()) {
+    <p class="skills-tile__note">Вмілості не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (!shelves().length) {
+    <app-empty-state art="trail" title="Ще жодної" body="Обери вмілість у каталозі на своїй картці — і вона зʼявиться тут." />
+  } @else {
+    @for (shelf of shelves(); track shelf.key) {
+      <div class="skills-tile__shelf">
+        <p class="skills-tile__label">{{ shelf.label }} <span>{{ shelf.badges.length }}</span></p>
+        <div class="skills-tile__grid">
+          @for (badge of shelf.badges; track badge.badgeId) {
+            <app-skill-mini-card [title]="badge.title" [imageUrl]="imageOf(badge)" [isPendingConfirmation]="shelf.key === 'onReview'" />
+          }
+        </div>
+      </div>
+    }
+  }
+</section>

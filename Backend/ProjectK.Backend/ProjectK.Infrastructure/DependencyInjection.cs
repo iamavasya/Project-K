@@ -2,6 +2,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Settings;
@@ -26,9 +28,7 @@ using Resend;
 namespace ProjectK.Infrastructure;
 
 /// <summary>
-/// Everything this project provides, registered by this project. The API used to list registrations
-/// for all three layers in one file, so adding a service meant editing a project that had no other
-/// reason to know about it.
+/// Registers this project's own services, so the API does not have to know about them.
 /// </summary>
 public static class DependencyInjection
 {
@@ -41,6 +41,9 @@ public static class DependencyInjection
         // The member module's facade is the same instance, so its writes still commit with the rest
         // of the request. What it buys is that no one else can reach the member table at all.
         services.AddScoped<IMemberUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
+        // The same for money: only the dues module can reach its tables.
+        services.AddScoped<IDuesUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
+        services.AddScoped<IScoreUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
 
         services.AddScoped<IJwtService, JwtService>();

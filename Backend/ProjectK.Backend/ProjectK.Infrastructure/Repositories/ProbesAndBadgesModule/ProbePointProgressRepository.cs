@@ -32,6 +32,14 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
                 cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ProbePointProgress>> GetSignedByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        return await Context.ProbePointProgresses
+            .Where(x => x.KurinKey == kurinKey && x.IsSigned)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<ProbePointProgress>> GetByMemberAndProbeAsync(
         Guid memberKey,
         string probeId,

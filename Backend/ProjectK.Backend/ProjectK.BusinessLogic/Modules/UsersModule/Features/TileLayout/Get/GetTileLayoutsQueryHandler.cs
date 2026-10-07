@@ -26,6 +26,7 @@ public class GetTileLayoutsQueryHandler : IRequestHandler<GetTileLayoutsQuery, S
             .Select(layout => new TileLayoutDto(
                 layout.BoardKey,
                 TileOrderSerializer.Deserialize(layout.TileOrderJson),
+                TileOrderSerializer.Deserialize(layout.HiddenTilesJson),
                 layout.SchemaVersion,
                 layout.UpdatedAtUtc))
             .ToList();

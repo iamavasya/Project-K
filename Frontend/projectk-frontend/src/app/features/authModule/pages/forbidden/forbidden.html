@@ -1,5 +1,13 @@
 <section class="forbidden-wrap">
   <div class="forbidden-card">
+    @if (isNoYouthProgram) {
+    <h1>Тут такого немає</h1>
+    <p>Проби й вмілості — юнацький вишкіл. У курені УСП чи УПС їх не ведуть.</p>
+
+    <div class="actions">
+      <a pButton routerLink="/kurin" severity="secondary">До куреня</a>
+    </div>
+    } @else {
     <h1>Немає доступу</h1>
     <p>У вас немає прав на перегляд цієї сторінки.</p>
 
@@ -7,5 +15,6 @@
       <a pButton routerLink="/login">До входу</a>
       <a pButton routerLink="/kurin" severity="secondary">До куреня</a>
     </div>
+    }
   </div>
 </section>

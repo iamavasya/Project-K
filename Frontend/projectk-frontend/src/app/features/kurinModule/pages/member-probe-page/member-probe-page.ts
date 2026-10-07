@@ -15,6 +15,9 @@ import { MemberService } from '../../services/member-service/member.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { MemberDto } from '../../models/member.dto';
+import { MembershipDto } from '../../models/membership.dto';
+import { memberBranchHere } from '../../functions/member-branch.function';
+import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { GroupedProbeDto } from '../../models/probes-and-badges/grouped-probe.dto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
 import { MemberProbeDetailPointRowView } from '../../models/probes-and-badges/member-probe-detail-point-row.view';
@@ -54,6 +57,7 @@ export class MemberProbePageComponent implements OnInit {
   probeId: string | null = null;
 
   member: MemberDto | null = null;
+  memberships: MembershipDto[] = [];
   groupedProbe: GroupedProbeDto | null = null;
   probeProgress: ProbeProgressDto | null = null;
 
@@ -82,8 +86,16 @@ export class MemberProbePageComponent implements OnInit {
     return total ? Math.round((this.signedPointsCount / total) * 100) : null;
   }
 
+  /**
+   * Старший пластун чи сеніор: проба — уже не вишкіл, а сторінка його пластового життєпису.
+   * Її видно, але не підписати й не закрити.
+   */
+  get isArchive(): boolean {
+    return this.member !== null && !hasYouthProgram(memberBranchHere(this.member, this.memberships));
+  }
+
   get canManageProbePoints(): boolean {
-    return this.permissionService.canReviewSkills() && this.canManageMemberActions;
+    return !this.isArchive && this.permissionService.canReviewSkills() && this.canManageMemberActions;
   }
 
   ngOnInit(): void {
@@ -330,6 +342,9 @@ export class MemberProbePageComponent implements OnInit {
           return of(null);
         })
       ),
+      memberships: this.memberService.getMemberships(this.memberKey).pipe(
+        catchError(() => of([] as MembershipDto[]))
+      ),
       groupedProbe: this.probesCatalogService.getGroupedById(this.probeId).pipe(
         catchError((error) => {
           console.error(`Error fetching grouped probe ${this.probeId}:`, error);
@@ -342,8 +357,9 @@ export class MemberProbePageComponent implements OnInit {
           return of(null);
         })
       )
-    }).subscribe(({ member, groupedProbe, progress }) => {
+    }).subscribe(({ member, memberships, groupedProbe, progress }) => {
       this.member = member;
+      this.memberships = memberships;
       this.groupedProbe = groupedProbe;
       this.applyProbeProgress(progress);
 

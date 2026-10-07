@@ -1,0 +1,50 @@
+<section class="kurin-tile score-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Точкування</h2>
+      <p>@if (periodLabel(); as period) { пластовий рік {{ period }} } @else { твої бали й місце гуртка }</p>
+    </div>
+  </div>
+
+  @if (loading() && !scores().length) {
+    <p-skeleton width="100%" height="5rem" borderRadius="12px" />
+  } @else if (failed()) {
+    <p class="score-tile__note">Бали не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (!rows().length) {
+    <app-empty-state art="trail" title="Балів ще немає" body="Бали зʼявляться після перших сходин із відміткою присутності." />
+  } @else {
+    <ul class="score-tile__list">
+      @for (row of rows(); track row.score.kurin.kurinKey) {
+        <li class="score-tile__row">
+          <div class="score-tile__mine">
+            <span class="score-tile__total" [class.score-tile__total--minus]="row.score.total < 0">{{ signed(row.score.total) }}</span>
+            <span class="score-tile__caption">
+              @if (row.score.total === 0) { балів ще немає } @else { моїх балів }
+              @if (namesKurin()) { · {{ kurinLabel(row) }} }
+            </span>
+            @if (row.parts.length) {
+              <span class="score-tile__parts">
+                @for (part of row.parts; track part.source) {
+                  <span class="lil-points" [class]="'lil-points ' + pointsClass(part.points)">{{ part.label }} {{ signed(part.points) }}</span>
+                }
+              </span>
+            }
+          </div>
+
+          <div class="score-tile__group">
+            <span class="lil-rank" [class]="'lil-rank ' + row.rankClass">{{ row.score.groupPlace }}</span>
+            <span class="score-tile__group-body">
+              <span class="score-tile__group-name">{{ row.score.groupName }}</span>
+              <span class="score-tile__caption" [pTooltip]="row.algorithm" tooltipPosition="top">
+                {{ row.score.groupPlace }} місце з {{ row.score.groupCount }} · {{ row.score.groupScore }}
+              </span>
+            </span>
+            @if (row.tableLink; as link) {
+              <p-button label="Таблиця" icon="pi pi-arrow-right" iconPos="right" variant="text" severity="secondary" size="small" [routerLink]="link" />
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

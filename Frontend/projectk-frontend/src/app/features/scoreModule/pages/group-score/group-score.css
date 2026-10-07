@@ -1,0 +1,121 @@
+.score-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.score-name-col {
+  min-width: 12rem;
+}
+
+.score-name {
+  font-size: var(--lil-text-body);
+  font-weight: 650;
+  margin-right: 0.5rem;
+}
+
+.score-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.score-link:hover {
+  color: var(--p-primary-color);
+  text-decoration: underline;
+}
+
+.score-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.score-minus {
+  color: var(--lil-dues-debt-fg);
+}
+
+.score-blank {
+  color: var(--p-text-muted-color);
+}
+
+.score-reason {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+}
+
+.score-actions-col {
+  width: 7rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.score-row-actions {
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+:host ::ng-deep .project-table .p-datatable-tbody > tr.score-row--gone > td {
+  color: var(--p-text-muted-color);
+}
+
+:host ::ng-deep .score-filter {
+  min-width: 10rem;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .score-table .p-datatable-wrapper {
+    overflow-x: visible;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-thead {
+    display: none;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-tbody > tr.score-row {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  :host ::ng-deep .score-table .p-datatable-tbody > tr.score-row > td {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.1rem 0 !important;
+    border: 0 !important;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-tbody > tr.score-row > td::before {
+    content: attr(data-mobile-label);
+    color: var(--lil-faint);
+    font-size: var(--lil-text-micro);
+    font-weight: 700;
+    letter-spacing: var(--lil-tracking-micro);
+    text-transform: uppercase;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-tbody > tr.score-row > td.score-actions-col {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: end;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-tbody > tr.score-row > td.score-actions-col::before {
+    content: none;
+  }
+
+  :host ::ng-deep .score-table .p-datatable-frozen-column {
+    background: transparent;
+  }
+
+  .score-name-col {
+    min-width: 0;
+  }
+
+  .score-number {
+    text-align: left;
+  }
+}

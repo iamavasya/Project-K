@@ -1,27 +1,36 @@
+import { TileLayout } from './tile-board.models';
+
 const STORAGE_PREFIX = 'tile-layout:';
 
-export function readStoredOrder(boardKey: string): string[] | null {
+/** A plain array is what older builds wrote: the order alone, nothing hidden. */
+export function readStoredLayout(boardKey: string): TileLayout | null {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + boardKey);
     if (!raw) {
       return null;
     }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.every(item => typeof item === 'string') ? parsed : null;
+    const parsed: unknown = JSON.parse(raw);
+    if (isKeyList(parsed)) {
+      return { tileKeys: parsed, hiddenTileKeys: [] };
+    }
+    if (isLayout(parsed)) {
+      return { tileKeys: parsed.tileKeys, hiddenTileKeys: parsed.hiddenTileKeys };
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
-export function writeStoredOrder(boardKey: string, tileKeys: string[]): void {
+export function writeStoredLayout(boardKey: string, layout: TileLayout): void {
   try {
-    localStorage.setItem(STORAGE_PREFIX + boardKey, JSON.stringify(tileKeys));
+    localStorage.setItem(STORAGE_PREFIX + boardKey, JSON.stringify(layout));
   } catch {
     return;
   }
 }
 
-export function removeStoredOrder(boardKey: string): void {
+export function removeStoredLayout(boardKey: string): void {
   try {
     localStorage.removeItem(STORAGE_PREFIX + boardKey);
   } catch {
@@ -42,4 +51,14 @@ export function clearTileLayoutStorage(): void {
   } catch {
     return;
   }
+}
+
+function isKeyList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+function isLayout(value: unknown): value is TileLayout {
+  return typeof value === 'object' && value !== null
+    && isKeyList((value as TileLayout).tileKeys)
+    && isKeyList((value as TileLayout).hiddenTileKeys);
 }

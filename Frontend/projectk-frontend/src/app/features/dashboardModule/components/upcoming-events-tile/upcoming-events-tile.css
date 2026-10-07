@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.events-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.events-tile__list {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.events-tile__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg);
+}
+
+.events-tile__row--awaiting {
+  border-color: var(--p-primary-200);
+  background: var(--p-primary-50);
+}
+
+/* The only place the category colour is shown pure, as on the calendar. */
+.events-tile__dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--lil-faint);
+}
+
+.events-tile__body {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.events-tile__title {
+  font-size: var(--lil-text-body);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.events-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.events-tile__when {
+  color: var(--p-text-color);
+  font-weight: 600;
+}
+
+.events-tile__rsvp {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+/* The chosen answer is tinted the way the calendar tints that status. */
+.events-tile__answer {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p-text-muted-color);
+  font: inherit;
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.events-tile__answer:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+  color: var(--p-text-color);
+}
+
+.events-tile__answer:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.events-tile__answer--on[data-status="Going"] {
+  background: var(--lil-agenda-done-bg);
+  border-color: var(--lil-agenda-done-bg);
+  color: var(--lil-agenda-done-fg);
+}
+
+.events-tile__answer--on[data-status="Maybe"] {
+  background: var(--lil-agenda-progress-bg);
+  border-color: var(--lil-agenda-progress-bg);
+  color: var(--lil-agenda-progress-fg);
+}
+
+.events-tile__answer--on[data-status="NotGoing"] {
+  background: var(--lil-agenda-todo-bg);
+  border-color: var(--lil-agenda-todo-bg);
+  color: var(--p-text-color);
+}
+
+.events-tile__note {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+@media (max-width: 640px) {
+  .events-tile__row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .events-tile__rsvp {
+    grid-column: 2;
+  }
+}

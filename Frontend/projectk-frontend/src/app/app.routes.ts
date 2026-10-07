@@ -3,11 +3,22 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
+import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
+import { dashboardMatchGuard } from './features/dashboardModule/guards/dashboard-match.guard';
 
 export const routes: Routes = [
+  // `/` is the dashboard for a person with a card and the welcome page for everyone else.
+  {
+    path: '',
+    canMatch: [dashboardMatchGuard],
+    loadComponent: () => import('./features/dashboardModule/pages/dashboard/dashboard')
+      .then(m => m.DashboardComponent),
+    title: 'Головна',
+    data: { breadcrumb: 'Головна', shell: 'app' }
+  },
   {
     path: '',
     canActivate: [publicAuthRedirectGuard],
@@ -105,6 +116,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Немає доступу' }
   },
   {
+    path: 'no-youth-program',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/authModule/pages/forbidden/forbidden')
+      .then(m => m.ForbiddenComponent),
+    title: 'Тут такого немає',
+    data: { breadcrumb: 'Тут такого немає', reason: 'youthProgram' }
+  },
+  {
     path: 'users',
     canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/pages/users-list/users-list')
@@ -167,6 +186,22 @@ export const routes: Routes = [
       .then(m => m.GroupPanelComponent),
     title: 'Гурток',
     data: { breadcrumb: 'Гурток', parent: '/kurin', entityType: 'group', titleContext: 'group', breadcrumbEntity: 'group' }
+  },
+  {
+    path: 'group/:groupKey/dues',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/duesModule/pages/group-dues/group-dues')
+      .then(m => m.GroupDuesComponent),
+    title: 'Вкладка',
+    data: { breadcrumb: 'Вкладка', parent: '/group/:groupKey', entityType: 'GroupDues', entityKeyParam: 'groupKey', entityAction: 'Read', titleContext: 'group' }
+  },
+  {
+    path: 'group/:groupKey/score',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/group-score/group-score')
+      .then(m => m.GroupScoreComponent),
+    title: 'Точкування гуртка',
+    data: { breadcrumb: 'Точкування', parent: '/group/:groupKey', entityType: 'GroupScore', entityKeyParam: 'groupKey', entityAction: 'Read', titleContext: 'group' }
   },
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
@@ -260,11 +295,51 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/review/skills',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), youthProgramGuard(), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/skills-review-page/skills-review-page')
       .then(m => m.SkillsReviewPageComponent),
     title: 'Перевірка вмінь',
     data: { breadcrumb: 'Модерація вмілостей', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/dues',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/duesModule/pages/kurin-dues/kurin-dues')
+      .then(m => m.KurinDuesComponent),
+    title: 'Вкладка куреня',
+    data: { breadcrumb: 'Вкладка куреня', parent: '/kurin', entityType: 'KurinDues', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/kurin-score/kurin-score')
+      .then(m => m.KurinScoreComponent),
+    title: 'Точкування',
+    data: { breadcrumb: 'Точкування', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/settings',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/kurin-score-settings/kurin-score-settings')
+      .then(m => m.KurinScoreSettingsComponent),
+    title: 'Налаштування точкування',
+    data: { breadcrumb: 'Налаштування точкування', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Manage', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/private',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/private-score/private-score')
+      .then(m => m.PrivateScoreComponent),
+    title: 'Точкування КВ',
+    data: { breadcrumb: 'Точкування КВ', parent: '/kurin', entityType: 'KurinScorePrivate', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/:kurinKey/score/events/:itemKey/:occurrence',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/scoreModule/pages/attendance-sheet/attendance-sheet')
+      .then(m => m.AttendanceSheetComponent),
+    title: 'Точкування події',
+    data: { breadcrumb: 'Точкування події', parent: '/kurin', entityType: 'KurinScore', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'kurin/:kurinKey/settings',

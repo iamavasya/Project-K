@@ -1,5 +1,16 @@
 @if (canReorder()) {
     <div class="tile-board-toolbar">
+        @if (editMode() && hiddenTiles().length) {
+            <div class="tile-board-hidden" role="group" aria-label="Приховані плитки">
+                <span class="tile-board-hidden__label">Приховано:</span>
+                @for (tile of hiddenTiles(); track tile.key) {
+                    <button type="button" class="tile-board-hidden__chip" (click)="restoreTile(tile)" [attr.aria-label]="'Повернути: ' + tile.label">
+                        <span class="pi pi-plus"></span>
+                        {{ tile.label }}
+                    </button>
+                }
+            </div>
+        }
         @if (editMode()) {
             <p-button
                 type="button"
@@ -25,7 +36,7 @@
     [class.tile-board--editing]="editMode()"
     [cdkDropListDisabled]="!editMode() || !canReorder()"
     (cdkDropListDropped)="onDrop($event)">
-    @for (tile of orderedTiles(); track tile.key; let i = $index; let count = $count) {
+    @for (tile of visibleTiles(); track tile.key; let i = $index; let count = $count) {
         <div
             cdkDrag
             class="tile-slot"
@@ -59,6 +70,15 @@
                             aria-label="Пересунути вниз">
                             <span class="pi pi-chevron-down"></span>
                         </button>
+                        @if (isHideable(tile)) {
+                            <button
+                                type="button"
+                                class="tile-slot__nudge"
+                                (click)="hideTile(tile)"
+                                [attr.aria-label]="'Сховати: ' + tile.label">
+                                <span class="pi pi-eye-slash"></span>
+                            </button>
+                        }
                     } @else {
                         <span class="tile-slot__pinned-badge">
                             <span class="pi pi-lock"></span>

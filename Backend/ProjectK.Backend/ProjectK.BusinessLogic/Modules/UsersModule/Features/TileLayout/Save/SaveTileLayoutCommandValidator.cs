@@ -13,7 +13,6 @@ public sealed partial class SaveTileLayoutCommandValidator : AbstractValidator<S
 
     public SaveTileLayoutCommandValidator()
     {
-        // First failing rule per property wins, matching the handler's previous order.
         RuleLevelCascadeMode = CascadeMode.Stop;
 
         RuleFor(command => command.BoardKey)
@@ -27,6 +26,14 @@ public sealed partial class SaveTileLayoutCommandValidator : AbstractValidator<S
                 .WithMessage("Tile keys must be non-empty, at most 64 lowercase alphanumeric/hyphen characters.")
             .Must(AllKeysUnique)
                 .WithMessage("Tile keys must be unique.");
+
+        RuleFor(command => command.HiddenTileKeys)
+            .Must(keys => (keys?.Count ?? 0) <= MaxTileCount)
+                .WithMessage($"A layout cannot hide more than {MaxTileCount} tiles.")
+            .Must(AllKeysWellFormed)
+                .WithMessage("Hidden tile keys must be non-empty, at most 64 lowercase alphanumeric/hyphen characters.")
+            .Must(AllKeysUnique)
+                .WithMessage("Hidden tile keys must be unique.");
     }
 
     private static bool AllKeysWellFormed(IReadOnlyList<string>? keys)

@@ -1,0 +1,59 @@
+.score-entry-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--p-text-color);
+  font-size: var(--lil-text-body);
+  font-weight: 600;
+}
+
+.score-entry-event,
+.score-entry-by {
+  color: var(--p-text-muted-color);
+  font-weight: 500;
+}
+
+.score-entry-existing {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.75rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius);
+  background: var(--p-surface-ground);
+}
+
+.score-entry-existing ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--lil-text-caption);
+}
+
+.score-entry-existing li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.score-entry-grid {
+  grid-template-columns: 7rem minmax(0, 1fr);
+}
+
+.score-entry-hint {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .score-entry-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+:host ::ng-deep .score-entry-delete {
+  margin-inline-end: auto;
+}

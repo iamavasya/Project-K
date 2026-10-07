@@ -32,7 +32,6 @@ import { MemberSkillItemView } from '../../models/probes-and-badges/member-skill
 import { BadgeProgressStatus } from '../../models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card';
-import { BentoTileSkeletonComponent } from '../../components/bento-tile-skeleton/bento-tile-skeleton';
 import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb.service';
@@ -42,7 +41,15 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { hasYouthProgram, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
+import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
+import { memberBranchHere } from '../../functions/member-branch.function';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
+import { duesAmountLabel, money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
+import { DUES_ENTRY_KIND_LABELS, DUES_STANDING_LABELS } from '../../../duesModule/models/dues.enums';
+import { DuesEntryDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../../services/member-award-service/member-award.service';
 import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
@@ -76,7 +83,6 @@ import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directi
     SelectModule,
     TooltipModule,
     SkillMiniCardComponent,
-    BentoTileSkeletonComponent,
     MemberAwardsTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
@@ -92,6 +98,7 @@ export class MemberCardComponent implements OnInit {
   route = inject(ActivatedRoute);
   router = inject(Router);
   memberService = inject(MemberService);
+  duesService = inject(DuesService);
   badgesCatalogService = inject(BadgesCatalogService);
   probesCatalogService = inject(ProbesCatalogService);
   memberProgressService = inject(MemberProgressService);
@@ -122,6 +129,15 @@ export class MemberCardComponent implements OnInit {
 
   isMembershipsLoading = false;
   membershipsLoadFailed = false;
+
+  /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
+  dues: MemberDuesDto | null = null;
+  isDuesLoading = false;
+  readonly money = money;
+  readonly quarterLabel = quarterLabel;
+  private memberLoaded = false;
+  private membershipsSettled = false;
+  private youthProgressRequested = false;
   isSkillsLoading = false;
   skillsLoadFailed = false;
   isProbesLoading = false;
@@ -159,9 +175,16 @@ export class MemberCardComponent implements OnInit {
       return;
     }
 
-    this.memberService.getByKey(this.memberKey).subscribe({
+    const memberKey = this.memberKey;
+    this.memberLoaded = false;
+    this.membershipsSettled = false;
+    this.youthProgressRequested = false;
+
+    this.memberService.getByKey(memberKey).subscribe({
       next: (member) => {
         this.member = member;
+        this.memberLoaded = true;
+        this.tryLoadYouthProgress(memberKey);
         if (isUsableKey(member.groupKey)) {
           this.breadcrumbService.setParam('groupKey', member.groupKey);
         }
@@ -177,13 +200,62 @@ export class MemberCardComponent implements OnInit {
       }
     });
 
-    this.loadMemberships(this.memberKey);
+    this.loadMemberships(memberKey);
+    this.loadDues(memberKey);
   }
 
   /**
-   * Одна тека — один запит. Проби й вмілості чекають на неї: у курені УСП чи УПС цього вишколу
-   * немає, і питати про них не варто зовсім, а не лише ховати відповідь.
+   * Quietly: a youth may read only their own, so for anyone else's card the server answers 403 and
+   * the tile simply does not appear — that is not an error the viewer needs told about.
    */
+  private loadDues(memberKey: string): void {
+    this.isDuesLoading = true;
+    this.dues = null;
+    this.duesService.getMemberDues(memberKey).subscribe({
+      next: dues => {
+        this.dues = dues.hasAccount ? dues : null;
+        this.isDuesLoading = false;
+      },
+      error: () => {
+        this.dues = null;
+        this.isDuesLoading = false;
+      }
+    });
+  }
+
+  openGroupDues(groupKey: string): void {
+    this.router.navigate(['/group', groupKey, 'dues']);
+  }
+
+  get duesEntriesPreview(): DuesEntryDto[] {
+    return (this.dues?.entries ?? []).slice(0, 3);
+  }
+
+  duesKindLabel(entry: DuesEntryDto): string {
+    return DUES_ENTRY_KIND_LABELS[entry.kind];
+  }
+
+  readonly duesAmountLabel = duesAmountLabel;
+  readonly duesStandingLabels = DUES_STANDING_LABELS;
+
+  /**
+   * Проби й вмілості чекають і на людину, і на її членства: гілку дають ступінь і курінь. Старшим
+   * цього на картці немає — їхнє юнацтво житиме в пластовому життєписі, — тож і питати не варто.
+   */
+  private tryLoadYouthProgress(memberKey: string): void {
+    if (!this.memberLoaded || !this.membershipsSettled || this.youthProgressRequested) {
+      return;
+    }
+
+    this.youthProgressRequested = true;
+    if (!this.hasYouthProgram) {
+      return;
+    }
+
+    this.loadSkills(memberKey);
+    this.loadProbes(memberKey);
+  }
+
   private loadMemberships(memberKey: string): void {
     this.isMembershipsLoading = true;
     this.membershipsLoadFailed = false;
@@ -191,25 +263,17 @@ export class MemberCardComponent implements OnInit {
       next: memberships => {
         this.memberships = memberships;
         this.isMembershipsLoading = false;
-        this.loadYouthProgress(memberKey);
+        this.membershipsSettled = true;
+        this.tryLoadYouthProgress(memberKey);
       },
       error: () => {
         this.memberships = [];
         this.membershipsLoadFailed = true;
         this.isMembershipsLoading = false;
-        // Не знаємо гілки — поводимось як із юнацьким куренем, бо він тут за замовчуванням.
-        this.loadYouthProgress(memberKey);
+        this.membershipsSettled = true;
+        this.tryLoadYouthProgress(memberKey);
       }
     });
-  }
-
-  private loadYouthProgress(memberKey: string): void {
-    if (!this.hasYouthProgram) {
-      return;
-    }
-
-    this.loadSkills(memberKey);
-    this.loadProbes(memberKey);
   }
 
   get phoneLink(): string | null {
@@ -220,15 +284,35 @@ export class MemberCardComponent implements OnInit {
     return emailHref(this.member?.email);
   }
 
-  /**
-   * Чи має курінь, у якому ми дивимось цю людину, юнацький вишкіл. Гілку бере членство саме тут:
-   * та сама людина може бути юнаком в одному курені й старшим пластуном у другому.
-   */
-  get hasYouthProgram(): boolean {
-    const here = this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
-      ?? this.memberships.find(m => m.isCurrent);
+  get personalBranch(): KurinBranch {
+    return memberBranchHere(this.member, this.memberships);
+  }
 
-    return hasYouthProgram(here?.branch);
+  /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */
+  get hasYouthProgram(): boolean {
+    return hasYouthProgram(this.personalBranch);
+  }
+
+  /**
+   * Чинні уряди в КВ — там, де людина у виховному проводі: впорядник, зв'язковий. Уряди куреня й
+   * гуртка сюди не йдуть — це юнацькі уряди.
+   */
+  get staffOffices(): LeadershipHistoryDto[] {
+    return (this.member?.leadershipHistories ?? [])
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv');
+  }
+
+  /** Гуртки, за якими людина закріплена виховником у курені, де її дивимось. */
+  get mentoredGroupNames(): string[] {
+    return this.member?.mentoredGroupNames ?? [];
+  }
+
+  officeLabel(role: string): string {
+    return leadershipRoleDisplayName(role);
+  }
+
+  officeSeverity(role: string): RoleSeverity {
+    return leadershipRoleSeverityForRole(role);
   }
 
   /**
@@ -326,8 +410,8 @@ export class MemberCardComponent implements OnInit {
     return this.canManageMemberActions;
   }
 
-  /** Closing a membership is the Звʼязковий's call alone: not the person's, not the Виховник's. */
-  get canReleaseFromKurin(): boolean {
+  /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */
+  get canManagePlacement(): boolean {
     return this.permissionService.canManageWholeKurin();
   }
 

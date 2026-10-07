@@ -1,0 +1,127 @@
+<p-dialog
+  [header]="title()"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="!saving()"
+  [closable]="!saving()"
+  [style]="{ width: 'min(94vw, 32rem)' }">
+
+  <form [formGroup]="form" class="lil-dialog-form dues-entry-form" (ngSubmit)="submit()">
+    <div class="lil-dialog-field dues-entry-field--wide">
+      <label for="dues-kind">Вид операції</label>
+      <p-select
+        inputId="dues-kind"
+        formControlName="kind"
+        [options]="kindOptions()"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+        styleClass="w-full" />
+      @if (isCorrection()) {
+        <p class="lil-dialog-hint dues-entry-hint">Корекція змінює баланс людини, а гроші в касі не рухає. Мінус зменшує баланс.</p>
+      }
+    </div>
+
+    @if (isPersonal()) {
+      <div class="lil-dialog-field dues-entry-field--wide">
+        <label for="dues-person">Чия вкладка</label>
+        <p-select
+          inputId="dues-person"
+          formControlName="membershipKey"
+          [options]="personOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="personOptions().length > 8"
+          filterBy="label"
+          placeholder="Обери юнака"
+          appendTo="body"
+          styleClass="w-full" />
+        @if (personError; as message) {
+          <p class="lil-dialog-error">{{ message }}</p>
+        }
+      </div>
+    }
+
+    <div class="lil-dialog-field">
+      <label for="dues-amount">Сума, ₴</label>
+      <input
+        pInputText
+        id="dues-amount"
+        type="number"
+        inputmode="decimal"
+        step="0.01"
+        formControlName="amount"
+        [invalid]="showError('amount') || !!amountError"
+        autocomplete="off" />
+      @if (amountError; as message) {
+        <p class="lil-dialog-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="lil-dialog-field">
+      <label for="dues-date">Дата</label>
+      <p-datepicker
+        inputId="dues-date"
+        formControlName="occurredOn"
+        dateFormat="dd.mm.yy"
+        [showIcon]="true"
+        [maxDate]="today"
+        appendTo="body"
+        styleClass="w-full" />
+    </div>
+
+    <div class="lil-dialog-field dues-entry-field--wide">
+      <span id="dues-method-label" class="lil-dialog-label">{{ isExchange() ? 'Звідки' : 'Спосіб' }}</span>
+      <p-selectButton
+        formControlName="method"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        ariaLabelledBy="dues-method-label" />
+      @if (isExchange()) {
+        <p class="lil-dialog-hint dues-entry-hint">{{ exchangeHint() }}. Сума в касі не змінюється.</p>
+      }
+    </div>
+
+    <div class="lil-dialog-field dues-entry-field--wide">
+      <label for="dues-collector">Хто збирав</label>
+      <p-select
+        inputId="dues-collector"
+        formControlName="collectedByMemberKey"
+        [options]="collectorOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [showClear]="true"
+        placeholder="Не вказано"
+        appendTo="body"
+        styleClass="w-full" />
+    </div>
+
+    <div class="lil-dialog-field dues-entry-field--wide">
+      <label for="dues-note">Нотатка</label>
+      <textarea
+        pTextarea
+        id="dues-note"
+        formControlName="note"
+        rows="2"
+        maxlength="500"
+        placeholder="За що, звідки, кому"
+        class="w-full"></textarea>
+    </div>
+
+    @if (errorMessage(); as message) {
+      <p class="lil-dialog-error dues-entry-field--wide">{{ message }}</p>
+    }
+  </form>
+
+  <ng-template #footer>
+    <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="saving()" (onClick)="close()" />
+    <p-button [label]="entry() ? 'Зберегти' : 'Записати'" [loading]="saving()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

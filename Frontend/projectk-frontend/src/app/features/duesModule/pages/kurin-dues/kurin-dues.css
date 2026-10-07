@@ -1,0 +1,234 @@
+.dues-rates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.dues-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dues-name-col {
+  min-width: 12rem;
+}
+
+.dues-name {
+  font-size: var(--lil-text-body);
+  font-weight: 650;
+}
+
+.dues-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dues-link:hover {
+  color: var(--p-primary-color);
+  text-decoration: underline;
+}
+
+.dues-actions-col {
+  width: 9rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dues-verified-col {
+  width: 7rem;
+  text-align: center;
+}
+
+.dues-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dues-amount--in {
+  color: var(--p-primary-color);
+  font-weight: 650;
+}
+
+.dues-amount--out {
+  font-weight: 650;
+}
+
+.dues-note {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+}
+
+.dues-blank {
+  color: var(--p-text-muted-color);
+}
+
+.dues-lock {
+  color: var(--lil-faint);
+}
+
+.dues-row--group {
+  cursor: pointer;
+}
+
+.dues-row--group:focus-visible {
+  outline: 2px solid var(--p-primary-50);
+  outline-offset: -2px;
+}
+
+:host ::ng-deep .project-table .p-datatable-tbody > tr.dues-row--selected > td {
+  background: var(--p-primary-50);
+}
+
+:host ::ng-deep .project-table .p-datatable-tbody > tr.dues-row--verified > td {
+  color: var(--p-text-muted-color);
+}
+
+:host ::ng-deep .project-table .p-datatable-tbody > tr.dues-row--verified > td.dues-number {
+  color: inherit;
+}
+
+.dues-row-actions {
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+.dues-balance {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  font-size: var(--lil-text-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dues-balance--ok {
+  background: var(--lil-dues-paid-bg);
+  border-color: var(--lil-dues-paid-line);
+  color: var(--lil-dues-paid-fg);
+}
+
+.dues-balance--debt {
+  background: var(--lil-dues-debt-bg);
+  border-color: var(--lil-dues-debt-line);
+  color: var(--lil-dues-debt-fg);
+}
+
+.dues-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .dues-filter {
+  min-width: 10rem;
+}
+
+.dues-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dues-quarter + .dues-quarter {
+  margin-top: 1.25rem;
+}
+
+.dues-quarter__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.dues-quarter__sum {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+:host ::ng-deep .project-table .p-datatable-tfoot > tr.dues-row--total > td {
+  border-color: var(--p-surface-border);
+  padding-block: 0.875rem;
+  font-weight: 700;
+  background: var(--p-surface-ground);
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .dues-table .p-datatable-wrapper {
+    overflow-x: visible;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-thead {
+    display: none;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row > td {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.1rem 0 !important;
+    border: 0 !important;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td::before,
+  :host ::ng-deep .dues-table .p-datatable-tfoot > tr.dues-row > td::before {
+    content: attr(data-mobile-label);
+    color: var(--lil-faint);
+    font-size: var(--lil-text-micro);
+    font-weight: 700;
+    letter-spacing: var(--lil-tracking-micro);
+    text-transform: uppercase;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td.dues-actions-col {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: end;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row > td.dues-actions-col::before {
+    content: none;
+  }
+
+  :host ::ng-deep .dues-table .p-datatable-frozen-column {
+    background: transparent;
+  }
+
+  .dues-name-col {
+    min-width: 0;
+  }
+
+  .dues-number {
+    text-align: left;
+  }
+
+  .dues-filters > * {
+    flex: 1 1 100%;
+  }
+}

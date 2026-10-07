@@ -43,11 +43,11 @@ jobs:
           cache-dependency-path: Frontend/projectk-frontend/package-lock.json
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: Frontend/projectk-frontend
 
       - name: Install browsers
-        run: npx playwright install --with-deps
+        run: npx --no-install playwright install --with-deps
         working-directory: Frontend/projectk-frontend
 
       - name: Run Playwright
@@ -55,7 +55,7 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://localhost:4201
           PLAYWRIGHT_START_FRONTEND: 'false'
           PLAYWRIGHT_API_URL: http://localhost:5206/api
-        run: npx playwright test
+        run: npx --no-install playwright test
         working-directory: Frontend/projectk-frontend
 
       - name: Upload report

@@ -10,7 +10,9 @@
               <div>
                 <p-iconfield iconPosition="left">
                   <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                  <label for="leadership-search" class="sr-only">Пошук у проводі</label>
                   <input
+                    id="leadership-search"
                     pInputText
                     type="text"
                     [(ngModel)]="searchTerm"
@@ -59,7 +61,8 @@
               optionLabel="lastName"
               [loading]="isLoading"
               formControlName="member"
-              placeholder="Оберіть особу"
+              placeholder="Не обсаджено"
+              [showClear]="true"
               [style]="{'width':'100%'}">
 
               <ng-template let-member pTemplate="selectedItem">
@@ -71,11 +74,6 @@
                 {{ member.lastName }} {{ member.firstName }}
               </ng-template>
             </p-select>
-            @if (rowControl.get('member')?.invalid && rowControl.get('member')?.touched) {
-              <small class="text-red-500 block mt-1">
-                Обов'язкове поле
-              </small>
-            }
           </td>
 
           @if (showArchived) {
@@ -113,7 +111,7 @@
     </p-table>
 
     <div class="mt-4 flex">
-      <p-button label="Зберегти" type="submit" [disabled]="leadershipForm.invalid" />
+      <p-button label="Зберегти" type="submit" [disabled]="leadershipForm.invalid || !canSave" />
     </div>
   </form>
 </div>

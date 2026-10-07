@@ -1,0 +1,55 @@
+---
+// Під `astro dev` — дві дороги до джерела сторінки: редактор `/editor` поруч зі сторінкою і той самий
+// файл у VS Code. Ведуть вони на справжнє джерело в репозиторії (`docs/user/…`, `ARCHITECTURE.md`),
+// а не на копію в `src/content/docs`, яку `sync-docs` перезапише. На зібраному сайті — Starlight як є.
+import { resolve } from 'node:path';
+import Default from '@astrojs/starlight/components/EditLink.astro';
+import { Icon } from '@astrojs/starlight/components';
+import { repo, sourceOfContentPath } from '../../scripts/doc-sources.mjs';
+
+const isDev = import.meta.env.DEV;
+const filePath: string | undefined = Astro.locals.starlightRoute.entry.filePath;
+const contentPath = filePath?.replace(/\\/g, '/').replace(/^.*?src\/content\/docs\//, '');
+const source = isDev && contentPath ? sourceOfContentPath(contentPath) : null;
+const editorHref = source ? `/editor?source=${encodeURIComponent(source)}` : null;
+const vscodeHref = source ? `vscode://file/${resolve(repo, source).replace(/\\/g, '/')}` : null;
+---
+
+{
+	source ? (
+		<span class="dev-edit sl-flex print:hidden">
+			<a href={editorHref} class="sl-flex">
+				<Icon name="pencil" size="1.2em" />
+				Правити поруч зі сторінкою
+			</a>
+			<a href={vscodeHref} class="sl-flex">
+				<Icon name="external" size="1.2em" />
+				Відкрити у VS Code
+			</a>
+			<code>{source}</code>
+		</span>
+	) : (
+		<Default />
+	)
+}
+
+<style>
+	.dev-edit {
+		flex-wrap: wrap;
+		gap: 0.5rem 1.25rem;
+		align-items: center;
+	}
+	.dev-edit a {
+		gap: 0.5rem;
+		align-items: center;
+		text-decoration: none;
+		color: var(--sl-color-gray-3);
+	}
+	.dev-edit a:hover {
+		color: var(--sl-color-white);
+	}
+	.dev-edit code {
+		color: var(--sl-color-gray-4);
+		font-size: var(--sl-text-xs);
+	}
+</style>

@@ -24,13 +24,15 @@ export class MemberMembershipsTileComponent {
   readonly isLoading = input(false);
   readonly loadFailed = input(false);
   /**
-   * Курінь, у якому ми зараз дієш, і чи маємо право рухати цю людину. Дії пропонуються лише тут:
-   * членством у чужому курені порядкує його власний провід.
+   * Курінь, у якому ми зараз дієш. Дії пропонуються лише тут: членством у чужому курені порядкує
+   * його власний провід.
    */
   readonly scopedKurinKey = input<string | null>(null);
+  /**
+   * Чи може той, хто дивиться, розставляти людей — переводити в гурток і виводити з куреня. Це
+   * справа Звʼязкового: впорядник не переводить ні себе, ні своїх юнаків.
+   */
   readonly canManage = input(false);
-  /** Whether the viewer may close a membership; the гурток move follows `canManage`. */
-  readonly canRelease = input(false);
 
   readonly moveToGroup = output<MembershipDto>();
   readonly leaveKurin = output<MembershipDto>();

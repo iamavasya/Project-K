@@ -1,0 +1,81 @@
+<section class="lil-page lil-page--wide">
+  <header class="lil-page-head dashboard-head">
+    <div>
+      <p class="lil-page-head__eyebrow">{{ today }}</p>
+      <h1>{{ greeting }}@if (firstName()) {, {{ firstName() }}}</h1>
+      @if (member(); as m) {
+        <p>
+          {{ m.latestPlastLevelDisplay || 'Ступінь не вказано' }}
+          @if (m.groupName) { · {{ m.groupName }} }
+        </p>
+      }
+    </div>
+  </header>
+
+  <app-tile-board [boardKey]="boardKey" [canHide]="true" class="block">
+    <ng-template [appTileDef]="{ key: 'upcoming-events', span: 'half', label: 'Найближче' }">
+      <app-upcoming-events-tile
+        [events]="events()"
+        [loading]="eventsLoading()"
+        [failed]="eventsFailed()"
+        [namesKurin]="namesKurin()"
+        [currentKurinKey]="currentKurinKey()"
+        [savingKey]="respondingTo()"
+        (respond)="respond($event)" />
+    </ng-template>
+
+    @if (duties().length) {
+      <ng-template [appTileDef]="{ key: 'my-duties', span: 'half', label: 'Справи' }">
+        <app-my-duties-tile [duties]="duties()" [loading]="dutiesLoading()" [failed]="dutiesFailed()" [namesKurin]="namesKurin()" />
+      </ng-template>
+    }
+
+    <ng-template [appTileDef]="{ key: 'my-tasks', span: 'half', label: 'Мої задачі' }">
+      <app-my-tasks-tile
+        [tasks]="tasks()"
+        [loading]="tasksLoading()"
+        [failed]="tasksFailed()"
+        [namesKurin]="namesKurin()"
+        [currentKurinKey]="currentKurinKey()"
+        [savingKey]="movingTask()"
+        (changeStatus)="moveTask($event)" />
+    </ng-template>
+
+    @if (hasYouthProgram()) {
+      <ng-template [appTileDef]="{ key: 'my-probe', span: 'half', label: 'Проба' }">
+        <app-my-probe-tile [growth]="growth()" [loading]="growthLoading()" [failed]="growthFailed()" />
+      </ng-template>
+
+      <ng-template [appTileDef]="{ key: 'my-skills', span: 'half', label: 'Вмілості' }">
+        <app-my-skills-tile [growth]="growth()" [loading]="growthLoading()" [failed]="growthFailed()" />
+      </ng-template>
+    }
+
+    @if (scores().length) {
+      <ng-template [appTileDef]="{ key: 'my-score', span: 'half', label: 'Точкування' }">
+        <app-my-score-tile [scores]="scores()" [loading]="scoresLoading()" [failed]="scoresFailed()" [namesKurin]="namesKurin()" />
+      </ng-template>
+    }
+
+    @if (dues().length) {
+      <ng-template [appTileDef]="{ key: 'my-dues', span: 'half', label: 'Вкладка' }">
+        <app-my-dues-tile [dues]="dues()" [loading]="duesLoading()" [failed]="duesFailed()" [namesKurin]="namesKurin()" />
+      </ng-template>
+    }
+
+    <ng-template [appTileDef]="{ key: 'my-profile', span: 'half', label: 'Мій профіль' }">
+      <app-my-profile-tile [member]="member()" [loading]="memberLoading()" />
+    </ng-template>
+
+    <ng-template [appTileDef]="{ key: 'my-kurins', span: 'half', label: 'Мої курені' }">
+      <app-my-kurins-tile
+        [kurins]="kurins()"
+        [memberships]="memberships()"
+        [currentKurinKey]="currentKurinKey()"
+        [currentOffices]="currentOffices()"
+        [switchingTo]="switchingTo()"
+        [loading]="kurinsLoading()"
+        (open)="openKurin($event)" />
+    </ng-template>
+  </app-tile-board>
+</section>

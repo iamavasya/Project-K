@@ -34,9 +34,9 @@ describe('publicAuthRedirectGuard', () => {
     expect(authService.ensureAccessToken).not.toHaveBeenCalled();
   });
 
-  it('redirects authenticated admins with active kurin to kurin page', async () => {
+  it('redirects authenticated admins with active kurin and no card to kurin page', async () => {
     const tree = { target: '/kurin' };
-    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-123' });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: 'kurin-123' });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
     authService.ensureAccessToken.and.returnValue(of(true));
@@ -48,9 +48,9 @@ describe('publicAuthRedirectGuard', () => {
     expect(result).toBe(tree as never);
   });
 
-  it('redirects authenticated admins without active kurin to admin panel', async () => {
+  it('redirects authenticated admins without a kurin or a card to admin panel', async () => {
     const tree = { target: '/panel' };
-    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null });
+    const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: null });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
     authService.ensureAccessToken.and.returnValue(of(true));
@@ -62,8 +62,8 @@ describe('publicAuthRedirectGuard', () => {
     expect(result).toBe(tree as never);
   });
 
-  it('redirects authenticated non-admin users to their kurin page', async () => {
-    const tree = { target: '/kurin' };
+  it('redirects authenticated people with a card to the dashboard', async () => {
+    const tree = { target: '/' };
     const state = createAuthState({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'], kurinKey: 'kurin-123' });
     authService.getAuthState.and.returnValue(of(state));
     authService.getAuthStateValue.and.returnValue(state);
@@ -72,7 +72,7 @@ describe('publicAuthRedirectGuard', () => {
 
     const result = await runGuard();
 
-    expect(router.createUrlTree).toHaveBeenCalledWith(['/kurin']);
+    expect(router.createUrlTree).toHaveBeenCalledWith(['/']);
     expect(result).toBe(tree as never);
   });
 

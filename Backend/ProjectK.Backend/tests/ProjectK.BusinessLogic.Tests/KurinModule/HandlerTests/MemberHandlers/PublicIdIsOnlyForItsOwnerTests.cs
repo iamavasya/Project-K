@@ -49,6 +49,11 @@ public class PublicIdIsOnlyForItsOwnerTests
 
         _memberData.SetupGet(u => u.Members).Returns(_members.Object);
         _kurinData.SetupGet(u => u.Memberships).Returns(_memberships.Object);
+        var mentorAssignments = new Mock<IMentorAssignmentRepository>();
+        mentorAssignments
+            .Setup(r => r.GetActiveGroupNamesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _kurinData.SetupGet(u => u.MentorAssignments).Returns(mentorAssignments.Object);
 
         _members
             .Setup(r => r.GetByKeyAsync(_memberKey, It.IsAny<CancellationToken>()))

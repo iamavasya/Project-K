@@ -26,7 +26,9 @@
                   <p-inputicon>
                       <i class="pi pi-search"></i>
                   </p-inputicon>
+                  <label for="member-list-search-leadership" class="sr-only">Пошук у проводі</label>
                   <input 
+                      id="member-list-search-leadership"
                       pInputText 
                       type="text" 
                       (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
@@ -106,7 +108,9 @@
               <p-inputicon>
                 <i class="pi pi-search"></i>
               </p-inputicon>
+              <label for="member-list-search-cards" class="sr-only">Пошук учасників</label>
               <input
+                id="member-list-search-cards"
                 pInputText
                 type="text"
                 [(ngModel)]="memberSearchQuery"
@@ -156,7 +160,8 @@
                     <p-inputicon>
                         <i class="pi pi-search"></i>
                     </p-inputicon>
-                    <input pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." class="member-list-search-input p-inputtext-sm" />
+                    <label for="member-list-search-group" class="sr-only">Пошук учасників</label>
+                    <input id="member-list-search-group" pInputText type="text" (input)="memberTable.filterGlobal($event.target.value, 'contains')" placeholder="Пошук..." class="member-list-search-input p-inputtext-sm" />
                 </p-iconfield>
 
                 @if (type() === 'group') {

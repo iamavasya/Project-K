@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { BreadcrumbService } from './breadcrumb.service';
+import { BreadcrumbService, routePathRegExp } from './breadcrumb.service';
 import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Route, Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { MenuItem } from '@openng/optimus-ui/api';
@@ -975,5 +975,18 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/admin/users/123/edit', '/admin/users/123/edit'));
+  });
+});
+
+describe('routePathRegExp', () => {
+  it('lets a :param stand for one segment and nothing more', () => {
+    expect(routePathRegExp('member/:memberKey').test('member/42')).toBeTrue();
+    expect(routePathRegExp('member/:memberKey').test('member/42/edit')).toBeFalse();
+  });
+
+  it('matches every other character only as itself', () => {
+    expect(routePathRegExp('docs/v1.0').test('docs/v1.0')).toBeTrue();
+    expect(routePathRegExp('docs/v1.0').test('docs/v1x0')).toBeFalse();
+    expect(routePathRegExp('a+b').test('aab')).toBeFalse();
   });
 });

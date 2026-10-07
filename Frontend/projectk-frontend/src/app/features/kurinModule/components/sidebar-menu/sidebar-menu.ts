@@ -3,7 +3,7 @@ import { DrawerModule } from '@openng/optimus-ui/drawer';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { PanelMenuModule } from '@openng/optimus-ui/panelmenu';
 import { MenuItem } from '@openng/optimus-ui/api';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap, tap } from 'rxjs';
@@ -17,13 +17,15 @@ import { getLeadershipRoleSortWeight } from '../../functions/leadership-role-ord
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
+import { DuesGroupLinkDto } from '../../../duesModule/models/group-dues.dto';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 
 @Component({
   selector: 'app-sidebar-menu',
-  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, ReportProblemDialogComponent],
+  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, RouterLink, ReportProblemDialogComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
@@ -32,6 +34,7 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly permissionService = inject(PermissionService);
   private readonly kurinService = inject(KurinService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
+  private readonly duesService = inject(DuesService);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
@@ -68,8 +71,12 @@ export class SidebarMenuComponent implements OnChanges {
             this.waitlistAttention.refresh();
           }
         }),
-        switchMap(([state, url]) => combineLatest([this.youthProgram$(state?.kurinKey ?? null), this.waitlistAttention.pending$]).pipe(
-          map(([isYouthKurin, pendingWaitlist]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist), url))
+        switchMap(([state, url]) => combineLatest([
+          this.youthProgram$(state?.kurinKey ?? null),
+          this.waitlistAttention.pending$,
+          this.duesGroups$(state?.kurinKey ?? null)
+        ]).pipe(
+          map(([isYouthKurin, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist, duesGroups), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -134,12 +141,25 @@ export class SidebarMenuComponent implements OnChanges {
     );
   }
 
-  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0): MenuItem[] {
+  /**
+   * The гуртки whose box this person keeps, for the «Вкладка гуртка» item. Asked only of those whose
+   * grants say they keep one; a failed read hides the item rather than breaking the menu.
+   */
+  private duesGroups$(kurinKey: string | null): Observable<DuesGroupLinkDto[]> {
+    if (!kurinKey || !this.permissionService.canSeeGroupDues()) {
+      return of([]);
+    }
+
+    return this.duesService.getReadableGroups(kurinKey).pipe(catchError(() => of([])));
+  }
+
+  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
     const canReviewSkills = this.permissionService.canReviewSkills();
     const canManageKurinSettings = this.permissionService.canManageKurinSettings();
+    const canSeeKurinDues = this.permissionService.canSeeKurinDues();
     const canSeeRegistry = isAdmin
       || this.permissionService.canManageWholeKurin()
       || this.permissionService.canLeadGroups();
@@ -148,6 +168,15 @@ export class SidebarMenuComponent implements OnChanges {
     const items: MenuItem[] = [];
 
     if (memberKey) {
+      items.push({
+        label: 'Головна',
+        icon: 'pi pi-home',
+        routerLink: ['/'],
+        command: () => {
+          this.close();
+          this.router.navigate(['/']);
+        }
+      });
       items.push({
         label: 'Мій профіль',
         icon: 'pi pi-user',
@@ -234,6 +263,17 @@ export class SidebarMenuComponent implements OnChanges {
         }
       });
 
+      // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
+      items.push({
+        label: 'Точкування',
+        icon: 'pi pi-trophy',
+        routerLink: ['/kurin', kurinKey, 'score'],
+        command: () => {
+          this.close();
+          this.router.navigate(['/kurin', kurinKey, 'score']);
+        }
+      });
+
       // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
       // сторінки, разом із іконками pi-sitemap і pi-address-book.
 
@@ -245,6 +285,45 @@ export class SidebarMenuComponent implements OnChanges {
           command: () => {
             this.close();
             this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
+          }
+        });
+      }
+
+      // One гурток — straight to its box; several — a fold with one entry each.
+      if (duesGroups.length === 1) {
+        const [group] = duesGroups;
+        items.push({
+          label: 'Вкладка гуртка',
+          icon: 'pi pi-wallet',
+          routerLink: ['/group', group.groupKey, 'dues'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/group', group.groupKey, 'dues']);
+          }
+        });
+      } else if (duesGroups.length > 1) {
+        items.push({
+          label: 'Вкладка гуртків',
+          icon: 'pi pi-wallet',
+          items: duesGroups.map(group => ({
+            label: group.groupName,
+            routerLink: ['/group', group.groupKey, 'dues'],
+            command: () => {
+              this.close();
+              this.router.navigate(['/group', group.groupKey, 'dues']);
+            }
+          }))
+        });
+      }
+
+      if (canSeeKurinDues) {
+        items.push({
+          label: 'Вкладка куреня',
+          icon: 'pi pi-wallet',
+          routerLink: ['/kurin', kurinKey, 'dues'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/kurin', kurinKey, 'dues']);
           }
         });
       }
@@ -344,13 +423,9 @@ export class SidebarMenuComponent implements OnChanges {
   }
 
   /**
-   * What the viewer is called in the footer.
-   *
-   * The office comes first, so a Зв'язковий reads "Зв'язковий" rather than the tier "Провід
-   * куреня" — the tier is what the office grants, not what the person is called, and it lumps
-   * Зв'язковий together with Курінний. Colour follows the same rule the member list uses, so an
-   * office is not one colour here and another there. The tiers stay as the fallback for accounts
-   * that hold no office at all.
+   * What the viewer is called in the footer: the office first, so a Зв'язковий reads "Зв'язковий"
+   * rather than the tier "Провід куреня", coloured by the member list's rule. The tiers are the
+   * fallback for accounts that hold no office.
    */
   private currentRoleTag(state: AuthState | null): { label: string; severity: RoleSeverity } {
     if (this.permissionService.isAdmin()) {

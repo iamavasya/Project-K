@@ -53,7 +53,7 @@ public sealed class AccessContextResolver : IAccessContextResolver
 
         // The account's choice is a bare key with no foreign key behind it, so it can outlive the
         // kurin: a deleted kurin, or one the seeder rebuilt under a new key. Honouring it then means
-        // signing the person in to a kurin that is not there вЂ” a scope with nothing in it and, for
+        // signing the person in to a kurin that is not there — a scope with nothing in it and, for
         // anyone but an admin, no way to step out (STAB-05). A choice that no longer exists is
         // treated as no choice at all.
         var chosen = user.ResolveScopeKurinKey();

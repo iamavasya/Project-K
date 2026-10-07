@@ -2,12 +2,16 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
+import docsEditor from './src/integrations/docs-editor.mjs';
 
 // Сайт Лілейки: візитка + довідка. Довідка не пишеться тут — вона живе в `docs/user/` у корені
 // репозиторію і копіюється сюди скриптом `scripts/sync-docs.mjs` перед dev і build, тож одна
 // правда і для сайту, і для тих, хто читає markdown на GitHub.
 export default defineConfig({
+	site: 'https://docs-projectk.rostyslav-mukha.dev',
 	integrations: [
+		// Лише під `astro dev`: сторінка /editor — джерело зліва, сторінка справа.
+		docsEditor(),
 		// Діаграми в довідці: ```mermaid у markdown рендериться в браузері й перемикає тему разом
 		// із сайтом. Має стояти перед starlight, інакше блок забере підсвітка коду.
 		mermaid({
@@ -36,6 +40,8 @@ export default defineConfig({
 			},
 			favicon: '/favicon.svg',
 			customCss: ['./src/styles/brand.css'],
+			// Під dev «Правити» веде на джерело в репозиторії: у /editor і у VS Code. Зібраний сайт — як був.
+			components: { EditLink: './src/components/EditLink.astro' },
 			// Two trees in one sidebar: the user one open, the developer one folded until asked for.
 			// The middleware only keeps prev/next from stepping across the border between them.
 			routeMiddleware: './src/route-middleware.ts',

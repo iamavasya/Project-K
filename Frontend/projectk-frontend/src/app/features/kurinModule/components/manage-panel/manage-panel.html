@@ -29,13 +29,14 @@
         @for (f of config().fields; track f) {
           @if (!isHidden(f)) {
             <div class="field">
-              <span class="field-label">{{ f.label }} @if (f.required) {
+              <label class="field-label" [for]="'manage-field-' + f.name">{{ f.label }} @if (f.required) {
                 <span class="req">*</span>
-              }</span>
+              }</label>
               @switch (f.type) {
                 @case ('text') {
                   <input
                     #autoField
+                    [id]="'manage-field-' + f.name"
                     pInputText
                     [placeholder]="f.placeholder"
                     [formControlName]="f.name" />
@@ -43,6 +44,7 @@
                 @case ('number') {
                   <input
                     #autoField
+                    [id]="'manage-field-' + f.name"
                     pInputText
                     type="number"
                     [placeholder]="f.placeholder"
@@ -51,6 +53,7 @@
                 @case ('textarea') {
                   <textarea
                     #autoField
+                    [id]="'manage-field-' + f.name"
                     pTextarea
                     rows="3"
                     [placeholder]="f.placeholder"

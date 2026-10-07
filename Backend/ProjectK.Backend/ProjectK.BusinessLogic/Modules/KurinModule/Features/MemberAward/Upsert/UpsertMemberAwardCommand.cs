@@ -81,7 +81,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             existingAward.ReviewedByUserKey = null;
             existingAward.UpdatedDate = DateTime.UtcNow;
 
-            _unitOfWork.MemberAwards.Update(existingAward);
+            _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
         }
         else
         {
@@ -98,7 +98,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
                 UpdatedDate = DateTime.UtcNow
             };
 
-            _unitOfWork.MemberAwards.Create(newAward);
+            _unitOfWork.MemberAwards.Create(newAward, cancellationToken);
             existingAward = newAward;
         }
 

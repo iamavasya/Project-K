@@ -10,10 +10,10 @@
 
 Незалежний проєкт, не офіційний ресурс НСОУ «Пласт». Зроблено пластуном для пластунів.
 
-**[Довідка](https://projectk-docs-and-demo.pages.dev/)** ·
-**[Демо](https://projectk-docs-and-demo.pages.dev/demo/)** ·
+**[Довідка](https://docs-projectk.rostyslav-mukha.dev/)** ·
+**[Демо](https://docs-projectk.rostyslav-mukha.dev/demo/)** ·
 **[Приєднати курінь](https://projectk.rostyslav-mukha.dev/join)** ·
-**[Власний сервер](https://projectk-docs-and-demo.pages.dev/user/self-host/)** ·
+**[Власний сервер](https://docs-projectk.rostyslav-mukha.dev/user/self-host/)** ·
 **[Релізи](https://github.com/iamavasya/Project-K/releases)**
 
 [![Release](https://img.shields.io/github/v/release/iamavasya/Project-K)](https://github.com/iamavasya/Project-K/releases)
@@ -22,8 +22,8 @@
 
 ## Документація
 
-Уся документація — на сайті: [для користувачів](https://projectk-docs-and-demo.pages.dev/) і
-[для розробників](https://projectk-docs-and-demo.pages.dev/dev/) — архітектура, запуск, сутності,
+Уся документація — на сайті: [для користувачів](https://docs-projectk.rostyslav-mukha.dev/) і
+[для розробників](https://docs-projectk.rostyslav-mukha.dev/dev/) — архітектура, запуск, сутності,
 міграції, власний сервер, DevLog. Джерела лежать у `docs/`, сайт збирається з `site/`.
 
 ## Запуск для розробки

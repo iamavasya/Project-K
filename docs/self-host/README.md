@@ -155,7 +155,7 @@ Compose-файл bundle запускає лише готові образи:
 - `projectk-sql` — SQL Server;
 - `projectk-azurite` — емулятор сховища Azurite.
 
-Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_DOCS_URL` (корінь сайту довідки; «Довідка» на вітальній веде на нього, у сайдбарі — на сторінку `/user/start/what-is/`; типово — `https://projectk-docs-and-demo.pages.dev/`) при старті
+Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_DOCS_URL` (корінь сайту довідки; «Довідка» на вітальній веде на нього, у сайдбарі — на сторінку `/user/start/what-is/`; типово — `https://docs-projectk.rostyslav-mukha.dev/`) при старті
 контейнера і записує в `env.js`, тож один образ працює на будь-якому домені без перезбірки.
 
 ## Томи
@@ -183,7 +183,7 @@ docker compose up -d
 ## Збірка образів локально
 
 Bundle не потребує .NET, Node.js, npm чи NuGet-токена. Якщо збираєш образи з репозиторію сам —
-для приватних NuGet-пакетів потрібен `NUGET_AUTH_TOKEN` (або `PROJECTK_NUGET_AUTH_TOKEN`) у
-середовищі; в `.env` його не клади.
+для приватних NuGet-пакетів потрібен `PROJECTK_NUGET_AUTH_TOKEN` у середовищі. Він іде в збірку
+секретом BuildKit і в образ не потрапляє; в `.env` його не клади.
 
 Далі: [оновлення](update.md), [резервні копії](backup-restore.md).

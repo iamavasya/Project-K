@@ -32,6 +32,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IMembershipRepository _memberships;
+    private readonly IMentorAssignmentRepository _mentorAssignments;
 
     public GetMemberByKeyQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IUnitOfWork kurinData)
     {
@@ -40,6 +41,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         _currentUserContext = currentUserContext;
         _scopeReader = scopeReader;
         _memberships = kurinData.Memberships;
+        _mentorAssignments = kurinData.MentorAssignments;
     }
 
     private async Task ScrubRestrictedDataAsync(
@@ -59,9 +61,8 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             canViewPrivate = ledGroups.Contains(theirGroupKey.Value);
         }
 
-        // The code is not a detail about a person, it is the thing they hand over. Leadership of
-        // their own kurin has no use for it — knowing it would let one kurin sign someone into
-        // another without ever asking them — so nobody but the person themselves is told it.
+        // Only the person themselves is told their code: leadership that knew it could sign them into
+        // another kurin without ever asking them.
         if (!isOwner)
         {
             response.PublicId = null;
@@ -82,7 +83,6 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             return new ServiceResult<MemberResponse>(ResultType.NotFound);
         }
 
-        // Where they stand comes from their membership; the record itself no longer says.
         var placement = await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
         var here = placement.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
             ?? placement.FirstOrDefault();
@@ -90,6 +90,13 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         var memberResponse = _mapper.Map<MemberResponse>(member);
         memberResponse.KurinKey = here?.KurinKey ?? Guid.Empty;
         memberResponse.GroupKey = here?.GroupKey ?? Guid.Empty;
+
+        // Assignments are kept per account, so a person without one runs no гурток.
+        if (here is not null && member.UserKey.HasValue)
+        {
+            memberResponse.MentoredGroupNames = [.. await _mentorAssignments
+                .GetActiveGroupNamesAsync(member.UserKey.Value, here.KurinKey, cancellationToken)];
+        }
 
         await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);
 

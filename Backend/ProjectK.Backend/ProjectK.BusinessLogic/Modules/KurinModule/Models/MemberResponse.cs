@@ -35,7 +35,10 @@ public class MemberResponse
     /// </summary>
     public bool IsStaff { get; set; }
 
-    /// <summary>The гуртки they run as виховник in that kurin, by name. Empty for a юнак.</summary>
+    /// <summary>
+    /// The гуртки they run as виховник in that kurin, by name. Empty for a юнак. Filled by list
+    /// reads and by the read of one person, for the kurin that person is seen in.
+    /// </summary>
     public ICollection<string> MentoredGroupNames { get; set; } = [];
     public Guid? UserKey { get; set; }
     public string? UserRole { get; set; }

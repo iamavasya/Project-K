@@ -1,0 +1,44 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.skills-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.skills-tile__shelf {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.skills-tile__label {
+  margin: 0;
+  color: var(--lil-faint);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.skills-tile__label > span {
+  margin-left: 0.25rem;
+  color: var(--p-text-muted-color);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.skills-tile__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.625rem;
+}
+
+.skills-tile__note {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}

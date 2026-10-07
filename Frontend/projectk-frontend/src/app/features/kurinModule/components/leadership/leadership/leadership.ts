@@ -77,7 +77,6 @@ export class LeadershipComponent implements OnInit {
   
   allMembers: MemberLookupDto[] = [];
   
-  // Стан фільтрів
   showArchived = false;
   searchTerm = '';
 
@@ -120,7 +119,6 @@ export class LeadershipComponent implements OnInit {
 
   loadAllMembers(): void {
     if (!this.leadershipType) return;
-    // ... (Логіка завантаження мемберів без змін)
     let groupKey: string | undefined = undefined;
     let kurinKey: string | undefined = undefined;
     const type = this.leadershipType.toLowerCase();
@@ -150,7 +148,6 @@ export class LeadershipComponent implements OnInit {
     const rolesForType = LEADERSHIP_ROLE_MAP[typeKey] || [];
     const rolesFromData = new Map<LeadershipRole, LeadershipHistoryDto[]>();
 
-    // Групуємо дані
     data.leadershipHistories.forEach(history => {
       const role = history.role as LeadershipRole;
       if (!rolesFromData.has(role)) rolesFromData.set(role, []);
@@ -166,7 +163,6 @@ export class LeadershipComponent implements OnInit {
         this.leadershipHistories.push(this.createHistoryRow(role, h));
       });
 
-      // Якщо немає активного (без дати кінця) - додаємо пустий рядок для вводу
       const hasActiveMember = histories.some(h => !h.endDate);
       if (!hasActiveMember) {
         this.leadershipHistories.push(this.createHistoryRow(role));
@@ -189,7 +185,9 @@ export class LeadershipComponent implements OnInit {
     const isArchived = !!data?.endDate;
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
-      member: [{ value: data?.member || null, disabled: isArchived }, Validators.required], 
+      // Жоден уряд не обов'язковий: у проводі буває лише курінний чи гуртковий, суддя й писар, а
+      // решти людей просто немає. Порожній рядок означає «уряд не обсаджено».
+      member: [{ value: data?.member || null, disabled: isArchived }],
       startDate: [data?.startDate ? new Date(data.startDate) : null],
       endDate: [data?.endDate ? new Date(data.endDate) : null],
       leadershipHistoryKey: [data?.leadershipHistoryKey || null],
@@ -197,19 +195,15 @@ export class LeadershipComponent implements OnInit {
     });
   }
 
-  // --- UI ФІЛЬТРАЦІЯ ---
-  // Ця функція викликається в HTML для кожного рядка
   isRowVisible(index: number): boolean {
     const control = this.leadershipHistories.at(index);
     const val = control.getRawValue();
     const isArchived = !!val.endDate;
 
-    // 1. Фільтр архіву
     if (!this.showArchived && isArchived) {
-        return false; // Ховаємо
+        return false;
     }
 
-    // 2. Пошук
     if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase();
         const roleName = leadershipRoleDisplayName(val.role).toLowerCase();
@@ -217,35 +211,40 @@ export class LeadershipComponent implements OnInit {
             ? `${val.member.lastName} ${val.member.firstName}`.toLowerCase() 
             : '';
         
-        // Якщо не знайшли ні в ролі, ні в імені - ховаємо
         if (!roleName.includes(term) && !memberName.includes(term)) {
             return false;
         }
     }
 
-    return true; // Показуємо
+    return true;
   }
 
-  // --- ВИДАЛЕННЯ ---
   onRemoveRow(index: number): void {
     const control = this.leadershipHistories.at(index);
     const role = control.getRawValue().role as LeadershipRole;
 
-    // 1. Видаляємо рядок
     this.leadershipHistories.removeAt(index);
 
-    // 2. Якщо це була обов'язкова роль і ми видалили єдиний запис, додаємо пустий
+    // Одномісний уряд лишається в списку порожнім рядком, щоб його можна було обсадити пізніше
     if (!this.canHaveMultipleMembers(role)) {
        const remainingRows = this.getRoleRowsCount(role);
        if (remainingRows === 0) {
-           // Додаємо назад пустий, щоб роль не зникла зі списку
            this.addRoleRow(role);
        }
     }
   }
 
+  /**
+   * Новий провід без жодної людини зберігати нема чого. Наявний — можна: зняти всіх означає
+   * закрити їхні уряди.
+   */
+  get canSave(): boolean {
+    return !!this.leadershipKey
+      || this.leadershipHistories.getRawValue().some((h: LeadershipHistoryDto) => h.member && !h.endDate);
+  }
+
   saveCadence(): void {
-    if (this.leadershipForm.invalid) {
+    if (this.leadershipForm.invalid || !this.canSave) {
       this.leadershipForm.markAllAsTouched();
       return;
     }

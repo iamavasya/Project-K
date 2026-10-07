@@ -60,7 +60,7 @@ export class PermissionService {
   /**
    * Who seats a провід, per body, the way the backend's AssignableOffices has it: Звʼязковий and
    * admin every one; Курінний only the kurin провід; Гуртковий only his гурток's. Checking
-   * `Leadership:Update` alone let a Гуртковий open the kurin провід form and meet a 403.
+   * `Leadership:Update` alone would let a Гуртковий open the kurin провід form and meet a 403.
    */
   canSetupLeadership(type: LeadershipScope): boolean {
     if (this.isAdmin() || this.has('Leadership:Manage:KurinWide')) {
@@ -93,6 +93,40 @@ export class PermissionService {
 
   canManageKurinSettings(): boolean {
     return this.isAdmin() || this.has('Kurin:Update:KurinWide');
+  }
+
+  /**
+   * Keeps or oversees the kurin's box: the курінний скарбник and the Звʼязковий. Youth get no
+   * `KurinDues` grant at all — their `GroupDues:Read:Own` is about their own balance only.
+   */
+  canSeeKurinDues(): boolean {
+    return this.isAdmin() || this.has('KurinDues:Read');
+  }
+
+  /**
+   * Keeps some гурток's box — Виховник, гуртковий, скарбник гуртка — or reads them all. A youth's
+   * `GroupDues:Read:Own` is about their own balance, not a box, so it does not count.
+   */
+  canSeeGroupDues(): boolean {
+    return this.isAdmin() || this.has('GroupDues:Read:OwnGroups') || this.has('GroupDues:Read:KurinWide');
+  }
+
+  /**
+   * Scores somewhere — a суддя, гуртковий, курінний, Виховник or the Звʼязковий. A youth's
+   * `GroupScore:Read:Own` is about their own points, so it does not count.
+   */
+  canScore(): boolean {
+    return this.isAdmin() || this.has('GroupScore:Create');
+  }
+
+  /** Opens the КВ's private book: the Звʼязковий and the впорядники, nobody else at any scope. */
+  canSeePrivateScore(): boolean {
+    return this.isAdmin() || this.has('KurinScorePrivate:Read');
+  }
+
+  /** Sets how the kurin scores: the суддя куреня and the Звʼязковий. */
+  canManageScore(): boolean {
+    return this.isAdmin() || this.has('KurinScore:Manage');
   }
 
   getRoleSeverity(): string {

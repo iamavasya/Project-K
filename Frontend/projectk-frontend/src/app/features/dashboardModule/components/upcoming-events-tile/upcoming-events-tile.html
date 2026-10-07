@@ -1,0 +1,58 @@
+<section class="kurin-tile events-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Найближче</h2>
+      @if (rows().length) { <span class="lil-count">{{ rows().length }}</span> }
+      <p>
+        @if (awaitingCount(); as count) { чекають відповіді: {{ count }} } @else { два тижні наперед }
+      </p>
+    </div>
+    @if (calendarLink(); as link) {
+      <div class="lil-tile-head__actions">
+        <p-button label="Календар" icon="pi pi-calendar" variant="text" severity="secondary" size="small" [routerLink]="link" />
+      </div>
+    }
+  </div>
+
+  @if (loading() && !events().length) {
+    @for (item of [1, 2, 3]; track item) {
+      <p-skeleton width="100%" height="3.25rem" borderRadius="12px" styleClass="mb-2" />
+    }
+  } @else if (failed()) {
+    <p class="events-tile__note">Події не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (!rows().length) {
+    <app-empty-state art="calendar" title="Найближчі два тижні вільні" body="Коли провід призначить сходини чи захід, тут зʼявиться рядок." />
+  } @else {
+    <ul class="events-tile__list">
+      @for (row of rows(); track row.event.agendaItemKey + row.event.startUtc) {
+        <li class="events-tile__row" [class.events-tile__row--awaiting]="row.isAwaiting">
+          <span class="events-tile__dot" [style.background]="row.event.categoryColorHex || null" aria-hidden="true"></span>
+          <span class="events-tile__body">
+            <span class="events-tile__title">{{ row.event.title }}</span>
+            <span class="events-tile__meta">
+              <span class="events-tile__when">{{ row.day }}@if (row.time) {, {{ row.time }}}</span>
+              @if (row.event.categoryName) { <span>· {{ row.event.categoryName }}</span> }
+              @if (namesKurin()) { <span>· {{ kurinLabel(row) }}</span> }
+            </span>
+          </span>
+          @if (row.event.rsvpRequired || row.event.myResponse) {
+            <span class="events-tile__rsvp" role="group" [attr.aria-label]="'Відповідь: ' + row.event.title">
+              @for (option of options; track option.value) {
+                <button
+                  type="button"
+                  class="events-tile__answer"
+                  [class.events-tile__answer--on]="row.event.myResponse === option.value"
+                  [attr.data-status]="option.value"
+                  [attr.aria-pressed]="row.event.myResponse === option.value"
+                  [disabled]="savingKey() === row.event.agendaItemKey"
+                  (click)="respond.emit({ event: row.event, status: option.value })">
+                  {{ option.label }}
+                </button>
+              }
+            </span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
