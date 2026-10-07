@@ -61,27 +61,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot respond to this event.");
         }
 
-        var existing = await _uow.AgendaResponses.GetForItemAndUserAsync(item.AgendaItemKey, userKey.Value, cancellationToken);
-        if (existing is null)
-        {
-            _uow.AgendaResponses.Create(new AgendaResponse
-            {
-                AgendaItemKey = item.AgendaItemKey,
-                UserKey = userKey.Value,
-                Status = request.Status,
-                RespondedAtUtc = DateTime.UtcNow
-            }, cancellationToken);
-        }
-        else if (existing.Status != request.Status)
-        {
-            // Re-time on change so switching to «Going» joins the back of the queue rather than keeping
-            // an earlier «Maybe» slot.
-            existing.Status = request.Status;
-            existing.RespondedAtUtc = DateTime.UtcNow;
-            existing.UpdatedDate = DateTime.UtcNow;
-            _uow.AgendaResponses.Update(existing, cancellationToken);
-        }
-
+        await AgendaRsvpWriter.UpsertAsync(_uow, item, userKey.Value, request.Status, DateTime.UtcNow, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, cancellationToken);

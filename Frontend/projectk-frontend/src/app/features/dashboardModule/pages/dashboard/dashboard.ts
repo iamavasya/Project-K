@@ -14,6 +14,11 @@ import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-rol
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MyKurinsTileComponent } from '../../components/my-kurins-tile/my-kurins-tile';
 import { MyProfileTileComponent } from '../../components/my-profile-tile/my-profile-tile';
+import { MyTasksTileComponent, TaskStatusChange } from '../../components/my-tasks-tile/my-tasks-tile';
+import { EventResponseChange, UpcomingEventsTileComponent } from '../../components/upcoming-events-tile/upcoming-events-tile';
+import { MyEventDto, MyTaskDto } from '../../models/me.dto';
+import { MeService } from '../../services/me.service';
+import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
 
 /**
@@ -23,7 +28,7 @@ import { greeting, todayLabel } from '../../functions/greeting.function';
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [TileBoardComponent, TileDefDirective, MyProfileTileComponent, MyKurinsTileComponent],
+  imports: [TileBoardComponent, TileDefDirective, MyProfileTileComponent, MyKurinsTileComponent, UpcomingEventsTileComponent, MyTasksTileComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,6 +38,8 @@ export class DashboardComponent implements OnInit {
   private readonly members = inject(MemberService);
   private readonly router = inject(Router);
   private readonly messages = inject(MessageService);
+  private readonly me = inject(MeService);
+  private readonly agenda = inject(AgendaService);
 
   readonly boardKey = TILE_BOARD_KEYS.dashboard;
 
@@ -42,6 +49,19 @@ export class DashboardComponent implements OnInit {
   readonly memberLoading = signal(true);
   readonly kurinsLoading = signal(true);
   readonly switchingTo = signal<string | null>(null);
+
+  readonly events = signal<MyEventDto[]>([]);
+  readonly eventsLoading = signal(true);
+  readonly eventsFailed = signal(false);
+  readonly respondingTo = signal<string | null>(null);
+
+  readonly tasks = signal<MyTaskDto[]>([]);
+  readonly tasksLoading = signal(true);
+  readonly tasksFailed = signal(false);
+  readonly movingTask = signal<string | null>(null);
+
+  /** A row names its kurin only when there is more than one to tell apart. */
+  readonly namesKurin = computed(() => this.kurins().length > 1);
 
   readonly now = new Date();
   readonly greeting = greeting(this.now);
@@ -81,6 +101,60 @@ export class DashboardComponent implements OnInit {
     this.auth.getKurinScopeOptions().subscribe({
       next: kurins => { this.kurins.set(kurins); this.kurinsLoading.set(false); },
       error: () => this.kurinsLoading.set(false)
+    });
+    this.loadEvents();
+    this.loadTasks();
+  }
+
+  private loadEvents(): void {
+    this.me.getEvents().subscribe({
+      next: events => { this.events.set(events); this.eventsLoading.set(false); this.eventsFailed.set(false); },
+      error: () => { this.eventsLoading.set(false); this.eventsFailed.set(true); }
+    });
+  }
+
+  private loadTasks(): void {
+    this.me.getTasks().subscribe({
+      next: tasks => { this.tasks.set(tasks); this.tasksLoading.set(false); this.tasksFailed.set(false); },
+      error: () => { this.tasksLoading.set(false); this.tasksFailed.set(true); }
+    });
+  }
+
+  /** The answer lands on the row at once; every occurrence of a series shares it. */
+  respond({ event, status }: EventResponseChange): void {
+    if (event.myResponse === status || this.respondingTo()) {
+      return;
+    }
+    this.respondingTo.set(event.agendaItemKey);
+    this.me.setEventResponse(event.agendaItemKey, status).subscribe({
+      next: () => {
+        this.respondingTo.set(null);
+        this.events.set(this.events().map(e => e.agendaItemKey === event.agendaItemKey ? { ...e, myResponse: status } : e));
+      },
+      error: (error: unknown) => {
+        this.respondingTo.set(null);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: failureDetail(error, 'Спробуй ще раз.') });
+      }
+    });
+  }
+
+  /** Moved through the board's own endpoint: it answers for the kurin the token acts in, which is the only place the tile offers it. */
+  moveTask({ task, status }: TaskStatusChange): void {
+    if (this.movingTask()) {
+      return;
+    }
+    this.movingTask.set(task.agendaItemKey);
+    this.agenda.changeStatus(task.agendaItemKey, status).subscribe({
+      next: () => {
+        this.movingTask.set(null);
+        this.tasks.set(status === 'Done'
+          ? this.tasks().filter(t => t.agendaItemKey !== task.agendaItemKey)
+          : this.tasks().map(t => t.agendaItemKey === task.agendaItemKey ? { ...t, status } : t));
+      },
+      error: (error: unknown) => {
+        this.movingTask.set(null);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося змінити', detail: failureDetail(error, 'Спробуй ще раз.') });
+      }
     });
   }
 

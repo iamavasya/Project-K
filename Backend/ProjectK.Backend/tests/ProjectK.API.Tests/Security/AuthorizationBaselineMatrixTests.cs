@@ -27,6 +27,7 @@ using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.API.Controllers.DuesModule;
 using ProjectK.API.Controllers.ScoreModule;
+using ProjectK.API.Controllers.MeModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 
@@ -171,6 +172,11 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<PrivateScoreController, Guid, Guid>>(nameof(PrivateScoreController.DeleteEntry), "RequireUser");
         yield return Row<Action<PrivateScoreController, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.CreateCriterion), "RequireUser");
         yield return Row<Action<PrivateScoreController, Guid, Guid, UpsertPrivateScoreCriterionRequest>>(nameof(PrivateScoreController.UpdateCriterion), "RequireUser");
+
+        // Me: about the caller alone, so signed-in is the whole gate; each kurin's visibility is settled inside.
+        yield return Row<Action<MeController, int>>(nameof(MeController.GetEvents), "RequireUser");
+        yield return Row<Action<MeController, Guid, SetMyEventResponseRequest>>(nameof(MeController.SetEventResponse), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetTasks), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

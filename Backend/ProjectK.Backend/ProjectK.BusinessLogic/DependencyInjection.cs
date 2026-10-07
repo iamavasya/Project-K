@@ -16,6 +16,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
@@ -50,6 +51,7 @@ public static class DependencyInjection
         services.AddMemberModule();
         services.AddDuesModule();
         services.AddScoreModule();
+        services.AddScoped<MeAgendaScopes>();
 
         // Kurin module
         services.AddScoped<IAgendaAccess, AgendaAccess>();

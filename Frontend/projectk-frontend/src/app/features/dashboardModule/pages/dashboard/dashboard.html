@@ -13,6 +13,28 @@
   </header>
 
   <app-tile-board [boardKey]="boardKey" [canHide]="true" class="block">
+    <ng-template [appTileDef]="{ key: 'upcoming-events', span: 'half', label: 'Найближче' }">
+      <app-upcoming-events-tile
+        [events]="events()"
+        [loading]="eventsLoading()"
+        [failed]="eventsFailed()"
+        [namesKurin]="namesKurin()"
+        [currentKurinKey]="currentKurinKey()"
+        [savingKey]="respondingTo()"
+        (respond)="respond($event)" />
+    </ng-template>
+
+    <ng-template [appTileDef]="{ key: 'my-tasks', span: 'half', label: 'Мої задачі' }">
+      <app-my-tasks-tile
+        [tasks]="tasks()"
+        [loading]="tasksLoading()"
+        [failed]="tasksFailed()"
+        [namesKurin]="namesKurin()"
+        [currentKurinKey]="currentKurinKey()"
+        [savingKey]="movingTask()"
+        (changeStatus)="moveTask($event)" />
+    </ng-template>
+
     <ng-template [appTileDef]="{ key: 'my-profile', span: 'half', label: 'Мій профіль' }">
       <app-my-profile-tile [member]="member()" [loading]="memberLoading()" />
     </ng-template>

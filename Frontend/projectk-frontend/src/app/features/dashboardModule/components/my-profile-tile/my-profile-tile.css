@@ -10,11 +10,23 @@
   height: 100%;
 }
 
+/* One row where the tile is wide enough: photo, words, the way to the card. The words keep a
+   readable width and the button drops under them in a narrow tile instead of crushing the name. */
 .profile-tile__body {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
   min-width: 0;
+}
+
+.profile-tile__lines {
+  flex: 1 1 12rem;
+}
+
+.profile-tile__body > p-button {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .profile-tile__photo,
@@ -48,6 +60,10 @@
 }
 
 .profile-tile__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
   font-size: var(--lil-text-h3);
   font-weight: var(--lil-weight-heading);
   letter-spacing: var(--lil-tracking-h3);
@@ -69,12 +85,19 @@
   overflow-wrap: anywhere;
 }
 
-.profile-tile__actions {
-  margin-top: auto;
-}
-
 .profile-tile__empty {
   margin: 0;
   color: var(--p-text-muted-color);
   font-size: var(--lil-text-caption);
+}
+
+@media (max-width: 640px) {
+  .profile-tile__body > p-button {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  :host ::ng-deep .profile-tile__open {
+    width: 100%;
+  }
 }

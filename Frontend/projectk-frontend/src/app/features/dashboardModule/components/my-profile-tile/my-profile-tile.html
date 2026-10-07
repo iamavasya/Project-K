@@ -21,16 +21,16 @@
         <span class="profile-tile__initials" aria-hidden="true">{{ initials() }}</span>
       }
       <div class="profile-tile__lines">
-        <span class="profile-tile__name">{{ fullName() }}</span>
-        <span class="profile-tile__meta">
-          <p-tag [value]="m.latestPlastLevelDisplay || 'Ступінь не вказано'" severity="secondary" />
-          @if (m.groupName) { <span>{{ m.groupName }}</span> }
+        <span class="profile-tile__name">
+          {{ fullName() }}
+          <p-tag [value]="m.latestPlastLevelDisplay || 'Ступінь не вказано'" severity="info" styleClass="rounded-full !text-xs" />
         </span>
-        @if (m.email) { <span class="profile-tile__contact">{{ m.email }}</span> }
+        <span class="profile-tile__meta">
+          @if (m.groupName) { <span>{{ m.groupName }}</span> }
+          @if (m.email) { <span class="profile-tile__contact">{{ m.email }}</span> }
+        </span>
       </div>
-    </div>
-    <div class="profile-tile__actions">
-      <p-button label="Відкрити профіль" icon="pi pi-user" severity="secondary" [routerLink]="['/member', m.memberKey]" />
+      <p-button label="Відкрити профіль" icon="pi pi-user" severity="secondary" styleClass="profile-tile__open" [routerLink]="['/member', m.memberKey]" />
     </div>
   } @else {
     <p class="profile-tile__empty">Картку не вдалося прочитати. Спробуй за хвилину.</p>
