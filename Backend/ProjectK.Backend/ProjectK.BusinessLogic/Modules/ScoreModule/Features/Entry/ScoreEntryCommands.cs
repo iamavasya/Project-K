@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
@@ -102,6 +103,13 @@ public static class ScoreEntryWriter
         return null;
     }
 
+    /// <summary>
+    /// The same position was given for the same event between our check and our save — the unique
+    /// index caught what the check could not. Said the way the check would have said it.
+    /// </summary>
+    public static ServiceResult<T> GivenMeanwhile<T>() =>
+        ServiceResult<T>.Failure(ResultType.Conflict, "ItemAlreadyGiven", "Уже дав хтось інший щойно.");
+
     public static void Apply(ScoreEntry entry, UpsertScoreEntryRequest request, ScoreBook book)
     {
         entry.ScoreItemKey = request.ScoreItemKey;
@@ -186,7 +194,15 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
         _score.ScoreEntries.Create(entry, cancellationToken);
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Created, ScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
 
-        await _score.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _score.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            return ScoreEntryWriter.GivenMeanwhile<Guid>();
+        }
+
         return new ServiceResult<Guid>(ResultType.Created, entry.ScoreEntryKey);
     }
 }
@@ -253,7 +269,15 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         _score.ScoreEntries.Update(entry, cancellationToken);
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Updated, ScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
 
-        await _score.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _score.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            return ScoreEntryWriter.GivenMeanwhile<object>();
+        }
+
         return new ServiceResult<object>(ResultType.Success);
     }
 }

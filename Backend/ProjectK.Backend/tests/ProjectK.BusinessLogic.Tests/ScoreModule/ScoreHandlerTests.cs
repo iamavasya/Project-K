@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -95,6 +96,9 @@ public class ScoreHandlerTests
         var agenda = new Mock<IAgendaItemRepository>();
         agenda.Setup(a => a.GetByKeyWithAssignmentsAsync(Skhodyny, It.IsAny<CancellationToken>())).ReturnsAsync(_event);
         agenda.Setup(a => a.GetByKeyAsync(Skhodyny, It.IsAny<CancellationToken>())).ReturnsAsync(_event);
+        agenda.Setup(a => a.GetCategoryKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
+                keys.Where(k => k == Skhodyny).ToDictionary(k => k, _ => _event.AgendaCategoryKey));
         var responses = new Mock<IAgendaResponseRepository>();
         responses.Setup(r => r.GetForItemAsync(Skhodyny, It.IsAny<CancellationToken>())).ReturnsAsync(() => _responses);
         _unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
@@ -255,6 +259,65 @@ public class ScoreHandlerTests
         first.Type.Should().Be(ResultType.Created);
         _entries.Should().ContainSingle().Which.Points.Should().Be(1);
         second.Type.Should().Be(ResultType.Conflict);
+    }
+
+    // Two judges give the same position at once: the unique index catches the slower one, which
+    // must hear the same 409 the preflight check gives, not a 500.
+    [Fact]
+    public async Task APositionGivenMeanwhile_IsAConflict_NotAnError()
+    {
+        var odnostriy = new ScoreItem { KurinKey = Kurin, Name = "Однострій", Points = 1 };
+        _items.Add(odnostriy);
+        _score.Setup(s => s.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateRowException(new InvalidOperationException()));
+        var request = new UpsertScoreEntryRequest { MembershipKey = _oksana, ScoreItemKey = odnostriy.ScoreItemKey, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, OccurredOn = new DateOnly(2026, 10, 6) };
+
+        var result = await Giver().Handle(new CreateScoreEntryCommand(Kurin, request), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("ItemAlreadyGiven");
+    }
+
+    // Two judges mark the same youth at once. The slower save fails on the unique index; its second
+    // pass sees the other judge's mark and says so instead of failing the whole sheet.
+    [Fact]
+    public async Task AMarkMadeMeanwhile_IsAlreadyMarked_NotAnError()
+    {
+        var saves = 0;
+        _score.Setup(s => s.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(() =>
+        {
+            if (++saves > 1)
+            {
+                return Task.FromResult(1);
+            }
+
+            _marks.Clear();
+            _marks.Add(new ScoreAttendance { KurinKey = Kurin, MembershipKey = _oksana, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Guid.NewGuid() });
+            throw new DuplicateRowException(new InvalidOperationException());
+        });
+
+        var result = await Marker().Handle(MarkCommand(_oksana), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data.Should().ContainSingle().Which.Outcome.Should().Be("AlreadyMarked");
+    }
+
+    // A youth who left keeps the гурток they left from: what they earned before leaving still
+    // counts for it, and so do the days they were there.
+    [Fact]
+    public async Task AYouthWhoLeft_KeepsWhatTheyEarned_ForTheirGurtok()
+    {
+        var left = Guid.NewGuid();
+        var member = Guid.NewGuid();
+        _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
+        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, Sokoly, "Ярема", "Пластун", "yarema@x", null));
+        _entries.Add(new ScoreEntry { KurinKey = Kurin, MembershipKey = left, Points = 4, Reason = "ватра", OccurredOn = new DateOnly(2026, 10, 1) });
+
+        var book = await Books().OpenAsync(Kurin, CancellationToken.None);
+        var sokoly = book.Ledger.Groups(new ScorePeriod(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 6)), [Sokoly, Levy])
+            .Single(g => g.GroupKey == Sokoly);
+
+        sokoly.YouthPoints.Should().Be(4);
+        sokoly.YouthCount.Should().BeGreaterThan(1, "the youth who left counts for the days before leaving");
     }
 
     [Fact]

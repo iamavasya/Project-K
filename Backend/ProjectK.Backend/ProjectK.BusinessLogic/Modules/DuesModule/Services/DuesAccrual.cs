@@ -1,4 +1,5 @@
 using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dues;
@@ -44,7 +45,7 @@ public sealed class DuesAccrual : IDuesAccrual
 
         if (added)
         {
-            await _dues.SaveChangesAsync(cancellationToken);
+            await SaveAsync(cancellationToken);
         }
     }
 
@@ -66,7 +67,24 @@ public sealed class DuesAccrual : IDuesAccrual
         var charged = await ChargedAsync(kurinKey, cancellationToken);
         if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged))
         {
+            await SaveAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Two reads of the same kurin accrue at once — the dashboard asks for dues and points together —
+    /// and the slower one hits the unique (membership, quarter) index. The charges it wanted are the
+    /// ones the faster read just wrote, so there is nothing to report; anything still missing is
+    /// charged by the next read.
+    /// </summary>
+    private async Task SaveAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
             await _dues.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
         }
     }
 

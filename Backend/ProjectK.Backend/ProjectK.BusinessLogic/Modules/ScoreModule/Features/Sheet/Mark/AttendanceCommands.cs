@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -75,6 +76,24 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
             .Where(m => m.Kind == MembershipKind.Youth && m.LeftAtUtc is null)
             .ToDictionary(m => m.MembershipKey);
 
+        try
+        {
+            return await MarkAsync(request, occurrence.StartUtc, youths, cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            // Another judge marked one of these people between our check and our save. A second
+            // pass sees their mark and answers AlreadyMarked for that person, and marks the rest.
+            return await MarkAsync(request, occurrence.StartUtc, youths, cancellationToken);
+        }
+    }
+
+    private async Task<ServiceResult<IReadOnlyList<MarkAttendanceResultDto>>> MarkAsync(
+        MarkAttendanceCommand request,
+        DateTime occurrenceStartUtc,
+        IReadOnlyDictionary<Guid, KurinMembershipRecord> youths,
+        CancellationToken cancellationToken)
+    {
         var results = new List<MarkAttendanceResultDto>();
         var now = _time.GetUtcNow().UtcDateTime;
         ScoreBook? book = null;
@@ -91,7 +110,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
                 return ScoreAccess.Forbidden<IReadOnlyList<MarkAttendanceResultDto>>();
             }
 
-            var standing = await _score.ScoreAttendances.GetStandingAsync(membershipKey, request.AgendaItemKey, occurrence.StartUtc, cancellationToken);
+            var standing = await _score.ScoreAttendances.GetStandingAsync(membershipKey, request.AgendaItemKey, occurrenceStartUtc, cancellationToken);
             if (standing is not null)
             {
                 book ??= await _books.OpenAsync(request.KurinKey, cancellationToken);
@@ -104,7 +123,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
                 KurinKey = request.KurinKey,
                 MembershipKey = membershipKey,
                 AgendaItemKey = request.AgendaItemKey,
-                OccurrenceStartUtc = occurrence.StartUtc,
+                OccurrenceStartUtc = occurrenceStartUtc,
                 MarkedByUserKey = _currentUser.UserId,
                 MarkedAtUtc = now,
                 CreatedDate = now,

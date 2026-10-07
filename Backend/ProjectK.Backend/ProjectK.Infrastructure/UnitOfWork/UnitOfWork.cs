@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -110,9 +113,22 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
         _context = context;
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken token = default)
+    public async Task<int> SaveChangesAsync(CancellationToken token = default)
     {
-        return _context.SaveChangesAsync(token);
+        try
+        {
+            return await _context.SaveChangesAsync(token);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            // The whole save rolled back; rows it tried to add must not ride along on the next save.
+            foreach (var added in _context.ChangeTracker.Entries().Where(e => e.State == EntityState.Added).ToList())
+            {
+                added.State = EntityState.Detached;
+            }
+
+            throw new DuplicateRowException(exception);
+        }
     }
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default)
