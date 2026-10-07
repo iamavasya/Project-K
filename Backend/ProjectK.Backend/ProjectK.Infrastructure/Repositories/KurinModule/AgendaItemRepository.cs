@@ -22,6 +22,19 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
             .FirstOrDefaultAsync(a => a.AgendaItemKey == agendaItemKey, token);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Guid?>> GetCategoryKeysAsync(IReadOnlyCollection<Guid> agendaItemKeys, CancellationToken token = default)
+    {
+        if (agendaItemKeys.Count == 0)
+        {
+            return new Dictionary<Guid, Guid?>();
+        }
+
+        return await Context.AgendaItems
+            .AsNoTracking()
+            .Where(a => agendaItemKeys.Contains(a.AgendaItemKey))
+            .ToDictionaryAsync(a => a.AgendaItemKey, a => a.AgendaCategoryKey, token);
+    }
+
     public void AddAssignment(AgendaAssignment assignment)
     {
         Context.AgendaAssignments.Add(assignment);

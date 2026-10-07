@@ -9,6 +9,9 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// <summary>Loads an item with its assignments for detail, edit and authorization checks.</summary>
     Task<AgendaItem?> GetByKeyWithAssignmentsAsync(Guid agendaItemKey, CancellationToken token = default);
 
+    /// <summary>The group of events each item belongs to, in one query; items that no longer exist are absent.</summary>
+    Task<IReadOnlyDictionary<Guid, Guid?>> GetCategoryKeysAsync(IReadOnlyCollection<Guid> agendaItemKeys, CancellationToken token = default);
+
     /// <summary>Marks an assignment for insertion. Explicit Added state avoids collection-fixup ambiguity.</summary>
     void AddAssignment(AgendaAssignment assignment);
 

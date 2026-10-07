@@ -100,20 +100,17 @@ public sealed class ScoreBook
         var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
         var groupNames = (await unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken)).ToDictionary(g => g.GroupKey, g => g.Name);
 
-        // The group of each event a mark is for, read once: the ledger prices a mark by it.
+        // The ledger prices a mark by its event's group, so every marked event's group is read at once.
         var eventKeys = attendances.Select(a => a.AgendaItemKey).Distinct().ToList();
-        var eventCategories = new Dictionary<Guid, Guid?>();
-        foreach (var eventKey in eventKeys)
-        {
-            var item = await unitOfWork.AgendaItems.GetByKeyAsync(eventKey, cancellationToken);
-            eventCategories[eventKey] = item?.AgendaCategoryKey;
-        }
+        var eventCategories = await unitOfWork.AgendaItems.GetCategoryKeysAsync(eventKeys, cancellationToken);
 
         var youths = inKurin.Values
             .Where(m => m.Kind == MembershipKind.Youth)
+            // A youth who left keeps the гурток they left from: what they earned before leaving, and
+            // the days they were there, still count for it. LeftOn bounds the days.
             .Select(m => new ScoreMember(
                 m.MembershipKey,
-                m.LeftAtUtc is null ? m.GroupKey : null,
+                m.GroupKey,
                 DateOnly.FromDateTime(m.JoinedAtUtc),
                 m.LeftAtUtc is { } left ? DateOnly.FromDateTime(left) : null))
             .ToList();
