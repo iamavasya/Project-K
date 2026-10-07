@@ -1,0 +1,76 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.dues-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.dues-tile__list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The same block the card shows a youth: paid is green, debt is red, a surplus plain. */
+.dues-tile__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg);
+}
+
+.dues-tile__row--ok {
+  background: var(--lil-dues-paid-bg);
+  border-color: var(--lil-dues-paid-line);
+}
+
+.dues-tile__row--ok .dues-tile__amount {
+  color: var(--lil-dues-paid-fg);
+}
+
+.dues-tile__row--debt {
+  background: var(--lil-dues-debt-bg);
+  border-color: var(--lil-dues-debt-line);
+}
+
+.dues-tile__row--debt .dues-tile__amount {
+  color: var(--lil-dues-debt-fg);
+}
+
+.dues-tile__amount {
+  font-size: var(--lil-text-h2);
+  font-weight: var(--lil-weight-heading);
+  letter-spacing: var(--lil-tracking-h2);
+  line-height: var(--lil-leading-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.dues-tile__sub {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.dues-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.375rem;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.dues-tile__note {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}

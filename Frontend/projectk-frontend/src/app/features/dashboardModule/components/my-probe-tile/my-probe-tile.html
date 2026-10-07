@@ -1,0 +1,50 @@
+<section class="kurin-tile probe-tile">
+  <div class="lil-tile-head">
+    <div>
+      <h2>Проба</h2>
+      @if (probe(); as p) {
+        <p>{{ p.title }} · {{ statusLabel() }}</p>
+      } @else {
+        <p>Юнацька дорога</p>
+      }
+    </div>
+    @if (probeLink(); as link) {
+      <div class="lil-tile-head__actions">
+        <p-button label="Відкрити" icon="pi pi-arrow-right" iconPos="right" variant="text" severity="secondary" size="small" [routerLink]="link" />
+      </div>
+    }
+  </div>
+
+  @if (loading() && !growth()) {
+    <p-skeleton width="100%" height="0.5rem" borderRadius="999px" />
+    <p-skeleton width="70%" height="1rem" styleClass="mt-3" />
+    <p-skeleton width="55%" height="1rem" styleClass="mt-2" />
+  } @else if (failed()) {
+    <p class="probe-tile__note">Пробу не вдалося прочитати. Спробуй за хвилину.</p>
+  } @else if (probe(); as p) {
+    <div class="probe-tile__progress" role="progressbar" [attr.aria-valuenow]="p.signedPoints" aria-valuemin="0" [attr.aria-valuemax]="p.totalPoints">
+      <div class="lil-bar"><div class="lil-bar__fill" [style.width.%]="percent()"></div></div>
+      <p class="probe-tile__count">
+        <strong>{{ p.signedPoints }}</strong> з {{ p.totalPoints }} точок підписано · {{ percent() }}%
+      </p>
+    </div>
+
+    @if (p.nextPoints.length) {
+      <div class="probe-tile__next">
+        <p class="probe-tile__label">{{ p.status === 'NotStarted' ? 'З чого починається' : 'Далі' }}</p>
+        <ul class="probe-tile__points">
+          @for (point of p.nextPoints; track point.pointId) {
+            <li>
+              <span class="probe-tile__code">{{ point.sectionCode }}</span>
+              <span class="probe-tile__point">{{ point.title }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else if (p.status === 'Completed') {
+      <p class="probe-tile__note">Усі точки підписані — лишилось, щоб провід затвердив пробу.</p>
+    }
+  } @else {
+    <app-empty-state art="trail" title="Проби складені" body="Усе, що є в каталозі, уже підписано й затверджено." />
+  }
+</section>

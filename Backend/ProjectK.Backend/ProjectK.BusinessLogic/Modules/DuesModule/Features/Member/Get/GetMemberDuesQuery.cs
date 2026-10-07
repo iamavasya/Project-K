@@ -23,8 +23,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private const int RecentEntries = 8;
 
     private readonly IDuesUnitOfWork _dues;
+    private readonly DuesLedgerReader _ledgers;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDuesAccrual _accrual;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _resourceAccess;
@@ -33,8 +33,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
 
     public GetMemberDuesQueryHandler(
         IDuesUnitOfWork dues,
+        DuesLedgerReader ledgers,
         IUnitOfWork unitOfWork,
-        IDuesAccrual accrual,
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
@@ -42,8 +42,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         TimeProvider time)
     {
         _dues = dues;
+        _ledgers = ledgers;
         _unitOfWork = unitOfWork;
-        _accrual = accrual;
         _memberships = memberships;
         _members = members;
         _resourceAccess = resourceAccess;
@@ -68,17 +68,11 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current) });
         }
 
-        await _accrual.AccrueKurinAsync(kurinKey, cancellationToken);
-
-        var rates = await _dues.KurinDuesRates.GetForKurinAsync(kurinKey, cancellationToken);
-        var groupRates = await _dues.GroupDuesRates.GetForKurinAsync(kurinKey, cancellationToken);
-        var concessions = await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken);
-        var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
         var entries = await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken);
         var groupNames = (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken))
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
-        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries);
         var mine = memberships.Select(m => m.MembershipKey).ToHashSet();
         var accounts = ledger.Accounts().Where(a => mine.Contains(a.MembershipKey)).ToList();
         if (accounts.Count == 0)

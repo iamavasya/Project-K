@@ -1,4 +1,5 @@
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -37,6 +38,9 @@ public interface IMemberDirectory
 
     /// <summary>The kurin a member belongs to. Null when the member does not exist.</summary>
     Task<Guid?> FindKurinKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Every ступінь recorded for the person, in no particular order; empty for nobody.</summary>
+    Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>Everyone in a kurin, in one read.</summary>
     Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(

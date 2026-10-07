@@ -15,6 +15,9 @@ public interface IMemberProgressDirectory
     /// <summary>Everything one person has taken and earned, in one call.</summary>
     Task<MemberProgress> GetForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>The ids of the points of one проба the person has had signed; empty when none.</summary>
+    Task<IReadOnlyCollection<string>> GetSignedPointIdsAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// How much there is, without reading it. The dossier index says what a folder holds before
     /// anyone asks to open it.

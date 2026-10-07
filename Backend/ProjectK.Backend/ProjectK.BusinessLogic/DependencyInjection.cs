@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddDuesModule();
         services.AddScoreModule();
         services.AddScoped<MeAgendaScopes>();
+        services.AddScoped<MePerson>();
 
         // Kurin module
         services.AddScoped<IAgendaAccess, AgendaAccess>();
@@ -82,6 +83,7 @@ public static class DependencyInjection
     private static IServiceCollection AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
+        services.AddScoped<DuesLedgerReader>();
         services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<GroupDuesAccess>();
         services.AddScoped<KurinDuesAccess>();

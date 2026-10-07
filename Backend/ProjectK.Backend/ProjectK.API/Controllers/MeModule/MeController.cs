@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.Common.Models.Enums;
@@ -53,6 +56,33 @@ public class MeController : ControllerBase
     public async Task<IActionResult> GetTasks()
     {
         var result = await _mediator.Send(new GetMyTasksQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The проба in hand and the вмілості — empty, with the flag off, for anyone outside the youth programme.</summary>
+    [HttpGet("growth")]
+    [ProducesResponseType(typeof(MyGrowthDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGrowth()
+    {
+        var result = await _mediator.Send(new GetMyGrowthQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The вкладка in every kurin that charges the person.</summary>
+    [HttpGet("dues")]
+    [ProducesResponseType(typeof(IReadOnlyList<MyDuesDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDues()
+    {
+        var result = await _mediator.Send(new GetMyDuesQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Own points this пластовий рік, per kurin where the person is a youth in a гурток.</summary>
+    [HttpGet("score")]
+    [ProducesResponseType(typeof(IReadOnlyList<MyScoreDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetScore()
+    {
+        var result = await _mediator.Send(new GetMyScoreQuery());
         return result.ToActionResult(this);
     }
 }

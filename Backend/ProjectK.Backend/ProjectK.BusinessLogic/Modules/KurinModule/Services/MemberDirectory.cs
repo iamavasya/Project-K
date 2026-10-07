@@ -3,6 +3,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -42,6 +43,12 @@ public sealed class MemberDirectory : IMemberDirectory
 
     public Task<Guid?> FindKurinKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetKurinKeyByMemberAsync(memberKey, cancellationToken);
+
+    public async Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default)
+    {
+        var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
+        return member?.PlastLevelHistory.Select(h => h.PlastLevel).ToList() ?? [];
+    }
 
     public Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
         Guid kurinKey,

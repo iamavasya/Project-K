@@ -177,6 +177,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController, int>>(nameof(MeController.GetEvents), "RequireUser");
         yield return Row<Action<MeController, Guid, SetMyEventResponseRequest>>(nameof(MeController.SetEventResponse), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetTasks), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetGrowth), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");

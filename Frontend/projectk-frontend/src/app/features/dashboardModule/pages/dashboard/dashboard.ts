@@ -12,11 +12,15 @@ import { MembershipDto } from '../../../kurinModule/models/membership.dto';
 import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-name.model';
 import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
+import { MyDuesTileComponent } from '../../components/my-dues-tile/my-dues-tile';
 import { MyKurinsTileComponent } from '../../components/my-kurins-tile/my-kurins-tile';
+import { MyProbeTileComponent } from '../../components/my-probe-tile/my-probe-tile';
 import { MyProfileTileComponent } from '../../components/my-profile-tile/my-profile-tile';
+import { MyScoreTileComponent } from '../../components/my-score-tile/my-score-tile';
+import { MySkillsTileComponent } from '../../components/my-skills-tile/my-skills-tile';
 import { MyTasksTileComponent, TaskStatusChange } from '../../components/my-tasks-tile/my-tasks-tile';
 import { EventResponseChange, UpcomingEventsTileComponent } from '../../components/upcoming-events-tile/upcoming-events-tile';
-import { MyEventDto, MyTaskDto } from '../../models/me.dto';
+import { MyDuesDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
@@ -28,7 +32,11 @@ import { greeting, todayLabel } from '../../functions/greeting.function';
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [TileBoardComponent, TileDefDirective, MyProfileTileComponent, MyKurinsTileComponent, UpcomingEventsTileComponent, MyTasksTileComponent],
+  imports: [
+    TileBoardComponent, TileDefDirective,
+    MyProfileTileComponent, MyKurinsTileComponent, UpcomingEventsTileComponent, MyTasksTileComponent,
+    MyProbeTileComponent, MySkillsTileComponent, MyDuesTileComponent, MyScoreTileComponent
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -59,6 +67,20 @@ export class DashboardComponent implements OnInit {
   readonly tasksLoading = signal(true);
   readonly tasksFailed = signal(false);
   readonly movingTask = signal<string | null>(null);
+
+  /* Tiles that are not for everyone: each appears only once its reply says there is something to show. */
+  readonly growth = signal<MyGrowthDto | null>(null);
+  readonly growthLoading = signal(true);
+  readonly growthFailed = signal(false);
+  readonly dues = signal<MyDuesDto[]>([]);
+  readonly duesLoading = signal(true);
+  readonly duesFailed = signal(false);
+  readonly scores = signal<MyScoreDto[]>([]);
+  readonly scoresLoading = signal(true);
+  readonly scoresFailed = signal(false);
+
+  /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
+  readonly hasYouthProgram = computed(() => this.growth()?.hasYouthProgram ?? false);
 
   /** A row names its kurin only when there is more than one to tell apart. */
   readonly namesKurin = computed(() => this.kurins().length > 1);
@@ -104,6 +126,30 @@ export class DashboardComponent implements OnInit {
     });
     this.loadEvents();
     this.loadTasks();
+    this.loadGrowth();
+    this.loadDues();
+    this.loadScores();
+  }
+
+  private loadGrowth(): void {
+    this.me.getGrowth().subscribe({
+      next: growth => { this.growth.set(growth); this.growthLoading.set(false); this.growthFailed.set(false); },
+      error: () => { this.growthLoading.set(false); this.growthFailed.set(true); }
+    });
+  }
+
+  private loadDues(): void {
+    this.me.getDues().subscribe({
+      next: dues => { this.dues.set(dues); this.duesLoading.set(false); this.duesFailed.set(false); },
+      error: () => { this.duesLoading.set(false); this.duesFailed.set(true); }
+    });
+  }
+
+  private loadScores(): void {
+    this.me.getScore().subscribe({
+      next: scores => { this.scores.set(scores); this.scoresLoading.set(false); this.scoresFailed.set(false); },
+      error: () => { this.scoresLoading.set(false); this.scoresFailed.set(true); }
+    });
   }
 
   private loadEvents(): void {

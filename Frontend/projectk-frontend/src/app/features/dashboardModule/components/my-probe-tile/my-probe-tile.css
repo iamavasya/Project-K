@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.probe-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.probe-tile__progress {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.probe-tile__count {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.probe-tile__count strong {
+  color: var(--p-text-color);
+  font-size: var(--lil-text-h3);
+  font-weight: var(--lil-weight-heading);
+}
+
+.probe-tile__next {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* The next points, one per line, with the section's code as a small plaque — as the проба itself lists them. */
+.probe-tile__label {
+  margin: 0;
+  color: var(--lil-faint);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.probe-tile__points {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.probe-tile__points > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg);
+}
+
+.probe-tile__code {
+  padding: 0.0625rem 0.4rem;
+  border-radius: 6px;
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.probe-tile__point {
+  font-size: var(--lil-text-body);
+  overflow-wrap: anywhere;
+}
+
+.probe-tile__note {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}

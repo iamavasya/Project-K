@@ -12,27 +12,18 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// </remarks>
 public sealed class DuesDirectory : IDuesDirectory
 {
-    private readonly IDuesUnitOfWork _dues;
-    private readonly IDuesAccrual _accrual;
+    private readonly DuesLedgerReader _ledgers;
     private readonly TimeProvider _time;
 
-    public DuesDirectory(IDuesUnitOfWork dues, IDuesAccrual accrual, TimeProvider time)
+    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time)
     {
-        _dues = dues;
-        _accrual = accrual;
+        _ledgers = ledgers;
         _time = time;
     }
 
     public async Task<IReadOnlyCollection<PaidQuarterRecord>> GetPaidQuartersAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
-        await _accrual.AccrueKurinAsync(kurinKey, cancellationToken);
-
-        var ledger = new DuesLedger(
-            await _dues.KurinDuesRates.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.GroupDuesRates.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken));
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
 
         var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
         return ledger.Accounts()
