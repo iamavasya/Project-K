@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -47,7 +48,7 @@ public sealed class KurinReportDataServiceTests
         _service = new KurinReportDataService(
             _source.Object,
             _currentUser.Object,
-            new BlobStorageOptions(),
+            FakeBlobReadLinks.Instance,
             _media.Object,
             Mock.Of<IProbesCatalogService>(),
             Mock.Of<IBadgesCatalogService>(),

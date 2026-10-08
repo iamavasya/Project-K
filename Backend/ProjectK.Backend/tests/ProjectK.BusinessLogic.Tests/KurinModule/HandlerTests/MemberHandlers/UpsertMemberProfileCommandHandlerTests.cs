@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -33,9 +34,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var loggerFactory = LoggerFactory.Create(builder => { });
         var mapperConfig = new MapperConfiguration(cfg =>
         {
-            cfg.ConstructServicesUsing(t => t == typeof(ProfilePhotoUrlResolver)
-                ? new ProfilePhotoUrlResolver(new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" })
-                : Activator.CreateInstance(t)!);
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
             cfg.AddProfile(new KurinModuleProfile());
         }, loggerFactory);
 

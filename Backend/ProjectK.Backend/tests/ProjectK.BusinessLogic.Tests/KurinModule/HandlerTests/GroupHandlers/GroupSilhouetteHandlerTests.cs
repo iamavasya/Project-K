@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,11 @@ public sealed class GroupSilhouetteHandlerTests
     public GroupSilhouetteHandlerTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
+        var mapperConfig = new MapperConfiguration(cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new KurinModuleProfile());
+        }, loggerFactory);
         _mapper = mapperConfig.CreateMapper();
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
@@ -62,7 +67,7 @@ public sealed class GroupSilhouetteHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         group.SilhouetteBlobName.Should().Be("group-silhouettes/2026/05/27/new.png");
-        result.Data!.SilhouetteUrl.Should().Be("group-silhouettes/2026/05/27/new.png");
+        result.Data!.SilhouetteUrl.Should().Be("https://cdn.test/group-silhouettes/2026/05/27/new.png?sig=read");
         _groupRepositoryMock.Verify(r => r.Update(group, It.IsAny<CancellationToken>()), Times.Once);
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
         _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);

@@ -19,7 +19,7 @@ public sealed class KurinReportDataService
 {
     private readonly IKurinReportSource _source;
     private readonly ICurrentUserContext _currentUser;
-    private readonly BlobStorageOptions _blobOptions;
+    private readonly IBlobReadLinks _links;
     private readonly IKurinReportMedia _media;
     private readonly IProbesCatalogService _probesCatalogService;
     private readonly IBadgesCatalogService _badgesCatalogService;
@@ -28,7 +28,7 @@ public sealed class KurinReportDataService
     public KurinReportDataService(
         IKurinReportSource source,
         ICurrentUserContext currentUser,
-        BlobStorageOptions blobOptions,
+        IBlobReadLinks links,
         IKurinReportMedia media,
         IProbesCatalogService probesCatalogService,
         IBadgesCatalogService badgesCatalogService,
@@ -36,7 +36,7 @@ public sealed class KurinReportDataService
     {
         _source = source;
         _currentUser = currentUser;
-        _blobOptions = blobOptions;
+        _links = links;
         _media = media;
         _probesCatalogService = probesCatalogService;
         _badgesCatalogService = badgesCatalogService;
@@ -89,7 +89,7 @@ public sealed class KurinReportDataService
                 group.GroupKey,
                 group.Name,
                 group.Description,
-                BuildBlobUrl(group.SilhouetteBlobName),
+                _links.For(group.SilhouetteBlobName),
                 await _media.TryDownloadAsync(group.SilhouetteBlobName, cancellationToken),
                 ResolveMentorNames(group.GroupKey, mentorAssignments, memberByUserKey, usersByKey),
                 members
@@ -234,7 +234,7 @@ public sealed class KurinReportDataService
             member.DateOfBirth,
             member.Address,
             member.School,
-            BuildBlobUrl(member.ProfilePhotoBlobName),
+            _links.For(member.ProfilePhotoBlobName),
             await _media.TryDownloadAsync(member.ProfilePhotoBlobName, cancellationToken),
             LatestLevelOf(member),
             member.UserKey is Guid mentorUserKey
@@ -373,9 +373,6 @@ public sealed class KurinReportDataService
             ? user.Email
             : null;
     }
-
-    private string? BuildBlobUrl(string? blobName)
-        => BlobPublicUrl.Build(_blobOptions.PublicBaseUrl, blobName);
 
     private string ResolveReleaseInfo(params string[] keys)
     {

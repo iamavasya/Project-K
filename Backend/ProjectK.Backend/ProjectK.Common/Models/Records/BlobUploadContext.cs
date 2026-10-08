@@ -19,7 +19,7 @@ public sealed record BlobUploadContext(
 
     /// <summary>
     /// A screenshot attached to a problem report. Re-encoded like everything else, so nothing but
-    /// a decoded image reaches the public container; never resized, a screenshot is read for detail.
+    /// a decoded image is stored; never resized, a screenshot is read for detail.
     /// </summary>
     public static BlobUploadContext FeedbackScreenshot { get; } =
         new(BlobUploadFolders.FeedbackScreenshots, BlobUploadProcessingMode.EncodeAsPng, "image/png");

@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,17 +45,9 @@ public class GetMembersHandlerTests
 
         var loggerFactory = LoggerFactory.Create(builder => { });
 
-        var options = new BlobStorageOptions { PublicBaseUrl = "https://cdn.test" };
         var mapperConfig = new MapperConfiguration(cfg =>
         {
-            cfg.ConstructServicesUsing(t =>
-            {
-                if (t == typeof(ProfilePhotoUrlResolver))
-                    return new ProfilePhotoUrlResolver(options);
-                if (t == typeof(MemberListItemPhotoUrlResolver))
-                    return new MemberListItemPhotoUrlResolver(options);
-                return Activator.CreateInstance(t)!;
-            });
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
             cfg.AddProfile(new KurinModuleProfile());
         }, loggerFactory);
         _mapper = mapperConfig.CreateMapper();
@@ -103,7 +96,7 @@ public class GetMembersHandlerTests
         result.Data.Should().HaveCount(2);
         var list = result.Data!.ToList();
         list[0].FirstName.Should().Be("A");
-        list[0].ProfilePhotoUrl.Should().Be("https://cdn.test/a.png");
+        list[0].ProfilePhotoUrl.Should().Be("https://cdn.test/a.png?sig=read");
         list[1].FirstName.Should().Be("B");
         list[1].ProfilePhotoUrl.Should().BeNull();
 

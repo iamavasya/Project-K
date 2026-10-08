@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +30,11 @@ public class UpsertGroupHandlerTests
     public UpsertGroupHandlerTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
+        var mapperConfig = new MapperConfiguration(cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new KurinModuleProfile());
+        }, loggerFactory);
         _mapper = mapperConfig.CreateMapper();
 
         _groupRepositoryMock = new Mock<IGroupRepository>();

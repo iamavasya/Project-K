@@ -25,10 +25,10 @@ public sealed class BadgeProgressResponse
 
     public static BadgeProgressResponse FromEntity(BadgeProgress entity)
     {
-        return FromEntity(entity, null);
+        return FromEntity(entity, null, null);
     }
 
-    public static BadgeProgressResponse FromEntity(BadgeProgress entity, MemberSummary? member)
+    public static BadgeProgressResponse FromEntity(BadgeProgress entity, MemberSummary? member, string? memberPhotoUrl)
     {
         var auditTrail = entity.AuditEvents
             .OrderBy(x => x.OccurredAtUtc)
@@ -60,7 +60,7 @@ public sealed class BadgeProgressResponse
             AuditTrail = auditTrail,
             MemberFirstName = member?.FirstName,
             MemberLastName = member?.LastName,
-            MemberPhotoUrl = member?.ProfilePhotoBlobName // Resolver will handle this on frontend or mapping if needed. Wait, API mapping resolves blob to URL.
+            MemberPhotoUrl = memberPhotoUrl
         };
     }
 }
