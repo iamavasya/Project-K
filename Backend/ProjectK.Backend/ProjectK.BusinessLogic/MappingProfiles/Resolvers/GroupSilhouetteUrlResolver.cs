@@ -1,32 +1,19 @@
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 
 public sealed class GroupSilhouetteUrlResolver : IValueResolver<Group, GroupResponse, string?>
 {
-    private readonly BlobStorageOptions _options;
+    private readonly IBlobReadLinks _links;
 
-    public GroupSilhouetteUrlResolver()
-        : this(new BlobStorageOptions())
+    public GroupSilhouetteUrlResolver(IBlobReadLinks links)
     {
-    }
-
-    public GroupSilhouetteUrlResolver(BlobStorageOptions options)
-    {
-        _options = options;
+        _links = links;
     }
 
     public string? Resolve(Group source, GroupResponse destination, string? destMember, ResolutionContext context)
-    {
-        if (string.IsNullOrWhiteSpace(source.SilhouetteBlobName))
-        {
-            return null;
-        }
-
-        return BlobPublicUrl.Build(_options.PublicBaseUrl, source.SilhouetteBlobName);
-    }
+        => _links.For(source.SilhouetteBlobName);
 }

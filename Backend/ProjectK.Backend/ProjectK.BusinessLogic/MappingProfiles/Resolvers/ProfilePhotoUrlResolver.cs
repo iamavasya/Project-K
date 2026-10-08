@@ -1,44 +1,33 @@
 using AutoMapper;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 
-// Turns a stored blob name into a public URL. Shared by the full member card
-// (from the entity) and the lean member list (from the projected read model)
-// so both build the same URL from one place.
-internal static class ProfilePhotoUrl
-{
-    public static string? Build(BlobStorageOptions options, string? blobName)
-        => BlobPublicUrl.Build(options.PublicBaseUrl, blobName);
-}
-
 public sealed class ProfilePhotoUrlResolver : IValueResolver<Member, MemberResponse, string?>
 {
-    private readonly BlobStorageOptions _options;
+    private readonly IBlobReadLinks _links;
 
-    public ProfilePhotoUrlResolver(BlobStorageOptions options)
+    public ProfilePhotoUrlResolver(IBlobReadLinks links)
     {
-        _options = options;
+        _links = links;
     }
 
     public string? Resolve(Member source, MemberResponse destination, string? destMember, ResolutionContext context)
-        => ProfilePhotoUrl.Build(_options, source.ProfilePhotoBlobName);
+        => _links.For(source.ProfilePhotoBlobName);
 }
 
 public sealed class MemberListItemPhotoUrlResolver : IValueResolver<MemberListItemDto, MemberResponse, string?>
 {
-    private readonly BlobStorageOptions _options;
+    private readonly IBlobReadLinks _links;
 
-    public MemberListItemPhotoUrlResolver(BlobStorageOptions options)
+    public MemberListItemPhotoUrlResolver(IBlobReadLinks links)
     {
-        _options = options;
+        _links = links;
     }
 
     public string? Resolve(MemberListItemDto source, MemberResponse destination, string? destMember, ResolutionContext context)
-        => ProfilePhotoUrl.Build(_options, source.ProfilePhotoBlobName);
+        => _links.For(source.ProfilePhotoBlobName);
 }

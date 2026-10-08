@@ -174,7 +174,6 @@ public static class Program
         {
             ConnectionString = builder.Configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
             ContainerName = builder.Configuration["BlobStorage:ContainerName"] ?? "photos",
-            PublicAccess = !bool.TryParse(builder.Configuration["BlobStorage:PublicAccess"], out var pa) || pa,
             PublicBaseUrl = builder.Configuration["BlobStorage:PublicBaseUrl"]
         };
         builder.Services.AddScoped<MemberPhotoReferenceProvider>();
@@ -191,6 +190,7 @@ public static class Program
         });
 
         builder.Services.AddSingleton(blobOptions);
+        builder.Services.AddSingleton<IBlobReadLinks, SignedBlobReadLinks>();
 
         builder.Services.Configure<OrphanCleanupOptions>(builder.Configuration.GetSection("OrphanCleanup"));
 
@@ -198,7 +198,11 @@ public static class Program
         {
             var opts = sp.GetRequiredService<BlobStorageOptions>();
             var refProvider = sp.GetService<IPhotoReferenceProvider>();
-            return new AzureBlobPhotoService(opts, refProvider);
+            return new AzureBlobPhotoService(
+                opts,
+                refProvider,
+                sp.GetRequiredService<IBlobReadLinks>(),
+                sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
         });
 
         builder.Services.AddHostedService<OrphanPhotoCleanupService>();
@@ -498,6 +502,17 @@ public static class Program
 
                 ctx.Status("Handing back what retention took...");
                 await StrandedInvitationRepairSeeder.RepairAsync(scope.ServiceProvider);
+
+                ctx.Status("Locking the photo container...");
+                try
+                {
+                    await scope.ServiceProvider.GetRequiredService<IPhotoService>().PrepareStorageAsync(CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    // Storage being down must not keep the API from starting; the first upload retries.
+                    app.Logger.LogWarning(ex, "Could not prepare blob storage at startup.");
+                }
 
                 ctx.Status("Waking the badges archive...");
                 _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();

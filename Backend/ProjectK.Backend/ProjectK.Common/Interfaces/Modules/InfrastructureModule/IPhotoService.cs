@@ -17,4 +17,10 @@ public interface IPhotoService
     Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, CancellationToken cancellationToken);
     Task<PhotoUploadResult> UploadPhotoAsync(byte[] photoBytes, string fileName, BlobUploadContext uploadContext, CancellationToken cancellationToken);
     Task<bool> DeletePhotoAsync(string photoUrl, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates the container if it is missing and closes public access on one that an older version
+    /// left public. Run at startup, so a deploy shuts the old anonymous URLs without waiting for an upload.
+    /// </summary>
+    Task PrepareStorageAsync(CancellationToken cancellationToken);
 }

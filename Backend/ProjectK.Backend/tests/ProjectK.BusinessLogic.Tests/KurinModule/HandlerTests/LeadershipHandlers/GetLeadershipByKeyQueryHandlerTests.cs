@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +24,11 @@ public class GetLeadershipByKeyHandlerTests
     // The real profile: EntityKey is derived by the mapping, so a stubbed IMapper
     // would assert the stub rather than the behaviour.
     private readonly IMapper _mapper = new MapperConfiguration(
-        cfg => cfg.AddProfile(new KurinModuleProfile()),
+        cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new KurinModuleProfile());
+        },
         NullLoggerFactory.Instance).CreateMapper();
     private readonly GetLeadershipByKeyQueryHandler _handler;
 

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.Services.BlobStorageService;
@@ -31,7 +32,7 @@ public class AzureBlobPhotoServiceTests
             ContainerName = "test-photos"
         };
 
-        _service = new AzureBlobPhotoService(options, null, _loggerMock.Object);
+        _service = new AzureBlobPhotoService(options, null, Mock.Of<IBlobReadLinks>(), _loggerMock.Object);
     }
 
     [Fact]
@@ -75,8 +76,8 @@ public class AzureBlobPhotoServiceTests
     [Fact]
     public async Task CompressImageAsync_ShouldRefuse_WhenFileIsNotAnImage()
     {
-        // The container is public. A file that does not decode used to be stored as it came, under
-        // its own extension and content type — which made the storage domain serve whatever was uploaded.
+        // A file that does not decode used to be stored as it came, under its own extension and
+        // content type — while the container was public, the storage domain served whatever was uploaded.
         byte[] invalidImageBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 }; // Invalid image header
         string fileName = "document.pdf";
 

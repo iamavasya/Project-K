@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -28,7 +29,11 @@ public class GetGroupMentorsQueryHandlerTests
     {
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.MentorAssignments).Returns(_assignments.Object);
-        var mapper = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), NullLoggerFactory.Instance)
+        var mapper = new MapperConfiguration(cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new KurinModuleProfile());
+        }, NullLoggerFactory.Instance)
             .CreateMapper();
         _handler = new GetGroupMentorsQueryHandler(unitOfWork.Object, _members.Object, mapper);
     }

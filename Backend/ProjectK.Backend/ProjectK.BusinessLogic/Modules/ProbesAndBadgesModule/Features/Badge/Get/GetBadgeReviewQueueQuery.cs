@@ -18,13 +18,15 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IResourceScopeReader _scopeReader;
+    private readonly IBlobReadLinks _links;
 
-    public GetBadgeReviewQueueQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader)
+    public GetBadgeReviewQueueQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _scopeReader = scopeReader;
+        _links = links;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeReviewQueueQuery request, CancellationToken cancellationToken)
@@ -53,7 +55,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
 
         var allProgresses = progresses
             .Where(p => p.Status == BadgeProgressStatus.Submitted)
-            .Select(p => BadgeProgressResponse.FromEntity(p, membersDict[p.MemberKey]))
+            .Select(p => BadgeProgressResponse.FromEntity(p, membersDict[p.MemberKey], _links.For(membersDict[p.MemberKey].ProfilePhotoBlobName)))
             .OrderByDescending(p => p.SubmittedAtUtc)
             .ToList();
 

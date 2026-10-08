@@ -34,11 +34,16 @@ public class AzureBlobPhotoService : IPhotoService
     private volatile bool _containerInitialized;
     private readonly SemaphoreSlim _containerInitLock = new(1, 1);
     private readonly IPhotoReferenceProvider? _referenceProvider;
+    private readonly IBlobReadLinks _links;
     private readonly ILogger<AzureBlobPhotoService>? _logger;
 
     private readonly ConcurrentDictionary<string, bool> _usageCache = new();
 
-    public AzureBlobPhotoService(BlobStorageOptions options, IPhotoReferenceProvider? referenceProvider, ILogger<AzureBlobPhotoService>? logger = null)
+    public AzureBlobPhotoService(
+        BlobStorageOptions options,
+        IPhotoReferenceProvider? referenceProvider,
+        IBlobReadLinks links,
+        ILogger<AzureBlobPhotoService>? logger = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         if (string.IsNullOrWhiteSpace(_options.ConnectionString))
@@ -48,6 +53,7 @@ public class AzureBlobPhotoService : IPhotoService
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _container = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
         _referenceProvider = referenceProvider;
+        _links = links;
         _logger = logger;
     }
 
@@ -84,7 +90,9 @@ public class AzureBlobPhotoService : IPhotoService
         await blobClient.UploadAsync(ms, new BlobUploadOptions { HttpHeaders = headers }, cancellationToken)
             .ConfigureAwait(false);
 
-        var url = BuildPublicUrl(blobClient);
+        var url = uploadContext == BlobUploadContext.FeedbackScreenshot
+            ? _links.ForSharing(blobName)!
+            : _links.For(blobName)!;
         return new PhotoUploadResult(blobName, url);
     }
 
@@ -173,9 +181,9 @@ public class AzureBlobPhotoService : IPhotoService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Nothing but a decoded image is ever written. The container is public, so a file
-            // that failed to decode used to be stored under its own extension and content type —
-            // an .html or .svg upload became a page served from the storage domain.
+            // Nothing but a decoded image is ever written. A file that failed to decode used to be
+            // stored under its own extension and content type — while the container was public, an
+            // .html or .svg upload became a page served from the storage domain.
             _logger?.LogWarning(ex, "Uploaded file {FileName} is not a decodable image.", fileName);
             throw new InvalidOperationException("Uploaded file is not a valid image.", ex);
         }
@@ -261,6 +269,8 @@ public class AzureBlobPhotoService : IPhotoService
         }
     }
 
+    public Task PrepareStorageAsync(CancellationToken cancellationToken) => EnsureContainerAsync(cancellationToken);
+
     private async Task EnsureContainerAsync(CancellationToken cancellationToken)
     {
         if (_containerInitialized)
@@ -272,15 +282,14 @@ public class AzureBlobPhotoService : IPhotoService
             if (_containerInitialized)
                 return;
 
+            // Private on purpose: photos of children are read only through signed links.
             if (_options.AutoCreateContainer)
             {
-                await _container.CreateIfNotExistsAsync(
-                    _options.PublicAccess
-                        ? PublicAccessType.Blob
-                        : PublicAccessType.None,
-                    cancellationToken: cancellationToken
-                ).ConfigureAwait(false);
+                await _container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
             }
+
+            await ClosePublicAccessAsync(cancellationToken).ConfigureAwait(false);
 
             _containerInitialized = true;
         }
@@ -288,6 +297,27 @@ public class AzureBlobPhotoService : IPhotoService
         {
             _containerInitLock.Release();
         }
+    }
+
+    // Containers made before links were signed allowed anonymous reads. Setting the policy also drops
+    // stored access policies; none are used, every link is signed with the account key.
+    private async Task ClosePublicAccessAsync(CancellationToken cancellationToken)
+    {
+        BlobContainerProperties properties;
+        try
+        {
+            properties = (await _container.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false)).Value;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return;
+        }
+
+        if (properties.PublicAccess is null or PublicAccessType.None)
+            return;
+
+        await _container.SetAccessPolicyAsync(PublicAccessType.None, cancellationToken: cancellationToken).ConfigureAwait(false);
+        _logger?.LogWarning("Closed public access on blob container {Container}; photos are now read through signed links.", _container.Name);
     }
 
     internal string BuildBlobName(BlobUploadContext uploadContext, string extension)
@@ -315,9 +345,6 @@ public class AzureBlobPhotoService : IPhotoService
         blobName = parts[1];
         return true;
     }
-
-    private string BuildPublicUrl(BlobClient client)
-        => BlobPublicUrl.Build(_options.PublicBaseUrl, client.Name, client.Uri.ToString())!;
 
     private static string NormalizeFolder(string folder)
     {

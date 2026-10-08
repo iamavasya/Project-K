@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -29,7 +30,11 @@ public class GetGroupsHandlerTests
     public GetGroupsHandlerTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg => cfg.AddProfile(new KurinModuleProfile()), loggerFactory);
+        var config = new MapperConfiguration(cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new KurinModuleProfile());
+        }, loggerFactory);
         _mapper = config.CreateMapper();
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
