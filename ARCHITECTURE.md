@@ -181,7 +181,7 @@ Permission                           напр. Group:Manage:KurinWide
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
 | PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
-| Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів | `API/Program.cs`, `Infrastructure` |
+| Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
 | Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог

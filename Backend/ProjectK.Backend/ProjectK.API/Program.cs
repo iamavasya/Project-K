@@ -617,7 +617,8 @@ public static class Program
             options.OnRejected = async (context, token) =>
             {
                 var endpoint = context.HttpContext.GetEndpoint();
-                var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                // No endpoint policy means the global limiter turned it away — said so, rather than left empty.
+                var policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName ?? "global";
                 var activityLogger = context.HttpContext.RequestServices.GetService<IActivityLogger>();
                 activityLogger?.ReportRateLimitRejection(policyName);
                 await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);

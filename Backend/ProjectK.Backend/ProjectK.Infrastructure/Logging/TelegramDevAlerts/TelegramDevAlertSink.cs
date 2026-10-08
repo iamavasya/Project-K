@@ -1,37 +1,38 @@
+using System.Net;
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using ProjectK.Common.Models.Settings;
 using Serilog.Core;
 using Serilog.Events;
 
 namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
+/// <summary>
+/// Sends warnings and errors to the developers' Telegram chat. Events are described by
+/// <see cref="TelegramAlertFormatter"/>, bursts folded by <see cref="TelegramAlertGrouper"/>, and the
+/// messages leave one by one through a queue — a burst used to be dropped while one message was in
+/// flight, so the chat saw a random few of forty.
+/// </summary>
 public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
 {
-    // A message that takes longer than this to redact is dropped rather than sent half-redacted.
-    private static readonly TimeSpan RedactTimeout = TimeSpan.FromMilliseconds(250);
-
-    private static readonly Regex EmailRegex = new(
-        @"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
-        RedactTimeout);
-
-    private static readonly Regex TokenRegex = new(
-        @"(?i)(bearer\s+)[a-z0-9._~+/=-]+|(?i)(token|password|secret|apikey|api_key)=([^\s;&]+)",
-        RegexOptions.Compiled,
-        RedactTimeout);
+    // Telegram allows about twenty messages a minute into a group; this stays under it.
+    private static readonly TimeSpan SendSpacing = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan DigestCheck = TimeSpan.FromSeconds(30);
+    private static readonly Regex Tags = new("<[^>]+>", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
     private readonly HttpClient _httpClient;
     private readonly TelegramDevAlertOptions _options;
     private readonly string _environmentName;
     private readonly string _version;
     private readonly string? _codename;
-    private readonly SemaphoreSlim _sendLock = new(1, 1);
-
-    private DateTimeOffset _lastSentAt = DateTimeOffset.MinValue;
+    private readonly TelegramAlertGrouper _grouper;
+    private readonly Channel<string> _outbox = Channel.CreateBounded<string>(
+        new BoundedChannelOptions(100) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true });
+    private readonly CancellationTokenSource _stopping = new();
+    private readonly Timer _digestTimer;
+    private readonly Task _sender;
 
     public TelegramDevAlertSink(
         TelegramDevAlertOptions options,
@@ -43,61 +44,113 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
         _environmentName = environmentName;
         _version = version;
         _codename = codename;
+        _grouper = new TelegramAlertGrouper(TimeSpan.FromSeconds(Math.Max(10, options.GroupWindowSeconds)));
         _httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds))
         };
+        _digestTimer = new Timer(_ => EnqueueDigests(flushAll: false), null, DigestCheck, DigestCheck);
+        _sender = Task.Run(SendLoopAsync);
     }
+
+    private bool Configured =>
+        _options.Enabled && !string.IsNullOrWhiteSpace(_options.BotToken) && !string.IsNullOrWhiteSpace(_options.ChatId);
 
     public void Emit(LogEvent logEvent)
     {
-        if (!_options.Enabled || string.IsNullOrWhiteSpace(_options.BotToken) || string.IsNullOrWhiteSpace(_options.ChatId))
-        {
-            return;
-        }
-
-        _ = SendAsync(logEvent);
-    }
-
-    public void Dispose()
-    {
-        _sendLock.Dispose();
-        _httpClient.Dispose();
-    }
-
-    private async Task SendAsync(LogEvent logEvent)
-    {
-        if (!await _sendLock.WaitAsync(0))
+        if (!Configured)
         {
             return;
         }
 
         try
         {
-            var elapsed = DateTimeOffset.UtcNow - _lastSentAt;
-            if (elapsed < TimeSpan.FromSeconds(2))
+            var alert = TelegramAlertFormatter.Describe(logEvent, _environmentName, _version, _codename);
+            if (_grouper.Offer(alert, DateTimeOffset.UtcNow) is { } text)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2) - elapsed);
+                _outbox.Writer.TryWrite(text);
             }
-
-            var endpoint = BuildEndpoint();
-            var payload = new SendMessageRequest(
-                _options.ChatId!,
-                BuildMessage(logEvent),
-                DisableWebPagePreview: true,
-                _options.DisableNotification);
-            using var response = await _httpClient.PostAsJsonAsync(endpoint, payload);
-            _lastSentAt = DateTimeOffset.UtcNow;
         }
         catch
         {
-            // Logging sinks must never throw back into application code.
-        }
-        finally
-        {
-            _sendLock.Release();
+            // Logging sinks must never throw back into application code; a message that cannot be
+            // described or redacted in time is not sent at all.
         }
     }
+
+    public void Dispose()
+    {
+        _digestTimer.Dispose();
+        EnqueueDigests(flushAll: true);
+        _outbox.Writer.TryComplete();
+        // Give what is queued a moment to leave on shutdown, without holding the host up.
+        _sender.Wait(TimeSpan.FromSeconds(5));
+        _stopping.Cancel();
+        _stopping.Dispose();
+        _httpClient.Dispose();
+    }
+
+    private void EnqueueDigests(bool flushAll)
+    {
+        try
+        {
+            foreach (var digest in _grouper.Due(DateTimeOffset.UtcNow, _environmentName, flushAll))
+            {
+                _outbox.Writer.TryWrite(digest);
+            }
+        }
+        catch
+        {
+            // Same as Emit: never into the application.
+        }
+    }
+
+    private async Task SendLoopAsync()
+    {
+        try
+        {
+            await foreach (var text in _outbox.Reader.ReadAllAsync(_stopping.Token))
+            {
+                await SendAsync(text);
+                await Task.Delay(SendSpacing, _stopping.Token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutting down.
+        }
+    }
+
+    private async Task SendAsync(string html)
+    {
+        try
+        {
+            var maxLength = Math.Clamp(_options.MaxMessageLength, 512, 3900);
+            if (html.Length <= maxLength)
+            {
+                using var response = await PostAsync(html, "HTML");
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+            }
+
+            // Too long, or markup Telegram would not take: the same words without it, cut to size.
+            using var _ = await PostAsync(Truncate(PlainText(html), maxLength), parseMode: null);
+        }
+        catch
+        {
+            // A failed alert is lost; the log itself still has the event.
+        }
+    }
+
+    private Task<HttpResponseMessage> PostAsync(string text, string? parseMode) =>
+        _httpClient.PostAsJsonAsync(BuildEndpoint(), new SendMessageRequest(
+            _options.ChatId!,
+            text,
+            parseMode,
+            DisableWebPagePreview: true,
+            _options.DisableNotification));
 
     private string BuildEndpoint()
     {
@@ -108,84 +161,15 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
         return $"{baseUrl}/bot{_options.BotToken}/sendMessage";
     }
 
-    private string BuildMessage(LogEvent logEvent)
-    {
-        var eventType = TryGetScalar(logEvent, "EventType") ?? "Log";
-        var action = TryGetScalar(logEvent, "Action");
-        var traceId = TryGetScalar(logEvent, "TraceId")
-            ?? TryGetScalar(logEvent, "RequestId")
-            ?? TryGetScalar(logEvent, "CorrelationId");
-        var exception = logEvent.Exception == null
-            ? null
-            : $"{logEvent.Exception.GetType().Name}: {logEvent.Exception.Message}";
+    private static string PlainText(string html) => WebUtility.HtmlDecode(Tags.Replace(html, string.Empty));
 
-        var builder = new StringBuilder()
-            .AppendLine($"[ProjectK] {_environmentName.ToUpperInvariant()} {logEvent.Level}")
-            .AppendLine($"Event: {eventType}")
-            .AppendLine($"Version: {_version}");
-
-        // Releases may carry no code name; then the line is left out rather than sent empty.
-        if (!string.IsNullOrWhiteSpace(_codename))
-        {
-            builder.AppendLine($"Codename: {_codename}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(action))
-        {
-            builder.AppendLine($"Action: {action}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(traceId))
-        {
-            builder.AppendLine($"Trace: {traceId}");
-        }
-
-        builder.AppendLine($"Message: {logEvent.RenderMessage()}");
-
-        if (!string.IsNullOrWhiteSpace(exception))
-        {
-            builder.AppendLine($"Exception: {exception}");
-        }
-
-        return Truncate(Redact(builder.ToString().Trim()), Math.Clamp(_options.MaxMessageLength, 512, 3900));
-    }
-
-    private static string? TryGetScalar(LogEvent logEvent, string name)
-    {
-        return logEvent.Properties.TryGetValue(name, out var value) && value is ScalarValue scalar
-            ? scalar.Value?.ToString()
-            : null;
-    }
-
-    private static string Redact(string value)
-    {
-        var redacted = EmailRegex.Replace(value, "[email]");
-        return TokenRegex.Replace(redacted, match =>
-        {
-            if (match.Groups[1].Success)
-            {
-                return $"{match.Groups[1].Value}[redacted]";
-            }
-
-            if (match.Groups[2].Success)
-            {
-                return $"{match.Groups[2].Value}=[redacted]";
-            }
-
-            return "[redacted]";
-        });
-    }
-
-    private static string Truncate(string value, int maxLength)
-    {
-        return value.Length <= maxLength
-            ? value
-            : string.Concat(value.AsSpan(0, maxLength - 20), "\n...[truncated]");
-    }
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : string.Concat(value.AsSpan(0, maxLength - 20), "\n...[truncated]");
 
     private sealed record SendMessageRequest(
         [property: JsonPropertyName("chat_id")] string ChatId,
         [property: JsonPropertyName("text")] string Text,
+        [property: JsonPropertyName("parse_mode"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ParseMode,
         [property: JsonPropertyName("disable_web_page_preview")] bool DisableWebPagePreview,
         [property: JsonPropertyName("disable_notification")] bool DisableNotification);
 }
