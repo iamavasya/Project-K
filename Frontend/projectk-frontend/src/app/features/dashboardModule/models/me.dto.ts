@@ -17,6 +17,7 @@ export interface MyEventDto {
   endUtc: string | null;
   isAllDay: boolean;
   isRecurring: boolean;
+  location: string | null;
   categoryName: string | null;
   categoryColorHex: string | null;
   categoryIcon: string | null;
@@ -31,7 +32,6 @@ export interface MyTaskDto {
   status: AgendaItemStatus;
   startUtc: string | null;
   endUtc: string | null;
-  addressedToMe: boolean;
   canChangeStatus: boolean;
 }
 

@@ -31,6 +31,7 @@
             <span class="events-tile__title">{{ row.event.title }}</span>
             <span class="events-tile__meta">
               <span class="events-tile__when">{{ row.day }}@if (row.time) {, {{ row.time }}}</span>
+              @if (row.event.location) { <span>· {{ row.event.location }}</span> }
               @if (row.event.categoryName) { <span>· {{ row.event.categoryName }}</span> }
               @if (namesKurin()) { <span>· {{ kurinLabel(row) }}</span> }
             </span>

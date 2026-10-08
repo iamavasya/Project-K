@@ -1,83 +1,242 @@
 <div class="lil-page">
   <header class="lil-page-head">
     <div>
-      <h1>Задачі</h1>
+      <h1>{{ view() === 'archive' ? 'Архів задач' : 'Задачі' }}</h1>
     </div>
-    <!-- Порожній стан нижче має ту саму дію, тож у шапці вона є лише коли є що показати (§10). -->
-    @if (canManage() && !isEmpty()) {
-      <div class="lil-page-head__actions">
-        <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
-      </div>
-    }
-  </header>
-
-  <section class="kurin-tile">
-
-    @if (isEmpty()) {
-      <app-empty-state
-        art="list"
-        title="Дошка порожня"
-        body="Створи першу задачу — і вона зʼявиться у стовпці «Зробити».">
-        @if (canManage()) {
+    <div class="lil-page-head__actions">
+      @if (view() === 'archive') {
+        <p-button label="До дошки" icon="pi pi-arrow-left" severity="secondary" variant="text" (click)="closeArchive()" />
+      } @else {
+        <p-button label="Архів" icon="pi pi-inbox" severity="secondary" variant="text" (click)="openArchive()" />
+        <!-- Порожній стан нижче має ту саму дію, тож у шапці вона є лише коли є що показати (§10). -->
+        @if (canManage() && !(isEmpty() && !filtered())) {
           <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
         }
-      </app-empty-state>
-    } @else {
-      <div class="agenda-board" [attr.aria-label]="'Дошка задач'">
-        @for (column of columns(); track column.status) {
-          <div class="agenda-column">
-            <div class="agenda-column__head">
-              <p-tag [severity]="column.severity" [value]="column.label" />
-              <span class="agenda-column__count">{{ column.items.length }}</span>
-            </div>
-            <div
-              class="agenda-column__list"
-              cdkDropList
-              [id]="column.status"
-              [cdkDropListData]="column.items"
-              [cdkDropListConnectedTo]="columnIds"
-              (cdkDropListDropped)="onDrop($event, column.status)">
-              @for (task of column.items; track task.agendaItemKey) {
-                <div class="agenda-card" [class.agenda-card--foreign]="!task.addressedToViewer" cdkDrag [cdkDragDisabled]="!task.canChangeStatus">
-                  <div class="agenda-card__title">{{ task.title }}</div>
-                  @if (!task.addressedToViewer) {
-                    <div class="agenda-card__meta agenda-card__meta--foreign"><i class="pi pi-send"></i> Призначено іншим</div>
-                  }
-                  @if (task.createdByName) {
-                    <div class="agenda-card__meta"><i class="pi pi-user"></i> {{ task.createdByName }}</div>
-                  }
-                  @if (task.assignments.length) {
-                    <div class="agenda-card__targets">
-                      @for (assignment of task.assignments; track assignment.targetKey) {
-                        <span class="agenda-card__chip">{{ assignment.label }}</span>
+      }
+    </div>
+  </header>
+
+  @if (view() === 'board') {
+    <section class="kurin-tile">
+      @if (isEmpty() && !filtered()) {
+        <app-empty-state
+          art="list"
+          title="Дошка порожня"
+          body="Створи першу задачу — і вона зʼявиться у стовпці «Зробити».">
+          @if (canManage()) {
+            <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
+          }
+        </app-empty-state>
+      } @else {
+        <div class="agenda-toolbar">
+          <p-iconfield class="agenda-toolbar__search">
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              type="search"
+              [(ngModel)]="search"
+              (ngModelChange)="onSearch()"
+              placeholder="Пошук за назвою, описом, гуртком"
+              aria-label="Пошук задач" />
+          </p-iconfield>
+          <p-select
+            [options]="targets()"
+            [(ngModel)]="targetValue"
+            (onChange)="loadData()"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            [filter]="targets().length > 8"
+            placeholder="Усі цілі"
+            ariaLabel="Для кого"
+            appendTo="body"
+            styleClass="agenda-toolbar__select" />
+          <p-select
+            [options]="sortOptions"
+            [(ngModel)]="sort"
+            (onChange)="loadData()"
+            optionLabel="label"
+            optionValue="value"
+            ariaLabel="Сортування"
+            appendTo="body"
+            styleClass="agenda-toolbar__select" />
+          <span class="agenda-toolbar__mine">
+            <p-toggleswitch [(ngModel)]="onlyMine" (onChange)="loadData()" inputId="agenda-only-mine" />
+            <label for="agenda-only-mine">Моє</label>
+          </span>
+          @if (hasFilter()) {
+            <p-button label="Скинути" icon="pi pi-filter-slash" severity="secondary" variant="text" (click)="resetFilters()" />
+          }
+        </div>
+
+        @if (isEmpty()) {
+          <app-empty-state art="list" title="Нічого не знайдено" body="Жодна задача не підходить під пошук і фільтри.">
+            <p-button label="Скинути фільтри" icon="pi pi-filter-slash" severity="secondary" (click)="resetFilters()" />
+          </app-empty-state>
+        } @else {
+          <!-- On a phone the tabs are where a card is dropped: drag it onto «Зроблено» to move it there. -->
+          <div class="agenda-tabs" role="tablist" aria-label="Колонка дошки">
+            @for (column of columns(); track column.status) {
+              <button
+                type="button"
+                role="tab"
+                class="agenda-tab"
+                [class.agenda-tab--active]="column.status === activeColumn()"
+                [attr.aria-selected]="column.status === activeColumn()"
+                cdkDropList
+                cdkDropListSortingDisabled
+                [id]="'tab-' + column.status"
+                [cdkDropListData]="column.items"
+                (cdkDropListDropped)="onDrop($event, column.status)"
+                (click)="activeColumn.set(column.status)">
+                {{ column.label }} · {{ column.total }}
+              </button>
+            }
+          </div>
+          <div class="agenda-board" [attr.aria-label]="'Дошка задач'">
+            @for (column of columns(); track column.status) {
+              <div class="agenda-column" [class.agenda-column--inactive]="column.status !== activeColumn()">
+                <div class="agenda-column__head">
+                  <p-tag [severity]="column.severity" [value]="column.label" />
+                  <span class="agenda-column__count">{{ column.total }}</span>
+                </div>
+                <div
+                  class="agenda-column__list"
+                  cdkDropList
+                  [id]="column.status"
+                  [cdkDropListData]="column.items"
+                  [cdkDropListConnectedTo]="columnIds"
+                  (cdkDropListDropped)="onDrop($event, column.status)">
+                  @for (task of column.items; track task.agendaItemKey) {
+                    <div class="agenda-card" [class.agenda-card--foreign]="!task.addressedToViewer" cdkDrag [cdkDragDisabled]="!task.canChangeStatus" [cdkDragStartDelay]="dragDelay">
+                      <button type="button" class="agenda-card__title" (click)="openEdit(task)">{{ task.title }}</button>
+                      @if (!task.addressedToViewer) {
+                        <div class="agenda-card__meta agenda-card__meta--foreign"><i class="pi pi-send"></i> Призначено іншим</div>
+                      }
+                      @if (task.endUtc ?? task.startUtc; as due) {
+                        <div class="agenda-card__meta"><i class="pi pi-calendar"></i> до {{ due | date:'dd.MM.yyyy' }}</div>
+                      }
+                      @if (task.createdByName) {
+                        <div class="agenda-card__meta"><i class="pi pi-user"></i> {{ task.createdByName }}</div>
+                      }
+                      @if (task.assignments.length) {
+                        <ul class="agenda-card__targets">
+                          @for (assignment of task.assignments; track assignment.agendaAssignmentKey) {
+                            <li class="agenda-card__target" [attr.data-status]="assignment.status">
+                              <i [class]="targetIcon(assignment)" aria-hidden="true"></i>
+                              <span class="agenda-card__target-label">{{ assignment.label }}</span>
+                              @if (assignment.completionMode === 'PerMember') {
+                                <i class="pi pi-user agenda-card__mode" title="Кожному окремо" aria-label="Кожному окремо"></i>
+                              } @else if (assignment.completionMode === 'SharedByAnyone') {
+                                <i class="pi pi-users agenda-card__mode" title="Закриває будь-хто" aria-label="Закриває будь-хто"></i>
+                              }
+                              @if (targetNote(assignment); as note) {
+                                <span class="agenda-card__target-note">{{ note }}</span>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      }
+                      @if (task.canEdit) {
+                        <div class="agenda-card__actions">
+                          <p-button icon="pi pi-pencil" severity="secondary" [rounded]="true" [text]="true" ariaLabel="Редагувати" (click)="openEdit(task)" />
+                          <p-button icon="pi pi-inbox" severity="secondary" [rounded]="true" [text]="true" ariaLabel="В архів" (click)="moveToArchive(task)" />
+                          <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" ariaLabel="Видалити" (click)="remove(task)" />
+                        </div>
                       }
                     </div>
                   }
-                  @if (task.canEdit) {
-                    <div class="agenda-card__actions">
-                      <p-button icon="pi pi-pencil" severity="secondary" [rounded]="true" [text]="true" (click)="openEdit(task)" />
-                      <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="remove(task)" />
-                    </div>
+                  @if (column.items.length < column.total) {
+                    <p-button
+                      [label]="'Завантажити ще (' + (column.total - column.items.length) + ')'"
+                      icon="pi pi-arrow-down"
+                      severity="secondary"
+                      variant="text"
+                      styleClass="agenda-column__more"
+                      [loading]="loadingMore() === column.status"
+                      (click)="loadMore(column)" />
                   }
                 </div>
-              }
-            </div>
+              </div>
+            }
           </div>
         }
+      }
+    </section>
+  } @else {
+    <section class="kurin-tile agenda-archive">
+      <div class="agenda-toolbar">
+        <p-iconfield class="agenda-toolbar__search">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="search"
+            [(ngModel)]="archiveSearch"
+            (ngModelChange)="onArchiveSearch()"
+            placeholder="Пошук в архіві"
+            aria-label="Пошук в архіві" />
+        </p-iconfield>
+        @if (archivePolicy(); as policy) {
+          <p class="agenda-archive__policy">
+            @if (policy.autoArchiveAfterDays) { Зроблені задачі переходять сюди через {{ policy.autoArchiveAfterDays }} дн. }
+            @else { Автоматичний архів вимкнено. }
+            @if (policy.purgeAfterDays) { Видаляються назавжди через {{ policy.purgeAfterDays }} дн. в архіві. }
+            @else { З архіву нічого не видаляється. }
+          </p>
+        }
       </div>
-    }
-  </section>
+
+      @if (!archive().length && !archiveLoading()) {
+        <app-empty-state
+          art="list"
+          [title]="archiveSearch.trim() ? 'Нічого не знайдено' : 'Архів порожній'"
+          [body]="archiveSearch.trim() ? 'Жодна задача в архіві не підходить під пошук.' : 'Сюди потрапляють зроблені задачі — самі чи кнопкою «В архів» на картці.'">
+          <p-button label="До дошки" icon="pi pi-arrow-left" severity="secondary" (click)="closeArchive()" />
+        </app-empty-state>
+      } @else {
+        <ul class="agenda-archive__list">
+          @for (task of archive(); track task.agendaItemKey) {
+            <li class="agenda-archive__row">
+              <div class="agenda-archive__body">
+                <button type="button" class="agenda-card__title" (click)="openEdit(task)">{{ task.title }}</button>
+                <span class="agenda-card__meta">
+                  {{ targetsLabel(task) }}
+                  · в архіві з {{ task.archivedAtUtc | date:'dd.MM.yyyy' }}{{ task.archivedByName ? ' (' + task.archivedByName + ')' : ' (автоматично)' }}
+                  @if (purgeDate(task); as purge) { · видалиться {{ purge | date:'dd.MM.yyyy' }} }
+                </span>
+              </div>
+              @if (task.canEdit) {
+                <div class="agenda-card__actions">
+                  <p-button label="Повернути" icon="pi pi-replay" severity="secondary" variant="text" (click)="restore(task)" />
+                  <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" ariaLabel="Видалити назавжди" (click)="remove(task)" />
+                </div>
+              }
+            </li>
+          }
+        </ul>
+        @if (archive().length < archiveTotal()) {
+          <p-button
+            [label]="'Завантажити ще (' + (archiveTotal() - archive().length) + ')'"
+            icon="pi pi-arrow-down"
+            severity="secondary"
+            variant="text"
+            styleClass="agenda-column__more"
+            [loading]="archiveLoading()"
+            (click)="loadArchive(true)" />
+        }
+      }
+    </section>
+  }
 </div>
 
-<!-- Only leadership creates/edits; rendering the dialog (which eagerly loads the mentor-only
-     assign-targets) for plain users would 403 and bounce them to /forbidden. -->
-@if (canManage()) {
-  <app-agenda-item-dialog
-    [visible]="dialogVisible()"
-    (visibleChange)="dialogVisible.set($event)"
-    [kurinKey]="kurinKey()"
-    [item]="editing()"
-    [defaultKind]="'Task'"
-    (saved)="loadData()" />
-  <p-confirmDialog />
-}
+<!-- Everyone opens a task to see where it stands; only leadership gets the form. A plain member's
+     dialog is view-only and never mounts the mentor-only assign-targets picker, which would 403. -->
+<app-agenda-item-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [kurinKey]="kurinKey()"
+  [item]="editing()"
+  [defaultKind]="'Task'"
+  [canManage]="canManage()"
+  (saved)="onSaved()" />
+<p-confirmDialog />

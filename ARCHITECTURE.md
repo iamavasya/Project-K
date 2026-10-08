@@ -186,7 +186,8 @@ Permission                           напр. Group:Manage:KurinWide
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
-(`OrphanPhotoCleanupService`).
+(`OrphanPhotoCleanupService`), архів задач — зроблені в архів і давні архівні геть, за строками
+кожного куреня (`AgendaArchiveBackgroundService`).
 
 ---
 

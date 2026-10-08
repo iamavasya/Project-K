@@ -812,8 +812,20 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("AgendaItemKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("CompletionMode")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StatusChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("StatusChangedByUserKey")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TargetKey")
                         .HasColumnType("uniqueidentifier");
@@ -832,6 +844,41 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("AgendaAssignments");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignmentProgress", b =>
+                {
+                    b.Property<Guid>("AgendaAssignmentProgressKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AgendaAssignmentKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ChangedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("AgendaAssignmentProgressKey");
+
+                    b.HasIndex("AgendaAssignmentKey", "MemberKey")
+                        .IsUnique();
+
+                    b.ToTable("AgendaAssignmentProgress");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaCategory", b =>
@@ -901,6 +948,15 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid?>("AgendaCategoryKey")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ArchivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ArchivedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("CreatedByUserKey")
                         .HasColumnType("uniqueidentifier");
 
@@ -922,6 +978,10 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("RecurrenceByWeekday")
                         .HasColumnType("int");
@@ -955,6 +1015,8 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasKey("AgendaItemKey");
 
                     b.HasIndex("AgendaCategoryKey");
+
+                    b.HasIndex("KurinKey", "ArchivedAtUtc");
 
                     b.HasIndex("KurinKey", "StartUtc");
 
@@ -1063,6 +1125,12 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("Stanytsia")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("TaskArchivePurgeAfterDays")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TaskAutoArchiveAfterDays")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -2356,6 +2424,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("AgendaItem");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignmentProgress", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", "Assignment")
+                        .WithMany("Progress")
+                        .HasForeignKey("AgendaAssignmentKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaCategory", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
@@ -2573,6 +2652,11 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>
+                {
+                    b.Navigation("Progress");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaItem", b =>

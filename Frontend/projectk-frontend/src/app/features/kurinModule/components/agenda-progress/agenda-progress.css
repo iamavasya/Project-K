@@ -1,0 +1,53 @@
+.agenda-progress {
+  border-top: 1px solid var(--p-content-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+}
+
+.agenda-progress__title { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
+
+.agenda-progress__own {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  justify-content: space-between;
+}
+
+.agenda-progress__targets,
+.agenda-progress__parts {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agenda-progress__targets { gap: 0.6rem; }
+
+.agenda-progress__target {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.agenda-progress__head { align-items: center; display: flex; gap: 0.5rem; }
+.agenda-progress__label { flex: 1; font-weight: 650; min-width: 0; overflow-wrap: anywhere; }
+.agenda-progress__state,
+.agenda-progress__count { color: var(--p-text-muted-color); font-size: 0.8rem; font-variant-numeric: tabular-nums; font-weight: 650; }
+
+.agenda-progress__mark { color: var(--lil-faint); display: inline-flex; }
+.agenda-progress__mark[data-status="InProgress"] { color: var(--lil-agenda-progress-fg); }
+.agenda-progress__mark[data-status="Done"] { color: var(--p-primary-color); }
+
+.agenda-progress__mode,
+.agenda-progress__who { color: var(--p-text-muted-color); font-size: 0.75rem; }
+
+.agenda-progress__parts { gap: 0.3rem; max-height: 14rem; overflow-y: auto; }
+.agenda-progress__parts li { align-items: center; display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+.agenda-progress__parts label { font-size: 0.85rem; }

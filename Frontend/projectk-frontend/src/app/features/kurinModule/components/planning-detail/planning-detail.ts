@@ -159,6 +159,7 @@ export class PlanningDetailComponent implements OnChanges {
       kind: 'Event',
       title: s.name,
       description: 'Створено з планування табору',
+      location: null,
       startUtc: s.optimalStartDate,
       endUtc: s.optimalEndDate ?? null,
       isAllDay: true,

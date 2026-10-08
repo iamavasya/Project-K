@@ -5,7 +5,11 @@ import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { AGENDA_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../client-cache/cache-policy';
 import {
+  AgendaArchivePage,
+  AgendaArchivePolicy,
   AgendaAssignTargets,
+  AgendaBoardFilter,
+  AgendaBoardResponse,
   AgendaCategoryDto,
   AgendaItemDto,
   AgendaItemStatus,
@@ -39,13 +43,43 @@ export class AgendaService {
     );
   }
 
-  /** Every task the current user may see, grouped client-side into board columns. */
-  getBoard(kurinKey: string): Observable<AgendaItemDto[]> {
-    return this.cache.get(
-      `${AGENDA_CACHE_PREFIX}board:${kurinKey}`,
-      ENTITY_CACHE_TTL_MS,
-      () => this.http.get<AgendaItemDto[]>(`${this.apiUrl}/${kurinKey}/board`)
-    );
+  /**
+   * The board, filtered and paged per column on the server. Not cached: every search keystroke and
+   * every «Завантажити ще» asks for a different slice.
+   */
+  getBoard(kurinKey: string, filter: AgendaBoardFilter = {}): Observable<AgendaBoardResponse> {
+    return this.http.get<AgendaBoardResponse>(`${this.apiUrl}/${kurinKey}/board`, { params: this.toParams(filter) });
+  }
+
+  /** One item as the viewer sees it now. */
+  getItem(agendaItemKey: string): Observable<AgendaItemDto> {
+    return this.http.get<AgendaItemDto>(`${this.apiUrl}/item/${agendaItemKey}`);
+  }
+
+  getArchive(kurinKey: string, search: string | null, skip: number, take: number): Observable<AgendaArchivePage> {
+    return this.http.get<AgendaArchivePage>(`${this.apiUrl}/${kurinKey}/archive`, { params: this.toParams({ search, skip, take }) });
+  }
+
+  setArchived(agendaItemKey: string, archived: boolean): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${agendaItemKey}/archive`, { archived }).pipe(tap(() => this.invalidate()));
+  }
+
+  getArchivePolicy(kurinKey: string): Observable<AgendaArchivePolicy> {
+    return this.http.get<AgendaArchivePolicy>(`${this.apiUrl}/${kurinKey}/archive-policy`);
+  }
+
+  setArchivePolicy(kurinKey: string, policy: AgendaArchivePolicy): Observable<AgendaArchivePolicy> {
+    return this.http.put<AgendaArchivePolicy>(`${this.apiUrl}/${kurinKey}/archive-policy`, policy);
+  }
+
+  private toParams(values: object): HttpParams {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(values)) {
+      if (value !== null && value !== undefined && value !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return params;
   }
 
   getAssignTargets(kurinKey: string): Observable<AgendaAssignTargets> {
@@ -66,6 +100,12 @@ export class AgendaService {
 
   changeStatus(agendaItemKey: string, status: AgendaItemStatus): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${agendaItemKey}/status`, { status }).pipe(tap(() => this.invalidate()));
+  }
+
+  /** One target, or — with `memberKey` — one person's part of a target done «кожному окремо». */
+  changeTargetStatus(agendaItemKey: string, assignmentKey: string, status: AgendaItemStatus, memberKey: string | null = null): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${agendaItemKey}/assignments/${assignmentKey}/status`, { status, memberKey })
+      .pipe(tap(() => this.invalidate()));
   }
 
   delete(agendaItemKey: string): Observable<unknown> {

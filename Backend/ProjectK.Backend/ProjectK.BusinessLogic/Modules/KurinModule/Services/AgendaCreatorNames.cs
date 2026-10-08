@@ -19,8 +19,14 @@ public static class AgendaCreatorNames
     {
         var names = new Dictionary<Guid, string>(fromMembers);
 
+        // Authors, and whoever last moved a target or a part — the board names them all.
         var missing = items
-            .Select(item => item.CreatedByUserKey)
+            .SelectMany(item => item.Assignments
+                .SelectMany(a => a.Progress.Select(p => (Guid?)p.ChangedByUserKey).Append(a.StatusChangedByUserKey))
+                .Where(key => key.HasValue)
+                .Select(key => key!.Value)
+                .Append(item.CreatedByUserKey)
+                .Concat(item.ArchivedByUserKey is { } archivedBy ? [archivedBy] : []))
             .Where(key => key != Guid.Empty && !names.ContainsKey(key))
             .Distinct();
 

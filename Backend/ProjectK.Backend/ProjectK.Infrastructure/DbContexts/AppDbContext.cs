@@ -31,6 +31,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ParticipantBusyRange> ParticipantBusyRanges { get; set; }
     public DbSet<AgendaItem> AgendaItems { get; set; }
     public DbSet<AgendaAssignment> AgendaAssignments { get; set; }
+    public DbSet<AgendaAssignmentProgress> AgendaAssignmentProgress { get; set; }
     public DbSet<AgendaCategory> AgendaCategories { get; set; }
     public DbSet<AgendaResponse> AgendaResponses { get; set; }
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
@@ -432,12 +433,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.RecurrenceFrequency).HasConversion<int>();
             entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.Location).HasMaxLength(200);
             entity.HasOne(e => e.Kurin)
                   .WithMany(k => k.AgendaItems)
                   .HasForeignKey(e => e.KurinKey)
                   .OnDelete(DeleteBehavior.Cascade);
             // The calendar queries by kurin and date window, so index both.
             entity.HasIndex(e => new { e.KurinKey, e.StartUtc });
+            // Every feed filters active vs archived, and the nightly sweep looks for old archived rows.
+            entity.HasIndex(e => new { e.KurinKey, e.ArchivedAtUtc });
             // NoAction (not SetNull) so Kurin keeps a single cascade path to AgendaItems: Category→Kurin
             // is Cascade, and a second Kurin→Category→item(SetNull) path would trip SQL Server 1785.
             // DeleteAgendaCategoryCommand nulls out referencing items itself before removing the group.
@@ -485,8 +489,22 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .HasForeignKey(e => e.AgendaItemKey)
                   .OnDelete(DeleteBehavior.Cascade);
             // One target appears once per item; also the lookup path for "what is assigned to me".
+            entity.Property(e => e.CompletionMode).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
             entity.HasIndex(e => new { e.AgendaItemKey, e.TargetType, e.TargetKey }).IsUnique();
             entity.HasIndex(e => new { e.TargetType, e.TargetKey });
+        });
+
+        builder.Entity<AgendaAssignmentProgress>(entity =>
+        {
+            entity.HasKey(e => e.AgendaAssignmentProgressKey);
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.HasOne(e => e.Assignment)
+                  .WithMany(a => a.Progress)
+                  .HasForeignKey(e => e.AgendaAssignmentKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // One part per person per target; a second move overwrites the row.
+            entity.HasIndex(e => new { e.AgendaAssignmentKey, e.MemberKey }).IsUnique();
         });
 
         builder.Entity<BadgeProgress>(entity =>

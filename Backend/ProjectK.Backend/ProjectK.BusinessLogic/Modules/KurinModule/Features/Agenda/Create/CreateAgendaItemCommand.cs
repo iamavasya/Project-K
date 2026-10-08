@@ -19,6 +19,7 @@ public sealed record CreateAgendaItemCommand : IRequest<ServiceResult<Guid>>
     public AgendaItemKind Kind { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public string? Location { get; init; }
     public DateTime? StartUtc { get; init; }
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
@@ -78,6 +79,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             Kind = request.Kind,
             Title = request.Title.Trim(),
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
             Status = AgendaItemStatus.Todo,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
@@ -90,7 +92,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             RecurrenceCount = request.RecurrenceCount,
             CreatedByUserKey = actorUserKey.Value,
             Assignments = request.Targets
-                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey })
+                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey, CompletionMode = AgendaTargetModes.For(t, request.Kind) })
                 .ToList()
         };
 

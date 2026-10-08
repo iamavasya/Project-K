@@ -24,8 +24,12 @@ public sealed record AgendaViewerContext(
     IReadOnlyCollection<Guid> VisibilityGroupKeys,
     IReadOnlyCollection<Guid> ViewerLeadershipKeys,
     bool CanSeeWholeKurin,
-    bool IsLeadership)
+    bool IsLeadership,
+    IReadOnlyCollection<Guid>? LedGroupKeysOrNull = null)
 {
+    /// <summary>The гуртки the viewer runs as провід or впорядник — narrower than what they see, which also holds their own гурток.</summary>
+    public IReadOnlyCollection<Guid> LedGroupKeys => LedGroupKeysOrNull ?? Array.Empty<Guid>();
+
     public AgendaViewerScope ToScope() =>
         new(KurinKey, ViewerUserKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
 }
@@ -100,9 +104,13 @@ public sealed class AgendaAccess : IAgendaAccess
             visibilityGroups.Add(ownGroupKey.Value);
         }
 
-        if (isLeadership && !canSeeWholeKurin && userKey.HasValue)
+        // A гуртковий answers for tasks set to their гурток even where their office grants no right to
+        // manage it (a youth гуртковий of УПЮ), so any group office counts here, not only leadership.
+        var holdsGroupOffice = (_currentUser.Roles ?? Array.Empty<string>()).Any(SystemRole.IsGroupOffice);
+        IReadOnlyCollection<Guid> ledGroups = Array.Empty<Guid>();
+        if ((isLeadership || holdsGroupOffice) && !canSeeWholeKurin && userKey.HasValue)
         {
-            var ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey.Value, kurinKey, cancellationToken);
+            ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey.Value, kurinKey, cancellationToken);
             foreach (var groupKey in ledGroups)
             {
                 visibilityGroups.Add(groupKey);
@@ -117,7 +125,8 @@ public sealed class AgendaAccess : IAgendaAccess
             VisibilityGroupKeys: visibilityGroups,
             ViewerLeadershipKeys: leadershipKeys,
             CanSeeWholeKurin: canSeeWholeKurin,
-            IsLeadership: isLeadership);
+            IsLeadership: isLeadership,
+            LedGroupKeysOrNull: ledGroups);
     }
 
     public async Task<ResourceAccessDecision> AuthorizeTargetAsync(
@@ -260,17 +269,11 @@ public static class AgendaPermissions
     public static bool IsVisibleTo(AgendaItem item, AgendaViewerContext viewer)
         => AgendaVisibility.IsVisible(item, viewer.ToScope());
 
-    /// <summary>The current user is individually on the hook for the item (their own task).</summary>
-    public static bool IsAssignee(AgendaItem item, AgendaViewerContext viewer)
-    {
-        return item.Assignments.Any(a =>
-            (a.TargetType == AgendaTargetType.Member && viewer.ViewerMemberKey.HasValue && a.TargetKey == viewer.ViewerMemberKey.Value) ||
-            (a.TargetType == AgendaTargetType.Group && viewer.ViewerOwnGroupKey.HasValue && a.TargetKey == viewer.ViewerOwnGroupKey.Value));
-    }
-
-    /// <summary>Assignees move their own tasks; creator and leadership move any in their zone.</summary>
+    /// <summary>
+    /// Whether a drag on the board moves anything for this viewer: their own part, or the shared
+    /// targets they answer for. Seeing a task is not enough — a youth whose гурток was handed a task
+    /// to be closed by its провід sees it without being able to close it. See <see cref="AgendaCompletion"/>.
+    /// </summary>
     public static bool CanChangeStatus(AgendaItem item, AgendaViewerContext viewer)
-    {
-        return CanManage(item, viewer) || IsAssignee(item, viewer);
-    }
+        => AgendaCompletion.BoardMove(item, viewer).Count > 0;
 }

@@ -7,6 +7,7 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { KurinDto } from '../../models/kurin.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AgendaCategoryManagerComponent } from '../../components/agenda-category-manager/agenda-category-manager';
+import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 
 @Component({
   selector: 'app-kurin-settings',
@@ -15,7 +16,8 @@ import { AgendaCategoryManagerComponent } from '../../components/agenda-category
     ButtonModule,
     MessageModule,
     ToggleSwitchModule,
-    AgendaCategoryManagerComponent
+    AgendaCategoryManagerComponent,
+    AgendaArchivePolicyComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,

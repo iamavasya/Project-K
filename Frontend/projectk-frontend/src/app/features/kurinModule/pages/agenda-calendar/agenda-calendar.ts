@@ -210,7 +210,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private eventClasses(item: AgendaItemDto): string[] {
-    const classes = ['agenda-ev', item.kind === 'Task' ? `agenda-ev--task agenda-ev--${item.status.toLowerCase()}` : 'agenda-ev--event'];
+    const classes = ['agenda-ev', item.kind === 'Task' ? `agenda-ev--task agenda-ev--${item.viewerStatus.toLowerCase()}` : 'agenda-ev--event'];
     if (item.isRecurrenceInstance) {
       classes.push('agenda-ev--series');
     }
@@ -286,6 +286,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       kind: item.kind,
       title: item.title,
       description: item.description,
+      location: item.location,
       startUtc,
       endUtc,
       isAllDay: allDay,
@@ -295,7 +296,8 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       recurrenceByWeekday: item.recurrenceByWeekday,
       recurrenceEndUtc: item.recurrenceEndUtc,
       recurrenceCount: item.recurrenceCount,
-      targets: item.assignments.map(a => ({ targetType: a.targetType, targetKey: a.targetKey }))
+      // The mode rides along: an update re-states every target, and a missing mode would reshape it.
+      targets: item.assignments.map(a => ({ targetType: a.targetType, targetKey: a.targetKey, completionMode: a.completionMode }))
     };
 
     this.agendaService.update(payload).subscribe({

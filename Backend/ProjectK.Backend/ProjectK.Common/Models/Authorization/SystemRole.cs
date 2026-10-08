@@ -22,6 +22,9 @@ public static class SystemRole
     /// <summary>The system-role name for an office within its провід.</summary>
     public static string ForOffice(LeadershipType type, LeadershipRole role) => $"{type}.{role}";
 
+    /// <summary>Whether the role is an office in a гуртковий провід — some of which carry no right to manage the гурток.</summary>
+    public static bool IsGroupOffice(string role) => role.StartsWith($"{LeadershipType.Group}.", StringComparison.Ordinal);
+
     /// <summary>Every role name that should exist in the identity store.</summary>
     public static IReadOnlyList<string> All() =>
         new[] { Admin, Member }

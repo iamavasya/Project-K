@@ -52,6 +52,7 @@ public static class DependencyInjection
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();
+        services.AddHostedService<AgendaArchiveBackgroundService>();
         services.AddHostedService<DemoResetBackgroundService>();
 
         services.AddScoped<IKurinReportSource, KurinReportSource>();

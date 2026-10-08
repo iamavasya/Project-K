@@ -1,0 +1,35 @@
+@if (loaded()) {
+  <div class="archive-policy">
+    <div class="archive-policy__row">
+      <label class="archive-policy__switch" for="archive-auto">
+        <p-toggleswitch [(ngModel)]="autoArchive" inputId="archive-auto" />
+        <span>Переносити зроблені задачі в архів</span>
+      </label>
+      @if (autoArchive) {
+        <span class="archive-policy__days">
+          через
+          <input pInputText type="number" min="1" max="3650" [(ngModel)]="autoArchiveDays" aria-label="Днів до архіву" />
+          дн. після закриття
+        </span>
+      }
+    </div>
+
+    <div class="archive-policy__row">
+      <label class="archive-policy__switch" for="archive-purge">
+        <p-toggleswitch [(ngModel)]="purge" inputId="archive-purge" />
+        <span>Видаляти задачі з архіву назавжди</span>
+      </label>
+      @if (purge) {
+        <span class="archive-policy__days">
+          через
+          <input pInputText type="number" min="1" max="3650" [(ngModel)]="purgeDays" aria-label="Днів в архіві до видалення" />
+          дн. в архіві
+        </span>
+      }
+    </div>
+
+    <div class="archive-policy__actions">
+      <p-button label="Зберегти" icon="pi pi-save" [loading]="saving()" [disabled]="saving()" (onClick)="save()" />
+    </div>
+  </div>
+}

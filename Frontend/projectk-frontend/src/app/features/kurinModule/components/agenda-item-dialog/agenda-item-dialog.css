@@ -5,6 +5,7 @@
 .agenda-label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
 .agenda-dates { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
 .agenda-form input, .agenda-form textarea { width: 100%; }
+.agenda-hint { color: var(--p-text-muted-color); font-size: 0.75rem; }
 .agenda-meta { align-items: center; color: var(--p-text-muted-color); display: flex; gap: 0.35rem; font-size: 0.8rem; }
 
 .agenda-category-option { align-items: center; display: inline-flex; gap: 0.4rem; }

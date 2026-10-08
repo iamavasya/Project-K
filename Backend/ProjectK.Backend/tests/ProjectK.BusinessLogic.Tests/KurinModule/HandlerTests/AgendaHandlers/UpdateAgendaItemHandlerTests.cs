@@ -120,4 +120,92 @@ public class UpdateAgendaItemHandlerTests
         _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Member && a.TargetKey == newMember)), Times.Once);
         _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Kurin)), Times.Never);
     }
+
+    // Switching «кожному окремо» to a shared mode after someone moved their part would silently drop it.
+    [Fact]
+    public async Task Handle_WhenTheModeOfAMovedTargetChanges_ReturnsConflict()
+    {
+        var groupKey = Guid.NewGuid();
+        var target = new AgendaAssignment { TargetType = AgendaTargetType.Group, TargetKey = groupKey, CompletionMode = AgendaCompletionMode.PerMember };
+        target.Progress.Add(new AgendaAssignmentProgress { MemberKey = Guid.NewGuid(), Status = AgendaItemStatus.Done });
+        var item = new AgendaItem
+        {
+            AgendaItemKey = Guid.NewGuid(),
+            KurinKey = _kurinKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
+            Assignments = new List<AgendaAssignment> { target }
+        };
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+
+        var result = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
+            Targets = [new() { TargetType = AgendaTargetType.Group, TargetKey = groupKey, CompletionMode = AgendaCompletionMode.Shared }]
+        }, default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        target.CompletionMode.Should().Be(AgendaCompletionMode.PerMember);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhileNothingHasMoved_TheModeMayChange()
+    {
+        var groupKey = Guid.NewGuid();
+        var target = new AgendaAssignment { TargetType = AgendaTargetType.Group, TargetKey = groupKey };
+        var item = new AgendaItem
+        {
+            AgendaItemKey = Guid.NewGuid(),
+            KurinKey = _kurinKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
+            Assignments = new List<AgendaAssignment> { target }
+        };
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+
+        var result = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
+            Location = "  домівка  ",
+            Targets = [new() { TargetType = AgendaTargetType.Group, TargetKey = groupKey, CompletionMode = AgendaCompletionMode.PerMember }]
+        }, default);
+
+        result.Type.Should().Be(ResultType.Success);
+        target.CompletionMode.Should().Be(AgendaCompletionMode.PerMember);
+        item.Location.Should().Be("домівка");
+    }
+
+    // The calendar's drag re-states every target without a mode; that must not reshape a task.
+    [Fact]
+    public async Task Handle_WhenATargetComesWithoutAMode_ItKeepsTheOneItHas()
+    {
+        var groupKey = Guid.NewGuid();
+        var target = new AgendaAssignment { TargetType = AgendaTargetType.Group, TargetKey = groupKey, CompletionMode = AgendaCompletionMode.PerMember };
+        target.Progress.Add(new AgendaAssignmentProgress { MemberKey = Guid.NewGuid(), Status = AgendaItemStatus.Done });
+        var item = new AgendaItem
+        {
+            AgendaItemKey = Guid.NewGuid(),
+            KurinKey = _kurinKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
+            Assignments = new List<AgendaAssignment> { target }
+        };
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+
+        var result = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку до п'ятниці",
+            Targets = [new() { TargetType = AgendaTargetType.Group, TargetKey = groupKey }]
+        }, default);
+
+        result.Type.Should().Be(ResultType.Success);
+        target.CompletionMode.Should().Be(AgendaCompletionMode.PerMember);
+    }
 }

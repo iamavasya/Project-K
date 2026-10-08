@@ -1,0 +1,77 @@
+<section class="agenda-progress" aria-label="Виконання">
+  <span class="agenda-progress__title">Виконання</span>
+
+  @if (ownPart()) {
+    <div class="agenda-progress__own">
+      <span>Твоя частина</span>
+      <p-selectButton
+        [options]="statusOptions"
+        [ngModel]="item().viewerStatus"
+        (onChange)="moveOwn($event.value)"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [disabled]="busy() !== null" />
+    </div>
+  }
+
+  <ul class="agenda-progress__targets">
+    @for (assignment of item().assignments; track assignment.agendaAssignmentKey) {
+      <li class="agenda-progress__target">
+        <div class="agenda-progress__head">
+          <span class="agenda-progress__mark" [attr.data-status]="assignment.status" aria-hidden="true">
+            <i [class]="assignment.status === 'Done' ? 'pi pi-check-circle' : assignment.status === 'InProgress' ? 'pi pi-clock' : 'pi pi-circle'"></i>
+          </span>
+          <span class="agenda-progress__label">{{ assignment.label }}</span>
+          @if (assignment.peopleCount !== null) {
+            <span class="agenda-progress__count">{{ assignment.doneCount }} з {{ assignment.peopleCount }}</span>
+          } @else {
+            <span class="agenda-progress__state">{{ statusLabel(assignment.status) }}</span>
+          }
+        </div>
+
+        @if (modeLabel(assignment); as mode) {
+          <span class="agenda-progress__mode">{{ mode }}</span>
+        }
+        @if (assignment.peopleCount === null && assignment.statusChangedByName && assignment.status !== 'Todo') {
+          <span class="agenda-progress__who">
+            {{ assignment.status === 'Done' ? 'Закрито' : 'Розпочато' }}: {{ assignment.statusChangedByName }}
+            · {{ assignment.statusChangedAtUtc | date:'dd.MM, HH:mm' }}
+          </span>
+        }
+
+        @if (assignment.canChangeStatus) {
+          <p-selectButton
+            [options]="statusOptions"
+            [ngModel]="assignment.status"
+            (onChange)="moveTarget(assignment, $event.value)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            [disabled]="busy() !== null" />
+        }
+
+        @if (assignment.parts?.length) {
+          <ul class="agenda-progress__parts">
+            @for (part of assignment.parts; track part.memberKey) {
+              <li>
+                <p-checkbox
+                  [inputId]="'part-' + assignment.agendaAssignmentKey + '-' + part.memberKey"
+                  [binary]="true"
+                  [ngModel]="part.status === 'Done'"
+                  (onChange)="movePart(assignment, part, $event.checked)"
+                  [disabled]="!part.canChangeStatus || busy() !== null" />
+                <label [for]="'part-' + assignment.agendaAssignmentKey + '-' + part.memberKey">{{ part.name }}</label>
+                @if (part.changedByName && part.status !== 'Todo') {
+                  <span class="agenda-progress__who">
+                    @if (part.changedByName !== part.name) { відмітка: {{ part.changedByName }} · }{{ part.changedAtUtc | date:'dd.MM' }}
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </li>
+    }
+  </ul>
+</section>
