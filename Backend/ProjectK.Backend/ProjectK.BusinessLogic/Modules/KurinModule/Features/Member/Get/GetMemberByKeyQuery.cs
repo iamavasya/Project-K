@@ -94,8 +94,9 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         // Assignments are kept per account, so a person without one runs no гурток.
         if (here is not null && member.UserKey.HasValue)
         {
-            memberResponse.MentoredGroupNames = [.. await _mentorAssignments
-                .GetActiveGroupNamesAsync(member.UserKey.Value, here.KurinKey, cancellationToken)];
+            memberResponse.MentoredGroups = [.. await _mentorAssignments
+                .GetActiveGroupsAsync(member.UserKey.Value, here.KurinKey, cancellationToken)];
+            memberResponse.MentoredGroupNames = [.. memberResponse.MentoredGroups.Select(g => g.Name)];
         }
 
         await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);

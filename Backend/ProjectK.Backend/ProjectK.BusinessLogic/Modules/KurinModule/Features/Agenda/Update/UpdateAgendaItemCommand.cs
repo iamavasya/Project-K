@@ -19,6 +19,7 @@ public sealed record UpdateAgendaItemCommand : IRequest<ServiceResult<object>>
     public AgendaItemKind Kind { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public string? Location { get; init; }
     public DateTime? StartUtc { get; init; }
     public DateTime? EndUtc { get; init; }
     public bool IsAllDay { get; init; } = true;
@@ -81,9 +82,28 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             }
         }
 
+        // Switching «кожному окремо» to a shared mode would silently drop everyone's parts, and the
+        // reverse would leave a closed shared state nobody did; once a target has moved its mode stays.
+        var currentModes = item.Assignments.ToDictionary(a => (a.TargetType, a.TargetKey), a => a.CompletionMode);
+        var requestedModes = request.Targets
+            .GroupBy(t => (t.TargetType, t.TargetKey))
+            .ToDictionary(
+                g => g.Key,
+                g => AgendaTargetModes.For(g.First(), request.Kind, currentModes.TryGetValue(g.Key, out var current) ? current : null));
+        var reshaped = item.Assignments.FirstOrDefault(a =>
+            requestedModes.TryGetValue((a.TargetType, a.TargetKey), out var mode)
+            && mode != a.CompletionMode
+            && AgendaCompletion.HasMoved(a));
+        if (reshaped is not null)
+        {
+            return ServiceResult<object>.Failure(ResultType.Conflict, "AGENDA_MODE_LOCKED",
+                "The way this target is done cannot change once someone has moved it; create a new task instead.");
+        }
+
         item.Kind = request.Kind;
         item.Title = request.Title.Trim();
         item.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        item.Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim();
         item.StartUtc = request.StartUtc;
         item.EndUtc = request.EndUtc;
         item.IsAllDay = request.IsAllDay;
@@ -110,6 +130,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             if (desired.Contains(tuple))
             {
                 kept.Add(tuple);
+                existing.CompletionMode = requestedModes[tuple];
             }
             else
             {
@@ -126,12 +147,17 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
                 {
                     AgendaItemKey = item.AgendaItemKey,
                     TargetType = target.TargetType,
-                    TargetKey = target.TargetKey
+                    TargetKey = target.TargetKey,
+                    CompletionMode = requestedModes[(target.TargetType, target.TargetKey)]
                 };
                 _uow.AgendaItems.AddAssignment(assignment);
                 item.Assignments.Add(assignment);
             }
         }
+
+        // Targets came and went, so what the task adds up to may have changed with them.
+        var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
+        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
 
         await _uow.SaveChangesAsync(cancellationToken);
 

@@ -16,6 +16,8 @@ using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
 using ProjectK.Common.Models.Dtos.AuthModule;
@@ -180,6 +182,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
@@ -231,12 +234,18 @@ public class AuthorizationBaselineMatrixTests
 
         // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
         // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
-        yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?>>(nameof(AgendaController.GetCalendar), "RequireUser");
-        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetBoard), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?, bool>>(nameof(AgendaController.GetCalendar), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, string?, AgendaTargetType?, Guid?, bool, AgendaBoardSort, AgendaItemStatus?, int, int>>(nameof(AgendaController.GetBoard), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, string?, int, int>>(nameof(AgendaController.GetArchive), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetArchivePolicy), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, AgendaArchivePolicyDto>>(nameof(AgendaController.SetArchivePolicy), "RequireUser");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetItem), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, SetAgendaArchivedRequest>>(nameof(AgendaController.SetArchived), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireAgendaAuthor");
         yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
         yield return Row<Action<AgendaController, Guid, UpdateAgendaItemCommand>>(nameof(AgendaController.Update), "RequireUser");
         yield return Row<Action<AgendaController, Guid, ChangeAgendaStatusRequest>>(nameof(AgendaController.ChangeStatus), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, Guid, ChangeAgendaTargetStatusRequest>>(nameof(AgendaController.ChangeTargetStatus), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.Delete), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategories), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetCategoriesForManagement), "RequireUser");

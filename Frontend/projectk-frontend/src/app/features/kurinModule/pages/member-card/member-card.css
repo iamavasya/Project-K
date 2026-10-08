@@ -309,3 +309,32 @@
     color: var(--lil-dues-debt-fg);
 }
 
+/* Гурток, названий у картці. Посилання тільки рамкою на ховері — без кольору й підкреслення в спокої. */
+.member-group-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius);
+    color: var(--p-text-color);
+    font-weight: 600;
+}
+
+.member-group-chip .pi {
+    color: var(--lil-faint);
+    font-size: 0.75rem;
+}
+
+.member-group-chip--link {
+    text-decoration: none;
+}
+
+.member-group-chip--link:hover {
+    border-color: var(--p-primary-color);
+}
+
+.member-group-chip--link:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+}

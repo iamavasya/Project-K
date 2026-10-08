@@ -44,14 +44,6 @@
   overflow-wrap: anywhere;
 }
 
-.tasks-tile__mine {
-  color: var(--lil-faint);
-  font-size: var(--lil-text-micro);
-  font-weight: 700;
-  letter-spacing: var(--lil-tracking-micro);
-  text-transform: uppercase;
-}
-
 .tasks-tile__meta {
   display: flex;
   flex-wrap: wrap;

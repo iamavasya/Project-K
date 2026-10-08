@@ -821,7 +821,8 @@ describe('MemberCardComponent', () => {
       expect(component.staffOffices.map(o => o.leadershipHistoryKey)).toEqual(['kv-now']);
       expect(renderedText()).toContain('Впорядництво');
       expect(renderedText()).toContain("Зв'язковий");
-      expect(renderedText()).toContain('Gurtok 1, Gurtok 2');
+      expect(renderedText()).toContain('Gurtok 1');
+      expect(renderedText()).toContain('Gurtok 2');
     });
 
     it('впорядник лише із закріпленням теж має плитку', () => {

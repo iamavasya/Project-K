@@ -89,7 +89,8 @@ public sealed class MeAgendaScopes
                 VisibilityGroupKeys: groups,
                 ViewerLeadershipKeys: leadershipKeys,
                 CanSeeWholeKurin: canSeeWholeKurin,
-                IsLeadership: roles.Count > 0), roles, led));
+                IsLeadership: roles.Count > 0,
+                LedGroupKeysOrNull: led), roles, led));
         }
 
         return contexts;

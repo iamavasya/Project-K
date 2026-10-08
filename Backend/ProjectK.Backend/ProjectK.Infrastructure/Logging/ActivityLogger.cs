@@ -58,7 +58,12 @@ public sealed class ActivityLogger : IActivityLogger
                 NewEmailHash = ShortHash(newEmail),
                 Ip = MaskIp(context.Ip),
                 UserAgentHash = ShortHash(context.UserAgent),
+                // The client as it names itself, only for a request nobody signed in made: it is what
+                // tells a scanner (zgrab, python-requests) from a browser; for a person the hash is enough.
+                UserAgent = context.UserId == null ? Shorten(context.UserAgent, MaxUserAgentLength) : null,
+                Host = context.Host,
                 Path = context.Path,
+                Query = Shorten(context.Query, MaxQueryLength),
                 Method = context.Method,
                 TraceId = context.TraceId,
                 RequestId = context.RequestId,
@@ -180,7 +185,7 @@ public sealed class ActivityLogger : IActivityLogger
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext == null)
         {
-            return new RequestContext(null, ipOverride, null, null, null, null, null);
+            return new RequestContext(null, ipOverride, null, null, null, null, null, null, null, null);
         }
 
         var userId = httpContext.User.GetUserKeyValue();
@@ -191,8 +196,12 @@ public sealed class ActivityLogger : IActivityLogger
         var userAgent = httpContext.Request?.Headers["User-Agent"].ToString();
         var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
         var requestId = httpContext.TraceIdentifier;
+        var host = httpContext.Request?.Host.Value;
+        var query = httpContext.Request?.QueryString.Value;
+        // Behind Cloudflare the country is already on the request; no lookup is made for a log line.
+        var country = httpContext.Request?.Headers["CF-IPCountry"].ToString();
 
-        return new RequestContext(userId, ip, path, method, userAgent, traceId, requestId);
+        return new RequestContext(userId, ip, path, method, userAgent, traceId, requestId, host, query, country);
     }
 
     private void LogSuspicious(
@@ -218,7 +227,7 @@ public sealed class ActivityLogger : IActivityLogger
                 TraceId = context.TraceId,
                 RequestId = context.RequestId,
                 PolicyName = details.PolicyName,
-                CountryCode = details.CountryCode,
+                CountryCode = details.CountryCode ?? UsableCountry(context.Country),
                 Count = details.Count,
                 Reason = details.Reason
             };
@@ -324,6 +333,23 @@ public sealed class ActivityLogger : IActivityLogger
         return "x.x.x.x";
     }
 
+    private const int MaxUserAgentLength = 160;
+    private const int MaxQueryLength = 200;
+
+    private static string? Shorten(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Length <= maxLength ? value : string.Concat(value.AsSpan(0, maxLength), "…");
+    }
+
+    /// <summary>Cloudflare's two-letter code; «XX» (unknown) and «T1» (Tor) say nothing of a country.</summary>
+    private static string? UsableCountry(string? code) =>
+        string.IsNullOrWhiteSpace(code) || code.Length != 2 || code is "XX" or "T1" ? null : code.ToUpperInvariant();
+
     private static string? ShortHash(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -363,5 +389,8 @@ public sealed class ActivityLogger : IActivityLogger
         string? Method,
         string? UserAgent,
         string? TraceId,
-        string? RequestId);
+        string? RequestId,
+        string? Host,
+        string? Query,
+        string? Country);
 }

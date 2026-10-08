@@ -1,8 +1,15 @@
+/* Every measure follows --kurin-number-size, so a page sets one length and the plaque keeps its proportions. */
+:host {
+  --kurin-number-size: 10rem;
+  display: inline-block;
+}
+
 .kurin-number-square {
-  width: 10rem;
-  height: 10rem;
+  width: var(--kurin-number-size);
+  height: var(--kurin-number-size);
+  box-sizing: border-box;
   background-color: #b30003;
-  border: 0.5rem solid #ff0005;
+  border: calc(var(--kurin-number-size) * 0.05) solid #ff0005;
   display: flex;
   flex-direction: row;
   align-content: center;
@@ -10,13 +17,14 @@
   align-items: center;
   color: white;
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1;
   user-select: none;
 }
 
 .kurin-number {
-    font-size: 7rem;
+    font-size: calc(var(--kurin-number-size) * 0.7);
 }
 
 .kurin-number-short {
-    font-size: 5.5rem;
+    font-size: calc(var(--kurin-number-size) * 0.55);
 }

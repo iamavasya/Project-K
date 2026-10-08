@@ -11,7 +11,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 public class MentorAssignmentRepositoryIntegrationTests
 {
     [Fact]
-    public async Task GetActiveGroupNamesAsync_NamesOnlyCurrentAssignmentsInThatKurin()
+    public async Task GetActiveGroupsAsync_NamesOnlyCurrentAssignmentsInThatKurin()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -34,8 +34,9 @@ public class MentorAssignmentRepositoryIntegrationTests
             new MentorAssignment { MentorUserKey = Guid.NewGuid(), GroupKey = alpha.GroupKey, AssignedAtUtc = DateTime.UtcNow });
         await context.SaveChangesAsync();
 
-        var names = await new MentorAssignmentRepository(context).GetActiveGroupNamesAsync(mentor, here.KurinKey);
+        var names = await new MentorAssignmentRepository(context).GetActiveGroupsAsync(mentor, here.KurinKey);
 
-        Assert.Equal(["Alpha", "Bravo"], names);
+        Assert.Equal(["Alpha", "Bravo"], names.Select(g => g.Name));
+        Assert.Equal(alpha.GroupKey, names[0].GroupKey);
     }
 }

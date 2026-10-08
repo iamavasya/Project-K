@@ -22,4 +22,10 @@ public sealed class TelegramDevAlertOptions
     public string MinimumLevel { get; set; } = "Warning";
 
     public int MaxMessageLength { get; set; } = 3500;
+
+    /// <summary>
+    /// How long alike events (same action from the same IP, same error) are gathered after the first
+    /// one went out; the rest arrive as one digest when it closes.
+    /// </summary>
+    public int GroupWindowSeconds { get; set; } = 300;
 }

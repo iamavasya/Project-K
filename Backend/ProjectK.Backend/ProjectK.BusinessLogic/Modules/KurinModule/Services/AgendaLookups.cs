@@ -11,7 +11,8 @@ public sealed record AgendaLookups(
     IReadOnlyDictionary<Guid, string> MemberNames,
     IReadOnlyDictionary<Guid, string> CreatorNames,
     IReadOnlyDictionary<Guid, string> LeadershipLabels,
-    IReadOnlyDictionary<Guid, AgendaCategory> Categories)
+    IReadOnlyDictionary<Guid, AgendaCategory> Categories,
+    IReadOnlyDictionary<Guid, Guid?> MemberGroups)
 {
     public const string KurinLabel = "Весь курінь";
     public const string KvLabel = "КВ";
@@ -41,7 +42,9 @@ public sealed record AgendaLookups(
         var categories = (await uow.AgendaCategories.GetForKurinAsync(kurinKey, includeArchived: true, cancellationToken))
             .ToDictionary(c => c.AgendaCategoryKey);
 
-        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels, categories);
+        var memberGroups = members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey);
+
+        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels, categories, memberGroups);
     }
 
     public static string LabelFor(LeadershipType type, Guid? groupKey, IReadOnlyDictionary<Guid, string> groupNames) =>

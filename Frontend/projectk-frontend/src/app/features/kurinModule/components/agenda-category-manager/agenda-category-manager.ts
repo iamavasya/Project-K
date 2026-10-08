@@ -138,7 +138,8 @@ export class AgendaCategoryManagerComponent implements OnInit {
       rsvpRequired: false,
       defaultDurationMinutes: null,
       reminderLeadMinutes: null,
-      isArchived: false
+      isArchived: false,
+      isKurinSchedule: false
     };
   }
 }

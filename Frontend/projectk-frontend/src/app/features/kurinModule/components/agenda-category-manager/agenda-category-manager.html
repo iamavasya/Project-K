@@ -18,6 +18,7 @@
           <span class="cat-list__meta">
             @if (category.capacity) { <span><i class="pi pi-users"></i> {{ category.capacity }}</span> }
             @if (category.rsvpRequired) { <span><i class="pi pi-check-square"></i> RSVP</span> }
+            @if (category.isKurinSchedule) { <span><i class="pi pi-calendar"></i> Графік куреня</span> }
             @if (category.isArchived) { <span class="cat-list__badge">В архіві</span> }
           </span>
           <span class="cat-list__actions">
@@ -96,6 +97,10 @@
     <div class="cat-toggle-row">
       <label for="cat-rsvp">Питати відповідь (RSVP)</label>
       <p-toggleswitch inputId="cat-rsvp" [(ngModel)]="form.rsvpRequired" />
+    </div>
+    <div class="cat-toggle-row">
+      <label for="cat-schedule">Графік куреня — події групи бачить увесь курінь</label>
+      <p-toggleswitch inputId="cat-schedule" [(ngModel)]="form.isKurinSchedule" />
     </div>
     <div class="cat-toggle-row">
       <label for="cat-archived">В архіві (сховати з пікера)</label>

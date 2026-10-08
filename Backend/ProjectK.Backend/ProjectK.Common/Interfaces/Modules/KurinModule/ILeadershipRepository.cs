@@ -88,6 +88,9 @@ public interface ILeadershipRepository
     /// <summary>User keys of the members who currently hold an office in the given провід (active history).</summary>
     Task<IReadOnlyList<Guid>> GetActiveMemberUserKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
 
+    /// <summary>Member keys of those who currently hold an office in the given провід.</summary>
+    Task<IReadOnlyList<Guid>> GetActiveMemberKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default);
+
     /// <summary>The провід keys a member currently belongs to (active <see cref="LeadershipHistory"/>).</summary>
     Task<IReadOnlyList<Guid>> GetActiveLeadershipKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }

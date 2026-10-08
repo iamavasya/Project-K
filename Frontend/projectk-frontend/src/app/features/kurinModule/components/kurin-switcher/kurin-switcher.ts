@@ -73,7 +73,7 @@ export class KurinSwitcherComponent implements OnInit {
       next: () => {
         this.switchingTo.set(null);
         // Сторінка під нами належала попередньому куреню — його ключі тут уже нічого не відкриють.
-        this.router.navigate(['/kurin', option.kurinKey]);
+        this.router.navigate(['/kurin']);
       },
       error: (error: unknown) => {
         this.switchingTo.set(null);

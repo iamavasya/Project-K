@@ -14,13 +14,16 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
+import { AgendaProgressComponent } from '../agenda-progress/agenda-progress';
 import {
   AgendaCategoryDto,
+  AgendaCompletionMode,
   AgendaItemDto,
   AgendaItemKind,
   AgendaResponsesResponse,
   AgendaRsvpStatus,
   AgendaTargetInput,
+  COMPLETION_MODE_OPTIONS,
   RecurrenceFrequency,
   WEEKDAY_BITS
 } from '../../models/agenda';
@@ -34,7 +37,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe, FormsModule, DialogModule, ButtonModule, InputTextModule, TextareaModule,
-    SelectButtonModule, SelectModule, DatePickerModule, ToggleSwitchModule, AgendaAssignSelectComponent
+    SelectButtonModule, SelectModule, DatePickerModule, ToggleSwitchModule, AgendaAssignSelectComponent,
+    AgendaProgressComponent
   ],
   templateUrl: './agenda-item-dialog.html',
   styleUrl: './agenda-item-dialog.css'
@@ -67,6 +71,7 @@ export class AgendaItemDialogComponent {
   protected kind: AgendaItemKind = 'Event';
   protected title = '';
   protected description = '';
+  protected location = '';
   protected allDay = true;
   protected startDate: Date | null = null;
   protected endDate: Date | null = null;
@@ -100,7 +105,42 @@ export class AgendaItemDialogComponent {
     { label: 'Щороку', value: 'Yearly' as RecurrenceFrequency }
   ];
 
+  /** One way of doing it for the whole task, applied to each target aimed at more than one person. */
+  protected completionMode: AgendaCompletionMode = 'Shared';
+  protected readonly completionModeOptions = COMPLETION_MODE_OPTIONS;
+
+  /**
+   * The item as it stands now. Starts as the one handed in and is re-read after a part moves, so the
+   * progress shown is never the one from before the click.
+   */
+  protected readonly live = signal<AgendaItemDto | null>(null);
+
   protected readonly canSave = computed(() => this.targets().length > 0);
+
+  /** The choice only exists for a task aimed at a гурток, the kurin or a провід. */
+  protected hasSharedTargets(): boolean {
+    return this.kind === 'Task' && this.targets().some(t => t.targetType !== 'Member');
+  }
+
+  /** Once anyone has moved a target, its way of being done stays — the server would refuse the change. */
+  protected readonly completionModeLocked = computed(() =>
+    (this.item()?.assignments ?? []).some(a => a.targetType !== 'Member' && (a.status !== 'Todo' || !!a.statusChangedAtUtc)));
+
+  protected completionModeHint(): string {
+    return this.completionModeOptions.find(o => o.value === this.completionMode)?.hint ?? '';
+  }
+
+  onProgressChanged(): void {
+    const current = this.live();
+    if (!current) {
+      return;
+    }
+    this.agendaService.getItem(current.agendaItemKey).subscribe(fresh => {
+      this.live.set(fresh);
+      this.saved.emit();
+      this.cdr.markForCheck();
+    });
+  }
 
   /** The sheet of this occurrence, for those who score: a saved event with a day, never a task. */
   protected readonly canOpenSheet = computed(() => {
@@ -118,6 +158,15 @@ export class AgendaItemDialogComponent {
   }
 
   /** View-only mode: a plain member, or anyone opening an item they may not edit. Shows details + RSVP only. */
+  /** «Графік куреня · Кельти» — whose schedule this is, for an event the viewer sees only through it. */
+  protected readonly scheduleOf = computed(() => {
+    const current = this.item();
+    if (!current || current.audience !== 'Schedule') {
+      return null;
+    }
+    return current.assignments.map(a => a.label).filter(Boolean).join(', ') || null;
+  });
+
   protected readonly viewOnly = computed(() => {
     if (!this.canManage()) {
       return true;
@@ -136,6 +185,8 @@ export class AgendaItemDialogComponent {
         this.kind = current.kind;
         this.title = current.title;
         this.description = current.description ?? '';
+        this.location = current.location ?? '';
+        this.completionMode = current.assignments.find(a => a.targetType !== 'Member')?.completionMode ?? 'Shared';
         this.allDay = current.isAllDay;
         this.startDate = this.parseForForm(current.startUtc, current.isAllDay);
         this.endDate = this.parseForForm(current.endUtc, current.isAllDay);
@@ -148,6 +199,7 @@ export class AgendaItemDialogComponent {
       } else {
         this.resetForm();
       }
+      this.live.set(current);
 
       this.loadCategories();
       this.loadResponses();
@@ -181,7 +233,8 @@ export class AgendaItemDialogComponent {
   private loadResponses(): void {
     const current = this.item();
     this.rsvp.set(null);
-    if (!current || current.kind !== 'Event') {
+    // An event seen only through the kurin's schedule has nobody to answer to: the server refuses it.
+    if (!current || current.kind !== 'Event' || current.audience === 'Schedule') {
       return;
     }
     this.agendaService.getResponses(current.agendaItemKey).subscribe({
@@ -224,6 +277,7 @@ export class AgendaItemDialogComponent {
       kind: this.kind,
       title: this.title.trim(),
       description: this.description.trim() || null,
+      location: this.kind === 'Event' ? (this.location.trim() || null) : null,
       startUtc: this.toWire(this.startDate),
       endUtc: this.toWire(this.endDate),
       isAllDay: this.allDay,
@@ -233,7 +287,10 @@ export class AgendaItemDialogComponent {
       recurrenceByWeekday: this.recurrenceFrequency === 'Weekly' ? this.recurrenceByWeekday : 0,
       recurrenceEndUtc: this.recurrenceFrequency !== 'None' ? this.toUtcMidnight(this.recurrenceEndDate) : null,
       recurrenceCount: null,
-      targets: this.targets()
+      targets: this.targets().map(t => ({
+        ...t,
+        completionMode: this.kind === 'Task' && t.targetType !== 'Member' ? this.completionMode : 'Shared' as AgendaCompletionMode
+      }))
     };
 
     const current = this.item();
@@ -293,6 +350,9 @@ export class AgendaItemDialogComponent {
     this.kind = this.defaultKind();
     this.title = '';
     this.description = '';
+    this.location = '';
+    this.completionMode = 'Shared';
+    this.live.set(null);
     this.allDay = this.presetAllDay();
     this.startDate = this.presetStart() ?? new Date();
     this.endDate = this.presetEnd();

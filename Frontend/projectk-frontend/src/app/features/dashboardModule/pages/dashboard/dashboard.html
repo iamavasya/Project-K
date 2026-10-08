@@ -67,15 +67,16 @@
       <app-my-profile-tile [member]="member()" [loading]="memberLoading()" />
     </ng-template>
 
-    <ng-template [appTileDef]="{ key: 'my-kurins', span: 'half', label: 'Мої курені' }">
+    <ng-template [appTileDef]="{ key: 'my-kurins', span: 'half', label: 'Мої курені та гуртки' }">
       <app-my-kurins-tile
         [kurins]="kurins()"
-        [memberships]="memberships()"
+        [groups]="groups()"
         [currentKurinKey]="currentKurinKey()"
         [currentOffices]="currentOffices()"
-        [switchingTo]="switchingTo()"
+        [openingKey]="openingKey()"
         [loading]="kurinsLoading()"
-        (open)="openKurin($event)" />
+        (open)="openKurin($event)"
+        (openGroup)="openGroup($event)" />
     </ng-template>
   </app-tile-board>
 </section>

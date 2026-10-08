@@ -16,7 +16,14 @@ public class AgendaItem : Entity
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    /// <summary>Board column. Meaningful for <see cref="AgendaItemKind.Task"/>; events stay Todo.</summary>
+    /// <summary>Where it happens, as people say it: «домівка, мала кімната», «Голосіївський парк».</summary>
+    public string? Location { get; set; }
+
+    /// <summary>
+    /// Board column. Meaningful for <see cref="AgendaItemKind.Task"/>; events stay Todo. Once the item
+    /// has targets it is derived from their states on every write (all done → done, any started → in
+    /// progress) and kept stored so feeds can filter on it.
+    /// </summary>
     public AgendaItemStatus Status { get; set; } = AgendaItemStatus.Todo;
 
     /// <summary>Full UTC start; null means the item is not yet placed on the calendar.</summary>
@@ -50,6 +57,18 @@ public class AgendaItem : Entity
     public int? RecurrenceCount { get; set; }
 
     public Guid CreatedByUserKey { get; set; }
+
+    /// <summary>When the task as a whole became done; cleared if it is reopened. What auto-archiving counts from.</summary>
+    public DateTime? CompletedAtUtc { get; set; }
+
+    /// <summary>
+    /// Set while the task sits in the archive: off the board, the dashboard and the calendar, still
+    /// findable and restorable. Purged for good after the kurin's retention.
+    /// </summary>
+    public DateTime? ArchivedAtUtc { get; set; }
+
+    /// <summary>Who archived it; null when it was archived automatically.</summary>
+    public Guid? ArchivedByUserKey { get; set; }
 
     public Kurin Kurin { get; set; } = null!;
     public AgendaCategory? Category { get; set; }
@@ -93,6 +112,13 @@ public class AgendaCategory : Entity
     /// <summary>Archived groups stay for historical items but are hidden from the picker.</summary>
     public bool IsArchived { get; set; }
 
+    /// <summary>
+    /// «Графік куреня»: the group's events are seen by everyone in the kurin, not only by those they
+    /// are assigned to — read-only, with no RSVP and no notification. What makes every гурток's
+    /// сходини one schedule.
+    /// </summary>
+    public bool IsKurinSchedule { get; set; }
+
     public Kurin Kurin { get; set; } = null!;
 }
 
@@ -125,5 +151,41 @@ public class AgendaAssignment : Entity
     /// <summary>KurinKey, GroupKey or MemberKey, per <see cref="TargetType"/>.</summary>
     public Guid TargetKey { get; set; }
 
+    /// <summary>Whether the target does the task once together or each person their own. Changeable only while nothing has moved.</summary>
+    public AgendaCompletionMode CompletionMode { get; set; } = AgendaCompletionMode.Shared;
+
+    /// <summary>
+    /// The target's own state. Set directly in the shared modes; in <see cref="AgendaCompletionMode.PerMember"/>
+    /// derived from <see cref="Progress"/> over the people in the target whenever a part moves.
+    /// </summary>
+    public AgendaItemStatus Status { get; set; } = AgendaItemStatus.Todo;
+
+    public Guid? StatusChangedByUserKey { get; set; }
+
+    public DateTime? StatusChangedAtUtc { get; set; }
+
     public AgendaItem AgendaItem { get; set; } = null!;
+
+    /// <summary>One row per person who has moved their part, in <see cref="AgendaCompletionMode.PerMember"/>; no row is Todo.</summary>
+    public ICollection<AgendaAssignmentProgress> Progress { get; set; } = new List<AgendaAssignmentProgress>();
+}
+
+/// <summary>
+/// One person's part of a task done «кожному окремо». A row appears the first time the part moves; a
+/// person with no row has not started. The people counted are those in the target when it is read,
+/// so a newcomer starts at Todo and a leaver's row stays as history without counting.
+/// </summary>
+public class AgendaAssignmentProgress : Entity
+{
+    public Guid AgendaAssignmentProgressKey { get; set; } = Guid.NewGuid();
+    public Guid AgendaAssignmentKey { get; set; }
+    public Guid MemberKey { get; set; }
+    public AgendaItemStatus Status { get; set; }
+
+    /// <summary>Who moved it — the person, or their провід marking it for them.</summary>
+    public Guid ChangedByUserKey { get; set; }
+
+    public DateTime ChangedAtUtc { get; set; }
+
+    public AgendaAssignment Assignment { get; set; } = null!;
 }

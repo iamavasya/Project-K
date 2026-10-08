@@ -19,6 +19,7 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
     {
         return await Context.AgendaItems
             .Include(a => a.Assignments)
+            .ThenInclude(a => a.Progress)
             .FirstOrDefaultAsync(a => a.AgendaItemKey == agendaItemKey, token);
     }
 
@@ -33,6 +34,11 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
             .AsNoTracking()
             .Where(a => agendaItemKeys.Contains(a.AgendaItemKey))
             .ToDictionaryAsync(a => a.AgendaItemKey, a => a.AgendaCategoryKey, token);
+    }
+
+    public void AddProgress(AgendaAssignmentProgress progress)
+    {
+        Context.AgendaAssignmentProgress.Add(progress);
     }
 
     public void AddAssignment(AgendaAssignment assignment)
@@ -83,10 +89,15 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
         DateTime? toUtc,
         bool onlyDated,
         AgendaItemKind? kind,
-        CancellationToken token = default)
+        CancellationToken token = default,
+        bool archived = false,
+        bool includeKurinSchedules = false)
     {
         var query = Context.AgendaItems
             .Where(a => a.KurinKey == viewer.KurinKey);
+        query = archived
+            ? query.Where(a => a.ArchivedAtUtc != null)
+            : query.Where(a => a.ArchivedAtUtc == null);
 
         if (kind.HasValue)
         {
@@ -119,11 +130,14 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
 
         if (!viewer.CanSeeWholeKurin)
         {
-            query = query.Where(AgendaVisibility.AssignedToViewer(viewer));
+            query = query.Where(includeKurinSchedules
+                ? AgendaVisibility.AssignedOrOnKurinSchedule(viewer)
+                : AgendaVisibility.AssignedToViewer(viewer));
         }
 
         return await query
             .Include(a => a.Assignments)
+            .ThenInclude(a => a.Progress)
             .AsNoTracking()
             .OrderBy(a => a.StartUtc)
             .ToListAsync(token);

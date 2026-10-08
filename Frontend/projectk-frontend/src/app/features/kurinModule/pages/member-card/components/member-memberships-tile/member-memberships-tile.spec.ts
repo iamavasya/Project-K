@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { MemberMembershipsTileComponent } from './member-memberships-tile';
 import { MembershipDto } from '../../../../models/membership.dto';
@@ -26,7 +27,8 @@ describe('MemberMembershipsTileComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MemberMembershipsTileComponent]
+      imports: [MemberMembershipsTileComponent],
+      providers: [provideRouter([])]
     }).compileComponents();
 
     fixture = TestBed.createComponent(MemberMembershipsTileComponent);
@@ -58,6 +60,27 @@ describe('MemberMembershipsTileComponent', () => {
     fixture.detectChanges();
 
     expect(labels()).toEqual(['Гурток', 'Вивести']);
+  });
+
+  it('веде до куреня й гуртка, де діє той, хто дивиться, а до іншого свого куреня — через перемикання', () => {
+    const scoped = crypto.randomUUID();
+    const other = membership({ kurinNumber: 9 });
+    const foreign = membership({ kurinNumber: 12 });
+    fixture.componentRef.setInput('memberships', [
+      membership({ kurinKey: scoped, groupKey: 'g1', groupName: 'Кельти' }), other, foreign
+    ]);
+    fixture.componentRef.setInput('scopedKurinKey', scoped);
+    fixture.componentRef.setInput('reachableKurinKeys', [other.kurinKey]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const opened: MembershipDto[] = [];
+    component.openKurin.subscribe(m => opened.push(m));
+
+    expect(Array.from(root.querySelectorAll('a.membership-link')).map(a => a.getAttribute('href'))).toEqual(['/kurin', '/group/g1']);
+    const buttons = root.querySelectorAll<HTMLButtonElement>('button.membership-link');
+    expect(buttons.length).toBe(1);
+    buttons[0].click();
+    expect(opened).toEqual([other]);
   });
 
   it('теперішнє членство показує лише рік початку', () => {

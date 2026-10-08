@@ -22,6 +22,7 @@ public sealed record UpsertAgendaCategoryCommand : IRequest<ServiceResult<Agenda
     public int? DefaultDurationMinutes { get; init; }
     public int? ReminderLeadMinutes { get; init; }
     public bool IsArchived { get; init; }
+    public bool IsKurinSchedule { get; init; }
 }
 
 public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertAgendaCategoryCommand, ServiceResult<AgendaCategoryResponse>>
@@ -69,6 +70,7 @@ public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertA
         category.DefaultDurationMinutes = request.DefaultDurationMinutes;
         category.ReminderLeadMinutes = request.ReminderLeadMinutes;
         category.IsArchived = request.IsArchived;
+        category.IsKurinSchedule = request.IsKurinSchedule;
         category.UpdatedDate = DateTime.UtcNow;
 
         await _uow.SaveChangesAsync(cancellationToken);

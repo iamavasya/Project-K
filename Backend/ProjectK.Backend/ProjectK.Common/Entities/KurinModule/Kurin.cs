@@ -24,6 +24,12 @@ public class Kurin(int number) : Entity
     public int ZbtUserCap { get; set; } = 15;
     public bool IsZbtKurin { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
+
+    /// <summary>Days a done task stays on the board before it moves to the archive by itself; null keeps it there.</summary>
+    public int? TaskAutoArchiveAfterDays { get; set; } = 30;
+
+    /// <summary>Days an archived task is kept before it is deleted for good; null keeps the archive forever.</summary>
+    public int? TaskArchivePurgeAfterDays { get; set; } = 365;
     public ICollection<Group> Groups { get; set; } = new List<Group>();
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();

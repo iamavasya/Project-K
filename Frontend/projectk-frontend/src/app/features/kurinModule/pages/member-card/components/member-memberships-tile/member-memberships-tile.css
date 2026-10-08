@@ -58,3 +58,44 @@
   display: flex;
   gap: 0.25rem;
 }
+
+/* Курінь і гурток відкриваються з рядка: рамка на ховері, як у решти рядків-посилань. */
+.membership-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: -0.125rem -0.375rem;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--p-text-color);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.membership-kurin.membership-link {
+  font-weight: 600;
+}
+
+.membership-link:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+}
+
+.membership-link:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.membership-link--group {
+  margin: 0;
+  border-color: var(--p-content-border-color);
+  color: var(--p-text-color);
+  font-weight: 600;
+}
+
+.membership-link--group .pi {
+  color: var(--lil-faint);
+  font-size: 0.75rem;
+}

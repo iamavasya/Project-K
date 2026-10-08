@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
@@ -11,8 +11,8 @@ import { KurinBranch } from '../../../kurinModule/models/enums/kurin-branch.enum
 import { MembershipKind } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
-import { MembershipDto } from '../../../kurinModule/models/membership.dto';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
+import { MyGroupDto } from '../../models/me.dto';
 import { DashboardComponent } from './dashboard';
 
 describe('DashboardComponent', () => {
@@ -41,8 +41,9 @@ describe('DashboardComponent', () => {
     { kurinKey: 'k1', kurinNumber: 1, branch: KurinBranch.UPYu, namedAfter: 'ім. Івана Богуна', kind: MembershipKind.Youth }
   ];
 
-  const memberships: MembershipDto[] = [
-    { membershipKey: 'ms1', kurinKey: 'k1', kurinNumber: 1, branch: KurinBranch.UPYu, groupKey: 'g1', groupName: 'Соколи', kind: MembershipKind.Youth, joinedAtUtc: '2025-09-01', isCurrent: true }
+  const groups: MyGroupDto[] = [
+    { groupKey: 'g1', kurin: { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true }, name: 'Соколи', silhouetteUrl: null, isOwn: true, isLed: false },
+    { groupKey: 'g7', kurin: { kurinKey: 'k2', kurinNumber: 7, namedAfter: null, isCurrent: false }, name: 'Кельти', silhouetteUrl: null, isOwn: false, isLed: true }
   ];
 
   beforeEach(() => {
@@ -51,9 +52,8 @@ describe('DashboardComponent', () => {
     auth.getAuthState.and.returnValue(of(state));
     auth.getKurinScopeOptions.and.returnValue(of(kurins));
     auth.setKurinScope.and.returnValue(of({ ...state, kurinKey: 'k2' }));
-    members = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
+    members = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
     members.getByKey.and.returnValue(of(member));
-    members.getMemberships.and.returnValue(of(memberships));
 
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -72,6 +72,8 @@ describe('DashboardComponent', () => {
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    TestBed.inject(HttpTestingController).match(r => r.url.endsWith('/me/groups')).forEach(r => r.flush(groups));
+    fixture.detectChanges();
   });
 
   const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -79,8 +81,9 @@ describe('DashboardComponent', () => {
   it('greets the person by name and shows both tiles', () => {
     expect(text()).toContain('Оксана');
     expect(text()).toContain('Мій профіль');
-    expect(text()).toContain('Мої курені');
+    expect(text()).toContain('Мої курені та гуртки');
     expect(text()).toContain('Соколи');
+    expect(text()).toContain('Кельти');
   });
 
   it('lists the offices held now in the kurin acted in, not the ones that ended', () => {
@@ -90,10 +93,20 @@ describe('DashboardComponent', () => {
   it('opens the current kurin as it is, and switches the scope for another', () => {
     component.openKurin(kurins[1]);
     expect(auth.setKurinScope).not.toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'k1']);
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
 
     component.openKurin(kurins[0]);
     expect(auth.setKurinScope).toHaveBeenCalledWith('k2');
-    expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'k2']);
+    expect(router.navigate).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens a гурток of the kurin acted in at once, and one of another kurin after a switch', () => {
+    component.openGroup(groups[0]);
+    expect(auth.setKurinScope).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/group', 'g1']);
+
+    component.openGroup(groups[1]);
+    expect(auth.setKurinScope).toHaveBeenCalledWith('k2');
+    expect(router.navigate).toHaveBeenCalledWith(['/group', 'g7']);
   });
 });

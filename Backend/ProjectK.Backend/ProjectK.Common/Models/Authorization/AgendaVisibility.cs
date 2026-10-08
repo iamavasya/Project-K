@@ -59,6 +59,25 @@ public static class AgendaVisibility
         return Expression.Lambda<Func<AgendaItem, bool>>(Expression.OrElse(addressed.Body, raisedByViewer), parameter);
     }
 
+    /// <summary>
+    /// What the calendar shows with «Графіки гуртків» on: what the viewer is assigned or raised, plus
+    /// every event of a group marked «графік куреня». The extra events are only to look at — RSVP and
+    /// the other guards keep using <see cref="IsVisible"/>, which does not include them.
+    /// </summary>
+    public static Expression<Func<AgendaItem, bool>> AssignedOrOnKurinSchedule(AgendaViewerScope viewer)
+    {
+        var assigned = AssignedToViewer(viewer);
+        var parameter = assigned.Parameters[0];
+        Expression<Func<AgendaItem, bool>> onSchedule = item => item.Category != null && item.Category.IsKurinSchedule;
+        var scheduleBody = new ParameterSwap(onSchedule.Parameters[0], parameter).Visit(onSchedule.Body);
+        return Expression.Lambda<Func<AgendaItem, bool>>(Expression.OrElse(assigned.Body, scheduleBody!), parameter);
+    }
+
+    private sealed class ParameterSwap(ParameterExpression from, ParameterExpression to) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node) => node == from ? to : base.VisitParameter(node);
+    }
+
     /// <summary>Whether at least one assignment reaches the viewer; false for an item they only authored.</summary>
     public static bool IsAddressedTo(AgendaItem item, AgendaViewerScope viewer)
         => AddressedToViewer(viewer).Compile()(item);

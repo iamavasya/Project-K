@@ -10,6 +10,7 @@ public sealed class UpdateAgendaItemCommandValidator : AbstractValidator<UpdateA
         RuleFor(command => command.AgendaItemKey).NotEmpty();
         RuleFor(command => command.Title).NotEmpty().MaximumLength(200);
         RuleFor(command => command.Description).MaximumLength(2000);
+        RuleFor(command => command.Location).MaximumLength(200);
         RuleFor(command => command.Targets).NotEmpty().WithMessage("At least one assignment target is required.");
         RuleForEach(command => command.Targets).ChildRules(target =>
             target.RuleFor(t => t.TargetKey).NotEmpty());

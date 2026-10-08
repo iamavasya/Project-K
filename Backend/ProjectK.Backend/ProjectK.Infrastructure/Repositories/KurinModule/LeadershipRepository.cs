@@ -288,6 +288,15 @@ public class LeadershipRepository : ILeadershipRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetActiveMemberKeysForLeadershipAsync(Guid leadershipKey, CancellationToken cancellationToken = default)
+    {
+        return await _context.LeadershipHistories
+            .Where(h => h.LeadershipKey == leadershipKey && h.EndDate == null)
+            .Select(h => h.MemberKey)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Guid>> GetActiveLeadershipKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return await _context.LeadershipHistories

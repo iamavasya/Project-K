@@ -22,6 +22,7 @@ public sealed class MyEventDto
     public DateTime? EndUtc { get; set; }
     public bool IsAllDay { get; set; }
     public bool IsRecurring { get; set; }
+    public string? Location { get; set; }
     public string? CategoryName { get; set; }
     public string? CategoryColorHex { get; set; }
     public string? CategoryIcon { get; set; }
@@ -29,7 +30,7 @@ public sealed class MyEventDto
     public AgendaRsvpStatus? MyResponse { get; set; }
 }
 
-/// <summary>A task the person is on the hook for, or raised, that is not done.</summary>
+/// <summary>A task the person is on the hook for that is not done.</summary>
 public sealed class MyTaskDto
 {
     public Guid AgendaItemKey { get; set; }
@@ -38,8 +39,6 @@ public sealed class MyTaskDto
     public AgendaItemStatus Status { get; set; }
     public DateTime? StartUtc { get; set; }
     public DateTime? EndUtc { get; set; }
-    /// <summary>False when the person sees the task only as its author.</summary>
-    public bool AddressedToMe { get; set; }
     /// <summary>Whether the status can be moved from here: the right to, in the kurin the token acts in.</summary>
     public bool CanChangeStatus { get; set; }
 }
@@ -153,4 +152,17 @@ public sealed class MyDutyDto
     public Guid? AgendaItemKey { get; set; }
     public DateTime? OccurrenceStartUtc { get; set; }
     public string? Title { get; set; }
+}
+
+/// <summary>A гурток the person belongs to as a youth, or leads, in one of their kurins.</summary>
+public sealed class MyGroupDto
+{
+    public Guid GroupKey { get; set; }
+    public MyKurinRefDto Kurin { get; set; } = new();
+    public string Name { get; set; } = string.Empty;
+    public string? SilhouetteUrl { get; set; }
+    /// <summary>The person stands in it as a youth.</summary>
+    public bool IsOwn { get; set; }
+    /// <summary>The person leads it — an office in its провід, or a mentor assignment.</summary>
+    public bool IsLed { get; set; }
 }

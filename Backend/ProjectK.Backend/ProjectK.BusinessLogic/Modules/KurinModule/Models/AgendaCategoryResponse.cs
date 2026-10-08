@@ -17,6 +17,7 @@ public record AgendaCategoryResponse
     public int? DefaultDurationMinutes { get; init; }
     public int? ReminderLeadMinutes { get; init; }
     public bool IsArchived { get; init; }
+    public bool IsKurinSchedule { get; init; }
 
     public static AgendaCategoryResponse From(AgendaCategory c) => new()
     {
@@ -31,6 +32,7 @@ public record AgendaCategoryResponse
         RsvpRequired = c.RsvpRequired,
         DefaultDurationMinutes = c.DefaultDurationMinutes,
         ReminderLeadMinutes = c.ReminderLeadMinutes,
-        IsArchived = c.IsArchived
+        IsArchived = c.IsArchived,
+        IsKurinSchedule = c.IsKurinSchedule
     };
 }

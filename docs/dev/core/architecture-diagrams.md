@@ -118,7 +118,7 @@ flowchart TB
         direction LR
         DBC["DbContext · міграції · репозиторії"]
         SVC["Сервіси<br/>Resend · Blob · QuestPDF · GitHub · JWT"]
-        BG["Фонові служби<br/>аудит · перестороги · осиротілі фото"]
+        BG["Фонові служби<br/>аудит · перестороги · осиротілі фото · архів задач"]
     end
 
     EXT["Зовнішні пакети<br/>ProjectK.Optimization · ProbeAndBadges.*"]

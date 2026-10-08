@@ -4,7 +4,7 @@
   [modal]="true"
   [style]="{ width: 'min(92vw, 34rem)' }"
   [draggable]="false"
-  [header]="viewOnly() ? 'Подія' : (item() ? 'Редагувати' : 'Нове призначення')"
+  [header]="viewOnly() ? (item()?.kind === 'Task' ? 'Задача' : 'Подія') : (item() ? 'Редагувати' : 'Нове призначення')"
   (onHide)="onHide()">
   <div class="agenda-form">
     @if (viewOnly()) {
@@ -13,14 +13,22 @@
         @if (item()?.categoryName) {
           <span class="agenda-view__badge" [style.background]="item()?.categoryColorHex">{{ item()?.categoryName }}</span>
         }
-        <div class="agenda-view__when">
-          <i class="pi pi-calendar"></i>
-          @if (item()?.isAllDay) {
-            {{ item()?.startUtc | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'dd.MM.yyyy' }} }
-          } @else {
-            {{ item()?.startUtc | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'HH:mm' }} }
-          }
-        </div>
+        @if (scheduleOf(); as whose) {
+          <div class="agenda-view__when"><i class="pi pi-users"></i> Графік куреня · {{ whose }}</div>
+        }
+        @if (item()?.startUtc) {
+          <div class="agenda-view__when">
+            <i class="pi pi-calendar"></i>
+            @if (item()?.isAllDay) {
+              {{ item()?.startUtc | date:'dd.MM.yyyy' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'dd.MM.yyyy' }} }
+            } @else {
+              {{ item()?.startUtc | date:'dd.MM.yyyy HH:mm' }}@if (item()?.endUtc) { – {{ item()?.endUtc | date:'HH:mm' }} }
+            }
+          </div>
+        }
+        @if (item()?.location) {
+          <div class="agenda-view__when"><i class="pi pi-map-marker"></i> {{ item()?.location }}</div>
+        }
         @if (item()?.description) {
           <p class="agenda-view__desc">{{ item()?.description }}</p>
         }
@@ -43,6 +51,11 @@
     </div>
 
     @if (kind === 'Event') {
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-location">Де</label>
+        <input id="agenda-location" pInputText [(ngModel)]="location" maxlength="200" placeholder="Домівка, мала кімната" />
+      </div>
+
       <div class="agenda-field">
         <label class="agenda-label" for="agenda-category">Група подій</label>
         <p-select
@@ -130,6 +143,29 @@
       <app-agenda-assign-select [kurinKey]="kurinKey()" [targets]="targets()" (targetsChange)="targets.set($event)" />
     </div>
 
+    @if (hasSharedTargets()) {
+      <div class="agenda-field">
+        <label class="agenda-label" for="agenda-mode">Як виконується</label>
+        <p-select
+          inputId="agenda-mode"
+          [options]="completionModeOptions"
+          [(ngModel)]="completionMode"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="completionModeLocked()"
+          appendTo="body" />
+        <span class="agenda-hint">
+          {{ completionModeLocked() ? 'Хтось уже почав — спосіб виконання не змінити. Потрібен інший — створи нову задачу.' : completionModeHint() }}
+        </span>
+      </div>
+    }
+
+    }
+
+    @if (live(); as current) {
+      @if (current.kind === 'Task' && current.assignments.length) {
+        <app-agenda-progress [item]="current" (changed)="onProgressChanged()" />
+      }
     }
 
     @if (item()?.createdByName) {

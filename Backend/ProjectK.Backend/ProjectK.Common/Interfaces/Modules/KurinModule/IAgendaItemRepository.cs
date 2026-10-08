@@ -6,7 +6,7 @@ namespace ProjectK.Common.Interfaces.Modules.KurinModule;
 
 public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
 {
-    /// <summary>Loads an item with its assignments for detail, edit and authorization checks.</summary>
+    /// <summary>Loads an item with its assignments and their per-person parts for detail, edit and authorization checks.</summary>
     Task<AgendaItem?> GetByKeyWithAssignmentsAsync(Guid agendaItemKey, CancellationToken token = default);
 
     /// <summary>The group of events each item belongs to, in one query; items that no longer exist are absent.</summary>
@@ -14,6 +14,9 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
 
     /// <summary>Marks an assignment for insertion. Explicit Added state avoids collection-fixup ambiguity.</summary>
     void AddAssignment(AgendaAssignment assignment);
+
+    /// <summary>Marks a person's part of a target for insertion, for the same reason as <see cref="AddAssignment"/>.</summary>
+    void AddProgress(AgendaAssignmentProgress progress);
 
     /// <summary>Marks an assignment for deletion. Explicit Deleted state avoids an accidental UPDATE.</summary>
     void RemoveAssignment(AgendaAssignment assignment);
@@ -36,7 +39,9 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// <summary>
     /// Items visible to <paramref name="viewer"/>. <paramref name="onlyDated"/> keeps the calendar to
     /// placed items; <paramref name="fromUtc"/>/<paramref name="toUtc"/> narrow to a window;
-    /// <paramref name="kind"/> narrows the board to tasks. Assignments are included.
+    /// <paramref name="kind"/> narrows the board to tasks; <paramref name="archived"/> reads the
+    /// archive instead of what is live; <paramref name="includeKurinSchedules"/> adds every event of a
+    /// group marked «графік куреня». Assignments are included.
     /// </summary>
     Task<IEnumerable<AgendaItem>> GetForViewerAsync(
         AgendaViewerScope viewer,
@@ -44,5 +49,7 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
         DateTime? toUtc,
         bool onlyDated,
         AgendaItemKind? kind,
-        CancellationToken token = default);
+        CancellationToken token = default,
+        bool archived = false,
+        bool includeKurinSchedules = false);
 }

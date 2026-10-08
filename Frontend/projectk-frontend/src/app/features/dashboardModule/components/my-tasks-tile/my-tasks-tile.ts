@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { AgendaItemStatus } from '../../../kurinModule/models/agenda';
 import { AGENDA_STATUS_META } from '../../../kurinModule/models/agenda-status.config';
@@ -27,7 +26,7 @@ export interface TaskRow {
  */
 @Component({
   selector: 'app-my-tasks-tile',
-  imports: [RouterLink, ButtonModule, SkeletonModule, TagModule, TooltipModule, EmptyStateComponent],
+  imports: [RouterLink, ButtonModule, SkeletonModule, TagModule, EmptyStateComponent],
   templateUrl: './my-tasks-tile.html',
   styleUrl: './my-tasks-tile.css',
   changeDetection: ChangeDetectionStrategy.OnPush

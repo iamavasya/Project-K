@@ -45,6 +45,17 @@
       </div>
       <app-agenda-category-manager [kurinKey]="kurinKey" />
     </section>
+
+    <section class="kurin-tile" aria-labelledby="task-archive-title">
+      <div class="setting-copy">
+        <h2 id="task-archive-title">Архів задач</h2>
+        <p>
+          Зроблені задачі самі сходять з дошки в архів, щоб на ній лишалось те, що ще треба зробити.
+          З архіву задачу можна знайти й повернути. Видалення з архіву — назавжди.
+        </p>
+      </div>
+      <app-agenda-archive-policy [kurinKey]="kurinKey" />
+    </section>
   }
 
   <footer class="settings-actions">

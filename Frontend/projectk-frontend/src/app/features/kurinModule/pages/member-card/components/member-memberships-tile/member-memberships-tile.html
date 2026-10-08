@@ -8,17 +8,40 @@
   <ul class="memberships-list">
     @for (membership of current(); track membership.membershipKey) {
       <li class="membership-row">
-        <span class="membership-kurin">
-          {{ kurinTitle(membership) }}
-          @if (membership.kurinNamedAfter) {
-            <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
-          }
-        </span>
+        @if (isScoped(membership)) {
+          <a class="membership-kurin membership-link" routerLink="/kurin">
+            {{ kurinTitle(membership) }}
+            @if (membership.kurinNamedAfter) {
+              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            }
+          </a>
+        } @else if (isReachable(membership)) {
+          <button type="button" class="membership-kurin membership-link" [disabled]="switchingTo() !== null" (click)="openKurin.emit(membership)">
+            {{ kurinTitle(membership) }}
+            @if (membership.kurinNamedAfter) {
+              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            }
+            @if (switchingTo() === membership.kurinKey) { <i class="pi pi-spin pi-spinner" aria-hidden="true"></i> }
+          </button>
+        } @else {
+          <span class="membership-kurin">
+            {{ kurinTitle(membership) }}
+            @if (membership.kurinNamedAfter) {
+              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            }
+          </span>
+        }
         <span class="membership-facts">
           <p-tag [value]="branchLabels[membership.branch]" severity="secondary" />
           <span>{{ kindLabels[membership.kind] }}</span>
           @if (membership.groupName) {
-            <span>{{ membership.groupName }}</span>
+            @if (membership.groupKey && isScoped(membership)) {
+              <a class="membership-link membership-link--group" [routerLink]="['/group', membership.groupKey]">
+                <i class="pi pi-users" aria-hidden="true"></i>{{ membership.groupName }}
+              </a>
+            } @else {
+              <span>{{ membership.groupName }}</span>
+            }
           }
           <span class="membership-period">{{ period(membership) }}</span>
         </span>

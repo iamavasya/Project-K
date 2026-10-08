@@ -27,7 +27,6 @@
           <span class="tasks-tile__body">
             <span class="tasks-tile__title">
               {{ row.task.title }}
-              @if (!row.task.addressedToMe) { <span class="tasks-tile__mine" pTooltip="Ти її поставив, а робить хтось інший" tooltipPosition="top">не моя</span> }
             </span>
             <span class="tasks-tile__meta">
               <p-tag [value]="statusMeta[row.task.status].label" [severity]="statusMeta[row.task.status].severity" />
