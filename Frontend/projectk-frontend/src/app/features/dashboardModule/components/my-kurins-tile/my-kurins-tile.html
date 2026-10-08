@@ -1,8 +1,7 @@
 <section class="kurin-tile kurins-tile">
   <div class="lil-tile-head">
     <div>
-      <h2>Мої курені</h2>
-      @if (rows().length > 1) { <span class="lil-count">{{ rows().length }}</span> }
+      <h2>Мої курені та гуртки</h2>
     </div>
   </div>
 
@@ -19,21 +18,20 @@
             type="button"
             class="kurins-tile__row"
             [class.kurins-tile__row--current]="row.isCurrent"
-            [disabled]="switchingTo() !== null"
+            [disabled]="openingKey() !== null"
             (click)="open.emit(row.option)">
-            <span class="kurins-tile__number" aria-hidden="true">{{ row.option.kurinNumber }}</span>
+            <app-kurin-number class="kurins-tile__plaque" [number]="row.option.kurinNumber" aria-hidden="true" />
             <span class="kurins-tile__body">
               <span class="kurins-tile__name">{{ kurinLabel(row.option) }}</span>
               <span class="kurins-tile__meta">
                 <p-tag [value]="branchLabels[row.option.branch]" severity="secondary" />
                 <span>{{ kindLabels[row.option.kind] }}</span>
-                @if (row.groupName) { <span>· {{ row.groupName }}</span> }
               </span>
               @if (row.isCurrent && currentOffices().length) {
                 <span class="kurins-tile__offices">{{ currentOffices().join(' · ') }}</span>
               }
             </span>
-            @if (switchingTo() === row.option.kurinKey) {
+            @if (openingKey() === row.option.kurinKey) {
               <i class="pi pi-spin pi-spinner kurins-tile__mark"></i>
             } @else if (row.isCurrent) {
               <span class="kurins-tile__now">зараз</span>
@@ -44,5 +42,39 @@
         </li>
       }
     </ul>
+
+    @if (sortedGroups().length) {
+      <ul class="kurins-tile__list" aria-label="Гуртки">
+        @for (group of sortedGroups(); track group.groupKey) {
+          <li>
+            <button
+              type="button"
+              class="kurins-tile__row"
+              [disabled]="openingKey() !== null"
+              (click)="openGroup.emit(group)">
+              <span class="kurins-tile__silhouette" aria-hidden="true">
+                @if (group.silhouetteUrl) {
+                  <img [src]="group.silhouetteUrl" alt="" loading="lazy" />
+                } @else {
+                  <i class="pi pi-users"></i>
+                }
+              </span>
+              <span class="kurins-tile__body">
+                <span class="kurins-tile__name">{{ group.name }}</span>
+                <span class="kurins-tile__meta">
+                  <span>{{ groupRole(group) }}</span>
+                  @if (namesKurin()) { <span>· к. ч. {{ group.kurin.kurinNumber }}</span> }
+                </span>
+              </span>
+              @if (openingKey() === group.groupKey) {
+                <i class="pi pi-spin pi-spinner kurins-tile__mark"></i>
+              } @else {
+                <i class="pi pi-arrow-right kurins-tile__mark" aria-hidden="true"></i>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
   }
 </section>

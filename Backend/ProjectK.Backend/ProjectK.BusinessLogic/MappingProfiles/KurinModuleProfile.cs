@@ -71,7 +71,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.GroupName, opt => opt.Ignore())
             // Standing and виховник assignments are read per placement, and this map has none.
             .ForMember(dest => dest.IsStaff, opt => opt.Ignore())
-            .ForMember(dest => dest.MentoredGroupNames, opt => opt.Ignore());
+            .ForMember(dest => dest.MentoredGroupNames, opt => opt.Ignore())
+            .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore());
 
         // Lean list read model -> same response shape as the full card. Level,
         // active leadership and active warnings are already resolved in the
@@ -81,6 +82,7 @@ public class KurinModuleProfile : Profile
             // the code is something one person hands over, not something a roster hands out.
             .ForMember(dest => dest.PublicId, opt => opt.Ignore())
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
+            .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
         CreateMap<Member, MemberLookupDto>()

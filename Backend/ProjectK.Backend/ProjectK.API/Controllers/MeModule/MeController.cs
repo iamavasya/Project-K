@@ -7,6 +7,7 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Groups;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
@@ -84,6 +85,15 @@ public class MeController : ControllerBase
     public async Task<IActionResult> GetDuties()
     {
         var result = await _mediator.Send(new GetMyDutiesQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The гуртки the person is in or leads, in every kurin, with their сильветки.</summary>
+    [HttpGet("groups")]
+    [ProducesResponseType(typeof(IReadOnlyList<MyGroupDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGroups()
+    {
+        var result = await _mediator.Send(new GetMyGroupsQuery());
         return result.ToActionResult(this);
     }
 

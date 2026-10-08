@@ -154,3 +154,16 @@ public sealed class MyDutyDto
     public DateTime? OccurrenceStartUtc { get; set; }
     public string? Title { get; set; }
 }
+
+/// <summary>A гурток the person belongs to as a youth, or leads, in one of their kurins.</summary>
+public sealed class MyGroupDto
+{
+    public Guid GroupKey { get; set; }
+    public MyKurinRefDto Kurin { get; set; } = new();
+    public string Name { get; set; } = string.Empty;
+    public string? SilhouetteUrl { get; set; }
+    /// <summary>The person stands in it as a youth.</summary>
+    public bool IsOwn { get; set; }
+    /// <summary>The person leads it — an office in its провід, or a mentor assignment.</summary>
+    public bool IsLed { get; set; }
+}

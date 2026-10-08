@@ -8,7 +8,6 @@ import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directi
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
-import { MembershipDto } from '../../../kurinModule/models/membership.dto';
 import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-name.model';
 import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
@@ -21,7 +20,7 @@ import { MyScoreTileComponent } from '../../components/my-score-tile/my-score-ti
 import { MySkillsTileComponent } from '../../components/my-skills-tile/my-skills-tile';
 import { MyTasksTileComponent, TaskStatusChange } from '../../components/my-tasks-tile/my-tasks-tile';
 import { EventResponseChange, UpcomingEventsTileComponent } from '../../components/upcoming-events-tile/upcoming-events-tile';
-import { MyDuesDto, MyDutyDto, MyEventDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
+import { MyDuesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
@@ -52,11 +51,11 @@ export class DashboardComponent implements OnInit {
   readonly boardKey = TILE_BOARD_KEYS.dashboard;
 
   readonly member = signal<MemberDto | null>(null);
-  readonly memberships = signal<MembershipDto[]>([]);
+  readonly groups = signal<MyGroupDto[]>([]);
   readonly kurins = signal<KurinScopeOption[]>([]);
   readonly memberLoading = signal(true);
   readonly kurinsLoading = signal(true);
-  readonly switchingTo = signal<string | null>(null);
+  readonly openingKey = signal<string | null>(null);
 
   readonly events = signal<MyEventDto[]>([]);
   readonly eventsLoading = signal(true);
@@ -119,9 +118,9 @@ export class DashboardComponent implements OnInit {
       next: member => { this.member.set(member); this.memberLoading.set(false); },
       error: () => this.memberLoading.set(false)
     });
-    this.members.getMemberships(memberKey).subscribe({
-      next: memberships => this.memberships.set(memberships),
-      error: () => this.memberships.set([])
+    this.me.getGroups().subscribe({
+      next: groups => this.groups.set(groups),
+      error: () => this.groups.set([])
     });
     this.auth.getKurinScopeOptions().subscribe({
       next: kurins => { this.kurins.set(kurins); this.kurinsLoading.set(false); },
@@ -217,25 +216,33 @@ export class DashboardComponent implements OnInit {
 
   /** A kurin is opened in the scope it belongs to: the one acted in already, or after a switch of token. */
   openKurin(option: KurinScopeOption): void {
-    if (option.kurinKey === this.currentKurinKey()) {
-      this.router.navigate(['/kurin', option.kurinKey]);
+    this.openIn(option.kurinKey, option.kurinNumber, option.kurinKey, ['/kurin']);
+  }
+
+  openGroup(group: MyGroupDto): void {
+    this.openIn(group.kurin.kurinKey, group.kurin.kurinNumber, group.groupKey, ['/group', group.groupKey]);
+  }
+
+  private openIn(kurinKey: string, kurinNumber: number, rowKey: string, path: string[]): void {
+    if (kurinKey === this.currentKurinKey()) {
+      this.router.navigate(path);
       return;
     }
-    if (this.switchingTo()) {
+    if (this.openingKey()) {
       return;
     }
-    this.switchingTo.set(option.kurinKey);
-    this.auth.setKurinScope(option.kurinKey).subscribe({
+    this.openingKey.set(rowKey);
+    this.auth.setKurinScope(kurinKey).subscribe({
       next: () => {
-        this.switchingTo.set(null);
-        this.router.navigate(['/kurin', option.kurinKey]);
+        this.openingKey.set(null);
+        this.router.navigate(path);
       },
       error: (error: unknown) => {
-        this.switchingTo.set(null);
+        this.openingKey.set(null);
         this.messages.add({
           severity: 'error',
           summary: 'Не вдалося перейти',
-          detail: failureDetail(error, `Курінь ч. ${option.kurinNumber} лишився недосяжним. Спробуй ще раз.`)
+          detail: failureDetail(error, `Курінь ч. ${kurinNumber} лишився недосяжним. Спробуй ще раз.`)
         });
       }
     });

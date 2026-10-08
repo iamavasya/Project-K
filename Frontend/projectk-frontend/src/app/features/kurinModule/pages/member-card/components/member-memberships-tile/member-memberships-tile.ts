@@ -5,6 +5,7 @@ import { MembershipDto } from '../../../../models/membership.dto';
 import { KURIN_BRANCH_LABELS } from '../../../../models/enums/kurin-branch.enum';
 import { MEMBERSHIP_KIND_LABELS } from '../../../../models/enums/membership-kind.enum';
 import { ButtonModule } from '@openng/optimus-ui/button';
+import { RouterLink } from '@angular/router';
 
 /**
  * Тека «Членства» з коробки людини: де вона є зараз і де була раніше.
@@ -14,7 +15,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
  */
 @Component({
   selector: 'app-member-memberships-tile',
-  imports: [TagModule, SkeletonModule, ButtonModule],
+  imports: [TagModule, SkeletonModule, ButtonModule, RouterLink],
   templateUrl: './member-memberships-tile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-memberships-tile.css'
@@ -33,15 +34,30 @@ export class MemberMembershipsTileComponent {
    * справа Звʼязкового: впорядник не переводить ні себе, ні своїх юнаків.
    */
   readonly canManage = input(false);
+  /**
+   * Інші курені, у яких стоїть той, хто дивиться: туди можна перейти, перемкнувши курінь. До
+   * куреня, де його немає, назва лишається просто назвою.
+   */
+  readonly reachableKurinKeys = input<string[]>([]);
+  readonly switchingTo = input<string | null>(null);
 
   readonly moveToGroup = output<MembershipDto>();
   readonly leaveKurin = output<MembershipDto>();
+  readonly openKurin = output<MembershipDto>();
 
   readonly branchLabels = KURIN_BRANCH_LABELS;
   readonly kindLabels = MEMBERSHIP_KIND_LABELS;
 
   readonly current = computed(() => this.memberships().filter(m => m.isCurrent));
   readonly past = computed(() => this.memberships().filter(m => !m.isCurrent));
+
+  isScoped(membership: MembershipDto): boolean {
+    return membership.kurinKey === this.scopedKurinKey();
+  }
+
+  isReachable(membership: MembershipDto): boolean {
+    return !this.isScoped(membership) && this.reachableKurinKeys().includes(membership.kurinKey);
+  }
 
   canAct(membership: MembershipDto): boolean {
     return this.canManage() && membership.isCurrent && membership.kurinKey === this.scopedKurinKey();

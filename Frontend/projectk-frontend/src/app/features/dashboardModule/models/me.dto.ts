@@ -115,3 +115,13 @@ export interface MyDutyDto {
   occurrenceStartUtc: string | null;
   title: string | null;
 }
+
+/** A гурток the person is in as a youth, or leads. */
+export interface MyGroupDto {
+  groupKey: string;
+  kurin: MyKurinRefDto;
+  name: string;
+  silhouetteUrl: string | null;
+  isOwn: boolean;
+  isLed: boolean;
+}

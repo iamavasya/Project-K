@@ -24,6 +24,8 @@ export interface MemberDto {
      * куреня, у якому людину дивляться.
      */
     mentoredGroupNames?: string[];
+    /** Ті самі гуртки з ключами, щоб картка могла їх відкрити. Приходить лише з картки однієї людини. */
+    mentoredGroups?: { groupKey: string; name: string }[];
     firstName: string;
     middleName: string;
     lastName: string;

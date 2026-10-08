@@ -172,18 +172,8 @@
         justify-content: flex-start;
     }
 
-    :host ::ng-deep .kurin-number-slot .kurin-number-square {
-        width: 6.5rem;
-        height: 6.5rem;
-        border-width: 0.35rem;
-    }
-
-    :host ::ng-deep .kurin-number-slot .kurin-number {
-        font-size: 4.6rem;
-    }
-
-    :host ::ng-deep .kurin-number-slot .kurin-number-short {
-        font-size: 3.65rem;
+    .kurin-number-slot app-kurin-number {
+        --kurin-number-size: 6.5rem;
     }
 
     /* Поруч стоїть число куреня 6.5rem; повний h1 із ним у рядок не вміщається. */

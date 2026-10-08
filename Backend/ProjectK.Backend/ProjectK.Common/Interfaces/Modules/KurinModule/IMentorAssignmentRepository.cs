@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Interfaces.Modules.KurinModule;
 
@@ -18,8 +19,8 @@ public interface IMentorAssignmentRepository : IBaseEntityRepository<MentorAssig
     Task<MentorAssignment?> GetSpecificAssignmentAsync(Guid mentorUserKey, Guid groupKey, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Names of the гуртки this account runs as виховник in one kurin right now. Revoked
+    /// The гуртки this account runs as виховник in one kurin right now, by name. Revoked
     /// assignments are history and do not count.
     /// </summary>
-    Task<IReadOnlyList<string>> GetActiveGroupNamesAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<GroupRef>> GetActiveGroupsAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default);
 }

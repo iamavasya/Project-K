@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
@@ -38,14 +39,16 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<string>> GetActiveGroupNamesAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<GroupRef>> GetActiveGroupsAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default)
     {
-        return await Context.MentorAssignments
+        // A record cannot be translated under Distinct/OrderBy, so the pair is read flat and wrapped after.
+        var groups = await Context.MentorAssignments
             .Where(ma => ma.MentorUserKey == mentorUserKey && ma.RevokedAtUtc == null && ma.Group.KurinKey == kurinKey)
-            .Select(ma => ma.Group.Name)
+            .Select(ma => new { ma.GroupKey, ma.Group.Name })
             .Distinct()
-            .OrderBy(name => name)
+            .OrderBy(group => group.Name)
             .ToListAsync(cancellationToken);
+        return groups.Select(group => new GroupRef(group.GroupKey, group.Name)).ToList();
     }
 
     public override async Task<MentorAssignment?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)

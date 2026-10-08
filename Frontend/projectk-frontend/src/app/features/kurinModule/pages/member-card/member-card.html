@@ -254,10 +254,18 @@
                         <span class="member-section-subtitle text-sm">з {{ office.startDate | date: 'yyyy' }}</span>
                     </li>
                     }
-                    @if (mentoredGroupNames.length) {
-                    <li class="text-sm">
+                    @if (mentoredGroups.length) {
+                    <li class="flex flex-wrap items-center gap-2 text-sm">
                         <span class="member-section-subtitle">Впорядник гуртка:</span>
-                        {{ mentoredGroupNames.join(', ') }}
+                        @for (group of mentoredGroups; track group.name) {
+                            @if (group.groupKey) {
+                            <a class="member-group-chip member-group-chip--link" [routerLink]="['/group', group.groupKey]">
+                                <i class="pi pi-users" aria-hidden="true"></i>{{ group.name }}
+                            </a>
+                            } @else {
+                            <span class="member-group-chip"><i class="pi pi-users" aria-hidden="true"></i>{{ group.name }}</span>
+                            }
+                        }
                     </li>
                     }
                 </ul>
@@ -345,6 +353,9 @@
                     [loadFailed]="membershipsLoadFailed"
                     [scopedKurinKey]="scopedKurinKey"
                     [canManage]="canManagePlacement"
+                    [reachableKurinKeys]="reachableKurinKeys"
+                    [switchingTo]="switchingKurinTo"
+                    (openKurin)="openMembershipKurin($event)"
                     (moveToGroup)="openMoveToGroup($event)"
                     (leaveKurin)="confirmLeaveKurin($event)" />
             </section>

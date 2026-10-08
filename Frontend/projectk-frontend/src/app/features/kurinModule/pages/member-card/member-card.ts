@@ -4,7 +4,7 @@ import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
 import { MemberDto } from '../../models/member.dto';
 import { MemberService } from '../../services/member-service/member.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { DialogModule } from '@openng/optimus-ui/dialog';
@@ -87,7 +87,8 @@ import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directi
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
     TileBoardComponent,
-    TileDefDirective
+    TileDefDirective,
+    RouterLink
   ],
   providers: [ConfirmationService],
   templateUrl: './member-card.html',
@@ -120,6 +121,9 @@ export class MemberCardComponent implements OnInit {
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
   memberships: MembershipDto[] = [];
+  /** Інші курені того, хто дивиться, куди з членств можна перейти. Читаються, лише коли людина стоїть ще деінде. */
+  reachableKurinKeys: string[] = [];
+  switchingKurinTo: string | null = null;
   groupOptions: GroupDto[] = [];
   selectedGroupKey: string | null = null;
   movingMembership: MembershipDto | null = null;
@@ -265,6 +269,7 @@ export class MemberCardComponent implements OnInit {
         this.isMembershipsLoading = false;
         this.membershipsSettled = true;
         this.tryLoadYouthProgress(memberKey);
+        this.loadReachableKurins(memberships);
       },
       error: () => {
         this.memberships = [];
@@ -272,6 +277,39 @@ export class MemberCardComponent implements OnInit {
         this.isMembershipsLoading = false;
         this.membershipsSettled = true;
         this.tryLoadYouthProgress(memberKey);
+      }
+    });
+  }
+
+  private loadReachableKurins(memberships: MembershipDto[]): void {
+    if (!memberships.some(m => m.isCurrent && m.kurinKey !== this.scopedKurinKey)) {
+      this.reachableKurinKeys = [];
+      return;
+    }
+    this.authService.getKurinScopeOptions().subscribe({
+      next: options => this.reachableKurinKeys = options.map(o => o.kurinKey),
+      error: () => this.reachableKurinKeys = []
+    });
+  }
+
+  /** Інший курінь відкривається після перемикання токена: сторінка куреня показує той, у якому діє сесія. */
+  openMembershipKurin(membership: MembershipDto): void {
+    if (this.switchingKurinTo) {
+      return;
+    }
+    this.switchingKurinTo = membership.kurinKey;
+    this.authService.setKurinScope(membership.kurinKey).subscribe({
+      next: () => {
+        this.switchingKurinTo = null;
+        this.router.navigate(['/kurin']);
+      },
+      error: (error: unknown) => {
+        this.switchingKurinTo = null;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Не вдалося перейти',
+          detail: failureDetail(error, `Курінь ч. ${membership.kurinNumber} лишився недосяжним. Спробуй ще раз.`)
+        });
       }
     });
   }
@@ -305,6 +343,19 @@ export class MemberCardComponent implements OnInit {
   /** Гуртки, за якими людина закріплена виховником у курені, де її дивимось. */
   get mentoredGroupNames(): string[] {
     return this.member?.mentoredGroupNames ?? [];
+  }
+
+  /**
+   * Ті самі гуртки для показу. Ключ лишається тільки тоді, коли гуртки з куреня, у якому діє той,
+   * хто дивиться: сторінка гуртка іншого куреня його не впустить.
+   */
+  get mentoredGroups(): { groupKey: string | null; name: string }[] {
+    const linkable = !!this.member?.kurinKey && this.member.kurinKey === this.scopedKurinKey;
+    const groups = this.member?.mentoredGroups;
+    if (groups?.length) {
+      return groups.map(g => ({ groupKey: linkable ? g.groupKey : null, name: g.name }));
+    }
+    return this.mentoredGroupNames.map(name => ({ groupKey: null, name }));
   }
 
   officeLabel(role: string): string {

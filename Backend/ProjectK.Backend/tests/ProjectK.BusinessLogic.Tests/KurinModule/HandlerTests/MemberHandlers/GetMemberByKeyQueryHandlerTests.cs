@@ -13,6 +13,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
@@ -119,6 +120,7 @@ public class GetMemberByKeyHandlerTests
         var memberKey = Guid.NewGuid();
         var userKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
+        var groupOne = Guid.NewGuid();
         var member = new Member { MemberKey = memberKey, UserKey = userKey, FirstName = "Ivan", MiddleName = "", LastName = "P", Email = "i@e.com", PhoneNumber = "1" };
 
         _membershipsMock
@@ -127,12 +129,13 @@ public class GetMemberByKeyHandlerTests
         _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
         _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(new MemberResponse { MemberKey = memberKey });
         _mentorRepoMock
-            .Setup(r => r.GetActiveGroupNamesAsync(userKey, kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(["Gurtok 1", "Gurtok 2"]);
+            .Setup(r => r.GetActiveGroupsAsync(userKey, kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new GroupRef(groupOne, "Gurtok 1"), new GroupRef(Guid.NewGuid(), "Gurtok 2")]);
 
         var result = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
 
         result.Data!.MentoredGroupNames.Should().Equal("Gurtok 1", "Gurtok 2");
+        result.Data!.MentoredGroups.First().GroupKey.Should().Be(groupOne);
     }
 
     [Fact]

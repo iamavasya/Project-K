@@ -78,7 +78,7 @@ describe('KurinSwitcherComponent', () => {
     component.switchTo(usp, popover);
 
     expect(authService.setKurinScope).toHaveBeenCalledWith('kurin-b');
-    expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-b']);
+    expect(router.navigate).toHaveBeenCalledWith(['/kurin']);
   });
 
   it('на курінь, де ми вже стоїмо, нічого не перевидає', () => {

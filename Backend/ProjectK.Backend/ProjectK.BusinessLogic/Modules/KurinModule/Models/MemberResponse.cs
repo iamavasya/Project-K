@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -40,6 +41,9 @@ public class MemberResponse
     /// reads and by the read of one person, for the kurin that person is seen in.
     /// </summary>
     public ICollection<string> MentoredGroupNames { get; set; } = [];
+
+    /// <summary>The same гуртки with their keys, so the card can open them. Filled only by the read of one person.</summary>
+    public ICollection<GroupRef> MentoredGroups { get; set; } = [];
     public Guid? UserKey { get; set; }
     public string? UserRole { get; set; }
     public string FirstName { get; set; }

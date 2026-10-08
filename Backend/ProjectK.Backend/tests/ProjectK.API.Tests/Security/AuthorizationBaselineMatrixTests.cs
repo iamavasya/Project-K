@@ -180,6 +180,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
