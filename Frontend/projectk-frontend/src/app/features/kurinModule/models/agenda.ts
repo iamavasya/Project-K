@@ -86,6 +86,10 @@ export interface AgendaItemDto {
   categoryName: string | null;
   categoryColorHex: string | null;
   categoryIcon: string | null;
+  /** The item's group is «графік куреня». */
+  isKurinSchedule: boolean;
+  /** `Schedule`: on the calendar only through the kurin's schedule — nothing to answer. */
+  audience: 'Assigned' | 'Schedule';
   recurrenceFrequency: RecurrenceFrequency;
   recurrenceInterval: number;
   recurrenceByWeekday: number;
@@ -162,6 +166,8 @@ export interface AgendaCategoryDto {
   defaultDurationMinutes: number | null;
   reminderLeadMinutes: number | null;
   isArchived: boolean;
+  /** «Графік куреня»: everyone in the kurin sees the group's events, read-only. */
+  isKurinSchedule: boolean;
 }
 
 /** Body for creating/updating an event group. Omit agendaCategoryKey to create. */
@@ -178,6 +184,8 @@ export interface UpsertAgendaCategoryRequest {
   defaultDurationMinutes: number | null;
   reminderLeadMinutes: number | null;
   isArchived: boolean;
+  /** «Графік куреня»: everyone in the kurin sees the group's events, read-only. */
+  isKurinSchedule: boolean;
 }
 
 export interface AgendaRsvpDto {

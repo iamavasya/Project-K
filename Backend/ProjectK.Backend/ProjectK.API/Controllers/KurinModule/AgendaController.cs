@@ -45,9 +45,9 @@ public class AgendaController : ControllerBase
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCalendar(Guid kurinKey, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc)
+    public async Task<IActionResult> GetCalendar(Guid kurinKey, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc, [FromQuery] bool includeSchedules = false)
     {
-        var response = await _mediator.Send(new GetAgendaItemsQuery(kurinKey, fromUtc, toUtc));
+        var response = await _mediator.Send(new GetAgendaItemsQuery(kurinKey, fromUtc, toUtc, includeSchedules));
         return response.ToActionResult(this);
     }
 

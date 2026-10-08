@@ -158,6 +158,15 @@ export class AgendaItemDialogComponent {
   }
 
   /** View-only mode: a plain member, or anyone opening an item they may not edit. Shows details + RSVP only. */
+  /** «Графік куреня · Кельти» — whose schedule this is, for an event the viewer sees only through it. */
+  protected readonly scheduleOf = computed(() => {
+    const current = this.item();
+    if (!current || current.audience !== 'Schedule') {
+      return null;
+    }
+    return current.assignments.map(a => a.label).filter(Boolean).join(', ') || null;
+  });
+
   protected readonly viewOnly = computed(() => {
     if (!this.canManage()) {
       return true;
@@ -224,7 +233,8 @@ export class AgendaItemDialogComponent {
   private loadResponses(): void {
     const current = this.item();
     this.rsvp.set(null);
-    if (!current || current.kind !== 'Event') {
+    // An event seen only through the kurin's schedule has nobody to answer to: the server refuses it.
+    if (!current || current.kind !== 'Event' || current.audience === 'Schedule') {
       return;
     }
     this.agendaService.getResponses(current.agendaItemKey).subscribe({

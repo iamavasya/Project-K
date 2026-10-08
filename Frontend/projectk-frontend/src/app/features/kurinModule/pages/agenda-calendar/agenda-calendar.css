@@ -1,6 +1,8 @@
 /* Native Optimus toolbar replaces FullCalendar's own header (headerToolbar: false). */
 .agenda-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; margin-bottom: 0.75rem; }
 .agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
+.agenda-toolbar__schedules { align-items: center; color: var(--p-text-muted-color); display: inline-flex; font-size: 0.85rem; font-weight: 650; gap: 0.5rem; margin-inline-start: auto; }
+.agenda-toolbar__schedules label { cursor: pointer; }
 .agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; text-transform: capitalize; }
 
 /* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
@@ -57,6 +59,13 @@
 :host ::ng-deep .fc-timegrid-event .agenda-ev__title { white-space: normal; }
 /* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
 :host ::ng-deep .agenda-ev--series { opacity: 0.92; }
+/* On the calendar only through the kurin's schedule: the group's colour as a frame around a paler
+   plate, so what is the viewer's reads first and the other гуртки's сходини do not get lost. */
+:host ::ng-deep .agenda-ev--schedule.agenda-ev--category {
+  background: color-mix(in srgb, var(--agenda-cat) calc(var(--lil-agenda-cat-bg-mix) / 3), var(--p-content-background));
+  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
+  color: var(--p-text-muted-color);
+}
 /* The viewer raised it for someone else: dashed, and paler than what is theirs to attend. */
 :host ::ng-deep .agenda-ev--foreign { border-style: dashed; opacity: 0.75; }
 :host ::ng-deep .agenda-ev--series .agenda-ev__title::before { content: '\21bb '; }

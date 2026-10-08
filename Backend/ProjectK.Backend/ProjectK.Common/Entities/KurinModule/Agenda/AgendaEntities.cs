@@ -112,6 +112,13 @@ public class AgendaCategory : Entity
     /// <summary>Archived groups stay for historical items but are hidden from the picker.</summary>
     public bool IsArchived { get; set; }
 
+    /// <summary>
+    /// «Графік куреня»: the group's events are seen by everyone in the kurin, not only by those they
+    /// are assigned to — read-only, with no RSVP and no notification. What makes every гурток's
+    /// сходини one schedule.
+    /// </summary>
+    public bool IsKurinSchedule { get; set; }
+
     public Kurin Kurin { get; set; } = null!;
 }
 

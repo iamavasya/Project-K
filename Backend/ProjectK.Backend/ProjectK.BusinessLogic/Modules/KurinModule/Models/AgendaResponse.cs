@@ -50,6 +50,15 @@ public record AgendaItemResponse
     public string? CategoryColorHex { get; set; }
     public string? CategoryIcon { get; set; }
 
+    /// <summary>The item's group is «графік куреня» — the calendar names the гурток on its plate.</summary>
+    public bool IsKurinSchedule { get; set; }
+
+    /// <summary>
+    /// Why it is on this viewer's calendar. <see cref="AgendaAudience.Schedule"/>: only through the
+    /// kurin's schedule — nothing to answer, and the dialog shows it read-only.
+    /// </summary>
+    public AgendaAudience Audience { get; set; }
+
     /// <summary>Recurrence rule echoed back so the edit dialog can repopulate the series settings.</summary>
     public RecurrenceFrequency RecurrenceFrequency { get; set; }
     public int RecurrenceInterval { get; set; } = 1;

@@ -30,6 +30,11 @@ public static class AgendaItemResponseFactory
             categories.TryGetValue(item.AgendaCategoryKey.Value, out category);
         }
 
+        var scope = viewer.ToScope();
+        var onSchedule = category?.IsKurinSchedule == true;
+        var raisedByViewer = viewer.ViewerUserKey.HasValue && item.CreatedByUserKey == viewer.ViewerUserKey.Value;
+        var addressed = AgendaVisibility.IsAddressedTo(item, scope);
+
         // For a recurring series the calendar shows one row per occurrence: the dates come from the
         // expansion, but the key stays the series key so edit/delete act on the whole series (v1).
         var isInstance = occurrenceStartUtc.HasValue;
@@ -58,7 +63,9 @@ public static class AgendaItemResponseFactory
             ArchivedByName = NameOf(item.ArchivedByUserKey, creatorNames),
             CanEdit = AgendaPermissions.CanManage(item, viewer),
             CanChangeStatus = AgendaPermissions.CanChangeStatus(item, viewer),
-            AddressedToViewer = AgendaVisibility.IsAddressedTo(item, viewer.ToScope()),
+            AddressedToViewer = addressed,
+            IsKurinSchedule = onSchedule,
+            Audience = onSchedule && !addressed && !raisedByViewer ? AgendaAudience.Schedule : AgendaAudience.Assigned,
             CategoryKey = category?.AgendaCategoryKey,
             CategoryName = category?.Name,
             CategoryColorHex = category?.ColorHex,

@@ -13,6 +13,9 @@
         @if (item()?.categoryName) {
           <span class="agenda-view__badge" [style.background]="item()?.categoryColorHex">{{ item()?.categoryName }}</span>
         }
+        @if (scheduleOf(); as whose) {
+          <div class="agenda-view__when"><i class="pi pi-users"></i> Графік куреня · {{ whose }}</div>
+        }
         @if (item()?.startUtc) {
           <div class="agenda-view__when">
             <i class="pi pi-calendar"></i>

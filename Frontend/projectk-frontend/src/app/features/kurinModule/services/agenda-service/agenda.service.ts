@@ -26,16 +26,19 @@ export class AgendaService {
   private readonly cache = inject(ClientCacheService);
   private readonly apiUrl = `${environment.apiUrl}/agenda`;
 
-  /** Dated items for the calendar within an optional [fromUtc, toUtc] window. */
-  getCalendar(kurinKey: string, fromUtc?: string, toUtc?: string): Observable<AgendaItemDto[]> {
-    let params = new HttpParams();
+  /**
+   * Dated items for the calendar within an optional [fromUtc, toUtc] window; with `includeSchedules`
+   * also every event of a group marked «графік куреня» («Графіки гуртків»).
+   */
+  getCalendar(kurinKey: string, fromUtc?: string, toUtc?: string, includeSchedules = false): Observable<AgendaItemDto[]> {
+    let params = new HttpParams().set('includeSchedules', String(includeSchedules));
     if (fromUtc) {
       params = params.set('fromUtc', fromUtc);
     }
     if (toUtc) {
       params = params.set('toUtc', toUtc);
     }
-    const window = `${fromUtc ?? ''}:${toUtc ?? ''}`;
+    const window = `${fromUtc ?? ''}:${toUtc ?? ''}:${includeSchedules ? 's' : ''}`;
     return this.cache.get(
       `${AGENDA_CACHE_PREFIX}calendar:${kurinKey}:${window}`,
       ENTITY_CACHE_TTL_MS,

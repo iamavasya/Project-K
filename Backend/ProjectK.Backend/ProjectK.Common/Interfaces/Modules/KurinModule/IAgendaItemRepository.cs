@@ -40,7 +40,8 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// Items visible to <paramref name="viewer"/>. <paramref name="onlyDated"/> keeps the calendar to
     /// placed items; <paramref name="fromUtc"/>/<paramref name="toUtc"/> narrow to a window;
     /// <paramref name="kind"/> narrows the board to tasks; <paramref name="archived"/> reads the
-    /// archive instead of what is live. Assignments are included.
+    /// archive instead of what is live; <paramref name="includeKurinSchedules"/> adds every event of a
+    /// group marked «графік куреня». Assignments are included.
     /// </summary>
     Task<IEnumerable<AgendaItem>> GetForViewerAsync(
         AgendaViewerScope viewer,
@@ -49,5 +50,6 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
         bool onlyDated,
         AgendaItemKind? kind,
         CancellationToken token = default,
-        bool archived = false);
+        bool archived = false,
+        bool includeKurinSchedules = false);
 }

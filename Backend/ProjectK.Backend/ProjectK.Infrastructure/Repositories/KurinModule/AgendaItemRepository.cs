@@ -90,7 +90,8 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
         bool onlyDated,
         AgendaItemKind? kind,
         CancellationToken token = default,
-        bool archived = false)
+        bool archived = false,
+        bool includeKurinSchedules = false)
     {
         var query = Context.AgendaItems
             .Where(a => a.KurinKey == viewer.KurinKey);
@@ -129,7 +130,9 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
 
         if (!viewer.CanSeeWholeKurin)
         {
-            query = query.Where(AgendaVisibility.AssignedToViewer(viewer));
+            query = query.Where(includeKurinSchedules
+                ? AgendaVisibility.AssignedOrOnKurinSchedule(viewer)
+                : AgendaVisibility.AssignedToViewer(viewer));
         }
 
         return await query

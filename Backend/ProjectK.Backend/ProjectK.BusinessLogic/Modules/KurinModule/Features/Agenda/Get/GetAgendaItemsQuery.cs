@@ -10,8 +10,13 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
 
-/// <summary>Calendar feed: dated items in the window that the current user may see.</summary>
-public sealed record GetAgendaItemsQuery(Guid KurinKey, DateTime? FromUtc, DateTime? ToUtc)
+/// <summary>
+/// Calendar feed: dated items in the window that the current user may see. With
+/// <see cref="IncludeKurinSchedules"/> («Графіки гуртків») it also carries every event of a group
+/// marked «графік куреня», as <see cref="AgendaAudience.Schedule"/>; without it those are left out
+/// for everyone, whole-kurin viewers too, so the switch means the same to all.
+/// </summary>
+public sealed record GetAgendaItemsQuery(Guid KurinKey, DateTime? FromUtc, DateTime? ToUtc, bool IncludeKurinSchedules = false)
     : IRequest<ServiceResult<IEnumerable<AgendaItemResponse>>>;
 
 public sealed class GetAgendaItemsQueryHandler
@@ -43,7 +48,8 @@ public sealed class GetAgendaItemsQueryHandler
             request.ToUtc,
             onlyDated: true,
             kind: null,
-            cancellationToken)).ToList();
+            cancellationToken,
+            includeKurinSchedules: request.IncludeKurinSchedules)).ToList();
 
         var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
@@ -60,6 +66,7 @@ public sealed class GetAgendaItemsQueryHandler
                 ? new[] { AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories, roster) }
                 : AgendaRecurrence.Expand(item, windowFrom, windowTo)
                     .Select(occ => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
+            .Where(r => request.IncludeKurinSchedules || r.Audience != AgendaAudience.Schedule)
             .OrderBy(r => r.StartUtc)
             .ToList();
 

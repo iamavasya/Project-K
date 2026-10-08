@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
+import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventContentArg, EventDropArg, EventInput, EventMountArg } from '@fullcalendar/core';
 import ukLocale from '@fullcalendar/core/locales/uk';
@@ -27,7 +28,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 @Component({
   selector: 'app-agenda-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, SelectButtonModule, FullCalendarModule, AgendaItemDialogComponent],
+  imports: [FormsModule, ButtonModule, SelectButtonModule, ToggleSwitchModule, FullCalendarModule, AgendaItemDialogComponent],
   templateUrl: './agenda-calendar.html',
   styleUrl: './agenda-calendar.css'
 })
@@ -159,11 +160,36 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     setTimeout(() => this.calendar()?.getApi().updateSize(), 0);
   }
 
+  /**
+   * «Графіки гуртків»: every гурток's сходини (any group marked «графік куреня») on top of one's own.
+   * On by default; remembered per viewer in this browser, which is a convenience, not data.
+   */
+  protected showSchedules = AgendaCalendarComponent.readShowSchedules();
+
+  private static readonly showSchedulesKey = 'lil.agenda.showSchedules';
+
+  private static readShowSchedules(): boolean {
+    try {
+      return localStorage.getItem(AgendaCalendarComponent.showSchedulesKey) !== 'off';
+    } catch {
+      return true;
+    }
+  }
+
+  onShowSchedulesChange(): void {
+    try {
+      localStorage.setItem(AgendaCalendarComponent.showSchedulesKey, this.showSchedules ? 'on' : 'off');
+    } catch {
+      // Private window or blocked storage: the switch still works for this visit.
+    }
+    this.reload();
+  }
+
   private reload(): void {
     if (!this.kurinKey() || !this.currentRange) {
       return;
     }
-    this.agendaService.getCalendar(this.kurinKey(), this.currentRange.from, this.currentRange.to)
+    this.agendaService.getCalendar(this.kurinKey(), this.currentRange.from, this.currentRange.to, this.showSchedules)
       .subscribe(items => {
         this.items.set(items);
         this.calendarOptions.update(opts => ({ ...opts, events: items.map(item => this.toEvent(item)) }));
@@ -182,7 +208,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
 
     return {
       id: `${item.agendaItemKey}|${item.startUtc}`,
-      title: item.title,
+      title: this.eventTitle(item),
       start,
       end,
       allDay,
@@ -190,6 +216,22 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       classNames: this.eventClasses(item),
       extendedProps: { item }
     };
+  }
+
+  /**
+   * A schedule event names its гурток: six «Сходини» on one day say nothing. The first group target
+   * goes first, «+N» for the rest; an event aimed at the whole kurin keeps its title as it is.
+   */
+  private eventTitle(item: AgendaItemDto): string {
+    if (!item.isKurinSchedule) {
+      return item.title;
+    }
+    const groups = item.assignments.filter(a => a.targetType === 'Group' && a.label);
+    if (!groups.length || item.title.includes(groups[0].label!)) {
+      return item.title;
+    }
+    const more = groups.length > 1 ? ` +${groups.length - 1}` : '';
+    return `${groups[0].label}${more} · ${item.title}`;
   }
 
   /**
@@ -214,7 +256,9 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     if (item.isRecurrenceInstance) {
       classes.push('agenda-ev--series');
     }
-    if (!item.addressedToViewer) {
+    if (item.audience === 'Schedule') {
+      classes.push('agenda-ev--schedule');
+    } else if (!item.addressedToViewer) {
       classes.push('agenda-ev--foreign');
     }
     // A category tints the plate from its colour (see paintCategory); only a plain item takes

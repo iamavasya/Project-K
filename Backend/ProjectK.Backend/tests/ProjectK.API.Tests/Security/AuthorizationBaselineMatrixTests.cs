@@ -234,7 +234,7 @@ public class AuthorizationBaselineMatrixTests
 
         // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
         // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
-        yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?>>(nameof(AgendaController.GetCalendar), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?, bool>>(nameof(AgendaController.GetCalendar), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, AgendaTargetType?, Guid?, bool, AgendaBoardSort, AgendaItemStatus?, int, int>>(nameof(AgendaController.GetBoard), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, int, int>>(nameof(AgendaController.GetArchive), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetArchivePolicy), "RequireUser");

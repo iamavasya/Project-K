@@ -891,6 +891,8 @@ public class DemoDataSeeder : IDemoDataSeeder
     {
         // The seven closed colours the category manager offers (BRANDBOOK §2).
         var skhodyny = Category(kurinKey, "Сходини", "#2F855A", "pi pi-users", rsvp: false, duration: 120, reminder: 60);
+        // Every гурток's сходини are one schedule the whole kurin sees (AGENDA-03).
+        skhodyny.IsKurinSchedule = true;
         var tabory = Category(kurinKey, "Табори", "#B7791F", "pi pi-sun", rsvp: true, duration: null, reminder: 24 * 60,
             capacity: 30, waitlist: true, template: "Що взяти: спальник, каремат, посуд, документи, гроші на дорогу.");
         var zakhody = Category(kurinKey, "Заходи", "#2B6CB0", "pi pi-flag", rsvp: true, duration: 180, reminder: 120);
