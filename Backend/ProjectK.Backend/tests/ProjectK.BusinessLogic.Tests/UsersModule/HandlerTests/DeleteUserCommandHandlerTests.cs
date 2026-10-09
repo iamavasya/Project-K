@@ -63,12 +63,8 @@ public class DeleteUserCommandHandlerTests
         _userManagerMock.Setup(x => x.DeleteAsync(user))
             .ReturnsAsync(IdentityResult.Success);
 
-        var assignments = new List<MentorAssignment>
-        {
-            new MentorAssignment { MentorUserKey = userId },
-            new MentorAssignment { MentorUserKey = Guid.NewGuid() } // Other user
-        };
-        _mentorAssignmentRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        var assignments = new List<MentorAssignment> { new MentorAssignment { MentorUserKey = userId } };
+        _mentorAssignmentRepositoryMock.Setup(r => r.GetByMentorUserKeyAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(assignments);
 
         var command = new DeleteUserCommand(userId);
@@ -80,6 +76,7 @@ public class DeleteUserCommandHandlerTests
         Assert.Equal(ResultType.Success, result.Type);
         _mentorAssignmentRepositoryMock.Verify(r => r.Delete(It.Is<MentorAssignment>(a => a.MentorUserKey == userId), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mentorAssignmentRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Never);
         _userManagerMock.Verify(x => x.DeleteAsync(user), Times.Once);
     }
 
@@ -94,7 +91,7 @@ public class DeleteUserCommandHandlerTests
         _userManagerMock.Setup(x => x.DeleteAsync(user))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Error deleting" }));
 
-        _mentorAssignmentRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        _mentorAssignmentRepositoryMock.Setup(r => r.GetByMentorUserKeyAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MentorAssignment>());
 
         var command = new DeleteUserCommand(userId);

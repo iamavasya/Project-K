@@ -30,15 +30,14 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Servi
             return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "User not found.");
         }
 
-        // Clean up MentorAssignments
-        var assignments = await _unitOfWork.MentorAssignments
-            .GetAllAsync(cancellationToken);
+        // A mentor's assignments reference the account, so they go first — read by the mentor,
+        // not the whole table filtered in memory.
+        var assignments = (await _unitOfWork.MentorAssignments
+            .GetByMentorUserKeyAsync(request.UserId, cancellationToken)).ToList();
 
-        var userAssignments = assignments.Where(a => a.MentorUserKey == request.UserId).ToList();
-
-        if (userAssignments.Any())
+        if (assignments.Count > 0)
         {
-            foreach (var assignment in userAssignments)
+            foreach (var assignment in assignments)
             {
                 _unitOfWork.MentorAssignments.Delete(assignment, cancellationToken);
             }
