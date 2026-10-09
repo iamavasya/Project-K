@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Records;
 
@@ -37,20 +38,20 @@ public class JwtService : IJwtService
     /// <summary>
     /// Генерує JWT access token
     /// </summary>
-    public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey)
+    public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey, bool hasSecondFactor)
     {
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(JwtRegisteredClaimNames.Email, email)
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(AccessTokenClaims.AuthenticationMethods, hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password)
         };
 
-        // Add other claims
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         if (kurinKey != null)
         {
-            claims.Add(new Claim("kurinKey", kurinKey));
+            claims.Add(new Claim(AccessTokenClaims.KurinKey, kurinKey));
         }
 
         var creds = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256);

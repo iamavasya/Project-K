@@ -59,7 +59,7 @@ public sealed class LoadTestLoginCommandHandler : IRequestHandler<LoadTestLoginC
 
         var context = await _access.ResolveAsync(user, cancellationToken);
         var token = _jwtService.GenerateAccessToken(
-            user.Id.ToString(), user.Email!, context.Roles, context.KurinKey?.ToString());
+            user.Id.ToString(), user.Email!, context.Roles, context.KurinKey?.ToString(), user.TwoFactorEnabled);
 
         return new ServiceResult<LoadTestSession>(ResultType.Success, new LoadTestSession(token));
     }

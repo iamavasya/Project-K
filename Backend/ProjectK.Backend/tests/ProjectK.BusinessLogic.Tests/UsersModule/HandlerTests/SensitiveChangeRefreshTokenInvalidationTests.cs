@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
@@ -22,12 +24,22 @@ public class SensitiveChangeRefreshTokenInvalidationTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
     private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
+    private readonly Mock<ILoginResponseFactory> _loginResponsesMock;
 
     public SensitiveChangeRefreshTokenInvalidationTests()
     {
         _userManagerMock = CreateUserManagerMock();
         _activityLoggerMock = new Mock<IActivityLogger>();
         _refreshTokensMock = new Mock<IRefreshTokenStore>();
+        _loginResponsesMock = new Mock<ILoginResponseFactory>();
+        _loginResponsesMock
+            .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse
+            {
+                UserKey = user.Id,
+                Email = user.Email!,
+                Tokens = new JwtResponse { AccessToken = "fresh-access", RefreshToken = new RefreshToken { Token = "fresh-refresh" } }
+            });
     }
 
     /// <summary>Every session the account holds was ended — not just the one that made the change.</summary>
@@ -155,7 +167,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
             _userManagerMock.Object,
             new Mock<ILogger<EnableMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            _refreshTokensMock.Object,
+            _loginResponsesMock.Object);
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -176,6 +189,11 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         Assert.Equal(new[] { "code-1", "code-2" }, result.Data.RecoveryCodes);
         AssertEverySessionRevoked(user, Times.Once());
         _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
+
+        // The device that enabled it is handed a new session — minted after the revoke, so it is
+        // the one session left, and after the change, so its token carries the second factor.
+        Assert.Equal("fresh-access", result.Data.Tokens?.AccessToken);
+        _loginResponsesMock.Verify(f => f.CreateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -187,7 +205,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
             _userManagerMock.Object,
             new Mock<ILogger<EnableMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            _refreshTokensMock.Object,
+            _loginResponsesMock.Object);
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -203,6 +222,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         AssertEverySessionRevoked(user, Times.Never());
         _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
+        _loginResponsesMock.Verify(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

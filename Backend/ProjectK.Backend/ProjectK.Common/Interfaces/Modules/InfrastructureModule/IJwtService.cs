@@ -5,7 +5,11 @@ namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 public interface IJwtService
 {
-    string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey);
+    /// <summary>
+    /// The token a request carries. <paramref name="hasSecondFactor"/> is written into it as
+    /// <c>amr</c>, so the privileged-MFA gate can answer from the token alone.
+    /// </summary>
+    string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey, bool hasSecondFactor);
 
     RefreshToken GenerateRefreshToken();
 

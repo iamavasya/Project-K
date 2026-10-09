@@ -26,6 +26,8 @@ export interface MfaStatusResponse {
 export interface MfaEnableResponse {
   enabled: boolean;
   recoveryCodes: string[];
+  /** The session that replaces the ended ones; its token already says the account has a second factor. */
+  tokens?: { accessToken: string } | null;
 }
 
 export interface MfaRecoveryCodesResponse {
@@ -115,6 +117,15 @@ export class AuthService {
       `${this.apiUrl}/auth/mfa/enable`,
       { code },
       { withCredentials: true }
+    ).pipe(
+      // Enabling ends every session and hands this device a new one. Without taking its token the
+      // old one would stay in use: still valid for minutes, but refused on every save by the
+      // privileged-MFA gate, which reads the second factor off the token.
+      tap(response => {
+        if (response.tokens?.accessToken) {
+          this.applyAccessToken(response.tokens.accessToken);
+        }
+      })
     );
   }
 
@@ -200,14 +211,7 @@ export class AuthService {
       {},
       { withCredentials: true, context: requestFeedback('silent') }
     ).pipe(
-      tap(res => {
-        const state = this.authState$.value;
-        if (state) {
-          const newState = { ...state, accessToken: res.accessToken };
-          this.authState$.next(newState);
-          this.persistAuthState(newState);
-        }
-      }),
+      tap(res => this.applyAccessToken(res.accessToken)),
       map(res => res.accessToken),
       finalize(() => {
         this.refreshTokenRequest$ = null;
@@ -335,6 +339,14 @@ export class AuthService {
   private applyState(state: AuthState): void {
     this.authState$.next(state);
     this.persistAuthState(state);
+  }
+
+  /** A new access token for the signed-in person; nothing to do when nobody is signed in. */
+  private applyAccessToken(accessToken: string): void {
+    const state = this.authState$.value;
+    if (state) {
+      this.applyState({ ...state, accessToken });
+    }
   }
 
   /**

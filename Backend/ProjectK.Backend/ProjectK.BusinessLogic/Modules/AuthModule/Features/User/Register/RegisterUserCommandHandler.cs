@@ -68,7 +68,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, S
 
         var jwt = new JwtResponse
         {
-            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, access.Roles, kurinKey),
+            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email, access.Roles, kurinKey, user.TwoFactorEnabled),
             RefreshToken = _jwtService.GenerateRefreshToken()
         };
 

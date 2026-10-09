@@ -95,7 +95,7 @@ public class RefreshTokenCommandHandlerTests
 
         _jwtServiceMock.Verify(
             service => service.GenerateAccessToken(
-                user.Id.ToString(), user.Email, It.IsAny<IEnumerable<string>>(), kurinKey.ToString()),
+                user.Id.ToString(), user.Email, It.IsAny<IEnumerable<string>>(), kurinKey.ToString(), It.IsAny<bool>()),
             Times.Once);
     }
 
@@ -193,7 +193,7 @@ public class RefreshTokenCommandHandlerTests
         _userManagerMock.Setup(manager => manager.GetRolesAsync(user)).ReturnsAsync(roles ?? ["User"]);
         _jwtServiceMock
             .Setup(service => service.GenerateAccessToken(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(service => service.GenerateRefreshToken()).Returns(issued);
 

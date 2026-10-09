@@ -45,7 +45,7 @@ public class LoginResponseFactory : ILoginResponseFactory
 
         var jwt = new JwtResponse
         {
-            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, kurinKey),
+            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, kurinKey, user.TwoFactorEnabled),
             RefreshToken = _jwtService.GenerateRefreshToken()
         };
 

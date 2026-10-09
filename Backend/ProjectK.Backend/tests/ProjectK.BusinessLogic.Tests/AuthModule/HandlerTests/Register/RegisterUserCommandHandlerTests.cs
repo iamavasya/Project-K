@@ -93,7 +93,7 @@ public class RegisterUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString(), It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(refreshToken);
@@ -123,7 +123,7 @@ public class RegisterUserCommandHandlerTests
         _roleManagerMock.Verify(x => x.RoleExistsAsync(command.Role), Times.Once);
         _userManagerMock.Verify(x => x.AddToRoleAsync(user, command.Role), Times.Once);
         _accessMock.Verify(x => x.ResolveAsync(user, It.IsAny<CancellationToken>()), Times.Once);
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString()), Times.Once);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, kurinKey.ToString(), It.IsAny<bool>()), Times.Once);
         _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
     }
 
@@ -160,7 +160,7 @@ public class RegisterUserCommandHandlerTests
         };
 
         SetupSuccessfulRegistration(command, user, roles, accessToken, refreshToken);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null, It.IsAny<bool>()))
             .Returns(accessToken);
 
         // Act
@@ -169,7 +169,7 @@ public class RegisterUserCommandHandlerTests
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
         Assert.NotNull(result.Data);
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null), Times.Once);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null, It.IsAny<bool>()), Times.Once);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class RegisterUserCommandHandlerTests
         };
 
         SetupSuccessfulRegistration(command, user, roles, accessToken, refreshToken);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), command.Email, roles, null, It.IsAny<bool>()))
             .Returns(accessToken);
 
         // Act & Assert
@@ -255,7 +255,7 @@ public class RegisterUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns("access-token");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(new Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh-token", Expires = DateTime.UtcNow.AddDays(7) });
@@ -422,7 +422,7 @@ public class RegisterUserCommandHandlerTests
             user.Id.ToString(),
             command.Email,
             roles,
-            It.IsAny<string>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
     }
 
     [Fact]
@@ -546,7 +546,7 @@ public class RegisterUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(refreshToken);

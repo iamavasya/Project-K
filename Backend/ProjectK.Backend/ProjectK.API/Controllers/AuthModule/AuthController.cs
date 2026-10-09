@@ -308,7 +308,9 @@ public class AuthController : ControllerBase
     /// Confirms a code from the authenticator app and turns the second factor on.
     /// </summary>
     /// <remarks>
-    /// Answers with the recovery codes, which are shown once and never returned again.
+    /// Answers with the recovery codes, which are shown once and never returned again, and with a
+    /// fresh session: every other one is ended, and this device's new token already carries the
+    /// second factor.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
@@ -323,6 +325,10 @@ public class AuthController : ControllerBase
 
         var command = new EnableMfaCommand(userKey, request.Code);
         var response = await _mediator.Send(command);
+        if (response.Type == ResultType.Success && response.Data?.Tokens != null)
+        {
+            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+        }
         return response.ToActionResult(this);
     }
 

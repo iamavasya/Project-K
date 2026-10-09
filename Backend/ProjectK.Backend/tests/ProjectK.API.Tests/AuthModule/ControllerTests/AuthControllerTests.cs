@@ -326,6 +326,27 @@ public class AuthControllerTests
     }
 
     [Fact]
+    public async Task EnableMfa_ShouldSetTheRefreshCookie_ForTheSessionThatReplacesTheEndedOnes()
+    {
+        // Arrange
+        SetCurrentUser(Guid.NewGuid());
+        var tokens = new JwtResponse
+        {
+            AccessToken = "fresh-access",
+            RefreshToken = new RefreshToken { Token = "fresh-refresh", Expires = DateTime.UtcNow.AddDays(7) }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<EnableMfaCommand>(), default))
+            .ReturnsAsync(new ServiceResult<MfaEnableResponseDto>(ResultType.Success, new MfaEnableResponseDto(true, [], tokens)));
+
+        // Act
+        var result = await _controller.EnableMfa(new MfaVerifyRequestDto("123456"));
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Contains("fresh-refresh", _controller.Response.Headers["Set-Cookie"].ToString());
+    }
+
+    [Fact]
     public async Task RotateMfaRecoveryCodes_ShouldSendCommandForCurrentUser()
     {
         // Arrange

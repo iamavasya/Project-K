@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Infrastructure.Services.JwtService;
 
@@ -24,6 +25,18 @@ public class JwtServiceTests
         }
 
         return new JwtService(new ConfigurationBuilder().AddInMemoryCollection(settings).Build(), TimeProvider.System);
+    }
+
+    [Theory]
+    [InlineData(true, "mfa")]
+    [InlineData(false, "pwd")]
+    public void AccessToken_ShouldSayWhetherTheAccountHasASecondFactor(bool hasSecondFactor, string expectedAmr)
+    {
+        var token = Service().GenerateAccessToken(Guid.NewGuid().ToString(), "a@b.c", ["Admin"], null, hasSecondFactor);
+
+        var claims = new JwtSecurityTokenHandler().ReadJwtToken(token).Claims;
+
+        Assert.Equal(expectedAmr, claims.Single(c => c.Type == "amr").Value);
     }
 
     [Fact]

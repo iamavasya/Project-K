@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 namespace ProjectK.API.Helpers;
@@ -19,7 +20,7 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
 
     public Guid? UserId => Principal.GetUserKey();
 
-    public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue("kurinKey"));
+    public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue(AccessTokenClaims.KurinKey));
 
     public IReadOnlyCollection<string> Roles => ResolveRoles();
 

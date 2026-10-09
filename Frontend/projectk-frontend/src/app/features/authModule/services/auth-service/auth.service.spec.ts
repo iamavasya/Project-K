@@ -294,6 +294,38 @@ describe('AuthService', () => {
       req.flush(response);
     });
 
+    it('takes the fresh session enabling mfa hands back', (done) => {
+      const initialState: AuthState = {
+        userKey: 'user-123',
+        memberKey: null,
+        email: 'test@example.com',
+        isAdmin: false,
+        permissions: [],
+        roles: ['KV.Zvyazkovyi'],
+        kurinKey: 'kurin-456',
+        accessToken: 'password-only-token'
+      };
+      localStorage.setItem('authState', JSON.stringify(initialState));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [AuthService, provideHttpClient(), provideHttpClientTesting()]
+      });
+      service = TestBed.inject(AuthService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      service.enableMfa('123456').subscribe(() => {
+        expect(service.getAuthStateValue()?.accessToken).toBe('mfa-token');
+        expect(service.getAuthStateValue()?.userKey).toBe('user-123');
+        done();
+      });
+
+      httpMock.expectOne(`${apiUrl}/auth/mfa/enable`).flush({
+        enabled: true,
+        recoveryCodes: ['code-1'],
+        tokens: { accessToken: 'mfa-token', refreshToken: { token: 'r', expires: '2027-01-01T00:00:00Z' } }
+      });
+    });
+
     it('should rotate mfa recovery codes with current password', (done) => {
       const response = { recoveryCodes: ['code-1', 'code-2'] };
 

@@ -130,7 +130,7 @@ public class LoginUserCommandHandlerTests
         _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, "password123", false))
             .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
         _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string>());
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
@@ -181,7 +181,7 @@ public class LoginUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString(), It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(refreshToken);
@@ -244,7 +244,7 @@ public class LoginUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, null))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, null, It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(refreshToken);
@@ -260,7 +260,7 @@ public class LoginUserCommandHandlerTests
         Assert.True(result.Data.IsAdmin);
         Assert.Null(result.Data.KurinKey);
 
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, null), Times.Once);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, null, It.IsAny<bool>()), Times.Once);
     }
 
     /// <summary>
@@ -315,7 +315,7 @@ public class LoginUserCommandHandlerTests
         _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(It.IsAny<AppUser>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()), Times.Never);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Never);
     }
 
@@ -352,7 +352,7 @@ public class LoginUserCommandHandlerTests
         _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(user, password, false), Times.Once);
         _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<AppUser>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()), Times.Never);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Never);
     }
 
@@ -463,7 +463,7 @@ public class LoginUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString(), It.IsAny<bool>()))
             .Returns(accessToken);
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(refreshToken);
@@ -477,7 +477,7 @@ public class LoginUserCommandHandlerTests
         Assert.True(result.Data.IsAdmin);
         Assert.Equal(accessToken, result.Data.Tokens.AccessToken);
 
-        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString()), Times.Once);
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(userId.ToString(), email, roles, kurinKey.ToString(), It.IsAny<bool>()), Times.Once);
     }
 
     [Fact]
@@ -513,7 +513,7 @@ public class LoginUserCommandHandlerTests
             .ReturnsAsync(new AccessContext(user.Id, user.ResolveScopeKurinKey(), roles));
         _userManagerMock.Setup(x => x.UpdateAsync(user))
             .ReturnsAsync(IdentityResult.Success);
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns("access-token");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(newRefreshToken);
@@ -585,7 +585,7 @@ public class LoginUserCommandHandlerTests
         _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, "password123", false))
             .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
         _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string>());
-        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>()))
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
