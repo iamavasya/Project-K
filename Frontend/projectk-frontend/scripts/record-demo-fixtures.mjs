@@ -117,6 +117,16 @@ async function downloadBadgePictures(page, entries) {
   mkdirSync(dir, { recursive: true });
   const token = await page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? '{}').accessToken);
   const apiOrigin = (process.env.LILEYKA_DEMO_API ?? 'http://localhost:5255');
+  // Exclusive create rather than "check, then write": a picture that appeared meanwhile is kept.
+  const saveNew = (path, body) => {
+    try {
+      writeFileSync(path, body, { flag: 'wx' });
+      return true;
+    } catch (error) {
+      if (error?.code === 'EEXIST') return false;
+      throw error;
+    }
+  };
   let saved = 0;
   for (const file of files) {
     const target = resolve(dir, file);
@@ -125,12 +135,11 @@ async function downloadBadgePictures(page, entries) {
     }
     const response = await page.request.get(`${apiOrigin}/badges_images/${file}`, { headers: { Authorization: `Bearer ${token}` } });
     if (response.ok()) {
-      writeFileSync(target, await response.body());
-      saved++;
+      if (saveNew(target, await response.body())) saved++;
     } else if (response.status() === 429) {
       await page.waitForTimeout(65000);
       const again = await page.request.get(`${apiOrigin}/badges_images/${file}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (again.ok()) { writeFileSync(target, await again.body()); saved++; }
+      if (again.ok() && saveNew(target, await again.body())) saved++;
     }
   }
   console.log(`  badge pictures: ${files.size} named, ${saved} downloaded now`);

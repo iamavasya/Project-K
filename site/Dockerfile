@@ -12,7 +12,9 @@ COPY docs/ /src/docs/
 COPY ARCHITECTURE.md CONTRIBUTING.md BRANDBOOK.md SECURITY.md /src/
 RUN npm run build
 
-FROM nginx:1.31-alpine AS runtime
+# The unprivileged image runs nginx as its own user and so listens above 1024; the compose file
+# maps the host port onto 8080.
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS runtime
 COPY docker/nginx/projectk-docs.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/site/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080
