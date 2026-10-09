@@ -107,14 +107,22 @@ public sealed class KurinReportDataService
 
         // Кадра — за тим самим правилом, що й у реєстрі, і воно живе в одному місці на обидва
         // виводи. Раніше сюди потрапляв і курінний, і будь-хто з глобальною роллю в Identity —
-        // тобто людина, яка має уряд виховника в іншому курені, рахувалась кадрою й тут.
+        // тобто людина, яка має уряд виховника в іншому курені, рахувалась кадрою й тут. А того,
+        // хто лише закріплений за гуртком, звіт не рахував зовсім — реєстр і сайдбар рахували.
+        var kurinOfGroup = groups.ToDictionary(group => group.GroupKey, group => group.KurinKey);
         var staffKeys = members
             .Where(member => member.LeadershipHistories.Any(history => KurinRoster.IsStaffOffice(
-                history.Leadership.Type,
-                history.Leadership.KurinKey,
-                history.Leadership.EndDate,
-                history.EndDate,
-                kurinKey)))
+                    history.Leadership.Type,
+                    history.Leadership.KurinKey,
+                    history.Leadership.EndDate,
+                    history.EndDate,
+                    kurinKey))
+                || (member.UserKey is Guid accountKey && mentorAssignments.Any(assignment =>
+                    assignment.MentorUserKey == accountKey
+                    && KurinRoster.IsStaffAssignment(
+                        assignment.RevokedAtUtc,
+                        kurinOfGroup.GetValueOrDefault(assignment.GroupKey),
+                        kurinKey))))
             .Select(member => member.MemberKey)
             .ToHashSet();
 

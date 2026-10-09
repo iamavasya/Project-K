@@ -2,7 +2,7 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -163,6 +163,27 @@ public sealed class KurinReportDataServiceTests
         report!.Staff.Select(member => member.FullName).Should().Equal("Тест Виховна");
         report.Youth.Select(member => member.FullName)
             .Should().BeEquivalentTo("Тест Юнак", "Тест Гурткова", "Тест Курінна");
+    }
+
+    /// <summary>
+    /// The реєстр and the sidebar call someone закріплений за гуртком a впорядник even with no КВ
+    /// office; the звіт used to put that same person among the юнаки. A revoked assignment counts
+    /// for nothing, and so does one in another kurin's гурток.
+    /// </summary>
+    [Fact]
+    public async Task ShouldCallSomeoneStaffOnAnAssignmentAlone_AsTheРеєстрDoes()
+    {
+        var assigned = Person("Закріплена", withAccount: true);
+        MentorOf(assigned, _alphaKey);
+        var revoked = Person("Знята", withAccount: true);
+        MentorOf(revoked, _betaKey, revokedAtUtc: DateTime.UtcNow.AddDays(-1));
+        var elsewhere = Person("Чужа", withAccount: true);
+        MentorOf(elsewhere, Guid.NewGuid());
+
+        var report = await Build();
+
+        report!.Staff.Select(member => member.FullName).Should().Equal("Тест Закріплена");
+        report.Youth.Select(member => member.FullName).Should().BeEquivalentTo("Тест Знята", "Тест Чужа");
     }
 
     [Fact]

@@ -141,6 +141,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     // юнак; тому тут звужено до KV, а не до «має якийсь уряд». Активне закріплення
                     // за гуртком — теж впорядник: доступ так його й трактує (LeadershipRepository),
                     // і реєстр не має казати «юнак» тому, кого сайдбар зве впорядником.
+                    // Це дзеркало KurinRoster.IsStaffOffice і KurinRoster.IsStaffAssignment, яким
+                    // відповідає звіт; EF не перекладе виклик методу, тож правило стоїть тут рядком.
                     IsStaff = Context.LeadershipHistories.Any(history =>
                         history.MemberKey == x.Person.MemberKey
                         && history.EndDate == null
