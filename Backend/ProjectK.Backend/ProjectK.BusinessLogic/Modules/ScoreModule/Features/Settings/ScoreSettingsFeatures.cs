@@ -227,8 +227,43 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Rule, rule.ScoreRuleKey, ScoreTrail.Updated,
             new { rule.Source, rule.Variant, rule.FromDate, rule.Points }, _currentUser.UserId, now);
 
+        await DropRulesThatChangeNothingAsync(request.KurinKey, history, rule, now, cancellationToken);
+
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<object>(ResultType.Success);
+    }
+
+    /// <summary>
+    /// The history must read as a list of changes. A rule that repeats the rate of the one before
+    /// it changes nothing, and it hides the day the rate really started: retyping an older rule to
+    /// the rate of a later duplicate left the duplicate in force and the page kept showing its
+    /// date — «the date does not change». Such duplicates were what the old handler added on every
+    /// save of the same rate, so every kurin that set its rules before 1.1.2 may carry them.
+    /// </summary>
+    private async Task DropRulesThatChangeNothingAsync(
+        Guid kurinKey, IReadOnlyList<ScoreRule> history, ScoreRule changed, DateTime now, CancellationToken cancellationToken)
+    {
+        var rows = history
+            .Where(x => x.ScoreRuleKey != changed.ScoreRuleKey)
+            .Select(x => (x.ScoreRuleKey, x.FromDate, x.Points))
+            .Append((changed.ScoreRuleKey, changed.FromDate, changed.Points))
+            .OrderBy(x => x.FromDate)
+            .ToList();
+
+        int? rateBefore = null;
+        foreach (var (key, fromDate, points) in rows)
+        {
+            if (rateBefore == points)
+            {
+                var redundant = key == changed.ScoreRuleKey ? changed : (await _score.ScoreRules.GetByKeyAsync(key, cancellationToken))!;
+                _score.ScoreRules.Delete(redundant, cancellationToken);
+                ScoreTrail.Record(_score, kurinKey, ScoreTrail.Rule, key, ScoreTrail.Deleted,
+                    new { redundant.Source, redundant.Variant, FromDate = fromDate, Points = points, Reason = "SameRateAsBefore" }, _currentUser.UserId, now);
+                continue;
+            }
+
+            rateBefore = points;
+        }
     }
 }
 
