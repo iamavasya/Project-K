@@ -25,7 +25,7 @@ public class KurinControllerTests
     public KurinControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
-        _controller = new KurinController(_mediatorMock.Object, null!, null!);
+        _controller = new KurinController(_mediatorMock.Object);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Globalization;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models;
 using ProjectK.Common.Models.Reports;
 using QuestPDF.Fluent;
@@ -7,7 +8,7 @@ using QuestPDF.Infrastructure;
 
 namespace ProjectK.Infrastructure.Reports;
 
-public sealed class KurinReportPdfRenderer
+public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 {
     /// <summary>
     /// Draws the report. Every timestamp in <paramref name="report"/> is UTC — that is how they are

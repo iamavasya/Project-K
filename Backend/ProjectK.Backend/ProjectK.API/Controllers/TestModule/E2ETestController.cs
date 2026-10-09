@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
+using ProjectK.Common.Security;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Seeding;

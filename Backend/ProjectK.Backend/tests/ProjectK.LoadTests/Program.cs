@@ -88,7 +88,7 @@ class Program
 
             var responseContent = await authResponse.Content.ReadAsStringAsync();
             var jsonDoc = JsonDocument.Parse(responseContent);
-            jwtToken = jsonDoc.RootElement.GetProperty("data").GetProperty("accessToken").GetString() ?? "";
+            jwtToken = jsonDoc.RootElement.GetProperty("accessToken").GetString() ?? "";
 
             if (string.IsNullOrEmpty(jwtToken))
             {

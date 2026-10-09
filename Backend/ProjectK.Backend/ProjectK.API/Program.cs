@@ -20,6 +20,7 @@ using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Security;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;

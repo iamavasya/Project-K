@@ -9,6 +9,7 @@ using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
@@ -18,7 +19,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
@@ -26,7 +26,6 @@ using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
-using ProjectK.Infrastructure.Reports;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -44,17 +43,10 @@ public class KurinController : ControllerBase
     private const long MaxRosterBytes = 5 * 1024 * 1024;
 
     private readonly IMediator _mediator;
-    private readonly KurinReportDataService _kurinReportDataService;
-    private readonly KurinReportPdfRenderer _kurinReportPdfRenderer;
 
-    public KurinController(
-        IMediator mediator,
-        KurinReportDataService kurinReportDataService,
-        KurinReportPdfRenderer kurinReportPdfRenderer)
+    public KurinController(IMediator mediator)
     {
         _mediator = mediator;
-        _kurinReportDataService = kurinReportDataService;
-        _kurinReportPdfRenderer = kurinReportPdfRenderer;
     }
 
     /// <summary>
@@ -193,16 +185,13 @@ public class KurinController : ControllerBase
         [FromQuery] string? timeZone,
         CancellationToken cancellationToken)
     {
-        var report = await _kurinReportDataService.BuildAsync(kurinKey, cancellationToken);
-        if (report is null)
+        var response = await _mediator.Send(new ExportKurinReportPdfQuery(kurinKey, timeZone), cancellationToken);
+        if (response.Type != ResultType.Success || response.Data is null)
         {
-            return this.Failure(ResultType.NotFound, "KurinNotFound", "No report data exists for this kurin.");
+            return response.ToActionResult(this);
         }
 
-        var bytes = _kurinReportPdfRenderer.Render(report, timeZone);
-        var fileName = $"kurin-{report.Kurin.Number}-report-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pdf";
-
-        return File(bytes, "application/pdf", fileName);
+        return File(response.Data.Content, "application/pdf", response.Data.FileName);
     }
 
     /// <summary>

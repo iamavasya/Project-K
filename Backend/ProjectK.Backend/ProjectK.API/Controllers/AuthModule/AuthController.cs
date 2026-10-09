@@ -12,11 +12,13 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaStatus;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
@@ -201,33 +203,10 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [HttpPost("loadtest-login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> LoadTestLogin(
-        [FromBody] LoadTestLoginRequest request,
-        [FromServices] Microsoft.Extensions.Configuration.IConfiguration config,
-        [FromServices] Microsoft.AspNetCore.Identity.UserManager<ProjectK.Common.Entities.AuthModule.AppUser> userManager,
-        [FromServices] ProjectK.Common.Interfaces.Modules.InfrastructureModule.IJwtService jwtService,
-        [FromServices] ProjectK.Common.Interfaces.Modules.AuthModule.IAccessContextResolver access)
+    public async Task<IActionResult> LoadTestLogin([FromBody] LoadTestLoginRequest request)
     {
-        // Its own secret, not the rate limiter's: the two used to share one value, so setting the
-        // bypass key to let a monitor through would also have opened a login as the load-test
-        // account. Empty means the endpoint is off, which is how it ships.
-        var expectedKey = config["LoadTestLoginKey"];
-        if (string.IsNullOrEmpty(expectedKey) || !SecretComparer.Matches(request.ApiKey, expectedKey))
-        {
-            return this.Failure(ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");
-        }
-
-        var user = await userManager.FindByEmailAsync("loadtest@projectk.com");
-        if (user == null)
-        {
-            return this.Failure(ResultType.NotFound, "UserNotFound", "Load test user not found.");
-        }
-
-        var context = await access.ResolveAsync(user);
-        var token = jwtService.GenerateAccessToken(
-            user.Id.ToString(), user.Email!, context.Roles, context.KurinKey?.ToString());
-
-        return Ok(new { data = new { accessToken = token } });
+        var response = await _mediator.Send(new LoadTestLoginCommand(request.ApiKey));
+        return response.ToActionResult(this);
     }
 
     /// <summary>
@@ -404,19 +383,11 @@ public class AuthController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpGet("mfa/status")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMfaStatus([FromServices] IMfaEnforcementPolicy mfaEnforcementPolicy)
+    [ProducesResponseType(typeof(MfaStatusResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMfaStatus()
     {
-        if (this.UserKey() is not { } userKey)
-        {
-            return this.UnreadableIdentity();
-        }
-
-        var user = await _mediator.Send(new GetUserQuery(userKey));
-        var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(
-            User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
-        var isMfaRequired = isPrivileged && await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(HttpContext.RequestAborted);
-        return Ok(new { isMfaEnabled = user.Data.TwoFactorEnabled, isMfaRequired });
+        var response = await _mediator.Send(new GetMfaStatusQuery());
+        return response.ToActionResult(this);
     }
 
     private void SetRefreshTokenCookie(string token, DateTime expires) => RefreshTokenCookie.Set(HttpContext, token, expires);
