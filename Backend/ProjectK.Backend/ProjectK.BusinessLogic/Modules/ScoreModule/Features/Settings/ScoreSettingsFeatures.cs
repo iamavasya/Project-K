@@ -182,18 +182,43 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
 
         var now = _time.GetUtcNow().UtcDateTime;
         var r = request.Request;
-        var rule = (await _score.ScoreRules.GetForKurinAsync(request.KurinKey, cancellationToken))
-            .FirstOrDefault(x => x.Source == r.Source && x.Variant == r.Variant && x.FromDate == r.FromDate);
+        var history = (await _score.ScoreRules.GetForKurinAsync(request.KurinKey, cancellationToken))
+            .Where(x => x.Source == r.Source && x.Variant == r.Variant)
+            .OrderBy(x => x.FromDate)
+            .ToList();
+        var latest = history.LastOrDefault();
+        var sameDay = history.FirstOrDefault(x => x.FromDate == r.FromDate);
 
-        if (rule is null)
+        ScoreRule rule;
+        if (sameDay is not null)
         {
+            // A rule already starts that day: this is its new rate.
+            rule = (await _score.ScoreRules.GetByKeyAsync(sameDay.ScoreRuleKey, cancellationToken))!;
+        }
+        else if (latest is null || (r.Points != latest.Points && r.FromDate > latest.FromDate))
+        {
+            // A different rate from a later day: the rule in force stays for what was earned before it.
             rule = new ScoreRule { KurinKey = request.KurinKey, Source = r.Source, Variant = r.Variant, FromDate = r.FromDate, CreatedDate = now };
             _score.ScoreRules.Create(rule, cancellationToken);
         }
         else
         {
-            // The list is read untracked; this is the row the change goes to.
-            rule = (await _score.ScoreRules.GetByKeyAsync(rule.ScoreRuleKey, cancellationToken))!;
+            // The same rate from another day, or any rate from an earlier one, corrects the rule in
+            // force rather than adding to it. Adding was what happened before, and the same rate
+            // from a later day then changed nothing: the old row kept paying for the days in
+            // between — a провід who set a rule on the day they entered a year of history could not
+            // push its start past that day, and the history scored itself.
+            var previous = history.Count > 1 ? history[^2] : null;
+            if (previous is not null && r.FromDate <= previous.FromDate)
+            {
+                return ServiceResult<object>.Failure(
+                    ResultType.BadRequest,
+                    "ScoreRuleOverlap",
+                    "The rule cannot start on or before the day the previous one did.");
+            }
+
+            rule = (await _score.ScoreRules.GetByKeyAsync(latest.ScoreRuleKey, cancellationToken))!;
+            rule.FromDate = r.FromDate;
         }
 
         rule.Points = r.Points;
