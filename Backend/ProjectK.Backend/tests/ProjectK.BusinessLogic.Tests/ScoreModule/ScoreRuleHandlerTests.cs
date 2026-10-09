@@ -37,6 +37,8 @@ public sealed class ScoreRuleHandlerTests
             .ReturnsAsync((Guid key, CancellationToken _) => _rules.First(x => x.ScoreRuleKey == key));
         rules.Setup(r => r.Create(It.IsAny<ScoreRule>(), It.IsAny<CancellationToken>()))
             .Callback((ScoreRule rule, CancellationToken _) => _rules.Add(rule));
+        rules.Setup(r => r.Delete(It.IsAny<ScoreRule>(), It.IsAny<CancellationToken>()))
+            .Callback((ScoreRule rule, CancellationToken _) => _rules.Remove(rule));
 
         var score = new Mock<IScoreUnitOfWork>();
         score.SetupGet(s => s.ScoreRules).Returns(rules.Object);
@@ -120,6 +122,38 @@ public sealed class ScoreRuleHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _rules.Should().ContainSingle();
         rule.Points.Should().Be(5);
+    }
+
+    /// <summary>
+    /// The case found on production: the old handler had added a second row with the same rate on
+    /// a later day, and retyping the older one to that rate left the later one in force — so the
+    /// page kept showing the later date whatever the провід entered.
+    /// </summary>
+    [Fact]
+    public async Task RetypingAnOlderRuleToTheRateOfALaterDuplicate_DropsTheDuplicate()
+    {
+        var older = Given(0, new DateOnly(2026, 9, 1));
+        Given(2, new DateOnly(2026, 10, 9));
+
+        var result = await Set(2, new DateOnly(2026, 9, 1));
+
+        result.Type.Should().Be(ResultType.Success);
+        _rules.Should().ContainSingle().Which.Should().BeSameAs(older);
+        older.Points.Should().Be(2);
+        older.FromDate.Should().Be(new DateOnly(2026, 9, 1), "that is the day the rate started, and the day the page shows");
+    }
+
+    [Fact]
+    public async Task ALaterRuleWithAnotherRate_IsKept()
+    {
+        Given(2, new DateOnly(2026, 9, 1));
+        var later = Given(3, new DateOnly(2026, 10, 9));
+
+        var result = await Set(5, new DateOnly(2026, 10, 9));
+
+        result.Type.Should().Be(ResultType.Success);
+        _rules.Should().HaveCount(2);
+        later.Points.Should().Be(5);
     }
 
     [Fact]

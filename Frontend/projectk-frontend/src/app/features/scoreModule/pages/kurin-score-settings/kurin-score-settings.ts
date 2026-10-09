@@ -203,7 +203,9 @@ export class KurinScoreSettingsComponent implements OnInit {
   openRuleDialog(row: RuleRow): void {
     this.ruleRow.set(row);
     this.rulePoints.set(row.current?.points ?? 0);
-    this.ruleFrom.set(new Date());
+    // The day the rule in force started, not today: «today» was what a провід saved by mistake
+    // after entering a year of history, and the day then had to be moved back.
+    this.ruleFrom.set(row.current ? parseDateOnlyString(row.current.fromDate) ?? new Date() : new Date());
     this.ruleDialogVisible.set(true);
   }
 
