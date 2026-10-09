@@ -26,34 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Kept identical in dotnet.yml and selfhost-docker.yml; change one, change all three.
+      # One place decides the version and code name for every workflow; it leaves VERSION and
+      # CODENAME in the job environment, a dev placeholder when this is not a release.
       - name: Extract Release Info
-        if: github.event_name == 'release'
-        shell: bash
-        env:
-          # Through the environment, not ${{ }} inside the script: a release name is free text and
-          # would otherwise be pasted into the shell as code.
-          RAW_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_NAME: ${{ github.event.release.name }}
-        run: |
-          VERSION="${RAW_TAG#v}"
-          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?([-.][0-9A-Za-z.-]+)?$'; then
-            echo "::error::Release tag '$RAW_TAG' is not a version like v1.0, v1.0.0 or v1.0.0-beta"
-            exit 1
-          fi
-          # The code name is whatever the release name carries in quotes, and a release no longer
-          # has to carry one: with no quotes this stays empty, and everything that prints a release
-          # drops the quotes along with it.
-          CODE_NAME=$(printf '%s' "$RELEASE_NAME" | sed -n 's/.*"\([^"]*\)".*/\1/p')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CODENAME=$CODE_NAME" >> $GITHUB_ENV
-
-      - name: Extract Dev Info
-        if: github.event_name != 'release'
-        shell: bash
-        run: |
-          echo "VERSION=0.0.0-dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "CODENAME=StagingBuild" >> $GITHUB_ENV
+        uses: ./.github/actions/release-info
 
       - name: Inject Versioning to Angular
         shell: bash
@@ -127,32 +103,18 @@ jobs:
           submodules: true
           lfs: false
           
+      # The same pair the build job and the API carry: this job used to work it out on its own,
+      # kept the "v" and invented a code name, so one release showed under two names.
+      - name: Extract Release Info
+        uses: ./.github/actions/release-info
+
       - name: Inject Versioning
         shell: bash
-        env:
-          RAW_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_NAME: ${{ github.event.release.name }}
         run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            # The same spelling the API reports and the image tags carry: the tag without its "v".
-            # This step used to keep the "v", so the About page showed the app as v0.20.0-beta and
-            # the API it was talking to as 0.20.0-beta — one release under two names.
-            TAG_NAME="${RAW_TAG#v}"
-            if ! printf '%s' "$TAG_NAME" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?([-.][0-9A-Za-z.-]+)?$'; then
-              echo "::error::Release tag '$RAW_TAG' is not a version like v1.0, v1.0.0 or v1.0.0-beta"
-              exit 1
-            fi
-            # Empty when the release name carries no quoted code name. It used to invent one.
-            CODE_NAME=$(printf '%s' "$RELEASE_NAME" | sed -n 's/.*"\([^"]*\)".*/\1/p')
-          else
-            TAG_NAME="0.0.0-dev-${GITHUB_SHA::7}"
-            CODE_NAME="StagingBuild"
-          fi
-
           ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
           for file in $ENV_FILES; do
-            sed -i "s/v0.0.0-dev/$TAG_NAME/g" "$file"
-            sed -i "s/LocalDevelopment/$CODE_NAME/g" "$file"
+            sed -i "s/v0.0.0-dev/$VERSION/g" "$file"
+            sed -i "s/LocalDevelopment/$CODENAME/g" "$file"
           done
 
       # Built here rather than by the deploy action. Azure's Oryx image pins Node 22.22.0 and the

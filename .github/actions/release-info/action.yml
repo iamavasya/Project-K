@@ -1,0 +1,69 @@
+name: Release info
+description: >-
+  The version and code name a run is building. On a release event they come from the tag and the
+  release name; on anything else from the inputs, or a dev placeholder when none are given. Written
+  to the job environment as VERSION and CODENAME, so every step after this one reads the same pair.
+
+inputs:
+  version:
+    description: Version to build when the run is not a release (a workflow_dispatch input); a leading "v" is dropped.
+    required: false
+    default: ''
+  codename:
+    description: Code name to go with an explicit version.
+    required: false
+    default: ''
+  dev-codename:
+    description: Code name for a run with neither a release nor an explicit version.
+    required: false
+    default: StagingBuild
+
+outputs:
+  version:
+    description: The version, without a "v".
+    value: ${{ steps.resolve.outputs.version }}
+  codename:
+    description: The code name; empty when the release carries none.
+    value: ${{ steps.resolve.outputs.codename }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        # Through the environment, not ${{ }} inside the script: a release name is free text and
+        # would otherwise be pasted into the shell as code.
+        EVENT_NAME: ${{ github.event_name }}
+        RAW_TAG: ${{ github.event.release.tag_name }}
+        RELEASE_NAME: ${{ github.event.release.name }}
+        GIVEN_VERSION: ${{ inputs.version }}
+        GIVEN_CODENAME: ${{ inputs.codename }}
+        DEV_CODENAME: ${{ inputs.dev-codename }}
+        SHA: ${{ github.sha }}
+      run: |
+        set -euo pipefail
+        if [ "$EVENT_NAME" = "release" ]; then
+          # The same spelling the API reports and the image tags carry: the tag without its "v".
+          VERSION="${RAW_TAG#v}"
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?([-.][0-9A-Za-z.-]+)?$'; then
+            echo "::error::Release tag '$RAW_TAG' is not a version like v1.0, v1.0.0 or v1.0.0-beta"
+            exit 1
+          fi
+          # The code name is whatever the release name carries in quotes, and a release no longer
+          # has to carry one: with no quotes this stays empty, and everything that prints a release
+          # drops the quotes along with it.
+          CODE_NAME=$(printf '%s' "$RELEASE_NAME" | sed -n 's/.*"\([^"]*\)".*/\1/p')
+        elif [ -n "$GIVEN_VERSION" ]; then
+          VERSION="${GIVEN_VERSION#v}"
+          CODE_NAME="$GIVEN_CODENAME"
+        else
+          VERSION="0.0.0-dev-${SHA::7}"
+          CODE_NAME="$DEV_CODENAME"
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "codename=$CODE_NAME" >> "$GITHUB_OUTPUT"
+        echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+        echo "CODENAME=$CODE_NAME" >> "$GITHUB_ENV"
+        echo "Building $VERSION${CODE_NAME:+ \"$CODE_NAME\"}"
