@@ -22,7 +22,7 @@ jobs:
           node-version-file: .node-version
       - name: Build site and demo
         run: bash scripts/build-site.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: site
           path: site/dist
