@@ -50,7 +50,7 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
             Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds))
         };
         _digestTimer = new Timer(_ => EnqueueDigests(flushAll: false), null, DigestCheck, DigestCheck);
-        _sender = Task.Run(SendLoopAsync);
+        _sender = Task.Run(SendLoopAsync, _stopping.Token);
     }
 
     private bool Configured =>
@@ -84,7 +84,19 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
         EnqueueDigests(flushAll: true);
         _outbox.Writer.TryComplete();
         // Give what is queued a moment to leave on shutdown, without holding the host up.
-        _sender.Wait(TimeSpan.FromSeconds(5));
+        using var grace = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            _sender.Wait(grace.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // The grace period ran out; whatever is still queued is dropped with the host.
+        }
+        catch (AggregateException)
+        {
+            // The loop ended on its own error; nothing left to wait for.
+        }
         _stopping.Cancel();
         _stopping.Dispose();
         _httpClient.Dispose();
@@ -150,7 +162,7 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
             text,
             parseMode,
             DisableWebPagePreview: true,
-            _options.DisableNotification));
+            _options.DisableNotification), _stopping.Token);
 
     private string BuildEndpoint()
     {

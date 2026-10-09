@@ -370,7 +370,7 @@ public static class DataSeeder
             var result = await userManager.CreateAsync(user);
             if (!result.Succeeded)
             {
-                throw new InvalidOperationException($"Failed to create passwordless user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new InvalidOperationException($"Failed to create the account {email} (activation pending): {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
             await userManager.AddToRoleAsync(user, role.ToClaimValue());
