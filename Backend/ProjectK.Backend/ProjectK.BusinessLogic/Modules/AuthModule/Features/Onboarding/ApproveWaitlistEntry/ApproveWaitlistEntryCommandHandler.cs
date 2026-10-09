@@ -59,9 +59,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
                 entry.Email,
                 entry.FirstName,
                 entry.LastName,
-                entry.WaitlistEntryKey,
-                KurinKey: null,
-                IsBetaParticipant: false),
+                entry.WaitlistEntryKey),
             cancellationToken);
 
         if (provisioned.Type != ResultType.Success || provisioned.Data is null)
@@ -80,12 +78,9 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             var kurin = new Kurin(kurinNumber);
             _unitOfWork.Kurins.Create(kurin, cancellationToken);
 
-            var user = await _userManager.FindByIdAsync(provisioned.Data.UserKey.ToString());
-            if (user is not null)
-            {
-                user.KurinKey = kurin.KurinKey;
-                await _userManager.UpdateAsync(user);
-            }
+            // The entry remembers which kurin it opened, so activation can seat the founder in it.
+            // It used to be written on the account, which then looked like the place it belonged.
+            entry.FoundedKurinKey = kurin.KurinKey;
         }
 
         // 4. Update Waitlist Entry

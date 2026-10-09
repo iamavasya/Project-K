@@ -70,7 +70,6 @@ public class RegisterUserCommandHandlerTests
             Email = command.Email,
             FirstName = command.FirstName,
             LastName = command.LastName,
-            KurinKey = kurinKey
         };
 
         var roles = new List<string> { "User" };
@@ -149,7 +148,6 @@ public class RegisterUserCommandHandlerTests
             Email = command.Email,
             FirstName = command.FirstName,
             LastName = command.LastName,
-            KurinKey = Guid.Empty
         };
 
         var roles = new List<string> { "Admin" };
@@ -195,7 +193,6 @@ public class RegisterUserCommandHandlerTests
             Email = command.Email,
             FirstName = command.FirstName,
             LastName = command.LastName,
-            KurinKey = null
         };
 
         var roles = new List<string> { "User" };
@@ -490,7 +487,6 @@ public class RegisterUserCommandHandlerTests
             Email = command.Email,
             FirstName = command.FirstName,
             LastName = command.LastName,
-            KurinKey = command.KurinKey
         };
 
         var roles = new List<string> { "User" };

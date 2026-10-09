@@ -5,13 +5,14 @@ namespace ProjectK.Common.Extensions;
 public static class AppUserScopeExtensions
 {
     /// <summary>
-    /// Kurin the user's tokens are scoped to: the kurin an admin stepped into, otherwise
-    /// their own. Every place that mints an access token must go through this, or a refresh
-    /// would silently widen an admin back to system-wide access.
+    /// The kurin the account has stepped into, or null when it never has. Every place that mints
+    /// an access token must go through this, or a refresh would silently widen an admin back to
+    /// system-wide access. The account used to carry a kurin of its own as a fallback; belonging
+    /// is read from membership now (<c>AccessContextResolver</c>), so there is nothing to fall back to.
     /// </summary>
     public static Guid? ResolveScopeKurinKey(this AppUser user)
     {
-        return Normalize(user.ActiveKurinKey) ?? Normalize(user.KurinKey);
+        return Normalize(user.ActiveKurinKey);
     }
 
     public static string? ResolveScopeKurinKeyString(this AppUser user)

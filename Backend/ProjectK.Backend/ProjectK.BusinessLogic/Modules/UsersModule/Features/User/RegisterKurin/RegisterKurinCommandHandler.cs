@@ -39,12 +39,8 @@ public class RegisterKurinCommandHandler : IRequestHandler<RegisterKurinCommand,
             // Step 1: Create the new Kurin
             var kurinResult = await _mediator.Send(new UpsertKurinCommand(request.KurinNumber), cancellationToken);
 
-            // Step 2: Register the user.
-            //
-            // An address that already has an account fails here, because AppUser.KurinKey holds a
-            // single kurin. Letting one person lead two kurins means making that a collection and
-            // reworking the kurin-scope claim with it, so it is a feature rather than something to
-            // patch in on this path.
+            // Step 2: Register the user. An address that already has an account fails here; letting
+            // one person found a second kurin is the invitation flow (SEC-4.4), not this path.
             var userResult = await _mediator.Send(new RegisterUserCommand
             {
                 Email = request.Email,

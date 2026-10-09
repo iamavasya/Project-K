@@ -163,8 +163,15 @@ public static class DataSeeder
             .Select(administrator => administrator.Id)
             .ToHashSet();
 
+        // Whose accounts these are is said by membership: the account itself no longer names a kurin.
+        var accountKeysHere = await dbContext.Memberships
+            .Where(ms => ms.KurinKey == kurinKey && ms.UserKey != null)
+            .Select(ms => ms.UserKey!.Value)
+            .Distinct()
+            .ToListAsync();
+
         var usersToDelete = await userManager.Users
-            .Where(u => u.KurinKey == kurinKey)
+            .Where(u => accountKeysHere.Contains(u.Id))
             .ToListAsync();
 
         var deletedUsers = usersToDelete.Where(u => !administratorIds.Contains(u.Id)).ToList();
@@ -344,7 +351,7 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
 
-    private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, Guid? kurinKey = null)
+    private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role)
     {
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
@@ -367,11 +374,6 @@ public static class DataSeeder
             }
 
             await userManager.AddToRoleAsync(user, role.ToClaimValue());
-        }
-        else if (user.KurinKey != kurinKey)
-        {
-            user.KurinKey = kurinKey;
-            await userManager.UpdateAsync(user);
         }
         return user;
     }
@@ -449,7 +451,7 @@ public static class DataSeeder
         SeededPerson person,
         CancellationToken cancellationToken = default)
     {
-        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword, person.KurinKey);
+        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword);
 
         // The account settings page reads the phone from the account, not the card.
         if (!string.Equals(user!.PhoneNumber, person.PhoneNumber, StringComparison.Ordinal))
@@ -516,7 +518,7 @@ public static class DataSeeder
         }
     }
 
-    internal static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password, Guid? kurinKey = null)
+    internal static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password)
     {
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
@@ -538,11 +540,6 @@ public static class DataSeeder
             }
 
             await userManager.AddToRoleAsync(user, role.ToClaimValue());
-        }
-        else if (user.KurinKey != kurinKey)
-        {
-            user.KurinKey = kurinKey;
-            await userManager.UpdateAsync(user);
         }
         return user;
     }

@@ -56,7 +56,6 @@ public static class StrandedInvitationRepairSeeder
                 DateOfBirth = DateTime.UnixEpoch,
                 IsKurinLeaderCandidate = false,
                 VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
-                IsBetaParticipant = user.IsBetaParticipant,
                 RequestedAtUtc = now,
                 ReviewedAtUtc = now,
                 ApprovedAtUtc = now

@@ -346,13 +346,12 @@ public class SensitiveChangeRefreshTokenInvalidationTests
     [Fact]
     public async Task ResetUserMfa_ShouldReturnForbidden_WhenTargetHasMovedOnFromTheManagersKurin()
     {
-        // Arrange: the account still carries the kurin it was opened in, but the person has
-        // since left it for another. Resetting MFA hands an account over, so the stale snapshot
-        // must not be what decides.
+        // Arrange: the manager still stands in the kurin the account was opened in, but the person
+        // has since left it for another. Resetting MFA hands an account over, so only where the
+        // person stands now may decide.
         var oldKurinKey = Guid.NewGuid();
         var newKurinKey = Guid.NewGuid();
         var targetUser = CreateSignedInUser();
-        targetUser.KurinKey = oldKurinKey;
         targetUser.TwoFactorEnabled = true;
 
         var currentUserContextMock = new Mock<ICurrentUserContext>();
@@ -387,7 +386,6 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         // and belonging is known only from membership.
         var kurinKey = Guid.NewGuid();
         var targetUser = CreateSignedInUser();
-        targetUser.KurinKey = null;
         targetUser.TwoFactorEnabled = true;
 
         var currentUserContextMock = new Mock<ICurrentUserContext>();

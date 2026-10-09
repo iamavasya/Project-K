@@ -77,21 +77,23 @@ public class ActivateAccountHandlerTests
         return invitation;
     }
 
-    private AppUser GivenUser(Guid userKey, Guid? kurinKey = null)
+    private AppUser GivenUser(Guid userKey)
     {
-        var user = new AppUser { Id = userKey, Email = "leader@example.com", KurinKey = kurinKey };
+        var user = new AppUser { Id = userKey, Email = "leader@example.com" };
         _userManager.Setup(x => x.FindByIdAsync(userKey.ToString())).ReturnsAsync(user);
         return user;
     }
 
-    private void GivenWaitlistEntry(Invitation invitation, bool isKurinLeaderCandidate)
+    /// <summary>The queue entry; for a founder, also the kurin their approval opened.</summary>
+    private void GivenWaitlistEntry(Invitation invitation, bool isKurinLeaderCandidate, Guid? foundedKurinKey = null)
     {
         _waitlistEntries
             .Setup(x => x.GetByKeyAsync(invitation.WaitlistEntryKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new WaitlistEntry
             {
                 Email = "leader@example.com",
-                IsKurinLeaderCandidate = isKurinLeaderCandidate
+                IsKurinLeaderCandidate = isKurinLeaderCandidate,
+                FoundedKurinKey = foundedKurinKey
             });
     }
 
@@ -155,7 +157,7 @@ public class ActivateAccountHandlerTests
     {
         var userKey = Guid.NewGuid();
         var invitation = GivenInvitation(userKey);
-        GivenUser(userKey, kurinKey: Guid.NewGuid());
+        GivenUser(userKey);
         GivenWaitlistEntry(invitation, isKurinLeaderCandidate: false);
         _members
             .Setup(x => x.GetByEmailAsync("leader@example.com", It.IsAny<CancellationToken>()))
@@ -180,8 +182,8 @@ public class ActivateAccountHandlerTests
         var userKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
         var invitation = GivenInvitation(userKey);
-        GivenUser(userKey, kurinKey);
-        GivenWaitlistEntry(invitation, isKurinLeaderCandidate: true);
+        GivenUser(userKey);
+        GivenWaitlistEntry(invitation, isKurinLeaderCandidate: true, foundedKurinKey: kurinKey);
         _members
             .Setup(x => x.GetByEmailAsync("leader@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync((Member?)null);

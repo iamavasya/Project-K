@@ -59,9 +59,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            KurinKey = request.KurinKey,
-            OnboardingStatus = OnboardingStatus.PendingActivation,
-            IsBetaParticipant = request.IsBetaParticipant
+            OnboardingStatus = OnboardingStatus.PendingActivation
         };
 
         var created = await _userManager.CreateAsync(user);
@@ -144,7 +142,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
         if (entry is null)
         {
             entryKey = OpenApprovedWaitlistEntry(
-                new AccountProvisioningRequest(email, user.FirstName, user.LastName, null, user.KurinKey, user.IsBetaParticipant),
+                new AccountProvisioningRequest(email, user.FirstName, user.LastName, null),
                 cancellationToken);
         }
         else
@@ -239,7 +237,6 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             DateOfBirth = (request.DateOfBirth ?? DateOnly.FromDateTime(now)).ToDateTime(TimeOnly.MinValue),
             IsKurinLeaderCandidate = false,
             VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
-            IsBetaParticipant = request.IsBetaParticipant,
             RequestedAtUtc = now,
             ReviewedAtUtc = now,
             ApprovedAtUtc = now,

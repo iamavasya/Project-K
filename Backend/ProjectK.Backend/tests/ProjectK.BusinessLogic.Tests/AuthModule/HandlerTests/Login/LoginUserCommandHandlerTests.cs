@@ -159,9 +159,9 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = kurinKey,
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            ActiveKurinKey = kurinKey
         };
 
         var roles = new List<string> { "User" };
@@ -223,7 +223,6 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = Guid.Empty,
             FirstName = "Admin",
             LastName = "User"
         };
@@ -333,7 +332,6 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = Guid.NewGuid(),
             FirstName = "John",
             LastName = "Doe"
         };
@@ -371,7 +369,6 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = Guid.NewGuid(),
             FirstName = "Locked",
             LastName = "User"
         };
@@ -404,7 +401,6 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = Guid.NewGuid(),
             TwoFactorEnabled = true,
             FirstName = "TwoFactor",
             LastName = "User"
@@ -445,9 +441,9 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = kurinKey,
             FirstName = "Multi",
-            LastName = "Role"
+            LastName = "Role",
+            ActiveKurinKey = kurinKey
         };
 
         var roles = new List<string> { "Admin", "Manager", "User" };
@@ -497,7 +493,6 @@ public class LoginUserCommandHandlerTests
         {
             Id = userId,
             Email = email,
-            KurinKey = Guid.NewGuid(),
             FirstName = "Update",
             LastName = "Test",
         };

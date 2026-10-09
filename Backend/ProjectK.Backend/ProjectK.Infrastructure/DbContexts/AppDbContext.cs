@@ -628,7 +628,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.VerificationStatus)
                 .HasConversion<string>();
             entity.HasIndex(e => e.Email).IsUnique();
+            // The kurin a founder's approval opened; it goes with the kurin, not with the entry.
+            entity.HasOne<Kurin>()
+                  .WithMany()
+                  .HasForeignKey(e => e.FoundedKurinKey)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // The kurin an account stepped into. With the database forgetting it alongside the kurin,
+        // no new path of deletion can leave an account scoped to a kurin that is gone (STAB-05).
+        builder.Entity<AppUser>()
+            .HasOne<Kurin>()
+            .WithMany()
+            .HasForeignKey(user => user.ActiveKurinKey)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<Invitation>(entity =>
         {

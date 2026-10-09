@@ -136,7 +136,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = "admin@example.com",
                 FirstName = "Admin",
                 LastName = "User",
-                KurinKey = Guid.NewGuid()
             }
         }.AsQueryable();
 
@@ -167,7 +166,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = "noroles@example.com",
                 FirstName = "No",
                 LastName = "Roles",
-                KurinKey = Guid.NewGuid()
             }
         }.AsQueryable();
 
@@ -199,7 +197,6 @@ public class GetAllUsersQueryHandlerTests
                 FirstName = "Null",
                 LastName = "Kurin",
                 // Set, and still ignored: an account's own kurin field is a stale snapshot.
-                KurinKey = Guid.NewGuid()
             }
         }.AsQueryable();
 
@@ -234,7 +231,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = "admin@example.com",
                 FirstName = "Admin",
                 LastName = "User",
-                KurinKey = Guid.NewGuid()
             },
             new AppUser
             {
@@ -242,7 +238,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = "manager@example.com",
                 FirstName = "Manager",
                 LastName = "User",
-                KurinKey = Guid.NewGuid()
             },
             new AppUser
             {
@@ -250,7 +245,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = "regular@example.com",
                 FirstName = "Regular",
                 LastName = "User",
-                KurinKey = Guid.NewGuid()
             }
         }.AsQueryable();
 
@@ -373,7 +367,6 @@ public class GetAllUsersQueryHandlerTests
                 Email = $"user{i}@example.com",
                 FirstName = $"User{i}",
                 LastName = "Test",
-                KurinKey = Guid.NewGuid()
             });
         }
 

@@ -51,7 +51,6 @@ public class ProvisionMemberAccountCommandHandlerTests
             new Mock<IDomainEventPublisher>().Object,
             _emailServiceMock.Object,
             _currentUserContextMock.Object,
-            _kurinDataMock.Object,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<ProvisionMemberAccountCommandHandler>.Instance);
     }
 

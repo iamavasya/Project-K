@@ -18,7 +18,6 @@ public class ProvisionMemberAccountCommandHandler
     private readonly IDomainEventPublisher _events;
     private readonly IEmailService _emailService;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IMembershipRepository _memberships;
     private readonly ILogger<ProvisionMemberAccountCommandHandler> _logger;
 
     public ProvisionMemberAccountCommandHandler(
@@ -27,7 +26,6 @@ public class ProvisionMemberAccountCommandHandler
         IDomainEventPublisher events,
         IEmailService emailService,
         ICurrentUserContext currentUserContext,
-        IUnitOfWork kurinData,
         ILogger<ProvisionMemberAccountCommandHandler> logger)
     {
         _logger = logger;
@@ -36,7 +34,6 @@ public class ProvisionMemberAccountCommandHandler
         _events = events;
         _emailService = emailService;
         _currentUserContext = currentUserContext;
-        _memberships = kurinData.Memberships;
     }
 
     public async Task<ServiceResult<MemberInvitation>> Handle(
@@ -60,18 +57,12 @@ public class ProvisionMemberAccountCommandHandler
             return new ServiceResult<MemberInvitation>(ResultType.Conflict);
         }
 
-        // The account is opened for the kurin the person actually belongs to.
-        var placement = await _memberships.GetActiveForMemberAsync(member.MemberKey, cancellationToken);
-        var kurinKey = placement.FirstOrDefault()?.KurinKey ?? Guid.Empty;
-
         var provisioned = await _accountProvisioning.ProvisionAsync(
             new AccountProvisioningRequest(
                 member.Email,
                 member.FirstName,
                 member.LastName,
                 WaitlistEntryKey: null,
-                kurinKey,
-                IsBetaParticipant: true,
                 member.PhoneNumber,
                 member.DateOfBirth),
             cancellationToken);
