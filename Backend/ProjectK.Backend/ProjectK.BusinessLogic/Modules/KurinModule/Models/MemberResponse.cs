@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Dtos;
@@ -45,6 +46,18 @@ public class MemberResponse
     /// <summary>The same гуртки with their keys, so the card can open them. Filled only by the read of one person.</summary>
     public ICollection<GroupRef> MentoredGroups { get; set; } = [];
     public Guid? UserKey { get; set; }
+
+    /// <summary>
+    /// Where their account stands — whether the invitation is still waiting to be accepted. Filled
+    /// only by the read of one person, and only for whoever may see their private details.
+    /// </summary>
+    public OnboardingStatus? AccountStatus { get; set; }
+
+    /// <summary>
+    /// Whether the invitation letter this write was due to send went out. Null when the write sent
+    /// none; false means the account stands but the letter has to be sent again.
+    /// </summary>
+    public bool? InvitationSent { get; set; }
     public string? UserRole { get; set; }
     public string FirstName { get; set; }
     public string MiddleName { get; set; }

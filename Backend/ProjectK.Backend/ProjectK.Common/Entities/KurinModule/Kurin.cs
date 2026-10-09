@@ -21,8 +21,6 @@ public class Kurin(int number) : Entity
 
     /// <summary>Which пластова гілка this kurin belongs to.</summary>
     public KurinBranch Branch { get; set; } = KurinBranch.UPYu;
-    public int ZbtUserCap { get; set; } = 15;
-    public bool IsZbtKurin { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 
     /// <summary>Days a done task stays on the board before it moves to the archive by itself; null keeps it there.</summary>

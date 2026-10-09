@@ -6,6 +6,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
@@ -270,6 +271,25 @@ public class MemberController : ControllerBase
             BlobContentType = request.Blob?.ContentType
         };
         var response = await _mediator.Send(command, cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Sends a member whose account is not activated yet a fresh invitation.
+    /// </summary>
+    /// <remarks>
+    /// Every invitation sent before stops working. The letter goes to the address on the member's
+    /// record, which the account always shares while it waits to be claimed.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [HttpPost("{memberKey:guid}/invitation")]
+    [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ResendInvitation(Guid memberKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new ResendMemberInvitationCommand(memberKey), cancellationToken);
         return response.ToActionResult(this);
     }
 

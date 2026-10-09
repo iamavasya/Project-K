@@ -110,11 +110,11 @@ public class OnboardingBaselineHttpIntegrationTests
     }
 
     [Fact]
-    public async Task WhitelistRegistration_ShouldDeny_WhenZbtCapIsReached()
+    public async Task WaitlistRegistration_ShouldAnswerBadRequest_ForAMalformedApplication()
     {
         await using var host = await OnboardingBaselineTestHost.StartAsync();
-        // Assuming we have a way to simulate cap reached, e.g. by setting up a specific state
-        // For now, we just expect the endpoint to exist and eventually handle caps.
+        // Kept from the closed-beta days, when it stood in for a cap check that never existed.
+        // What it actually pins is that this application is refused by validation, not stored.
 
         var payload = JsonSerializer.Serialize(new
         {
@@ -132,8 +132,6 @@ public class OnboardingBaselineHttpIntegrationTests
         using var content = new StringContent(payload, Encoding.UTF8, "application/json");
         var response = await host.Client.PostAsync("/api/auth/onboarding/waitlist", content);
 
-        // This is a bit tricky for a baseline test without actual implementation, 
-        // but it highlights the requirement.
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -238,6 +236,7 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddSingleton(new Mock<IRefreshTokenStore>().Object);
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
             builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
             builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();

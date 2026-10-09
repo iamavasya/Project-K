@@ -48,7 +48,7 @@ public class GetMemberByKeyHandlerTests
         _membershipsMock
             .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _handler = new GetMemberByKeyQueryHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object);
+        _handler = new GetMemberByKeyQueryHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object, new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
     }
 
     [Fact]

@@ -476,8 +476,11 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(a => a.Responses)
                   .HasForeignKey(e => e.AgendaItemKey)
                   .OnDelete(DeleteBehavior.Cascade);
-            // One answer per user per item; the RSVP list also queries by item.
-            entity.HasIndex(e => new { e.AgendaItemKey, e.UserKey }).IsUnique();
+            // One answer per user per occurrence, NULL being the one-off event itself. SQL Server treats
+            // NULLs as equal in a unique index, which is exactly the one-row-per-user rule a one-off
+            // needs — but EF would add a «IS NOT NULL» filter by default and exempt those rows, so the
+            // filter is switched off. The RSVP list also queries by item and occurrence.
+            entity.HasIndex(e => new { e.AgendaItemKey, e.UserKey, e.OccurrenceStartUtc }).IsUnique().HasFilter(null);
         });
 
         builder.Entity<AgendaAssignment>(entity =>
@@ -628,7 +631,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.VerificationStatus)
                 .HasConversion<string>();
             entity.HasIndex(e => e.Email).IsUnique();
+            // The kurin a founder's approval opened; it goes with the kurin, not with the entry.
+            entity.HasOne<Kurin>()
+                  .WithMany()
+                  .HasForeignKey(e => e.FoundedKurinKey)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // The kurin an account stepped into. With the database forgetting it alongside the kurin,
+        // no new path of deletion can leave an account scoped to a kurin that is gone (STAB-05).
+        builder.Entity<AppUser>()
+            .HasOne<Kurin>()
+            .WithMany()
+            .HasForeignKey(user => user.ActiveKurinKey)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<Invitation>(entity =>
         {

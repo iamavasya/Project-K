@@ -198,7 +198,6 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
         DateOfBirth = DateTime.UnixEpoch,
         IsKurinLeaderCandidate = false,
         VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
-        IsBetaParticipant = user.IsBetaParticipant,
         RequestedAtUtc = now,
         ReviewedAtUtc = now,
         ApprovedAtUtc = now,

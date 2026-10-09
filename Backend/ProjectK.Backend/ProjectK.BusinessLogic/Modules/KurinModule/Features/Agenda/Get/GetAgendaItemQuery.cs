@@ -47,7 +47,7 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
             return ServiceResult<AgendaItemResponse>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item was not found.");
         }
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, item.KurinKey, cancellationToken);
+        var lookups = await AgendaLookups.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, [item], cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 

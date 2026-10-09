@@ -45,13 +45,11 @@ public class MemberBoundaryRules
     private static readonly string[] AuthorizationStillKnowsAboutMember = [];
 
     /// <summary>
-    /// The kurin's report still reads probe and вмілість rows itself. It needs everyone's progress
-    /// at once, which the directory does not offer yet — MM-13a adds that read and empties this list.
+    /// Empty since MM-13a (DEBT-03): the kurin's report was the last reader of probe and вмілість
+    /// rows outside their module, and now asks <c>IMemberProgressDirectory</c> for the whole roster
+    /// in one call. Nothing may cross again.
     /// </summary>
-    private static readonly string[] ReadsProgressDataDirectly =
-    [
-        "ProjectK.BusinessLogic.Modules.KurinModule.Reports.KurinReportDataService"
-    ];
+    private static readonly string[] ReadsProgressDataDirectly = [];
 
     [Fact]
     public void MemberData_ShouldBeReachedOnlyFromItsOwnModule()

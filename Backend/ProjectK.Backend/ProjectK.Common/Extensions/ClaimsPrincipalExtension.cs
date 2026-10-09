@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.Common.Extensions;
 
@@ -24,4 +25,15 @@ public static class ClaimsPrincipalExtension
     public static string? GetUserKeyValue(this ClaimsPrincipal? principal)
         => principal?.FindFirstValue(ClaimTypes.NameIdentifier)
            ?? principal?.FindFirstValue("sub");
+
+    /// <summary>
+    /// Whether the token says the account has a second factor. The bearer handler maps <c>amr</c>
+    /// onto <see cref="ClaimTypes.AuthenticationMethod"/> on the way in; a principal built anywhere
+    /// else carries it under its own name, so both spellings count.
+    /// </summary>
+    public static bool HasSecondFactor(this ClaimsPrincipal? principal)
+        => principal is not null
+           && principal.FindAll(ClaimTypes.AuthenticationMethod)
+               .Concat(principal.FindAll(AccessTokenClaims.AuthenticationMethods))
+               .Any(claim => claim.Value == AccessTokenClaims.Mfa);
 }

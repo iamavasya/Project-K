@@ -19,8 +19,6 @@ public class KurinResponse
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }
     public string? Description { get; set; }
-    public bool IsZbtEnabled { get; set; }
-    public int ZbtUserCap { get; set; }
     public int CurrentUserCount { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 }

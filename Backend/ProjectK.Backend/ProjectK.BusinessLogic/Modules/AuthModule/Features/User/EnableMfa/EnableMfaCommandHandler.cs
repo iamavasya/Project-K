@@ -15,6 +15,7 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
+    private readonly ILoginResponseFactory _loginResponses;
     private readonly ILogger<EnableMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
 
@@ -22,12 +23,14 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
         UserManager<AppUser> userManager,
         ILogger<EnableMfaCommandHandler> logger,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens)
+        IRefreshTokenStore refreshTokens,
+        ILoginResponseFactory loginResponses)
     {
         _userManager = userManager;
         _logger = logger;
         _activityLogger = activityLogger;
         _refreshTokens = refreshTokens;
+        _loginResponses = loginResponses;
     }
 
     public async Task<ServiceResult<MfaEnableResponseDto>> Handle(EnableMfaCommand request, CancellationToken cancellationToken)
@@ -64,6 +67,11 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
         // sessions first signed every device out even when this update failed.
         await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
 
+        // The device that just enabled it keeps working: a session minted now carries the second
+        // factor in its token, where the privileged-MFA gate reads it. The old access token said
+        // «password only» and would have been refused on every save until it expired.
+        var session = await _loginResponses.CreateAsync(user, cancellationToken);
+
         _activityLogger.LogAudit(
             action: "Account.MfaEnabled",
             actorUserId: user.Id,
@@ -74,6 +82,6 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 
         return new ServiceResult<MfaEnableResponseDto>(
             ResultType.Success,
-            new MfaEnableResponseDto(true, recoveryCodes ?? Enumerable.Empty<string>()));
+            new MfaEnableResponseDto(true, recoveryCodes ?? Enumerable.Empty<string>(), session.Tokens));
     }
 }

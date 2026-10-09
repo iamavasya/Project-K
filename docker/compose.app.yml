@@ -87,11 +87,11 @@ services:
       context: ..
       dockerfile: site/Dockerfile
     ports:
-      - "${PROJECTK_DOCS_PORT:-4321}:80"
+      - "${PROJECTK_DOCS_PORT:-4321}:8080"
     networks:
       - projectk-dev-net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 15s
       timeout: 5s
       retries: 10

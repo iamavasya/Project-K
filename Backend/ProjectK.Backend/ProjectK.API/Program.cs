@@ -19,7 +19,8 @@ using ProjectK.API.Swagger;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Security;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -493,15 +494,6 @@ public static class Program
 
                 ctx.Status("Planting heroic seed data...");
                 await DataSeeder.SeedAsync(scope.ServiceProvider);
-
-                ctx.Status("Migrating legacy roles to offices...");
-                await LegacyRoleMigrationSeeder.MigrateAsync(scope.ServiceProvider);
-
-                ctx.Status("Taking office roles off accounts...");
-                await OfficeRoleCleanupSeeder.CleanAsync(scope.ServiceProvider);
-
-                ctx.Status("Handing back what retention took...");
-                await StrandedInvitationRepairSeeder.RepairAsync(scope.ServiceProvider);
 
                 ctx.Status("Locking the photo container...");
                 try

@@ -198,6 +198,8 @@ export interface AgendaRsvpDto {
 
 export interface AgendaResponsesResponse {
   agendaItemKey: string;
+  /** The occurrence the picture is of; null for a one-off event. */
+  occurrenceStartUtc: string | null;
   capacity: number | null;
   waitlistEnabled: boolean;
   myStatus: AgendaRsvpStatus | null;

@@ -32,4 +32,13 @@ public interface IMemberProgressDirectory
     /// signed, проби verified — each with its day. One call for the whole kurin.
     /// </summary>
     Task<KurinProgressFacts> GetFactsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// What the звіт куреня prints for each of these people, keyed by member. One call for the
+    /// whole roster: the report used to read the progress tables itself, which was the last place
+    /// outside this module to do so.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, MemberProgressDetail>> GetDetailsForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default);
 }

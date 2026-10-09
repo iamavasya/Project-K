@@ -64,7 +64,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
                 user.Id.ToString(),
                 user.Email,
                 access.Roles,
-                access.KurinKey?.ToString()),
+                access.KurinKey?.ToString(),
+                user.TwoFactorEnabled),
             RefreshToken = _jwtService.GenerateRefreshToken()
         };
 

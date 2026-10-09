@@ -5,7 +5,7 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
-/// Turns raw RSVP rows into the display picture. Confirmed-vs-waitlist is derived here, not stored: the
+/// Turns the RSVP rows of one occurrence into the display picture. Confirmed-vs-waitlist is derived here, not stored: the
 /// «Going» answers are ranked by time and the first <c>capacity</c> are confirmed, the rest waitlisted
 /// (only when the category has a capacity and the waitlist is enabled). NotGoing/Maybe are never waitlisted.
 /// </summary>
@@ -13,6 +13,7 @@ public static class AgendaRsvpProjector
 {
     public static AgendaResponsesResponse Project(
         Guid agendaItemKey,
+        DateTime? occurrenceStartUtc,
         IReadOnlyList<AgendaResponse> responses,
         int? capacity,
         bool waitlistEnabled,
@@ -45,6 +46,7 @@ public static class AgendaRsvpProjector
         return new AgendaResponsesResponse
         {
             AgendaItemKey = agendaItemKey,
+            OccurrenceStartUtc = occurrenceStartUtc.HasValue ? DateTime.SpecifyKind(occurrenceStartUtc.Value, DateTimeKind.Utc) : null,
             Capacity = capacity,
             WaitlistEnabled = waitlistEnabled,
             MyStatus = myUserKey.HasValue

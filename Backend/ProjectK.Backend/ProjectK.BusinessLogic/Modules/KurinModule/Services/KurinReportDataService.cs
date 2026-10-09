@@ -5,6 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -13,7 +14,7 @@ using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Roster;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 public sealed class KurinReportDataService
 {
@@ -24,6 +25,8 @@ public sealed class KurinReportDataService
     private readonly IProbesCatalogService _probesCatalogService;
     private readonly IBadgesCatalogService _badgesCatalogService;
     private readonly IConfiguration _configuration;
+    // What people have earned belongs to another module; the report asks for it, all at once.
+    private readonly IMemberProgressDirectory _progress;
 
     public KurinReportDataService(
         IKurinReportSource source,
@@ -32,7 +35,8 @@ public sealed class KurinReportDataService
         IKurinReportMedia media,
         IProbesCatalogService probesCatalogService,
         IBadgesCatalogService badgesCatalogService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IMemberProgressDirectory progress)
     {
         _source = source;
         _currentUser = currentUser;
@@ -41,6 +45,7 @@ public sealed class KurinReportDataService
         _probesCatalogService = probesCatalogService;
         _badgesCatalogService = badgesCatalogService;
         _configuration = configuration;
+        _progress = progress;
     }
 
     public async Task<KurinReportData?> BuildAsync(Guid kurinKey, CancellationToken cancellationToken)
@@ -51,7 +56,10 @@ public sealed class KurinReportDataService
             return null;
         }
 
-        var (kurin, groups, mentorAssignments, members, usersByKey, _, _, _, _) = source;
+        var (kurin, groups, mentorAssignments, members, usersByKey, _) = source;
+        var progressByMember = await _progress.GetDetailsForMembersAsync(
+            members.Select(member => member.MemberKey).ToArray(),
+            cancellationToken);
 
         var groupNamesByKey = groups.ToDictionary(group => group.GroupKey, group => group.Name);
         var memberByUserKey = members
@@ -77,7 +85,13 @@ public sealed class KurinReportDataService
         foreach (var member in members)
         {
             reportMembers.Add(await BuildMemberReportAsync(
-                member, source, kurinKey, groupNamesByKey, mentoredGroupsByUserKey, cancellationToken));
+                member,
+                source,
+                progressByMember.GetValueOrDefault(member.MemberKey) ?? MemberProgressDetail.Empty,
+                kurinKey,
+                groupNamesByKey,
+                mentoredGroupsByUserKey,
+                cancellationToken));
         }
 
         var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
@@ -107,14 +121,22 @@ public sealed class KurinReportDataService
 
         // Кадра — за тим самим правилом, що й у реєстрі, і воно живе в одному місці на обидва
         // виводи. Раніше сюди потрапляв і курінний, і будь-хто з глобальною роллю в Identity —
-        // тобто людина, яка має уряд виховника в іншому курені, рахувалась кадрою й тут.
+        // тобто людина, яка має уряд виховника в іншому курені, рахувалась кадрою й тут. А того,
+        // хто лише закріплений за гуртком, звіт не рахував зовсім — реєстр і сайдбар рахували.
+        var kurinOfGroup = groups.ToDictionary(group => group.GroupKey, group => group.KurinKey);
         var staffKeys = members
             .Where(member => member.LeadershipHistories.Any(history => KurinRoster.IsStaffOffice(
-                history.Leadership.Type,
-                history.Leadership.KurinKey,
-                history.Leadership.EndDate,
-                history.EndDate,
-                kurinKey)))
+                    history.Leadership.Type,
+                    history.Leadership.KurinKey,
+                    history.Leadership.EndDate,
+                    history.EndDate,
+                    kurinKey))
+                || (member.UserKey is Guid accountKey && mentorAssignments.Any(assignment =>
+                    assignment.MentorUserKey == accountKey
+                    && KurinRoster.IsStaffAssignment(
+                        assignment.RevokedAtUtc,
+                        kurinOfGroup.GetValueOrDefault(assignment.GroupKey),
+                        kurinKey))))
             .Select(member => member.MemberKey)
             .ToHashSet();
 
@@ -142,9 +164,7 @@ public sealed class KurinReportDataService
                 kurin.Stanytsia,
                 kurin.RegionOrCountry,
                 kurin.NamedAfter,
-                kurin.Description,
-                kurin.IsZbtKurin,
-                kurin.ZbtUserCap),
+                kurin.Description),
             reportGroups,
             staff,
             youth,
@@ -211,15 +231,12 @@ public sealed class KurinReportDataService
     private async Task<KurinReportMember> BuildMemberReportAsync(
         Member member,
         KurinReportSourceData source,
+        MemberProgressDetail progress,
         Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
         CancellationToken cancellationToken)
     {
-        var probeProgress = ProgressOf(source.ProbeProgressByMemberKey, member.MemberKey);
-        var probePointProgress = ProgressOf(source.ProbePointProgressByMemberKey, member.MemberKey);
-        var badgeProgress = ProgressOf(source.BadgeProgressByMemberKey, member.MemberKey);
-
         return new KurinReportMember(
             member.MemberKey,
             member.UserKey,
@@ -245,7 +262,7 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.DateAchieved)
                 .Select(item => new KurinReportPlastLevel(item.PlastLevel, item.DateAchieved))
                 .ToArray(),
-            probeProgress
+            progress.Probes
                 .OrderBy(item => item.ProbeId)
                 .Select(item =>
                 {
@@ -261,8 +278,7 @@ public sealed class KurinReportDataService
                         item.VerifiedByName);
                 })
                 .ToArray(),
-            probePointProgress
-                .Where(item => item.IsSigned)
+            progress.SignedPoints
                 .OrderBy(item => item.ProbeId)
                 .ThenBy(item => item.PointId)
                 .Select(item =>
@@ -278,8 +294,7 @@ public sealed class KurinReportDataService
                         item.SignedByRole);
                 })
                 .ToArray(),
-            badgeProgress
-                .Where(item => item.Status == BadgeProgressStatus.Confirmed)
+            progress.ConfirmedBadges
                 .OrderBy(item => item.BadgeId)
                 .Select(item =>
                 {
@@ -451,9 +466,4 @@ public sealed class KurinReportDataService
 
         return pointId;
     }
-
-    private static IReadOnlyList<T> ProgressOf<T>(
-        IReadOnlyDictionary<Guid, IReadOnlyList<T>> byMemberKey,
-        Guid memberKey)
-        => byMemberKey.TryGetValue(memberKey, out var rows) ? rows : [];
 }

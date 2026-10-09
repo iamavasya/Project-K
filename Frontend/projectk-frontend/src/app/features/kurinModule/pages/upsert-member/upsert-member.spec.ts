@@ -4,7 +4,8 @@ import { UpsertMemberComponent } from './upsert-member';
 import { ActivatedRoute, Router, convertToParamMap, ParamMap, Navigation } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { MemberService } from '../../services/member-service/member.service';
-import { ConfirmationService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { AccountStatus } from '../../models/enums/account-status.enum';
 import { MemberDto } from '../../models/member.dto';
 import { FileSelectEvent } from '@openng/optimus-ui/fileupload';
 import { ImageCroppedEvent } from 'ngx-image-cropper';
@@ -26,6 +27,7 @@ describe('UpsertMemberComponent', () => {
   let memberServiceSpy: jasmine.SpyObj<MemberService>;
   let kurinServiceSpy: jasmine.SpyObj<KurinService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
+  let messageServiceSpy: jasmine.SpyObj<MessageService>;
   let locationSpy: jasmine.SpyObj<Location>;
   let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
@@ -57,9 +59,10 @@ describe('UpsertMemberComponent', () => {
     currentNavigationSignal = signal<Navigation | null>(null);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification', 'resendInvitation']);
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
+    messageServiceSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
     permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'canManageWholeKurin', 'isReviewer']);
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
@@ -105,6 +108,7 @@ describe('UpsertMemberComponent', () => {
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: KurinService, useValue: kurinServiceSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
+        { provide: MessageService, useValue: messageServiceSpy },
         { provide: Location, useValue: locationSpy },
         { provide: PermissionService, useValue: permissionServiceSpy },
         { provide: AuthService, useValue: authServiceSpy },
@@ -252,6 +256,43 @@ describe('UpsertMemberComponent', () => {
       memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
       create();
       expect(component.canEditEmail()).toBeFalse();
+    });
+
+    it('should let leadership correct the email of an account nobody has activated yet', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        userKey: 'linked-user-key',
+        accountStatus: AccountStatus.PendingActivation
+      }));
+      create();
+      expect(component.isPendingAccount).toBeTrue();
+      expect(component.canEditEmail()).toBeTrue();
+    });
+
+    it('should resend the invitation only while the address matches the saved one', () => {
+      memberServiceSpy.resendInvitation.and.returnValue(of(void 0));
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        userKey: 'linked-user-key',
+        accountStatus: AccountStatus.PendingActivation
+      }));
+      create();
+
+      component.member.email = 'typo-fixed@example.com';
+      component.resendInvitation();
+      expect(memberServiceSpy.resendInvitation).not.toHaveBeenCalled();
+
+      component.member.email = loadedMember.email;
+      component.resendInvitation();
+      expect(memberServiceSpy.resendInvitation).toHaveBeenCalledWith(memberKey);
+      expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'success' }));
+    });
+
+    it('should warn when the account was opened but the letter did not go', () => {
+      create();
+      memberServiceSpy.update.and.returnValue(of({ ...loadedMember, invitationSent: false }));
+      component.submit();
+      expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Лист не надіслано' }));
     });
 
     it('should allow editing email for linked member when current user is admin', () => {

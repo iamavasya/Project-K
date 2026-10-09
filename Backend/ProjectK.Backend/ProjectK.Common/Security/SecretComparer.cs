@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.Common.Security;
 
 /// <summary>
 /// Compares a caller-supplied secret with the configured one in constant time, so the answer takes

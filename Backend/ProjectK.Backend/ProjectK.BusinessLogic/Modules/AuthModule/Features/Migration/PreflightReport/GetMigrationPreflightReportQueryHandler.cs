@@ -84,35 +84,10 @@ public class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrat
             }
         }
 
-        // 4. Inconsistent Links — an account whose snapshot names a kurin the person does not
-        // stand in. Only a contradiction is reported, never a merely absent snapshot:
-        // AppUser.KurinKey is written when the account is opened and never again, so most
-        // accounts carry nothing, and reporting those would be reporting the whole table.
-        var standing = await _memberships.GetCurrentForAccountsAsync(
-            users.Select(user => user.Id).ToList(),
-            cancellationToken);
-
-        foreach (var member in members.Where(m => m.UserKey.HasValue))
-        {
-            var user = users.FirstOrDefault(u => u.Id == member.UserKey!.Value);
-            if (user?.KurinKey is null || user.KurinKey == Guid.Empty)
-            {
-                continue;
-            }
-
-            var kurinsHere = standing.TryGetValue(user.Id, out var current)
-                ? current.Select(record => record.KurinKey).ToList()
-                : [];
-
-            if (kurinsHere.Count > 0 && !kurinsHere.Contains(user.KurinKey.Value))
-            {
-                report.InconsistentLinks.Add(new InconsistentLinkInfo(
-                    member.MemberKey,
-                    user.Id,
-                    kurinsHere[0],
-                    user.KurinKey));
-            }
-        }
+        // 4. Inconsistent links used to compare the kurin snapshot on the account with where the
+        // person stands. The snapshot is gone (DEBT-10): membership is the only place belonging is
+        // written, so there is nothing left for it to contradict. The list stays in the report,
+        // empty, so the admin page keeps its shape.
 
         return new ServiceResult<MigrationPreflightReport>(ResultType.Success, report);
     }

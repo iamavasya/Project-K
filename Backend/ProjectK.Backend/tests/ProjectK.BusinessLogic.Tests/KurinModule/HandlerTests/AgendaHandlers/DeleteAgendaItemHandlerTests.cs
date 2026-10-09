@@ -34,6 +34,8 @@ public class DeleteAgendaItemHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MemberSummary>());
+        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<MemberSummary>());
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
     }

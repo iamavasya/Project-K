@@ -1,13 +1,15 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.API.Middleware;
 
+/// <summary>
+/// Refuses a mutation from a whole-kurin manager whose account has no second factor, where the
+/// policy demands one. Answered from the access token's <c>amr</c> claim: it used to look the
+/// account up on every such request for one bit, and the token already knows.
+/// </summary>
 public class PrivilegedMfaEnforcementMiddleware
 {
     private readonly RequestDelegate _next;
@@ -17,7 +19,7 @@ public class PrivilegedMfaEnforcementMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager, IMfaEnforcementPolicy mfaEnforcementPolicy)
+    public async Task InvokeAsync(HttpContext context, IMfaEnforcementPolicy mfaEnforcementPolicy)
     {
         if (!RequiresMfaEnforcement(context))
         {
@@ -31,14 +33,7 @@ public class PrivilegedMfaEnforcementMiddleware
             return;
         }
 
-        if (context.User.GetUserKey() is not { } userKey)
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
-
-        var user = await userManager.FindByIdAsync(userKey.ToString());
-        if (user?.TwoFactorEnabled == true)
+        if (context.User.HasSecondFactor())
         {
             await _next(context);
             return;

@@ -311,21 +311,22 @@ public class AgendaController : ControllerBase
     // ---- RSVP ----
 
     /// <summary>
-    /// Returns who has answered an item and how.
+    /// Returns who has answered one occurrence of an item and how. <c>occurrenceStartUtc</c> names the
+    /// occurrence of a series; a one-off event takes none.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{agendaItemKey:guid}/responses")]
     [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetResponses(Guid agendaItemKey)
+    public async Task<IActionResult> GetResponses(Guid agendaItemKey, [FromQuery] DateTime? occurrenceStartUtc = null)
     {
-        var response = await _mediator.Send(new GetAgendaResponsesQuery(agendaItemKey));
+        var response = await _mediator.Send(new GetAgendaResponsesQuery(agendaItemKey, occurrenceStartUtc));
         return response.ToActionResult(this);
     }
 
     /// <summary>
-    /// Records the caller's own answer to an item.
+    /// Records the caller's own answer to one occurrence of an item.
     /// </summary>
     /// <remarks>
     /// Refused on items the caller cannot see, using the same visibility rule as the feed — the two are one
@@ -339,7 +340,7 @@ public class AgendaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetResponse(Guid agendaItemKey, [FromBody] SetAgendaResponseRequest request)
     {
-        var response = await _mediator.Send(new SetAgendaResponseCommand(agendaItemKey, request.Status));
+        var response = await _mediator.Send(new SetAgendaResponseCommand(agendaItemKey, request.OccurrenceStartUtc, request.Status));
         return response.ToActionResult(this);
     }
 }
@@ -353,5 +354,5 @@ public sealed record SetAgendaArchivedRequest(bool Archived);
 /// <summary>Body for moving one target; <c>MemberKey</c> names whose part, in «кожному окремо».</summary>
 public sealed record ChangeAgendaTargetStatusRequest(AgendaItemStatus Status, Guid? MemberKey);
 
-/// <summary>Body for an RSVP set.</summary>
-public sealed record SetAgendaResponseRequest(AgendaRsvpStatus Status);
+/// <summary>Body for an RSVP set; <c>OccurrenceStartUtc</c> names the occurrence of a series, null for a one-off event.</summary>
+public sealed record SetAgendaResponseRequest(AgendaRsvpStatus Status, DateTime? OccurrenceStartUtc = null);

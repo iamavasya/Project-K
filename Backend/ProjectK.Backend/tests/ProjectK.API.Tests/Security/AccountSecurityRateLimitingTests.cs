@@ -29,7 +29,7 @@ public class AccountSecurityRateLimitingTests
         yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa));
         yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes));
         yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
-        yield return Row<Action<AuthController, IMfaEnforcementPolicy>>(nameof(AuthController.GetMfaStatus));
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus));
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings));
         yield return Row<Action<UserController, UpdateAccountProfileRequestDto>>(nameof(UserController.UpdateAccountProfile));

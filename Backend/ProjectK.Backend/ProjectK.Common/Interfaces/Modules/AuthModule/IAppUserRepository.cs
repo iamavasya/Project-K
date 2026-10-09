@@ -30,11 +30,11 @@ public interface IAppUserRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Forgets the kurin on every account that names it, whether as the one stepped into
-    /// (<c>ActiveKurinKey</c>) or as the one written at sign-up (<c>KurinKey</c>). Neither column is a
-    /// foreign key, so deleting a kurin used to leave these accounts scoped to a key that no longer
-    /// existed: signed in, shown a kurin, and with nowhere to step out to. The change is tracked and
-    /// lands with the caller's <c>SaveChangesAsync</c>.
+    /// Forgets the kurin on every account that has stepped into it (<c>ActiveKurinKey</c>). The
+    /// column now has a foreign key that sets it null when the kurin goes, but the accounts are
+    /// still cleared here, in the same unit of work, so a reader in the same transaction never
+    /// sees them scoped to a kurin that no longer exists. Tracked; lands with the caller's
+    /// <c>SaveChangesAsync</c>.
     /// </summary>
     Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

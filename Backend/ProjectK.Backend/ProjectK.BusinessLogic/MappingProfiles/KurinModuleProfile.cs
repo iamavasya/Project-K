@@ -25,7 +25,6 @@ public class KurinModuleProfile : Profile
     {
         // Kurin Mapping
         CreateMap<Kurin, KurinResponse>()
-            .ForMember(dest => dest.IsZbtEnabled, opt => opt.MapFrom(src => src.IsZbtKurin))
             .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)));
         CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
@@ -72,7 +71,10 @@ public class KurinModuleProfile : Profile
             // Standing and виховник assignments are read per placement, and this map has none.
             .ForMember(dest => dest.IsStaff, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroupNames, opt => opt.Ignore())
-            .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore());
+            .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
+            // The account belongs to another module; the read of one person asks it.
+            .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore());
 
         // Lean list read model -> same response shape as the full card. Level,
         // active leadership and active warnings are already resolved in the
@@ -83,6 +85,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.PublicId, opt => opt.Ignore())
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
+            .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
         CreateMap<Member, MemberLookupDto>()

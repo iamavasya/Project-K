@@ -21,6 +21,11 @@ export interface EventRow {
   isAwaiting: boolean;
 }
 
+/** One row per occurrence: a series shows several rows under one item key, so the key alone is not a row. */
+export function eventRowKey(event: Pick<MyEventDto, 'agendaItemKey' | 'startUtc'>): string {
+  return `${event.agendaItemKey}|${event.startUtc}`;
+}
+
 export const RSVP_OPTIONS: readonly { value: AgendaRsvpStatus; label: string }[] = [
   { value: 'Going', label: 'Іду' },
   { value: 'Maybe', label: 'Можливо' },
@@ -63,6 +68,10 @@ export class UpcomingEventsTileComponent {
   );
 
   readonly awaitingCount = computed(() => this.rows().filter(r => r.isAwaiting).length);
+
+  rowKey(row: EventRow): string {
+    return eventRowKey(row.event);
+  }
 
   kurinLabel(row: EventRow): string {
     return `к. ч. ${row.event.kurin.kurinNumber}`;

@@ -326,6 +326,27 @@ public class AuthControllerTests
     }
 
     [Fact]
+    public async Task EnableMfa_ShouldSetTheRefreshCookie_ForTheSessionThatReplacesTheEndedOnes()
+    {
+        // Arrange
+        SetCurrentUser(Guid.NewGuid());
+        var tokens = new JwtResponse
+        {
+            AccessToken = "fresh-access",
+            RefreshToken = new RefreshToken { Token = "fresh-refresh", Expires = DateTime.UtcNow.AddDays(7) }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<EnableMfaCommand>(), default))
+            .ReturnsAsync(new ServiceResult<MfaEnableResponseDto>(ResultType.Success, new MfaEnableResponseDto(true, [], tokens)));
+
+        // Act
+        var result = await _controller.EnableMfa(new MfaVerifyRequestDto("123456"));
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Contains("fresh-refresh", _controller.Response.Headers["Set-Cookie"].ToString());
+    }
+
+    [Fact]
     public async Task RotateMfaRecoveryCodes_ShouldSendCommandForCurrentUser()
     {
         // Arrange
@@ -412,44 +433,4 @@ public class AuthControllerTests
         };
     }
 
-    /// <summary>
-    /// The endpoint mints a token for the seeded load-test account, so the only thing between it
-    /// and an anonymous caller is the configured key. Empty means off, which is how it ships:
-    /// appsettings.json leaves LoadTestLoginKey blank.
-    /// </summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public async Task LoadTestLogin_ShouldRefuse_WhenNoKeyIsConfigured(string? configuredKey)
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = configuredKey })
-            .Build();
-
-        var result = await _controller.LoadTestLogin(
-            new AuthController.LoadTestLoginRequest { ApiKey = "anything" },
-            configuration,
-            userManager: null!,
-            jwtService: null!,
-            access: null!);
-
-        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
-    }
-
-    [Fact]
-    public async Task LoadTestLogin_ShouldRefuse_WhenTheKeyDoesNotMatch()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["LoadTestLoginKey"] = "the-real-key" })
-            .Build();
-
-        var result = await _controller.LoadTestLogin(
-            new AuthController.LoadTestLoginRequest { ApiKey = "not-the-real-key" },
-            configuration,
-            userManager: null!,
-            jwtService: null!,
-            access: null!);
-
-        ApiErrorAssert.HasError(result, StatusCodes.Status401Unauthorized, "InvalidApiKey");
-    }
 }

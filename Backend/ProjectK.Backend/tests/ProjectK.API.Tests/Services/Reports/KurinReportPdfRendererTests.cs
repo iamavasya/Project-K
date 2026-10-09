@@ -53,7 +53,7 @@ public sealed class KurinReportPdfRendererTests
         IReadOnlyList<KurinReportMember>? members = null)
         => new(
             new KurinReportHeader(new DateTime(2026, 5, 28, 12, 0, 0, DateTimeKind.Utc), "Manager User", "manager@example.com", "v0.13.0-beta", "Stage8"),
-            new KurinReportKurin(Guid.NewGuid(), 1, "Kyiv", "Ukraine", "Patron", "Description", false, 15),
+            new KurinReportKurin(Guid.NewGuid(), 1, "Kyiv", "Ukraine", "Patron", "Description"),
             groups ?? [],
             staff ?? [],
             youth ?? [],

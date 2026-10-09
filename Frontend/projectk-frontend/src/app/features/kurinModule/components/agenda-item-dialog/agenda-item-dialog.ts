@@ -237,7 +237,7 @@ export class AgendaItemDialogComponent {
     if (!current || current.kind !== 'Event' || current.audience === 'Schedule') {
       return;
     }
-    this.agendaService.getResponses(current.agendaItemKey).subscribe({
+    this.agendaService.getResponses(current.agendaItemKey, this.occurrenceOf(current)).subscribe({
       next: picture => {
         this.rsvp.set(picture);
         this.cdr.markForCheck();
@@ -246,13 +246,18 @@ export class AgendaItemDialogComponent {
     });
   }
 
+  /** The answer is to the occurrence that was clicked: a series row carries its own start, a one-off has none. */
+  private occurrenceOf(item: AgendaItemDto): string | null {
+    return item.isRecurrenceInstance ? item.startUtc : null;
+  }
+
   setRsvp(status: AgendaRsvpStatus): void {
     const current = this.item();
     if (!current) {
       return;
     }
     this.rsvpSaving.set(true);
-    this.agendaService.setResponse(current.agendaItemKey, status).subscribe({
+    this.agendaService.setResponse(current.agendaItemKey, status, this.occurrenceOf(current)).subscribe({
       next: picture => {
         this.rsvp.set(picture);
         this.rsvpSaving.set(false);

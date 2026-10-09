@@ -62,6 +62,20 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<ProbeProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        var keys = memberKeys as IReadOnlyCollection<Guid> ?? memberKeys.ToList();
+        if (keys.Count == 0)
+        {
+            return Array.Empty<ProbeProgress>();
+        }
+
+        return await Context.ProbeProgresses
+            .Where(x => keys.Contains(x.MemberKey))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public override Task<IEnumerable<ProbeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetByMemberKeyAsync instead.");

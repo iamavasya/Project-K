@@ -37,9 +37,7 @@ public sealed record KurinReportKurin(
     string? Stanytsia,
     string? RegionOrCountry,
     string? NamedAfter,
-    string? Description,
-    bool IsZbtKurin,
-    int ZbtUserCap);
+    string? Description);
 
 public sealed record KurinReportGroup(
     Guid GroupKey,

@@ -46,6 +46,15 @@ public interface IMemberDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Some of a kurin's people, as they stand in it: the members, гуртки and accounts the
+    /// selection names, in one read. For a page that labels a few people out of the whole kurin.
+    /// </summary>
+    Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
+        Guid kurinKey,
+        MemberSelection selection,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The перестороги a kurin issued that still stand at <paramref name="nowUtc"/> — not revoked,
     /// not expired. What точкування takes points for.
     /// </summary>

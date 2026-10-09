@@ -9,8 +9,11 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Responses;
 
-/// <summary>Who answered an event's invitation, with confirmed/waitlist ranking and the caller's own choice.</summary>
-public sealed record GetAgendaResponsesQuery(Guid AgendaItemKey) : IRequest<ServiceResult<AgendaResponsesResponse>>;
+/// <summary>
+/// Who answered one occurrence of an event's invitation, with confirmed/waitlist ranking and the
+/// caller's own choice. <paramref name="OccurrenceStartUtc"/> is null for a one-off event.
+/// </summary>
+public sealed record GetAgendaResponsesQuery(Guid AgendaItemKey, DateTime? OccurrenceStartUtc) : IRequest<ServiceResult<AgendaResponsesResponse>>;
 
 public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaResponsesQuery, ServiceResult<AgendaResponsesResponse>>
 {
@@ -53,7 +56,12 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot view this event.");
         }
 
-        var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, cancellationToken);
+        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, out var occurrenceKey))
+        {
+            return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
+        }
+
+        var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);
         var names = await ResolveNamesAsync(item.KurinKey, cancellationToken);
 
         int? capacity = null;
@@ -65,7 +73,7 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
             waitlistEnabled = category?.WaitlistEnabled ?? false;
         }
 
-        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, responses, capacity, waitlistEnabled, names, _currentUser.UserId);
+        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, _currentUser.UserId);
         return new ServiceResult<AgendaResponsesResponse>(ResultType.Success, picture);
     }
 

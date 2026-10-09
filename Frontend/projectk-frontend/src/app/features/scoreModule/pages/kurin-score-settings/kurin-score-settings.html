@@ -176,7 +176,7 @@
 
     <p-dialog [header]="ruleRow()?.label ?? ''" [visible]="ruleDialogVisible()" (visibleChange)="ruleDialogVisible.set($event)"
       [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(92vw, 24rem)' }">
-      <p class="lil-dialog-hint">{{ ruleRow()?.hint }}. Діє з дати; що зароблено раніше, лишається як було.</p>
+      <p class="lil-dialog-hint">{{ ruleRow()?.hint }}. Інша кількість балів з пізнішої дати — нове правило, а що зароблено раніше, лишається як було. Та сама кількість з іншої дати лише переносить початок чинного правила.</p>
       <div class="lil-dialog-form">
         <div class="lil-dialog-field">
           <label for="rule-points">Балів</label>

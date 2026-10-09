@@ -10,7 +10,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { MemberDto } from '../../models/member.dto';
 import { UpsertMemberDto } from '../../models/requests/member/upsert-member.dto';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { ConfirmationService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { MinAgeValidatorDirective } from "../../directives/min-age-validator/min-age.validator";
 import { FileSelectEvent, FileUploadModule } from '@openng/optimus-ui/fileupload';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
@@ -30,6 +30,8 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { concatMap, finalize, from, Observable, of, toArray } from 'rxjs';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
+import { AccountStatus } from '../../models/enums/account-status.enum';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { ProfileVerificationBadgeComponent } from '../../components/profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
@@ -83,10 +85,14 @@ export class UpsertMemberComponent implements OnInit {
   authService = inject(AuthService);
   permissionService = inject(PermissionService);
   confirmationService = inject(ConfirmationService);
+  private readonly messages = inject(MessageService);
 
   private cameFromMember = false;
 
   isCreate = false;
+  // Адреса, на яку пішов лист. Поки поле з нею не збігається, «надіслати ще раз» пошле на стару.
+  private savedEmail = '';
+  invitationSending = false;
   canManageWarnings = false;
   profileVerificationEnabled = false;
   profileVerificationSubmitting = false;
@@ -175,6 +181,7 @@ export class UpsertMemberComponent implements OnInit {
         };
 
         this.member = memberForEdit;
+        this.savedEmail = memberForEdit.email;
         this.memberWarnings = memberForEdit.warnings ?? [];
         this.ensurePlastLevelMap();
         this.setupAccordionAndToggles();
@@ -398,8 +405,51 @@ export class UpsertMemberComponent implements OnInit {
     });
   }
 
+  /** Акаунт є, але запрошення ще ніхто не прийняв — пошту можна виправити, а лист переслати. */
+  get isPendingAccount(): boolean {
+    return !this.isCreate
+      && !!this.member.userKey
+      && this.member.accountStatus === AccountStatus.PendingActivation;
+  }
+
+  get emailChangedSinceSave(): boolean {
+    return this.member.email.trim().toLowerCase() !== this.savedEmail.trim().toLowerCase();
+  }
+
   canEditEmail(): boolean {
-    return this.isCreate || !this.member.userKey || this.permissionService.isAdmin();
+    return this.isCreate || !this.member.userKey || this.isPendingAccount || this.permissionService.isAdmin();
+  }
+
+  resendInvitation(): void {
+    if (!this.isPendingAccount || this.emailChangedSinceSave || this.invitationSending) {
+      return;
+    }
+
+    this.invitationSending = true;
+    this.memberService.resendInvitation(this.memberKey).pipe(
+      finalize(() => this.invitationSending = false)
+    ).subscribe({
+      next: () => this.messages.add({
+        severity: 'success',
+        summary: 'Лист надіслано',
+        detail: `Нове посилання пішло на ${this.savedEmail}. Попереднє більше не діє.`
+      }),
+      error: (error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.status === 409) {
+          this.messages.add({
+            severity: 'warn',
+            summary: 'Лист не надіслано',
+            detail: 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.'
+          });
+        } else if (error instanceof HttpErrorResponse && error.status === 500) {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Лист не надіслано',
+            detail: 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.'
+          });
+        }
+      }
+    });
   }
 
   canDeleteMember(): boolean {
@@ -565,6 +615,14 @@ export class UpsertMemberComponent implements OnInit {
 
     saveObs.subscribe({
       next: (savedMember) => {
+        if (savedMember.invitationSent === false) {
+          this.messages.add({
+            severity: 'warn',
+            summary: 'Лист не надіслано',
+            detail: 'Запис збережено, але лист із запрошенням не пішов. Відкрий редагування й натисни «Надіслати лист ще раз».',
+            life: 10000
+          });
+        }
         this.processPendingWarnings(savedMember.memberKey).subscribe({
           next: () => {
             if (this.cameFromMember) {
@@ -585,6 +643,15 @@ export class UpsertMemberComponent implements OnInit {
         });
       },
       error: (error) => {
+        if (error instanceof HttpErrorResponse && error.error?.error === 'EmailTaken') {
+          this.messages.add({
+            severity: 'warn',
+            summary: 'Пошта зайнята',
+            detail: 'Ця адреса вже належить іншому акаунту або заявці. Перевір її.'
+          });
+          return;
+        }
+
         if (this.isCreate) {
           console.error('Error creating member:', error, { isCreate: true });
         } else {

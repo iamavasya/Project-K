@@ -72,6 +72,13 @@ export class MemberService {
     );
   }
 
+  /** Новий лист-запрошення для неактивованого акаунта; попередні посилання перестають діяти. */
+  resendInvitation(memberKey: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${memberKey}/invitation`, null, {
+      context: requestFeedback('errors', [409, 500])
+    });
+  }
+
   delete(memberKey: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${memberKey}`).pipe(
       tap(() => this.invalidateMemberCache())

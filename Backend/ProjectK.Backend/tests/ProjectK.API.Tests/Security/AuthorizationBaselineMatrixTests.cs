@@ -108,7 +108,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");
         yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa), "RequireUser");
         yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes), "RequireUser");
-        yield return Row<Action<AuthController, IMfaEnforcementPolicy>>(nameof(AuthController.GetMfaStatus), "RequireUser");
+        yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus), "RequireUser");
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAllUsers), "RequireAdmin");
         yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings), "RequireUser");
@@ -252,7 +252,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpsertCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpdateCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid, Guid>>(nameof(AgendaController.DeleteCategory), "RequireUser");
-        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, DateTime?>>(nameof(AgendaController.GetResponses), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
 
         yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), "RequireUser");
@@ -273,6 +273,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), "RequireUser");
         yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<MemberController>(nameof(MemberController.ResendInvitation), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.VerifyProfile), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), "RequireUser");

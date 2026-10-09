@@ -115,11 +115,11 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 5.5. A founder is taken into the kurin their approval opened for them. The account is
-        // what carries that kurin, and here it is the only thing that can: the kurin was created
-        // moments ago and nobody belongs to it yet. Joining rather than placing matters — someone
-        // who already belongs to a kurin keeps it and founds the new one alongside.
-        var foundedKurinKey = user.KurinKey;
+        // 5.5. A founder is taken into the kurin their approval opened for them. The queue entry
+        // is what remembers that kurin, and here it is the only thing that can: the kurin was
+        // created moments ago and nobody belongs to it yet. Joining rather than placing matters —
+        // someone who already belongs to a kurin keeps it and founds the new one alongside.
+        var foundedKurinKey = entry?.FoundedKurinKey;
         if (foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
         {
             await _mediator.Send(

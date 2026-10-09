@@ -45,7 +45,7 @@
                   [class.events-tile__answer--on]="row.event.myResponse === option.value"
                   [attr.data-status]="option.value"
                   [attr.aria-pressed]="row.event.myResponse === option.value"
-                  [disabled]="savingKey() === row.event.agendaItemKey"
+                  [disabled]="savingKey() === rowKey(row)"
                   (click)="respond.emit({ event: row.event, status: option.value })">
                   {{ option.label }}
                 </button>

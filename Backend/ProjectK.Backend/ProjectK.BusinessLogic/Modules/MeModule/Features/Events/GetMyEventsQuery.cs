@@ -51,14 +51,22 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
             var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
                 .ToDictionary(c => c.AgendaCategoryKey);
 
+            // The person's answers for the whole window in one read, then matched per occurrence: a
+            // series' answers are keyed by occurrence start, a one-off's by null.
+            var answers = (await _unitOfWork.AgendaResponses.GetForUserAsync(
+                    context.Viewer.ViewerUserKey!.Value, items.Select(i => i.AgendaItemKey).ToList(), now, until, cancellationToken))
+                .ToDictionary(r => (r.AgendaItemKey, r.OccurrenceStartUtc), r => r.Status);
+
             foreach (var item in items)
             {
-                var response = await _unitOfWork.AgendaResponses.GetForItemAndUserAsync(item.AgendaItemKey, context.Viewer.ViewerUserKey!.Value, cancellationToken);
                 var category = item.AgendaCategoryKey is { } key ? categories.GetValueOrDefault(key) : null;
 
                 foreach (var occurrence in AgendaRecurrence.Expand(item, now, until))
                 {
-                    rows.Add(ToDto(item, kurin, category, occurrence, response?.Status));
+                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc)), out var status)
+                        ? status
+                        : (AgendaRsvpStatus?)null;
+                    rows.Add(ToDto(item, kurin, category, occurrence, response));
                 }
             }
         }

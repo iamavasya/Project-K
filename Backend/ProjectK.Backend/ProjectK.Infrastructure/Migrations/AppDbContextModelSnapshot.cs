@@ -180,12 +180,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsBetaParticipant")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("KurinKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -227,6 +221,8 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActiveKurinKey");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -388,14 +384,14 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<Guid?>("FoundedKurinKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("InvitationAcceptedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("InvitationSentAtUtc")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsBetaParticipant")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsKurinLeaderCandidate")
                         .HasColumnType("bit");
@@ -446,6 +442,8 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("FoundedKurinKey");
 
                     b.ToTable("WaitlistEntries");
                 });
@@ -1038,6 +1036,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("OccurrenceStartUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("RespondedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1052,7 +1053,7 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasKey("AgendaResponseKey");
 
-                    b.HasIndex("AgendaItemKey", "UserKey")
+                    b.HasIndex("AgendaItemKey", "UserKey", "OccurrenceStartUtc")
                         .IsUnique();
 
                     b.ToTable("AgendaResponses");
@@ -1108,9 +1109,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<bool>("IsZbtKurin")
-                        .HasColumnType("bit");
-
                     b.Property<string>("NamedAfter")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1137,9 +1135,6 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("ZbtUserCap")
-                        .HasColumnType("int");
 
                     b.HasKey("KurinKey");
 
@@ -2365,6 +2360,14 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.AppUser", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", null)
+                        .WithMany()
+                        .HasForeignKey("ActiveKurinKey")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "TargetUser")
@@ -2403,6 +2406,14 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.WaitlistEntry", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", null)
+                        .WithMany()
+                        .HasForeignKey("FoundedKurinKey")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntryEvent", b =>

@@ -59,7 +59,7 @@ export class PermissionService {
 
   /**
    * Who seats a провід, per body, the way the backend's AssignableOffices has it: Звʼязковий and
-   * admin every one; Курінний only the kurin провід; Гуртковий only his гурток's. Checking
+   * admin every one; Курінний only the kurin провід; Виховник and Гуртковий only a гурток's. Checking
    * `Leadership:Update` alone would let a Гуртковий open the kurin провід form and meet a 403.
    */
   canSetupLeadership(type: LeadershipScope): boolean {

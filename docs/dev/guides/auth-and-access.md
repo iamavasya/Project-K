@@ -54,7 +54,11 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 
 **Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `MfaEnforcementPolicy` вимагають
 другий фактор для адміністратора і Звʼязкового на `Production` і `Staging`; `Security:EnforcePrivilegedMFA`
-керує цим на self-host. Ключ `E2E:BypassPrivilegedMfa` читається лише на тестових тирах. Фронтенд:
+керує цим на self-host. Ключ `E2E:BypassPrivilegedMfa` читається лише на тестових тирах. Гейт не ходить
+у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaims`), записаний при видачі —
+`login`, `refresh`, активація. Увімкнення MFA (`mfa/enable`) обриває всі сесії й одразу віддає нову
+(`Tokens` у відповіді + cookie), тож старий токен «лише пароль» не доживає до відмови; вимкнення теж
+обриває всі сесії, і токен без другого фактора живе щонайбільше `Jwt:ExpiresInMinutes`. Фронтенд:
 `mfa-setup-dialog` (обовʼязковий діалог після входу), `account-settings`.
 
 ## Дозволи на бекенді

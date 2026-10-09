@@ -163,14 +163,31 @@ public static class DataSeeder
             .Select(administrator => administrator.Id)
             .ToHashSet();
 
-        var usersToDelete = await userManager.Users
-            .Where(u => u.KurinKey == kurinKey)
+        // Whose accounts these are is said by membership: the account itself no longer names a kurin.
+        var accountKeysHere = await dbContext.Memberships
+            .Where(ms => ms.KurinKey == kurinKey && ms.UserKey != null)
+            .Select(ms => ms.UserKey!.Value)
+            .Distinct()
             .ToListAsync();
 
-        foreach (var user in usersToDelete.Where(u => !administratorIds.Contains(u.Id)))
+        var usersToDelete = await userManager.Users
+            .Where(u => accountKeysHere.Contains(u.Id))
+            .ToListAsync();
+
+        var deletedUsers = usersToDelete.Where(u => !administratorIds.Contains(u.Id)).ToList();
+        foreach (var user in deletedUsers)
         {
             await userManager.DeleteAsync(user);
         }
+
+        // Their queue entries go too (invitations cascade with them). Left behind, an entry keeps
+        // its address "waiting", and adding someone with it again was refused as a conflict.
+        var deletedEmails = deletedUsers
+            .Where(user => user.Email is not null)
+            .Select(user => user.Email!)
+            .ToList();
+        dbContext.WaitlistEntries.RemoveRange(
+            await dbContext.WaitlistEntries.Where(entry => deletedEmails.Contains(entry.Email)).ToListAsync());
 
         var planningSessionKeys = await dbContext.PlanningSessions
             .Where(s => s.KurinKey == kurinKey)
@@ -334,7 +351,7 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
 
-    private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, Guid? kurinKey = null)
+    private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role)
     {
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
@@ -353,15 +370,10 @@ public static class DataSeeder
             var result = await userManager.CreateAsync(user);
             if (!result.Succeeded)
             {
-                throw new InvalidOperationException($"Failed to create passwordless user {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new InvalidOperationException($"Failed to create the account {email} (activation pending): {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
             await userManager.AddToRoleAsync(user, role.ToClaimValue());
-        }
-        else if (user.KurinKey != kurinKey)
-        {
-            user.KurinKey = kurinKey;
-            await userManager.UpdateAsync(user);
         }
         return user;
     }
@@ -439,7 +451,7 @@ public static class DataSeeder
         SeededPerson person,
         CancellationToken cancellationToken = default)
     {
-        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword, person.KurinKey);
+        var user = await EnsureUser(userManager, person.Email, person.FirstName, person.LastName, UserRole.Member, SeededPassword);
 
         // The account settings page reads the phone from the account, not the card.
         if (!string.Equals(user!.PhoneNumber, person.PhoneNumber, StringComparison.Ordinal))
@@ -506,7 +518,7 @@ public static class DataSeeder
         }
     }
 
-    internal static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password, Guid? kurinKey = null)
+    internal static async Task<AppUser?> EnsureUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role, string password)
     {
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
@@ -528,11 +540,6 @@ public static class DataSeeder
             }
 
             await userManager.AddToRoleAsync(user, role.ToClaimValue());
-        }
-        else if (user.KurinKey != kurinKey)
-        {
-            user.KurinKey = kurinKey;
-            await userManager.UpdateAsync(user);
         }
         return user;
     }

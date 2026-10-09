@@ -100,7 +100,7 @@ public class ScoreHandlerTests
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
                 keys.Where(k => k == Skhodyny).ToDictionary(k => k, _ => _event.AgendaCategoryKey));
         var responses = new Mock<IAgendaResponseRepository>();
-        responses.Setup(r => r.GetForItemAsync(Skhodyny, It.IsAny<CancellationToken>())).ReturnsAsync(() => _responses);
+        responses.Setup(r => r.GetForItemAsync(Skhodyny, It.IsAny<DateTime?>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _responses);
         _unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
         _unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         _unitOfWork.SetupGet(u => u.AgendaResponses).Returns(responses.Object);

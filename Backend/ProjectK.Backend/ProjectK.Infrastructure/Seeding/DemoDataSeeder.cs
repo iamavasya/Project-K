@@ -225,7 +225,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
-            kurin = new Kurin(KurinNumber) { IsZbtKurin = true };
+            kurin = new Kurin(KurinNumber);
             _dbContext.Kurins.Add(kurin);
         }
 

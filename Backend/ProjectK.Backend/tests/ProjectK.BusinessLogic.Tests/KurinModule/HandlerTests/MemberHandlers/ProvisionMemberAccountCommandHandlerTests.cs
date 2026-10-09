@@ -51,7 +51,7 @@ public class ProvisionMemberAccountCommandHandlerTests
             new Mock<IDomainEventPublisher>().Object,
             _emailServiceMock.Object,
             _currentUserContextMock.Object,
-            _kurinDataMock.Object);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ProvisionMemberAccountCommandHandler>.Instance);
     }
 
     private Member GivenMember(Guid? userKey = null)
@@ -83,7 +83,8 @@ public class ProvisionMemberAccountCommandHandlerTests
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        member.UserKey.Should().Be(result.Data);
+        member.UserKey.Should().Be(result.Data!.UserKey);
+        result.Data.Sent.Should().BeTrue();
         _accountProvisioningMock.Verify(
             x => x.ProvisionAsync(
                 It.Is<AccountProvisioningRequest>(r => r.Email == member.Email),
@@ -92,6 +93,24 @@ public class ProvisionMemberAccountCommandHandlerTests
         _emailServiceMock.Verify(
             x => x.SendInvitationEmailAsync(member.Email, "invitation-token", It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheLetterCannotBeSent_ShouldKeepTheAccountAndReportTheLetterUnsent()
+    {
+        var member = GivenMember();
+        _emailServiceMock
+            .Setup(x => x.SendInvitationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("API key is invalid"));
+
+        var result = await _handler.Handle(
+            new ProvisionMemberAccountCommand(member.MemberKey),
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.Sent.Should().BeFalse();
+        member.UserKey.Should().Be(result.Data.UserKey);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

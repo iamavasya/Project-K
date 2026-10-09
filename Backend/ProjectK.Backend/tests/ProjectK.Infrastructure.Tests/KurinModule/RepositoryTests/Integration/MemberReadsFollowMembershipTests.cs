@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 using Xunit;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
@@ -102,6 +103,46 @@ public class MemberReadsFollowMembershipTests
         Assert.Equal(person.MemberKey, inSenior.MemberKey);
         Assert.Equal(youthGroup, inYouth.GroupKey);
         Assert.Null(inSenior.GroupKey);
+    }
+
+    /// <summary>
+    /// What the agenda reads instead of the whole kurin: the people named, everyone in the гуртки
+    /// named, the people behind the accounts named — each placed by this kurin's membership, and
+    /// nobody from another kurin even when their key is asked for.
+    /// </summary>
+    [Fact]
+    public async Task ASelection_ShouldAnswerWithTheMembersGroupsAndAccountsNamed_InThisKurinOnly()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var kurinKey = Guid.NewGuid();
+        var otherKurin = Guid.NewGuid();
+        var group = Guid.NewGuid();
+        var byKey = Person("Названа");
+        var inGroup = Person("Угуртку");
+        var byAccount = Person("Заакаунтом");
+        byAccount.UserKey = Guid.NewGuid();
+        var bystander = Person("Стороння");
+        var elsewhere = Person("Вінших");
+        context.Members.AddRange(byKey, inGroup, byAccount, bystander, elsewhere);
+        context.Memberships.AddRange(
+            Joining(byKey.MemberKey, kurinKey),
+            Joining(inGroup.MemberKey, kurinKey, group),
+            Joining(byAccount.MemberKey, kurinKey),
+            Joining(bystander.MemberKey, kurinKey, Guid.NewGuid()),
+            Joining(elsewhere.MemberKey, otherKurin, group));
+        await context.SaveChangesAsync();
+
+        var selection = new MemberSelection([byKey.MemberKey, elsewhere.MemberKey], [group], [byAccount.UserKey!.Value]);
+        var found = await uow.Members.GetSummariesByKurinKeyAsync(kurinKey, selection);
+
+        Assert.Equal(
+            new[] { byAccount.MemberKey, byKey.MemberKey, inGroup.MemberKey }.OrderBy(k => k),
+            found.Select(f => f.MemberKey).OrderBy(k => k));
+        Assert.All(found, f => Assert.Equal(kurinKey, f.KurinKey));
+        Assert.Equal(group, found.Single(f => f.MemberKey == inGroup.MemberKey).GroupKey);
+        Assert.Empty(await uow.Members.GetSummariesByKurinKeyAsync(kurinKey, MemberSelection.None));
     }
 
     [Fact]

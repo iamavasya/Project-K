@@ -34,6 +34,14 @@ public class WaitlistEntry : Entity
     [MaxLength(200)]
     public string? ClaimedKurinNameOrNumber { get; set; }
 
+    /// <summary>
+    /// The kurin this applicant's approval opened for them, when they applied as its leader.
+    /// Activation seats them in it. Written here, on the record that exists only for as long as
+    /// the application does, rather than on the account — where it read as the kurin the person
+    /// belonged to, which is membership's to say.
+    /// </summary>
+    public Guid? FoundedKurinKey { get; set; }
+
     public WaitlistVerificationStatus VerificationStatus { get; set; }
 
     [MaxLength(100)]
@@ -41,8 +49,6 @@ public class WaitlistEntry : Entity
 
     [MaxLength(1000)]
     public string? VerificationNote { get; set; }
-
-    public bool IsBetaParticipant { get; set; }
 
     public DateTime RequestedAtUtc { get; set; }
     public DateTime? ReviewedAtUtc { get; set; }

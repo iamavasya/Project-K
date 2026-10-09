@@ -115,6 +115,7 @@ HTTP
   ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
   ↓     другий фактор: пароль → короткий mfaToken (5 хв, окрема audience) → код + mfaToken;
   ↓     код без mfaToken відхиляється — другий фактор ніколи не буває єдиним
+  ↓     гейт MFA для проводу читає клейм amr з токена, не акаунт (PrivilegedMfaEnforcementMiddleware)
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
   ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
   ↓  контролер: жодних рішень, лише _mediator.Send(...)

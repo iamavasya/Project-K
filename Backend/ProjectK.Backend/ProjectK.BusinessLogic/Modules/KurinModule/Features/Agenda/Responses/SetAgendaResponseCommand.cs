@@ -10,8 +10,11 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Responses;
 
-/// <summary>The caller's RSVP to an event (йду/не йду/можливо). Upserts one row per (event, user).</summary>
-public sealed record SetAgendaResponseCommand(Guid AgendaItemKey, AgendaRsvpStatus Status)
+/// <summary>
+/// The caller's RSVP to one occurrence of an event (йду/не йду/можливо). Upserts one row per
+/// (event, occurrence, user); <paramref name="OccurrenceStartUtc"/> is null for a one-off event.
+/// </summary>
+public sealed record SetAgendaResponseCommand(Guid AgendaItemKey, DateTime? OccurrenceStartUtc, AgendaRsvpStatus Status)
     : IRequest<ServiceResult<AgendaResponsesResponse>>;
 
 public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaResponseCommand, ServiceResult<AgendaResponsesResponse>>
@@ -61,10 +64,15 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot respond to this event.");
         }
 
-        await AgendaRsvpWriter.UpsertAsync(_uow, item, userKey.Value, request.Status, DateTime.UtcNow, cancellationToken);
+        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, out var occurrenceKey))
+        {
+            return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
+        }
+
+        await AgendaRsvpWriter.UpsertAsync(_uow, item, userKey.Value, occurrenceKey, request.Status, DateTime.UtcNow, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, cancellationToken);
+        var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);
         var names = await ResolveNamesAsync(item.KurinKey, cancellationToken);
 
         int? capacity = null;
@@ -76,7 +84,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             waitlistEnabled = category?.WaitlistEnabled ?? false;
         }
 
-        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, responses, capacity, waitlistEnabled, names, userKey);
+        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, userKey);
         return new ServiceResult<AgendaResponsesResponse>(ResultType.Success, picture);
     }
 

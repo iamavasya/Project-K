@@ -1,151 +1,104 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.API.Tests.Security;
 
+/// <summary>
+/// The gate answers from the token's <c>amr</c> claim and nothing else: no account lookup, so a
+/// request without the claim is one from a password-only session.
+/// </summary>
 public class PrivilegedMfaEnforcementMiddlewareTests
 {
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenPrivilegedUserReadsPageDataWithoutMfa()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, "KV.Zvyazkovyi");
+        var context = CreateContext("/api/user/users", "KV.Zvyazkovyi", secondFactor: false);
         context.Request.Method = HttpMethods.Get;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
         Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldContinue_WhenPrivilegedUserHasMfa()
+    public async Task InvokeAsync_ShouldContinue_WhenTheTokenCarriesTheSecondFactor()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, "Admin");
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
-        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
-            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = true });
+        var context = CreateContext("/api/user/users", "Admin", secondFactor: true);
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
+        Assert.True(nextCalled);
+    }
+
+    /// <summary>The bearer handler renames <c>amr</c> on the way in; the gate must read that spelling too.</summary>
+    [Fact]
+    public async Task InvokeAsync_ShouldContinue_WhenTheSecondFactorArrivesUnderTheMappedClaimType()
+    {
+        var context = CreateContext("/api/user/users", "Admin", secondFactor: null);
+        context.User.AddIdentity(new ClaimsIdentity([new Claim(ClaimTypes.AuthenticationMethod, AccessTokenClaims.Mfa)]));
+
+        var nextCalled = await Invoke(context, required: true);
+
         Assert.True(nextCalled);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenPrivilegedUserCallsMfaSetupEndpoint()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/auth/mfa/setup", userKey, "KV.Zvyazkovyi");
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
+        var context = CreateContext("/api/auth/mfa/setup", "KV.Zvyazkovyi", secondFactor: false);
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
         Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenPrivilegedUserReadsOwnAccountSettings()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: false);
         context.Request.Method = HttpMethods.Get;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
         Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenPrivilegedUserChecksAccessWithoutMfa()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/auth/check-access", userKey, "KV.Zvyazkovyi");
+        var context = CreateContext("/api/auth/check-access", "KV.Zvyazkovyi", secondFactor: false);
         context.Request.Method = HttpMethods.Post;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
         Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldReturnForbidden_WhenPrivilegedUserUpdatesOwnProfileWithoutMfa()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: false);
         context.Request.Method = HttpMethods.Put;
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
-        userManagerMock.Setup(x => x.FindByIdAsync(userKey.ToString()))
-            .ReturnsAsync(new AppUser { Id = userKey, TwoFactorEnabled = false });
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+    }
+
+    /// <summary>A token minted before the claim existed says nothing — and nothing is not a second factor.</summary>
+    [Fact]
+    public async Task InvokeAsync_ShouldReturnForbidden_WhenTheTokenSaysNothingAboutTheSecondFactor()
+    {
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: null);
+        context.Request.Method = HttpMethods.Put;
+
+        var nextCalled = await Invoke(context, required: true);
+
         Assert.False(nextCalled);
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
     }
@@ -153,67 +106,59 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenUserIsNotPrivileged()
     {
-        // Arrange
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/users", userKey, "Member");
-        var nextCalled = false;
-        var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var userManagerMock = CreateUserManagerMock();
+        var context = CreateContext("/api/user/users", "Member", secondFactor: false);
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: true).Object);
+        var nextCalled = await Invoke(context, required: true);
 
-        // Assert
         Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldContinue_WhenPolicyDoesNotRequireMfa()
     {
-        // Arrange (e.g. self-host with enforcement disabled, or Development)
-        var userKey = Guid.NewGuid();
-        var context = CreateContext("/api/user/me", userKey, "KV.Zvyazkovyi");
+        // e.g. self-host with enforcement disabled, or Development
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: false);
         context.Request.Method = HttpMethods.Put;
+
+        var nextCalled = await Invoke(context, required: false);
+
+        Assert.True(nextCalled);
+    }
+
+    private static async Task<bool> Invoke(HttpContext context, bool required)
+    {
         var nextCalled = false;
         var middleware = new PrivilegedMfaEnforcementMiddleware(_ =>
         {
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var userManagerMock = CreateUserManagerMock();
 
-        // Act
-        await middleware.InvokeAsync(context, userManagerMock.Object, CreatePolicy(required: false).Object);
-
-        // Assert
-        Assert.True(nextCalled);
-        userManagerMock.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never);
+        await middleware.InvokeAsync(context, CreatePolicy(required).Object);
+        return nextCalled;
     }
 
-    private static DefaultHttpContext CreateContext(string path, Guid userKey, string role)
+    /// <param name="secondFactor">What <c>amr</c> says; null for a token without the claim.</param>
+    private static DefaultHttpContext CreateContext(string path, string role, bool? secondFactor)
     {
         var context = new DefaultHttpContext();
         context.Request.Path = path;
         context.Response.Body = new MemoryStream();
-        context.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, userKey.ToString()),
-                new Claim(ClaimTypes.Role, role)
-            ],
-            "Test"));
 
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new(ClaimTypes.Role, role)
+        };
+        if (secondFactor is { } hasSecondFactor)
+        {
+            claims.Add(new Claim(
+                AccessTokenClaims.AuthenticationMethods,
+                hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password));
+        }
+
+        context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
         return context;
-    }
-
-    private static Mock<UserManager<AppUser>> CreateUserManagerMock()
-    {
-        var store = new Mock<IUserStore<AppUser>>();
-        return new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
     }
 
     private static Mock<IMfaEnforcementPolicy> CreatePolicy(bool required)

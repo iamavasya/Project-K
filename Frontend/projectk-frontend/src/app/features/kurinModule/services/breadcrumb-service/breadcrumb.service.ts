@@ -39,7 +39,9 @@ export class BreadcrumbService {
   public breadcrumbs$: Observable<MenuItem[]> = this.breadcrumbsSubject.asObservable();
   private homeSubject = new BehaviorSubject<MenuItem>({ icon: 'pi pi-home' });
   public home$: Observable<MenuItem> = this.homeSubject.asObservable();
-  private paramCache: Record<string, string> = {};
+  // A Map, not an object keyed by route-parameter names: the names come from route definitions,
+  // but a plain object makes a key such as "__proto__" a write to the prototype.
+  private paramCache = new Map<string, string>();
   private entityTargets = new Map<string, EntityTarget>();
   private entityLabels = new Map<string, string>();
   private requestedEntities = new Set<string>();
@@ -105,11 +107,11 @@ export class BreadcrumbService {
   }
 
   public setParam(key: string, value: string): void {
-    if (!isUsableKey(value) || this.paramCache[key] === value) {
+    if (!isUsableKey(value) || this.paramCache.get(key) === value) {
       return;
     }
 
-    this.paramCache[key] = value;
+    this.paramCache.set(key, value);
     const breadcrumbs = this.createBreadcrumbs();
     this.breadcrumbsSubject.next(breadcrumbs);
     this.requestEntityLabels();
@@ -121,7 +123,7 @@ export class BreadcrumbService {
   private cacheParams(params: Record<string, string>): void {
     for (const [key, value] of Object.entries(params)) {
       if (isUsableKey(value)) {
-        this.paramCache[key] = value;
+        this.paramCache.set(key, value);
       }
     }
   }
@@ -129,7 +131,7 @@ export class BreadcrumbService {
   private updateParamCache(): void {
     // Route parameters are navigation-scoped. Dynamic values such as a member's
     // groupKey may be injected again after the destination entity is loaded.
-    this.paramCache = {};
+    this.paramCache.clear();
 
     const urlSegments = (this.router.url ?? '').split('/').filter(s => s);
     const routes = this.router.config ?? [];
@@ -219,12 +221,12 @@ export class BreadcrumbService {
   private entityKey(type: TitleContextType): string | null {
     switch (type) {
       case 'group':
-        return this.paramCache['groupKey'] ?? null;
+        return this.paramCache.get('groupKey') ?? null;
       case 'member':
-        return this.paramCache['memberKey'] ?? null;
+        return this.paramCache.get('memberKey') ?? null;
       case 'kurin': {
         const scopedKurinKey = this.authService.getAuthStateValue?.()?.kurinKey;
-        return this.paramCache['kurinKey'] ?? (isUsableKey(scopedKurinKey) ? scopedKurinKey : null);
+        return this.paramCache.get('kurinKey') ?? (isUsableKey(scopedKurinKey) ? scopedKurinKey ?? null : null);
       }
     }
   }
@@ -397,8 +399,9 @@ export class BreadcrumbService {
     
     for (const param of paramMatches) {
       const paramName = param.substring(1);
-      if (this.paramCache[paramName]) {
-        result = result.replace(param, this.paramCache[paramName]);
+      const cached = this.paramCache.get(paramName);
+      if (cached) {
+        result = result.replace(param, cached);
       }
     }
     

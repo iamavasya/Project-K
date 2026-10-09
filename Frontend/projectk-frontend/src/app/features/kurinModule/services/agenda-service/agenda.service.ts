@@ -146,13 +146,15 @@ export class AgendaService {
 
   // ---- RSVP ----
 
-  getResponses(agendaItemKey: string): Observable<AgendaResponsesResponse> {
-    return this.http.get<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/responses`);
+  /** The answers to one occurrence of an event; `occurrenceStartUtc` is null for a one-off event. */
+  getResponses(agendaItemKey: string, occurrenceStartUtc: string | null): Observable<AgendaResponsesResponse> {
+    const params = occurrenceStartUtc ? new HttpParams().set('occurrenceStartUtc', occurrenceStartUtc) : undefined;
+    return this.http.get<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/responses`, { params });
   }
 
-  setResponse(agendaItemKey: string, status: AgendaRsvpStatus): Observable<AgendaResponsesResponse> {
+  setResponse(agendaItemKey: string, status: AgendaRsvpStatus, occurrenceStartUtc: string | null): Observable<AgendaResponsesResponse> {
     return this.http
-      .put<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/response`, { status })
+      .put<AgendaResponsesResponse>(`${this.apiUrl}/${agendaItemKey}/response`, { status, occurrenceStartUtc })
       .pipe(tap(() => this.invalidate()));
   }
 

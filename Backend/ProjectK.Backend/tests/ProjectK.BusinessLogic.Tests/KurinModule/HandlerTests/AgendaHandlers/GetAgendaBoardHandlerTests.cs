@@ -46,6 +46,7 @@ public class GetAgendaBoardHandlerTests
 
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var access = new Mock<IAgendaAccess>();
         access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))

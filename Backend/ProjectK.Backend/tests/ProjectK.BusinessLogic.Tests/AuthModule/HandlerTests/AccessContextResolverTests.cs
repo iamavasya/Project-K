@@ -42,7 +42,7 @@ public class AccessContextResolverTests
         _resolver = new AccessContextResolver(_userManager.Object, _offices.Object, _memberships.Object, unitOfWork.Object);
     }
 
-    private AppUser Account(Guid? kurinKey = null, Guid? activeKurinKey = null, bool isAdmin = false)
+    private AppUser Account(Guid? activeKurinKey = null, bool isAdmin = false)
     {
         var user = new AppUser
         {
@@ -50,7 +50,6 @@ public class AccessContextResolverTests
             Email = "person@example.com",
             FirstName = "Оксана",
             LastName = "Тестова",
-            KurinKey = kurinKey,
             ActiveKurinKey = activeKurinKey
         };
 
@@ -67,8 +66,10 @@ public class AccessContextResolverTests
     [Fact]
     public async Task EveryAccount_ShouldCarryTheBaseline()
     {
-        var user = Account(kurinKey: Guid.NewGuid());
-        HoldsInKurin(user, user.KurinKey!.Value);
+        var kurinKey = Guid.NewGuid();
+        var user = Account();
+        BelongsTo(user, (kurinKey, DateTime.UtcNow.AddYears(-1)));
+        HoldsInKurin(user, kurinKey);
 
         var access = await _resolver.ResolveAsync(user);
 
@@ -80,7 +81,8 @@ public class AccessContextResolverTests
     public async Task AnOfficeInTheKurinTheyAreIn_ShouldBecomeARole()
     {
         var kurinKey = Guid.NewGuid();
-        var user = Account(kurinKey: kurinKey);
+        var user = Account();
+        BelongsTo(user, (kurinKey, DateTime.UtcNow.AddYears(-1)));
         HoldsInKurin(user, kurinKey, new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
 
         var access = await _resolver.ResolveAsync(user);
@@ -95,7 +97,8 @@ public class AccessContextResolverTests
     {
         var ownKurin = Guid.NewGuid();
         var steppedInto = Guid.NewGuid();
-        var user = Account(kurinKey: ownKurin, activeKurinKey: steppedInto, isAdmin: true);
+        var user = Account(activeKurinKey: steppedInto, isAdmin: true);
+        BelongsTo(user, (ownKurin, DateTime.UtcNow.AddYears(-1)));
         HoldsInKurin(user, ownKurin, new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi));
         HoldsInKurin(user, steppedInto);
 
@@ -227,7 +230,7 @@ public class AccessContextResolverTests
     public async Task HavingChosenAKurinThatNoLongerExists_AndBelongingNowhere_ShouldStandNowhere()
     {
         var gone = Guid.NewGuid();
-        var user = Account(kurinKey: gone, activeKurinKey: gone, isAdmin: true);
+        var user = Account(activeKurinKey: gone, isAdmin: true);
         _kurins.Setup(r => r.ExistsAsync(gone, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var access = await _resolver.ResolveAsync(user);

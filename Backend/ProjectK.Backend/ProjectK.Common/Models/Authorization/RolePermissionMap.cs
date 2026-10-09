@@ -7,7 +7,7 @@ namespace ProjectK.Common.Models.Authorization;
 /// change a grant list here — nothing else reasons about role names.
 /// <list type="bullet">
 /// <item><b>Зв'язковий (КВ)</b> — full kurin management incl. kurin settings and office assignment.</item>
-/// <item><b>Виховник (КВ)</b> — runs his гурток: members, progress and the group record.</item>
+/// <item><b>Виховник (КВ)</b> — runs his гурток: members, progress, the group record and its провід.</item>
 /// <item><b>Курінний</b> — reads the kurin, plans, raises agenda items and assigns the курінний провід
 /// below himself. He holds nothing on members: probe sign-off, awards, warnings and profile
 /// verification all sit behind <c>Member:Update</c>, which he does not get.</item>
@@ -124,6 +124,18 @@ public static class RolePermissionMap
                 foreach (var office in LeadershipOffices.All())
                 {
                     assignable.Add(office);
+                }
+
+                continue;
+            }
+
+            // The впорядник is who appoints a гурток's провід, its Гуртковий included. Which гуртки
+            // is the resource check's business: Leadership:Update reaches only those he leads.
+            if (role == SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk))
+            {
+                foreach (var office in LeadershipOffices.Grouping[LeadershipType.Group])
+                {
+                    assignable.Add((LeadershipType.Group, office));
                 }
 
                 continue;
@@ -331,6 +343,9 @@ public static class RolePermissionMap
             grants.Add(new Permission(resource, ResourceAction.Create, AccessScope.OwnGroups));
             grants.Add(new Permission(resource, ResourceAction.Update, AccessScope.OwnGroups));
         }
+
+        // He seats his гурток's провід.
+        grants.Add(new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.OwnGroups));
 
         // He moderates everything aimed at his гурток, agenda included — not just what he authored.
         grants.Add(new Permission(ResourceType.AgendaItem, ResourceAction.Update, AccessScope.OwnGroups));
