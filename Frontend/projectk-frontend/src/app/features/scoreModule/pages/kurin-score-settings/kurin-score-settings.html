@@ -91,6 +91,10 @@
               @if (row.current; as rule) {
                 <span class="lil-points" [class.lil-points--plus]="rule.points > 0" [class.lil-points--minus]="rule.points < 0" [class.lil-points--zero]="rule.points === 0">{{ points(rule.points) }}</span>
                 <span class="settings-row__since">з {{ rule.fromDate | date:'dd.MM.yyyy' }}</span>
+              } @else if (row.upcoming; as rule) {
+                <span class="lil-points" [class.lil-points--plus]="rule.points > 0" [class.lil-points--minus]="rule.points < 0" [class.lil-points--zero]="rule.points === 0">{{ points(rule.points) }}</span>
+                <span class="settings-row__since">з {{ rule.fromDate | date:'dd.MM.yyyy' }}</span>
+                <p-tag value="ще не діє" severity="secondary" />
               } @else {
                 <p-tag value="вимкнено" severity="secondary" />
               }
