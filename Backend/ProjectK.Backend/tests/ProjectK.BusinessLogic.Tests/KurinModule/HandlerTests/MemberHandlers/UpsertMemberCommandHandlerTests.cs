@@ -151,6 +151,47 @@ public class UpsertMemberHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenTheAddressChangedUnderAnAccount_ShouldMoveTheAccountAfterTheProfile()
+    {
+        GivenAccountLink(null);
+        var member = GivenWrittenMember(isCreated: false, userKey: Guid.NewGuid());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                ResultType.Success,
+                new MemberProfileWriteResult(member.MemberKey, false, false, null, AccountEmailToFollow: true)));
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<MoveMemberAccountEmailCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, member.UserKey!.Value));
+
+        var result = await _handler.Handle(
+            new UpsertMemberCommand { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), Email = "fixed@example.com" },
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _mediatorMock.Verify(
+            m => m.Send(
+                It.Is<MoveMemberAccountEmailCommand>(c => c.MemberKey == member.MemberKey),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheAddressDidNotChange_ShouldLeaveTheAccountAlone()
+    {
+        GivenAccountLink(null);
+        GivenWrittenMember(isCreated: false, userKey: Guid.NewGuid());
+
+        await _handler.Handle(
+            new UpsertMemberCommand { KurinKey = Guid.NewGuid(), FirstName = "Ivan" },
+            CancellationToken.None);
+
+        _mediatorMock.Verify(
+            m => m.Send(It.IsAny<MoveMemberAccountEmailCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_WithAccountRequested_WhenTheAddressIsTaken_ShouldConflictBeforeWritingAnything()
     {
         GivenAccountLink(null);

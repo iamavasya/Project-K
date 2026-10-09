@@ -8,6 +8,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -33,9 +34,11 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
     private readonly IResourceScopeReader _scopeReader;
     private readonly IMembershipRepository _memberships;
     private readonly IMentorAssignmentRepository _mentorAssignments;
+    private readonly IAccountProvisioningService _accounts;
 
-    public GetMemberByKeyQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IUnitOfWork kurinData)
+    public GetMemberByKeyQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IUnitOfWork kurinData, IAccountProvisioningService accounts)
     {
+        _accounts = accounts;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserContext = currentUserContext;
@@ -44,7 +47,8 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         _mentorAssignments = kurinData.MentorAssignments;
     }
 
-    private async Task ScrubRestrictedDataAsync(
+    /// <summary>Clears what the viewer may not see, and answers whether they may see the private details.</summary>
+    private async Task<bool> ScrubRestrictedDataAsync(
         MemberResponse response,
         MemberEntity entity,
         Guid? theirGroupKey,
@@ -73,6 +77,8 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             response.Address = string.Empty;
             response.School = string.Empty;
         }
+
+        return canViewPrivate;
     }
 
     public async Task<ServiceResult<MemberResponse>> Handle(GetMemberByKeyQuery request, CancellationToken cancellationToken)
@@ -99,7 +105,12 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             memberResponse.MentoredGroupNames = [.. memberResponse.MentoredGroups.Select(g => g.Name)];
         }
 
-        await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);
+        var canViewPrivate = await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);
+
+        if (canViewPrivate && member.UserKey.HasValue)
+        {
+            memberResponse.AccountStatus = (await _accounts.FindAsync(member.UserKey.Value, cancellationToken))?.Status;
+        }
 
         return new ServiceResult<MemberResponse>(ResultType.Success, memberResponse);
     }

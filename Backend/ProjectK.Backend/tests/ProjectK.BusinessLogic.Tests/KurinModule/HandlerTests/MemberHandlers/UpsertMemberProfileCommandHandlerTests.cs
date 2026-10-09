@@ -6,13 +6,16 @@ using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Xunit;
 
@@ -27,6 +30,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IMembershipRepository> _membershipsMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
+    private readonly Mock<IAccountProvisioningService> _accountsMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
 
     public UpsertMemberProfileCommandHandlerTests()
@@ -59,8 +63,13 @@ public class UpsertMemberProfileCommandHandlerTests
             _kurinDataMock.Object,
             mapperConfig.CreateMapper(),
             _currentUserContextMock.Object,
-            _eventsMock.Object);
+            _eventsMock.Object,
+            _accountsMock.Object);
     }
+
+    private void AccountIs(Guid userKey, OnboardingStatus status) =>
+        _accountsMock.Setup(a => a.FindAsync(userKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountSnapshot(userKey, "old@example.com", status));
 
     private static Group MakeGroup(Guid? kurinKey = null)
     {
@@ -291,16 +300,61 @@ public class UpsertMemberProfileCommandHandlerTests
 
         _currentUserContextMock.Setup(x => x.IsInRole("KV.Vykhovnyk")).Returns(true);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
+        AccountIs(existing.UserKey.Value, OnboardingStatus.Active);
         ExistingMemberIs(existing, existing.MemberKey);
         GroupIs(group);
 
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
+        result.Data!.AccountEmailToFollow.Should().BeFalse();
         existing.FirstName.Should().Be("NewName");
         existing.Email.Should().Be("old@example.com");
         existing.PhoneNumber.Should().Be("222");
         _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_Update_PendingAccount_ByLeadership_ShouldCorrectEmailAndAskTheAccountToFollow()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        var cmd = ProfileCommandFor(existing, group, email: "fixed@example.com");
+
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
+        AccountIs(existing.UserKey.Value, OnboardingStatus.PendingActivation);
+        ExistingMemberIs(existing, existing.MemberKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.AccountEmailToFollow.Should().BeTrue();
+        existing.Email.Should().Be("fixed@example.com");
+    }
+
+    [Fact]
+    public async Task Handle_Update_PendingAccount_WhenAddressIsTaken_ShouldRefuseAndWriteNothing()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        var cmd = ProfileCommandFor(existing, group, email: "someone.else@example.com");
+
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
+        AccountIs(existing.UserKey.Value, OnboardingStatus.PendingActivation);
+        _accountsMock.Setup(a => a.CheckAvailabilityAsync("someone.else@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AccountAvailability.EmailTaken);
+        ExistingMemberIs(existing, existing.MemberKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("EmailTaken");
+        existing.Email.Should().Be("old@example.com");
+        _memberRepoMock.Verify(r => r.Update(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -313,12 +367,14 @@ public class UpsertMemberProfileCommandHandlerTests
 
         _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(true);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
+        AccountIs(existing.UserKey.Value, OnboardingStatus.Active);
         ExistingMemberIs(existing, existing.MemberKey);
         GroupIs(group);
 
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
+        result.Data!.AccountEmailToFollow.Should().BeTrue();
         existing.Email.Should().Be("admin.changed@example.com");
         existing.PhoneNumber.Should().Be("222");
     }

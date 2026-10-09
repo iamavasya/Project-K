@@ -25,4 +25,33 @@ public interface IAccountProvisioningService
     Task<ServiceResult<AccountProvisioningResult>> ProvisionAsync(
         AccountProvisioningRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The account as it stands now, or <c>null</c> when there is none under this key.</summary>
+    Task<AccountSnapshot?> FindAsync(
+        Guid userKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Issues a fresh invitation for an account nobody has claimed yet, first moving the account to
+    /// <paramref name="email"/> when it was opened for another address. Every invitation issued before
+    /// is revoked, so a letter that went to a mistyped address stops working. Refuses with
+    /// <c>Conflict</c> an account that is already active, or an address someone else holds.
+    /// <para>
+    /// A new address is persisted immediately; the invitation is only added to the unit of work.
+    /// </para>
+    /// </summary>
+    Task<ServiceResult<AccountProvisioningResult>> ReissueInvitationAsync(
+        Guid userKey,
+        string email,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Moves an account that is already in use to another address and ends every session it holds.
+    /// This is an admin correcting a record, not the owner's own change, so no confirmation letter
+    /// is involved. Persisted immediately.
+    /// </summary>
+    Task<ServiceResult<Guid>> ChangeEmailAsync(
+        Guid userKey,
+        string email,
+        CancellationToken cancellationToken = default);
 }

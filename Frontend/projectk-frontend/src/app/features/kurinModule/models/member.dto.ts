@@ -3,6 +3,7 @@ import { LeadershipHistoryDto } from "./requests/leadership/leadership.dto";
 import { MemberWarningDto } from "./member-warning.dto";
 import { MemberAwardDto } from "./member-award.dto";
 import { MemberProfileVerificationStatus } from "./enums/member-profile-verification-status.enum";
+import { AccountStatus } from "./enums/account-status.enum";
 
 export interface MemberDto {
     memberKey: string;
@@ -13,6 +14,8 @@ export interface MemberDto {
     groupName?: string | null;
     kurinKey: string;
     userKey?: string | null;
+    /** Чи прийнято запрошення. Приходить лише з картки однієї людини і лише тому, хто бачить її приватні дані. */
+    accountStatus?: AccountStatus | null;
     userRole?: string | null;
     /**
      * Чи людина в кадрі виховників цього куреня. Заповнює лише читання списку — картка про одну

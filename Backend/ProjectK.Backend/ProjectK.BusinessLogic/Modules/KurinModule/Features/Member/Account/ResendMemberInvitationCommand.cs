@@ -1,0 +1,71 @@
+using MediatR;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
+
+/// <summary>
+/// Sends a member whose account nobody has claimed yet a fresh invitation, to the address on their
+/// record. Every invitation sent before stops working, so a letter that went astray cannot be used
+/// after its replacement. Answers with the account's key.
+/// </summary>
+public sealed record ResendMemberInvitationCommand(Guid MemberKey) : IRequest<ServiceResult<Guid>>;
+
+public class ResendMemberInvitationCommandHandler
+    : IRequestHandler<ResendMemberInvitationCommand, ServiceResult<Guid>>
+{
+
+    private readonly IMemberUnitOfWork _unitOfWork;
+    private readonly IAccountProvisioningService _accounts;
+    private readonly IEmailService _emailService;
+
+    public ResendMemberInvitationCommandHandler(
+        IMemberUnitOfWork unitOfWork,
+        IAccountProvisioningService accounts,
+        IEmailService emailService)
+    {
+        _unitOfWork = unitOfWork;
+        _accounts = accounts;
+        _emailService = emailService;
+    }
+
+    public async Task<ServiceResult<Guid>> Handle(
+        ResendMemberInvitationCommand request,
+        CancellationToken cancellationToken)
+    {
+        var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
+        if (member is null)
+        {
+            return new ServiceResult<Guid>(ResultType.NotFound);
+        }
+
+        if (!member.UserKey.HasValue)
+        {
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, "NoAccount", "This member has no account to invite to.");
+        }
+
+        var reissued = await _accounts.ReissueInvitationAsync(member.UserKey.Value, member.Email, cancellationToken);
+        if (reissued.Type != ResultType.Success || reissued.Data is null)
+        {
+            return ServiceResult<Guid>.Failure(
+                reissued.Type,
+                reissued.ErrorCode ?? "InvitationNotIssued",
+                reissued.ErrorMessage ?? "Could not issue a new invitation.");
+        }
+
+        // The letter goes before the save: a send that throws leaves the invitations as they were,
+        // and the one the person already holds keeps working.
+        await _emailService.SendInvitationEmailAsync(member.Email, reissued.Data.InvitationToken, cancellationToken);
+
+        var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (changes <= 0)
+        {
+            return new ServiceResult<Guid>(ResultType.InternalServerError);
+        }
+
+        return new ServiceResult<Guid>(ResultType.Success, reissued.Data.UserKey);
+    }
+}

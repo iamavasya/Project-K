@@ -100,5 +100,6 @@ public class PublicIdIsOnlyForItsOwnerTests
         _mapper.Object,
         _currentUser.Object,
         new Mock<IResourceScopeReader>().Object,
-        _kurinData.Object);
+        _kurinData.Object,
+        new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
 }

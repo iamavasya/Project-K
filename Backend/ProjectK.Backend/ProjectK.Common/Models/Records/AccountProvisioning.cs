@@ -1,3 +1,5 @@
+using ProjectK.Common.Entities.AuthModule;
+
 namespace ProjectK.Common.Models.Records;
 
 /// <summary>
@@ -41,3 +43,9 @@ public sealed record AccountProvisioningRequest(
 
 /// <summary>The account that was created and the invitation that lets its owner claim it.</summary>
 public sealed record AccountProvisioningResult(Guid UserKey, Guid InvitationKey, string InvitationToken);
+
+/// <summary>
+/// The account behind a member, as far as the member's own screens need it: the address it signs in
+/// with and whether anyone has claimed it yet.
+/// </summary>
+public sealed record AccountSnapshot(Guid UserKey, string Email, OnboardingStatus Status);

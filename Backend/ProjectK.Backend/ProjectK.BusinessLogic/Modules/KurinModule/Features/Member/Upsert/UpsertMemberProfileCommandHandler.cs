@@ -2,7 +2,9 @@ using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -26,14 +28,17 @@ public class UpsertMemberProfileCommandHandler
     private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
+    private readonly IAccountProvisioningService _accounts;
 
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IUnitOfWork kurinData,
         IMapper mapper,
         ICurrentUserContext currentUserContext,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IAccountProvisioningService accounts)
     {
+        _accounts = accounts;
         _unitOfWork = unitOfWork;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
@@ -85,6 +90,7 @@ public class UpsertMemberProfileCommandHandler
 
         bool isCreated;
         string? previousPhotoBlobName = null;
+        var accountEmailToFollow = false;
 
         if (existing == null)
         {
@@ -130,7 +136,27 @@ public class UpsertMemberProfileCommandHandler
                         "Cannot change email or phone number for a member linked to an active user account. The user must update this via their account settings.");
                 }
 
-                preserveLinkedUserEmail = emailChanged && !IsAdmin();
+                if (emailChanged)
+                {
+                    // The member and the account sign in under one address, and activation finds the
+                    // member by it. An account nobody has claimed yet follows the record — its letter
+                    // went to the old address, which is usually the very mistake being fixed. One in
+                    // use belongs to its owner, and only an admin may move it for them.
+                    var account = await _accounts.FindAsync(existing.UserKey.Value, cancellationToken);
+                    accountEmailToFollow = account is not null
+                        && (account.Status == OnboardingStatus.PendingActivation || IsAdmin());
+
+                    if (accountEmailToFollow
+                        && await _accounts.CheckAvailabilityAsync(request.Email, cancellationToken) != AccountAvailability.Available)
+                    {
+                        return ServiceResult<MemberProfileWriteResult>.Failure(
+                            ResultType.Conflict,
+                            "EmailTaken",
+                            "This email is already used by another account or registration.");
+                    }
+                }
+
+                preserveLinkedUserEmail = emailChanged && !accountEmailToFollow && !IsAdmin();
                 linkedUserEmail = preserveLinkedUserEmail ? existing.Email : null;
             }
 
@@ -141,7 +167,6 @@ public class UpsertMemberProfileCommandHandler
             {
                 existing.Email = linkedUserEmail!;
             }
-
 
             if (shouldMarkProfileStale)
             {
@@ -176,7 +201,8 @@ public class UpsertMemberProfileCommandHandler
                 existing.MemberKey,
                 isCreated,
                 wasProfileVerifiedCurrent,
-                previousPhotoBlobName));
+                previousPhotoBlobName,
+                accountEmailToFollow));
     }
 
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();

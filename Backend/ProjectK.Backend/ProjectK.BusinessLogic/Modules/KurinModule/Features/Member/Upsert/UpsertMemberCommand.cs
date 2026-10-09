@@ -116,6 +116,18 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
             }
         }
 
+        if (profile.Data.AccountEmailToFollow)
+        {
+            var moved = await _mediator.Send(
+                new MoveMemberAccountEmailCommand(profile.Data.MemberKey),
+                cancellationToken);
+
+            if (moved.Type != ResultType.Success)
+            {
+                return Propagate(moved);
+            }
+        }
+
         if (provisionAccount)
         {
             var account = await _mediator.Send(

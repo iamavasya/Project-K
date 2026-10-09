@@ -9,10 +9,12 @@ public sealed record MemberAccountLink(Guid MemberKey, Guid? UserKey);
 /// <summary>
 /// What the profile write leaves behind for the steps that run after it: the member it wrote, whether
 /// it was newly created, and the photo it replaced — the callers of those steps have no other way to
-/// know, because each runs as its own use case.
+/// know, because each runs as its own use case. <paramref name="AccountEmailToFollow"/> says the
+/// address changed on a member whose account has to move with it.
 /// </summary>
 public sealed record MemberProfileWriteResult(
     Guid MemberKey,
     bool IsCreated,
     bool WasProfileVerifiedCurrent,
-    string? PreviousPhotoBlobName);
+    string? PreviousPhotoBlobName,
+    bool AccountEmailToFollow = false);

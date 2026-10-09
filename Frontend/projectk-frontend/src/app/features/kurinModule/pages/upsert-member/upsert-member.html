@@ -90,6 +90,25 @@
                                 <p-message severity="info" styleClass="w-full"
                                     text="На цю адресу прийде лист із посиланням для активації акаунта. Попросіть перевірити теку «Спам», якщо лист не видно." />
                             }
+                            @if (isPendingAccount) {
+                                <div class="account-pending">
+                                    @if (emailChangedSinceSave) {
+                                        <p-message severity="info" styleClass="w-full"
+                                            text="Після збереження лист із новим посиланням піде на цю адресу, а посилання з попереднього листа перестане діяти." />
+                                    } @else {
+                                        <p-message severity="warn" styleClass="w-full"
+                                            text="Акаунт ще не активовано. Якщо в адресі помилка — виправте її й збережіть, лист піде заново." />
+                                        <p-button
+                                            label="Надіслати лист ще раз"
+                                            icon="pi pi-send"
+                                            severity="secondary"
+                                            [outlined]="true"
+                                            size="small"
+                                            [loading]="invitationSending"
+                                            (onClick)="resendInvitation()" />
+                                    }
+                                </div>
+                            }
                         }
                         <p-floatlabel variant="on">
                             <p-inputMask

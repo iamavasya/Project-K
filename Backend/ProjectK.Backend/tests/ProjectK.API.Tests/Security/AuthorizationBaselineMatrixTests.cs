@@ -273,6 +273,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), "RequireUser");
         yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<MemberController>(nameof(MemberController.ResendInvitation), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.VerifyProfile), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), "RequireUser");
