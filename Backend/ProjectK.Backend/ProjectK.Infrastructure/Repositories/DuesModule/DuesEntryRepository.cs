@@ -25,6 +25,14 @@ public class DuesEntryRepository : BaseEntityRepository<DuesEntry>, IDuesEntryRe
             .ThenBy(e => e.CreatedDate)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<DuesEntry>> GetForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+        => membershipKeys.Count == 0
+            ? []
+            : await Set
+                .Include(e => e.Events)
+                .Where(e => e.MembershipKey != null && membershipKeys.Contains(e.MembershipKey.Value) && e.DeletedAtUtc == null)
+                .ToListAsync(cancellationToken);
+
     /// <summary>Money is never removed: deleting is a mark, made by the handler.</summary>
     public override void Delete(DuesEntry entity, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException("Dues entries are marked deleted, never removed.");

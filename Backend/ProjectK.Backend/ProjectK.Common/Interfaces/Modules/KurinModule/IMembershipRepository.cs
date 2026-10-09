@@ -108,11 +108,12 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Drops every membership these people held, current or past. Called when the people
-    /// themselves are gone: nothing in the database ties the two tables together, so nobody else
-    /// would clear these rows.
+    /// Drops every membership these people held, current or past, and answers with the keys of
+    /// the memberships dropped. Called when the people themselves are gone: nothing in the database
+    /// ties the two tables together, so nobody else would clear these rows — and whoever keys
+    /// anything by membership needs to hear which ones went.
     /// </summary>
-    Task RemoveForMembersAsync(
+    Task<IReadOnlyCollection<Guid>> RemoveForMembersAsync(
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default);
 

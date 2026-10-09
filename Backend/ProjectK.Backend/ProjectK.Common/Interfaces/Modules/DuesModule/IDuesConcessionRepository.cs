@@ -6,4 +6,7 @@ public interface IDuesConcessionRepository : IBaseEntityRepository<DuesConcessio
 {
     /// <summary>Every пільга switch in the kurin, oldest first.</summary>
     Task<IReadOnlyList<DuesConcession>> GetForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Drops every пільга switch of these memberships — the people behind them are gone.</summary>
+    Task DeleteForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
 }

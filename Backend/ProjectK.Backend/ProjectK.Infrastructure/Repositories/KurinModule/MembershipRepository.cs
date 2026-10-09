@@ -221,19 +221,20 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         here.UserKey = userKey;
     }
 
-    public async Task RemoveForMembersAsync(
+    public async Task<IReadOnlyCollection<Guid>> RemoveForMembersAsync(
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default)
     {
         if (memberKeys.Count == 0)
         {
-            return;
+            return [];
         }
 
-        Context.Memberships.RemoveRange(
-            await Context.Memberships
-                .Where(m => memberKeys.Contains(m.MemberKey))
-                .ToListAsync(cancellationToken));
+        var rows = await Context.Memberships
+            .Where(m => memberKeys.Contains(m.MemberKey))
+            .ToListAsync(cancellationToken);
+        Context.Memberships.RemoveRange(rows);
+        return rows.Select(m => m.MembershipKey).ToList();
     }
 
     public async Task RemoveForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)

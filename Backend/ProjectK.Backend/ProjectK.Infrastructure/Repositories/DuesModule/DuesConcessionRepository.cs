@@ -17,4 +17,14 @@ public class DuesConcessionRepository : BaseEntityRepository<DuesConcession>, ID
             .Where(e => e.KurinKey == kurinKey)
             .OrderBy(e => e.FromQuarter).ThenBy(e => e.CreatedDate)
             .ToListAsync(cancellationToken);
+
+    public async Task DeleteForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+    {
+        if (membershipKeys.Count == 0)
+        {
+            return;
+        }
+
+        Set.RemoveRange(await Set.Where(c => membershipKeys.Contains(c.MembershipKey)).ToListAsync(cancellationToken));
+    }
 }
