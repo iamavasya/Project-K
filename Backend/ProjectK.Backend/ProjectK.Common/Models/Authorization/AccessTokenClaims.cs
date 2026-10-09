@@ -17,6 +17,13 @@ public static class AccessTokenClaims
     /// </summary>
     public const string AuthenticationMethods = "amr";
 
+    /// <summary>
+    /// What the bearer handler renames <c>amr</c> to on the way in (its inbound claim map), which is
+    /// not <c>ClaimTypes.AuthenticationMethod</c>. 1.1.2 looked for the latter and refused every
+    /// privileged save on production.
+    /// </summary>
+    public const string AuthenticationMethodsMapped = "http://schemas.microsoft.com/claims/authnmethodsreferences";
+
     public const string Mfa = "mfa";
     public const string Password = "pwd";
 }

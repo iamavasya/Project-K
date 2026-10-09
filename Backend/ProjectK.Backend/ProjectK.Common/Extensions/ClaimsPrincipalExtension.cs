@@ -27,13 +27,15 @@ public static class ClaimsPrincipalExtension
            ?? principal?.FindFirstValue("sub");
 
     /// <summary>
-    /// Whether the token says the account has a second factor. The bearer handler maps <c>amr</c>
-    /// onto <see cref="ClaimTypes.AuthenticationMethod"/> on the way in; a principal built anywhere
-    /// else carries it under its own name, so both spellings count.
+    /// Whether the token says the account has a second factor. The bearer handler renames <c>amr</c>
+    /// to <see cref="AccessTokenClaims.AuthenticationMethodsMapped"/> on the way in; a principal
+    /// built anywhere else carries it under its own name, so every spelling counts.
+    /// The API test PrivilegedMfaGateHttpTests reads a real token through the real handler for this.
     /// </summary>
     public static bool HasSecondFactor(this ClaimsPrincipal? principal)
         => principal is not null
-           && principal.FindAll(ClaimTypes.AuthenticationMethod)
+           && principal.FindAll(AccessTokenClaims.AuthenticationMethodsMapped)
                .Concat(principal.FindAll(AccessTokenClaims.AuthenticationMethods))
+               .Concat(principal.FindAll(ClaimTypes.AuthenticationMethod))
                .Any(claim => claim.Value == AccessTokenClaims.Mfa);
 }

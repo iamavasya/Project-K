@@ -39,7 +39,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     public async Task InvokeAsync_ShouldContinue_WhenTheSecondFactorArrivesUnderTheMappedClaimType()
     {
         var context = CreateContext("/api/user/users", "Admin", secondFactor: null);
-        context.User.AddIdentity(new ClaimsIdentity([new Claim(ClaimTypes.AuthenticationMethod, AccessTokenClaims.Mfa)]));
+        context.User.AddIdentity(new ClaimsIdentity([new Claim(AccessTokenClaims.AuthenticationMethodsMapped, AccessTokenClaims.Mfa)]));
 
         var nextCalled = await Invoke(context, required: true);
 
