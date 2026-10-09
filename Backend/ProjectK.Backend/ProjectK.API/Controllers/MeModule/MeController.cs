@@ -48,7 +48,7 @@ public class MeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetEventResponse(Guid agendaItemKey, [FromBody] SetMyEventResponseRequest request)
     {
-        var result = await _mediator.Send(new SetMyEventResponseCommand(agendaItemKey, request.Status ?? AgendaRsvpStatus.Going));
+        var result = await _mediator.Send(new SetMyEventResponseCommand(agendaItemKey, request.OccurrenceStartUtc, request.Status ?? AgendaRsvpStatus.Going));
         return result.ToActionResult(this);
     }
 
@@ -107,4 +107,5 @@ public class MeController : ControllerBase
     }
 }
 
-public sealed record SetMyEventResponseRequest(AgendaRsvpStatus? Status);
+/// <summary>Body for a dashboard RSVP; <c>OccurrenceStartUtc</c> names the occurrence of a series, null for a one-off event.</summary>
+public sealed record SetMyEventResponseRequest(AgendaRsvpStatus? Status, DateTime? OccurrenceStartUtc = null);

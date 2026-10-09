@@ -9,10 +9,11 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
 
 /// <summary>
-/// The person's answer to an event of any of their kurins, from the dashboard. Refused on an event
-/// they could not see from that kurin's calendar — the one visibility rule for both.
+/// The person's answer to one occurrence of an event of any of their kurins, from the dashboard.
+/// Refused on an event they could not see from that kurin's calendar — the one visibility rule for
+/// both. <paramref name="OccurrenceStartUtc"/> is null for a one-off event.
 /// </summary>
-public sealed record SetMyEventResponseCommand(Guid AgendaItemKey, AgendaRsvpStatus Status) : IRequest<ServiceResult<object>>;
+public sealed record SetMyEventResponseCommand(Guid AgendaItemKey, DateTime? OccurrenceStartUtc, AgendaRsvpStatus Status) : IRequest<ServiceResult<object>>;
 
 public sealed class SetMyEventResponseCommandValidator : AbstractValidator<SetMyEventResponseCommand>
 {
@@ -50,7 +51,12 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
             return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot respond to this event.");
         }
 
-        await AgendaRsvpWriter.UpsertAsync(_unitOfWork, item, context.Viewer.ViewerUserKey!.Value, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
+        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, out var occurrenceKey))
+        {
+            return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
+        }
+
+        await AgendaRsvpWriter.UpsertAsync(_unitOfWork, item, context.Viewer.ViewerUserKey!.Value, occurrenceKey, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return new ServiceResult<object>(ResultType.Success);
     }

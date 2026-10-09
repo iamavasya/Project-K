@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
@@ -60,7 +61,8 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             return ScoreAccess.Forbidden<AttendanceSheetResponse>();
         }
 
-        var responses = (await _unitOfWork.AgendaResponses.GetForItemAsync(item.AgendaItemKey, cancellationToken))
+        // The answers of this very day: a series' RSVPs are per occurrence, a one-off's sit under null.
+        var responses = (await _unitOfWork.AgendaResponses.GetForItemAsync(item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc), cancellationToken))
             .ToDictionary(r => r.UserKey, r => r.Status);
         var marks = book.Attendances
             .Where(a => a.AgendaItemKey == item.AgendaItemKey && a.OccurrenceStartUtc == occurrence.StartUtc)

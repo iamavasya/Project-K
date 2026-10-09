@@ -37,7 +37,7 @@ public class SetAgendaResponseHandlerTests
         _currentUser.Setup(c => c.UserId).Returns(_userKey);
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
-        _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AgendaResponse>());
         _handler = new SetAgendaResponseCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
     }
@@ -64,7 +64,7 @@ public class SetAgendaResponseHandlerTests
         item.Kind = AgendaItemKind.Task;
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.BadRequest);
     }
@@ -75,7 +75,7 @@ public class SetAgendaResponseHandlerTests
         var item = Event(kurin: Guid.NewGuid()); // belongs to a different kurin than the caller's claim
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
 
-        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         _responses.Verify(r => r.Create(It.IsAny<AgendaResponse>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -89,7 +89,7 @@ public class SetAgendaResponseHandlerTests
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupVisible(_kurinKey, visible: false);
 
-        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
     }
@@ -100,10 +100,10 @@ public class SetAgendaResponseHandlerTests
         var item = Event();
         _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
         SetupVisible(_kurinKey, visible: true);
-        _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, It.IsAny<CancellationToken>()))
+        _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AgendaResponse?)null);
 
-        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Success);
         _responses.Verify(r => r.Create(It.Is<AgendaResponse>(x => x.UserKey == _userKey && x.Status == AgendaRsvpStatus.Going), It.IsAny<CancellationToken>()), Times.Once);
@@ -123,14 +123,69 @@ public class SetAgendaResponseHandlerTests
             Status = AgendaRsvpStatus.Maybe,
             RespondedAtUtc = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc)
         };
-        _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, It.IsAny<CancellationToken>()))
+        _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
-        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, AgendaRsvpStatus.Going), default);
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
 
         result.Type.Should().Be(ResultType.Success);
         existing.Status.Should().Be(AgendaRsvpStatus.Going);
         existing.RespondedAtUtc.Should().BeAfter(new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc));
         _responses.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private AgendaItem WeeklyEvent()
+    {
+        var item = Event();
+        item.StartUtc = new DateTime(2026, 10, 5, 16, 0, 0, DateTimeKind.Unspecified); // a Monday
+        item.RecurrenceFrequency = RecurrenceFrequency.Weekly;
+        item.RecurrenceByWeekday = 1 << (int)DayOfWeek.Monday;
+        return item;
+    }
+
+    [Fact]
+    public async Task Handle_OnASeriesOccurrence_WritesThatOccurrenceOnly()
+    {
+        var item = WeeklyEvent();
+        var secondMonday = new DateTime(2026, 10, 12, 16, 0, 0, DateTimeKind.Utc);
+        _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetupVisible(_kurinKey, visible: true);
+        _responses.Setup(r => r.GetForItemAndUserAsync(item.AgendaItemKey, _userKey, secondMonday, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AgendaResponse?)null);
+
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, secondMonday, AgendaRsvpStatus.Going), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.OccurrenceStartUtc.Should().Be(secondMonday);
+        _responses.Verify(r => r.Create(It.Is<AgendaResponse>(x => x.OccurrenceStartUtc == secondMonday && x.Status == AgendaRsvpStatus.Going), It.IsAny<CancellationToken>()), Times.Once);
+        _responses.Verify(r => r.GetForItemAsync(item.AgendaItemKey, secondMonday, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_OnASeriesWithoutAnOccurrence_ReturnsBadRequest()
+    {
+        var item = WeeklyEvent();
+        _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetupVisible(_kurinKey, visible: true);
+
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, null, AgendaRsvpStatus.Going), default);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        _responses.Verify(r => r.Create(It.IsAny<AgendaResponse>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_OnADayTheSeriesDoesNotMeet_ReturnsBadRequest()
+    {
+        var item = WeeklyEvent();
+        _items.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetupVisible(_kurinKey, visible: true);
+        var tuesday = new DateTime(2026, 10, 13, 16, 0, 0, DateTimeKind.Utc);
+
+        var result = await _handler.Handle(new SetAgendaResponseCommand(item.AgendaItemKey, tuesday, AgendaRsvpStatus.Going), default);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        _responses.Verify(r => r.Create(It.IsAny<AgendaResponse>(), It.IsAny<CancellationToken>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -19,7 +19,7 @@ import { MyProfileTileComponent } from '../../components/my-profile-tile/my-prof
 import { MyScoreTileComponent } from '../../components/my-score-tile/my-score-tile';
 import { MySkillsTileComponent } from '../../components/my-skills-tile/my-skills-tile';
 import { MyTasksTileComponent, TaskStatusChange } from '../../components/my-tasks-tile/my-tasks-tile';
-import { EventResponseChange, UpcomingEventsTileComponent } from '../../components/upcoming-events-tile/upcoming-events-tile';
+import { EventResponseChange, UpcomingEventsTileComponent, eventRowKey } from '../../components/upcoming-events-tile/upcoming-events-tile';
 import { MyDuesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
@@ -176,16 +176,17 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** The answer lands on the row at once; every occurrence of a series shares it. */
+  /** The answer lands on the clicked row at once; the other occurrences of a series keep their own. */
   respond({ event, status }: EventResponseChange): void {
     if (event.myResponse === status || this.respondingTo()) {
       return;
     }
-    this.respondingTo.set(event.agendaItemKey);
-    this.me.setEventResponse(event.agendaItemKey, status).subscribe({
+    const rowKey = eventRowKey(event);
+    this.respondingTo.set(rowKey);
+    this.me.setEventResponse(event.agendaItemKey, status, event.isRecurring ? event.startUtc : null).subscribe({
       next: () => {
         this.respondingTo.set(null);
-        this.events.set(this.events().map(e => e.agendaItemKey === event.agendaItemKey ? { ...e, myResponse: status } : e));
+        this.events.set(this.events().map(e => eventRowKey(e) === rowKey ? { ...e, myResponse: status } : e));
       },
       error: (error: unknown) => {
         this.respondingTo.set(null);

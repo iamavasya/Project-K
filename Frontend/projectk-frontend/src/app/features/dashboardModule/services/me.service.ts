@@ -18,8 +18,9 @@ export class MeService {
     return this.http.get<MyEventDto[]>(`${this.apiUrl}/events`, { params: new HttpParams().set('days', String(days)) });
   }
 
-  setEventResponse(agendaItemKey: string, status: AgendaRsvpStatus): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/events/${agendaItemKey}/response`, { status });
+  /** The answer to one occurrence; `occurrenceStartUtc` is null for a one-off event. */
+  setEventResponse(agendaItemKey: string, status: AgendaRsvpStatus, occurrenceStartUtc: string | null): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/events/${agendaItemKey}/response`, { status, occurrenceStartUtc });
   }
 
   getTasks(): Observable<MyTaskDto[]> {

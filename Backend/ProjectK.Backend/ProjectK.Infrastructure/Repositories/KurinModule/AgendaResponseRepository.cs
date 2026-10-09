@@ -21,13 +21,30 @@ public class AgendaResponseRepository : BaseEntityRepository<AgendaResponse>, IA
     public override Task<IEnumerable<AgendaResponse>> GetAllAsync(CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Use GetForItemAsync instead.");
 
-    public async Task<IReadOnlyList<AgendaResponse>> GetForItemAsync(Guid agendaItemKey, CancellationToken cancellationToken = default) =>
+    public async Task<IReadOnlyList<AgendaResponse>> GetForItemAsync(Guid agendaItemKey, DateTime? occurrenceStartUtc, CancellationToken cancellationToken = default) =>
         await Context.AgendaResponses
-            .Where(r => r.AgendaItemKey == agendaItemKey)
+            .Where(r => r.AgendaItemKey == agendaItemKey && r.OccurrenceStartUtc == occurrenceStartUtc)
             .OrderBy(r => r.RespondedAtUtc)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-    public async Task<AgendaResponse?> GetForItemAndUserAsync(Guid agendaItemKey, Guid userKey, CancellationToken cancellationToken = default) =>
-        await Context.AgendaResponses.FirstOrDefaultAsync(r => r.AgendaItemKey == agendaItemKey && r.UserKey == userKey, cancellationToken);
+    public async Task<AgendaResponse?> GetForItemAndUserAsync(Guid agendaItemKey, Guid userKey, DateTime? occurrenceStartUtc, CancellationToken cancellationToken = default) =>
+        await Context.AgendaResponses.FirstOrDefaultAsync(
+            r => r.AgendaItemKey == agendaItemKey && r.UserKey == userKey && r.OccurrenceStartUtc == occurrenceStartUtc,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<AgendaResponse>> GetForUserAsync(Guid userKey, IReadOnlyCollection<Guid> agendaItemKeys, DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default)
+    {
+        if (agendaItemKeys.Count == 0)
+        {
+            return Array.Empty<AgendaResponse>();
+        }
+
+        return await Context.AgendaResponses
+            .Where(r => r.UserKey == userKey
+                && agendaItemKeys.Contains(r.AgendaItemKey)
+                && (r.OccurrenceStartUtc == null || (r.OccurrenceStartUtc >= fromUtc && r.OccurrenceStartUtc <= toUtc)))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
 }

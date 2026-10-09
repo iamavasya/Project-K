@@ -14,10 +14,13 @@ public record AgendaRsvpDto
     public bool IsWaitlisted { get; init; }
 }
 
-/// <summary>The full RSVP picture for one event: everyone's answer, the counts, and the caller's own choice.</summary>
+/// <summary>The full RSVP picture for one occurrence of an event: everyone's answer, the counts, and the caller's own choice.</summary>
 public record AgendaResponsesResponse
 {
     public Guid AgendaItemKey { get; init; }
+
+    /// <summary>The occurrence the picture is of; null for a one-off event.</summary>
+    public DateTime? OccurrenceStartUtc { get; init; }
     public int? Capacity { get; init; }
     public bool WaitlistEnabled { get; init; }
     public AgendaRsvpStatus? MyStatus { get; init; }

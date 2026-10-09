@@ -252,7 +252,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpsertCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid, UpsertAgendaCategoryCommand>>(nameof(AgendaController.UpdateCategory), "RequireUser");
         yield return Row<Action<AgendaController, Guid, Guid>>(nameof(AgendaController.DeleteCategory), "RequireUser");
-        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetResponses), "RequireUser");
+        yield return Row<Action<AgendaController, Guid, DateTime?>>(nameof(AgendaController.GetResponses), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaResponseRequest>>(nameof(AgendaController.SetResponse), "RequireUser");
 
         yield return Endpoint<AuthController>(nameof(AuthController.SetKurinScope), "RequireUser");
