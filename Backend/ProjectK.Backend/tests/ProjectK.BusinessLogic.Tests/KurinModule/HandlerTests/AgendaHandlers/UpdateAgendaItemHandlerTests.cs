@@ -35,6 +35,8 @@ public class UpdateAgendaItemHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MemberSummary>());
+        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<MemberSummary>());
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));

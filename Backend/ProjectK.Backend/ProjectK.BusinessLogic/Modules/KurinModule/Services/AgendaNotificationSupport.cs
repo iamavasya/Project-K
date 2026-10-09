@@ -26,8 +26,9 @@ public static class AgendaNotificationRecipients
         Guid actorUserKey,
         CancellationToken cancellationToken)
     {
-        // Summaries, not the member graph: this runs on every agenda write and only three keys are read.
-        var members = await directory.GetByKurinAsync(item.KurinKey, cancellationToken);
+        // This runs on every agenda write: only the people the targets reach are read, and the
+        // whole kurin only when the kurin itself is a target.
+        var members = await AgendaPeople.ReadAsync(directory, item.KurinKey, AgendaPeople.ToNotify(item), cancellationToken);
         var recipients = new HashSet<Guid>();
 
         foreach (var assignment in item.Assignments)

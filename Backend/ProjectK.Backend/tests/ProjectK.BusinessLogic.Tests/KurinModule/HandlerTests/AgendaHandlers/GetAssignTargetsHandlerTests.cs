@@ -46,6 +46,7 @@ public class GetAssignTargetsHandlerTests
         _uow.Setup(u => u.Leaderships).Returns(_leadershipRepo.Object);
         _groupRepo.Setup(r => r.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(groups);
         _memberDirectory.Setup(r => r.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(members);
+        _memberDirectory.Setup(r => r.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(members);
         _leadershipRepo.Setup(r => r.GetLeadershipRefsForKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<LeadershipRef>());
 

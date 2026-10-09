@@ -51,7 +51,7 @@ public sealed class GetAgendaItemsQueryHandler
             cancellationToken,
             includeKurinSchedules: request.IncludeKurinSchedules)).ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, cancellationToken);
+        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, items, cancellationToken);
 

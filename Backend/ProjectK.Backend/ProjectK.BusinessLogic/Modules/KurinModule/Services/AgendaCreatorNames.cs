@@ -19,18 +19,7 @@ public static class AgendaCreatorNames
     {
         var names = new Dictionary<Guid, string>(fromMembers);
 
-        // Authors, and whoever last moved a target or a part — the board names them all.
-        var missing = items
-            .SelectMany(item => item.Assignments
-                .SelectMany(a => a.Progress.Select(p => (Guid?)p.ChangedByUserKey).Append(a.StatusChangedByUserKey))
-                .Where(key => key.HasValue)
-                .Select(key => key!.Value)
-                .Append(item.CreatedByUserKey)
-                .Concat(item.ArchivedByUserKey is { } archivedBy ? [archivedBy] : []))
-            .Where(key => key != Guid.Empty && !names.ContainsKey(key))
-            .Distinct();
-
-        foreach (var key in missing)
+        foreach (var key in AccountsNamedBy(items).Where(key => !names.ContainsKey(key)))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var user = await userManager.FindByIdAsync(key.ToString());
@@ -45,4 +34,16 @@ public static class AgendaCreatorNames
 
         return names;
     }
+
+    /// <summary>Authors, and whoever last moved a target or a part, or archived — the board names them all.</summary>
+    public static IEnumerable<Guid> AccountsNamedBy(IEnumerable<AgendaItem> items) =>
+        items
+            .SelectMany(item => item.Assignments
+                .SelectMany(a => a.Progress.Select(p => (Guid?)p.ChangedByUserKey).Append(a.StatusChangedByUserKey))
+                .Where(key => key.HasValue)
+                .Select(key => key!.Value)
+                .Append(item.CreatedByUserKey)
+                .Concat(item.ArchivedByUserKey is { } archivedBy ? [archivedBy] : []))
+            .Where(key => key != Guid.Empty)
+            .Distinct();
 }

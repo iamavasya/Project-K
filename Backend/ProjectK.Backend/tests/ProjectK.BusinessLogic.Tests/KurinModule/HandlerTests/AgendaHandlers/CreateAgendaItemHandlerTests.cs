@@ -33,6 +33,8 @@ public class CreateAgendaItemHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MemberSummary>());
+        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<MemberSummary>());
         _handler = new CreateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
     }
 

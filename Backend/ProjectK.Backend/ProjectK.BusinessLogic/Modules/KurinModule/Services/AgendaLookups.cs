@@ -5,7 +5,10 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
-/// <summary>Name lookups used to label agenda assignments and creators.</summary>
+/// <summary>
+/// Name lookups used to label agenda assignments and creators. Loaded for the items on the page:
+/// only the people they name are read, not the kurin (<see cref="AgendaPeople"/>).
+/// </summary>
 public sealed record AgendaLookups(
     IReadOnlyDictionary<Guid, string> GroupNames,
     IReadOnlyDictionary<Guid, string> MemberNames,
@@ -19,10 +22,10 @@ public sealed record AgendaLookups(
     public const string KurinLeadershipLabel = "Курінний провід";
     public const string GroupLeadershipLabel = "Гуртковий провід";
 
-    public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, CancellationToken cancellationToken)
+    public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, IEnumerable<AgendaItem> items, CancellationToken cancellationToken)
     {
         var groups = await uow.Groups.GetAllAsync(kurinKey, cancellationToken);
-        var members = await directory.GetByKurinAsync(kurinKey, cancellationToken);
+        var members = await AgendaPeople.ReadAsync(directory, kurinKey, AgendaPeople.ToLabel(items), cancellationToken);
 
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
         var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);

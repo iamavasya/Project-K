@@ -318,6 +318,34 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                       m.ProfilePhotoBlobName))
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, MemberSelection selection, CancellationToken cancellationToken = default)
+    {
+        if (selection.IsEmpty)
+        {
+            return [];
+        }
+
+        var memberKeys = selection.MemberKeys.ToList();
+        var groupKeys = selection.GroupKeys.ToList();
+        var accountKeys = selection.AccountKeys.ToList();
+
+        return await (from ms in ActiveMemberships.Where(ms => ms.KurinKey == kurinKey)
+                      join m in Context.Members on ms.MemberKey equals m.MemberKey
+                      where memberKeys.Contains(m.MemberKey)
+                          || (ms.GroupKey != null && groupKeys.Contains(ms.GroupKey.Value))
+                          || (m.UserKey != null && accountKeys.Contains(m.UserKey.Value))
+                      select new MemberSummary(
+                          m.MemberKey,
+                          m.UserKey,
+                          ms.KurinKey,
+                          ms.GroupKey,
+                          m.FirstName,
+                          m.LastName,
+                          m.Email,
+                          m.ProfilePhotoBlobName))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
         => await SummariesOf(Context.Members).ToListAsync(cancellationToken);
 

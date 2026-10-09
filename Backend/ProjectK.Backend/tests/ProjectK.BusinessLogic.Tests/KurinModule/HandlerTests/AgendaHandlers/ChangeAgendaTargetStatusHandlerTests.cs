@@ -51,6 +51,11 @@ public class ChangeAgendaTargetStatusHandlerTests
             new MemberSummary(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
             new MemberSummary(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
         ]);
+        _members.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberSummary(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
+            new MemberSummary(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
+        ]);
         _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, _hurtkovyiUser, _hurtkovyi, _groupKey, [_groupKey], [], false, true, [_groupKey]));
 

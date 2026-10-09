@@ -22,7 +22,7 @@ public sealed class AgendaRoster
 
     public static readonly AgendaRoster Empty = new(new Dictionary<Guid, Guid?>(), new Dictionary<Guid, IReadOnlyList<Guid>>());
 
-    /// <summary>Reads the kurin's members and the holders of every провід the items aim at.</summary>
+    /// <summary>Reads the people the items stand for and the holders of every провід they aim at.</summary>
     public static async Task<AgendaRoster> LoadAsync(
         IUnitOfWork uow,
         IMemberDirectory directory,
@@ -30,8 +30,9 @@ public sealed class AgendaRoster
         IEnumerable<AgendaItem> items,
         CancellationToken cancellationToken)
     {
-        var members = await directory.GetByKurinAsync(kurinKey, cancellationToken);
-        return await LoadAsync(uow, members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey), items, cancellationToken);
+        var list = items as IReadOnlyCollection<AgendaItem> ?? items.ToList();
+        var members = await AgendaPeople.ReadAsync(directory, kurinKey, AgendaPeople.ToLabel(list), cancellationToken);
+        return await LoadAsync(uow, members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey), list, cancellationToken);
     }
 
     /// <summary>The same, over a kurin's members already read for the page.</summary>

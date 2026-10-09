@@ -33,6 +33,7 @@ public class ChangeAgendaItemStatusHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object, TimeProvider.System);
     }
 
