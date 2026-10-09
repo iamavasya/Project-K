@@ -21,13 +21,17 @@ import { KurinScoreSettingsDto, ScoreAttendanceRateDto, ScoreItemDto, ScoreRuleD
 import { AUTOMATIC_SCORE_SOURCES, SCORE_ALGORITHM_HINTS, SCORE_ALGORITHM_LABELS, SCORE_SOURCE_LABELS, ScoreAlgorithm, ScoreSource } from '../../models/score.enums';
 import { ScoreService } from '../../services/score-service/score.service';
 
-/** One automatic source as the page lists it: the rule in force today, if any. */
+/**
+ * One automatic source as the page lists it: the rule in force today, if any, and otherwise the
+ * next one to come — a rule moved to a future day is planned, not switched off.
+ */
 interface RuleRow {
   source: ScoreSource;
   variant: number;
   label: string;
   hint: string;
   current: ScoreRuleDto | null;
+  upcoming: ScoreRuleDto | null;
 }
 
 const RULE_HINTS: Partial<Record<ScoreSource, string>> = {
@@ -87,7 +91,8 @@ export class KurinScoreSettingsComponent implements OnInit {
           variant,
           label: source === ScoreSource.Warning ? `Пересторога ${['I', 'II', 'III'][variant - 1]}` : SCORE_SOURCE_LABELS[source],
           hint: RULE_HINTS[source] ?? '',
-          current: this.currentRule(d, source, variant)
+          current: this.currentRule(d, source, variant),
+          upcoming: this.upcomingRule(d, source, variant)
         });
       }
     }
@@ -202,10 +207,11 @@ export class KurinScoreSettingsComponent implements OnInit {
 
   openRuleDialog(row: RuleRow): void {
     this.ruleRow.set(row);
-    this.rulePoints.set(row.current?.points ?? 0);
+    this.rulePoints.set((row.current ?? row.upcoming)?.points ?? 0);
     // The day the rule in force started, not today: «today» was what a провід saved by mistake
     // after entering a year of history, and the day then had to be moved back.
-    this.ruleFrom.set(row.current ? parseDateOnlyString(row.current.fromDate) ?? new Date() : new Date());
+    const shown = row.current ?? row.upcoming;
+    this.ruleFrom.set(shown ? parseDateOnlyString(shown.fromDate) ?? new Date() : new Date());
     this.ruleDialogVisible.set(true);
   }
 
@@ -297,6 +303,13 @@ export class KurinScoreSettingsComponent implements OnInit {
     return (d?.rules ?? [])
       .filter(r => r.source === source && r.variant === variant && r.fromDate <= today)
       .sort((a, b) => b.fromDate.localeCompare(a.fromDate))[0] ?? null;
+  }
+
+  private upcomingRule(d: KurinScoreSettingsDto | null, source: ScoreSource, variant: number): ScoreRuleDto | null {
+    const today = toDateOnlyString(new Date())!;
+    return (d?.rules ?? [])
+      .filter(r => r.source === source && r.variant === variant && r.fromDate > today)
+      .sort((a, b) => a.fromDate.localeCompare(b.fromDate))[0] ?? null;
   }
 
   private fail(summary: string, error: unknown): void {

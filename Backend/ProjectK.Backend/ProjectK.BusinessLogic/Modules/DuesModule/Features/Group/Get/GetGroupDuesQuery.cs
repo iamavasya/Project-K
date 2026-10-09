@@ -68,8 +68,10 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var accounts = ledger.Accounts();
         var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
 
+        // A membership the kurin no longer has is a removed person, not someone who left: their rows
+        // were closed on removal, and older leftovers must not show as a nameless line.
         var accountDtos = accounts
-            .Where(a => a.GroupKey == group.GroupKey)
+            .Where(a => a.GroupKey == group.GroupKey && names.Memberships.ContainsKey(a.MembershipKey))
             .Select(a =>
             {
                 names.Memberships.TryGetValue(a.MembershipKey, out var membership);

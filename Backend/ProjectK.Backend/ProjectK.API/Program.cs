@@ -320,6 +320,9 @@ public static class Program
             }
         });
 
+        // The clock a kurin's week repeats by (DST-safe recurrence); Kyiv unless configured.
+        AgendaRecurrence.DefaultZone = AgendaRecurrence.ResolveZone(builder.Configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
+
         var app = builder.Build();
 
         app.UseForwardedHeaders();

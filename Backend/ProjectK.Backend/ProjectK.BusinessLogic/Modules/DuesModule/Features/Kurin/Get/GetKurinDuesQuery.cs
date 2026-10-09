@@ -66,7 +66,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
         var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries);
-        var accounts = ledger.Accounts();
+        // Memberships the kurin no longer has are removed people; see GetGroupDuesQuery.
+        var accounts = ledger.Accounts().Where(a => names.Memberships.ContainsKey(a.MembershipKey)).ToList();
         var kurinBox = ledger.KurinBox(accounts);
         var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
 
