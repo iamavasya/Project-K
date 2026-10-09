@@ -288,6 +288,13 @@ describe('UpsertMemberComponent', () => {
       expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'success' }));
     });
 
+    it('should warn when the account was opened but the letter did not go', () => {
+      create();
+      memberServiceSpy.update.and.returnValue(of({ ...loadedMember, invitationSent: false }));
+      component.submit();
+      expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Лист не надіслано' }));
+    });
+
     it('should allow editing email for linked member when current user is admin', () => {
       permissionServiceSpy.isAdmin.and.returnValue(true);
       memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));

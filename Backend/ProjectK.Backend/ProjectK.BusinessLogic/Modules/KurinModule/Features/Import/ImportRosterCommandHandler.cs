@@ -246,6 +246,8 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         var result = await _mediator.Send(new ProvisionMemberAccountCommand(memberKey), cancellationToken);
         return result.Type switch
         {
+            ResultType.Success or ResultType.Created when result.Data is { Sent: false } =>
+                new Invitation(false, "Акаунт відкрито, але лист не надіслано — надішліть його з картки людини."),
             ResultType.Success or ResultType.Created => new Invitation(true, null),
             ResultType.Conflict => Invitation.NotApplicable,
             _ => new Invitation(false, "Запис створено, але акаунт відкрити не вдалося.")

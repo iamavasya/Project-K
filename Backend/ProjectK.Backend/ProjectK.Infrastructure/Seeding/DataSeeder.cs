@@ -167,10 +167,20 @@ public static class DataSeeder
             .Where(u => u.KurinKey == kurinKey)
             .ToListAsync();
 
-        foreach (var user in usersToDelete.Where(u => !administratorIds.Contains(u.Id)))
+        var deletedUsers = usersToDelete.Where(u => !administratorIds.Contains(u.Id)).ToList();
+        foreach (var user in deletedUsers)
         {
             await userManager.DeleteAsync(user);
         }
+
+        // Their queue entries go too (invitations cascade with them). Left behind, an entry keeps
+        // its address "waiting", and adding someone with it again was refused as a conflict.
+        var deletedEmails = deletedUsers
+            .Where(user => user.Email is not null)
+            .Select(user => user.Email!)
+            .ToList();
+        dbContext.WaitlistEntries.RemoveRange(
+            await dbContext.WaitlistEntries.Where(entry => deletedEmails.Contains(entry.Email)).ToListAsync());
 
         var planningSessionKeys = await dbContext.PlanningSessions
             .Where(s => s.KurinKey == kurinKey)

@@ -441,6 +441,12 @@ export class UpsertMemberComponent implements OnInit {
             summary: 'Лист не надіслано',
             detail: 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.'
           });
+        } else if (error instanceof HttpErrorResponse && error.status === 500) {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Лист не надіслано',
+            detail: 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.'
+          });
         }
       }
     });
@@ -609,6 +615,14 @@ export class UpsertMemberComponent implements OnInit {
 
     saveObs.subscribe({
       next: (savedMember) => {
+        if (savedMember.invitationSent === false) {
+          this.messages.add({
+            severity: 'warn',
+            summary: 'Лист не надіслано',
+            detail: 'Запис збережено, але лист із запрошенням не пішов. Відкрий редагування й натисни «Надіслати лист ще раз».',
+            life: 10000
+          });
+        }
         this.processPendingWarnings(savedMember.memberKey).subscribe({
           next: () => {
             if (this.cameFromMember) {

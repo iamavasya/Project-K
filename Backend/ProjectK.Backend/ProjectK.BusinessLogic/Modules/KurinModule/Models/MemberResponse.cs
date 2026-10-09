@@ -52,6 +52,12 @@ public class MemberResponse
     /// only by the read of one person, and only for whoever may see their private details.
     /// </summary>
     public OnboardingStatus? AccountStatus { get; set; }
+
+    /// <summary>
+    /// Whether the invitation letter this write was due to send went out. Null when the write sent
+    /// none; false means the account stands but the letter has to be sent again.
+    /// </summary>
+    public bool? InvitationSent { get; set; }
     public string? UserRole { get; set; }
     public string FirstName { get; set; }
     public string MiddleName { get; set; }

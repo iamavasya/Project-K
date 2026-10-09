@@ -74,7 +74,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.MentoredGroupNames, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             // The account belongs to another module; the read of one person asks it.
-            .ForMember(dest => dest.AccountStatus, opt => opt.Ignore());
+            .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore());
 
         // Lean list read model -> same response shape as the full card. Level,
         // active leadership and active warnings are already resolved in the
@@ -86,6 +87,7 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
         CreateMap<Member, MemberLookupDto>()

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -10,23 +11,29 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 /// <summary>
 /// Sends a member whose account nobody has claimed yet a fresh invitation, to the address on their
 /// record. Every invitation sent before stops working, so a letter that went astray cannot be used
-/// after its replacement. Answers with the account's key.
+/// after its replacement. Answers with the account's key; a letter that could not be sent answers
+/// <c>InvitationNotSent</c> and changes no invitation.
 /// </summary>
 public sealed record ResendMemberInvitationCommand(Guid MemberKey) : IRequest<ServiceResult<Guid>>;
 
 public class ResendMemberInvitationCommandHandler
     : IRequestHandler<ResendMemberInvitationCommand, ServiceResult<Guid>>
 {
+    /// <summary>The error code of a send that failed, so a caller can tell it from a refusal.</summary>
+    public const string InvitationNotSent = "InvitationNotSent";
 
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IAccountProvisioningService _accounts;
     private readonly IEmailService _emailService;
+    private readonly ILogger<ResendMemberInvitationCommandHandler> _logger;
 
     public ResendMemberInvitationCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IAccountProvisioningService accounts,
-        IEmailService emailService)
+        IEmailService emailService,
+        ILogger<ResendMemberInvitationCommandHandler> logger)
     {
+        _logger = logger;
         _unitOfWork = unitOfWork;
         _accounts = accounts;
         _emailService = emailService;
@@ -58,7 +65,18 @@ public class ResendMemberInvitationCommandHandler
 
         // The letter goes before the save: a send that throws leaves the invitations as they were,
         // and the one the person already holds keeps working.
-        await _emailService.SendInvitationEmailAsync(member.Email, reissued.Data.InvitationToken, cancellationToken);
+        try
+        {
+            await _emailService.SendInvitationEmailAsync(member.Email, reissued.Data.InvitationToken, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "A replacement invitation for a member could not be sent; no invitation was changed.");
+            return ServiceResult<Guid>.Failure(
+                ResultType.InternalServerError,
+                InvitationNotSent,
+                "The invitation letter could not be sent.");
+        }
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)

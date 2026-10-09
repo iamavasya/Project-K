@@ -116,13 +116,20 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
             }
         }
 
+        bool? invitationSent = null;
+
         if (profile.Data.AccountEmailToFollow)
         {
             var moved = await _mediator.Send(
                 new MoveMemberAccountEmailCommand(profile.Data.MemberKey),
                 cancellationToken);
 
-            if (moved.Type != ResultType.Success)
+            // The profile is already written; a letter that did not go is reported, not failed on.
+            if (moved.ErrorCode == ResendMemberInvitationCommandHandler.InvitationNotSent)
+            {
+                invitationSent = false;
+            }
+            else if (moved.Type != ResultType.Success)
             {
                 return Propagate(moved);
             }
@@ -134,10 +141,12 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
                 new ProvisionMemberAccountCommand(profile.Data.MemberKey),
                 cancellationToken);
 
-            if (account.Type != ResultType.Success)
+            if (account.Type != ResultType.Success || account.Data is null)
             {
                 return Propagate(account);
             }
+
+            invitationSent = account.Data.Sent;
         }
 
         var member = await _unitOfWork.Members.GetByKeyAsync(profile.Data.MemberKey, cancellationToken);
@@ -154,6 +163,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         }
 
         var response = _mapper.Map<MemberResponse>(member);
+        response.InvitationSent = invitationSent;
 
         return profile.Data.IsCreated
             ? new ServiceResult<MemberResponse>(

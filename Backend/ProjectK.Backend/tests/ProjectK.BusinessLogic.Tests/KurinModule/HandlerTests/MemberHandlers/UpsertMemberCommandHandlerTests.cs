@@ -130,7 +130,7 @@ public class UpsertMemberHandlerTests
         var member = GivenWrittenMember(isCreated: true);
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
 
         var result = await _handler.Handle(
             new UpsertMemberCommand
@@ -143,11 +143,52 @@ public class UpsertMemberHandlerTests
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
+        result.Data!.InvitationSent.Should().BeTrue();
         _mediatorMock.Verify(
             m => m.Send(
                 It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == member.MemberKey),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WithAccountRequested_WhenTheLetterDidNotGo_ShouldStillAnswerCreatedAndSaySo()
+    {
+        GivenAccountLink(null);
+        GivenWrittenMember(isCreated: true);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), false)));
+
+        var result = await _handler.Handle(
+            new UpsertMemberCommand { KurinKey = Guid.NewGuid(), CreateUserAccount = true, Email = "ivan@example.com" },
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        result.Data!.InvitationSent.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheMovedAccountsLetterDidNotGo_ShouldKeepTheEditAndSaySo()
+    {
+        GivenAccountLink(null);
+        var member = GivenWrittenMember(isCreated: false, userKey: Guid.NewGuid());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
+                ResultType.Success,
+                new MemberProfileWriteResult(member.MemberKey, false, false, null, AccountEmailToFollow: true)));
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<MoveMemberAccountEmailCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceResult<Guid>.Failure(
+                ResultType.InternalServerError, ResendMemberInvitationCommandHandler.InvitationNotSent, "not sent"));
+
+        var result = await _handler.Handle(
+            new UpsertMemberCommand { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), Email = "fixed@example.com" },
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.InvitationSent.Should().BeFalse();
     }
 
     [Fact]

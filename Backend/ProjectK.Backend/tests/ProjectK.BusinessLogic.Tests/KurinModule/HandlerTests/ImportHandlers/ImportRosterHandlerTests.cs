@@ -115,7 +115,7 @@ public class ImportRosterHandlerTests
                 new MemberProfileWriteResult(memberKey, true, false, null)));
         _mediator
             .Setup(m => m.Send(It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == memberKey), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
 
         var report = await _handler.Handle(
             new ImportRosterCommand(
@@ -141,7 +141,7 @@ public class ImportRosterHandlerTests
                 new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
         _mediator
             .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<Guid>(ResultType.InternalServerError));
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.InternalServerError));
 
         var report = await _handler.Handle(
             new ImportRosterCommand(
@@ -377,7 +377,7 @@ public class ImportRosterHandlerTests
                 new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
         _mediator
             .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Success, Guid.NewGuid()));
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
 
         var report = await _handler.Handle(
             new ImportRosterCommand(
