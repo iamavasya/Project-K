@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GroupPanelComponent } from './group-panel';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 import { MemberService } from '../../services/member-service/member.service';
 import { GroupService } from '../../services/group-service/group.service';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
@@ -145,6 +145,29 @@ describe('GroupPanelComponent', () => {
     component.toggleDescription();
 
     expect(component.descriptionExpanded).toBeTrue();
+  });
+
+  // Built on the first answer alone, the menu opened without «Редагувати профіль» for whoever
+  // clicked at once; the page now waits for both rights and offers the menu only then.
+  it('should offer the action menu only once both access answers are in', () => {
+    const create = new Subject<boolean>();
+    const update = new Subject<boolean>();
+    entityServiceSpy.checkEntityAccess.and.callFake((_type: string, _key: string, action?: string) =>
+      action === 'Create' ? create.asObservable() : update.asObservable());
+
+    component.refreshData();
+    expect(component.accessResolved).toBeFalse();
+
+    create.next(true);
+    create.complete();
+    expect(component.accessResolved).toBeFalse();
+    expect(component.canEditGroupProfile).toBeFalse();
+
+    update.next(true);
+    update.complete();
+    expect(component.accessResolved).toBeTrue();
+    expect(component.canCreateMembers).toBeTrue();
+    expect(component.canEditGroupProfile).toBeTrue();
   });
 
   it('groupEditMenuItems should expose permitted actions in one menu', () => {

@@ -33,6 +33,7 @@
                         type="button"
                         severity="secondary"
                         icon="pi pi-pencil"
+                        [disabled]="!accessResolved"
                         (onClick)="groupEditMenu.toggle($event)" />
                 }
             </div>

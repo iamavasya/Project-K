@@ -12,7 +12,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MultiSelectModule } from '@openng/optimus-ui/multiselect';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
@@ -66,6 +66,8 @@ export class GroupPanelComponent implements OnInit {
   mentorSaveInProgress = false;
   canCreateMembers = false;
   canEditGroupProfile = false;
+  // Both rights arrive together; until they do, the action menu is not offered at all.
+  accessResolved = false;
   profileEditMode = false;
   profileSaving = false;
   descriptionExpanded = false;
@@ -468,28 +470,24 @@ export class GroupPanelComponent implements OnInit {
   }
 
   private updateGroupAccess(): void {
+    // Rights from the previous load are not carried over while the new answer is in flight.
+    this.accessResolved = false;
+    this.canCreateMembers = false;
+    this.canEditGroupProfile = false;
     if (!this.groupKey) {
-      this.canCreateMembers = false;
-      this.canEditGroupProfile = false;
       return;
     }
 
-    this.entityService.checkEntityAccess('group', this.groupKey, 'Create').subscribe({
-      next: (canCreate) => {
-        this.canCreateMembers = canCreate;
-      },
-      error: () => {
-        this.canCreateMembers = false;
-      }
-    });
-
-    this.entityService.checkEntityAccess('group', this.groupKey, 'Update').subscribe({
-      next: (canUpdate) => {
-        this.canEditGroupProfile = canUpdate;
-      },
-      error: () => {
-        this.canEditGroupProfile = false;
-      }
+    // One answer for both rights. Taken one at a time, the menu was built on whichever came
+    // first, and whoever clicked at once saw it without «Редагувати профіль» — once in six full
+    // e2e runs, which is exactly often enough to be a flake and never a bug report.
+    forkJoin({
+      canCreate: this.entityService.checkEntityAccess('group', this.groupKey, 'Create').pipe(catchError(() => of(false))),
+      canUpdate: this.entityService.checkEntityAccess('group', this.groupKey, 'Update').pipe(catchError(() => of(false)))
+    }).subscribe(({ canCreate, canUpdate }) => {
+      this.canCreateMembers = canCreate;
+      this.canEditGroupProfile = canUpdate;
+      this.accessResolved = true;
     });
   }
 
