@@ -8,7 +8,9 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Xunit;
 
@@ -23,6 +25,7 @@ public sealed class KurinReportDataServiceTests
     private readonly Mock<IKurinReportSource> _source = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IKurinReportMedia> _media = new();
+    private readonly Mock<IMemberProgressDirectory> _progress = new();
     private readonly KurinReportDataService _service;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -45,6 +48,11 @@ public sealed class KurinReportDataServiceTests
         _media.Setup(m => m.TryDownloadAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((byte[]?)null);
 
+        // Nobody here has taken a проба; the report asks the module and is told so.
+        _progress
+            .Setup(p => p.GetDetailsForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, MemberProgressDetail>());
+
         _service = new KurinReportDataService(
             _source.Object,
             _currentUser.Object,
@@ -52,7 +60,8 @@ public sealed class KurinReportDataServiceTests
             _media.Object,
             Mock.Of<IProbesCatalogService>(),
             Mock.Of<IBadgesCatalogService>(),
-            new ConfigurationBuilder().Build());
+            new ConfigurationBuilder().Build(),
+            _progress.Object);
     }
 
     private Member Person(string lastName, Guid? groupKey = null, PlastLevel? level = null, bool withAccount = false)
@@ -134,9 +143,6 @@ public sealed class KurinReportDataServiceTests
                 _mentorAssignments,
                 _members,
                 new Dictionary<Guid, AppUser>(),
-                new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress>>(),
-                new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress>>(),
-                new Dictionary<Guid, IReadOnlyList<ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress>>(),
                 _memberships.ToDictionary(membership => membership.MemberKey)));
 
         return _service.BuildAsync(_kurinKey, CancellationToken.None);

@@ -64,24 +64,6 @@ public sealed class KurinReportSource : IKurinReportSource
             .ThenBy(member => member.FirstName)
             .ToListAsync(cancellationToken);
 
-        // Progress hangs off the member by key alone, so it is read on its own rather than joined.
-        var memberKeys = members.Select(member => member.MemberKey).ToArray();
-
-        var probeProgress = await _context.ProbeProgresses
-            .AsNoTracking()
-            .Where(progress => memberKeys.Contains(progress.MemberKey))
-            .ToListAsync(cancellationToken);
-
-        var probePointProgress = await _context.ProbePointProgresses
-            .AsNoTracking()
-            .Where(progress => memberKeys.Contains(progress.MemberKey))
-            .ToListAsync(cancellationToken);
-
-        var badgeProgress = await _context.BadgeProgresses
-            .AsNoTracking()
-            .Where(progress => memberKeys.Contains(progress.MemberKey))
-            .ToListAsync(cancellationToken);
-
         var userKeys = members
             .Select(member => member.UserKey)
             .OfType<Guid>()
@@ -105,18 +87,6 @@ public sealed class KurinReportSource : IKurinReportSource
             mentorAssignments,
             members,
             (IReadOnlyDictionary<Guid, AppUser>)usersByKey,
-            GroupByMember(probeProgress, progress => progress.MemberKey),
-            GroupByMember(probePointProgress, progress => progress.MemberKey),
-            GroupByMember(badgeProgress, progress => progress.MemberKey),
             memberships.ToDictionary(membership => membership.MemberKey));
-    }
-
-    private static IReadOnlyDictionary<Guid, IReadOnlyList<T>> GroupByMember<T>(
-        IEnumerable<T> rows,
-        Func<T, Guid> memberKeyOf)
-    {
-        return rows
-            .GroupBy(memberKeyOf)
-            .ToDictionary(group => group.Key, group => (IReadOnlyList<T>)group.ToArray());
     }
 }

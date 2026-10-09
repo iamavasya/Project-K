@@ -1,12 +1,12 @@
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
-
 namespace ProjectK.Common.Interfaces.Modules.KurinModule;
 
 /// <summary>
-/// Everything the kurin report is assembled from, read in one pass.
+/// Everything of the kurin's own the report is assembled from, read in one pass. What people have
+/// earned is not here: that belongs to the probes and вмілості module and is asked of it through
+/// <c>IMemberProgressDirectory</c>.
 /// </summary>
 public sealed record KurinReportSourceData(
     Kurin Kurin,
@@ -14,9 +14,6 @@ public sealed record KurinReportSourceData(
     IReadOnlyList<MentorAssignment> MentorAssignments,
     IReadOnlyList<Member> Members,
     IReadOnlyDictionary<Guid, AppUser> UsersByKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<ProbeProgress>> ProbeProgressByMemberKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<ProbePointProgress>> ProbePointProgressByMemberKey,
-    IReadOnlyDictionary<Guid, IReadOnlyList<BadgeProgress>> BadgeProgressByMemberKey,
     IReadOnlyDictionary<Guid, Membership> MembershipByMemberKey);
 
 /// <summary>

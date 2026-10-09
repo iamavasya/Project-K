@@ -8,6 +8,9 @@ public interface IProbeProgressRepository : IBaseEntityRepository<ProbeProgress>
     Task<ProbeProgress?> GetByMemberAndProbeIdWithAuditAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ProbeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>Every проба of these people, without the audit trail: one query for a whole roster.</summary>
+    Task<IEnumerable<ProbeProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Removes these people's probe progress. No foreign key ties it to the member row, so deleting a
     /// member — or a whole kurin of them — has to ask for this explicitly.
