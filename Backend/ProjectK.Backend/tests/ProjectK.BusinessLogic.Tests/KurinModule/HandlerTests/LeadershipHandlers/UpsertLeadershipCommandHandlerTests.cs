@@ -326,6 +326,46 @@ public class UpsertLeadershipHandlerTests
         Assert.Equal(expected, result.Type);
     }
 
+    [Theory]
+    [InlineData("KV.Vykhovnyk", LeadershipRole.Hurtkoviy, ResultType.Success)]
+    [InlineData("KV.Vykhovnyk", LeadershipRole.Skarbnyk, ResultType.Success)]
+    [InlineData("Group.Hurtkoviy", LeadershipRole.Hurtkoviy, ResultType.Forbidden)]
+    [InlineData("Group.Pysar", LeadershipRole.Hurtkoviy, ResultType.Forbidden)]
+    public async Task Handle_SeatingAGroupProvid_ShouldBeOpenToTheVporyadnyk(
+        string callerRole,
+        LeadershipRole seated,
+        ResultType expected)
+    {
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { callerRole });
+
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Group;
+        existing.GroupKey = Guid.NewGuid();
+
+        var requestDto = BuildRequest("group");
+        requestDto.EntityKey = existing.GroupKey;
+        requestDto.LeadershipHistories = new List<LeadershipHistoryMemberDto>
+        {
+            new()
+            {
+                Role = seated.ToString(),
+                Member = new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Seated", LastName = "Member" }
+            }
+        };
+        var command = new UpsertLeadershipCommand(requestDto, existing.LeadershipKey);
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(expected, result.Type);
+    }
+
     [Fact]
     public async Task Handle_ShouldCloseOldActiveHistoryAndStartNewOne_WhenRoleMemberChanges()
     {
