@@ -1,8 +1,7 @@
-
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Optimization.Scheduling;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Solvers;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 public class CampDateSolver : BaseCampDateProblem
 {

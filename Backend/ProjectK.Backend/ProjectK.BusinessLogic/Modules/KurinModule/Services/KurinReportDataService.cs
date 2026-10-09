@@ -13,7 +13,7 @@ using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Roster;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Reports;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 public sealed class KurinReportDataService
 {

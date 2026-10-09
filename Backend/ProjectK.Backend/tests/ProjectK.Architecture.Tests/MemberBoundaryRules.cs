@@ -50,7 +50,7 @@ public class MemberBoundaryRules
     /// </summary>
     private static readonly string[] ReadsProgressDataDirectly =
     [
-        "ProjectK.BusinessLogic.Modules.KurinModule.Reports.KurinReportDataService"
+        "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinReportDataService"
     ];
 
     [Fact]
