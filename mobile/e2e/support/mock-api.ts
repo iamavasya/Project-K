@@ -141,8 +141,9 @@ export type ExtraApi = (request: { method: string; path: string; query: URLSearc
 /**
  * Headless WebKit on Linux paints backdrop-filter in software, and a blurred toast or sheet over a
  * stacked card modal can hold its frame loop for seconds, so clicks wait for a «stable» element
- * that never comes. iPhone runs therefore drop the blur between screenshots; shot() turns it back
- * on, so the pictures keep the glass. Real Safari composites it on the GPU.
+ * that never comes, and a screenshot can wait just as long. iPhone runs therefore drop the blur
+ * (screenshots lose little: the glass is mostly translucency and borders). Real Safari composites
+ * it on the GPU.
  */
 const NO_BACKDROP_ID = 'e2e-no-backdrop';
 const noBackdrop = (id: string): void => {
@@ -158,17 +159,6 @@ const noBackdrop = (id: string): void => {
   if (document.head) add();
   else document.addEventListener('DOMContentLoaded', add, { once: true });
 };
-
-async function toggleBlur(page: Page, on: boolean): Promise<void> {
-  if (page.context().browser()?.browserType().name() !== 'webkit') return;
-  await page.evaluate(
-    ([id, enabled]) => {
-      const style = document.getElementById(id as string) as HTMLStyleElement | null;
-      if (style) style.disabled = enabled as boolean;
-    },
-    [NO_BACKDROP_ID, on] as const,
-  );
-}
 
 export async function mockApi(context: BrowserContext, extra?: ExtraApi, permissions: string[] = []): Promise<ApiLog> {
   if (context.browser()?.browserType().name() === 'webkit') await context.addInitScript(noBackdrop, NO_BACKDROP_ID);
@@ -228,8 +218,6 @@ export async function signIn(page: Page, account = member, extra?: ExtraApi, per
 
 export async function shot(page: Page, project: string, name: string): Promise<void> {
   await page.waitForTimeout(900); // let Ionic transitions settle (the iOS 27 page motion runs ~0.6s)
-  await toggleBlur(page, true);
   await page.screenshot({ path: `${shots}/${project}-${name}.png`, scale: 'css' });
-  await toggleBlur(page, false);
 }
 
