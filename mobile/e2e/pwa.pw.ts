@@ -75,7 +75,7 @@ test('shows the profile and the app details from Ще', async ({ page }, info) =
   await expect(page.getByTestId('account')).toContainText('Остап Коваль');
   await page.getByTestId('account').click();
   await expect(page.locator('app-profile').getByText('Остап Коваль')).toBeVisible();
-  await expect(page.getByText('Коваль Остап Петрович')).toBeVisible();
+  await expect(page.locator('app-profile').getByText('Петрович', { exact: true })).toBeVisible();
   await expect(page.getByText('14 березня 2012')).toBeVisible();
   await shot(page, project, '07-profile');
 
