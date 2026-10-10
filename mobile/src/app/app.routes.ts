@@ -29,6 +29,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ],
   },
+  // The component sheet (Ionic as it ships next to Лілейка). Open without signing in.
+  { path: 'ui', loadComponent: () => import('./pages/ui-sheet').then((m) => m.UiSheetPage) },
   { path: '', redirectTo: 'tabs/home', pathMatch: 'full' },
   { path: '**', redirectTo: 'tabs/home' },
 ];
