@@ -214,7 +214,8 @@ Project-K/
 ## 14. Що перевірено, а що ні
 
 ✅ Перевірено: Capacitor/Ionic можливості (док), код і структура репо, auth-cookie поведінка, CORS, CI, BRANDBOOK, CONTRIBUTING, форма `api/me`, моделі agenda/notification.
-⚠️ Не перевірено: WKWebView-cookie з `capacitor://localhost`; WSL2+usbipd з iPhone; `10.0.2.2`+cleartext у Capacitor 8; ATS при http; `ion-icon`+Lucide; `?ionic:mode=`; віртуалізація Android-емулятора на Windows; чистота shared DTO від UI-імпортів; `auth.interceptor.ts` прочитано не повністю.
+✅ Перевірено спайками (див. §17): Angular 22 zoneless + Ionic 9 + Capacitor 8 збирається і працює на Android та iOS-симуляторі; `10.0.2.2`+cleartext у Capacitor 8 (live reload і dev-API на емуляторі).
+⚠️ Не перевірено: WKWebView-cookie з `capacitor://localhost`; WSL2+usbipd з iPhone; ATS при http; `ion-icon`+Lucide; `?ionic:mode=`; віртуалізація Android-емулятора на Windows; чистота shared DTO від UI-імпортів; `auth.interceptor.ts` прочитано не повністю.
 
 ## 15. Список для читання наступній сесії
 
@@ -232,3 +233,19 @@ Project-K/
 ## 16. Перший крок наступної сесії
 
 Не починати з коду фіч. Спершу S1 (+S2) у `mobile/`; після них узгодити з користувачем результат і лише тоді Фаза 1. Пристроєві перевірки (iPhone, емулятор) виконує користувач; у середовищі агента доступ до репо лише на читання — зміни віддавати патчем/файлами.
+
+## 17. Результати Фази 0 (2026-10-10)
+
+Каркас у `mobile/`, PR #114 (draft, у `dev` не мерджиться до рішення користувача). Перевірки ганяє `.github/workflows/mobile.yml` на кожен PR, що чіпає `mobile/**`; скріни в артефактах `mobile-screens` і `ios-screens`.
+
+- **S1 — ✅ pass.** Ionic 9 + Angular 22 (zoneless, без zone.js) + Capacitor 8. На емуляторі Android (API 35, GitHub Actions + KVM) `scripts/emulator-smoke.sh` перевіряє: рендер, режим `md`, платформа `android`, лічильник (сигнали), вкладка «Ще», темна тема за системою, live reload з `10.0.2.2:4200` (правка `home.ts` долітає на емулятор) і dev-API `http://10.0.2.2:5205/api`. Cleartext дозволено лише для `10.0.2.2`/`localhost` через `network_security_config.xml`.
+- **S2 — ✅ pass (замінено).** Замість iPhone по Tailscale: iOS-симулятор на macOS-раннері. Нативна збірка Capacitor (SPM, без підпису) встановлюється і запускається (режим Ionic `ios`, платформа Capacitor `ios`, темна тема за системою); Safari на симуляторі відкриває dev-сервер (Головна, Ще) і сам вмикає режим `ios` без `?ionic:mode=`. Перевірка на справжньому iPhone по Tailscale лишається за користувачем.
+- **S3 — ⏸ заблоковано.** Потрібні Apple Developer акаунт, App Store Connect API key і сертифікати в секретах репо. macOS-раннер для симулятора вже працює (~10 хв на прогін).
+- **S4 — ⏸ заблоковано.** Потрібні iPhone і Windows/WSL2 користувача.
+
+Що з'ясувалося по дорозі:
+- Angular CLI 22 вимагає Node ≥22.22.3 або ≥24.15.
+- Sass `@import` застарів, теми підключаються через `@use`.
+- SonarCloud (quality gate) вимагає: `npm ci --ignore-scripts`, без `npx` у workflow, закріплені SHA сторонніх actions, `Package.resolved` для SPM, вузький `FileProvider`, `allowBackup=false`, явний `usesCleartextTraffic=false`.
+
+Наступний крок: користувач дивиться скріни і PR, вирішує по S3/S4, далі Фаза 1.

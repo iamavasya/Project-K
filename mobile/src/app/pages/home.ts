@@ -72,8 +72,10 @@ import { environment } from '../../environments/environment';
           <ion-note slot="end">{{ nativePlatform }}</ion-note>
         </ion-item>
         <ion-item>
-          <ion-label>Платформи Ionic</ion-label>
-          <ion-note slot="end">{{ platforms }}</ion-note>
+          <ion-label class="ion-text-wrap">
+            <h3>Платформи Ionic</h3>
+            <p>{{ platforms }}</p>
+          </ion-label>
         </ion-item>
         <ion-item>
           <ion-label>API</ion-label>

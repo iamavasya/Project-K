@@ -58,6 +58,8 @@ log ""
 log "## Native app (Capacitor, bundled)"
 xcrun simctl install booted "$APP_PATH" && pass "App installed" || fail "App install"
 launch && pass "App launched" || fail "App launch"
+# The first cold start can screenshot a blank WebView; relaunch once warm.
+launch || fail "App relaunch in light mode"
 shot 01-ios-home-light
 xcrun simctl ui booted appearance dark
 launch || fail "App relaunch in dark mode"
