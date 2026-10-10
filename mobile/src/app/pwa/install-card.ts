@@ -4,22 +4,21 @@ import {
   IonCard,
   IonCardContent,
   IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
+    IonCardTitle,
 } from '@ionic/angular';
 import { InstallService } from './install.service';
 
 @Component({
   selector: 'app-install-card',
-  imports: [IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, IonButton],
+  imports: [IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonButton],
   template: `
     @if (install.canPrompt()) {
       <ion-card>
         <ion-card-header>
           <ion-card-title>Встановити Лілейку</ion-card-title>
-          <ion-card-subtitle>Іконка на екрані, відкривається як застосунок</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
+          <p>Іконка на екрані, відкривається як застосунок.</p>
           <ion-button expand="block" (click)="install.prompt()">Встановити</ion-button>
         </ion-card-content>
       </ion-card>
@@ -27,9 +26,9 @@ import { InstallService } from './install.service';
       <ion-card>
         <ion-card-header>
           <ion-card-title>Додай Лілейку на екран</ion-card-title>
-          <ion-card-subtitle>Так вона працюватиме як застосунок і зможе надсилати сповіщення</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
+          <p>Так вона працюватиме як застосунок і зможе надсилати сповіщення.</p>
           <p>Натисни «Поділитися» внизу Safari, потім «На початковий екран».</p>
           <ion-button fill="clear" size="small" (click)="hidden.set(true)">Зрозуміло</ion-button>
         </ion-card-content>

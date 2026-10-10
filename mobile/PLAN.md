@@ -249,3 +249,23 @@ Project-K/
 - SonarCloud (quality gate) вимагає: `npm ci --ignore-scripts`, без `npx` у workflow, закріплені SHA сторонніх actions, `Package.resolved` для SPM, вузький `FileProvider`, `allowBackup=false`, явний `usesCleartextTraffic=false`.
 
 Наступний крок: користувач дивиться скріни і PR, вирішує по S3/S4, далі Фаза 1.
+
+## 18. Поворот на PWA (2026-10-10)
+
+Рішення користувача: поки нативні збірки чекають (S3/S4 потребують комп'ютера), основний шлях —
+максимально «нативна» PWA з того самого `mobile/`. Ionic сам обирає вигляд і в браузері: `ios` на
+iPhone/iPad, `md` (Material) на Android.
+
+Зроблено:
+- маніфест, іконки Лілейки (any, maskable, apple-touch), iOS meta-теги, `theme-color` за системною темою;
+- Angular service worker лише в браузерній прод-збірці (у нативних оболонках вимкнений);
+- картка встановлення: кнопка «Встановити» на Android (`beforeinstallprompt`), підказка
+  «Поділитися → На початковий екран» на iPhone;
+- haptics на вебі через `navigator.vibrate` (Android), на iPhone без вібрації;
+- PWA-смоук у Playwright (`npm run e2e`, job `pwa` у CI): маніфест та іконки, `ios`/`md`, таби,
+  темна тема, запуск з головного екрана, офлайн-перезавантаження (Chromium).
+
+Відкрито:
+- хостинг PWA: окремий піддомен на `rostyslav-mukha.dev` і цей origin у CORS бекенду (рішення користувача);
+- cookie-авторизація веба з PWA на тому ж сайті — висновок з коду, перевірити на Фазі 1;
+- push (APNs через Web Push на iOS 16.4+ лише для встановленої PWA) — Фаза 3.
