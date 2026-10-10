@@ -1,6 +1,9 @@
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
+  IonBadge,
   IonButton,
+  IonButtons,
   IonCard,
   IonCardContent,
   IonCardHeader,
@@ -8,7 +11,11 @@ import {
   IonCardTitle,
   IonContent,
   IonHeader,
+  IonIcon,
+  IonItem,
   IonLabel,
+  IonList,
+  IonNote,
   IonProgressBar,
   IonRefresher,
   IonRefresherContent,
@@ -18,7 +25,10 @@ import {
   IonTitle,
   IonToolbar,
   ToastController,
+  ViewWillEnter,
 } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { arrowDown, checkbox, chevronForward, notificationsOutline, star, wallet } from 'ionicons/icons';
 import { AuthService } from '../auth/auth.service';
 import { GlassEffects } from '../ui/glass';
 import { dayLabel, greeting, money, timeLabel, todayLabel } from '../me/labels';
@@ -26,6 +36,7 @@ import {
   AgendaItemStatus,
   AgendaRsvpStatus,
   MyDuesDto,
+  MyDutyDto,
   MyEventDto,
   MyGrowthDto,
   MyScoreDto,
@@ -33,6 +44,8 @@ import {
 } from '../me/me.models';
 import { MeService } from '../me/me.service';
 import { InstallCard } from '../pwa/install-card';
+import { dutiesSpanKurins, dutyRows } from '../features/leader/duties';
+import { NotificationsService } from '../features/leader/notifications.service';
 
 /** A section's data: still loading, here, or failed (the rest of the screen still shows). */
 type Loaded<T> = { state: 'loading' } | { state: 'ready'; value: T } | { state: 'failed' };
@@ -58,12 +71,19 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     IonCardSubtitle,
     IonCardContent,
     IonButton,
+    IonButtons,
+    IonBadge,
+    IonIcon,
+    IonList,
+    IonItem,
+    IonNote,
     IonLabel,
     IonSegment,
     IonSegmentButton,
     IonProgressBar,
     IonSkeletonText,
     InstallCard,
+    RouterLink,
   ],
   styles: `
     .subline {
@@ -96,6 +116,67 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     .row p {
       margin: 0;
       font-size: 14px;
+    }
+    .open {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      color: inherit;
+      text-decoration: none;
+      flex: 1;
+      min-width: 0;
+    }
+    .open > div {
+      flex: 1;
+      min-width: 0;
+    }
+    .go {
+      flex: none;
+      font-size: 18px;
+      color: var(--lk-faint);
+    }
+    .bell {
+      position: relative;
+      overflow: visible;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .bell ion-badge {
+      position: absolute;
+      top: 2px;
+      inset-inline-end: 0;
+      min-width: 18px;
+      height: 18px;
+      padding: 2px 5px;
+      border-radius: 9px;
+      font-size: 11px;
+      line-height: 14px;
+      pointer-events: none;
+    }
+    .duties ion-list {
+      background: transparent;
+      padding: 0 0 8px;
+    }
+    .duties ion-item {
+      --background: transparent;
+    }
+    .duties ion-card-title .count {
+      margin-inline-start: 6px;
+      color: var(--lk-faint);
+      font-weight: 600;
+    }
+    .duties h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--lk-ink);
+      margin: 0;
     }
     .when {
       color: var(--lk-primary);
@@ -151,6 +232,15 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-title>{{ hello }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button class="bell" routerLink="notifications" data-testid="bell">
+            <ion-icon slot="icon-only" name="notifications-outline" aria-hidden="true" />
+            <span class="sr-only">{{ bellLabel() }}</span>
+            @if (unread() > 0) {
+              <ion-badge color="danger" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</ion-badge>
+            }
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -168,6 +258,34 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
 
       <app-install-card />
 
+      @if (duties().length) {
+        <ion-card class="duties" data-testid="duties">
+          <ion-card-header>
+            <ion-card-subtitle>Що чекає на тебе як на провід</ion-card-subtitle>
+            <ion-card-title>Справи<span class="count">{{ dutiesTotal() }}</span></ion-card-title>
+          </ion-card-header>
+          <ion-list lines="full">
+            @for (row of duties(); track row.key; let last = $last) {
+              <ion-item
+                [button]="!!row.link"
+                [detail]="!!row.link"
+                [routerLink]="row.link"
+                [queryParams]="row.queryParams"
+                [lines]="last ? 'none' : 'full'"
+                data-testid="duty"
+              >
+                <ion-icon class="lk-tile" slot="start" [name]="row.icon" [style.--lk-tile]="row.tile" aria-hidden="true" />
+                <ion-label class="ion-text-wrap">
+                  <h3>{{ row.label }}</h3>
+                  @if (row.detail) { <p>{{ row.detail }}</p> }
+                </ion-label>
+                @if (row.count !== null) { <ion-note slot="end">{{ row.count }}</ion-note> }
+              </ion-item>
+            }
+          </ion-list>
+        </ion-card>
+      }
+
       <ion-card>
         <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
         <ion-card-content>
@@ -177,9 +295,18 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
             @default {
               @for (event of upcoming(); track event.agendaItemKey + event.startUtc) {
                 <div class="row" data-testid="event">
-                  <p class="when">{{ when(event) }}</p>
-                  <h3>{{ event.title }}</h3>
-                  @if (event.location) { <p>{{ event.location }}</p> }
+                  <a
+                    class="open"
+                    [routerLink]="['/tabs/calendar/event', event.agendaItemKey]"
+                    [queryParams]="event.isRecurring ? { start: event.startUtc } : null"
+                  >
+                    <div>
+                      <p class="when">{{ when(event) }}</p>
+                      <h3>{{ event.title }}</h3>
+                      @if (event.location) { <p>{{ event.location }}</p> }
+                    </div>
+                    <ion-icon class="go" name="chevron-forward" aria-hidden="true" />
+                  </a>
                   @if (event.rsvpRequired) {
                     <ion-segment
                       [value]="event.myResponse ?? ''"
@@ -211,10 +338,13 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
             @default {
               @for (task of openTasks(); track task.agendaItemKey) {
                 <div class="row task" data-testid="task">
-                  <div>
-                    <h3>{{ task.title }}</h3>
-                    <p [class.late]="isLate(task)">{{ taskLine(task) }}</p>
-                  </div>
+                  <a class="open" [routerLink]="['/tabs/tasks/task', task.agendaItemKey]">
+                    <div>
+                      <h3>{{ task.title }}</h3>
+                      <p [class.late]="isLate(task)">{{ taskLine(task) }}</p>
+                    </div>
+                    @if (!task.canChangeStatus) { <ion-icon class="go" name="chevron-forward" aria-hidden="true" /> }
+                  </a>
                   @if (task.canChangeStatus) {
                     <ion-button
                       size="small"
@@ -297,8 +427,9 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     </ion-content>
   `,
 })
-export class HomePage implements OnInit, OnDestroy {
+export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   private readonly me = inject(MeService);
+  private readonly notifications = inject(NotificationsService);
   private readonly auth = inject(AuthService);
   private readonly toasts = inject(ToastController);
   private readonly glass = new GlassEffects(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
@@ -315,6 +446,7 @@ export class HomePage implements OnInit, OnDestroy {
   private readonly growth = signal<Loaded<MyGrowthDto>>({ state: 'loading' });
   private readonly score = signal<Loaded<MyScoreDto[]>>({ state: 'loading' });
   private readonly dues = signal<Loaded<MyDuesDto[]>>({ state: 'loading' });
+  private readonly dutyList = signal<Loaded<MyDutyDto[]>>({ state: 'loading' });
   protected readonly responding = signal<string | null>(null);
   protected readonly moving = signal<string | null>(null);
 
@@ -329,8 +461,19 @@ export class HomePage implements OnInit, OnDestroy {
   protected readonly growthValue = computed(() => valueOf(this.growth()));
   protected readonly scoreValue = computed(() => valueOf(this.score()) ?? []);
   protected readonly duesValue = computed(() => valueOf(this.dues()) ?? []);
+  /** Like the web: the card is there only while something waits (a failed read hides it too). */
+  protected readonly duties = computed(() => {
+    const duties = valueOf(this.dutyList()) ?? [];
+    return dutyRows(duties, new Date(), dutiesSpanKurins(duties));
+  });
+  protected readonly dutiesTotal = computed(() => (valueOf(this.dutyList()) ?? []).reduce((sum, d) => sum + d.count, 0));
+  protected readonly unread = this.notifications.unread;
+  protected readonly bellLabel = computed(() =>
+    this.unread() > 0 ? `Сповіщення, непрочитаних: ${this.unread()}` : 'Сповіщення',
+  );
 
   constructor() {
+    addIcons({ notificationsOutline, chevronForward, star, arrowDown, wallet, checkbox });
     // The RSVP segments come and go with the events; each gets the iOS glass lens (no-op on md).
     afterRenderEffect(() => {
       this.upcoming();
@@ -346,8 +489,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.glass.destroy();
   }
 
+  /** Home stays alive under the screens it opens; the bell is re-read each time it shows. */
+  ionViewWillEnter(): void {
+    void this.notifications.refreshUnread();
+  }
+
   protected async refresh(event: Event): Promise<void> {
-    await this.load();
+    await Promise.all([this.load(), this.notifications.refreshUnread()]);
     await (event.target as HTMLIonRefresherElement).complete();
   }
 
@@ -420,6 +568,7 @@ export class HomePage implements OnInit, OnDestroy {
       settle(this.me.growth(), this.growth),
       settle(this.me.score(), this.score),
       settle(this.me.dues(), this.dues),
+      settle(this.me.duties(), this.dutyList),
     ]);
   }
 
