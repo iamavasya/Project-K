@@ -22,7 +22,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return ready.pipe(
     switchMap((current) => next(withToken(req, current))),
     catchError((error: unknown) => {
-      const expired = error instanceof HttpErrorResponse && error.status === 401;
+      // A wrong current password on the account screens is a 401 too, but it names itself.
+      const expired =
+        error instanceof HttpErrorResponse &&
+        error.status === 401 &&
+        (error.error as { error?: string } | null)?.error !== 'InvalidCredentials';
       if (!retryable || !expired || !auth.signedIn()) {
         return throwError(() => error);
       }

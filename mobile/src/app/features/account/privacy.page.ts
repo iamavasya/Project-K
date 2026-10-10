@@ -1,20 +1,249 @@
 import { Component } from '@angular/core';
-import { IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
+import { RouterLink } from '@angular/router';
+import {
+  IonBackButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonItem,
+  IonItemGroup,
+  IonLabel,
+  IonList,
+  IonListHeader,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular';
 
-/** Placeholder until the feature lands (PLAN.md §19). */
+/** One row of «які дані і навіщо»: what is stored, why, and who puts it there. */
+interface PersonalDataRow {
+  what: string;
+  why: string;
+  who: string;
+}
+
+/**
+ * The privacy policy of the cloud Лілейка, word for word the web's privacy-page (and
+ * docs/user/privacy.md): when one changes, the others follow, and `revisedOn` moves with them.
+ */
 @Component({
   selector: 'app-privacy',
-  imports: [IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonContent,
+    IonList,
+    IonListHeader,
+    IonItemGroup,
+    IonItem,
+    IonLabel,
+    RouterLink,
+  ],
+  styles: `
+    .doc {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 8px 20px 32px;
+      color: var(--lk-ink-soft);
+      font-size: 16px;
+      line-height: 24px;
+    }
+    .kicker {
+      margin: 8px 0 4px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--lk-primary);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 26px;
+      line-height: 32px;
+      font-weight: 800;
+      color: var(--lk-ink);
+    }
+    h2 {
+      margin: 28px 0 8px;
+      font-size: 19px;
+      line-height: 24px;
+      font-weight: 700;
+      color: var(--lk-ink);
+    }
+    p {
+      margin: 0 0 12px;
+    }
+    ul {
+      margin: 0 0 12px;
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    strong {
+      color: var(--lk-ink);
+    }
+    a {
+      color: var(--lk-primary);
+    }
+    .lead {
+      color: var(--lk-muted);
+    }
+    .table {
+      margin: 0 -20px;
+    }
+    ion-label h3 {
+      font-weight: 600;
+      color: var(--lk-ink);
+    }
+  `,
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
         <ion-title>Конфіденційність</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
-      <p class="ion-padding">Скоро.</p>
+      <article class="doc">
+        <p class="kicker">Конфіденційність</p>
+        <h1>Що Лілейка зберігає про людей і хто це бачить</h1>
+        <p class="lead">
+          Ця сторінка стосується хмарної Лілейки, яку веде автор системи. Якщо курінь чи станиця поставили систему на
+          власний сервер, за дані відповідає той, хто його тримає. Чинна редакція — від {{ revisedOn }}.
+        </p>
+
+        <h2>Хто відповідає за дані</h2>
+        <p>
+          Власник і розпорядник персональних даних хмарної Лілейки — <strong>Ростислав Муха</strong>, фізична особа,
+          автор системи. Обробка ведеться за Законом України «Про захист персональних даних». Звʼязатися можна через
+          <a [href]="links.site" target="_blank" rel="noopener">rostyslav-mukha.dev</a> або
+          <a [href]="links.github" target="_blank" rel="noopener">GitHub</a>.
+        </p>
+
+        <h2>Діти</h2>
+        <p>
+          Дані юнацтва до 18 років вносить провід куреня на підставі згоди батьків або законних представників, яку
+          курінь отримує при вступі дитини до Пласту. Подаючи заявку, Звʼязковий підтверджує, що курінь має такі
+          згоди. Якщо батьки не згодні, курінь не вносить дитину в систему або видаляє її картку.
+        </p>
+
+        <h2>Які дані і навіщо</h2>
+        <p>Лілейка зберігає лише те, що потрібно куреню для його роботи. Нічого не збирається «про запас».</p>
+        <div class="table">
+          <ion-list [inset]="true">
+            <ion-list-header><ion-label>Дані · навіщо · хто вносить</ion-label></ion-list-header>
+            <ion-item-group>
+              @for (row of dataRows; track row.what) {
+                <ion-item>
+                  <ion-label class="ion-text-wrap">
+                    <h3>{{ row.what }}</h3>
+                    <p>{{ row.why }}</p>
+                    <p>Вносить: {{ row.who }}</p>
+                  </ion-label>
+                </ion-item>
+              }
+            </ion-item-group>
+          </ion-list>
+        </div>
+        <p>
+          Лілейка <strong>не</strong> збирає геолокацію, не ставить рекламних чи аналітичних трекерів і не передає дані
+          третім особам для реклами.
+        </p>
+
+        <h2>Хто бачить дані</h2>
+        <p>Права йдуть з діловодств у курені, і сервер перевіряє їх при кожній дії.</p>
+        <ul>
+          <li><strong>Сама людина</strong> бачить свою картку повністю.</li>
+          <li>
+            <strong>Члени куреня</strong> бачать реєстр і картки одне одного: імʼя, гурток, ступінь, діловодства, пошту й
+            телефон, поступ, відзначення і перестороги. Адреси, школи і чужого публічного коду не бачать.
+          </li>
+          <li><strong>Впорядник</strong> бачить і редагує картки свого гуртка.</li>
+          <li><strong>Провід куреня</strong> бачить увесь курінь.</li>
+          <li><strong>Адміністратор системи</strong> бачить те, що потрібно для підтримки; його дії пишуться в журнал.</li>
+        </ul>
+        <p>
+          Інші курені нічого не бачать. Фото зберігаються як публічні файли з невгадуваною адресою: хто має адресу, може
+          відкрити фото без входу. Не завантажуй фото, яке не можна показати всьому куреню.
+        </p>
+
+        <h2>Скільки зберігаємо</h2>
+        <ul>
+          <li>
+            <strong>Картка, проба, вмілості, історія</strong> — поки людина є в системі. Після виходу з куреня картка
+            лишається з історією, щоб її можна було прийняти в інший курінь за кодом.
+          </li>
+          <li><strong>Журнал підписів</strong> проб і вмілостей — 180 днів, далі видаляється сам.</li>
+          <li><strong>Заявки і запрошення</strong>, які не завершились — 30 днів, далі видаляються самі.</li>
+          <li><strong>Сесії</strong> — до виходу або 7 днів; довірений пристрій для двофакторного входу — 7 днів.</li>
+          <li><strong>Технічні логи</strong> — до 365 днів, з масковими чутливими полями.</li>
+        </ul>
+
+        <h2>Де зберігаємо</h2>
+        <p>
+          Хмарна Лілейка працює на Microsoft Azure за Cloudflare. Листи надсилає сервіс Resend: він отримує адресу і
+          текст листа, більше нічого. Технічні логи йдуть в Application Insights. Інших сторонніх сервісів немає. Автор
+          має технічний доступ до бази для підтримки і резервних копій; копії живуть у тій самій хмарі.
+        </p>
+
+        <h2>На твоєму пристрої</h2>
+        <p>
+          Два cookie: сесія входу і довірений пристрій для двофакторного входу. У сховищі браузера — тема, останній
+          курінь і розкладка карток. Сторонніх cookie немає, тому й банера немає.
+        </p>
+
+        <h2>Твої права</h2>
+        <ul>
+          <li><strong>Подивитися</strong> все, що система про тебе зберігає: картка учасника і налаштування акаунта.</li>
+          <li><strong>Виправити</strong> контакти й пароль самостійно; імʼя, ступінь, гурток — через провід куреня.</li>
+          <li><strong>Забрати</strong> дані: провід куреня експортує реєстр у таблицю або PDF-звіт.</li>
+          <li>
+            <strong>Видалити</strong> акаунт і картку повністю: напиши Звʼязковому або авторові. Журнал підписів, де ти
+            згаданий як той, хто підписував, лишає імʼя знімком до кінця свого строку.
+          </li>
+          <li><strong>Відкликати згоду</strong> на обробку даних дитини: картка видаляється так само.</li>
+        </ul>
+        <p>
+          Запит виконується протягом 30 днів. Якщо вважаєш, що з даними поводяться неправильно, напиши авторові; також
+          маєш право звернутися до Уповноваженого Верховної Ради з прав людини.
+        </p>
+
+        <h2>Безпека</h2>
+        <p>
+          Паролі зберігаються лише хешем, проводу обовʼязковий двофакторний вхід, кожен пристрій — окрема сесія.
+          Вразливості приймаються приватно —
+          <a [href]="links.security" target="_blank" rel="noopener">політика безпеки</a>.
+        </p>
+        <p><a routerLink="/tabs/more/about">Про Лілейку →</a></p>
+      </article>
     </ion-content>
   `,
 })
-export class PrivacyPage {}
+export class PrivacyPage {
+  protected readonly revisedOn = '12 вересня 2026';
+
+  protected readonly links = {
+    site: 'https://rostyslav-mukha.dev',
+    github: 'https://github.com/iamavasya/Project-K',
+    security: 'https://github.com/iamavasya/Project-K/security/policy',
+  };
+
+  protected readonly dataRows: PersonalDataRow[] = [
+    { what: 'Прізвище, імʼя, по батькові, дата народження', why: 'реєстр куреня, вік для проб і ступенів', who: 'провід куреня або імпорт із таблиці' },
+    { what: 'Пошта і телефон', why: 'вхід, запрошення, відновлення пароля, звʼязок у курені', who: 'провід куреня; сама людина може змінити' },
+    { what: 'Адреса, школа', why: 'необовʼязкові поля реєстру', who: 'провід куреня' },
+    { what: 'Фото', why: 'картка учасника, сильветка гуртка', who: 'провід куреня або сама людина' },
+    { what: 'Ступінь, історія ступенів, діловодства', why: 'реєстр, права в системі', who: 'провід куреня' },
+    { what: 'Проба, вмілості, журнал підписів', why: 'поступ юнака; хто й коли підписав', who: 'впорядник, провід' },
+    { what: 'Відзначення і перестороги', why: 'облік у курені', who: 'впорядник, провід' },
+    { what: 'Курені, в яких людина стояла', why: 'історія членства', who: 'система' },
+    { what: 'Публічний код PL-…', why: 'перехід між куренями без втрати історії', who: 'система' },
+    { what: 'Заявка куреня: імʼя, пошта, телефон, станиця, число куреня', why: 'розгляд заявки адміністратором', who: 'Звʼязковий' },
+    { what: 'Пароль (хеш), двофакторний вхід, резервні коди (хешовані)', why: 'безпека акаунта', who: 'сама людина' },
+    { what: 'Сесії: пристрій, час входу, IP-адреса', why: 'окремий вихід з кожного пристрою, захист від підбору пароля', who: 'система' },
+    { what: 'Технічні логи запитів', why: 'пошук збоїв і атак', who: 'система' },
+  ];
+}

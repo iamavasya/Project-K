@@ -3,7 +3,16 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiUrl } from '../runtime-config';
-import { AuthState, LoginOutcome, LoginResponse, MfaEnabled, MfaSetup, MfaStatus } from './auth.models';
+import {
+  AuthState,
+  KurinScopeOption,
+  LoginOutcome,
+  LoginResponse,
+  MfaEnabled,
+  MfaRecoveryCodes,
+  MfaSetup,
+  MfaStatus,
+} from './auth.models';
 
 /**
  * The PWA lives on the web's origin (/m/), so it shares the web's session: the same `authState`
@@ -150,6 +159,46 @@ export class AuthService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * A new set of recovery codes; the old set stops working. Asks for the password, as the web does,
+   * so a phone left unlocked cannot hand them out.
+   */
+  async rotateRecoveryCodes(currentPassword: string): Promise<string[]> {
+    const response = await this.post<MfaRecoveryCodes>('auth/mfa/recovery-codes', { currentPassword });
+    return response.recoveryCodes ?? [];
+  }
+
+  /**
+   * The second factor was switched off or reset from the account page. Провід must set it up anew
+   * before going on, so the guard asks the server again this session.
+   */
+  mfaTurnedOff(): void {
+    this.mfaEnabled.set(false);
+    sessionStorage.removeItem(mfaCheckedKey(this.state()?.userKey));
+  }
+
+  /** The kurins this account may act in, from the server, so the choice matches what it allows. */
+  kurinScopeOptions(): Promise<KurinScopeOption[]> {
+    return firstValueFrom(
+      this.http.get<KurinScopeOption[]>(`${this.api}/auth/kurin-scope/options`, { withCredentials: true }),
+    );
+  }
+
+  /**
+   * Acts in another kurin. Rights depend on the kurin, so this is a new token rather than a filter:
+   * nothing changes until the server has issued it (and rotated the refresh cookie with it).
+   */
+  async setKurinScope(kurinKey: string): Promise<void> {
+    const response = await this.post<LoginResponse>('auth/kurin-scope', { kurinKey });
+    this.apply(toState(response));
+  }
+
+  /** The account's email once the server has changed it (not while it waits for confirmation). */
+  updateEmail(email: string): void {
+    const current = this.state();
+    if (current) this.apply({ ...current, email });
   }
 
   forget(): void {

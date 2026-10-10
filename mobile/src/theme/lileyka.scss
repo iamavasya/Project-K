@@ -9,6 +9,25 @@
 // - iPhone: every control is Liquid Glass, drawn by rdlabo's iOS 26/27 theme (styles.scss).
 // - Android: the web's skin at Material's sizes: buttons, segmented tabs, toolbar, tab bar, cards
 //   and the «Ще» menu.
+//
+// Light or dark is the person's choice in «Ще → Вигляд» (Системна / Світла / Темна):
+// AppearanceService puts `ion-palette-dark` on <html> whenever the page is dark, so Ionic's dark
+// palette and rdlabo's dark Liquid Glass are loaded here in their class form, and the brand tokens
+// below follow the same class. The `prefers-color-scheme` blocks only cover the moment before the
+// app starts (and are held off by `lk-light`, a chosen light theme on a dark system).
+
+@use 'sass:meta';
+
+@include meta.load-css('@ionic/angular/css/palettes/dark.class');
+
+// The same @supports split as styles.scss: each generation's dark goes with its own theme.
+@supports (overflow-anchor: auto) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/ionic-theme-ios27-dark-class');
+}
+
+@supports (text-wrap: pretty) and (not (overflow-anchor: auto)) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/ionic-theme-ios26-dark-class');
+}
 
 @font-face {
   font-family: 'Manrope';
@@ -69,34 +88,47 @@
   --lk-secondary-fg: #4a5350;
 }
 
+@mixin dark-tokens {
+  --lk-primary: #34c48d;
+  --lk-primary-hover: #4fd49e;
+  --lk-primary-active: #21a874;
+  --lk-on-primary: #052018;
+  --lk-primary-50: #1d2e27;
+  --lk-primary-100: #245039;
+  --lk-primary-700: #9fe3c2;
+  --lk-accent-50: #2a1f16;
+  --lk-accent-700: #f3b784;
+  --lk-danger: #f87171;
+  --lk-danger-rgb: 248, 113, 113;
+  --lk-ios-ground: #0d1110;
+  --lk-ios-ground-rgb: 13, 17, 16;
+  --lk-danger-50: #2c1515;
+  --lk-danger-700: #fca5a5;
+  --lk-ink: #e9edea;
+  --lk-ink-soft: #dde2df;
+  --lk-muted: #9ba8a2;
+  --lk-faint: #6c7570;
+  --lk-line: #232a27;
+  --lk-surface: #0d1110;
+  --lk-paper: #161b19;
+  --lk-secondary-bg: #1d2320;
+  --lk-secondary-bg-active: #232a27;
+  --lk-secondary-fg: #c7cfcb;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --lk-primary: #34c48d;
-    --lk-primary-hover: #4fd49e;
-    --lk-primary-active: #21a874;
-    --lk-on-primary: #052018;
-    --lk-primary-50: #1d2e27;
-    --lk-primary-100: #245039;
-    --lk-primary-700: #9fe3c2;
-    --lk-accent-50: #2a1f16;
-    --lk-accent-700: #f3b784;
-    --lk-danger: #f87171;
-    --lk-danger-rgb: 248, 113, 113;
-    --lk-ios-ground: #0d1110;
-    --lk-ios-ground-rgb: 13, 17, 16;
-    --lk-danger-50: #2c1515;
-    --lk-danger-700: #fca5a5;
-    --lk-ink: #e9edea;
-    --lk-ink-soft: #dde2df;
-    --lk-muted: #9ba8a2;
-    --lk-faint: #6c7570;
-    --lk-line: #232a27;
-    --lk-surface: #0d1110;
-    --lk-paper: #161b19;
-    --lk-secondary-bg: #1d2320;
-    --lk-secondary-bg-active: #232a27;
-    --lk-secondary-fg: #c7cfcb;
+  :root:not(.lk-light) {
+    @include dark-tokens;
   }
+}
+
+:root.ion-palette-dark {
+  @include dark-tokens;
+}
+
+// rdlabo's dark lists tint the disclosure chevron; in class form that rule outranks the brand's.
+.ion-palette-dark .lk ion-list.ios ion-item {
+  --detail-icon-color: var(--lk-faint);
 }
 
 .lk {

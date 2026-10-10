@@ -16,15 +16,32 @@ import {
   ViewWillEnter,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { informationCircle, shieldCheckmark } from 'ionicons/icons';
+import {
+  bug,
+  colorPalette,
+  flag,
+  helpCircle,
+  informationCircle,
+  lockClosed,
+  openOutline,
+  personCircle,
+  shieldCheckmark,
+} from 'ionicons/icons';
+import { KurinScopeOption } from '../auth/auth.models';
 import { AuthService } from '../auth/auth.service';
+import { kurinShortLabel } from '../features/account/account.labels';
+import { AppearanceService } from '../features/account/appearance.service';
+import { helpUrl } from '../features/account/web-links';
 import { initials } from '../me/labels';
 import { MemberDto } from '../me/me.models';
 import { MeService } from '../me/me.service';
 
+const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 'Темна' } as const;
+
 /**
- * Laid out as iOS Settings: the account row on top (avatar, name, what it opens), then rows with
- * icon tiles, and the sign-out on its own at the end.
+ * Laid out as iOS Settings: the account row on top (avatar, name, what it opens), then grouped rows
+ * with icon tiles (the account and its kurins, the look, help and the app), and the sign-out on its
+ * own at the end.
  */
 @Component({
   selector: 'app-more',
@@ -63,6 +80,10 @@ import { MeService } from '../me/me.service';
       font-weight: 700;
       color: var(--lk-ink);
     }
+    .external {
+      font-size: 18px;
+      color: var(--lk-faint);
+    }
   `,
   template: `
     <ion-header [translucent]="true">
@@ -94,22 +115,70 @@ import { MeService } from '../me/me.service';
             </ion-item>
           </ion-item-group>
         </ion-list>
-      }
-      <ion-list [inset]="true">
-        <ion-item-group>
-          @if (user()) {
-            <ion-item [button]="true" [detail]="true" routerLink="/mfa">
+
+        <ion-list [inset]="true">
+          <ion-item-group>
+            <ion-item [button]="true" [detail]="true" routerLink="account">
+              <ion-icon class="lk-tile" slot="start" name="person-circle" aria-hidden="true" style="--lk-tile: #007aff" />
+              <ion-label>Акаунт</ion-label>
+            </ion-item>
+            <ion-item [button]="true" [detail]="true" routerLink="account" data-testid="mfa-row">
               <ion-icon class="lk-tile" slot="start" name="shield-checkmark" aria-hidden="true" style="--lk-tile: #34a853" />
               <ion-label>Двофакторний вхід</ion-label>
               <ion-note slot="end">{{ mfaLabel() }}</ion-note>
             </ion-item>
+            @if (kurins().length > 1) {
+              <ion-item [button]="true" [detail]="true" routerLink="kurins" data-testid="kurins-row">
+                <ion-icon class="lk-tile" slot="start" name="flag" aria-hidden="true" style="--lk-tile: #ff9500" />
+                <ion-label>Мої курені</ion-label>
+                <ion-note slot="end">{{ currentKurin() }}</ion-note>
+              </ion-item>
+            } @else if (kurins().length === 1) {
+              <!-- Nothing to choose from: the kurin is shown, not offered (the web hides its switcher). -->
+              <ion-item data-testid="kurins-row">
+                <ion-icon class="lk-tile" slot="start" name="flag" aria-hidden="true" style="--lk-tile: #ff9500" />
+                <ion-label>Курінь</ion-label>
+                <ion-note slot="end">{{ currentKurin() }}</ion-note>
+              </ion-item>
+            }
+          </ion-item-group>
+        </ion-list>
+      }
+
+      <ion-list [inset]="true">
+        <ion-item-group>
+          <ion-item [button]="true" [detail]="true" routerLink="appearance">
+            <ion-icon class="lk-tile" slot="start" name="color-palette" aria-hidden="true" style="--lk-tile: #5856d6" />
+            <ion-label>Вигляд</ion-label>
+            <ion-note slot="end">{{ themeLabel() }}</ion-note>
+          </ion-item>
+        </ion-item-group>
+      </ion-list>
+
+      <ion-list [inset]="true">
+        <ion-item-group>
+          <ion-item [href]="help" target="_blank" rel="noopener" [detail]="false" data-testid="help">
+            <ion-icon class="lk-tile" slot="start" name="help-circle" aria-hidden="true" style="--lk-tile: #0a84ff" />
+            <ion-label>Довідка</ion-label>
+            <ion-icon class="external" slot="end" name="open-outline" aria-hidden="true" />
+          </ion-item>
+          @if (user()) {
+            <ion-item [button]="true" [detail]="true" routerLink="report">
+              <ion-icon class="lk-tile" slot="start" name="bug" aria-hidden="true" style="--lk-tile: #ff3b30" />
+              <ion-label>Повідомити про проблему</ion-label>
+            </ion-item>
           }
+          <ion-item [button]="true" [detail]="true" routerLink="privacy">
+            <ion-icon class="lk-tile" slot="start" name="lock-closed" aria-hidden="true" style="--lk-tile: #30b0c7" />
+            <ion-label>Конфіденційність</ion-label>
+          </ion-item>
           <ion-item [button]="true" [detail]="true" routerLink="about">
             <ion-icon class="lk-tile" slot="start" name="information-circle" aria-hidden="true" style="--lk-tile: #8e9a95" />
             <ion-label>Про застосунок</ion-label>
           </ion-item>
         </ion-item-group>
       </ion-list>
+
       @if (user()) {
         <ion-list [inset]="true">
           <ion-item-group>
@@ -127,8 +196,11 @@ export class MorePage implements ViewWillEnter {
   private readonly me = inject(MeService);
   private readonly router = inject(Router);
   private readonly sheets = inject(ActionSheetController);
+  private readonly appearance = inject(AppearanceService);
+  protected readonly help = helpUrl();
   protected readonly user = this.auth.user;
   protected readonly member = signal<MemberDto | null>(null);
+  protected readonly kurins = signal<KurinScopeOption[]>([]);
   protected readonly leaving = signal(false);
   protected readonly name = computed(() => {
     const m = this.member();
@@ -143,12 +215,28 @@ export class MorePage implements ViewWillEnter {
     if (enabled === null) return '';
     return enabled ? 'увімкнено' : 'вимкнено';
   });
+  protected readonly currentKurin = computed(() => {
+    const key = this.user()?.kurinKey;
+    const current = this.kurins().find((option) => option.kurinKey === key);
+    return current ? kurinShortLabel(current) : '';
+  });
+  protected readonly themeLabel = computed(() => THEME_LABELS[this.appearance.choice()]);
 
   constructor() {
-    addIcons({ shieldCheckmark, informationCircle });
+    addIcons({
+      personCircle,
+      shieldCheckmark,
+      flag,
+      colorPalette,
+      helpCircle,
+      bug,
+      lockClosed,
+      informationCircle,
+      openOutline,
+    });
   }
 
-  /** The status and the card are asked once (the status endpoint is rate-limited). */
+  /** The status, the card and the kurins are asked once (the status endpoint is rate-limited). */
   async ionViewWillEnter(): Promise<void> {
     const user = this.user();
     if (!user) return;
@@ -156,6 +244,12 @@ export class MorePage implements ViewWillEnter {
       this.me.member(user.memberKey).then(
         (member) => this.member.set(member),
         () => undefined, // The row keeps the email.
+      );
+    }
+    if (!this.kurins().length) {
+      this.auth.kurinScopeOptions().then(
+        (options) => this.kurins.set(options),
+        () => undefined, // No row: the choice is a convenience, as on the web.
       );
     }
     if (this.auth.mfaEnabled() !== null) return;
