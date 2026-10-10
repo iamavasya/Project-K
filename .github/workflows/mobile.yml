@@ -117,6 +117,68 @@ jobs:
           name: pwa-screens
           path: mobile/test-results/pwa-screens
 
+  pwa-real-api:
+    runs-on: ubuntu-latest
+    name: PWA sign-in against the real API
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same stack as the web e2e workflow; its web image serves the PWA under /m/.
+      - name: Start the e2e stack
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
+        run: |
+          ./scripts/dev.sh tools up
+          ./scripts/dev.sh up e2e --build
+
+      - name: Wait for the stack
+        run: |
+          for _ in $(seq 1 60); do
+            web=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4201/m/ || true)
+            api=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5206/health || true)
+            [ "$web" = "200" ] && [ "$api" = "200" ] && exit 0
+            sleep 5
+          done
+          echo "Stack did not become healthy" >&2
+          exit 1
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+        working-directory: mobile
+
+      - name: Install WebKit and Chromium
+        run: npm run e2e:install
+        working-directory: mobile
+
+      - name: Sign in through the PWA
+        env:
+          PW_BASE_URL: http://localhost:4201/m/
+          PW_REAL_API: http://localhost:5206/api
+        run: npx --no-install playwright test e2e/real-login.pw.ts
+        working-directory: mobile
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pwa-real-api-screens
+          path: mobile/test-results/pwa-screens
+
+      - name: Collect stack logs on failure
+        if: failure()
+        run: ./scripts/dev.sh logs e2e || true
+
+      - name: Tear down
+        if: always()
+        run: ./scripts/dev.sh down e2e -v || true
+
   ios-simulator:
     runs-on: macos-15
     name: Build for iOS Simulator and smoke

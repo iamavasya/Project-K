@@ -21,6 +21,7 @@ import { environment } from '../../environments/environment';
 import { InstallCard } from '../pwa/install-card';
 import { apiUrl } from '../runtime-config';
 import { InstallService } from '../pwa/install.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -55,6 +56,15 @@ import { InstallService } from '../pwa/install.service';
       </ion-header>
 
       <app-install-card />
+
+      @if (user(); as me) {
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Вітаємо!</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>Ти увійшов як {{ me.email }}</ion-card-content>
+        </ion-card>
+      }
 
       <ion-card>
         <ion-card-header>
@@ -110,6 +120,7 @@ export class HomePage {
   protected readonly apiUrl = apiUrl();
   protected readonly version = environment.version;
   protected readonly standalone = inject(InstallService).standalone;
+  protected readonly user = inject(AuthService).user;
 
   protected async tap(): Promise<void> {
     this.taps.update((n) => n + 1);
