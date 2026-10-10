@@ -84,3 +84,56 @@ jobs:
         with:
           name: mobile-screens
           path: ${{ runner.temp }}/screens
+
+  ios-simulator:
+    runs-on: macos-15
+    name: Build for iOS Simulator and smoke
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Build simulator app
+        run: |
+          npm run build
+          npm run cap -- sync ios
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO -quiet build
+
+      - name: Start dev server for Safari
+        run: |
+          nohup npm run ng -- serve --host 127.0.0.1 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:4200 > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/serve.log"; exit 1
+
+      - name: Smoke on simulator
+        run: ./scripts/ios-sim-smoke.sh "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app" http://127.0.0.1:4200 "$RUNNER_TEMP/ios-screens"
+
+      - name: Job summary
+        if: always()
+        run: cat "$RUNNER_TEMP/ios-screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screens
+          path: ${{ runner.temp }}/ios-screens
