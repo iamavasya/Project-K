@@ -176,8 +176,11 @@ jobs:
 
       - name: Collect stack logs on failure
         if: failure()
-        # dev.sh follows the logs, so cut it off once the backlog is printed.
-        run: timeout 60 ./scripts/dev.sh logs e2e || true
+        # dev.sh follows the logs, so cut it off once the backlog is printed. Requests, warnings
+        # and errors only: the seed's SQL would push the test output out of the log's tail.
+        run: |
+          timeout 60 ./scripts/dev.sh logs e2e 2>&1 \
+            | grep -E 'HTTP |WRN|ERR|FTL|Exception|nginx|error' | tail -300 || true
 
       - name: Tear down
         if: always()
