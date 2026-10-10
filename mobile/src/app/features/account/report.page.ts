@@ -191,7 +191,7 @@ const UPLOAD_ERRORS: Record<string, string> = {
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
-        <ion-title>Повідомити про проблему</ion-title>
+        <ion-title>Проблема</ion-title>
         @if (!receipt()) {
           <ion-buttons slot="end">
             <ion-button [strong]="true" [disabled]="!canSend()" (click)="send()" data-testid="send">
