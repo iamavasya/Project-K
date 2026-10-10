@@ -334,13 +334,11 @@
   ion-tab-button {
     font-weight: 700;
   }
-}
 
-// ── Glass: an iOS 26 Liquid Glass look-alike, on trial in the sheet (.lk-glass) ────────────────
-// The web can't refract, so it is frosted translucency: the page blurs through, a light rim on top
-// and a soft lift. The bar fades into the page and its buttons float as glass circles; the tab
-// bar floats as a capsule with a pill behind the chosen tab.
-.lk {
+  // ── Glass: an iOS 26 Liquid Glass look-alike, on trial in the sheet (.lk-glass) ────────────────
+  // The web can't refract, so it is frosted translucency: the page blurs through, a light rim on top
+  // and a soft lift. The bar fades into the page and its buttons float as glass circles; the tab
+  // bar floats as a capsule with a pill behind the chosen tab.
   ion-toolbar.lk-glass {
     --background: transparent;
     --border-width: 0;
