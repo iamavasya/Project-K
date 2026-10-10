@@ -1,0 +1,14 @@
+name: Sonar peek (temporary)
+on:
+  pull_request:
+    branches: [ "dev" ]
+    paths: [ '.github/workflows/sonar-peek.yml' ]
+permissions:
+  contents: read
+jobs:
+  peek:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s "https://sonarcloud.io/api/issues/search?componentKeys=iamavasya_Project-K&pullRequest=114&issueStatuses=OPEN,CONFIRMED&ps=100" \
+            | jq -r '.issues[] | [.rule, .severity, (.impacts|map(.softwareQuality+":"+.severity)|join(",")), .component, (.line|tostring), .message] | @tsv'

@@ -283,15 +283,15 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             </div>
             <div class="side lk">
               <span class="cap">Лілейка</span>
-              <label class="lk-field">
+              <div class="lk-field">
                 <span class="lk-field__label">Email</span>
                 <ion-input class="lk-input" aria-label="Email" placeholder="name@plast.org.ua" />
-              </label>
-              <label class="lk-field">
+              </div>
+              <div class="lk-field">
                 <span class="lk-field__label">Пароль</span>
                 <ion-input class="lk-input lk-invalid" aria-label="Пароль" type="password" value="секретик" />
                 <span class="lk-field__error">Невірний email або пароль.</span>
-              </label>
+              </div>
             </div>
           </div>
         </section>
