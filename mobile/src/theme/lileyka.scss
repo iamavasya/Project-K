@@ -457,9 +457,9 @@
   }
 }
 
-// Android: Material's switch, checkbox and ripple stay; the brand drops Material's uppercase and
-// elevation (handled above) and its 4px chip radius. The toggle's track is the brand green at
-// half strength, as Material draws it.
+// Android: Material's switch, checkbox and ripple stay. The shared rules above already drop
+// Material's uppercase buttons and elevation. The toggle's track is the brand green at half
+// strength, as Material draws it.
 .md .lk {
   ion-toggle {
     --handle-background-checked: var(--lk-primary);

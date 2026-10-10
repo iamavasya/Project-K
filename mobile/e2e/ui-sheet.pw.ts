@@ -13,9 +13,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('mode', mode);
     await expect(page.getByTestId(`mode-${mode}`)).toHaveClass(/current/);
-    for (const section of ['buttons', 'tabs', 'switches', 'inputs', 'list', 'tags', 'card', 'bars']) {
-      await expect(page.getByTestId(section)).toBeVisible();
-    }
+    const sections = ['buttons', 'tabs', 'switches', 'inputs', 'list', 'tags', 'card', 'bars'];
+    await Promise.all(sections.map((section) => expect(page.getByTestId(section)).toBeVisible()));
     // The brand side is set in Manrope; the Ionic side keeps the platform font.
     await page.evaluate(() => document.fonts.ready);
     const brandFont = await page.locator('.lk ion-button').first().evaluate((el) => getComputedStyle(el).fontFamily);
