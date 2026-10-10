@@ -77,6 +77,20 @@ export interface MyScoreDto {
   groupCount: number;
 }
 
+export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
+
+/** One thing that waits on a провід (api/me/duties; the web's MyDutyDto). */
+export interface MyDutyDto {
+  kind: MyDutyKind;
+  kurin: MyKurinRefDto;
+  count: number;
+  groupKey: string | null;
+  groupName: string | null;
+  agendaItemKey: string | null;
+  occurrenceStartUtc: string | null;
+  title: string | null;
+}
+
 /** The member card (Frontend kurinModule/models/member.dto.ts), the fields the profile shows. */
 export interface MemberDto {
   memberKey: string;

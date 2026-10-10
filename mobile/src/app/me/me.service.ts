@@ -7,6 +7,7 @@ import {
   AgendaRsvpStatus,
   MemberDto,
   MyDuesDto,
+  MyDutyDto,
   MyEventDto,
   MyGrowthDto,
   MyScoreDto,
@@ -33,6 +34,11 @@ export class MeService {
 
   dues(): Promise<MyDuesDto[]> {
     return this.get('me/dues');
+  }
+
+  /** What waits on the person as провід; empty for a youth. */
+  duties(): Promise<MyDutyDto[]> {
+    return this.get('me/duties');
   }
 
   score(): Promise<MyScoreDto[]> {
