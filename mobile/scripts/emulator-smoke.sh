@@ -28,8 +28,19 @@ shot() {
 
 dump_ui() {
   rm -f "$OUT/ui.xml"
-  adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
+  adb shell uiautomator dump /sdcard/ui.xml > "$OUT/dump.log" 2>&1
   adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
+  return 0
+}
+
+# What the emulator was doing when a wait gave up: the last dump attempt, the focused window,
+# and the WebView's console (Capacitor logs it to logcat).
+diagnose() {
+  local reason=$1
+  echo "  --- diagnose: $reason"
+  echo "  last uiautomator dump: $(tr '\n' ' ' < "$OUT/dump.log" 2>/dev/null)"
+  echo "  focus: $(adb shell dumpsys window 2>/dev/null | grep -m1 mCurrentFocus | tr -s ' ')"
+  adb logcat -d -t 400 2>/dev/null | grep -E 'Capacitor|chromium|AndroidRuntime|ANR' | tail -25 | sed 's/^/  /'
   return 0
 }
 
@@ -41,6 +52,7 @@ wait_for_text() {
     grep -q -- "$text" "$OUT/ui.xml" 2>/dev/null && return 0
     sleep 2
   done
+  diagnose "no \"$text\" on screen"
   return 1
 }
 
