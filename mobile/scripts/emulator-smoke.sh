@@ -25,6 +25,7 @@ shot() {
 }
 
 dump_ui() {
+  rm -f "$OUT/ui.xml"
   adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
   adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
 }
@@ -40,7 +41,8 @@ wait_for_text() {
   return 1
 }
 
-# Taps the centre of the first node whose text or content-desc equals $1.
+# Taps the centre of the first node whose text or content-desc equals $1, ignoring case
+# (Material buttons render uppercase).
 tap_text() {
   dump_ui
   local xy
@@ -48,7 +50,8 @@ tap_text() {
 import re, sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
 for node in root.iter('node'):
-    if sys.argv[2] in (node.get('text', '').strip(), node.get('content-desc', '').strip()):
+    wanted = sys.argv[2].casefold()
+    if wanted in (node.get('text', '').strip().casefold(), node.get('content-desc', '').strip().casefold()):
         x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
         print((x1 + x2) // 2, (y1 + y2) // 2)
         break
@@ -93,6 +96,8 @@ log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
 if wait_for_text "Привіт від S1" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
+sleep 2
+dump_ui
 grep -q '10.0.2.2:5205' "$OUT/ui.xml" && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 
