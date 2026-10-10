@@ -101,14 +101,21 @@ PY
   return 0
 }
 
-# tap_text, retried while the screen is still settling (the tab bar can render after the page).
-tap_when_shown() {
-  local label=$1 tries=${2:-10}
-  for _ in $(seq "$tries"); do
-    tap_text "$label" && return 0
-    sleep 2
+# Taps $1 until $2 is on screen: a tap that lands while a system dialog is up is lost.
+tap_until() {
+  local label=$1 expect=$2
+  for _ in $(seq 6); do
+    if tap_text "$label"; then
+      for _ in $(seq 4); do
+        sleep 1
+        dump_ui
+        grep -q -- "$expect" "$OUT/ui.xml" 2>/dev/null && return 0
+      done
+    else
+      sleep 2
+    fi
   done
-  diagnose "nothing to tap labelled \"$label\""
+  diagnose "tapping \"$label\" never showed \"$expect\""
   return 1
 }
 
@@ -120,6 +127,10 @@ launch() {
 
 ABOUT="Про застосунок"
 
+# The app is started with monkey, so the home screen is not needed; on a busy emulator the Pixel
+# launcher keeps raising «isn't responding» over the app.
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher > /dev/null 2>&1 || true
+
 log "## Bundled build"
 adb install -r "$BUNDLED_APK" > /dev/null && pass "APK installed" || fail "APK install"
 adb shell cmd uimode night no
@@ -127,9 +138,9 @@ launch
 if wait_for_text "Найближче" 60; then pass "App starts and renders Головна"; else fail "Головна did not render"; fi
 shot 01-home-light
 
-if tap_when_shown "Ще" && wait_for_text "$ABOUT" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
+if tap_until "Ще" "$ABOUT"; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
 shot 03-more-light
-if tap_when_shown "$ABOUT" && wait_for_text "Перевірка оболонки" 10; then pass "$ABOUT opens"; else fail "$ABOUT did not open"; fi
+if tap_until "$ABOUT" "Перевірка оболонки"; then pass "$ABOUT opens"; else fail "$ABOUT did not open"; fi
 grep -q 'text="md"' "$OUT/ui.xml" && pass "Ionic mode is md on Android" || fail "Ionic mode md not found"
 grep -q 'text="android' "$OUT/ui.xml" && pass "Capacitor platform is android" || fail "Capacitor platform android not found"
 
@@ -151,7 +162,7 @@ log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
 if wait_for_text "Найближче" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
-if tap_when_shown "Ще" && tap_when_shown "$ABOUT"; then pass "$ABOUT opens on the live-reload build"; else fail "$ABOUT did not open on the live-reload build"; fi
+if tap_until "Ще" "$ABOUT" && tap_until "$ABOUT" "Перевірка оболонки"; then pass "$ABOUT opens on the live-reload build"; else fail "$ABOUT did not open on the live-reload build"; fi
 wait_for_text '10.0.2.2:5205' 15 && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 
