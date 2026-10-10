@@ -260,6 +260,7 @@ test('marks attendance on the spot, in bulk, and rolls back a refusal', async ({
 
   // «Усі, хто відповів, були»: everyone mine who answered and is not marked, in one call.
   await page.locator('ion-toast').evaluateAll((toasts) => toasts.forEach((t) => (t as HTMLIonToastElement).dismiss()));
+  await expect(page.locator('ion-toast')).toHaveCount(0); // dismissing animates; a slow WebKit keeps the old one a while
   await expect(page.getByTestId('mark-answered')).toContainText('(3)');
   const before = log.writes.length;
   await page.getByTestId('mark-answered').click();

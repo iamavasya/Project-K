@@ -27,7 +27,8 @@ export default defineConfig({
         reuseExistingServer: !process.env['CI'],
       },
   projects: [
-    { name: 'iphone', use: { ...devices['iPhone 15'] } },
+    // WebKit runs the long journeys (a member's card, a leader's dues) at about twice Chromium's time.
+    { name: 'iphone', timeout: 60_000, use: { ...devices['iPhone 15'] } },
     {
       name: 'android',
       use: {
