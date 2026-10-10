@@ -125,17 +125,27 @@ launch() {
   return 0
 }
 
-# Swipes the page up until $1 is on screen: uiautomator only sees what the WebView has laid out
-# in view, so a card below the fold is not tappable yet.
+# Swipes the page up until a node labelled $1 lies inside the screen. The WebView reports nodes
+# below the fold too (with bounds past the display), so being in the dump is not enough to tap.
 scroll_to_text() {
-  local text=$1
-  for _ in $(seq 8); do
+  local label=$1 height
+  height=$(adb shell wm size | grep -o '[0-9]\+$' | tail -1)
+  for _ in $(seq 10); do
     dump_ui
-    grep -q -- "$text" "$OUT/ui.xml" 2>/dev/null && return 0
+    python3 - "$OUT/ui.xml" "$label" "${height:-2400}" <<'PY' && return 0
+import re, sys, xml.etree.ElementTree as ET
+wanted, height = sys.argv[2].casefold(), int(sys.argv[3])
+for node in ET.parse(sys.argv[1]).getroot().iter('node'):
+    if wanted in (node.get('text', '').strip().casefold(), node.get('content-desc', '').strip().casefold()):
+        x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
+        if y2 > y1 and y1 >= 0 and y2 <= height * 0.85:
+            sys.exit(0)
+sys.exit(1)
+PY
     adb shell input swipe 540 1700 540 500 300
     sleep 1
   done
-  diagnose "scrolling never showed \"$text\""
+  diagnose "scrolling never brought \"$label\" into view"
   return 1
 }
 
