@@ -30,6 +30,29 @@ dump_ui() {
   rm -f "$OUT/ui.xml"
   adb shell uiautomator dump /sdcard/ui.xml > "$OUT/dump.log" 2>&1
   adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
+  dismiss_anr
+  return 0
+}
+
+# A slow emulator sometimes shows «Pixel Launcher isn't responding» over the app; answer «Wait» and
+# dump again, or every later step only sees that dialog.
+dismiss_anr() {
+  local xy
+  grep -q "isn't responding" "$OUT/ui.xml" 2>/dev/null || return 0
+  xy=$(python3 - "$OUT/ui.xml" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+for node in ET.parse(sys.argv[1]).getroot().iter('node'):
+    if node.get('text', '').strip() == 'Wait':
+        x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
+        print((x1 + x2) // 2, (y1 + y2) // 2)
+        break
+PY
+)
+  echo "  dismissing a system 'not responding' dialog"
+  if [[ -n "$xy" ]]; then adb shell input tap $xy; else adb shell input keyevent KEYCODE_BACK; fi
+  sleep 1
+  adb shell uiautomator dump /sdcard/ui.xml > "$OUT/dump.log" 2>&1
+  adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
   return 0
 }
 
