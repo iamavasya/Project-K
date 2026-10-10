@@ -48,6 +48,8 @@ async function mockApi(context: BrowserContext): Promise<void> {
       case 'auth/refresh':
         return session ? json(200, { accessToken: 'access-2' }) : json(401, { error: 'Unauthorized' });
       case 'auth/logout':
+        // Like the API's [Authorize]: signing out needs the access token, not only the cookie.
+        if (!request.headers()['authorization']?.startsWith('Bearer access-')) return json(401, {});
         session = false;
         return route.fulfill({ status: 200, headers, body: '' });
       default:
@@ -233,9 +235,9 @@ test('signs out from the Ще tab', async ({ page }, info) => {
   await expect(page.getByText(member.email, { exact: true })).toBeVisible();
   await shot(page, info.project.name, '06-more-signed-in');
 
-  const loggedOut = page.waitForRequest((r) => r.url().endsWith('/auth/logout'));
+  const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
   await page.getByText('Вийти', { exact: true }).click();
-  await loggedOut;
+  expect((await loggedOut).ok()).toBe(true);
   await expect(page).toHaveURL(/\/m\/login$/);
   expect(await page.evaluate(() => localStorage.getItem('authState'))).toBeNull();
 

@@ -11,11 +11,12 @@ const NO_REFRESH = ['/auth/login', '/auth/mfa/login-verify', '/auth/logout', '/a
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (NO_REFRESH.some((path) => req.url.includes(path))) return next(req);
+  const retryable = !NO_REFRESH.some((path) => req.url.includes(path));
 
   return next(withToken(req, auth.accessToken())).pipe(
     catchError((error: unknown) => {
-      if (!(error instanceof HttpErrorResponse) || error.status !== 401 || !auth.signedIn()) {
+      const expired = error instanceof HttpErrorResponse && error.status === 401;
+      if (!retryable || !expired || !auth.signedIn()) {
         return throwError(() => error);
       }
       return from(auth.refresh()).pipe(
