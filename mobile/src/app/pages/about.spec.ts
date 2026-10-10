@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { provideIonicAngular } from '@ionic/angular';
-import { HomePage } from './home';
+import { AboutPage } from './about';
 
-describe('HomePage', () => {
+describe('AboutPage', () => {
   it('counts taps with signals (zoneless)', async () => {
-    TestBed.configureTestingModule({ imports: [HomePage], providers: [provideIonicAngular(), provideHttpClient()] });
-    const fixture = TestBed.createComponent(HomePage);
+    TestBed.configureTestingModule({ imports: [AboutPage], providers: [provideIonicAngular(), provideHttpClient(), provideRouter([])] });
+    const fixture = TestBed.createComponent(AboutPage);
     await fixture.whenStable();
 
     const button = fixture.nativeElement.querySelector('ion-button') as HTMLElement;

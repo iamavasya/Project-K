@@ -18,3 +18,14 @@ export const signedInGuard: CanActivateFn = () => {
 /** The sign-in screen is skipped when a session is already there. */
 export const signedOutGuard: CanActivateFn = () =>
   inject(AuthService).ensureSession() ? inject(Router).parseUrl('/tabs/home') : true;
+
+/**
+ * Admins and the kurin's провід must turn on the second factor first, as on the web. Runs after
+ * signedInGuard; the server refuses their changes until they do, whatever this guard decides.
+ */
+export const mfaSetupGuard: CanActivateFn = async () => {
+  if (!signInRequired) return true;
+  const router = inject(Router);
+  const required = await inject(AuthService).mfaSetupRequired();
+  return required ? router.parseUrl('/mfa') : true;
+};

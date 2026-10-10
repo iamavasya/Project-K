@@ -87,24 +87,25 @@ log "## Bundled build"
 adb install -r "$BUNDLED_APK" > /dev/null && pass "APK installed" || fail "APK install"
 adb shell cmd uimode night no
 launch
-if wait_for_text "Привіт від S1" 60; then pass "App starts and renders Головна"; else fail "Головна did not render"; fi
+if wait_for_text "Найближче" 60; then pass "App starts and renders Головна"; else fail "Головна did not render"; fi
+shot 01-home-light
+
+if tap_text "Ще" && wait_for_text "Про застосунок" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
+shot 03-more-light
+if tap_text "Про застосунок" && wait_for_text "Перевірка оболонки" 10; then pass "Про застосунок opens"; else fail "Про застосунок did not open"; fi
 grep -q 'text="md"' "$OUT/ui.xml" && pass "Ionic mode is md on Android" || fail "Ionic mode md not found"
 grep -q 'text="android' "$OUT/ui.xml" && pass "Capacitor platform is android" || fail "Capacitor platform android not found"
-shot 01-home-light
 
 if tap_text "Натиснути" && sleep 1 && tap_text "Натиснути" && wait_for_text "Натиснуто: 2" 5; then
   pass "Signals update the screen without zone.js (Натиснуто: 2 · подвоєно: 4)"
 else
   fail "Tap counter did not update"
 fi
-shot 02-home-tapped
-
-if tap_text "Ще" && wait_for_text "Про Лілейку" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
-shot 03-more-light
+shot 02-about-tapped
 
 adb shell cmd uimode night yes
 launch
-if wait_for_text "Привіт від S1" 60; then pass "Dark mode renders"; else fail "Dark mode did not render"; fi
+if wait_for_text "Найближче" 60; then pass "Dark mode renders"; else fail "Dark mode did not render"; fi
 shot 04-home-dark
 adb shell cmd uimode night no
 
@@ -112,14 +113,15 @@ log ""
 log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
-if wait_for_text "Привіт від S1" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
+if wait_for_text "Найближче" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
+tap_text "Ще" && wait_for_text "Про застосунок" 10 && tap_text "Про застосунок"
 wait_for_text '10.0.2.2:5205' 15 && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 
-sed -i 's/Привіт від S1/Live reload працює/' "$MOBILE_DIR/src/app/pages/home.ts"
+sed -i 's/Перевірка оболонки/Live reload працює/' "$MOBILE_DIR/src/app/pages/about.ts"
 if wait_for_text "Live reload працює" 30; then pass "Editing src/ updates the emulator without reinstalling"; else fail "Edit did not reach the emulator"; fi
 shot 06-live-after
-git -C "$MOBILE_DIR" checkout -- src/app/pages/home.ts
+git -C "$MOBILE_DIR" checkout -- src/app/pages/about.ts
 
 rm -f "$OUT/ui.xml"
 exit $FAILED

@@ -1,27 +1,46 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {
   IonButton,
   IonCard,
   IonCardContent,
   IonCardHeader,
+  IonCardSubtitle,
   IonCardTitle,
   IonContent,
   IonHeader,
-  IonItem,
   IonLabel,
-  IonList,
-  IonNote,
+  IonProgressBar,
+  IonRefresher,
+  IonRefresherContent,
+  IonSegment,
+  IonSegmentButton,
+  IonSkeletonText,
   IonTitle,
   IonToolbar,
-  getPlatforms,
+  ToastController,
 } from '@ionic/angular';
-import { environment } from '../../environments/environment';
-import { InstallCard } from '../pwa/install-card';
-import { apiUrl } from '../runtime-config';
-import { InstallService } from '../pwa/install.service';
 import { AuthService } from '../auth/auth.service';
+import { dayLabel, greeting, money, timeLabel, todayLabel } from '../me/labels';
+import {
+  AgendaItemStatus,
+  AgendaRsvpStatus,
+  MyDuesDto,
+  MyEventDto,
+  MyGrowthDto,
+  MyScoreDto,
+  MyTaskDto,
+} from '../me/me.models';
+import { MeService } from '../me/me.service';
+import { InstallCard } from '../pwa/install-card';
+
+/** A section's data: still loading, here, or failed (the rest of the screen still shows). */
+type Loaded<T> = { state: 'loading' } | { state: 'ready'; value: T } | { state: 'failed' };
+
+const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
+  { value: 'Going', label: 'Іду' },
+  { value: 'Maybe', label: 'Можливо' },
+  { value: 'NotGoing', label: 'Не йду' },
+];
 
 @Component({
   selector: 'app-home',
@@ -30,106 +49,384 @@ import { AuthService } from '../auth/auth.service';
     IonToolbar,
     IonTitle,
     IonContent,
+    IonRefresher,
+    IonRefresherContent,
     IonCard,
     IonCardHeader,
     IonCardTitle,
+    IonCardSubtitle,
     IonCardContent,
     IonButton,
-    IonList,
-    IonItem,
     IonLabel,
-    IonNote,
+    IonSegment,
+    IonSegmentButton,
+    IonProgressBar,
+    IonSkeletonText,
     InstallCard,
   ],
+  styles: `
+    .subline {
+      margin: 0 20px 4px;
+      color: var(--ion-color-medium);
+      font-size: 15px;
+    }
+    .row {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.12));
+    }
+    .row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .row:first-child {
+      padding-top: 0;
+    }
+    .row h3 {
+      margin: 2px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-text-color);
+    }
+    .row p {
+      margin: 0;
+      font-size: 14px;
+    }
+    .when {
+      color: var(--ion-color-primary);
+      font-weight: 600;
+    }
+    .late {
+      color: var(--ion-color-danger);
+    }
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .task > div {
+      flex: 1;
+      min-width: 0;
+    }
+    ion-segment {
+      margin-top: 8px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .stats strong {
+      display: block;
+      font-size: 24px;
+      color: var(--ion-text-color);
+    }
+    .big {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ion-text-color);
+    }
+    .ok {
+      color: var(--ion-color-success);
+    }
+    .debt {
+      color: var(--ion-color-danger);
+    }
+    ion-progress-bar {
+      margin: 8px 0;
+      height: 6px;
+      border-radius: 3px;
+    }
+    .muted {
+      color: var(--ion-color-medium);
+    }
+  `,
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-title>Лілейка</ion-title>
+        <ion-title>{{ hello }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content [fullscreen]="true">
+      <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+        <ion-refresher-content />
+      </ion-refresher>
+
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Лілейка</ion-title>
+          <ion-title size="large">{{ hello }}</ion-title>
         </ion-toolbar>
       </ion-header>
+      <p class="subline">{{ subline() }}</p>
 
       <app-install-card />
 
-      @if (user(); as me) {
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Вітаємо!</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>Ти увійшов як {{ me.email }}</ion-card-content>
-        </ion-card>
-      }
-
       <ion-card>
-        <ion-card-header>
-          <ion-card-title>Привіт від S1</ion-card-title>
-        </ion-card-header>
+        <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
         <ion-card-content>
-          <p>Ionic 9 + Angular 22 (zoneless) + Capacitor 8.</p>
-          <p>Натиснуто: {{ taps() }} · подвоєно: {{ doubled() }}</p>
-          <ion-button expand="block" (click)="tap()">Натиснути</ion-button>
+          @switch (events().state) {
+            @case ('loading') { <ion-skeleton-text [animated]="true" style="height: 48px" /> }
+            @case ('failed') { <p>{{ failedText }}</p> }
+            @default {
+              @for (event of upcoming(); track event.agendaItemKey + event.startUtc) {
+                <div class="row" data-testid="event">
+                  <p class="when">{{ when(event) }}</p>
+                  <h3>{{ event.title }}</h3>
+                  @if (event.location) { <p>{{ event.location }}</p> }
+                  @if (event.rsvpRequired) {
+                    <ion-segment
+                      [value]="event.myResponse ?? ''"
+                      [disabled]="responding() !== null"
+                      (ionChange)="respond(event, $event)"
+                    >
+                      @for (option of rsvp; track option.value) {
+                        <ion-segment-button [value]="option.value">
+                          <ion-label>{{ option.label }}</ion-label>
+                        </ion-segment-button>
+                      }
+                    </ion-segment>
+                  }
+                </div>
+              } @empty {
+                <p>Найближчі два тижні подій немає.</p>
+              }
+            }
+          }
         </ion-card-content>
       </ion-card>
 
-      <ion-list [inset]="true">
-        <ion-item>
-          <ion-label>Режим Ionic</ion-label>
-          <ion-note slot="end">{{ mode }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>Платформа Capacitor</ion-label>
-          <ion-note slot="end">{{ nativePlatform }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label class="ion-text-wrap">
-            <h3>Платформи Ionic</h3>
-            <p>{{ platforms }}</p>
-          </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-label class="ion-text-wrap">
-            <h3>API</h3>
-            <p>{{ apiUrl }}</p>
-          </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-label>Відкрито як</ion-label>
-          <ion-note slot="end">{{ standalone() ? 'застосунок' : 'вкладка браузера' }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>Версія</ion-label>
-          <ion-note slot="end">{{ version }}</ion-note>
-        </ion-item>
-      </ion-list>
+      <ion-card>
+        <ion-card-header><ion-card-title>Мої задачі</ion-card-title></ion-card-header>
+        <ion-card-content>
+          @switch (tasks().state) {
+            @case ('loading') { <ion-skeleton-text [animated]="true" style="height: 48px" /> }
+            @case ('failed') { <p>{{ failedText }}</p> }
+            @default {
+              @for (task of openTasks(); track task.agendaItemKey) {
+                <div class="row task" data-testid="task">
+                  <div>
+                    <h3>{{ task.title }}</h3>
+                    <p [class.late]="isLate(task)">{{ taskLine(task) }}</p>
+                  </div>
+                  @if (task.canChangeStatus) {
+                    <ion-button
+                      size="small"
+                      fill="outline"
+                      [disabled]="moving() !== null"
+                      (click)="move(task, task.status === 'Todo' ? 'InProgress' : 'Done')"
+                    >
+                      {{ task.status === 'Todo' ? 'Почати' : 'Зроблено' }}
+                    </ion-button>
+                  }
+                </div>
+              } @empty {
+                <p>Відкритих задач немає.</p>
+              }
+            }
+          }
+        </ion-card-content>
+      </ion-card>
+
+      @if (growthValue(); as growth) {
+        @if (growth.hasYouthProgram) {
+          @if (growth.probe; as probe) {
+            <ion-card>
+              <ion-card-header>
+                <ion-card-subtitle>Проба</ion-card-subtitle>
+                <ion-card-title>{{ probe.title }}</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <p>Підписано {{ probe.signedPoints }} з {{ probe.totalPoints }}</p>
+                <ion-progress-bar [value]="probe.totalPoints ? probe.signedPoints / probe.totalPoints : 0" />
+                @if (probe.nextPoints.length) {
+                  <p class="muted">Далі:</p>
+                  @for (point of probe.nextPoints.slice(0, 3); track point.pointId) {
+                    <p>{{ point.sectionCode }} · {{ point.title }}</p>
+                  }
+                }
+              </ion-card-content>
+            </ion-card>
+          }
+          <ion-card>
+            <ion-card-header><ion-card-title>Вмілості</ion-card-title></ion-card-header>
+            <ion-card-content>
+              <div class="stats">
+                <div><strong>{{ growth.badges.onReview.length }}</strong>на перевірці</div>
+                <div><strong>{{ growth.badges.inWork.length }}</strong>у роботі</div>
+                <div><strong>{{ growth.badges.confirmedCount }}</strong>підтверджені</div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        }
+      }
+
+      @for (item of scoreValue(); track item.groupKey) {
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Точкування · {{ item.groupName }}</ion-card-subtitle>
+            <ion-card-title><span class="big">{{ item.total }}</span> балів</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p>Місце {{ item.groupPlace }} з {{ item.groupCount }} · {{ item.periodLabel }}</p>
+          </ion-card-content>
+        </ion-card>
+      }
+
+      @for (item of duesValue(); track item.kurin.kurinKey) {
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Вкладка · {{ item.quarterNumber }} квартал {{ item.quarterYear }}</ion-card-subtitle>
+            <ion-card-title [class.debt]="item.balance < 0" [class.ok]="item.balance >= 0">
+              {{ duesTitle(item) }}
+            </ion-card-title>
+          </ion-card-header>
+          @if (item.quarterRate !== null) {
+            <ion-card-content>
+              <p>Ставка {{ money(item.quarterRate) }} за квартал{{ item.isConcession ? ' (пільга)' : '' }}</p>
+            </ion-card-content>
+          }
+        </ion-card>
+      }
     </ion-content>
   `,
 })
 export class HomePage {
-  protected readonly taps = signal(0);
-  protected readonly doubled = computed(() => this.taps() * 2);
+  private readonly me = inject(MeService);
+  private readonly auth = inject(AuthService);
+  private readonly toasts = inject(ToastController);
 
-  protected readonly mode = document.documentElement.getAttribute('mode') ?? '?';
-  protected readonly nativePlatform = Capacitor.getPlatform();
-  protected readonly platforms = getPlatforms().join(', ');
-  protected readonly apiUrl = apiUrl();
-  protected readonly version = environment.version;
-  protected readonly standalone = inject(InstallService).standalone;
-  protected readonly user = inject(AuthService).user;
+  private readonly now = new Date();
+  protected readonly hello = greeting(this.now);
+  protected readonly rsvp = RSVP;
+  protected readonly money = money;
+  protected readonly failedText = 'Не вдалося завантажити. Потягни вниз, щоб оновити.';
 
-  protected async tap(): Promise<void> {
-    this.taps.update((n) => n + 1);
-    // Native shells use the Taptic engine; on the web Capacitor falls back to navigator.vibrate
-    // (Android browsers), and iOS Safari has no vibration API at all.
+  private readonly firstName = signal<string | null>(null);
+  protected readonly events = signal<Loaded<MyEventDto[]>>({ state: 'loading' });
+  protected readonly tasks = signal<Loaded<MyTaskDto[]>>({ state: 'loading' });
+  private readonly growth = signal<Loaded<MyGrowthDto>>({ state: 'loading' });
+  private readonly score = signal<Loaded<MyScoreDto[]>>({ state: 'loading' });
+  private readonly dues = signal<Loaded<MyDuesDto[]>>({ state: 'loading' });
+  protected readonly responding = signal<string | null>(null);
+  protected readonly moving = signal<string | null>(null);
+
+  protected readonly subline = computed(() => {
+    const name = this.firstName();
+    return name ? `${name} · ${todayLabel(this.now)}` : todayLabel(this.now);
+  });
+  protected readonly upcoming = computed(() => valueOf(this.events())?.slice(0, 5) ?? []);
+  protected readonly openTasks = computed(
+    () => valueOf(this.tasks())?.filter((t) => t.status !== 'Done').slice(0, 5) ?? [],
+  );
+  protected readonly growthValue = computed(() => valueOf(this.growth()));
+  protected readonly scoreValue = computed(() => valueOf(this.score()) ?? []);
+  protected readonly duesValue = computed(() => valueOf(this.dues()) ?? []);
+
+  constructor() {
+    void this.load();
+  }
+
+  protected async refresh(event: Event): Promise<void> {
+    await this.load();
+    await (event.target as HTMLIonRefresherElement).complete();
+  }
+
+  protected when(event: MyEventDto): string {
+    const start = new Date(event.startUtc);
+    const end = event.endUtc ? new Date(event.endUtc) : null;
+    return [dayLabel(start, new Date()), timeLabel(start, end, event.isAllDay)].filter(Boolean).join(' · ');
+  }
+
+  protected isLate(task: MyTaskDto): boolean {
+    return task.endUtc !== null && new Date(task.endUtc) < new Date();
+  }
+
+  protected taskLine(task: MyTaskDto): string {
+    const status = task.status === 'InProgress' ? 'В процесі' : 'Зробити';
+    if (!task.endUtc) return status;
+    const due = dayLabel(new Date(task.endUtc), new Date());
+    return `${status} · ${this.isLate(task) ? 'прострочено, ' : 'до '}${due}`;
+  }
+
+  protected duesTitle(item: MyDuesDto): string {
+    if (item.balance < 0) return `Борг ${money(-item.balance)}`;
+    if (item.balance > 0) return `Сплачено, +${money(item.balance)}`;
+    return 'Сплачено';
+  }
+
+  /** The answer lands on the row at once and goes back if the server refuses it. */
+  protected async respond(event: MyEventDto, change: Event): Promise<void> {
+    const status = (change as CustomEvent<{ value?: string }>).detail.value as AgendaRsvpStatus | undefined;
+    if (!status || status === event.myResponse || this.responding()) return;
+    const key = event.agendaItemKey + event.startUtc;
+    this.responding.set(key);
+    this.patchEvent(key, status);
     try {
-      await Haptics.impact({ style: ImpactStyle.Light });
+      await this.me.respond(event, status);
     } catch {
-      // No haptics on this device.
+      this.patchEvent(key, event.myResponse);
+      await this.toast('Не вдалося відповісти. Спробуй ще раз.');
+    } finally {
+      this.responding.set(null);
     }
+  }
+
+  protected async move(task: MyTaskDto, status: AgendaItemStatus): Promise<void> {
+    if (this.moving()) return;
+    this.moving.set(task.agendaItemKey);
+    try {
+      await this.me.moveTask(task, status);
+      const current = valueOf(this.tasks()) ?? [];
+      this.tasks.set({
+        state: 'ready',
+        value: current.map((t) => (t.agendaItemKey === task.agendaItemKey ? { ...t, status } : t)),
+      });
+      if (status === 'Done') await this.toast('Зроблено');
+    } catch {
+      await this.toast('Не вдалося змінити задачу. Спробуй ще раз.');
+    } finally {
+      this.moving.set(null);
+    }
+  }
+
+  private async load(): Promise<void> {
+    const memberKey = this.auth.user()?.memberKey;
+    await Promise.all([
+      memberKey
+        ? this.me.member(memberKey).then((m) => this.firstName.set(m.firstName), () => undefined)
+        : Promise.resolve(),
+      settle(this.me.events(), this.events),
+      settle(this.me.tasks(), this.tasks),
+      settle(this.me.growth(), this.growth),
+      settle(this.me.score(), this.score),
+      settle(this.me.dues(), this.dues),
+    ]);
+  }
+
+  private patchEvent(key: string, myResponse: AgendaRsvpStatus | null): void {
+    const current = valueOf(this.events()) ?? [];
+    this.events.set({
+      state: 'ready',
+      value: current.map((e) => (e.agendaItemKey + e.startUtc === key ? { ...e, myResponse } : e)),
+    });
+  }
+
+  private async toast(message: string): Promise<void> {
+    const toast = await this.toasts.create({ message, duration: 2500, position: 'top' });
+    await toast.present();
+  }
+}
+
+function valueOf<T>(loaded: Loaded<T>): T | null {
+  return loaded.state === 'ready' ? loaded.value : null;
+}
+
+/** Fills one section; a failed read keeps what was shown before a refresh, if anything. */
+async function settle<T>(request: Promise<T>, target: { set(v: Loaded<T>): void; (): Loaded<T> }): Promise<void> {
+  try {
+    target.set({ state: 'ready', value: await request });
+  } catch {
+    if (target().state !== 'ready') target.set({ state: 'failed' });
   }
 }

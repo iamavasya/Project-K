@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiUrl } from '../runtime-config';
-import { AuthState, LoginOutcome, LoginResponse } from './auth.models';
+import { AuthState, LoginOutcome, LoginResponse, MfaEnabled, MfaSetup, MfaStatus } from './auth.models';
 
 /**
  * The PWA lives on the web's origin (/m/), so it shares the web's session: the same `authState`
@@ -96,8 +96,56 @@ export class AuthService {
     }
   }
 
+  /** Whether the account has the second factor on, as last heard from the server; null until asked. */
+  readonly mfaEnabled = signal<boolean | null>(null);
+
+  async mfaStatus(): Promise<MfaStatus> {
+    const status = await firstValueFrom(
+      this.http.get<MfaStatus>(`${this.api}/auth/mfa/status`, { withCredentials: true }),
+    );
+    this.mfaEnabled.set(status.isMfaEnabled);
+    return status;
+  }
+
+  mfaSetup(): Promise<MfaSetup> {
+    return firstValueFrom(this.http.get<MfaSetup>(`${this.api}/auth/mfa/setup`, { withCredentials: true }));
+  }
+
+  /**
+   * Turning the second factor on ends every session and hands this device a new one. Its token has
+   * to replace the old one: the old token is still valid for minutes, but the privileged-MFA gate
+   * reads the second factor off the token and would refuse every save.
+   */
+  async enableMfa(code: string): Promise<string[]> {
+    const response = await this.post<MfaEnabled>('auth/mfa/enable', { code });
+    const accessToken = response.tokens?.accessToken;
+    const current = this.state();
+    if (accessToken && current) this.apply({ ...current, accessToken });
+    sessionStorage.setItem(mfaCheckedKey(current?.userKey), 'true');
+    this.mfaEnabled.set(true);
+    return response.recoveryCodes ?? [];
+  }
+
+  /**
+   * Whether this account still has to turn on the second factor before using the app. Asked once
+   * per browser session; a failed check lets the person in, and the server still refuses changes.
+   */
+  async mfaSetupRequired(): Promise<boolean> {
+    const key = mfaCheckedKey(this.state()?.userKey);
+    if (sessionStorage.getItem(key) === 'true') return false;
+    try {
+      const status = await this.mfaStatus();
+      const required = status.isMfaRequired && !status.isMfaEnabled;
+      if (!required) sessionStorage.setItem(key, 'true');
+      return required;
+    } catch {
+      return false;
+    }
+  }
+
   forget(): void {
     this.state.set(null);
+    this.mfaEnabled.set(null);
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -133,6 +181,10 @@ export function loginErrorText(error: unknown, fallback: string): string {
  */
 export function isOffline(error: unknown): boolean {
   return error instanceof HttpErrorResponse && (error.status === 0 || error.status === 504);
+}
+
+function mfaCheckedKey(userKey: string | undefined): string {
+  return `mfa-status-checked:${userKey ?? ''}`;
 }
 
 function toState(response: LoginResponse): AuthState {

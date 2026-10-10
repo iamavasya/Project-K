@@ -1,0 +1,93 @@
+/** The web's dashboard shapes (Frontend dashboardModule/models/me.dto.ts), the parts the phone reads. */
+export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
+export type AgendaRsvpStatus = 'Going' | 'NotGoing' | 'Maybe';
+
+export interface MyKurinRefDto {
+  kurinKey: string;
+  kurinNumber: number;
+  namedAfter: string | null;
+  isCurrent: boolean;
+}
+
+export interface MyEventDto {
+  agendaItemKey: string;
+  kurin: MyKurinRefDto;
+  title: string;
+  startUtc: string;
+  endUtc: string | null;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  location: string | null;
+  categoryName: string | null;
+  categoryColorHex: string | null;
+  rsvpRequired: boolean;
+  myResponse: AgendaRsvpStatus | null;
+}
+
+export interface MyTaskDto {
+  agendaItemKey: string;
+  kurin: MyKurinRefDto;
+  title: string;
+  status: AgendaItemStatus;
+  startUtc: string | null;
+  endUtc: string | null;
+  canChangeStatus: boolean;
+}
+
+export interface MyProbeDto {
+  probeId: string;
+  title: string;
+  status: 'NotStarted' | 'InProgress' | 'Completed' | 'Verified';
+  signedPoints: number;
+  totalPoints: number;
+  nextPoints: { pointId: string; sectionCode: string; title: string }[];
+}
+
+export interface MyBadgeDto {
+  badgeId: string;
+  title: string;
+  status: 'Draft' | 'Submitted' | 'Confirmed' | 'Rejected';
+}
+
+export interface MyGrowthDto {
+  memberKey: string;
+  hasYouthProgram: boolean;
+  probe: MyProbeDto | null;
+  badges: { onReview: MyBadgeDto[]; inWork: MyBadgeDto[]; confirmed: MyBadgeDto[]; confirmedCount: number };
+}
+
+export interface MyDuesDto {
+  kurin: MyKurinRefDto;
+  groupName: string | null;
+  quarterYear: number;
+  quarterNumber: number;
+  /** Negative is debt, positive a surplus. */
+  balance: number;
+  quarterRate: number | null;
+  isConcession: boolean;
+}
+
+export interface MyScoreDto {
+  kurin: MyKurinRefDto;
+  groupKey: string;
+  groupName: string;
+  periodLabel: string;
+  total: number;
+  groupPlace: number;
+  groupCount: number;
+}
+
+/** The member card (Frontend kurinModule/models/member.dto.ts), the fields the profile shows. */
+export interface MemberDto {
+  memberKey: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  groupName?: string | null;
+  school?: string | null;
+  latestPlastLevelDisplay?: string | null;
+  profilePhotoUrl: string | null;
+}

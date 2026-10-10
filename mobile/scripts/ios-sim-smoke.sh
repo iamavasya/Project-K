@@ -88,5 +88,5 @@ sleep 6
 shot 04-safari-more
 
 log ""
-log "Screenshots are checked by eye: the native app should show Режим Ionic = ios, Платформа Capacitor = ios."
+log "Screenshots are checked by eye: the native app opens on Головна, Safari on the sign-in screen."
 exit $FAILED

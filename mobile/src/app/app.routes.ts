@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { signedInGuard, signedOutGuard } from './auth/auth.guards';
+import { mfaSetupGuard, signedInGuard, signedOutGuard } from './auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -8,12 +8,24 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login').then((m) => m.LoginPage),
   },
   {
-    path: 'tabs',
+    path: 'mfa',
     canActivate: [signedInGuard],
+    loadComponent: () => import('./pages/mfa-setup').then((m) => m.MfaSetupPage),
+  },
+  {
+    path: 'tabs',
+    canActivate: [signedInGuard, mfaSetupGuard],
     loadComponent: () => import('./pages/tabs').then((m) => m.TabsPage),
     children: [
       { path: 'home', loadComponent: () => import('./pages/home').then((m) => m.HomePage) },
-      { path: 'more', loadComponent: () => import('./pages/more').then((m) => m.MorePage) },
+      {
+        path: 'more',
+        children: [
+          { path: '', loadComponent: () => import('./pages/more').then((m) => m.MorePage) },
+          { path: 'profile', loadComponent: () => import('./pages/profile').then((m) => m.ProfilePage) },
+          { path: 'about', loadComponent: () => import('./pages/about').then((m) => m.AboutPage) },
+        ],
+      },
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ],
   },
