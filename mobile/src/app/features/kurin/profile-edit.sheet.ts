@@ -36,9 +36,9 @@ const FIELDS: { key: Field; label: string; type: 'text' | 'tel' | 'date'; autoco
 ];
 
 /**
- * One's own card (web upsert-member as a youth sees it): name, phone and birth date. The email is
- * the account's and changes in its settings; the photo, ступені, verification and перестороги stay
- * with the провід on the web. Dismisses with the saved card.
+ * A card's basic fields (web upsert-member): name, phone and birth date, on one's own card or, for
+ * провід and admins, on anyone's the server lets them change. The email is the account's; the photo,
+ * ступені, verification and перестороги stay on the web for now. Dismisses with the saved card.
  */
 @Component({
   selector: 'app-profile-edit-sheet',
@@ -73,7 +73,7 @@ const FIELDS: { key: Field; label: string; type: 'text' | 'tel' | 'date'; autoco
         <ion-buttons slot="start">
           <ion-button (click)="close(null)">Скасувати</ion-button>
         </ion-buttons>
-        <ion-title>Мій профіль</ion-title>
+        <ion-title>{{ own ? 'Мій профіль' : 'Профіль учасника' }}</ion-title>
         <ion-buttons slot="end">
           <ion-button [strong]="true" [disabled]="!valid() || busy()" (click)="save()" data-testid="save-profile">Зберегти</ion-button>
         </ion-buttons>
@@ -103,7 +103,11 @@ const FIELDS: { key: Field; label: string; type: 'text' | 'tel' | 'date'; autoco
           }
         </ion-item-group>
       </ion-list>
-      <p class="hint">Email ({{ member?.email }}) змінюється в налаштуваннях акаунта. Фото, ступені й решту змінює провід у вебі.</p>
+      @if (own) {
+        <p class="hint">Email ({{ member?.email }}) змінюється в налаштуваннях акаунта. Фото, ступені й решту змінює провід у вебі.</p>
+      } @else {
+        <p class="hint">Email, фото, ступені, перевірку й перестороги поки змінюють у вебі.</p>
+      }
     </ion-content>
   `,
 })
@@ -114,6 +118,8 @@ export class ProfileEditSheet implements OnInit {
 
   // Set by ModalController's componentProps.
   member: MemberDto | null = null;
+  /** One's own card, or somebody else's opened by провід or an admin. */
+  own = true;
 
   protected readonly fields = FIELDS;
   protected readonly today = toDateOnly(new Date());

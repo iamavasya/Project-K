@@ -314,8 +314,15 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
 
   await page.goto('./tabs/kurin/member/m2');
   await expect(page.getByTestId('member-head')).toContainText('Марта Шевчук');
-  // Not one's own card: the fields are edited on the web.
-  await expect(page.getByTestId('edit-profile')).toHaveCount(0);
+  // Провід changes somebody else's basic fields too; email, photo and the rest stay on the web.
+  await page.getByTestId('edit-profile').click();
+  await expect(page.locator('ion-modal ion-title')).toContainText('Профіль учасника');
+  await page.locator('[data-testid=profile-middleName] input').fill('Іванівна');
+  await page.locator('[data-testid=profile-phoneNumber] input').fill('+380 50 222 22 22');
+  await page.locator('[data-testid=profile-dateOfBirth] input').fill('2012-03-04');
+  await page.getByTestId('save-profile').click();
+  await expect.poll(() => String(log.writes.find((w) => w.method === 'PUT' && w.path === 'member/m2')?.body ?? '')).toContain('+380 50 222 22 22');
+  await expect(page.locator('ion-modal.show-modal')).toHaveCount(0);
 
   await page.getByTestId('all-skills').click();
   await page.getByTestId('pending-skills').getByRole('button', { name: 'Підтвердити' }).click();

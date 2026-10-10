@@ -47,6 +47,7 @@ import {
 import { GroupDto, KurinDto, LeadershipHistoryDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { GroupSilhouette } from './group-silhouette';
 
 type Section = 'overview' | 'members';
 
@@ -83,8 +84,12 @@ const DESCRIPTION_LIMIT = 360;
     IonSkeletonText,
     RouterLink,
     MemberAvatar,
+    GroupSilhouette,
   ],
   styles: `
+    app-group-silhouette.mini {
+      margin-inline-end: 16px;
+    }
     .segment {
       padding: 4px 16px 8px;
     }
@@ -255,7 +260,7 @@ const DESCRIPTION_LIMIT = 360;
                 @default {
                   @for (group of groupList(); track group.groupKey) {
                     <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/group', group.groupKey]">
-                      <ion-icon class="lk-tile" slot="start" name="people" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+                      <app-group-silhouette slot="start" class="mini" [url]="group.silhouetteUrl" [size]="32" />
                       <ion-label>{{ group.name }}</ion-label>
                     </ion-item>
                   } @empty {

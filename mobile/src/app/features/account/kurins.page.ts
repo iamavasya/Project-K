@@ -28,6 +28,7 @@ import { Toasts } from '../../core/toast';
 import { BRANCH_LABELS, KIND_LABELS, groupRole, kurinLabel, sortKurins } from './account.labels';
 import { MyGroupDto } from './account.models';
 import { AccountService } from './account.service';
+import { GroupSilhouette } from '../kurin/group-silhouette';
 
 /**
  * «Мої курені»: the web's kurin switcher and my-kurins tile. The kurin acted in is checked; picking
@@ -37,6 +38,7 @@ import { AccountService } from './account.service';
 @Component({
   selector: 'app-kurins',
   imports: [
+    GroupSilhouette,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -69,11 +71,8 @@ import { AccountService } from './account.service';
       font-weight: 800;
       font-size: 16px;
     }
-    .plaque img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 10px;
+    .plaque-silhouette {
+      margin: 8px 16px 8px 0;
     }
     .plaque ion-icon {
       font-size: 20px;
@@ -167,13 +166,7 @@ import { AccountService } from './account.service';
                     (click)="openGroup(group)"
                     [attr.data-testid]="'group-' + group.groupKey"
                   >
-                    <span class="plaque" slot="start" aria-hidden="true">
-                      @if (group.silhouetteUrl) {
-                        <img [src]="group.silhouetteUrl" alt="" loading="lazy" />
-                      } @else {
-                        <ion-icon name="people" />
-                      }
-                    </span>
+                    <app-group-silhouette slot="start" class="plaque-silhouette" [url]="group.silhouetteUrl" [size]="40" />
                     <ion-label class="ion-text-wrap">
                       <h3>{{ group.name }}</h3>
                       <p>{{ role(group) }}@if (kurins().length > 1) { · к. ч. {{ group.kurin.kurinNumber }} }</p>

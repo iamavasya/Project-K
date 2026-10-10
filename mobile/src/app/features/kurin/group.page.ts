@@ -43,6 +43,7 @@ import {
 import { GroupDto, LeadershipHistoryDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { GroupSilhouette } from './group-silhouette';
 
 const DESCRIPTION_LIMIT = 220;
 const BIRTHDAY_DAYS = 30;
@@ -80,30 +81,13 @@ const SEARCH_FROM = 9;
     IonSkeletonText,
     RouterLink,
     MemberAvatar,
+    GroupSilhouette,
   ],
   styles: `
     .hero {
       display: flex;
       gap: 14px;
       align-items: center;
-    }
-    .silhouette {
-      flex: none;
-      width: 72px;
-      height: 72px;
-      border-radius: 16px;
-      background: var(--lk-primary-50);
-      color: var(--lk-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      font-size: 36px;
-    }
-    .silhouette img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
     }
     .eyebrow {
       margin: 0;
@@ -190,13 +174,7 @@ const SEARCH_FROM = 9;
             @default {
               @if (groupValue(); as g) {
                 <div class="hero">
-                  <div class="silhouette">
-                    @if (g.silhouetteUrl) {
-                      <img [src]="g.silhouetteUrl" [alt]="'Сильветка гуртка ' + g.name" />
-                    } @else {
-                      <ion-icon name="people" aria-hidden="true" />
-                    }
-                  </div>
+                  <app-group-silhouette [url]="g.silhouetteUrl" [size]="72" data-testid="group-silhouette" />
                   <div>
                     <p class="eyebrow">Гурток</p>
                     <h2>{{ g.name }}</h2>

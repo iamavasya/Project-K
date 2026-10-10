@@ -169,11 +169,11 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
     .thumb {
       width: 36px;
       height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
+      object-fit: contain;
       margin-inline-end: 12px;
     }
     ion-icon.thumb {
+      border-radius: 50%;
       box-sizing: border-box;
       padding: 8px;
       background: var(--lk-primary-50);
@@ -214,7 +214,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
           }
         </ion-buttons>
         <ion-title>{{ own() ? 'Профіль' : 'Учасник' }}</ion-title>
-        @if (canEditOwn()) {
+        @if (canEditProfile()) {
           <ion-buttons slot="end">
             <ion-button (click)="editProfile()" data-testid="edit-profile">Редагувати</ion-button>
           </ion-buttons>
@@ -533,8 +533,8 @@ export class MemberPage implements OnInit {
   protected readonly memberValue = computed(() => valueOf(this.member()));
   private readonly membershipList = computed(() => valueOf(this.memberships()) ?? []);
   protected readonly isOwnCard = computed(() => !!this.key() && this.key() === this.auth.user()?.memberKey);
-  /** «Редагувати» for one's own fields; somebody else's card is edited on the web. */
-  protected readonly canEditOwn = computed(() => this.isOwnCard() && this.canUpdate() && !!this.memberValue());
+  /** «Редагувати»: name, phone and birth date, on any card the server lets this user change (own, or as провід/адмін). */
+  protected readonly canEditProfile = computed(() => this.canUpdate() && !!this.memberValue());
   /** Skills and awards: whoever the server lets change the card (web canEditMember). */
   protected readonly canEdit = computed(() => this.canUpdate());
   /** Confirming skills and awards: a reviewer who may change this card (web canInlineModerateSkills). */
@@ -685,7 +685,7 @@ export class MemberPage implements OnInit {
     if (!key || !member) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member },
+      componentProps: { member, own: this.isOwnCard() },
       presentingElement: this.presenting(),
     });
     await modal.present();

@@ -55,11 +55,11 @@ const REVIEW_ERRORS = {
     .thumb {
       width: 36px;
       height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
+      object-fit: contain;
       margin-inline-end: 12px;
     }
     ion-icon.thumb {
+      border-radius: 50%;
       box-sizing: border-box;
       padding: 8px;
       background: var(--lk-primary-50);
@@ -250,11 +250,11 @@ export class SkillsSheet implements OnInit {
     .thumb {
       width: 40px;
       height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
+      object-fit: contain;
       margin-inline-end: 12px;
     }
     ion-icon.thumb {
+      border-radius: 50%;
       box-sizing: border-box;
       padding: 9px;
       background: var(--lk-primary-50);
