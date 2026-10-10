@@ -7,6 +7,8 @@ on:
     branches: [ "**" ]
     paths:
       - 'Frontend/**'
+      # The phone PWA ships inside the same site, under /m/.
+      - 'mobile/**'
       # A change to the pipeline is a change that has to run through it.
       - '.github/workflows/angular.yml'
   pull_request:
@@ -35,7 +37,7 @@ jobs:
         shell: bash
         run: |
           : "${VERSION:?no version resolved by an earlier step}"
-          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
+          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ mobile/src/environments/ -name "environment*.ts")
           for file in $ENV_FILES; do
             sed -i "s/v0.0.0-dev/${VERSION}/g" "$file"
             # CODENAME is empty for a release without a code name, which blanks the placeholder.
@@ -111,7 +113,7 @@ jobs:
       - name: Inject Versioning
         shell: bash
         run: |
-          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ -name "environment*.ts")
+          ENV_FILES=$(find Frontend/projectk-frontend/src/environments/ mobile/src/environments/ -name "environment*.ts")
           for file in $ENV_FILES; do
             sed -i "s/v0.0.0-dev/$VERSION/g" "$file"
             sed -i "s/LocalDevelopment/$CODENAME/g" "$file"
@@ -132,6 +134,17 @@ jobs:
       - name: Build
         run: npm run build -- --configuration ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'staging' }}
         working-directory: Frontend/projectk-frontend
+
+      # The phone PWA (mobile/) is served from the same origin under /m/, so it shares the web's
+      # CORS entry, cookies and env.js.
+      - run: npm ci --ignore-scripts
+        working-directory: mobile
+
+      - name: Build the phone PWA into /m/
+        run: |
+          npm run ng -- build --configuration ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'production' || 'production,staging' }} --base-href /m/
+          cp -R www ../Frontend/projectk-frontend/dist/projectk-frontend/browser/m
+        working-directory: mobile
 
       - name: Deploy
         id: builddeploy

@@ -54,8 +54,9 @@ jobs:
           roots = [
               Path("Backend/ProjectK.Backend/ProjectK.API"),
               Path("Frontend/projectk-frontend/src/environments"),
+              Path("mobile/src/environments"),
           ]
-          patterns = ["appsettings*.json", "environment*.ts"]
+          patterns = ["appsettings*.json", "environment*.ts", "environment*.ts"]
 
           for root, pattern in zip(roots, patterns):
               for path in root.glob(pattern):

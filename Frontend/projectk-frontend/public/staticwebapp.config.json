@@ -1,11 +1,29 @@
 {
+  "routes": [
+    {
+      "route": "/m/*.{js,css,json,webmanifest,png,svg,ico,txt}",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "route": "/m/*",
+      "rewrite": "/m/index.html"
+    }
+  ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": [
+      "/m/*"
+    ]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+  },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
   }
 }

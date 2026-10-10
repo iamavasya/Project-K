@@ -1,0 +1,520 @@
+// Лілейка on top of Ionic (BRANDBOOK v1.2, PLAN.md §5).
+//
+// Everything is scoped to `.lk`: the app root carries it (app.ts), and the component sheet at /ui
+// sets it only on its brand side, next to Ionic as it ships.
+//
+// Ionic crossed with the web (Rost's reviews of the sheet, 2026-10-10):
+// - Both platforms: the brand's colours, Manrope, the surface ground, the web's fields, tags in
+//   p-tag colours and the card eyebrow; toggles, checkboxes, radios and progress stay Ionic's.
+// - iPhone: every control is Liquid Glass, drawn by rdlabo's iOS 26/27 theme (styles.scss).
+// - Android: the web's skin at Material's sizes: buttons, segmented tabs, toolbar, tab bar, cards
+//   and the «Ще» menu.
+//
+// Light or dark is the person's choice in «Ще → Вигляд» (Системна / Світла / Темна):
+// AppearanceService puts `ion-palette-dark` on <html> whenever the page is dark, so Ionic's dark
+// palette and rdlabo's dark Liquid Glass are loaded here in their class form, and the brand tokens
+// below follow the same class. The `prefers-color-scheme` blocks only cover the moment before the
+// app starts (and are held off by `lk-light`, a chosen light theme on a dark system).
+
+@use 'sass:meta';
+
+@include meta.load-css('@ionic/angular/css/palettes/dark.class');
+
+// The same @supports split as styles.scss: each generation's dark goes with its own theme.
+@supports (overflow-anchor: auto) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/ionic-theme-ios27-dark-class');
+}
+
+@supports (text-wrap: pretty) and (not (overflow-anchor: auto)) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/ionic-theme-ios26-dark-class');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./fonts/manrope-var-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./fonts/manrope-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./fonts/manrope-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+// Brand tokens (BRANDBOOK §2), the same numbers as --lil-* in the web's lileyka-theme.css.
+:root {
+  --lk-primary: #0e6e4e;
+  --lk-primary-hover: #0b5a40;
+  --lk-primary-active: #084733;
+  --lk-on-primary: #ffffff;
+  --lk-primary-50: #eaf3ee;
+  --lk-primary-100: #cfe5d9;
+  --lk-primary-700: #0b5a40;
+  --lk-accent-50: #fbe9dc;
+  --lk-accent-700: #a8541b;
+  --lk-danger: #dc2626;
+  --lk-danger-rgb: 220, 38, 38;
+  --lk-ios-ground: #eff1f0;
+  --lk-ios-ground-rgb: 239, 241, 240;
+  --lk-danger-50: #fee2e2;
+  --lk-danger-700: #b91c1c;
+  --lk-ink: #101413;
+  --lk-ink-soft: #2e3633;
+  --lk-muted: #6e7873;
+  --lk-faint: #9aa39f;
+  --lk-line: #e4e8e6;
+  --lk-surface: #f7f9f8;
+  --lk-paper: #ffffff;
+  // Aura's secondary button: surface.100 under surface.600.
+  --lk-secondary-bg: #eff1f0;
+  --lk-secondary-bg-active: #e4e8e6;
+  --lk-secondary-fg: #4a5350;
+}
+
+@mixin dark-tokens {
+  --lk-primary: #34c48d;
+  --lk-primary-hover: #4fd49e;
+  --lk-primary-active: #21a874;
+  --lk-on-primary: #052018;
+  --lk-primary-50: #1d2e27;
+  --lk-primary-100: #245039;
+  --lk-primary-700: #9fe3c2;
+  --lk-accent-50: #2a1f16;
+  --lk-accent-700: #f3b784;
+  --lk-danger: #f87171;
+  --lk-danger-rgb: 248, 113, 113;
+  --lk-ios-ground: #0d1110;
+  --lk-ios-ground-rgb: 13, 17, 16;
+  --lk-danger-50: #2c1515;
+  --lk-danger-700: #fca5a5;
+  --lk-ink: #e9edea;
+  --lk-ink-soft: #dde2df;
+  --lk-muted: #9ba8a2;
+  --lk-faint: #6c7570;
+  --lk-line: #232a27;
+  --lk-surface: #0d1110;
+  --lk-paper: #161b19;
+  --lk-secondary-bg: #1d2320;
+  --lk-secondary-bg-active: #232a27;
+  --lk-secondary-fg: #c7cfcb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.lk-light) {
+    @include dark-tokens;
+  }
+}
+
+:root.ion-palette-dark {
+  @include dark-tokens;
+}
+
+// rdlabo's dark lists tint the disclosure chevron; in class form that rule outranks the brand's.
+.ion-palette-dark .lk ion-list.ios ion-item {
+  --detail-icon-color: var(--lk-faint);
+}
+
+.lk {
+  --ion-font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ion-text-color: var(--lk-ink);
+  --ion-border-color: var(--lk-line);
+  // Ionic's danger (color="danger") in the brand's red.
+  --ion-color-danger: var(--lk-danger);
+  --ion-color-danger-rgb: var(--lk-danger-rgb);
+  --ion-color-danger-shade: var(--lk-danger-700);
+  --ion-color-danger-tint: var(--lk-danger);
+  font-family: var(--ion-font-family);
+  color: var(--lk-ink);
+
+  // ── Page: the web's ground (surface) under paper cards, lists and bars ──────────────────────
+  ion-content {
+    --background: var(--lk-surface);
+    --color: var(--lk-ink);
+  }
+
+  // ── Fields: the web's field (BRANDBOOK §5 «Поля введення») ─────────────────────────────────
+  // Label above in 13/600 faint, a 1px line box with an 8px radius; focus is a primary line with a
+  // soft primary ring. 44px instead of the web's 40 for a finger. The box is a wrapper, so its
+  // rounded line is never painted over by the input's own layers.
+  .lk-field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .lk-field__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--lk-faint);
+  }
+
+  .lk-input-box {
+    background: var(--lk-paper);
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    outline: 2px solid transparent;
+    overflow: hidden;
+    transition:
+      border-color 120ms ease,
+      outline-color 120ms ease;
+  }
+
+  .lk-input-box:focus-within {
+    border-color: var(--lk-primary);
+    outline-color: var(--lk-primary-50);
+  }
+
+  .lk-input-box.lk-invalid {
+    border-color: var(--lk-danger);
+  }
+
+  .lk-input-box ion-input {
+    --background: transparent;
+    --color: var(--lk-ink);
+    --placeholder-color: var(--lk-faint);
+    --placeholder-opacity: 1;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --highlight-height: 0;
+    --border-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  // Password dots in the system face: Manrope's bullets are small and widely spaced.
+  .lk-input-box ion-input[type='password'] {
+    font-family: -apple-system, system-ui, Roboto, sans-serif;
+  }
+
+  .lk-field__error {
+    font-size: 13px;
+    color: var(--lk-danger);
+  }
+
+  // ── Tags: ion-badge at Ionic's size and radius, in p-tag's colours ───────────────────────────
+  ion-badge.lk-tag--info {
+    --background: var(--lk-primary-50);
+    --color: var(--lk-primary-700);
+  }
+
+  ion-badge.lk-tag--warn {
+    --background: var(--lk-accent-50);
+    --color: var(--lk-accent-700);
+  }
+
+  ion-badge.lk-tag--danger {
+    --background: var(--lk-danger-50);
+    --color: var(--lk-danger-700);
+  }
+
+  ion-badge.lk-tag--secondary {
+    --background: var(--lk-secondary-bg);
+    --color: var(--lk-secondary-fg);
+  }
+
+  // ── Card: brand colours and the web tile's eyebrow above the title ────────────────────────────
+  // Type sizes and the progress bar are Ionic's; the shape is each platform's (see below).
+  ion-card {
+    --background: var(--lk-paper);
+    --color: var(--lk-muted);
+  }
+
+  // iOS puts the subtitle under the title (column-reverse); the web's eyebrow sits above it.
+  ion-card-header {
+    flex-direction: column;
+  }
+
+  ion-card-subtitle {
+    color: var(--lk-faint);
+  }
+
+  ion-card-title {
+    color: var(--lk-ink);
+  }
+
+  // ── Lists: brand colours and lines ────────────────────────────────────────────────────────────
+  ion-item {
+    --border-color: var(--lk-line);
+    --color: var(--lk-ink-soft);
+    --background-activated: var(--lk-surface);
+    --background-hover: var(--lk-surface);
+    --background-hover-opacity: 1;
+    --detail-icon-color: var(--lk-faint);
+  }
+
+  ion-item ion-note,
+  ion-item ion-label p {
+    color: var(--lk-muted);
+  }
+
+  ion-list-header {
+    color: var(--lk-ink);
+  }
+}
+
+// ── iPhone: Liquid Glass ──────────────────────────────────────────────────────────────────────
+// rdlabo's iOS 26/27 theme (styles.scss) draws every control as Apple does: glass tab bar and
+// toolbar buttons, segments, lists, buttons, overlays and page motion. The brand only lends its
+// green, type and ground; nothing here reshapes a control.
+.ios .lk {
+  // iOS grouped look: paper groups and cards on a ground a step darker than the web's surface
+  // (Apple's #f2f2f7 in the brand's grey). Surfaces the theme draws from the background colour
+  // (segment plates, fields, overlays) stay paper; its scroll-edge fades take the ground.
+  --ion-background-color: var(--lk-paper);
+  --ion-item-background: var(--lk-paper);
+  --ion-card-background: var(--lk-paper);
+  --ion-toolbar-background: var(--lk-ios-ground);
+  --ios-theme-content-box-shadow-rgb: var(--lk-ios-ground-rgb);
+  // iOS 26 bars have no hairline: the soft scroll-edge blur alone parts them from the content.
+  --ion-toolbar-border-color: transparent;
+
+  // The glass bars let the page show through above the content, so the app itself is ground too.
+  background: var(--lk-ios-ground);
+
+  ion-content,
+  ion-header.header-collapse-condense ion-toolbar {
+    --background: var(--lk-ios-ground);
+  }
+
+  ion-tab-bar {
+    --color-selected: var(--lk-primary);
+  }
+
+}
+
+// ── Android ───────────────────────────────────────────────────────────────────────────────────
+// Buttons are the web's p-button (radius 8, no uppercase or elevation) at Material's size:
+// 36px with 14/500 labels, 27px small with 13px. The segment is Material's 48px with 14px labels.
+// The web's skin lives here only: segmented tabs, the paper toolbar and tab bar with a 1px line,
+// cards with the web tile's 12px radius and the «Ще» menu, framed by a line instead of a shadow.
+.md .lk {
+  // ── Tabs: the web's segmented tabs (agenda board on a phone, p-selectButton) ────────────────
+  // A tray on the page ground with a 1px line; the chosen tab is a paper plate with a line.
+  ion-segment {
+    --background: var(--lk-surface);
+    background: var(--lk-surface);
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  // Material's 48px segment with 14px labels: a 4px tray around 38px plates.
+  ion-segment-button {
+    --color: var(--lk-muted);
+    --color-checked: var(--lk-ink);
+    --background: transparent;
+    --background-checked: transparent;
+    --background-hover: transparent;
+    --indicator-color: var(--lk-paper);
+    --indicator-box-shadow: none;
+    --indicator-height: 100%;
+    --border-radius: 8px;
+    --border-width: 0;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    margin: 0;
+    min-width: 0;
+    min-height: 38px;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  // iOS draws hairlines between the options; the web has none.
+  ion-segment-button::before {
+    display: none;
+  }
+
+  ion-segment-button::part(indicator) {
+    height: 100%;
+    padding: 0;
+    top: 0;
+    bottom: 0;
+  }
+
+  ion-segment-button::part(indicator-background) {
+    height: 100%;
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    background: var(--lk-paper);
+  }
+
+  // ── Toolbar: paper with a 1px line, no shadow (BRANDBOOK §5 «Тулбар»); Ionic's title size ─────
+  ion-toolbar {
+    --background: var(--lk-paper);
+    --color: var(--lk-ink);
+    --border-color: var(--lk-line);
+    --border-width: 0 0 1px;
+  }
+
+  ion-title {
+    font-weight: 700;
+  }
+
+  // iOS large titles sit on the page itself, not on a bar.
+  ion-header.header-collapse-condense ion-toolbar {
+    --background: var(--lk-surface);
+    --border-width: 0;
+  }
+
+  // Toolbar icons in ink: they read clearly without competing with the green actions.
+  ion-toolbar ion-button {
+    --color: var(--lk-ink-soft);
+  }
+
+  // ── Tab bar: paper, a 1px line on top, faint at rest and primary when chosen ─────────────────
+  ion-tab-bar {
+    --background: var(--lk-paper);
+    --border: 1px solid var(--lk-line);
+    --color: var(--lk-faint);
+    --color-selected: var(--lk-primary);
+  }
+
+  ion-tab-button {
+    font-weight: 700;
+  }
+
+  ion-card {
+    border: 1px solid var(--lk-line);
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  ion-list {
+    --ion-item-background: var(--lk-paper);
+  }
+
+  ion-button:not(ion-toolbar ion-button) {
+    --border-radius: 8px;
+    --box-shadow: none;
+    --padding-start: 1.1em;
+    --padding-end: 1.1em;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    height: 36px;
+    min-height: 36px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  ion-button.button-small {
+    height: 2.1em;
+    min-height: 2.1em;
+    --padding-start: 0.9em;
+    --padding-end: 0.9em;
+    font-size: 13px;
+  }
+
+  // Material pads the label 12px top and bottom, which would push the plate past 38px.
+  ion-segment-button ion-label {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  ion-button.button-solid {
+    --background: var(--lk-primary);
+    --background-hover: var(--lk-primary-hover);
+    --background-activated: var(--lk-primary-active);
+    --background-focused: var(--lk-primary-hover);
+    --color: var(--lk-on-primary);
+  }
+
+  // Secondary: Aura's grey button, for the alternative action.
+  ion-button.button-solid.lk-secondary {
+    --background: var(--lk-secondary-bg);
+    --background-hover: var(--lk-secondary-bg-active);
+    --background-activated: var(--lk-secondary-bg-active);
+    --background-focused: var(--lk-secondary-bg-active);
+    --color: var(--lk-secondary-fg);
+  }
+
+  ion-button.button-outline {
+    --border-width: 1px;
+    --border-color: var(--lk-primary);
+    --color: var(--lk-primary);
+    --background-hover: var(--lk-primary-50);
+    --background-activated: var(--lk-primary-100);
+  }
+
+  // Text buttons are tertiary actions («Скасувати»): muted, not green.
+  ion-button.button-clear:not(ion-toolbar ion-button) {
+    --color: var(--lk-muted);
+    --background-hover: var(--lk-surface);
+    --background-activated: var(--lk-line);
+  }
+
+  ion-button.button-clear.lk-danger {
+    --color: var(--lk-danger);
+  }
+
+  ion-button.button-disabled {
+    opacity: 0.4;
+  }
+
+  ion-list.list-inset {
+    border: 1px solid var(--lk-line);
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  ion-list-header {
+    color: var(--lk-faint);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  ion-item {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  ion-item ion-note,
+  ion-item ion-label p {
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  // Material keeps action sheet rows neutral; a destructive one still reads as the brand's red.
+  ion-action-sheet .action-sheet-destructive {
+    color: var(--lk-danger);
+  }
+}
+
+// ── Settings icon tiles (both columns of the sheet too, so outside .lk) ──────────────────────
+// iPhone: Apple's 29pt square, ~7pt corner, 16pt to the label, a white glyph on the row's own
+// colour (--lk-tile). Android: Material settings rows carry a plain grey icon.
+.ios ion-item > ion-icon.lk-tile[slot='start'] {
+  box-sizing: content-box;
+  font-size: 21px;
+  padding: 4px;
+  margin-inline-end: 16px;
+  border-radius: 7px;
+  color: #ffffff;
+  background: var(--lk-tile, var(--lk-primary));
+}
+
+.md ion-item > ion-icon.lk-tile[slot='start'] {
+  color: var(--lk-muted, var(--ion-color-medium));
+}

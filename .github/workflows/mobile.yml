@@ -1,0 +1,240 @@
+name: Mobile CI
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    name: Test, build APK and smoke on emulator
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci --ignore-scripts
+
+      - name: Unit tests
+        run: npm test -- --watch=false
+
+      - name: Build bundled debug APK
+        run: |
+          npm run build
+          npm run cap -- sync android
+          (cd android && ./gradlew assembleDebug --no-daemon -q)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/bundled.apk"
+
+      - name: Build live-reload debug APK
+        run: |
+          LIVE_RELOAD_URL=http://10.0.2.2:4200 npm run cap -- sync android
+          (cd android && ./gradlew assembleDebug --no-daemon -q)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/live.apk"
+
+      - name: Start dev server for live reload
+        run: |
+          nohup npm run ng -- serve --host 0.0.0.0 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:4200 > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/serve.log"; exit 1
+
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke on emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          working-directory: mobile
+          script: ./scripts/emulator-smoke.sh "$RUNNER_TEMP/bundled.apk" "$RUNNER_TEMP/live.apk" "$RUNNER_TEMP/screens"
+
+      - name: Job summary
+        if: always()
+        run: cat "$RUNNER_TEMP/screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-screens
+          path: ${{ runner.temp }}/screens
+
+  pwa:
+    runs-on: ubuntu-latest
+    name: PWA as iPhone Safari and Android Chrome
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Install WebKit and Chromium
+        run: npm run e2e:install
+
+      - name: Build and run the PWA smoke
+        run: npm run e2e
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pwa-screens
+          path: mobile/test-results/pwa-screens
+
+  pwa-real-api:
+    runs-on: ubuntu-latest
+    name: PWA sign-in against the real API
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same stack as the web e2e workflow; its web image serves the PWA under /m/.
+      - name: Start the e2e stack
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
+        run: |
+          ./scripts/dev.sh tools up
+          ./scripts/dev.sh up e2e --build
+
+      - name: Wait for the stack
+        run: |
+          for _ in $(seq 1 60); do
+            web=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4201/m/ || true)
+            api=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5206/health || true)
+            [ "$web" = "200" ] && [ "$api" = "200" ] && exit 0
+            sleep 5
+          done
+          echo "Stack did not become healthy" >&2
+          exit 1
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+        working-directory: mobile
+
+      - name: Install WebKit and Chromium
+        run: npm run e2e:install
+        working-directory: mobile
+
+      - name: Sign in through the PWA
+        env:
+          PW_BASE_URL: http://localhost:4201/m/
+          PW_REAL_API: http://localhost:5206/api
+          # The e2e seed's shared test password (Frontend/projectk-frontend/e2e/support/test-users.ts).
+          E2E_MEMBER_PASSWORD: User@12345
+        # One worker: each browser resets the shared database, and two resets at once collide.
+        run: npx --no-install playwright test e2e/real-login.pw.ts --workers 1
+        working-directory: mobile
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pwa-real-api-screens
+          path: mobile/test-results/pwa-screens
+
+      - name: Collect stack logs on failure
+        if: failure()
+        # dev.sh follows the logs, so cut it off once the backlog is printed. Requests, warnings
+        # and errors only: the seed's SQL would push the test output out of the log's tail.
+        run: |
+          timeout 60 ./scripts/dev.sh logs e2e 2>&1 \
+            | grep -E 'HTTP |WRN|ERR|FTL|Exception|nginx|error' | tail -300 || true
+
+      - name: Tear down
+        if: always()
+        run: ./scripts/dev.sh down e2e -v || true
+
+  ios-simulator:
+    runs-on: macos-15
+    name: Build for iOS Simulator and smoke
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Build simulator app
+        run: |
+          npm run build
+          npm run cap -- sync ios
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO -quiet build
+
+      - name: Start dev server for Safari
+        run: |
+          nohup npm run ng -- serve --host 127.0.0.1 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:4200 > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/serve.log"; exit 1
+
+      - name: Smoke on simulator
+        run: ./scripts/ios-sim-smoke.sh "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app" http://127.0.0.1:4200 "$RUNNER_TEMP/ios-screens"
+
+      - name: Job summary
+        if: always()
+        run: cat "$RUNNER_TEMP/ios-screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screens
+          path: ${{ runner.temp }}/ios-screens
