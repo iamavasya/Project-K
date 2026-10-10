@@ -138,9 +138,10 @@ wanted, height = sys.argv[2].casefold(), int(sys.argv[3])
 for node in ET.parse(sys.argv[1]).getroot().iter('node'):
     if wanted in (node.get('text', '').strip().casefold(), node.get('content-desc', '').strip().casefold()):
         x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
-        # Above the tab bar and system navigation (~250 px on a Pixel 6): at the end of the page
-        # the last card sits just over them.
-        if y2 > y1 and y1 >= 0 and y2 <= height - 250:
+        # Off-screen nodes report [0,0][0,0]. A tap lands on the centre, which must clear the tab
+        # bar and system navigation (~210 px on a Pixel 6); at the end of the page the last card
+        # sits just over them (its button at [73,2083][1008,2183] on CI).
+        if y2 > y1 and y1 >= 0 and (y1 + y2) // 2 <= height - 220:
             sys.exit(0)
         print(f'  {sys.argv[2]} at {node.get("bounds")}, screen height {height}', file=sys.stderr)
 sys.exit(1)
