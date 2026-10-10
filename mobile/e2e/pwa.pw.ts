@@ -15,8 +15,11 @@ test('serves an installable manifest', async ({ request }) => {
   const sizes = manifest.icons.map((icon: { sizes: string }) => icon.sizes);
   expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
   expect(manifest.icons.some((icon: { purpose: string }) => icon.purpose === 'maskable')).toBe(true);
-  for (const icon of manifest.icons) {
-    expect((await request.get(`/${icon.src}`)).ok(), icon.src).toBe(true);
+  const responses = await Promise.all(
+    manifest.icons.map((icon: { src: string }) => request.get(`/${icon.src}`)),
+  );
+  for (const response of responses) {
+    expect(response.ok(), response.url()).toBe(true);
   }
 });
 
@@ -72,15 +75,11 @@ test('keeps working offline after the first visit', async ({ page, context }, in
   // Wait until ngsw has activated and prefetched the app shell into its cache.
   await expect
     .poll(
-      async () =>
+      () =>
         page.evaluate(async () => {
           await navigator.serviceWorker.ready;
-          for (const key of await caches.keys()) {
-            if (key.endsWith(':assets:app:cache') && (await (await caches.open(key)).match('/index.html'))) {
-              return true;
-            }
-          }
-          return false;
+          const key = (await caches.keys()).find((name) => name.endsWith(':assets:app:cache'));
+          return key !== undefined && (await (await caches.open(key)).match('/index.html')) !== undefined;
         }),
       { timeout: 45_000 },
     )
