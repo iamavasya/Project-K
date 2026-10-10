@@ -35,9 +35,10 @@ launch() {
 
 # Safari's first cold start can outlast openurl's own timeout on a busy runner; try a few times.
 open_url() {
+  local url="$1"
   local attempt
   for attempt in 1 2 3; do
-    xcrun simctl openurl booted "$1" && return 0
+    xcrun simctl openurl booted "$url" && return 0
     echo "  openurl attempt $attempt timed out, retrying"
     sleep 10
   done
