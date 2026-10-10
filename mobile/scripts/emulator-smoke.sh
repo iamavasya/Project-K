@@ -101,9 +101,7 @@ log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
 if wait_for_text "Привіт від S1" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
-sleep 2
-dump_ui
-grep -q '10.0.2.2:5205' "$OUT/ui.xml" && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
+wait_for_text '10.0.2.2:5205' 15 && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 
 sed -i 's/Привіт від S1/Live reload працює/' "$MOBILE_DIR/src/app/pages/home.ts"
