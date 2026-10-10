@@ -132,6 +132,15 @@ jobs:
         if: always()
         run: cat "$RUNNER_TEMP/ios-screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
 
+      - name: "Temporary: dump downscaled screenshots to the log"
+        if: always()
+        working-directory: ${{ runner.temp }}/ios-screens
+        run: |
+          for f in *.png; do
+            sips -Z 900 -s format jpeg -s formatOptions 70 "$f" --out "/tmp/${f%.png}.jpg" > /dev/null
+            echo "BEGIN-SHOT ${f%.png}"; base64 -b 0 -i "/tmp/${f%.png}.jpg"; echo; echo "END-SHOT"
+          done
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
