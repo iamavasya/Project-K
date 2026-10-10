@@ -266,6 +266,9 @@ iPhone/iPad, `md` (Material) на Android.
   темна тема, запуск з головного екрана, офлайн-перезавантаження (Chromium).
 
 Відкрито:
-- хостинг PWA: окремий піддомен на `rostyslav-mukha.dev` і цей origin у CORS бекенду (рішення користувача);
+- хостинг PWA: вирішено — той самий домен, шлях `/m/` (CORS, cookie і `env.js` спільні з вебом; self-host
+  без окремого домену). Хмара: `angular.yml` збирає PWA в `dist/.../m`, маршрути в `staticwebapp.config.json`;
+  self-host: стадія `mobile` у web-Dockerfile і `location /m/` в nginx. Для фото пізніше треба дозволити
+  `camera` у `Permissions-Policy` для `/m/`;
 - cookie-авторизація веба з PWA на тому ж сайті — висновок з коду, перевірити на Фазі 1;
 - push (APNs через Web Push на iOS 16.4+ лише для встановленої PWA) — Фаза 3.

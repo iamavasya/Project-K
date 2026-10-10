@@ -8,15 +8,16 @@ async function shot(page: Page, project: string, name: string): Promise<void> {
 }
 
 test('serves an installable manifest', async ({ request }) => {
-  const manifest = await (await request.get('/manifest.webmanifest')).json();
+  const manifest = await (await request.get('manifest.webmanifest')).json();
   expect(manifest.name).toBe('Лілейка');
   expect(manifest.display).toBe('standalone');
-  expect(manifest.start_url).toBe('/');
+  expect(manifest.start_url).toBe('./');
+  expect(manifest.scope).toBe('./');
   const sizes = manifest.icons.map((icon: { sizes: string }) => icon.sizes);
   expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
   expect(manifest.icons.some((icon: { purpose: string }) => icon.purpose === 'maskable')).toBe(true);
   const responses = await Promise.all(
-    manifest.icons.map((icon: { src: string }) => request.get(`/${icon.src}`)),
+    manifest.icons.map((icon: { src: string }) => request.get(icon.src)),
   );
   for (const response of responses) {
     expect(response.ok(), response.url()).toBe(true);
@@ -27,10 +28,13 @@ test('picks the platform look and shows the main tabs', async ({ page }, info) =
   const project = info.project.name;
   const mode = project === 'iphone' ? 'ios' : 'md';
 
-  await page.goto('/');
+  await page.goto('./');
   await expect(page.locator('html')).toHaveAttribute('mode', mode);
   await expect(page.getByText('Привіт від S1')).toBeVisible();
+  await expect(page).toHaveURL(/\/m\/tabs\/home$/);
   await expect(page.getByText('вкладка браузера')).toBeVisible();
+  // The API comes from the server's /env.js, like on a self-hosted install.
+  await expect(page.getByText('https://api.example.test/api')).toBeVisible();
   if (project === 'iphone') {
     await expect(page.getByText('Додай Лілейку на екран')).toBeVisible();
   }
@@ -61,7 +65,7 @@ test('looks like an app when opened from the home screen', async ({ page }, info
         ? ({ ...original(query), matches: true, media: query } as MediaQueryList)
         : original(query);
   });
-  await page.goto('/');
+  await page.goto('./');
   await expect(page.getByText('застосунок', { exact: true })).toBeVisible();
   await expect(page.getByText('Додай Лілейку на екран')).toHaveCount(0);
   await shot(page, info.project.name, '04-home-standalone');
@@ -70,7 +74,7 @@ test('looks like an app when opened from the home screen', async ({ page }, info
 test('keeps working offline after the first visit', async ({ page, context }, info) => {
   test.skip(info.project.name !== 'android', 'Playwright drives service workers in Chromium only');
 
-  await page.goto('/');
+  await page.goto('./');
   await expect(page.getByText('Привіт від S1')).toBeVisible();
   // Wait until ngsw has activated and prefetched the app shell into its cache.
   await expect
@@ -79,7 +83,8 @@ test('keeps working offline after the first visit', async ({ page, context }, in
         page.evaluate(async () => {
           await navigator.serviceWorker.ready;
           const key = (await caches.keys()).find((name) => name.endsWith(':assets:app:cache'));
-          return key !== undefined && (await (await caches.open(key)).match('/index.html')) !== undefined;
+          const shell = new URL('index.html', document.baseURI).pathname;
+          return key !== undefined && (await (await caches.open(key)).match(shell)) !== undefined;
         }),
       { timeout: 45_000 },
     )

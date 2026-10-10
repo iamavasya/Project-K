@@ -11,8 +11,9 @@
     "android:live": "cap run android -l --host 10.0.2.2 --port 4200",
     "sync": "ng build && cap sync",
     "cap": "cap",
-    "e2e": "ng build && playwright test",
-    "e2e:install": "playwright install --with-deps chromium webkit"
+    "e2e": "npm run build:pwa && playwright test",
+    "e2e:install": "playwright install --with-deps chromium webkit",
+    "build:pwa": "ng build --base-href /m/"
   },
   "private": true,
   "dependencies": {

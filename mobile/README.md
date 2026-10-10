@@ -23,9 +23,15 @@ npm run e2e               # прод-збірка + PWA-смоук у Playwright
 
 ## PWA
 
-Прод-збірка (`npm run build`) містить маніфест, іконки і service worker (`ngsw-config.json`).
-Service worker вмикається лише в прод-збірці і лише в браузері, у нативних оболонках він вимкнений.
-Перевірити локально: `npm run build && node scripts/serve-www.mjs`, далі http://127.0.0.1:4300.
+PWA живе на тому ж домені, що й веб, під шляхом `/m/` (наприклад
+`projectk.rostyslav-mukha.dev/m/`): той самий origin у CORS, ті самі cookie і той самий `/env.js`
+з адресою API, тож self-host працює без окремого домену. Збирає її `npm run build:pwa`
+(`--base-href /m/`); у хмарі її кладе в сайт `angular.yml`, у self-host — `Frontend/projectk-frontend/Dockerfile`
+(nginx: `docker/nginx/projectk-frontend.conf`).
+
+Прод-збірка містить маніфест, іконки і service worker (`ngsw-config.json`). Service worker
+вмикається лише в прод-збірці і лише в браузері, у нативних оболонках він вимкнений.
+Перевірити локально: `npm run build:pwa && node scripts/serve-www.mjs`, далі http://127.0.0.1:4300/m/.
 
 Перед першим `npm run e2e` постав браузери: `npm run e2e:install`. Скріни лягають у
 `test-results/pwa-screens/`.

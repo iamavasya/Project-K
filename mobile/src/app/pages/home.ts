@@ -19,6 +19,7 @@ import {
 } from '@ionic/angular';
 import { environment } from '../../environments/environment';
 import { InstallCard } from '../pwa/install-card';
+import { apiUrl } from '../runtime-config';
 import { InstallService } from '../pwa/install.service';
 
 @Component({
@@ -106,7 +107,7 @@ export class HomePage {
   protected readonly mode = document.documentElement.getAttribute('mode') ?? '?';
   protected readonly nativePlatform = Capacitor.getPlatform();
   protected readonly platforms = getPlatforms().join(', ');
-  protected readonly apiUrl = environment.apiUrl;
+  protected readonly apiUrl = apiUrl();
   protected readonly version = environment.version;
   protected readonly standalone = inject(InstallService).standalone;
 
