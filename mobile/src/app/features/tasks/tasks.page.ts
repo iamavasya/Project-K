@@ -26,7 +26,9 @@ import {
   IonTitle,
   IonToolbar,
   ViewWillEnter,
+  IonMenuButton,
 } from '@ionic/angular';
+import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
 import { add, checkmarkCircle, chevronDown, ellipseOutline, timeOutline } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
@@ -70,6 +72,8 @@ interface Board {
 @Component({
   selector: 'app-tasks',
   imports: [
+    IonMenuButton,
+    HeaderActions,
     RouterLink,
     IonHeader,
     IonToolbar,
@@ -152,14 +156,16 @@ interface Board {
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
+        <ion-buttons slot="start"><ion-menu-button /></ion-buttons>
         <ion-title>Задачі</ion-title>
-        @if (canManage()) {
-          <ion-buttons slot="end">
+        <ion-buttons slot="end">
+          @if (canManage()) {
             <ion-button routerLink="/tabs/tasks/new" aria-label="Нова задача" data-testid="new-task">
               <ion-icon slot="icon-only" name="add" />
             </ion-button>
-          </ion-buttons>
-        }
+          }
+          <app-header-actions />
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 

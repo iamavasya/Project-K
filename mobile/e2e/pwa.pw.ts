@@ -64,11 +64,11 @@ test('answers an event and moves a task from the dashboard', async ({ page }) =>
   await expect(page.getByTestId('task').filter({ hasText: 'Вивчити вузли' })).toHaveCount(0);
 });
 
-test('shows the profile and the app details from Ще', async ({ page }, info) => {
+test('shows the profile and the app details from Меню', async ({ page }, info) => {
   const project = info.project.name;
   await signIn(page);
-  await page.getByText('Ще', { exact: true }).click();
-  await expect(page.getByText('вимкнено', { exact: true })).toBeVisible();
+  await page.locator('#tab-button-more').click();
+  await expect(page.locator('app-more').getByText('Налаштування акаунта')).toBeVisible();
   await shot(page, project, '02-more-light');
 
   // The account row on top, as in iOS Settings: the person's name, opening the profile.
@@ -130,8 +130,8 @@ test.describe('with the service worker', () => {
     await context.setOffline(true);
     await page.reload();
     await expect(page.getByText('Найближче', { exact: true })).toBeVisible();
-    await page.getByText('Ще', { exact: true }).click();
-    await expect(page.getByText('Про застосунок')).toBeVisible();
+    await page.locator('#tab-button-more').click();
+    await expect(page.locator('app-more').getByText('Про Лілейку')).toBeVisible();
     await shot(page, info.project.name, '05-offline');
   });
 });
@@ -222,9 +222,9 @@ test('makes провід turn on two-factor sign-in before anything else', async
   await expect(page.getByText('Сходини гуртка')).toBeVisible();
 });
 
-test('signs out from the Ще tab', async ({ page }, info) => {
+test('signs out from the Меню tab', async ({ page }, info) => {
   await signIn(page);
-  await page.getByText('Ще', { exact: true }).click();
+  await page.locator('#tab-button-more').click();
   await expect(page.getByTestId('account')).toContainText(member.email);
 
   // A sheet asks first; backing out keeps the session.

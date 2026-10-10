@@ -190,7 +190,7 @@ const UPLOAD_ERRORS: Record<string, string> = {
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Меню" /></ion-buttons>
         <ion-title>Проблема</ion-title>
         @if (!receipt()) {
           <ion-buttons slot="end">

@@ -291,9 +291,9 @@ test('shows somebody else’s card read-only to a youth', async ({ page }) => {
   await expect(page.getByTestId('dues')).toHaveCount(0);
 });
 
-test('opens the own card from «Профіль» in Ще', async ({ page }, info) => {
+test('opens the own card from «Мій профіль» in Меню', async ({ page }, info) => {
   await signIn(page, member, kurinApi({ canUpdate: (key) => key === 'm1' }));
-  await page.getByText('Ще', { exact: true }).click();
+  await page.locator('#tab-button-more').click();
   await page.getByTestId('account').click();
   await expect(page.locator('app-profile').getByTestId('member-head')).toContainText('Остап Коваль');
   await expect(page.locator('app-profile').getByTestId('edit-profile')).toBeVisible();

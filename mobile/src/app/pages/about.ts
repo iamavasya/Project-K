@@ -175,7 +175,7 @@ interface ProjectMilestone {
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Меню" /></ion-buttons>
         <ion-title>Про застосунок</ion-title>
       </ion-toolbar>
     </ion-header>

@@ -13,7 +13,7 @@ import {
 } from './support/mock-api';
 
 /**
- * «Ще» and the app shell: account settings, appearance, kurins, privacy, report a problem, about,
+ * «Меню» and the app shell (the web's sidebar, the ☰ drawer, the header's kurin switcher): account settings, appearance, kurins, privacy, report a problem, about,
  * the cold-start notice and the sign-in links to the web.
  */
 
@@ -108,37 +108,108 @@ async function openMore(page: Page): Promise<void> {
   await expect(page.locator('app-more').getByText('Вигляд')).toBeVisible();
 }
 
-test('Ще groups the account, the look, help and the app like iOS Settings', async ({ page }, info) => {
+/** `window.open` as the app calls it for pages outside: the URL is kept instead of a tab opened. */
+async function catchOpened(page: Page): Promise<() => Promise<string | null>> {
+  await page.evaluate(() => {
+    (window as any).__opened = null;
+    window.open = (url?: string | URL) => {
+      (window as any).__opened = String(url);
+      return null;
+    };
+  });
+  return () => page.evaluate(() => (window as any).__opened as string | null);
+}
+
+test('Меню repeats the web sidebar, then the look, the kurins and privacy', async ({ page }, info) => {
   const fixture = accountApi({ password: member.password, mfa: false });
   await signIn(page, member, fixture.extra);
   await openMore(page);
   const more = page.locator('app-more');
-  await expect(more.getByText('Акаунт', { exact: true })).toBeVisible();
-  await expect(more.getByTestId('mfa-row')).toContainText('вимкнено');
+  await expect(more.getByTestId('web-menu').locator('ion-label')).toHaveText([
+    'Головна',
+    'Курінь',
+    'Календар',
+    'Задачі',
+    'Планування',
+    'Точкування',
+    'Налаштування акаунта',
+    'Довідка',
+    'Повідомити про проблему',
+    'Про Лілейку',
+  ]);
   // More than one kurin: the row opens the switcher and names the one acted in.
   await expect(more.getByTestId('kurins-row')).toContainText('Мої курені');
   await expect(more.getByTestId('kurins-row')).toContainText('к. ч. 7');
-  await expect(more.getByText('Вигляд')).toBeVisible();
   await expect(more.locator('ion-item').filter({ hasText: 'Вигляд' })).toContainText('Системна');
-  // Help is the web's docs site, outside the app.
-  await expect
-    .poll(() => more.getByTestId('help').evaluate((item) => (item as HTMLIonItemElement).href))
-    .toBe('https://docs-projectk.rostyslav-mukha.dev/user/start/what-is/');
-  await expect(more.getByTestId('help')).toHaveAttribute('target', '_blank');
   await shot(page, info.project.name, 'account-01-more');
+
+  // Help is the web's docs site; Планування is the web's own page. Both open outside the app.
+  const opened = await catchOpened(page);
+  await more.getByTestId('menu-help').click();
+  expect(await opened()).toBe('https://docs-projectk.rostyslav-mukha.dev/user/start/what-is/');
+  await more.getByTestId('menu-planning').click();
+  expect(await opened()).toMatch(/^http:\/\/[^/]+\/planning\/k1$/);
+
+  // An item the app has a screen for opens it.
+  await more.getByTestId('menu-score').click();
+  await expect(page).toHaveURL(/\/tabs\/kurin\/score$/);
+  await openMore(page);
   await page.evaluate(() => document.querySelector<HTMLIonContentElement>('app-more ion-content')?.scrollToBottom(0));
   await shot(page, info.project.name, 'account-01-more-scrolled');
 });
 
-test('one kurin is shown, not offered', async ({ page }) => {
+test('one kurin is not offered, as the web hides its switcher', async ({ page }) => {
   const fixture = accountApi({ password: member.password, mfa: false, kurins: [k1] });
   await signIn(page, member, fixture.extra);
   await openMore(page);
-  const row = page.locator('app-more').getByTestId('kurins-row');
-  await expect(row).toContainText('Курінь');
-  await expect(row).toContainText('к. ч. 7');
-  // A plain row: nothing to tap.
-  await expect(row).not.toHaveClass(/ion-activatable/);
+  await expect(page.locator('app-more').getByTestId('menu-kurin')).toBeVisible();
+  await expect(page.locator('app-more').getByTestId('kurins-row')).toHaveCount(0);
+  await expect(page.getByTestId('kurin-switcher')).toHaveCount(0);
+});
+
+test('switches the kurin from the header, as the web does', async ({ page }, info) => {
+  const fixture = accountApi({ password: member.password, mfa: false });
+  await signIn(page, member, fixture.extra);
+  const switcher = page.locator('app-home').getByTestId('kurin-switcher');
+  await expect(switcher).toContainText('к. ч. 7');
+  await switcher.click();
+  const sheet = page.locator('ion-action-sheet');
+  await expect(sheet.getByRole('button', { name: 'к. ч. 7 ✓' })).toBeVisible();
+  await shot(page, info.project.name, 'nav-03-kurin-switcher');
+  await sheet.getByRole('button', { name: 'к. ч. 42 ім. Сірого Лева' }).click();
+  await expect(page).toHaveURL(/\/m\/tabs\/home$/);
+  expect(fixture.authWrites.find((w) => w.path === 'auth/kurin-scope')?.body).toEqual({ kurinKey: 'k2' });
+  await expect(page.locator('app-home').getByTestId('kurin-switcher')).toContainText('к. ч. 42');
+});
+
+test('«Як у вебі» swaps the tabs for the web’s ☰ drawer', async ({ page }, info) => {
+  const fixture = accountApi({ password: member.password, mfa: false });
+  await signIn(page, member, fixture.extra);
+  await page.goto('./tabs/more/appearance');
+  await page.getByTestId('nav-web').click();
+  await expect(page.locator('ion-tab-bar')).toBeHidden();
+
+  await page.goto('./tabs/home');
+  const burger = page.locator('app-home ion-menu-button');
+  await expect(burger).toBeVisible();
+  await burger.click();
+  const drawer = page.getByTestId('drawer');
+  await expect(drawer.getByTestId('menu-home')).toHaveClass(/current/);
+  await shot(page, info.project.name, 'nav-02-drawer');
+
+  await drawer.getByTestId('menu-calendar').click();
+  await expect(page).toHaveURL(/\/tabs\/calendar$/);
+  await expect(drawer).not.toHaveClass(/show-menu/);
+  await expect(page.locator('app-calendar ion-menu-button')).toBeVisible();
+  await shot(page, info.project.name, 'nav-01-web-calendar');
+
+  // Remembered on the device; back to the tabs.
+  await page.reload();
+  await expect(page.locator('ion-tab-bar')).toBeHidden();
+  await page.goto('./tabs/more/appearance');
+  await page.getByTestId('nav-tabs').click();
+  await expect(page.locator('ion-tab-bar')).toBeVisible();
+  await expect(page.locator('app-more ion-menu-button, app-home ion-menu-button').first()).toBeHidden();
 });
 
 test('changes contacts and the password from Акаунт', async ({ page }, info) => {
@@ -205,8 +276,7 @@ test('renews recovery codes and turns the second factor off', async ({ page }, i
   const fixture = accountApi({ password: member.password, mfa: true });
   const log = await signIn(page, member, fixture.extra);
   await openMore(page);
-  await expect(page.locator('app-more').getByTestId('mfa-row')).toContainText('увімкнено');
-  await page.locator('app-more').getByTestId('mfa-row').click();
+  await page.locator('app-more').getByTestId('menu-account').click();
   const account = page.locator('app-account');
   await expect(account.getByTestId('mfa-status')).toHaveText('Увімкнено');
 

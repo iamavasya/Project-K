@@ -1,7 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  IonBadge,
   IonButton,
   IonButtons,
   IonCard,
@@ -26,9 +25,11 @@ import {
   IonToolbar,
   ToastController,
   ViewWillEnter,
+  IonMenuButton,
 } from '@ionic/angular';
+import { HeaderActions } from '../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { arrowDown, checkbox, chevronForward, notificationsOutline, star, wallet } from 'ionicons/icons';
+import { arrowDown, checkbox, chevronForward, star, wallet } from 'ionicons/icons';
 import { AuthService } from '../auth/auth.service';
 import { GlassEffects } from '../ui/glass';
 import { dayLabel, greeting, money, timeLabel, todayLabel } from '../me/labels';
@@ -59,6 +60,8 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
 @Component({
   selector: 'app-home',
   imports: [
+    IonMenuButton,
+    HeaderActions,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -72,7 +75,6 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     IonCardContent,
     IonButton,
     IonButtons,
-    IonBadge,
     IonIcon,
     IonList,
     IonItem,
@@ -135,30 +137,6 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
       flex: none;
       font-size: 18px;
       color: var(--lk-faint);
-    }
-    .bell {
-      position: relative;
-      overflow: visible;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-    .bell ion-badge {
-      position: absolute;
-      top: 2px;
-      inset-inline-end: 0;
-      min-width: 18px;
-      height: 18px;
-      padding: 2px 5px;
-      border-radius: 9px;
-      font-size: 11px;
-      line-height: 14px;
-      pointer-events: none;
     }
     .duties ion-list {
       background: transparent;
@@ -231,16 +209,9 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
+        <ion-buttons slot="start"><ion-menu-button /></ion-buttons>
         <ion-title>{{ hello }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-button class="bell" routerLink="notifications" data-testid="bell">
-            <ion-icon slot="icon-only" name="notifications-outline" aria-hidden="true" />
-            <span class="sr-only">{{ bellLabel() }}</span>
-            @if (unread() > 0) {
-              <ion-badge color="danger" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</ion-badge>
-            }
-          </ion-button>
-        </ion-buttons>
+        <ion-buttons slot="end"><app-header-actions /></ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -467,13 +438,9 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
     return dutyRows(duties, new Date(), dutiesSpanKurins(duties));
   });
   protected readonly dutiesTotal = computed(() => (valueOf(this.dutyList()) ?? []).reduce((sum, d) => sum + d.count, 0));
-  protected readonly unread = this.notifications.unread;
-  protected readonly bellLabel = computed(() =>
-    this.unread() > 0 ? `Сповіщення, непрочитаних: ${this.unread()}` : 'Сповіщення',
-  );
 
   constructor() {
-    addIcons({ notificationsOutline, chevronForward, star, arrowDown, wallet, checkbox });
+    addIcons({ chevronForward, star, arrowDown, wallet, checkbox });
     // The RSVP segments come and go with the events; each gets the iOS glass lens (no-op on md).
     afterRenderEffect(() => {
       this.upcoming();

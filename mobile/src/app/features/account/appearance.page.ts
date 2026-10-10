@@ -14,6 +14,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
+import { NavMode, NavModeService } from '../../nav/nav-mode.service';
 import { AppearanceService, ThemeChoice } from './appearance.service';
 
 const CHOICES: { value: ThemeChoice; label: string }[] = [
@@ -22,7 +23,12 @@ const CHOICES: { value: ThemeChoice; label: string }[] = [
   { value: 'dark', label: 'Темна' },
 ];
 
-/** Системна / Світла / Темна, applied at once and remembered on this device. */
+const NAV_CHOICES: { value: NavMode; label: string }[] = [
+  { value: 'tabs', label: 'Вкладки й меню' },
+  { value: 'web', label: 'Як у вебі' },
+];
+
+/** Системна / Світла / Темна and the navigation, applied at once and remembered on this device. */
 @Component({
   selector: 'app-appearance',
   imports: [
@@ -54,7 +60,7 @@ const CHOICES: { value: ThemeChoice; label: string }[] = [
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Меню" /></ion-buttons>
         <ion-title>Вигляд</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -73,7 +79,26 @@ const CHOICES: { value: ThemeChoice; label: string }[] = [
           </ion-radio-group>
         </ion-item-group>
       </ion-list>
-      <p class="footnote">Системна тема йде за налаштуваннями телефона. Вибір діє лише на цьому пристрої.</p>
+      <p class="footnote">Системна тема йде за налаштуваннями телефона.</p>
+
+      <ion-list [inset]="true">
+        <ion-list-header><ion-label>Навігація</ion-label></ion-list-header>
+        <ion-item-group>
+          <ion-radio-group [value]="navMode()" (ionChange)="pickNav($event)">
+            @for (option of navChoices; track option.value) {
+              <ion-item>
+                <ion-radio [value]="option.value" justify="space-between" [attr.data-testid]="'nav-' + option.value">
+                  {{ option.label }}
+                </ion-radio>
+              </ion-item>
+            }
+          </ion-radio-group>
+        </ion-item-group>
+      </ion-list>
+      <p class="footnote">
+        «Вкладки й меню»: щоденне внизу екрана, а «Меню» повторює бокове меню вебу. «Як у вебі»: без вкладок, ☰ угорі
+        відкриває бокове меню, як у вебі на телефоні. Вибір діє лише на цьому пристрої.
+      </p>
     </ion-content>
   `,
 })
@@ -81,9 +106,17 @@ export class AppearancePage {
   private readonly appearance = inject(AppearanceService);
   protected readonly choices = CHOICES;
   protected readonly choice = this.appearance.choice;
+  private readonly nav = inject(NavModeService);
+  protected readonly navChoices = NAV_CHOICES;
+  protected readonly navMode = this.nav.mode;
 
   protected pick(event: Event): void {
     const value = (event as CustomEvent<{ value?: ThemeChoice }>).detail.value;
     if (value) this.appearance.set(value);
+  }
+
+  protected pickNav(event: Event): void {
+    const value = (event as CustomEvent<{ value?: NavMode }>).detail.value;
+    if (value) this.nav.set(value);
   }
 }

@@ -208,7 +208,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
       <ion-toolbar>
         <ion-buttons slot="start">
           @if (own()) {
-            <ion-back-button defaultHref="/tabs/more" text="Ще" />
+            <ion-back-button defaultHref="/tabs/more" text="Меню" />
           } @else {
             <ion-back-button defaultHref="/tabs/kurin" text="Назад" />
           }

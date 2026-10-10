@@ -22,7 +22,9 @@ import {
   IonToggle,
   IonToolbar,
   ViewWillEnter,
+  IonMenuButton,
 } from '@ionic/angular';
+import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronForward } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
@@ -60,6 +62,8 @@ const LIST_DAYS = 60;
 @Component({
   selector: 'app-calendar',
   imports: [
+    IonMenuButton,
+    HeaderActions,
     NgTemplateOutlet,
     RouterLink,
     IonHeader,
@@ -212,9 +216,10 @@ const LIST_DAYS = 60;
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
+        <ion-buttons slot="start"><ion-menu-button /></ion-buttons>
         <ion-title>Календар</ion-title>
-        @if (canManage()) {
-          <ion-buttons slot="end">
+        <ion-buttons slot="end">
+          @if (canManage()) {
             <ion-button
               routerLink="/tabs/calendar/new"
               [queryParams]="{ date: selected() }"
@@ -223,8 +228,9 @@ const LIST_DAYS = 60;
             >
               <ion-icon slot="icon-only" name="add" />
             </ion-button>
-          </ion-buttons>
-        }
+          }
+          <app-header-actions />
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 

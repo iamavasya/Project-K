@@ -23,7 +23,9 @@ import {
   IonSkeletonText,
   IonTitle,
   IonToolbar,
+  IonMenuButton,
 } from '@ionic/angular';
+import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
 import { alertCircle, checkmarkCircle, people, ribbon, swapVertical, trophy } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
@@ -61,6 +63,8 @@ const DESCRIPTION_LIMIT = 360;
 @Component({
   selector: 'app-kurin',
   imports: [
+    IonMenuButton,
+    HeaderActions,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -173,14 +177,16 @@ const DESCRIPTION_LIMIT = 360;
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
+        <ion-buttons slot="start"><ion-menu-button /></ion-buttons>
         <ion-title>Курінь</ion-title>
-        @if (section() === 'members') {
-          <ion-buttons slot="end">
+        <ion-buttons slot="end">
+          @if (section() === 'members') {
             <ion-button aria-label="Сортування" (click)="chooseSort()">
               <ion-icon slot="icon-only" name="swap-vertical" />
             </ion-button>
-          </ion-buttons>
-        }
+          }
+          <app-header-actions />
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 

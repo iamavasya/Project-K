@@ -112,7 +112,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     <ion-header [translucent]="true">
       <ion-toolbar>
         @if (!mandatory()) {
-          <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Ще" /></ion-buttons>
+          <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/more" text="Меню" /></ion-buttons>
         }
         <ion-title>Двофакторний вхід</ion-title>
       </ion-toolbar>
