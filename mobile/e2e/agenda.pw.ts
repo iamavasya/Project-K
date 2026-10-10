@@ -146,12 +146,7 @@ function agendaApi(leader = false): Fixtures {
 
 /** Провід: the youth's sign-in with the agenda and scoring grants added, as the web reads them. */
 async function signInAsLeader(page: Page, extra: ExtraApi, path: string) {
-  const log = await signIn(page, member, extra);
-  await page.evaluate(() => {
-    const state = JSON.parse(localStorage.getItem('authState')!);
-    state.permissions = ['AgendaItem:Create:OwnGroups', 'GroupScore:Create:OwnGroups'];
-    localStorage.setItem('authState', JSON.stringify(state));
-  });
+  const log = await signIn(page, member, extra, ['AgendaItem:Create:OwnGroups', 'GroupScore:Create:OwnGroups']);
   await page.goto(path);
   return log;
 }

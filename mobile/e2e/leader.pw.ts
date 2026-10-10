@@ -114,14 +114,6 @@ function leaderApi(options: { viewer?: Parameters<typeof groupDues>[0] } = {}): 
   };
 }
 
-/** The mock signs everyone in without permissions; a leader's come with their session, as on the web. */
-async function grant(page: Page, permissions: string[]): Promise<void> {
-  await page.evaluate((list) => {
-    const state = JSON.parse(localStorage.getItem('authState') ?? '{}');
-    localStorage.setItem('authState', JSON.stringify({ ...state, permissions: list }));
-  }, permissions);
-}
-
 /** Picks an option of an ion-select's action sheet (radios there) and waits for the sheet to go. */
 async function choose(page: Page, name: string): Promise<void> {
   await page.locator('ion-action-sheet').getByRole('radio', { name, exact: true }).click();
@@ -234,8 +226,7 @@ test('reads the inbox, opens a notification and marks everything read', async ({
 // ── Skills review ────────────────────────────────────────────────────────────────────────────
 
 test('reviews skills from the queue with a note', async ({ page }, info) => {
-  const log = await signIn(page, undefined, leaderApi());
-  await grant(page, ['Group:Update:OwnGroups']);
+  const log = await signIn(page, undefined, leaderApi(), ['Group:Update:OwnGroups']);
   await page.goto('./tabs/kurin/review/skills');
 
   const items = page.getByTestId('review-item');

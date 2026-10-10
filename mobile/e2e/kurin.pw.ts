@@ -157,15 +157,6 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGrou
   };
 }
 
-/** Gives the signed-in session these grants, as the next sign-in would, and opens the app again. */
-async function grant(page: Page, permissions: string[]): Promise<void> {
-  await page.evaluate((list) => {
-    const state = JSON.parse(localStorage.getItem('authState') ?? '{}');
-    localStorage.setItem('authState', JSON.stringify({ ...state, permissions: list }));
-  }, permissions);
-  await page.reload();
-}
-
 const openKurinTab = async (page: Page) => {
   await page.locator('ion-tab-button[tab=kurin]').click();
   await expect(page.getByTestId('kurin-head')).toContainText('7 курінь');
@@ -315,8 +306,7 @@ test('opens the own card from «Профіль» in Ще', async ({ page }, info
 const reviewer = ['Group:Update:OwnGroups', 'GroupDues:Read:OwnGroups', 'BadgeProgress:Update:OwnGroups'];
 
 test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
-  const log = await signIn(page, member, kurinApi({ canUpdate: () => true, duesGroups: ['g1'] }));
-  await grant(page, reviewer);
+  const log = await signIn(page, member, kurinApi({ canUpdate: () => true, duesGroups: ['g1'] }), reviewer);
   await openKurinTab(page);
   await expect(page.getByText('Вмілості на перевірку')).toBeVisible();
   await page.getByTestId('groups').getByText('Соколи').click();
@@ -343,8 +333,7 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
 });
 
 test('lets a reviewer sign the probe and close it', async ({ page }, info) => {
-  const log = await signIn(page, member, kurinApi({ canUpdate: () => true }));
-  await grant(page, reviewer);
+  const log = await signIn(page, member, kurinApi({ canUpdate: () => true }), reviewer);
   await page.goto('./tabs/kurin/member/m2');
   await page.getByTestId('probe').first().click();
   await expect(page).toHaveURL(/\/member\/m2\/probe\?id=probe-1$/);

@@ -36,6 +36,8 @@ export type Answer = { status: number; json: unknown } | { status: number; empty
 export interface MockState {
   session: string | null;
   mfaEnabled: Set<string>;
+  /** The grants sign-in hands out, as the API reads them from the person's roles. */
+  permissions: string[];
 }
 
 export const ok = (json: unknown): Answer => ({ status: 200, json });
@@ -44,7 +46,7 @@ export const refuse = (status: number, error?: string): Answer => ({ status, jso
 function signedInAs(state: MockState, email: string): Answer {
   state.session = email;
   return ok({
-    userKey: `u-${email}`, memberKey: 'm1', email, isAdmin: email === admin.email, permissions: [], roles: [],
+    userKey: `u-${email}`, memberKey: 'm1', email, isAdmin: email === admin.email, permissions: state.permissions, roles: [],
     kurinKey: 'k1', requiresMfa: false, tokens: { accessToken: 'access-1' },
   });
 }
@@ -136,9 +138,9 @@ function meAnswer(state: MockState, path: string): Answer | null {
  */
 export type ExtraApi = (request: { method: string; path: string; query: URLSearchParams; body: any; state: MockState }) => Answer | null;
 
-export async function mockApi(context: BrowserContext, extra?: ExtraApi): Promise<ApiLog> {
+export async function mockApi(context: BrowserContext, extra?: ExtraApi, permissions: string[] = []): Promise<ApiLog> {
   const log: ApiLog = { writes: [] };
-  const state: MockState = { session: null, mfaEnabled: new Set([leader.email]) };
+  const state: MockState = { session: null, mfaEnabled: new Set([leader.email]), permissions };
 
   await context.route(`${api}/**`, (route) => {
     const request = route.request();
@@ -180,8 +182,9 @@ export async function fillCredentials(page: Page, account: { email: string; pass
   await page.getByRole('button', { name: 'Увійти' }).click();
 }
 
-export async function signIn(page: Page, account = member, extra?: ExtraApi): Promise<ApiLog> {
-  const log = await mockApi(page.context(), extra);
+/** Signs in through the form; `permissions` are the grants the API hands this session (провід). */
+export async function signIn(page: Page, account = member, extra?: ExtraApi, permissions: string[] = []): Promise<ApiLog> {
+  const log = await mockApi(page.context(), extra, permissions);
   await page.goto('./');
   await expect(page).toHaveURL(/\/m\/login$/);
   await fillCredentials(page, account);
