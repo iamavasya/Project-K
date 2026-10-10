@@ -71,7 +71,8 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await expect(page.getByText('вимкнено', { exact: true })).toBeVisible();
   await page.getByText('Профіль', { exact: true }).click();
   await expect(page.locator('app-profile h1')).toBeVisible();
-  await expect(page.getByText(member.email, { exact: true })).toBeVisible();
+  // Ще stays in the DOM under the profile and shows the email too.
+  await expect(page.locator('app-profile').getByText(member.email, { exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/pwa-screens/${info.project.name}-real-profile.png`, scale: 'css' });
 
   // Turning the second factor on, with a code computed from the key the API handed out.
