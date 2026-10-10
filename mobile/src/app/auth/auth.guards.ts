@@ -9,15 +9,12 @@ import { AuthService } from './auth.service';
  */
 const signInRequired = !Capacitor.isNativePlatform();
 
-/** Screens behind sign-in. A stored session is renewed from the cookie before the screen opens. */
-export const signedInGuard: CanActivateFn = async () => {
+/** Screens behind sign-in. */
+export const signedInGuard: CanActivateFn = () => {
   if (!signInRequired) return true;
-  const router = inject(Router);
-  return (await inject(AuthService).ensureSession()) || router.parseUrl('/login');
+  return inject(AuthService).ensureSession() || inject(Router).parseUrl('/login');
 };
 
 /** The sign-in screen is skipped when a session is already there. */
-export const signedOutGuard: CanActivateFn = async () => {
-  const router = inject(Router);
-  return (await inject(AuthService).ensureSession()) ? router.parseUrl('/tabs/home') : true;
-};
+export const signedOutGuard: CanActivateFn = () =>
+  inject(AuthService).ensureSession() ? inject(Router).parseUrl('/tabs/home') : true;

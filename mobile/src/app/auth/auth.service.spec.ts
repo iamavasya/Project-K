@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { apiUrl } from '../runtime-config';
 import { AuthService } from './auth.service';
 
@@ -23,7 +24,9 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([{ path: 'login', children: [] }])],
+    });
     auth = TestBed.inject(AuthService);
     http = TestBed.inject(HttpTestingController);
   });
@@ -56,31 +59,44 @@ describe('AuthService', () => {
     expect(auth.signedIn()).toBe(true);
   });
 
-  it('renews a stored session from the cookie, and drops it when the server refuses', async () => {
+  it('opens a stored session at once and renews the token from the cookie', async () => {
     localStorage.setItem('authState', JSON.stringify({ ...signedIn, accessToken: null }));
     const fresh = TestBed.runInInjectionContext(() => new AuthService());
 
-    const ok = fresh.ensureSession();
+    expect(fresh.ensureSession()).toBe(true);
     http.expectOne(`${api}/auth/refresh`).flush({ accessToken: 'access-2' });
-    expect(await ok).toBe(true);
+    await settle();
     expect(fresh.accessToken()).toBe('access-2');
+  });
 
-    fresh.forget();
+  it('signs out when the server refuses the cookie', async () => {
     localStorage.setItem('authState', JSON.stringify({ ...signedIn, accessToken: null }));
-    const expired = TestBed.runInInjectionContext(() => new AuthService());
-    const refused = expired.ensureSession();
+    const fresh = TestBed.runInInjectionContext(() => new AuthService());
+
+    expect(fresh.ensureSession()).toBe(true);
     http.expectOne(`${api}/auth/refresh`).flush({}, { status: 401, statusText: 'Unauthorized' });
-    expect(await refused).toBe(false);
+    await settle();
+    expect(fresh.signedIn()).toBe(false);
     expect(localStorage.getItem('authState')).toBeNull();
   });
 
-  it('stays signed in while offline', async () => {
+  it('stays signed in while offline, also when the service worker answers 504', async () => {
     localStorage.setItem('authState', JSON.stringify({ ...signedIn, accessToken: null }));
     const fresh = TestBed.runInInjectionContext(() => new AuthService());
 
-    const offline = fresh.ensureSession();
+    expect(fresh.ensureSession()).toBe(true);
     http.expectOne(`${api}/auth/refresh`).error(new ProgressEvent('error'), { status: 0 });
-    expect(await offline).toBe(true);
+    await settle();
+    expect(fresh.signedIn()).toBe(true);
+
+    fresh.ensureSession();
+    http.expectOne(`${api}/auth/refresh`).flush('', { status: 504, statusText: 'Gateway Timeout' });
+    await settle();
+    expect(fresh.signedIn()).toBe(true);
     expect(localStorage.getItem('authState')).not.toBeNull();
   });
 });
+
+function settle(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve));
+}

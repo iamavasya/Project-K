@@ -12,7 +12,13 @@ export default defineConfig({
   testMatch: '*.pw.ts',
   outputDir: 'test-results/artifacts',
   reporter: [['list']],
-  use: { baseURL: external ?? 'http://127.0.0.1:4300/m/', locale: 'uk-UA' },
+  use: {
+    baseURL: external ?? 'http://127.0.0.1:4300/m/',
+    locale: 'uk-UA',
+    // The service worker proxies API calls, and WebKit cannot route requests made by a worker, so
+    // mocked API calls would miss. Only the offline test turns it on (Chromium).
+    serviceWorkers: 'block',
+  },
   webServer: external
     ? undefined
     : {

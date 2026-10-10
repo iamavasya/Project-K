@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiUrl } from '../runtime-config';
 import { AuthState, LoginOutcome, LoginResponse } from './auth.models';
@@ -20,6 +21,7 @@ const ERROR_TEXT: Record<string, string> = {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly api = apiUrl();
   private readonly state = signal<AuthState | null>(readStoredState());
   private refreshing: Promise<string> | null = null;
@@ -63,25 +65,30 @@ export class AuthService {
     return this.refreshing;
   }
 
-  /** True when there is a usable session, renewing the access token from the cookie if needed. */
-  async ensureSession(): Promise<boolean> {
+  /**
+   * True when there is a session to open the app with. A stored session counts straight away, like
+   * a native app that opens signed in; the access token is renewed from the cookie in the background,
+   * and only a server that refuses it signs the person out. Offline or a slow network never does.
+   */
+  ensureSession(): boolean {
     if (!this.state()) return false;
-    if (this.accessToken()) return true;
-    try {
-      await this.refresh();
-      return true;
-    } catch (error) {
-      // Offline is not signed out: keep the session and let the cached screens open.
-      if (error instanceof HttpErrorResponse && error.status === 0) return true;
-      this.forget();
-      return false;
+    if (!this.accessToken()) {
+      this.refresh().catch((error: unknown) => {
+        if (isOffline(error)) return;
+        this.forget();
+        void this.router.navigateByUrl('/login', { replaceUrl: true });
+      });
     }
+    return true;
   }
 
   /** Ends the session on the server first, so the request still carries the token. */
   async logout(): Promise<void> {
     try {
-      if (await this.ensureSession()) await this.post('auth/logout', {}, 'text');
+      if (this.state()) {
+        if (!this.accessToken()) await this.refresh();
+        await this.post('auth/logout', {}, 'text');
+      }
     } catch {
       // Signed out locally either way; the server session expires on its own.
     } finally {
@@ -112,12 +119,20 @@ export class AuthService {
 /** What to tell a person whose sign-in failed. The API's own messages are English and technical. */
 export function loginErrorText(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
-    if (error.status === 0) return 'Немає зв’язку з сервером. Перевір інтернет.';
+    if (isOffline(error)) return 'Немає зв’язку з сервером. Перевір інтернет.';
     if (error.status === 429) return 'Забагато спроб. Спробуй за хвилину.';
     const code = (error.error as { error?: string } | null)?.error;
     if (code && ERROR_TEXT[code]) return ERROR_TEXT[code];
   }
   return fallback;
+}
+
+/**
+ * No answer from the API. In the browser that is status 0; once the service worker is in charge,
+ * it answers a failed network request with its own 504 instead.
+ */
+export function isOffline(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && (error.status === 0 || error.status === 504);
 }
 
 function toState(response: LoginResponse): AuthState {

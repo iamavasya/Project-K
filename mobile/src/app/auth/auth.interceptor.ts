@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
-import { AuthService } from './auth.service';
+import { AuthService, isOffline } from './auth.service';
 
 /** Sign-in steps answer 401 for a wrong password or code; that is not an expired session. */
 const NO_REFRESH = ['/auth/login', '/auth/mfa/login-verify', '/auth/logout', '/auth/refresh'];
@@ -19,9 +19,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
       return from(auth.refresh()).pipe(
-        catchError(() => {
-          auth.forget();
-          void router.navigateByUrl('/login', { replaceUrl: true });
+        catchError((refreshError: unknown) => {
+          if (!isOffline(refreshError)) {
+            auth.forget();
+            void router.navigateByUrl('/login', { replaceUrl: true });
+          }
           return throwError(() => error);
         }),
         switchMap((token) => next(withToken(req, token))),

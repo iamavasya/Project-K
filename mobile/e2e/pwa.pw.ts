@@ -139,30 +139,34 @@ test('looks like an app when opened from the home screen', async ({ page }, info
   await shot(page, info.project.name, '04-home-standalone');
 });
 
-test('keeps working offline after the first visit', async ({ page, context }, info) => {
-  test.skip(info.project.name !== 'android', 'Playwright drives service workers in Chromium only');
+test.describe('with the service worker', () => {
+  test.use({ serviceWorkers: 'allow' });
 
-  await signIn(page);
-  // Wait until ngsw has activated and prefetched the app shell into its cache.
-  await expect
-    .poll(
-      () =>
-        page.evaluate(async () => {
-          await navigator.serviceWorker.ready;
-          const key = (await caches.keys()).find((name) => name.endsWith(':assets:app:cache'));
-          const shell = new URL('index.html', document.baseURI).pathname;
-          return key !== undefined && (await (await caches.open(key)).match(shell)) !== undefined;
-        }),
-      { timeout: 45_000 },
-    )
-    .toBe(true);
+  test('keeps working offline after the first visit', async ({ page, context }, info) => {
+    test.skip(info.project.name !== 'android', 'Playwright drives service workers in Chromium only');
 
-  await context.setOffline(true);
-  await page.reload();
-  await expect(page.getByText('Привіт від S1')).toBeVisible();
-  await page.getByText('Ще', { exact: true }).click();
-  await expect(page.getByText('Про Лілейку')).toBeVisible();
-  await shot(page, info.project.name, '05-offline');
+    await signIn(page);
+    // Wait until ngsw has activated and prefetched the app shell into its cache.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(async () => {
+            await navigator.serviceWorker.ready;
+            const key = (await caches.keys()).find((name) => name.endsWith(':assets:app:cache'));
+            const shell = new URL('index.html', document.baseURI).pathname;
+            return key !== undefined && (await (await caches.open(key)).match(shell)) !== undefined;
+          }),
+        { timeout: 45_000 },
+      )
+      .toBe(true);
+
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.getByText('Привіт від S1')).toBeVisible();
+    await page.getByText('Ще', { exact: true }).click();
+    await expect(page.getByText('Про Лілейку')).toBeVisible();
+    await shot(page, info.project.name, '05-offline');
+  });
 });
 
 test('the page does not zoom like a website', async ({ page }) => {
