@@ -78,8 +78,10 @@ import { environment } from '../../environments/environment';
           </ion-label>
         </ion-item>
         <ion-item>
-          <ion-label>API</ion-label>
-          <ion-note slot="end">{{ apiUrl }}</ion-note>
+          <ion-label class="ion-text-wrap">
+            <h3>API</h3>
+            <p>{{ apiUrl }}</p>
+          </ion-label>
         </ion-item>
         <ion-item>
           <ion-label>Версія</ion-label>
