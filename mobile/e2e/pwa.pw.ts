@@ -145,9 +145,9 @@ async function mockApi(context: BrowserContext): Promise<ApiLog> {
     if (request.method() === 'PUT') log.writes.push({ method: 'PUT', path, body });
 
     // Everything past sign-in needs the token, as on the real API.
-    const answer =
-      authAnswer(state, path, body, bearer) ??
-      (bearer ? (meAnswer(state, path) ?? (request.method() === 'PUT' ? ok({}) : refuse(404))) : refuse(401));
+    const fallback = request.method() === 'PUT' ? ok({}) : refuse(404);
+    const signedInAnswer = bearer ? (meAnswer(state, path) ?? fallback) : refuse(401);
+    const answer = authAnswer(state, path, body, bearer) ?? signedInAnswer;
     return 'empty' in answer
       ? route.fulfill({ status: answer.status, headers, body: '' })
       : route.fulfill({ status: answer.status, headers, json: answer.json });
