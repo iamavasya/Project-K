@@ -4,7 +4,7 @@ const shots = 'test-results/pwa-screens';
 
 async function shot(page: Page, project: string, name: string): Promise<void> {
   await page.waitForTimeout(400); // let Ionic transitions settle
-  await page.screenshot({ path: `${shots}/${project}-${name}.png` });
+  await page.screenshot({ path: `${shots}/${project}-${name}.png`, scale: 'css' });
 }
 
 test('serves an installable manifest', async ({ request }) => {
