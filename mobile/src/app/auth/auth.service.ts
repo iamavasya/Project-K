@@ -66,6 +66,15 @@ export class AuthService {
   }
 
   /**
+   * The access token once a renewal already under way has finished (null if it failed or none is
+   * running), so requests sent while the app opens don't go out without one only to be retried.
+   */
+  async tokenWhenReady(): Promise<string | null> {
+    if (this.refreshing) await this.refreshing.catch(() => null);
+    return this.accessToken();
+  }
+
+  /**
    * True when there is a session to open the app with. A stored session counts straight away, like
    * a native app that opens signed in; the access token is renewed from the cookie in the background,
    * and only a server that refuses it signs the person out. Offline or a slow network never does.
