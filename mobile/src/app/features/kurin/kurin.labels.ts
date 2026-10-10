@@ -145,7 +145,7 @@ export function fullName(member: Pick<MemberLookupDto, 'firstName' | 'lastName' 
 
 /** Active first, then by office, then by name, then the latest first (web compareLeadershipHistoriesByDefault). */
 export function compareHistories(left: LeadershipHistoryDto, right: LeadershipHistoryDto): number {
-  if (!left.endDate !== !right.endDate) return left.endDate ? 1 : -1;
+  if (Boolean(left.endDate) !== Boolean(right.endDate)) return left.endDate ? 1 : -1;
   const weight = roleWeight(left.role) - roleWeight(right.role);
   if (weight !== 0) return weight;
   const name = fullName(left.member).toLowerCase().localeCompare(fullName(right.member).toLowerCase());
@@ -339,7 +339,7 @@ const WARNING_NAMES = ['', 'Перша', 'Друга', 'Третя'];
 export function activeWarning(warnings: MemberWarningDto[] | null | undefined, now = Date.now()): { level: number; daysLeft: number } | null {
   const active = (warnings ?? []).filter((w) => !w.revokedAtUtc && (utcDate(w.expiresAtUtc)?.getTime() ?? 0) > now);
   if (!active.length) return null;
-  const top = active.reduce((a, b) => (WARNING_WEIGHT[b.level] > WARNING_WEIGHT[a.level] ? b : a));
+  const top = active.reduce((a, b) => (WARNING_WEIGHT[b.level] > WARNING_WEIGHT[a.level] ? b : a), active[0]);
   const expires = utcDate(top.expiresAtUtc)?.getTime() ?? now;
   return { level: WARNING_WEIGHT[top.level] ?? 0, daysLeft: Math.max(0, Math.ceil((expires - now) / 86_400_000)) };
 }

@@ -237,7 +237,11 @@ export class MorePage implements ViewWillEnter {
   }
 
   /** The status, the card and the kurins are asked once (the status endpoint is rate-limited). */
-  async ionViewWillEnter(): Promise<void> {
+  ionViewWillEnter(): void {
+    void this.refresh();
+  }
+
+  private async refresh(): Promise<void> {
     const user = this.user();
     if (!user) return;
     if (user.memberKey && !this.member()) {

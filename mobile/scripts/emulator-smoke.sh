@@ -125,6 +125,20 @@ launch() {
   return 0
 }
 
+# Swipes the page up until $1 is on screen: uiautomator only sees what the WebView has laid out
+# in view, so a card below the fold is not tappable yet.
+scroll_to_text() {
+  local text=$1
+  for _ in $(seq 8); do
+    dump_ui
+    grep -q -- "$text" "$OUT/ui.xml" 2>/dev/null && return 0
+    adb shell input swipe 540 1700 540 500 300
+    sleep 1
+  done
+  diagnose "scrolling never showed \"$text\""
+  return 1
+}
+
 ABOUT="Про застосунок"
 
 # The app is started with monkey, so the home screen is not needed; on a busy emulator the Pixel
@@ -144,7 +158,7 @@ if tap_until "$ABOUT" "Перевірка оболонки"; then pass "$ABOUT o
 grep -q 'text="md"' "$OUT/ui.xml" && pass "Ionic mode is md on Android" || fail "Ionic mode md not found"
 grep -q 'text="android' "$OUT/ui.xml" && pass "Capacitor platform is android" || fail "Capacitor platform android not found"
 
-if tap_text "Натиснути" && sleep 1 && tap_text "Натиснути" && wait_for_text "Натиснуто: 2" 5; then
+if scroll_to_text "Натиснути" && tap_text "Натиснути" && sleep 1 && tap_text "Натиснути" && wait_for_text "Натиснуто: 2" 5; then
   pass "Signals update the screen without zone.js (Натиснуто: 2 · подвоєно: 4)"
 else
   fail "Tap counter did not update"

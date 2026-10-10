@@ -54,7 +54,7 @@ export const WEEKDAY_BITS: { label: string; bit: number }[] = [
   { label: 'Чт', bit: 1 << 4 },
   { label: 'Пт', bit: 1 << 5 },
   { label: 'Сб', bit: 1 << 6 },
-  { label: 'Нд', bit: 1 << 0 },
+  { label: 'Нд', bit: 1 },
 ];
 
 export const WEEKDAY_HEADERS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];

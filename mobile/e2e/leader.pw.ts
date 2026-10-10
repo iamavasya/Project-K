@@ -57,7 +57,9 @@ const cell = (quarter: { year: number; number: number }, charged: number, paid: 
   quarter, charged: amount(charged), paid: amount(paid), balance: paid - charged, isConcession,
 });
 
-function groupDues(viewer = { canKeep: true, canVerify: true, canSetKurinRates: false }) {
+const KEEPER = { canKeep: true, canVerify: true, canSetKurinRates: false };
+
+function groupDues(viewer = KEEPER) {
   return {
     groupKey: 'g1', kurinKey: 'k1', groupName: 'Соколи', currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '2026/27', quarters: [q(2026, 3), q(2026, 4), q(2027, 1), q(2027, 2)] }],

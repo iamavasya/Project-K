@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -334,7 +334,9 @@ interface ProjectMilestone {
     </ion-content>
   `,
 })
-export class AboutPage {
+export class AboutPage implements OnInit {
+  private readonly account = inject(AccountService);
+
   protected readonly taps = signal(0);
   protected readonly doubled = computed(() => this.taps() * 2);
   protected readonly photoMissing = signal(false);
@@ -485,13 +487,14 @@ export class AboutPage {
       gitNetwork,
       star,
     });
+  }
+
+  ngOnInit(): void {
     // No API in reach is not an error here; the app's own version still shows.
-    inject(AccountService)
-      .health()
-      .then(
-        (health) => this.apiVersion.set(health.version ? versionLabel(health.version, health.codeName) : null),
-        () => undefined,
-      );
+    this.account.health().then(
+      (health) => this.apiVersion.set(health.version ? versionLabel(health.version, health.codeName) : null),
+      () => undefined,
+    );
   }
 
   /** One spelling for every release: the tag as git knows it, then the code name when there was one. */

@@ -17,7 +17,9 @@ export function docsUrl(): string {
 
 /** «Довідка» opens the guide's first page, like the web's sidebar. */
 export function helpUrl(): string {
-  return `${docsUrl().replace(/\/+$/, '')}/user/start/what-is/`;
+  let base = docsUrl();
+  while (base.endsWith('/')) base = base.slice(0, -1);
+  return `${base}/user/start/what-is/`;
 }
 
 /** A page of the web app on this origin: the PWA lives under /m/ next to it. */

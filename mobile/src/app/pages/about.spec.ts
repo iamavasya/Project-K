@@ -28,6 +28,7 @@ describe('AboutPage', () => {
 
   it('shows the web page’s story and the running API’s version', async () => {
     const fixture = TestBed.createComponent(AboutPage);
+    await fixture.whenStable();
     TestBed.inject(HttpTestingController)
       .expectOne((request) => request.url.endsWith('/health'))
       .flush({ version: 'v0.20.0-beta', codeName: 'Honeypot Ant' });

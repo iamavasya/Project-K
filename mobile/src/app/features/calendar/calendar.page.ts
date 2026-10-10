@@ -410,7 +410,7 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
     const byDay = itemsByDay(state.value);
     return [...byDay.keys()]
       .filter((day) => day >= this.today)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .map((day) => ({ day, label: dayHeading(day, this.today), items: byDay.get(day)! }));
   });
 
