@@ -3,6 +3,9 @@ import { Capacitor } from '@capacitor/core';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { loadRuntimeConfig } from './app/runtime-config';
+import { blockPinchZoom } from './app/pwa/no-zoom';
+
+blockPinchZoom();
 
 const ready = Capacitor.isNativePlatform() ? Promise.resolve() : loadRuntimeConfig();
 

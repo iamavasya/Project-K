@@ -97,3 +97,22 @@ test('keeps working offline after the first visit', async ({ page, context }, in
   await expect(page.getByText('Про Лілейку')).toBeVisible();
   await shot(page, info.project.name, '05-offline');
 });
+
+test('the page does not zoom like a website', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.getByText('Привіт від S1')).toBeVisible();
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    'content',
+    /maximum-scale=1\.0, user-scalable=no/,
+  );
+  const blocked = await page.evaluate(() => {
+    const pinch = new Event('gesturestart', { cancelable: true });
+    document.dispatchEvent(pinch);
+    return {
+      pinch: pinch.defaultPrevented,
+      touchAction: getComputedStyle(document.documentElement).touchAction,
+    };
+  });
+  expect(blocked.pinch).toBe(true);
+  expect(blocked.touchAction).toBe('pan-x pan-y');
+});
