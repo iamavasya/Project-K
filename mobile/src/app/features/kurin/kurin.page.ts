@@ -50,6 +50,7 @@ import { GroupDto, KurinDto, LeadershipHistoryDto, MemberLookupDto } from './kur
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import { GroupSilhouette } from './group-silhouette';
+import { KurinPlaque } from './kurin-plaque';
 
 type Section = 'overview' | 'members';
 
@@ -89,6 +90,7 @@ const DESCRIPTION_LIMIT = 360;
     RouterLink,
     MemberAvatar,
     GroupSilhouette,
+    KurinPlaque,
   ],
   styles: `
     app-group-silhouette.mini {
@@ -101,19 +103,6 @@ const DESCRIPTION_LIMIT = 360;
       display: flex;
       gap: 14px;
       align-items: center;
-    }
-    .number {
-      flex: none;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--lk-primary);
-      color: var(--lk-on-primary);
-      font-size: 24px;
-      font-weight: 800;
     }
     .head h2 {
       margin: 0;
@@ -217,7 +206,7 @@ const DESCRIPTION_LIMIT = 360;
                 @default {
                   @if (kurinValue(); as k) {
                     <div class="head">
-                      <div class="number" aria-hidden="true">{{ k.number }}</div>
+                      <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
                       <div>
                         <h2>{{ k.number }} курінь</h2>
                         @if (k.namedAfter) { <p>ім. {{ k.namedAfter }}</p> }

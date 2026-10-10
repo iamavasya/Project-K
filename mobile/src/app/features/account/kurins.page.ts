@@ -29,6 +29,7 @@ import { BRANCH_LABELS, KIND_LABELS, groupRole, kurinLabel, sortKurins } from '.
 import { MyGroupDto } from './account.models';
 import { AccountService } from './account.service';
 import { GroupSilhouette } from '../kurin/group-silhouette';
+import { KurinPlaque } from '../kurin/kurin-plaque';
 
 /**
  * «Мої курені»: the web's kurin switcher and my-kurins tile. The kurin acted in is checked; picking
@@ -55,27 +56,12 @@ import { GroupSilhouette } from '../kurin/group-silhouette';
     IonIcon,
     IonSpinner,
     IonSkeletonText,
+    KurinPlaque,
   ],
   styles: `
-    .plaque {
-      flex: none;
-      width: 40px;
-      height: 40px;
-      margin: 8px 16px 8px 0;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--lk-primary-50);
-      color: var(--lk-primary-700);
-      font-weight: 800;
-      font-size: 16px;
-    }
+    .plaque,
     .plaque-silhouette {
       margin: 8px 16px 8px 0;
-    }
-    .plaque ion-icon {
-      font-size: 20px;
     }
     .now {
       color: var(--lk-primary);
@@ -133,7 +119,7 @@ import { GroupSilhouette } from '../kurin/group-silhouette';
                     (click)="choose(option)"
                     [attr.data-testid]="'kurin-' + option.kurinNumber"
                   >
-                    <span class="plaque" slot="start" aria-hidden="true">{{ option.kurinNumber }}</span>
+                    <app-kurin-plaque slot="start" class="plaque" [number]="option.kurinNumber" />
                     <ion-label class="ion-text-wrap">
                       <h3>{{ label(option) }}</h3>
                       <p>{{ branch[option.branch] }} · {{ kind[option.kind] }}</p>

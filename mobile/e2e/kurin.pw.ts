@@ -171,6 +171,8 @@ test('shows the kurin with its groups, КВ, провід and people', async ({ 
   await expect(head).toContainText('ім. Івана Франка');
   await expect(head).toContainText('УПЮ');
   await expect(head).toContainText('Львівщина');
+  // The web's red plaque with the kurin's number, in its small size.
+  await expect(head.getByTestId('kurin-plaque')).toHaveCSS('background-color', 'rgb(179, 0, 3)');
   await expect(page.getByTestId('groups')).toContainText('Соколи');
   await expect(page.getByTestId('groups')).toContainText('Орли');
   // The Звʼязковий first, then the впорядники with their гуртки.

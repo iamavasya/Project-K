@@ -40,8 +40,11 @@ import { NavModeService } from './nav/nav-mode.service';
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          @if (drawer()) {
-            <app-nav-menu [drawer]="true" />
+          <!-- Loaded only for «Як у вебі», so the tabs' first screen does not wait for the menu. -->
+          @defer (when drawer()) {
+            @if (drawer()) {
+              <app-nav-menu [drawer]="true" />
+            }
           }
         </ion-content>
       </ion-menu>
