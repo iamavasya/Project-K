@@ -67,12 +67,12 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
   styles: `
     .subline {
       margin: 0 20px 4px;
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
       font-size: 15px;
     }
     .row {
       padding: 12px 0;
-      border-bottom: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.12));
+      border-bottom: 1px solid var(--lk-line);
     }
     .row:last-child {
       border-bottom: 0;
@@ -85,18 +85,18 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
       margin: 2px 0;
       font-size: 16px;
       font-weight: 600;
-      color: var(--ion-text-color);
+      color: var(--lk-ink);
     }
     .row p {
       margin: 0;
       font-size: 14px;
     }
     .when {
-      color: var(--ion-color-primary);
+      color: var(--lk-primary);
       font-weight: 600;
     }
     .late {
-      color: var(--ion-color-danger);
+      color: var(--lk-danger);
     }
     .task {
       display: flex;
@@ -119,18 +119,18 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     .stats strong {
       display: block;
       font-size: 24px;
-      color: var(--ion-text-color);
+      color: var(--lk-ink);
     }
     .big {
       font-size: 28px;
       font-weight: 700;
-      color: var(--ion-text-color);
+      color: var(--lk-ink);
     }
     .ok {
-      color: var(--ion-color-success);
+      color: var(--lk-primary);
     }
     .debt {
-      color: var(--ion-color-danger);
+      color: var(--lk-danger);
     }
     ion-progress-bar {
       margin: 8px 0;
@@ -138,7 +138,7 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
       border-radius: 3px;
     }
     .muted {
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
     }
   `,
   template: `

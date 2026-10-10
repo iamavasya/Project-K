@@ -11,7 +11,6 @@ import {
   IonList,
   IonListHeader,
   IonSpinner,
-  IonText,
   IonTitle,
   IonToolbar,
   ToastController,
@@ -42,7 +41,6 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     IonInput,
     IonButton,
     IonSpinner,
-    IonText,
   ],
   styles: `
     .wrap {
@@ -60,7 +58,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     }
     .lead p {
       margin: 0 0 8px;
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
     }
     .actions {
       padding: 4px 16px;
@@ -72,7 +70,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     .hint {
       margin: 0 0 8px;
       font-size: 14px;
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
     }
     .key {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -98,11 +96,6 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
       padding: 8px 20px 16px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 16px;
-    }
-    .error {
-      display: block;
-      padding: 0 20px 8px;
-      font-size: 14px;
     }
     .center {
       display: flex;
@@ -178,22 +171,26 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
               <ion-list [inset]="true">
                 <ion-list-header>2. Введи код із застосунку</ion-list-header>
                 <ion-item>
-                  <ion-input
-                    data-testid="mfa-code"
-                    label="Шестизначний код"
-                    labelPlacement="stacked"
-                    type="tel"
-                    inputmode="numeric"
-                    autocomplete="one-time-code"
-                    [maxlength]="6"
-                    [value]="code()"
-                    (ionInput)="code.set(digits($event))"
-                  />
+                  <div class="lk-field">
+                    <span class="lk-field__label">Шестизначний код</span>
+                    <div class="lk-input-box" [class.lk-invalid]="!!error()">
+                      <ion-input
+                        data-testid="mfa-code"
+                        aria-label="Шестизначний код"
+                        type="tel"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        [maxlength]="6"
+                        [value]="code()"
+                        (ionInput)="code.set(digits($event))"
+                      />
+                    </div>
+                    @if (error(); as message) {
+                      <span class="lk-field__error" role="alert">{{ message }}</span>
+                    }
+                  </div>
                 </ion-item>
               </ion-list>
-              @if (error(); as message) {
-                <ion-text color="danger" class="error" role="alert">{{ message }}</ion-text>
-              }
               <div class="actions">
                 <ion-button type="submit" expand="block" [disabled]="code().length !== 6 || busy()">
                   @if (busy()) { <ion-spinner name="crescent" /> } @else { Увімкнути }

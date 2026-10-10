@@ -44,8 +44,8 @@ import { MeService } from '../me/me.service';
     ion-avatar {
       width: 96px;
       height: 96px;
-      background: var(--ion-color-primary);
-      color: var(--ion-color-primary-contrast);
+      background: var(--lk-primary);
+      color: var(--lk-on-primary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -59,7 +59,7 @@ import { MeService } from '../me/me.service';
     }
     .head p {
       margin: 0;
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
     }
   `,
   template: `

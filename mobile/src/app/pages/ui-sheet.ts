@@ -146,6 +146,11 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     .side ion-list {
       margin: 0;
     }
+    /* In the app cards and Android buttons keep Ionic's margins; in the sheet's grid they sit flush. */
+    .side.lk ion-card,
+    :host-context(.md) .side.lk ion-button {
+      margin: 0;
+    }
     .frame {
       border: 1px dashed var(--ion-color-step-250, #ccc);
       border-radius: 8px;
@@ -153,6 +158,43 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     }
     ion-tab-bar {
       position: static;
+    }
+    /* A phone screen cut: the page scrolls under the bars, so the glass has something to blur. */
+    .screen {
+      position: relative;
+      height: 360px;
+      overflow: hidden;
+      border: 1px dashed var(--ion-color-step-250, #ccc);
+      border-radius: 12px;
+      background: var(--lk-surface);
+    }
+    .screen__page {
+      display: grid;
+      gap: 12px;
+      padding: 20px 12px 90px;
+    }
+    .screen__page ion-card {
+      margin: 0;
+    }
+    .screen__page ion-button {
+      margin: 12px 0 0;
+    }
+    .screen .when {
+      color: var(--lk-primary);
+      font-weight: 600;
+    }
+    .screen .what {
+      color: var(--lk-ink);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .screen ion-toolbar {
+      position: absolute;
+      inset: 0 0 auto;
+    }
+    .screen ion-tab-bar {
+      position: absolute;
+      inset: auto 0 0;
     }
   `,
   template: `
@@ -434,6 +476,88 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
               </div>
               <div class="frame">
                 <ion-tab-bar>
+                  <ion-tab-button tab="home" [selected]="true"><ion-icon name="home" /><ion-label>Головна</ion-label></ion-tab-button>
+                  <ion-tab-button tab="calendar"><ion-icon name="calendar-outline" /><ion-label>Календар</ion-label></ion-tab-button>
+                  <ion-tab-button tab="growth"><ion-icon name="trending-up" /><ion-label>Поступ</ion-label></ion-tab-button>
+                  <ion-tab-button tab="more"><ion-icon name="ellipsis-horizontal" /><ion-label>Ще</ion-label></ion-tab-button>
+                </ion-tab-bar>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section data-testid="glass">
+          <h2>Скло (iOS 26)</h2>
+          <p class="why">Схоже на Liquid Glass: сторінка просвічує крізь розмиту шапку й плаваючий таб-бар. Справжнього заломлення веб не вміє.</p>
+          <div class="pair stack">
+            <div class="side lk">
+              <span class="cap">Лілейка зараз</span>
+              <div class="screen">
+                <div class="screen__page">
+                  <ion-card>
+                    <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
+                    <ion-card-content>
+                      <p class="when">завтра · 17:00–19:00</p>
+                      <p class="what">Сходини гуртка</p>
+                      <ion-button expand="block">Іду</ion-button>
+                    </ion-card-content>
+                  </ion-card>
+                  <ion-card>
+                    <ion-card-header>
+                      <ion-card-subtitle>Проба</ion-card-subtitle>
+                      <ion-card-title>Перша проба</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                      <p>Підписано 12 з 30</p>
+                      <ion-progress-bar [value]="0.4" />
+                      <ion-button expand="block" fill="outline">Відкрити</ion-button>
+                    </ion-card-content>
+                  </ion-card>
+                </div>
+                <ion-toolbar>
+                  <ion-title>Головна</ion-title>
+                  <ion-buttons slot="end">
+                    <ion-button aria-label="Сповіщення"><ion-icon slot="icon-only" name="notifications-outline" /></ion-button>
+                  </ion-buttons>
+                </ion-toolbar>
+                <ion-tab-bar>
+                  <ion-tab-button tab="home" [selected]="true"><ion-icon name="home" /><ion-label>Головна</ion-label></ion-tab-button>
+                  <ion-tab-button tab="calendar"><ion-icon name="calendar-outline" /><ion-label>Календар</ion-label></ion-tab-button>
+                  <ion-tab-button tab="growth"><ion-icon name="trending-up" /><ion-label>Поступ</ion-label></ion-tab-button>
+                  <ion-tab-button tab="more"><ion-icon name="ellipsis-horizontal" /><ion-label>Ще</ion-label></ion-tab-button>
+                </ion-tab-bar>
+              </div>
+            </div>
+            <div class="side lk">
+              <span class="cap">Лілейка зі склом</span>
+              <div class="screen">
+                <div class="screen__page">
+                  <ion-card>
+                    <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
+                    <ion-card-content>
+                      <p class="when">завтра · 17:00–19:00</p>
+                      <p class="what">Сходини гуртка</p>
+                      <ion-button expand="block">Іду</ion-button>
+                    </ion-card-content>
+                  </ion-card>
+                  <ion-card>
+                    <ion-card-header>
+                      <ion-card-subtitle>Проба</ion-card-subtitle>
+                      <ion-card-title>Перша проба</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                      <p>Підписано 12 з 30</p>
+                      <ion-progress-bar [value]="0.4" />
+                      <ion-button expand="block" fill="outline">Відкрити</ion-button>
+                    </ion-card-content>
+                  </ion-card>
+                </div>
+                <ion-toolbar class="lk-glass">
+                  <ion-title>Головна</ion-title>
+                  <ion-buttons slot="end">
+                    <ion-button aria-label="Сповіщення"><ion-icon slot="icon-only" name="notifications-outline" /></ion-button>
+                  </ion-buttons>
+                </ion-toolbar>
+                <ion-tab-bar class="lk-glass">
                   <ion-tab-button tab="home" [selected]="true"><ion-icon name="home" /><ion-label>Головна</ion-label></ion-tab-button>
                   <ion-tab-button tab="calendar"><ion-icon name="calendar-outline" /><ion-label>Календар</ion-label></ion-tab-button>
                   <ion-tab-button tab="growth"><ion-icon name="trending-up" /><ion-label>Поступ</ion-label></ion-tab-button>

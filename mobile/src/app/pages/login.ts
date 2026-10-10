@@ -1,21 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  IonButton,
-  IonContent,
-  IonInput,
-  IonList,
-  IonItem,
-  IonSpinner,
-  IonText,
-} from '@ionic/angular';
+import { IonButton, IonContent, IonInput, IonSpinner } from '@ionic/angular';
 import { AuthService, loginErrorText } from '../auth/auth.service';
 
 type Step = 'password' | 'code';
 
 @Component({
   selector: 'app-login',
-  imports: [IonContent, IonList, IonItem, IonInput, IonButton, IonSpinner, IonText],
+  imports: [IonContent, IonInput, IonButton, IonSpinner],
   styles: `
     .wrap {
       max-width: 420px;
@@ -37,15 +29,18 @@ type Step = 'password' | 'code';
     }
     .brand p {
       margin: 0;
-      color: var(--ion-color-medium);
+      color: var(--lk-muted);
+    }
+    .fields {
+      display: grid;
+      gap: 16px;
+      padding: 0 16px 16px;
     }
     .actions {
       padding: 8px 16px 0;
     }
     .error {
-      display: block;
-      padding: 0 20px 8px;
-      font-size: 14px;
+      margin: -8px 16px 8px;
     }
     .links {
       display: flex;
@@ -65,52 +60,58 @@ type Step = 'password' | 'code';
 
         <form (submit)="$event.preventDefault(); submit()">
           @if (step() === 'password') {
-            <ion-list [inset]="true">
-              <ion-item>
-                <ion-input
-                  data-testid="email"
-                  label="Email"
-                  labelPlacement="stacked"
-                  type="email"
-                  inputmode="email"
-                  autocomplete="username"
-                  autocapitalize="off"
-                  [value]="email()"
-                  (ionInput)="email.set(text($event))"
-                />
-              </ion-item>
-              <ion-item>
-                <ion-input
-                  data-testid="password"
-                  label="Пароль"
-                  labelPlacement="stacked"
-                  type="password"
-                  autocomplete="current-password"
-                  [value]="password()"
-                  (ionInput)="password.set(text($event))"
-                />
-              </ion-item>
-            </ion-list>
+            <div class="fields">
+              <div class="lk-field">
+                <span class="lk-field__label">Email</span>
+                <div class="lk-input-box" [class.lk-invalid]="!!error()">
+                  <ion-input
+                    data-testid="email"
+                    aria-label="Email"
+                    type="email"
+                    inputmode="email"
+                    autocomplete="username"
+                    autocapitalize="off"
+                    [value]="email()"
+                    (ionInput)="email.set(text($event))"
+                  />
+                </div>
+              </div>
+              <div class="lk-field">
+                <span class="lk-field__label">Пароль</span>
+                <div class="lk-input-box" [class.lk-invalid]="!!error()">
+                  <ion-input
+                    data-testid="password"
+                    aria-label="Пароль"
+                    type="password"
+                    autocomplete="current-password"
+                    [value]="password()"
+                    (ionInput)="password.set(text($event))"
+                  />
+                </div>
+              </div>
+            </div>
           } @else {
-            <ion-list [inset]="true">
-              <ion-item>
-                <ion-input
-                  data-testid="code"
-                  [label]="useRecoveryCode() ? 'Код відновлення' : 'Код з застосунку-автентифікатора'"
-                  labelPlacement="stacked"
-                  [type]="useRecoveryCode() ? 'text' : 'tel'"
-                  [inputmode]="useRecoveryCode() ? 'text' : 'numeric'"
-                  autocomplete="one-time-code"
-                  [maxlength]="useRecoveryCode() ? 32 : 6"
-                  [value]="code()"
-                  (ionInput)="code.set(text($event))"
-                />
-              </ion-item>
-            </ion-list>
+            <div class="fields">
+              <div class="lk-field">
+                <span class="lk-field__label">{{ codeLabel() }}</span>
+                <div class="lk-input-box" [class.lk-invalid]="!!error()">
+                  <ion-input
+                    data-testid="code"
+                    [attr.aria-label]="codeLabel()"
+                    [type]="useRecoveryCode() ? 'text' : 'tel'"
+                    [inputmode]="useRecoveryCode() ? 'text' : 'numeric'"
+                    autocomplete="one-time-code"
+                    [maxlength]="useRecoveryCode() ? 32 : 6"
+                    [value]="code()"
+                    (ionInput)="code.set(text($event))"
+                  />
+                </div>
+              </div>
+            </div>
           }
 
           @if (error(); as message) {
-            <ion-text color="danger" class="error" role="alert">{{ message }}</ion-text>
+            <p class="lk-field__error error" role="alert">{{ message }}</p>
           }
 
           <div class="actions">
@@ -151,6 +152,10 @@ export class LoginPage {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   private mfaToken: string | null = null;
+
+  protected readonly codeLabel = computed(() =>
+    this.useRecoveryCode() ? 'Код відновлення' : 'Код з застосунку-автентифікатора',
+  );
 
   protected readonly canSubmit = computed(() => {
     if (this.busy()) return false;

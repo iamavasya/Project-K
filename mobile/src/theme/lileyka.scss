@@ -1,7 +1,7 @@
 // Лілейка on top of Ionic (BRANDBOOK v1.2, PLAN.md §5).
 //
-// Everything is scoped to `.lk` for now, so the component sheet at /ui can put Ionic as it ships
-// next to the brand version. Rolling it out is moving these rules from `.lk` to the app root.
+// Everything is scoped to `.lk`: the app root carries it (app.ts), and the component sheet at /ui
+// sets it only on its brand side, next to Ionic as it ships.
 //
 // Ionic crossed with the web (Rost's review of the sheet, 2026-10-10):
 // - Both platforms: tabs (segment) and fields are the web's; tags, cards, the toolbar and the tab
@@ -51,6 +51,7 @@
   --lk-accent-50: #fbe9dc;
   --lk-accent-700: #a8541b;
   --lk-danger: #dc2626;
+  --lk-danger-rgb: 220, 38, 38;
   --lk-danger-50: #fee2e2;
   --lk-danger-700: #b91c1c;
   --lk-ink: #101413;
@@ -60,6 +61,12 @@
   --lk-line: #e4e8e6;
   --lk-surface: #f7f9f8;
   --lk-paper: #ffffff;
+  --lk-paper-rgb: 255, 255, 255;
+  --lk-surface-rgb: 247, 249, 248;
+  // Glass (iOS 26 look, on trial in the sheet): the light rim, the lift and the chosen-tab pill.
+  --lk-glass-rim: rgba(255, 255, 255, 0.7);
+  --lk-glass-shadow: 0 8px 28px rgba(16, 20, 19, 0.14);
+  --lk-glass-pill: rgba(16, 20, 19, 0.07);
   // Aura's secondary button: surface.100 under surface.600.
   --lk-secondary-bg: #eff1f0;
   --lk-secondary-bg-active: #e4e8e6;
@@ -78,6 +85,7 @@
     --lk-accent-50: #2a1f16;
     --lk-accent-700: #f3b784;
     --lk-danger: #f87171;
+    --lk-danger-rgb: 248, 113, 113;
     --lk-danger-50: #2c1515;
     --lk-danger-700: #fca5a5;
     --lk-ink: #e9edea;
@@ -87,6 +95,11 @@
     --lk-line: #232a27;
     --lk-surface: #0d1110;
     --lk-paper: #161b19;
+    --lk-paper-rgb: 22, 27, 25;
+    --lk-surface-rgb: 13, 17, 16;
+    --lk-glass-rim: rgba(255, 255, 255, 0.14);
+    --lk-glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --lk-glass-pill: rgba(255, 255, 255, 0.1);
     --lk-secondary-bg: #1d2320;
     --lk-secondary-bg-active: #232a27;
     --lk-secondary-fg: #c7cfcb;
@@ -97,8 +110,19 @@
   --ion-font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --ion-text-color: var(--lk-ink);
   --ion-border-color: var(--lk-line);
+  // Ionic's danger (color="danger") in the brand's red.
+  --ion-color-danger: var(--lk-danger);
+  --ion-color-danger-rgb: var(--lk-danger-rgb);
+  --ion-color-danger-shade: var(--lk-danger-700);
+  --ion-color-danger-tint: var(--lk-danger);
   font-family: var(--ion-font-family);
   color: var(--lk-ink);
+
+  // ── Page: the web's ground (surface) under paper cards, lists and bars ──────────────────────
+  ion-content {
+    --background: var(--lk-surface);
+    --color: var(--lk-ink);
+  }
 
   // ── Tabs: the web's segmented tabs (agenda board on a phone, p-selectButton) ────────────────
   // A tray on the page ground with a 1px line; the chosen tab is a paper plate with a line.
@@ -238,7 +262,6 @@
     --color: var(--lk-muted);
     border: 1px solid var(--lk-line);
     box-shadow: none;
-    margin: 0;
   }
 
   // iOS puts the subtitle under the title (column-reverse); the web's eyebrow sits above it.
@@ -289,6 +312,12 @@
     font-weight: 700;
   }
 
+  // iOS large titles sit on the page itself, not on a bar.
+  ion-header.header-collapse-condense ion-toolbar {
+    --background: var(--lk-surface);
+    --border-width: 0;
+  }
+
   // Toolbar icons in ink: they read clearly without competing with the green actions.
   ion-toolbar ion-button {
     --color: var(--lk-ink-soft);
@@ -304,6 +333,65 @@
 
   ion-tab-button {
     font-weight: 700;
+  }
+}
+
+// ── Glass: an iOS 26 Liquid Glass look-alike, on trial in the sheet (.lk-glass) ────────────────
+// The web can't refract, so it is frosted translucency: the page blurs through, a light rim on top
+// and a soft lift. The bar fades into the page and its buttons float as glass circles; the tab
+// bar floats as a capsule with a pill behind the chosen tab.
+.lk {
+  ion-toolbar.lk-glass {
+    --background: transparent;
+    --border-width: 0;
+  }
+
+  ion-toolbar.lk-glass::part(background) {
+    background: linear-gradient(rgba(var(--lk-surface-rgb), 0.92), rgba(var(--lk-surface-rgb), 0));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    mask-image: linear-gradient(#000 55%, transparent);
+    -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  }
+
+  ion-toolbar.lk-glass ion-buttons {
+    margin-inline: 8px;
+  }
+
+  ion-toolbar.lk-glass ion-buttons ion-button {
+    --background: rgba(var(--lk-paper-rgb), 0.6);
+    --border-radius: 999px;
+    --padding-start: 0;
+    --padding-end: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--lk-glass-rim);
+    box-shadow: var(--lk-glass-shadow);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  ion-tab-bar.lk-glass {
+    --background: rgba(var(--lk-paper-rgb), 0.62);
+    --border: 0;
+    height: 62px;
+    margin: 0 16px 8px;
+    padding: 4px;
+    border-radius: 999px;
+    border: 1px solid var(--lk-glass-rim);
+    box-shadow: var(--lk-glass-shadow);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+  }
+
+  ion-tab-bar.lk-glass ion-tab-button {
+    --background: transparent;
+    border-radius: 999px;
+  }
+
+  ion-tab-bar.lk-glass ion-tab-button.tab-selected {
+    background: var(--lk-glass-pill);
   }
 }
 
@@ -345,7 +433,6 @@
     --padding-bottom: 0;
     height: 36px;
     min-height: 36px;
-    margin: 0;
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0;
