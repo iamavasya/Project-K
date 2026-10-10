@@ -111,6 +111,7 @@
     gap: 4px;
   }
 
+  // Heights and type follow each platform's own segment (see the .ios / .md blocks below).
   ion-segment-button {
     --color: var(--lk-muted);
     --color-checked: var(--lk-ink);
@@ -125,9 +126,7 @@
     --padding-top: 0;
     --padding-bottom: 0;
     margin: 0;
-    min-height: 34px;
     min-width: 0;
-    font-size: 13px;
     font-weight: 650;
     letter-spacing: 0;
     text-transform: none;
@@ -315,34 +314,61 @@
   ion-list.list-inset {
     border: 1px solid var(--lk-line);
   }
+
+  // Ionic's iOS segment is 32px tall with 13px labels: a 2px tray around 26px plates.
+  ion-segment {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  ion-segment-button {
+    min-height: 26px;
+    font-size: 13px;
+  }
+
+  ion-segment-button::part(indicator-background) {
+    border-radius: 6px;
+  }
 }
 
 // ── Android ───────────────────────────────────────────────────────────────────────────────────
-// Buttons are the web's p-button at Material's 14px: 40px, radius 8, no uppercase or elevation.
+// Buttons are the web's p-button (radius 8, no uppercase or elevation) at Material's size:
+// 36px with 14/500 labels, 27px small with 13px. The segment is Material's 48px with 14px labels.
 // The «Ще» list is the web's menu, and cards take the web tile's 12px radius.
 .md .lk {
   ion-button:not(ion-toolbar ion-button) {
     --border-radius: 8px;
     --box-shadow: none;
-    --padding-start: 20px;
-    --padding-end: 20px;
+    --padding-start: 1.1em;
+    --padding-end: 1.1em;
     --padding-top: 0;
     --padding-bottom: 0;
-    height: 40px;
-    min-height: 40px;
+    height: 36px;
+    min-height: 36px;
     margin: 0;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0;
     text-transform: none;
   }
 
   ion-button.button-small {
-    height: 34px;
-    min-height: 34px;
-    --padding-start: 14px;
-    --padding-end: 14px;
+    height: 2.1em;
+    min-height: 2.1em;
+    --padding-start: 0.9em;
+    --padding-end: 0.9em;
     font-size: 13px;
+  }
+
+  ion-segment-button {
+    min-height: 38px;
+    font-size: 14px;
+  }
+
+  // Material pads the label 12px top and bottom, which would push the plate past 38px.
+  ion-segment-button ion-label {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   ion-button.button-solid {
