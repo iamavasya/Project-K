@@ -320,3 +320,231 @@ Chromium, тобто це гілка iOS 27; справжній Safari 26 бер
 у `ion-list-header` (так їх малює тема), кнопки в `ion-item` явно `size="default"` (Ionic інакше робить їх
 малими). Відкрите: точний радіус груп iOS 26 і розмір іконок таб-бару Apple не публікує — звірити з
 UI Kit з Apple Design Resources, коли Рост буде за компʼютером.
+
+## 19. Інвентар веб-додатку для перенесення (2026-10-10)
+
+Повний перелік сторінок і фіч основного вебу (`Frontend/projectk-frontend`), щоб переносити в PWA пункт за
+пунктом. Знято з коду (маршрути в [app.routes.ts](../Frontend/projectk-frontend/src/app/app.routes.ts), меню в
+[sidebar-menu.ts](../Frontend/projectk-frontend/src/app/features/kurinModule/components/sidebar-menu/sidebar-menu.ts), права в
+[permission.service.ts](../Frontend/projectk-frontend/src/app/features/authModule/services/permission-service/permission.service.ts)); веб не запускався.
+
+**Ролі.** **Ю** — юнак (без проводових прав: читає курінь, своє редагує). **П** — провід (Виховник/гуртковий,
+Звʼязковий, курінний, скарбник, суддя; конкретна посада вказана). **А** — адмін системи (поза куренем).
+Більшість кнопок усередині сторінок вебу гейтиться прапорцями з відповіді API (`canEdit`, `canChangeStatus`,
+`viewer.canKeep` …), тож PWA має читати ті самі прапорці, а не вигадувати свої перевірки.
+
+**Стан у PWA.** ✅ є · ◐ частково · ○ немає (план §7 або пізніше) · ✗ свідомо не переносимо в мобілку.
+
+### 19.1 Оболонка і навігація
+
+1. **Верхня панель** — [toolbar-header](../Frontend/projectk-frontend/src/app/features/kurinModule/components/toolbar-header/toolbar-header.html):
+   бургер-меню, хлібні крихти, перемикач куреня, «До адміністрації» (А), тема, дзвіночок, «Вийти». Ю/П/А.
+   PWA ◐: таб-бар + «Ще», вихід є; хлібних крихт не треба ✗.
+2. **Бокове меню** — [sidebar-menu.ts](../Frontend/projectk-frontend/src/app/features/kurinModule/components/sidebar-menu/sidebar-menu.ts): пункти за
+   правами (Головна, Мій профіль, Курінь, Реєстр, Імпорт, Календар, Задачі, Планування, Точкування, Модерація
+   вмілостей, Вкладка гуртка/куреня, Налаштування куреня, Адміністрація, Акаунт, Довідка, Повідомити про
+   проблему, Про Лілейку). PWA ◐: «Ще» має профіль, двофакторку, про застосунок, вихід.
+3. **Перемикач куреня** — [kurin-switcher](../Frontend/projectk-frontend/src/app/features/kurinModule/components/kurin-switcher/) (лише якщо куренів >1;
+   `auth/kurin-scope/options`, `POST auth/kurin-scope`). Ю/П. PWA ○ (§7.6 «Мої курені»).
+4. **Банер холодного старту** — [cold-start-banner](../Frontend/projectk-frontend/src/app/features/systemModule/components/cold-start-banner/),
+   [health-banner.service](../Frontend/projectk-frontend/src/app/features/systemModule/services/health-banner-service/). Усі. PWA ○.
+5. **Тема світла/темна** — [theme.service](../Frontend/projectk-frontend/src/app/features/systemModule/services/theme-service/). Усі. PWA ◐: системна
+   тема є, ручного вибору немає (§7.6 «Вигляд»).
+6. **Плиткові дошки з власним розкладом** — [tile-board](../Frontend/projectk-frontend/src/app/shared/tile-board/tile-board.ts): «Налаштувати
+   вигляд», перетягування, сховати/повернути плитку, скинути; `GET/PUT/DELETE user/me/layouts/{boardKey}`.
+   Дошки: `dashboard`, `member-card`, `kurin-panel`, `group-panel`. Усі. PWA ○ (§7.1: спершу лише поважати
+   приховані плитки).
+7. **Перемикач ролей для розробки** — [dev-role-switcher](../Frontend/projectk-frontend/src/app/features/systemModule/components/dev-role-switcher/)
+   (не прод, А). PWA ✗.
+
+### 19.2 Вхід, онбординг, акаунт
+
+8. **Вхід** — [login](../Frontend/projectk-frontend/src/app/features/authModule/pages/login/login.html): email+пароль, крок з кодом або кодом відновлення,
+   посилання на відновлення і заявку; у демо-режимі панель «Демо-курінь» (Звʼязковий/Впорядник/Юнак). Усі.
+   PWA ✅ (без демо-панелі ○).
+9. **Вихід** — [logout](../Frontend/projectk-frontend/src/app/features/authModule/pages/logout/logout.ts). Усі. PWA ✅.
+10. **Обовʼязкова двофакторка** — [mfa-enforcer.service](../Frontend/projectk-frontend/src/app/features/authModule/services/mfa-enforcer-service/),
+    [mfa-setup-dialog](../Frontend/projectk-frontend/src/app/features/authModule/components/mfa-setup-dialog/mfa-setup-dialog.html): QR/секрет, код,
+    коди відновлення. Для А і Звʼязкового (сервер каже через `auth/mfa/status`). PWA ✅.
+11. **Налаштування акаунта** — [account-settings](../Frontend/projectk-frontend/src/app/features/authModule/pages/account-settings/account-settings.html):
+    контакти (email з підтвердженням, телефон), зміна пароля, MFA (увімкнути; привілейовані — «Скинути»,
+    решта — «Вимкнути»; оновити коди відновлення). Ю/П/А. PWA ◐: лише увімкнення двофакторки.
+12. **Відновлення пароля** — [forgot-password](../Frontend/projectk-frontend/src/app/features/authModule/pages/onboarding/forgot-password/forgot-password.ts),
+    [reset-password](../Frontend/projectk-frontend/src/app/features/authModule/pages/onboarding/reset-password/reset-password.ts). Усі. PWA ○ (§7.0:
+    через веб).
+13. **Заявка на приєднання** — [waitlist-registration](../Frontend/projectk-frontend/src/app/features/authModule/pages/onboarding/waitlist-registration/waitlist-registration.ts)
+    (`/join`). Гості. PWA ✗ у v1 (§7.0).
+14. **Активація акаунта** — [account-activation](../Frontend/projectk-frontend/src/app/features/authModule/pages/onboarding/account-activation/account-activation.ts)
+    (`/activate/:token`, пароль → вхід). Гості. PWA ○ (через веб, потім universal links).
+15. **Початкове налаштування системи** — [setup](../Frontend/projectk-frontend/src/app/features/authModule/pages/setup/setup.html) (лише перший запуск).
+    А. PWA ✗.
+16. **Немає доступу / Тут такого немає** — [forbidden](../Frontend/projectk-frontend/src/app/features/authModule/pages/forbidden/forbidden.html). Усі. PWA ○.
+
+### 19.3 Головна
+
+17. **Головна (дашборд)** — [dashboard](../Frontend/projectk-frontend/src/app/features/dashboardModule/pages/dashboard/dashboard.html),
+    [me.service](../Frontend/projectk-frontend/src/app/features/dashboardModule/services/me.service.ts) (`api/me/*`); показується, коли є картка учасника,
+    інакше вітальна сторінка ([dashboard-match.guard](../Frontend/projectk-frontend/src/app/features/dashboardModule/guards/dashboard-match.guard.ts)).
+    Плитки:
+    - 17.1 **Найближче** (14 днів, RSVP інлайн) — [upcoming-events-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/upcoming-events-tile/). Ю/П. PWA ✅.
+    - 17.2 **Мої задачі** (Почати/Зроблено) — [my-tasks-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-tasks-tile/). Ю/П. PWA ✅.
+    - 17.3 **Проба** — [my-probe-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-probe-tile/) (лише УПЮ). Ю. PWA ✅.
+    - 17.4 **Вмілості** — [my-skills-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-skills-tile/) (лише УПЮ). Ю. PWA ✅.
+    - 17.5 **Точкування** — [my-score-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-score-tile/). Ю. PWA ✅.
+    - 17.6 **Вкладка** (свій баланс, пільга) — [my-dues-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-dues-tile/). Ю. PWA ✅.
+    - 17.7 **Справи** (вмілості на перевірку, передачі, записи на перевірку, події без присутності) —
+      [my-duties-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-duties-tile/). П. PWA ○ (фаза 3).
+    - 17.8 **Мій профіль** — [my-profile-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-profile-tile/). Усі. PWA ✅ (у «Ще»).
+    - 17.9 **Мої курені** (з перемиканням скоупу) — [my-kurins-tile](../Frontend/projectk-frontend/src/app/features/dashboardModule/components/my-kurins-tile/). Ю/П. PWA ○ (§7.6).
+
+### 19.4 Календар, задачі, планування
+
+18. **Календар** — [agenda-calendar](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/agenda-calendar/agenda-calendar.html) (`/calendar/:kurinKey`),
+    [agenda.service](../Frontend/projectk-frontend/src/app/features/kurinModule/services/agenda-service/agenda.service.ts): місяць/тиждень/день,
+    «Графіки гуртків» (усі); «Нова подія», виділення діапазону, перетягування/розтяг (П: `canManageAgenda` +
+    `item.canEdit`; серія зсувається цілком). Ю — перегляд і RSVP. PWA ○ (§7.2).
+19. **Подія/задача (діалог)** — [agenda-item-dialog](../Frontend/projectk-frontend/src/app/features/kurinModule/components/agenda-item-dialog/agenda-item-dialog.html):
+    перегляд (усі); RSVP Йду/Можливо/Не йду з лічильниками й списком (усі, для збережених подій); форма
+    (П): тип, назва, опис, місце, група подій, весь день, повторення (тиждень/місяць/рік, інтервал, дні, до
+    дати), цілі ([agenda-assign-select](../Frontend/projectk-frontend/src/app/features/kurinModule/components/agenda-assign-select/)), режим виконання
+    (спільно/будь-хто/кожен), видалення; кнопка «Точкування» → аркуш присутності (`canScore`). PWA ○
+    (§7.2 деталі-шит з RSVP; створення пізніше).
+20. **Виконання задачі** — [agenda-progress](../Frontend/projectk-frontend/src/app/features/kurinModule/components/agenda-progress/): «Твоя частина»,
+    статус по цілях «X з N», чекбокси кожного (за прапорцями `canChangeStatus`). Ю/П. PWA ○ (§7.3).
+21. **Задачі (дошка)** — [agenda-board](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/agenda-board/agenda-board.html) (`/tasks/:kurinKey`):
+    колонки Зробити/В процесі/Зроблено, пошук, ціль, сортування, «Моє», «Завантажити ще», перетягування між
+    колонками (`canChangeStatus`); «Нова задача» (П); редагувати/в архів/видалити (`canEdit`); архів з
+    поверненням і видаленням назавжди (`canEdit`). Ю — перегляд, свої статуси. PWA ○ (§7.3, без архіву).
+22. **Групи подій (категорії)** — [agenda-category-manager](../Frontend/projectk-frontend/src/app/features/kurinModule/components/agenda-category-manager/)
+    на сторінці налаштувань куреня. П (Звʼязковий)/А. PWA ✗ (адмінка лишається у вебі).
+23. **Політика архіву задач** — [agenda-archive-policy](../Frontend/projectk-frontend/src/app/features/kurinModule/components/agenda-archive-policy/). П (Звʼязковий)/А. PWA ✗.
+24. **Планування таборів** — [planning-list.ts](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/planning-list/planning-list.ts)
+    (`/planning/:kurinKey`), [planning-detail.ts](../Frontend/projectk-frontend/src/app/features/kurinModule/components/planning-detail/planning-detail.ts):
+    список сесій, графік зайнятості, оптимальні дати, «Перенести в календар»; видалення (`session.canDelete`).
+    Ю/П читають. PWA ○ (фаза 3).
+25. **Нове планування** — [create-planning.ts](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/create-planning/create-planning.ts):
+    назва, тривалість, вікно пошуку, учасники КВ з вагою голосу і зайнятими датами. П (`canCreatePlanning`).
+    PWA ✗/пізніше.
+
+### 19.5 Курінь, гуртки, учасники
+
+26. **Курінь** — [kurin-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/kurin-panel/kurin-panel.html) (`/kurin`): шапка (номер,
+    імені, гілка, станиця/край, опис); гуртки (відкрити — усі; створити/змінити/видалити через
+    [manage-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/components/manage-panel/) — Звʼязковий); PDF-звіт і редагування профілю
+    куреня (Звʼязковий); список учасників ([member-list](../Frontend/projectk-frontend/src/app/features/kurinModule/components/member-list/): пошук,
+    сортування, посади, верифікація); «Додати учасника куреня», «Прийняти за кодом»
+    ([join-by-code-dialog](../Frontend/projectk-frontend/src/app/features/kurinModule/components/join-by-code-dialog/)) — Звʼязковий. Ю — усе read-only.
+    PWA ○.
+27. **КВ (курінна виховна)** — [kv-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/components/kv-panel/): Звʼязковий і впорядники з
+    гуртками, архів (усі); додати впорядника, призначити гуртки, передати Звʼязкового (Звʼязковий/А). PWA ○.
+28. **Провід (панель)** — [leadership-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/components/leadership/leadership-panel/): посади
+    зараз і архів (усі); шестерня → форма (`canSetupLeadership`). Курінь і гурток. PWA ○.
+29. **Провід (форма)** — [leadership](../Frontend/projectk-frontend/src/app/features/kurinModule/components/leadership/leadership/leadership.html)
+    (`/leadership/...`): учасник на кожну посаду, кілька на посаду, архів. П (курінний — свій курінь,
+    Виховник/гуртковий — свій гурток, Звʼязковий — усе). PWA ✗/пізніше.
+30. **Гурток** — [group-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/group-panel/group-panel.html) (`/group/:groupKey`): силует,
+    опис, провід гуртка, учасники таблицею або картками ([mini-member-card](../Frontend/projectk-frontend/src/app/features/kurinModule/components/mini-member-card/)),
+    дні народження на 30 днів ([upcoming-birthdays-tile](../Frontend/projectk-frontend/src/app/features/kurinModule/components/upcoming-birthdays-tile/));
+    меню «Редагувати»: опис, додати учасника, Виховники, силует з обрізанням (П за `check-access`). Ю — read-only.
+    PWA ○.
+31. **Картка учасника** — [member-card](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-card/member-card.html) (`/member/:memberKey`),
+    дошка з плитками:
+    - 31.1 Профіль (фото, верифікація, попередження, контакти, школа, адреса; «Редагувати» — своя картка або П). PWA ✅ read-only.
+    - 31.2 Здобуті вмілості, діалог «Усі вмілості», «Додати вмілість» з каталогу (своя картка/П), підтвердити/зняти (П-рецензент) — [skill-mini-card](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-card/components/skill-mini-card/). PWA ○ (§7.4, подання — фаза 2b).
+    - 31.3 Проба (прогрес, «Деталі»). PWA ○ (§7.4).
+    - 31.4 Нагороди: додати/змінити/видалити (своя картка/П), підтвердити (П) — [member-awards-tile](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-card/components/member-awards-tile/), [member-awards-dialog](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-card/components/member-awards-dialog/). PWA ○.
+    - 31.5 Впорядництво (посади КВ, гуртки). PWA ○.
+    - 31.6 Вкладка учасника (баланс, рахунки, 3 останні записи; своя або скарбник). PWA ◐ (свій баланс на Головній).
+    - 31.7 Членства: поточні/минулі курені, перемкнути курінь; «Гурток» (перевести) і «Вивести» — Звʼязковий — [member-memberships-tile](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-card/components/member-memberships-tile/). PWA ○.
+    Ю — своя картка повністю (крім модерації), чужа — read-only без вкладки.
+32. **Редагування/новий учасник** — [upsert-member](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/upsert-member/upsert-member.html) (4 маршрути):
+    імʼя, телефон, дата народження, email (лише без акаунта), повторне запрошення, фото з обрізанням, дати
+    ступенів УПЮ/УСП/УПС; верифікація профілю (П-рецензент), попередження 3 рівнів (П), «Видалити профіль»
+    (Звʼязковий/А). Ю — лише свій профіль без email. PWA ○ (своє редагування — кандидат на фазу 2).
+33. **Проба (сторінка)** — [member-probe-page](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/member-probe-page/member-probe-page.html):
+    розділи-акордеон, хто/коли підписав; «Підписати», «Скасувати підпис», «Здати і закрити пробу» (П-рецензент).
+    Ю — read-only. PWA ○ (§7.4).
+34. **Модерація вмілостей** — [skills-review-page](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/skills-review-page/skills-review-page.html):
+    черга, «Підтвердити»/«Відхилити» з коментарем. П (Виховник, Звʼязковий), лише УПЮ. PWA ○ (кандидат для
+    проводу, фаза 3).
+35. **Реєстр** — [registry](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/registry/registry.html): склад рядками, вибір колонок,
+    вивантаження в Excel, колишні з «Повернути», чисельність за ступенями. П (Виховник, Звʼязковий)/А. PWA ✗
+    (таблиця під десктоп).
+36. **Імпорт складу** — [import](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/import/import.html): `.xlsx`, мапінг колонок, пробний
+    прогін, імпорт. Звʼязковий/А. PWA ✗.
+37. **Налаштування куреня** — [kurin-settings](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/kurin-settings/kurin-settings.html):
+    верифікація профілів, групи подій (п. 22), архів задач (п. 23). Звʼязковий/А. PWA ✗.
+
+### 19.6 Вкладка (внески)
+
+38. **Вкладка гуртка** — [group-dues](../Frontend/projectk-frontend/src/app/features/duesModule/pages/group-dues/group-dues.html) (`/group/:groupKey/dues`),
+    [dues.service](../Frontend/projectk-frontend/src/app/features/duesModule/services/dues-service/dues.service.ts): каса, ставки, сітка по кварталах,
+    колишні, історія з фільтром; ставка гуртка, «Записати операцію»
+    ([dues-entry-dialog](../Frontend/projectk-frontend/src/app/features/duesModule/pages/group-dues/components/dues-entry-dialog/)), пільга, правка
+    неперевірених (`viewer.canKeep`); «Перевірено» (`canVerify`); ставки куреня
+    ([kurin-rate-dialog](../Frontend/projectk-frontend/src/app/features/duesModule/components/kurin-rate-dialog/), `canSetKurinRates`). П (Виховник,
+    гуртковий, скарбник гуртка). Ю — немає (свій баланс — п. 17.6). PWA ○ (для скарбника — «записати
+    операцію» з телефону має сенс, фаза 3).
+39. **Вкладка куреня** — [kurin-dues](../Frontend/projectk-frontend/src/app/features/duesModule/pages/kurin-dues/kurin-dues.html): каса куреня, гуртки,
+    квартали, передачі від гуртків («Отримано»), операції, ставки. П (курінний скарбник, Звʼязковий)/А. PWA ○ пізніше.
+
+### 19.7 Точкування
+
+40. **Точкування куреня** — [kurin-score](../Frontend/projectk-frontend/src/app/features/scoreModule/pages/kurin-score/kurin-score.html) (`/kurin/:kurinKey/score`),
+    [score.service](../Frontend/projectk-frontend/src/app/features/scoreModule/services/score-service/score.service.ts): період
+    ([score-period-select](../Frontend/projectk-frontend/src/app/features/scoreModule/components/score-period-select/)), рейтинг гуртків; кнопки «Точкування
+    КВ» (`canSeePrivateScore`) і «Налаштування» (`viewer.canManage`). Ю/П. PWA ◐: свої бали на Головній, таблиця ○ (§7.6).
+41. **Точкування гуртка** — [group-score](../Frontend/projectk-frontend/src/app/features/scoreModule/pages/group-score/group-score.html): юнаки за джерелами,
+    «Дано вручну»; «Записати бал» ([score-entry-dialog](../Frontend/projectk-frontend/src/app/features/scoreModule/components/score-entry-dialog/)) і
+    правка (`canScore`). Ю — read-only, якщо сервер пускає. PWA ○.
+42. **Аркуш присутності події** — [attendance-sheet](../Frontend/projectk-frontend/src/app/features/scoreModule/pages/attendance-sheet/attendance-sheet.html):
+    пошук, фільтр гуртка, «Відповіли/Призначені/Решта», відмітити присутність, «Усі, хто відповів, були»,
+    бал особі/гуртку, ставка події. П (суддя, гуртковий, курінний, Виховник, Звʼязковий). PWA ○ — сильний
+    кандидат для мобілки (відмічати на зустрічі з телефону).
+43. **Налаштування точкування** — [kurin-score-settings](../Frontend/projectk-frontend/src/app/features/scoreModule/pages/kurin-score-settings/kurin-score-settings.html):
+    алгоритм, ставки присутності, автоправила, позиції, етапи. П (суддя куреня, Звʼязковий)/А. PWA ✗.
+44. **Книга КВ** — [private-score](../Frontend/projectk-frontend/src/app/features/scoreModule/pages/private-score/private-score.html): бали КВ за критеріями,
+    записи, критерії. Звʼязковий, впорядники/А. PWA ✗/пізніше.
+
+### 19.8 Сповіщення
+
+45. **Дзвіночок** — [notification-bell](../Frontend/projectk-frontend/src/app/features/notificationsModule/components/notification-bell/),
+    [notification.service](../Frontend/projectk-frontend/src/app/features/notificationsModule/services/notification-service/notification.service.ts):
+    останні 10, лічильник, «Позначити всі як прочитані», тап → прочитано і перехід за `route`; без опитування й
+    push. Усі. PWA ○ (§7.5). Типи і веб-маршрути (для таблиці відповідності):
+    `MemberProfileVerified`, `MemberProfileChangedAfterVerification`, `MemberAwardSubmitted`,
+    `MemberAwardReviewed`, `MemberWarningAssigned`, `MemberSkillReviewed` → `/member/{key}`;
+    `MemberSkillSubmittedForReview` → `/kurin/{k}/review/skills`; `AgendaItemAssigned/Updated/Deleted/StatusChanged`
+    → `/tasks/{k}` (задача) або `/calendar/{k}` (подія); `WaitlistEntrySubmitted` → `/waitlist` (А; у фронтовому
+    типі відсутній); `LeadershipChanged` — у переліку є, але ніде не надсилається.
+
+### 19.9 Адміністрування (адмін поза куренем)
+
+46. **Адміністрація** — [admin-panel](../Frontend/projectk-frontend/src/app/features/kurinModule/pages/admin-panel/admin-panel.html) (`/panel`): курені
+    (відкрити, створити, змінити, видалити), «Заявки» з крапкою, «Користувачі». А. PWA ✗.
+47. **Користувачі** — [users-list](../Frontend/projectk-frontend/src/app/features/adminModule/pages/users-list/users-list.html): пошук, роль, блокування,
+    видалення. А. PWA ✗.
+48. **Заявки** — [waitlist-management.ts](../Frontend/projectk-frontend/src/app/features/adminModule/pages/waitlist-management/waitlist-management.ts):
+    схвалити (запрошення), відхилити з приміткою, повторне запрошення. А. PWA ✗ (можливо пізніше: швидко
+    схвалити з телефону).
+49. **Системні налаштування** — [system-settings](../Frontend/projectk-frontend/src/app/features/adminModule/pages/system-settings/system-settings.html):
+    обовʼязкова MFA для привілейованих. А. PWA ✗.
+
+### 19.10 Інформаційні сторінки і зворотний звʼязок
+
+50. **Вітальна сторінка** — [welcome-page](../Frontend/projectk-frontend/src/app/features/systemModule/pages/welcome-page/welcome-page.html). Гості. PWA ✗
+    (PWA відкривається одразу на вхід).
+51. **Про Лілейку** — [about-page](../Frontend/projectk-frontend/src/app/features/systemModule/pages/about-page/about-page.html): ідея, історія релізів,
+    версії фронту й API. Усі. PWA ◐: «Про застосунок» є, вміст вебової сторінки (вимога ліцензії) ○.
+52. **Конфіденційність** — [privacy-page](../Frontend/projectk-frontend/src/app/features/systemModule/pages/privacy-page/privacy-page.html). Усі. PWA ○.
+53. **Повідомити про проблему** — [report-problem-dialog](../Frontend/projectk-frontend/src/app/features/systemModule/components/report-problem-dialog/report-problem-dialog.html),
+    [feedback.service](../Frontend/projectk-frontend/src/app/features/systemModule/services/feedback-service/): опис, кроки, очікуване, скріншоти,
+    `POST feedback/problems`. Усі. PWA ○ (§7.6).
+54. **Довідка** — зовнішній сайт документації (`docsUrl`), пункт меню. Усі. PWA ○ (посилання в «Ще»).
+
+### 19.11 Що з цього випливає для порядку перенесення
+
+- **Юнак (MVP, §7):** 3, 5, 11, 18–21, 31 (своя картка), 33 (read-only), 40, 45, 52–54. Решта юнацького вже є.
+- **Провід, телефонні сценарії (фаза 3):** 17.7 Справи, 42 аркуш присутності, 34 модерація вмілостей,
+  33 підпис пункту проби, 38 записати операцію у вкладку, створення події/задачі (19), 26/30 перегляд складу.
+- **Лишається у вебі:** 7, 15, 22, 23, 35–37, 43, 46–49 (налаштування, таблиці й адмінка під десктоп).
