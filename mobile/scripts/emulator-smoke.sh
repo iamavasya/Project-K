@@ -40,6 +40,7 @@ diagnose() {
   echo "  --- diagnose: $reason"
   echo "  last uiautomator dump: $(tr '\n' ' ' < "$OUT/dump.log" 2>/dev/null)"
   echo "  focus: $(adb shell dumpsys window 2>/dev/null | grep -m1 mCurrentFocus | tr -s ' ')"
+  echo "  on screen: $(grep -o 'text="[^"]\+"' "$OUT/ui.xml" 2>/dev/null | cut -d'"' -f2 | head -40 | paste -sd '|')"
   adb logcat -d -t 400 2>/dev/null | grep -E 'Capacitor|chromium|AndroidRuntime|ANR' | tail -25 | sed 's/^/  /'
   return 0
 }
@@ -77,6 +78,17 @@ PY
   return 0
 }
 
+# tap_text, retried while the screen is still settling (the tab bar can render after the page).
+tap_when_shown() {
+  local label=$1 tries=${2:-10}
+  for _ in $(seq "$tries"); do
+    tap_text "$label" && return 0
+    sleep 2
+  done
+  diagnose "nothing to tap labelled \"$label\""
+  return 1
+}
+
 launch() {
   adb shell am force-stop "$APP_ID"
   adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
@@ -92,9 +104,9 @@ launch
 if wait_for_text "Найближче" 60; then pass "App starts and renders Головна"; else fail "Головна did not render"; fi
 shot 01-home-light
 
-if tap_text "Ще" && wait_for_text "$ABOUT" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
+if tap_when_shown "Ще" && wait_for_text "$ABOUT" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
 shot 03-more-light
-if tap_text "$ABOUT" && wait_for_text "Перевірка оболонки" 10; then pass "$ABOUT opens"; else fail "$ABOUT did not open"; fi
+if tap_when_shown "$ABOUT" && wait_for_text "Перевірка оболонки" 10; then pass "$ABOUT opens"; else fail "$ABOUT did not open"; fi
 grep -q 'text="md"' "$OUT/ui.xml" && pass "Ionic mode is md on Android" || fail "Ionic mode md not found"
 grep -q 'text="android' "$OUT/ui.xml" && pass "Capacitor platform is android" || fail "Capacitor platform android not found"
 
@@ -116,7 +128,7 @@ log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
 if wait_for_text "Найближче" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
-tap_text "Ще" && wait_for_text "$ABOUT" 10 && tap_text "$ABOUT"
+if tap_when_shown "Ще" && tap_when_shown "$ABOUT"; then pass "$ABOUT opens on the live-reload build"; else fail "$ABOUT did not open on the live-reload build"; fi
 wait_for_text '10.0.2.2:5205' 15 && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 
