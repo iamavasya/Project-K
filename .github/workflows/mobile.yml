@@ -32,7 +32,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
       - name: Unit tests
         run: npm test -- --watch=false
@@ -40,19 +40,19 @@ jobs:
       - name: Build bundled debug APK
         run: |
           npm run build
-          npx cap sync android
+          npm run cap -- sync android
           (cd android && ./gradlew assembleDebug --no-daemon -q)
           cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/bundled.apk"
 
       - name: Build live-reload debug APK
         run: |
-          LIVE_RELOAD_URL=http://10.0.2.2:4200 npx cap sync android
+          LIVE_RELOAD_URL=http://10.0.2.2:4200 npm run cap -- sync android
           (cd android && ./gradlew assembleDebug --no-daemon -q)
           cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/live.apk"
 
       - name: Start dev server for live reload
         run: |
-          nohup npx ng serve --host 0.0.0.0 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          nohup npm run ng -- serve --host 0.0.0.0 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
           for i in $(seq 60); do curl -sf http://127.0.0.1:4200 > /dev/null && exit 0; sleep 2; done
           cat "$RUNNER_TEMP/serve.log"; exit 1
 

@@ -9,7 +9,8 @@
     "test": "ng test",
     "build:dev": "ng build --configuration development",
     "android:live": "cap run android -l --host 10.0.2.2 --port 4200",
-    "sync": "ng build && cap sync"
+    "sync": "ng build && cap sync",
+    "cap": "cap"
   },
   "private": true,
   "dependencies": {

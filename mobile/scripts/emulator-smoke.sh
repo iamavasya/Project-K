@@ -15,19 +15,22 @@ REPORT="$OUT/report.md"
 : > "$REPORT"
 FAILED=0
 
-log() { echo "$*"; echo "$*" >> "$REPORT"; }
-pass() { log "- ✅ $*"; }
-fail() { log "- ❌ $*"; FAILED=1; }
+log() { echo "$*"; echo "$*" >> "$REPORT"; return 0; }
+pass() { log "- ✅ $*"; return 0; }
+fail() { log "- ❌ $*"; FAILED=1; return 0; }
 
 shot() {
-  adb exec-out screencap -p > "$OUT/$1.png"
-  echo "  screenshot $1.png"
+  local name=$1
+  adb exec-out screencap -p > "$OUT/$name.png"
+  echo "  screenshot $name.png"
+  return 0
 }
 
 dump_ui() {
   rm -f "$OUT/ui.xml"
   adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
   adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
+  return 0
 }
 
 # Waits until a node whose text or content-desc contains $1 is on screen.
@@ -44,9 +47,9 @@ wait_for_text() {
 # Taps the centre of the first node whose text or content-desc equals $1, ignoring case
 # (Material buttons render uppercase).
 tap_text() {
+  local label=$1 xy
   dump_ui
-  local xy
-  xy=$(python3 - "$OUT/ui.xml" "$1" <<'PY'
+  xy=$(python3 - "$OUT/ui.xml" "$label" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
 for node in root.iter('node'):
@@ -57,13 +60,15 @@ for node in root.iter('node'):
         break
 PY
 )
-  [ -n "$xy" ] || return 1
+  [[ -n "$xy" ]] || return 1
   adb shell input tap $xy
+  return 0
 }
 
 launch() {
   adb shell am force-stop "$APP_ID"
   adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+  return 0
 }
 
 log "## Bundled build"
