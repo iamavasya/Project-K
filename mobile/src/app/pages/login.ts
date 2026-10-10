@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonButton, IonContent, IonInput, IonSpinner } from '@ionic/angular';
 import { AuthService, loginErrorText } from '../auth/auth.service';
+import { webPage } from '../features/account/web-links';
+import { InstallService } from '../pwa/install.service';
 
 type Step = 'password' | 'code';
 
@@ -127,8 +129,8 @@ type Step = 'password' | 'code';
 
         <div class="links">
           @if (step() === 'password') {
-            <a href="/forgot-password">Забули пароль?</a>
-            <a href="/join">Подати заявку</a>
+            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забули пароль?</a>
+            <a [href]="joinUrl" [attr.target]="outTarget" rel="noopener" data-testid="join">Подати заявку</a>
           } @else {
             <a href="" (click)="$event.preventDefault(); back()">Назад</a>
             <a href="" (click)="$event.preventDefault(); toggleRecovery()">
@@ -143,6 +145,15 @@ type Step = 'password' | 'code';
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  /**
+   * Password reset, activation and the join form are the web's pages on this same origin. From the
+   * home screen they open in the system's browser over the app, which stays on this screen for when
+   * the person comes back with a new password; in a browser tab they open in place.
+   */
+  protected readonly forgotUrl = webPage('/forgot-password');
+  protected readonly joinUrl = webPage('/join');
+  protected readonly outTarget = inject(InstallService).standalone() ? '_blank' : null;
 
   protected readonly step = signal<Step>('password');
   protected readonly email = signal('');

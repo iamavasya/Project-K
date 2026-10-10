@@ -44,3 +44,25 @@ export interface MfaEnabled {
   /** The session that replaces the ended ones; its token already says the account has a second factor. */
   tokens?: { accessToken: string } | null;
 }
+
+export interface MfaRecoveryCodes {
+  recoveryCodes: string[];
+}
+
+/** Пластова гілка куреня (web kurinModule/models/enums/kurin-branch.enum.ts). */
+export type KurinBranch = 'UPYu' | 'USP' | 'UPS';
+
+/** Юнацтво чи виховний склад (web kurinModule/models/enums/membership-kind.enum.ts). */
+export type MembershipKind = 'Youth' | 'Staff';
+
+/**
+ * A kurin this account may act in now, from `auth/kurin-scope/options`. Kept in step with the
+ * web's kurin-scope-option.model.ts and the API's KurinScopeOption record.
+ */
+export interface KurinScopeOption {
+  kurinKey: string;
+  kurinNumber: number;
+  branch: KurinBranch;
+  namedAfter?: string | null;
+  kind: MembershipKind;
+}
