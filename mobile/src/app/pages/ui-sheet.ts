@@ -173,7 +173,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="buttons">
           <h2>Кнопки</h2>
-          <p class="why">Як у вебі: 40px, радіус 8, 15/600, без капсу й тіні. Однаково на iOS і Android.</p>
+          <p class="why">{{ why.buttons }}</p>
           <div class="pair">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -191,10 +191,10 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             <div class="side lk">
               <span class="cap">Лілейка</span>
               <ion-button expand="block">Зберегти</ion-button>
-              <ion-button expand="block" class="lk-secondary">Інша дія</ion-button>
+              <ion-button expand="block" class="lk-secondary" [color]="mode === 'ios' ? 'medium' : undefined">Інша дія</ion-button>
               <ion-button expand="block" fill="outline">Відкрити</ion-button>
               <ion-button expand="block" fill="clear">Скасувати</ion-button>
-              <ion-button expand="block" fill="clear" class="lk-danger">Вийти</ion-button>
+              <ion-button expand="block" fill="clear" class="lk-danger" [color]="mode === 'ios' ? 'danger' : undefined">Вийти</ion-button>
               <div class="row">
                 <ion-button size="small">Почати</ion-button>
                 <ion-button size="small" fill="outline">Зроблено</ion-button>
@@ -206,7 +206,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="tabs">
           <h2>Вкладки</h2>
-          <p class="why">Як вкладки дошки у вебі: лоток з рамкою, обрана вкладка біла з рамкою.</p>
+          <p class="why">Як вкладки дошки у вебі: лоток з рамкою, обрана вкладка біла з рамкою. На обох платформах.</p>
           <div class="pair stack">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -239,7 +239,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="switches">
           <h2>Перемикачі, прапорці, вибір</h2>
-          <p class="why">Форма лишається нативною для платформи, змінюються лише колір, шрифт і лінії.</p>
+          <p class="why">Як в Ionic, лише брендовий шрифт підписів.</p>
           <div class="pair">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -268,7 +268,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="inputs">
           <h2>Поля</h2>
-          <p class="why">Як у вебі: підпис над полем, рамка 1px, радіус 8; у фокусі зелена рамка з ореолом.</p>
+          <p class="why">Як у вебі: підпис над полем, рамка 1px, радіус 8, у фокусі зелена рамка з ореолом. Крапки пароля системні, як в Ionic.</p>
           <div class="pair stack">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -285,11 +285,11 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
               <span class="cap">Лілейка</span>
               <div class="lk-field">
                 <span class="lk-field__label">Email</span>
-                <ion-input class="lk-input" aria-label="Email" placeholder="name@plast.org.ua" />
+                <div class="lk-input-box"><ion-input aria-label="Email" placeholder="name@plast.org.ua" /></div>
               </div>
               <div class="lk-field">
                 <span class="lk-field__label">Пароль</span>
-                <ion-input class="lk-input lk-invalid" aria-label="Пароль" type="password" value="секретик" />
+                <div class="lk-input-box lk-invalid"><ion-input aria-label="Пароль" type="password" value="секретик" /></div>
                 <span class="lk-field__error">Невірний email або пароль.</span>
               </div>
             </div>
@@ -298,7 +298,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="list">
           <h2>Меню (список «Ще»)</h2>
-          <p class="why">Рядки нативні, з брендовим шрифтом; групи лежать на рамці 1px з радіусом 12, без тіні.</p>
+          <p class="why">{{ why.list }}</p>
           <div class="pair stack">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -343,7 +343,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="tags">
           <h2>Мітки</h2>
-          <p class="why">Як p-tag у вебі: радіус 6, 11/700. Зелений «прийнято», терракота «очікує», червоний «борг».</p>
+          <p class="why">Розмір і заокруглення з Ionic, кольори з вебу: зелений «прийнято», терракота «очікує», червоний «борг».</p>
           <div class="pair">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -357,10 +357,10 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             <div class="side lk">
               <span class="cap">Лілейка</span>
               <div class="row">
-                <span class="lk-tag lk-tag--info">Прийнято</span>
-                <span class="lk-tag lk-tag--warn">Очікує</span>
-                <span class="lk-tag lk-tag--danger">Борг</span>
-                <span class="lk-tag lk-tag--secondary">Учасник</span>
+                <ion-badge class="lk-tag--info">Прийнято</ion-badge>
+                <ion-badge class="lk-tag--warn">Очікує</ion-badge>
+                <ion-badge class="lk-tag--danger">Борг</ion-badge>
+                <ion-badge class="lk-tag--secondary">Учасник</ion-badge>
               </div>
             </div>
           </div>
@@ -368,7 +368,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="card">
           <h2>Картка</h2>
-          <p class="why">Як плитка у вебі: рамка 1px, радіус 12, без тіні; заголовок 17/800, смужка прогресу.</p>
+          <p class="why">{{ why.card }}</p>
           <div class="pair stack">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -401,7 +401,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="bars">
           <h2>Шапка й нижнє меню</h2>
-          <p class="why">Нативне розташування; білий фон, лінія 1px замість тіні, брендовий шрифт і зелений активний пункт.</p>
+          <p class="why">Розміри з Ionic; білий фон, лінія 1px замість тіні, брендовий шрифт, зелений активний пункт, темні іконки шапки.</p>
           <div class="pair stack">
             <div class="side">
               <span class="cap">Ionic</span>
@@ -449,6 +449,20 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 })
 export class UiSheetPage {
   protected readonly mode = document.documentElement.getAttribute('mode') === 'md' ? 'md' : 'ios';
+
+  /** What the Лілейка column takes from where, per platform (Rost's review, PLAN.md §18). */
+  protected readonly why =
+    this.mode === 'ios'
+      ? {
+          buttons: 'На iPhone лишаємо кнопки Ionic як є.',
+          list: 'Розміри iOS і великий заголовок групи, кольори й лінія 1px з бренду.',
+          card: 'Плитка з вебу (рамка без тіні, «Проба» над назвою); розміри, заокруглення й прогрес з Ionic.',
+        }
+      : {
+          buttons: 'Як у вебі (40px, радіус 8, без капсу й тіні), шрифт 14px як в Ionic.',
+          list: 'Меню як у вебі: групи на рамці 1px з радіусом 12, без тіні.',
+          card: 'Плитка з вебу (рамка без тіні, радіус 12, «Проба» над назвою); розміри шрифтів і прогрес з Ionic.',
+        };
 
   constructor() {
     addIcons({ home, calendarOutline, trendingUp, ellipsisHorizontal, notificationsOutline });

@@ -3,12 +3,12 @@
 // Everything is scoped to `.lk` for now, so the component sheet at /ui can put Ionic as it ships
 // next to the brand version. Rolling it out is moving these rules from `.lk` to the app root.
 //
-// What follows the web and what stays native:
-// - Buttons, tabs (segment), inputs, tags, cards and progress take the web's look (Optimus UI /
-//   Aura with lileyka-preset): the same on iPhone and Android.
-// - Toggles, checkboxes, radios, lists, the toolbar and the tab bar keep their native shape on each
-//   platform and only take the brand colours, type and lines. `.ios` / `.md` rules below are the
-//   per-platform part.
+// Ionic crossed with the web (Rost's review of the sheet, 2026-10-10):
+// - Both platforms: tabs (segment) and fields are the web's; tags, cards, the toolbar and the tab
+//   bar take Ionic's sizes and radii with the brand's colours, lines and type; toggles,
+//   checkboxes, radios and the progress bar stay as Ionic draws them.
+// - iPhone: buttons stay Ionic's; the «Ще» list keeps iOS sizes (big group title) in brand colours.
+// - Android: buttons are the web's at Ionic's 14px; the «Ще» list is the web's menu.
 
 @font-face {
   font-family: 'Manrope';
@@ -100,72 +100,6 @@
   font-family: var(--ion-font-family);
   color: var(--lk-ink);
 
-  // ── Buttons: the web's p-button (BRANDBOOK §5 «Кнопки») ─────────────────────────────────────
-  // 40px high, 8px radius, 15/600, no uppercase, no elevation, on iPhone and Android alike.
-  ion-button {
-    --border-radius: 8px;
-    --box-shadow: none;
-    --padding-start: 20px;
-    --padding-end: 20px;
-    --padding-top: 0;
-    --padding-bottom: 0;
-    height: 40px;
-    min-height: 40px;
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-
-  ion-button.button-small {
-    height: 34px;
-    min-height: 34px;
-    --padding-start: 14px;
-    --padding-end: 14px;
-    font-size: 13px;
-  }
-
-  ion-button.button-solid {
-    --background: var(--lk-primary);
-    --background-hover: var(--lk-primary-hover);
-    --background-activated: var(--lk-primary-active);
-    --background-focused: var(--lk-primary-hover);
-    --color: var(--lk-on-primary);
-  }
-
-  // Secondary: Aura's grey button, for the alternative action.
-  ion-button.button-solid.lk-secondary {
-    --background: var(--lk-secondary-bg);
-    --background-hover: var(--lk-secondary-bg-active);
-    --background-activated: var(--lk-secondary-bg-active);
-    --background-focused: var(--lk-secondary-bg-active);
-    --color: var(--lk-secondary-fg);
-  }
-
-  ion-button.button-outline {
-    --border-width: 1px;
-    --border-color: var(--lk-primary);
-    --color: var(--lk-primary);
-    --background-hover: var(--lk-primary-50);
-    --background-activated: var(--lk-primary-100);
-  }
-
-  // Text buttons are tertiary actions («Скасувати»): muted, not green.
-  ion-button.button-clear {
-    --color: var(--lk-muted);
-    --background-hover: var(--lk-surface);
-    --background-activated: var(--lk-line);
-  }
-
-  ion-button.button-clear.lk-danger {
-    --color: var(--lk-danger);
-  }
-
-  ion-button.button-disabled {
-    opacity: 0.4;
-  }
-
   // ── Tabs: the web's segmented tabs (agenda board on a phone, p-selectButton) ────────────────
   // A tray on the page ground with a 1px line; the chosen tab is a paper plate with a line.
   ion-segment {
@@ -218,9 +152,10 @@
     background: var(--lk-paper);
   }
 
-  // ── Inputs: the web's field (BRANDBOOK §5 «Поля введення») ─────────────────────────────────
+  // ── Fields: the web's field (BRANDBOOK §5 «Поля введення») ─────────────────────────────────
   // Label above in 13/600 faint, a 1px line box with an 8px radius; focus is a primary line with a
-  // soft primary ring. 44px instead of the web's 40 for a finger.
+  // soft primary ring. 44px instead of the web's 40 for a finger. The box is a wrapper, so its
+  // rounded line is never painted over by the input's own layers.
   .lk-field {
     display: grid;
     gap: 6px;
@@ -232,8 +167,28 @@
     color: var(--lk-faint);
   }
 
-  ion-input.lk-input {
-    --background: var(--lk-paper);
+  .lk-input-box {
+    background: var(--lk-paper);
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    outline: 2px solid transparent;
+    overflow: hidden;
+    transition:
+      border-color 120ms ease,
+      outline-color 120ms ease;
+  }
+
+  .lk-input-box:focus-within {
+    border-color: var(--lk-primary);
+    outline-color: var(--lk-primary-50);
+  }
+
+  .lk-input-box.lk-invalid {
+    border-color: var(--lk-danger);
+  }
+
+  .lk-input-box ion-input {
+    --background: transparent;
     --color: var(--lk-ink);
     --placeholder-color: var(--lk-faint);
     --placeholder-opacity: 1;
@@ -241,25 +196,13 @@
     --padding-end: 12px;
     --highlight-height: 0;
     --border-width: 0;
-    box-sizing: border-box;
-    width: 100%;
     min-height: 44px;
-    border: 1px solid var(--lk-line);
-    border-radius: 8px;
     font-size: 16px;
-    transition:
-      border-color 120ms ease,
-      outline-color 120ms ease;
-    outline: 2px solid transparent;
   }
 
-  ion-input.lk-input.has-focus {
-    border-color: var(--lk-primary);
-    outline-color: var(--lk-primary-50);
-  }
-
-  ion-input.lk-input.lk-invalid {
-    border-color: var(--lk-danger);
+  // Password dots in the system face: Manrope's bullets are small and widely spaced.
+  .lk-input-box ion-input[type='password'] {
+    font-family: -apple-system, system-ui, Roboto, sans-serif;
   }
 
   .lk-field__error {
@@ -267,44 +210,34 @@
     color: var(--lk-danger);
   }
 
-  // ── Tags: p-tag as the web paints it ──────────────────────────────────────────────────────────
-  .lk-tag {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 6px;
-    padding: 3px 9px;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.4;
+  // ── Tags: ion-badge at Ionic's size and radius, in p-tag's colours ───────────────────────────
+  ion-badge.lk-tag--info {
+    --background: var(--lk-primary-50);
+    --color: var(--lk-primary-700);
   }
 
-  .lk-tag--info {
-    background: var(--lk-primary-50);
-    color: var(--lk-primary-700);
+  ion-badge.lk-tag--warn {
+    --background: var(--lk-accent-50);
+    --color: var(--lk-accent-700);
   }
 
-  .lk-tag--warn {
-    background: var(--lk-accent-50);
-    color: var(--lk-accent-700);
+  ion-badge.lk-tag--danger {
+    --background: var(--lk-danger-50);
+    --color: var(--lk-danger-700);
   }
 
-  .lk-tag--danger {
-    background: var(--lk-danger-50);
-    color: var(--lk-danger-700);
+  ion-badge.lk-tag--secondary {
+    --background: var(--lk-secondary-bg);
+    --color: var(--lk-secondary-fg);
   }
 
-  .lk-tag--secondary {
-    background: var(--lk-secondary-bg);
-    color: var(--lk-secondary-fg);
-  }
-
-  // ── Card: .kurin-tile (BRANDBOOK §5 «Картка») ────────────────────────────────────────────────
-  // Lives on its line, not on a shadow; 12px radius; title 17/800; eyebrow 11px uppercase.
+  // ── Card: the web tile's skin on Ionic's card ─────────────────────────────────────────────────
+  // A 1px line instead of a shadow, the eyebrow above the title, brand colours; type sizes and the
+  // progress bar are Ionic's.
   ion-card {
     --background: var(--lk-paper);
     --color: var(--lk-muted);
     border: 1px solid var(--lk-line);
-    border-radius: 12px;
     box-shadow: none;
     margin: 0;
   }
@@ -312,71 +245,148 @@
   // iOS puts the subtitle under the title (column-reverse); the web's eyebrow sits above it.
   ion-card-header {
     flex-direction: column;
-    padding: 16px 16px 0;
   }
 
   ion-card-subtitle {
     color: var(--lk-faint);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
   }
 
   ion-card-title {
     color: var(--lk-ink);
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
   }
 
-  ion-card-content {
-    padding: 8px 16px 16px;
-    font-size: 15px;
-    line-height: 1.5;
+  // ── Lists: brand colours and lines ────────────────────────────────────────────────────────────
+  ion-list {
+    --ion-item-background: var(--lk-paper);
   }
 
-  // ── Progress: .lil-bar ───────────────────────────────────────────────────────────────────────
-  // The web lays the bar on the page ground; on a white card that is near invisible, so the
-  // track takes the line colour here.
-  ion-progress-bar {
-    --background: var(--lk-line);
-    --progress-background: var(--lk-primary);
-    height: 6px;
-    border-radius: 999px;
+  ion-item {
+    --border-color: var(--lk-line);
+    --color: var(--lk-ink-soft);
+    --background-activated: var(--lk-surface);
+    --background-hover: var(--lk-surface);
+    --background-hover-opacity: 1;
+    --detail-icon-color: var(--lk-faint);
   }
 
-  ion-progress-bar::part(progress) {
-    border-radius: 999px;
+  ion-item ion-note,
+  ion-item ion-label p {
+    color: var(--lk-muted);
   }
 
-  // ── Native-shaped controls: brand colour, type and lines only ───────────────────────────────
-  ion-toggle,
-  ion-checkbox,
-  ion-radio {
-    font-size: 15px;
+  ion-list-header {
     color: var(--lk-ink);
   }
 
-  ion-toggle {
-    --track-background-checked: var(--lk-primary);
+  // ── Toolbar: paper with a 1px line, no shadow (BRANDBOOK §5 «Тулбар»); Ionic's title size ─────
+  ion-toolbar {
+    --background: var(--lk-paper);
+    --color: var(--lk-ink);
+    --border-color: var(--lk-line);
+    --border-width: 0 0 1px;
   }
 
-  ion-checkbox {
-    --checkbox-background-checked: var(--lk-primary);
-    --border-color-checked: var(--lk-primary);
-    --border-color: var(--lk-faint);
-    --border-width: 1px;
+  ion-title {
+    font-weight: 700;
   }
 
-  ion-radio {
-    --color-checked: var(--lk-primary);
+  // Toolbar icons in ink: they read clearly without competing with the green actions.
+  ion-toolbar ion-button {
+    --color: var(--lk-ink-soft);
+  }
+
+  // ── Tab bar: paper, a 1px line on top, faint at rest and primary when chosen ─────────────────
+  ion-tab-bar {
+    --background: var(--lk-paper);
+    --border: 1px solid var(--lk-line);
     --color: var(--lk-faint);
+    --color-selected: var(--lk-primary);
   }
 
-  // Lists (the «Ще» menu): native rows, brand type and lines, cards on a line instead of shadows.
-  ion-list {
-    --ion-item-background: var(--lk-paper);
+  ion-tab-button {
+    font-weight: 700;
+  }
+}
+
+// ── iPhone ────────────────────────────────────────────────────────────────────────────────────
+// Buttons, toggles and the card's radius are Apple's as Ionic draws them. The «Ще» list keeps
+// iOS sizes and its big group title; it only takes the brand's colours and a 1px line.
+.ios .lk {
+  ion-list.list-inset {
+    border: 1px solid var(--lk-line);
+  }
+}
+
+// ── Android ───────────────────────────────────────────────────────────────────────────────────
+// Buttons are the web's p-button at Material's 14px: 40px, radius 8, no uppercase or elevation.
+// The «Ще» list is the web's menu, and cards take the web tile's 12px radius.
+.md .lk {
+  ion-button:not(ion-toolbar ion-button) {
+    --border-radius: 8px;
+    --box-shadow: none;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    height: 40px;
+    min-height: 40px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  ion-button.button-small {
+    height: 34px;
+    min-height: 34px;
+    --padding-start: 14px;
+    --padding-end: 14px;
+    font-size: 13px;
+  }
+
+  ion-button.button-solid {
+    --background: var(--lk-primary);
+    --background-hover: var(--lk-primary-hover);
+    --background-activated: var(--lk-primary-active);
+    --background-focused: var(--lk-primary-hover);
+    --color: var(--lk-on-primary);
+  }
+
+  // Secondary: Aura's grey button, for the alternative action.
+  ion-button.button-solid.lk-secondary {
+    --background: var(--lk-secondary-bg);
+    --background-hover: var(--lk-secondary-bg-active);
+    --background-activated: var(--lk-secondary-bg-active);
+    --background-focused: var(--lk-secondary-bg-active);
+    --color: var(--lk-secondary-fg);
+  }
+
+  ion-button.button-outline {
+    --border-width: 1px;
+    --border-color: var(--lk-primary);
+    --color: var(--lk-primary);
+    --background-hover: var(--lk-primary-50);
+    --background-activated: var(--lk-primary-100);
+  }
+
+  // Text buttons are tertiary actions («Скасувати»): muted, not green.
+  ion-button.button-clear:not(ion-toolbar ion-button) {
+    --color: var(--lk-muted);
+    --background-hover: var(--lk-surface);
+    --background-activated: var(--lk-line);
+  }
+
+  ion-button.button-clear.lk-danger {
+    --color: var(--lk-danger);
+  }
+
+  ion-button.button-disabled {
+    opacity: 0.4;
+  }
+
+  ion-card {
+    border-radius: 12px;
   }
 
   ion-list.list-inset {
@@ -394,84 +404,13 @@
   }
 
   ion-item {
-    --border-color: var(--lk-line);
-    --color: var(--lk-ink-soft);
-    --background-activated: var(--lk-surface);
-    --background-hover: var(--lk-surface);
-    --background-hover-opacity: 1;
-    --detail-icon-color: var(--lk-faint);
     font-size: 15px;
     font-weight: 600;
   }
 
-  ion-item ion-note {
-    color: var(--lk-muted);
-    font-size: 13px;
-    font-weight: 400;
-  }
-
+  ion-item ion-note,
   ion-item ion-label p {
-    color: var(--lk-muted);
     font-size: 13px;
     font-weight: 400;
-  }
-
-  // Toolbar: paper with a 1px line, no shadow (BRANDBOOK §5 «Тулбар»); title as a card heading.
-  ion-toolbar {
-    --background: var(--lk-paper);
-    --color: var(--lk-ink);
-    --border-color: var(--lk-line);
-    --border-width: 0 0 1px;
-  }
-
-  ion-title {
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-
-  // Tab bar: paper, a 1px line on top, faint at rest and primary when chosen.
-  ion-tab-bar {
-    --background: var(--lk-paper);
-    --border: 1px solid var(--lk-line);
-    --color: var(--lk-faint);
-    --color-selected: var(--lk-primary);
-  }
-
-  ion-tab-button {
-    font-weight: 700;
-  }
-}
-
-// ── Per platform ──────────────────────────────────────────────────────────────────────────────
-
-// iOS: the switch keeps Apple's proportions; only its «on» is the brand green. Inset lists keep
-// the grouped look, with the brand's 12px radius and line instead of the system's grey edge.
-.ios .lk {
-  ion-toggle {
-    --track-background: var(--lk-line);
-  }
-
-  ion-tab-button {
-    font-size: 10px;
-  }
-}
-
-// Android: Material's switch, checkbox and ripple stay. The shared rules above already drop
-// Material's uppercase buttons and elevation. The toggle's track is the brand green at half
-// strength, as Material draws it.
-.md .lk {
-  ion-toggle {
-    --handle-background-checked: var(--lk-primary);
-    --track-background-checked: color-mix(in srgb, var(--lk-primary) 45%, transparent);
-  }
-
-  ion-checkbox {
-    --border-radius: 4px;
-    --border-width: 2px;
-  }
-
-  ion-tab-button {
-    font-size: 12px;
   }
 }
