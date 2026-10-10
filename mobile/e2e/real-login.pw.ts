@@ -69,7 +69,7 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
 
   await page.locator('#tab-button-more').click();
   await expect(page.locator('app-more').getByText('вимкнено', { exact: true })).toBeVisible();
-  await page.getByText('Профіль', { exact: true }).click();
+  await page.getByTestId('account').click();
   await expect(page.locator('app-profile h1')).toBeVisible();
   // Ще stays in the DOM under the profile and shows the email too.
   await expect(page.locator('app-profile').getByText(member.email, { exact: true })).toBeVisible();
@@ -90,6 +90,7 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   // Enabling ended the old session; signing out works only with the token it handed back.
   const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
   await page.locator('app-more').getByText('Вийти', { exact: true }).click();
+  await page.locator('ion-action-sheet').getByRole('button', { name: 'Вийти' }).click();
   expect((await loggedOut).ok()).toBe(true);
   await expect(page).toHaveURL(/\/m\/login$/);
 

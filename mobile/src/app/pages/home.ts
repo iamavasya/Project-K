@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import {
   IonButton,
   IonCard,
@@ -20,6 +20,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { AuthService } from '../auth/auth.service';
+import { GlassEffects } from '../ui/glass';
 import { dayLabel, greeting, money, timeLabel, todayLabel } from '../me/labels';
 import {
   AgendaItemStatus,
@@ -69,6 +70,11 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
       margin: 0 20px 4px;
       color: var(--lk-muted);
       font-size: 15px;
+      line-height: 20px;
+    }
+    /* Under the large title, on its leading edge (Apple's subhead, 15/20). */
+    :host-context(.ios) .subline {
+      margin-inline: 16px;
     }
     .row {
       padding: 12px 0;
@@ -291,10 +297,11 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     </ion-content>
   `,
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   private readonly me = inject(MeService);
   private readonly auth = inject(AuthService);
   private readonly toasts = inject(ToastController);
+  private readonly glass = new GlassEffects(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
 
   private readonly now = new Date();
   protected readonly hello = greeting(this.now);
@@ -323,8 +330,20 @@ export class HomePage implements OnInit {
   protected readonly scoreValue = computed(() => valueOf(this.score()) ?? []);
   protected readonly duesValue = computed(() => valueOf(this.dues()) ?? []);
 
+  constructor() {
+    // The RSVP segments come and go with the events; each gets the iOS glass lens (no-op on md).
+    afterRenderEffect(() => {
+      this.upcoming();
+      this.glass.sync();
+    });
+  }
+
   ngOnInit(): void {
     void this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.glass.destroy();
   }
 
   protected async refresh(event: Event): Promise<void> {

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, inject } from '@angular/core';
 import {
   IonBadge,
   IonButton,
@@ -31,7 +31,8 @@ import {
   IonToolbar,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendingUp } from 'ionicons/icons';
+import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, shieldCheckmark, trendingUp } from 'ionicons/icons';
+import { GlassEffects } from '../ui/glass';
 
 /**
  * The component sheet: every control the app uses, as Ionic ships it next to the Лілейка version
@@ -316,7 +317,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             <div class="side">
               <span class="cap">{{ stockCap }}</span>
               <ion-list [inset]="true">
-                <ion-list-header>Акаунт</ion-list-header>
+                <ion-list-header><ion-label>Акаунт</ion-label></ion-list-header>
                 <ion-item-group>
                   <ion-item [button]="true" [detail]="true">
                     <ion-label>
@@ -325,11 +326,12 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
                     </ion-label>
                   </ion-item>
                   <ion-item [button]="true" [detail]="true">
+                    <ion-icon class="lk-tile" slot="start" name="shield-checkmark" aria-hidden="true" style="--lk-tile: #34a853" />
                     <ion-label>Двофакторний вхід</ion-label>
                     <ion-note slot="end">увімкнено</ion-note>
                   </ion-item>
-                  <ion-item [button]="true">
-                    <ion-label color="danger">Вийти</ion-label>
+                  <ion-item [button]="true" [detail]="false">
+                    <ion-label color="danger" style="text-align: center">Вийти</ion-label>
                   </ion-item>
                 </ion-item-group>
               </ion-list>
@@ -337,7 +339,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             <div class="side lk">
               <span class="cap">Лілейка</span>
               <ion-list [inset]="true">
-                <ion-list-header>Акаунт</ion-list-header>
+                <ion-list-header><ion-label>Акаунт</ion-label></ion-list-header>
                 <ion-item-group>
                   <ion-item [button]="true" [detail]="true">
                     <ion-label>
@@ -346,11 +348,12 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
                     </ion-label>
                   </ion-item>
                   <ion-item [button]="true" [detail]="true">
+                    <ion-icon class="lk-tile" slot="start" name="shield-checkmark" aria-hidden="true" style="--lk-tile: #34a853" />
                     <ion-label>Двофакторний вхід</ion-label>
                     <ion-note slot="end">увімкнено</ion-note>
                   </ion-item>
-                  <ion-item [button]="true">
-                    <ion-label color="danger">Вийти</ion-label>
+                  <ion-item [button]="true" [detail]="false">
+                    <ion-label color="danger" style="text-align: center">Вийти</ion-label>
                   </ion-item>
                 </ion-item-group>
               </ion-list>
@@ -464,7 +467,9 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     </ion-content>
   `,
 })
-export class UiSheetPage {
+export class UiSheetPage implements AfterViewInit, OnDestroy {
+  private readonly glass = new GlassEffects(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
+
   protected readonly mode = document.documentElement.getAttribute('mode') === 'md' ? 'md' : 'ios';
 
   /** On iPhone both columns are Liquid Glass (rdlabo's iOS 26/27 theme); Android's left one is stock. */
@@ -476,7 +481,7 @@ export class UiSheetPage {
       ? {
           buttons: 'Скляні кнопки iOS 26/27 у зеленому бренду.',
           tabs: 'Сегмент iOS 26/27, як його малює тема скла.',
-          list: 'Групи iOS 26/27: заголовок над скляною групою, кольори бренду.',
+          list: 'Як «Параметри» iOS: плитки іконок 29pt з відступом 16pt до назви, «Вийти» окремо по центру.',
           card: 'Картка iOS 26/27 у кольорах бренду, «Проба» над назвою.',
           bars: 'Скляні шапка й плаваючий таб-бар iOS 26/27, активний пункт зелений.',
         }
@@ -489,6 +494,15 @@ export class UiSheetPage {
         };
 
   constructor() {
-    addIcons({ home, calendarOutline, trendingUp, ellipsisHorizontal, notificationsOutline });
+    addIcons({ home, calendarOutline, trendingUp, ellipsisHorizontal, notificationsOutline, shieldCheckmark });
+  }
+
+  /** The glass lens on the sheet's segments and tab bars, as in the app. */
+  ngAfterViewInit(): void {
+    this.glass.sync();
+  }
+
+  ngOnDestroy(): void {
+    this.glass.destroy();
   }
 }

@@ -9,6 +9,7 @@ import {
   IonInput,
   IonItem,
   IonItemGroup,
+  IonLabel,
   IonList,
   IonListHeader,
   IonSpinner,
@@ -40,6 +41,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     IonListHeader,
     IonItem,
     IonItemGroup,
+    IonLabel,
     IonInput,
     IonButton,
     IonSpinner,
@@ -55,6 +57,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     }
     .lead h2 {
       font-size: 22px;
+      line-height: 28px;
       font-weight: 700;
       margin: 8px 0;
     }
@@ -145,12 +148,12 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
             </div>
 
             <ion-list [inset]="true">
-              <ion-list-header>1. Додай Лілейку в застосунок</ion-list-header>
+              <ion-list-header><ion-label>1. Додай Лілейку в застосунок</ion-label></ion-list-header>
               <ion-item-group>
                 <ion-item>
                   <div>
                     <p class="hint">Google Authenticator, 1Password або інший. Якщо він на цьому телефоні, відкрий його кнопкою.</p>
-                    <ion-button expand="block" [href]="setup()?.authenticatorUri">Відкрити застосунок-автентифікатор</ion-button>
+                    <ion-button expand="block" size="default" [href]="setup()?.authenticatorUri">Відкрити автентифікатор</ion-button>
                   </div>
                 </ion-item>
                 <ion-item>
@@ -173,7 +176,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
 
             <form (submit)="$event.preventDefault(); enable()">
               <ion-list [inset]="true">
-                <ion-list-header>2. Введи код із застосунку</ion-list-header>
+                <ion-list-header><ion-label>2. Введи код із застосунку</ion-label></ion-list-header>
                 <ion-item-group>
                   <ion-item>
                     <div class="lk-field">

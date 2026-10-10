@@ -246,8 +246,10 @@ test('shows the profile and the app details from Ще', async ({ page }, info) =
   await expect(page.getByText('вимкнено', { exact: true })).toBeVisible();
   await shot(page, project, '02-more-light');
 
-  await page.getByText('Профіль', { exact: true }).click();
-  await expect(page.getByText('Остап Коваль')).toBeVisible();
+  // The account row on top, as in iOS Settings: the person's name, opening the profile.
+  await expect(page.getByTestId('account')).toContainText('Остап Коваль');
+  await page.getByTestId('account').click();
+  await expect(page.locator('app-profile').getByText('Остап Коваль')).toBeVisible();
   await expect(page.getByText('Коваль Остап Петрович')).toBeVisible();
   await expect(page.getByText('14 березня 2012')).toBeVisible();
   await shot(page, project, '07-profile');
@@ -395,13 +397,21 @@ test('makes провід turn on two-factor sign-in before anything else', async
   await expect(page.getByText('Сходини гуртка')).toBeVisible();
 });
 
-test('signs out from the Ще tab', async ({ page }) => {
+test('signs out from the Ще tab', async ({ page }, info) => {
   await signIn(page);
   await page.getByText('Ще', { exact: true }).click();
-  await expect(page.getByText(member.email, { exact: true })).toBeVisible();
+  await expect(page.getByTestId('account')).toContainText(member.email);
+
+  // A sheet asks first; backing out keeps the session.
+  await page.locator('app-more').getByText('Вийти', { exact: true }).click();
+  await page.getByRole('button', { name: 'Скасувати' }).click();
+  await expect(page.locator('ion-action-sheet')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('authState'))).not.toBeNull();
 
   const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
-  await page.getByText('Вийти', { exact: true }).click();
+  await page.locator('app-more').getByText('Вийти', { exact: true }).click();
+  await shot(page, info.project.name, '11-sign-out-sheet');
+  await page.locator('ion-action-sheet').getByRole('button', { name: 'Вийти' }).click();
   expect((await loggedOut).ok()).toBe(true);
   await expect(page).toHaveURL(/\/m\/login$/);
   expect(await page.evaluate(() => localStorage.getItem('authState'))).toBeNull();

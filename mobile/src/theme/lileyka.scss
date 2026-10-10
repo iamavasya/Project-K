@@ -249,6 +249,8 @@
   --ion-card-background: var(--lk-paper);
   --ion-toolbar-background: var(--lk-ios-ground);
   --ios-theme-content-box-shadow-rgb: var(--lk-ios-ground-rgb);
+  // iOS 26 bars have no hairline: the soft scroll-edge blur alone parts them from the content.
+  --ion-toolbar-border-color: transparent;
 
   // The glass bars let the page show through above the content, so the app itself is ground too.
   background: var(--lk-ios-ground);
@@ -261,6 +263,7 @@
   ion-tab-bar {
     --color-selected: var(--lk-primary);
   }
+
 }
 
 // ── Android ───────────────────────────────────────────────────────────────────────────────────
@@ -460,4 +463,26 @@
     font-size: 13px;
     font-weight: 400;
   }
+
+  // Material keeps action sheet rows neutral; a destructive one still reads as the brand's red.
+  ion-action-sheet .action-sheet-destructive {
+    color: var(--lk-danger);
+  }
+}
+
+// ── Settings icon tiles (both columns of the sheet too, so outside .lk) ──────────────────────
+// iPhone: Apple's 29pt square, ~7pt corner, 16pt to the label, a white glyph on the row's own
+// colour (--lk-tile). Android: Material settings rows carry a plain grey icon.
+.ios ion-item > ion-icon.lk-tile[slot='start'] {
+  box-sizing: content-box;
+  font-size: 21px;
+  padding: 4px;
+  margin-inline-end: 16px;
+  border-radius: 7px;
+  color: #ffffff;
+  background: var(--lk-tile, var(--lk-primary));
+}
+
+.md ion-item > ion-icon.lk-tile[slot='start'] {
+  color: var(--lk-muted, var(--ion-color-medium));
 }
