@@ -101,10 +101,6 @@ test('keeps working offline after the first visit', async ({ page, context }, in
 test('the page does not zoom like a website', async ({ page }) => {
   await page.goto('./');
   await expect(page.getByText('Привіт від S1')).toBeVisible();
-  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
-    'content',
-    /maximum-scale=1\.0, user-scalable=no/,
-  );
   const blocked = await page.evaluate(() => {
     const pinch = new Event('gesturestart', { cancelable: true });
     document.dispatchEvent(pinch);

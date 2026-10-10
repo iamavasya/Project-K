@@ -1,5 +1,5 @@
 /**
- * iOS Safari ignores user-scalable=no, so pinch zoom is blocked through WebKit's gesture events
+ * iOS Safari ignores viewport zoom limits, so pinch zoom is blocked through WebKit's gesture events
  * and two-finger touchmove. Double-tap zoom is handled by touch-action in styles.scss, which keeps
  * fast repeated taps working.
  */
