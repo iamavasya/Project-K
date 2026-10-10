@@ -8,6 +8,7 @@ import {
   IonHeader,
   IonInput,
   IonItem,
+  IonItemGroup,
   IonList,
   IonListHeader,
   IonSpinner,
@@ -38,6 +39,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     IonList,
     IonListHeader,
     IonItem,
+    IonItemGroup,
     IonInput,
     IonButton,
     IonSpinner,
@@ -144,24 +146,26 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
 
             <ion-list [inset]="true">
               <ion-list-header>1. Додай Лілейку в застосунок</ion-list-header>
-              <ion-item>
-                <div>
-                  <p class="hint">Google Authenticator, 1Password або інший. Якщо він на цьому телефоні, відкрий його кнопкою.</p>
-                  <ion-button expand="block" [href]="setup()?.authenticatorUri">Відкрити застосунок-автентифікатор</ion-button>
-                </div>
-              </ion-item>
-              <ion-item>
-                <div>
-                  <p class="hint">Або введи ключ вручну:</p>
-                  <p class="key" data-testid="shared-key">{{ setup()?.sharedKey }}</p>
-                  <ion-button size="small" fill="outline" (click)="copy(setup()?.sharedKey ?? '', 'Ключ скопійовано')">
-                    Скопіювати ключ
-                  </ion-button>
-                  <ion-button size="small" fill="clear" (click)="showQr.set(!showQr())">
-                    {{ showQr() ? 'Сховати QR-код' : 'QR-код для іншого пристрою' }}
-                  </ion-button>
-                </div>
-              </ion-item>
+              <ion-item-group>
+                <ion-item>
+                  <div>
+                    <p class="hint">Google Authenticator, 1Password або інший. Якщо він на цьому телефоні, відкрий його кнопкою.</p>
+                    <ion-button expand="block" [href]="setup()?.authenticatorUri">Відкрити застосунок-автентифікатор</ion-button>
+                  </div>
+                </ion-item>
+                <ion-item>
+                  <div>
+                    <p class="hint">Або введи ключ вручну:</p>
+                    <p class="key" data-testid="shared-key">{{ setup()?.sharedKey }}</p>
+                    <ion-button size="small" fill="outline" (click)="copy(setup()?.sharedKey ?? '', 'Ключ скопійовано')">
+                      Скопіювати ключ
+                    </ion-button>
+                    <ion-button size="small" fill="clear" (click)="showQr.set(!showQr())">
+                      {{ showQr() ? 'Сховати QR-код' : 'QR-код для іншого пристрою' }}
+                    </ion-button>
+                  </div>
+                </ion-item>
+              </ion-item-group>
             </ion-list>
             @if (showQr()) {
               <div class="qr"><img [src]="setup()?.qrCodeBase64" alt="QR-код для застосунку-автентифікатора" /></div>
@@ -170,26 +174,28 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
             <form (submit)="$event.preventDefault(); enable()">
               <ion-list [inset]="true">
                 <ion-list-header>2. Введи код із застосунку</ion-list-header>
-                <ion-item>
-                  <div class="lk-field">
-                    <span class="lk-field__label">Шестизначний код</span>
-                    <div class="lk-input-box" [class.lk-invalid]="!!error()">
-                      <ion-input
-                        data-testid="mfa-code"
-                        aria-label="Шестизначний код"
-                        type="tel"
-                        inputmode="numeric"
-                        autocomplete="one-time-code"
-                        [maxlength]="6"
-                        [value]="code()"
-                        (ionInput)="code.set(digits($event))"
-                      />
+                <ion-item-group>
+                  <ion-item>
+                    <div class="lk-field">
+                      <span class="lk-field__label">Шестизначний код</span>
+                      <div class="lk-input-box" [class.lk-invalid]="!!error()">
+                        <ion-input
+                          data-testid="mfa-code"
+                          aria-label="Шестизначний код"
+                          type="tel"
+                          inputmode="numeric"
+                          autocomplete="one-time-code"
+                          [maxlength]="6"
+                          [value]="code()"
+                          (ionInput)="code.set(digits($event))"
+                        />
+                      </div>
+                      @if (error(); as message) {
+                        <span class="lk-field__error" role="alert">{{ message }}</span>
+                      }
                     </div>
-                    @if (error(); as message) {
-                      <span class="lk-field__error" role="alert">{{ message }}</span>
-                    }
-                  </div>
-                </ion-item>
+                  </ion-item>
+                </ion-item-group>
               </ion-list>
               <div class="actions">
                 <ion-button type="submit" expand="block" [disabled]="code().length !== 6 || busy()">

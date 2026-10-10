@@ -14,6 +14,7 @@ import {
   IonIcon,
   IonInput,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonList,
   IonListHeader,
@@ -59,6 +60,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     IonList,
     IonListHeader,
     IonItem,
+    IonItemGroup,
     IonNote,
     IonBadge,
     IonCard,
@@ -159,43 +161,6 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     ion-tab-bar {
       position: static;
     }
-    /* A phone screen cut: the page scrolls under the bars, so the glass has something to blur. */
-    .screen {
-      position: relative;
-      height: 360px;
-      overflow: hidden;
-      border: 1px dashed var(--ion-color-step-250, #ccc);
-      border-radius: 12px;
-      background: var(--lk-surface);
-    }
-    .screen__page {
-      display: grid;
-      gap: 12px;
-      padding: 20px 12px 90px;
-    }
-    .screen__page ion-card {
-      margin: 0;
-    }
-    .screen__page ion-button {
-      margin: 12px 0 0;
-    }
-    .screen .when {
-      color: var(--lk-primary);
-      font-weight: 600;
-    }
-    .screen .what {
-      color: var(--lk-ink);
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .screen ion-toolbar {
-      position: absolute;
-      inset: 0 0 auto;
-    }
-    .screen ion-tab-bar {
-      position: absolute;
-      inset: auto 0 0;
-    }
   `,
   template: `
     <ion-header>
@@ -206,7 +171,11 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
     <ion-content>
       <div class="sheet">
         <p class="intro">
-          Ліворуч Ionic як є, праворуч Лілейка. Зараз показано {{ mode === 'ios' ? 'iOS' : 'Android' }}.
+          @if (mode === 'ios') {
+            Зараз показано iOS: ліворуч скло iOS 26/27 як є, праворуч воно ж у Лілейці.
+          } @else {
+            Зараз показано Android: ліворуч Ionic як є, праворуч Лілейка.
+          }
         </p>
         <div class="modes">
           <a href="ui?ionic:mode=ios" [class.current]="mode === 'ios'" data-testid="mode-ios">Як на iPhone</a>
@@ -218,7 +187,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">{{ why.buttons }}</p>
           <div class="pair">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-button expand="block">Зберегти</ion-button>
               <ion-button expand="block" color="medium">Інша дія</ion-button>
               <ion-button expand="block" fill="outline">Відкрити</ion-button>
@@ -248,10 +217,10 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="tabs">
           <h2>Вкладки</h2>
-          <p class="why">Як вкладки дошки у вебі: лоток з рамкою, обрана вкладка біла з рамкою. Висота й шрифт як у сегмента Ionic на кожній платформі.</p>
+          <p class="why">{{ why.tabs }}</p>
           <div class="pair stack">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-segment value="events">
                 <ion-segment-button value="events"><ion-label>Події</ion-label></ion-segment-button>
                 <ion-segment-button value="tasks"><ion-label>Задачі</ion-label></ion-segment-button>
@@ -284,7 +253,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">Як в Ionic, лише брендовий шрифт підписів.</p>
           <div class="pair">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-toggle [checked]="true" justify="space-between">Нагадування</ion-toggle>
               <ion-toggle justify="space-between">Тиха година</ion-toggle>
               <ion-checkbox [checked]="true" justify="start" labelPlacement="end">Іду</ion-checkbox>
@@ -313,14 +282,16 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">Як у вебі: підпис над полем, рамка 1px, радіус 8, у фокусі зелена рамка з ореолом. Крапки пароля системні, як в Ionic.</p>
           <div class="pair stack">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-list [inset]="true">
-                <ion-item>
-                  <ion-input label="Email" labelPlacement="stacked" placeholder="name@plast.org.ua" />
-                </ion-item>
-                <ion-item>
-                  <ion-input label="Пароль" labelPlacement="stacked" type="password" value="секретик" />
-                </ion-item>
+                <ion-item-group>
+                  <ion-item>
+                    <ion-input label="Email" labelPlacement="stacked" placeholder="name@plast.org.ua" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-input label="Пароль" labelPlacement="stacked" type="password" value="секретик" />
+                  </ion-item>
+                </ion-item-group>
               </ion-list>
             </div>
             <div class="side lk">
@@ -343,41 +314,45 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">{{ why.list }}</p>
           <div class="pair stack">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-list [inset]="true">
                 <ion-list-header>Акаунт</ion-list-header>
-                <ion-item [button]="true" [detail]="true">
-                  <ion-label>
-                    <h3>Профіль</h3>
-                    <p>ostap&#64;plast.org.ua</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item [button]="true" [detail]="true">
-                  <ion-label>Двофакторний вхід</ion-label>
-                  <ion-note slot="end">увімкнено</ion-note>
-                </ion-item>
-                <ion-item [button]="true">
-                  <ion-label color="danger">Вийти</ion-label>
-                </ion-item>
+                <ion-item-group>
+                  <ion-item [button]="true" [detail]="true">
+                    <ion-label>
+                      <h3>Профіль</h3>
+                      <p>ostap&#64;plast.org.ua</p>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item [button]="true" [detail]="true">
+                    <ion-label>Двофакторний вхід</ion-label>
+                    <ion-note slot="end">увімкнено</ion-note>
+                  </ion-item>
+                  <ion-item [button]="true">
+                    <ion-label color="danger">Вийти</ion-label>
+                  </ion-item>
+                </ion-item-group>
               </ion-list>
             </div>
             <div class="side lk">
               <span class="cap">Лілейка</span>
               <ion-list [inset]="true">
                 <ion-list-header>Акаунт</ion-list-header>
-                <ion-item [button]="true" [detail]="true">
-                  <ion-label>
-                    <h3>Профіль</h3>
-                    <p>ostap&#64;plast.org.ua</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item [button]="true" [detail]="true">
-                  <ion-label>Двофакторний вхід</ion-label>
-                  <ion-note slot="end">увімкнено</ion-note>
-                </ion-item>
-                <ion-item [button]="true">
-                  <ion-label color="danger">Вийти</ion-label>
-                </ion-item>
+                <ion-item-group>
+                  <ion-item [button]="true" [detail]="true">
+                    <ion-label>
+                      <h3>Профіль</h3>
+                      <p>ostap&#64;plast.org.ua</p>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item [button]="true" [detail]="true">
+                    <ion-label>Двофакторний вхід</ion-label>
+                    <ion-note slot="end">увімкнено</ion-note>
+                  </ion-item>
+                  <ion-item [button]="true">
+                    <ion-label color="danger">Вийти</ion-label>
+                  </ion-item>
+                </ion-item-group>
               </ion-list>
             </div>
           </div>
@@ -388,7 +363,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">Розмір і заокруглення з Ionic, кольори з вебу: зелений «прийнято», терракота «очікує», червоний «борг».</p>
           <div class="pair">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <div class="row">
                 <ion-badge color="success">Прийнято</ion-badge>
                 <ion-badge color="warning">Очікує</ion-badge>
@@ -413,7 +388,7 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
           <p class="why">{{ why.card }}</p>
           <div class="pair stack">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <ion-card>
                 <ion-card-header>
                   <ion-card-subtitle>Проба</ion-card-subtitle>
@@ -443,10 +418,10 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 
         <section data-testid="bars">
           <h2>Шапка й нижнє меню</h2>
-          <p class="why">Розміри з Ionic; білий фон, лінія 1px замість тіні, брендовий шрифт, зелений активний пункт, темні іконки шапки.</p>
+          <p class="why">{{ why.bars }}</p>
           <div class="pair stack">
             <div class="side">
-              <span class="cap">Ionic</span>
+              <span class="cap">{{ stockCap }}</span>
               <div class="frame">
                 <ion-toolbar>
                   <ion-title>Профіль</ion-title>
@@ -485,88 +460,6 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
             </div>
           </div>
         </section>
-        <section data-testid="glass">
-          <h2>Скло (iOS 26)</h2>
-          <p class="why">Схоже на Liquid Glass: сторінка просвічує крізь розмиту шапку й плаваючий таб-бар. Справжнього заломлення веб не вміє.</p>
-          <div class="pair stack">
-            <div class="side lk">
-              <span class="cap">Лілейка зараз</span>
-              <div class="screen">
-                <div class="screen__page">
-                  <ion-card>
-                    <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
-                    <ion-card-content>
-                      <p class="when">завтра · 17:00–19:00</p>
-                      <p class="what">Сходини гуртка</p>
-                      <ion-button expand="block">Іду</ion-button>
-                    </ion-card-content>
-                  </ion-card>
-                  <ion-card>
-                    <ion-card-header>
-                      <ion-card-subtitle>Проба</ion-card-subtitle>
-                      <ion-card-title>Перша проба</ion-card-title>
-                    </ion-card-header>
-                    <ion-card-content>
-                      <p>Підписано 12 з 30</p>
-                      <ion-progress-bar [value]="0.4" />
-                      <ion-button expand="block" fill="outline">Відкрити</ion-button>
-                    </ion-card-content>
-                  </ion-card>
-                </div>
-                <ion-toolbar>
-                  <ion-title>Головна</ion-title>
-                  <ion-buttons slot="end">
-                    <ion-button aria-label="Сповіщення"><ion-icon slot="icon-only" name="notifications-outline" /></ion-button>
-                  </ion-buttons>
-                </ion-toolbar>
-                <ion-tab-bar>
-                  <ion-tab-button tab="home" [selected]="true"><ion-icon name="home" /><ion-label>Головна</ion-label></ion-tab-button>
-                  <ion-tab-button tab="calendar"><ion-icon name="calendar-outline" /><ion-label>Календар</ion-label></ion-tab-button>
-                  <ion-tab-button tab="growth"><ion-icon name="trending-up" /><ion-label>Поступ</ion-label></ion-tab-button>
-                  <ion-tab-button tab="more"><ion-icon name="ellipsis-horizontal" /><ion-label>Ще</ion-label></ion-tab-button>
-                </ion-tab-bar>
-              </div>
-            </div>
-            <div class="side lk">
-              <span class="cap">Лілейка зі склом</span>
-              <div class="screen">
-                <div class="screen__page">
-                  <ion-card>
-                    <ion-card-header><ion-card-title>Найближче</ion-card-title></ion-card-header>
-                    <ion-card-content>
-                      <p class="when">завтра · 17:00–19:00</p>
-                      <p class="what">Сходини гуртка</p>
-                      <ion-button expand="block">Іду</ion-button>
-                    </ion-card-content>
-                  </ion-card>
-                  <ion-card>
-                    <ion-card-header>
-                      <ion-card-subtitle>Проба</ion-card-subtitle>
-                      <ion-card-title>Перша проба</ion-card-title>
-                    </ion-card-header>
-                    <ion-card-content>
-                      <p>Підписано 12 з 30</p>
-                      <ion-progress-bar [value]="0.4" />
-                      <ion-button expand="block" fill="outline">Відкрити</ion-button>
-                    </ion-card-content>
-                  </ion-card>
-                </div>
-                <ion-toolbar class="lk-glass">
-                  <ion-title>Головна</ion-title>
-                  <ion-buttons slot="end">
-                    <ion-button aria-label="Сповіщення"><ion-icon slot="icon-only" name="notifications-outline" /></ion-button>
-                  </ion-buttons>
-                </ion-toolbar>
-                <ion-tab-bar class="lk-glass">
-                  <ion-tab-button tab="home" [selected]="true"><ion-icon name="home" /><ion-label>Головна</ion-label></ion-tab-button>
-                  <ion-tab-button tab="calendar"><ion-icon name="calendar-outline" /><ion-label>Календар</ion-label></ion-tab-button>
-                  <ion-tab-button tab="growth"><ion-icon name="trending-up" /><ion-label>Поступ</ion-label></ion-tab-button>
-                  <ion-tab-button tab="more"><ion-icon name="ellipsis-horizontal" /><ion-label>Ще</ion-label></ion-tab-button>
-                </ion-tab-bar>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </ion-content>
   `,
@@ -574,16 +467,23 @@ import { calendarOutline, ellipsisHorizontal, home, notificationsOutline, trendi
 export class UiSheetPage {
   protected readonly mode = document.documentElement.getAttribute('mode') === 'md' ? 'md' : 'ios';
 
-  /** What the Лілейка column takes from where, per platform (Rost's review, PLAN.md §18). */
+  /** On iPhone both columns are Liquid Glass (rdlabo's iOS 26/27 theme); Android's left one is stock. */
+  protected readonly stockCap = this.mode === 'ios' ? 'Скло iOS' : 'Ionic';
+
+  /** What the Лілейка column takes from where, per platform (Rost's reviews, PLAN.md §18). */
   protected readonly why =
     this.mode === 'ios'
       ? {
-          buttons: 'На iPhone лишаємо кнопки Ionic як є.',
-          list: 'Розміри iOS і великий заголовок групи, кольори й лінія 1px з бренду.',
-          card: 'Плитка з вебу (рамка без тіні, «Проба» над назвою); розміри, заокруглення й прогрес з Ionic.',
+          buttons: 'Скляні кнопки iOS 26/27 у зеленому бренду.',
+          tabs: 'Сегмент iOS 26/27, як його малює тема скла.',
+          list: 'Групи iOS 26/27: заголовок над скляною групою, кольори бренду.',
+          card: 'Картка iOS 26/27 у кольорах бренду, «Проба» над назвою.',
+          bars: 'Скляні шапка й плаваючий таб-бар iOS 26/27, активний пункт зелений.',
         }
       : {
           buttons: 'Вигляд з вебу (радіус 8, без капсу й тіні), розміри Material: 36px, шрифт 14/500.',
+          tabs: 'Як вкладки дошки у вебі: лоток з рамкою, обрана вкладка біла з рамкою, висота й шрифт Material.',
+          bars: 'Розміри Material; білий фон, лінія 1px замість тіні, брендовий шрифт, зелений активний пункт.',
           list: 'Меню як у вебі: групи на рамці 1px з радіусом 12, без тіні.',
           card: 'Плитка з вебу (рамка без тіні, радіус 12, «Проба» над назвою); розміри шрифтів і прогрес з Ionic.',
         };

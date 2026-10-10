@@ -12,6 +12,7 @@ import {
   IonContent,
   IonHeader,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonList,
   IonNote,
@@ -40,6 +41,7 @@ import { apiUrl } from '../runtime-config';
     IonButton,
     IonList,
     IonItem,
+    IonItemGroup,
     IonLabel,
     IonNote,
   ],
@@ -52,34 +54,36 @@ import { apiUrl } from '../runtime-config';
     </ion-header>
     <ion-content [fullscreen]="true">
       <ion-list [inset]="true">
-        <ion-item>
-          <ion-label>Версія</ion-label>
-          <ion-note slot="end">{{ version }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>Відкрито як</ion-label>
-          <ion-note slot="end">{{ standalone() ? 'застосунок' : 'вкладка браузера' }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>Режим Ionic</ion-label>
-          <ion-note slot="end">{{ mode }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>Платформа Capacitor</ion-label>
-          <ion-note slot="end">{{ nativePlatform }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label class="ion-text-wrap">
-            <h3>Платформи Ionic</h3>
-            <p>{{ platforms }}</p>
-          </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-label class="ion-text-wrap">
-            <h3>Сервер</h3>
-            <p>{{ apiUrl }}</p>
-          </ion-label>
-        </ion-item>
+        <ion-item-group>
+          <ion-item>
+            <ion-label>Версія</ion-label>
+            <ion-note slot="end">{{ version }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Відкрито як</ion-label>
+            <ion-note slot="end">{{ standalone() ? 'застосунок' : 'вкладка браузера' }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Режим Ionic</ion-label>
+            <ion-note slot="end">{{ mode }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Платформа Capacitor</ion-label>
+            <ion-note slot="end">{{ nativePlatform }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label class="ion-text-wrap">
+              <h3>Платформи Ionic</h3>
+              <p>{{ platforms }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label class="ion-text-wrap">
+              <h3>Сервер</h3>
+              <p>{{ apiUrl }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-item-group>
       </ion-list>
 
       <ion-card>

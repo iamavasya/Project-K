@@ -4,6 +4,7 @@ import {
   IonContent,
   IonHeader,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonList,
   IonListHeader,
@@ -16,7 +17,19 @@ import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-more',
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonListHeader, IonItem, IonLabel, IonNote, RouterLink],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonList,
+    IonListHeader,
+    IonItem,
+    IonItemGroup,
+    IonLabel,
+    IonNote,
+    RouterLink,
+  ],
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
@@ -32,28 +45,34 @@ import { AuthService } from '../auth/auth.service';
       @if (user(); as me) {
         <ion-list [inset]="true">
           <ion-list-header>Акаунт</ion-list-header>
-          <ion-item [button]="true" [detail]="true" routerLink="profile">
-            <ion-label class="ion-text-wrap">
-              <h3>Профіль</h3>
-              <p>{{ me.email }}</p>
-            </ion-label>
-          </ion-item>
-          <ion-item [button]="true" [detail]="true" routerLink="/mfa">
-            <ion-label>Двофакторний вхід</ion-label>
-            <ion-note slot="end">{{ mfaLabel() }}</ion-note>
-          </ion-item>
+          <ion-item-group>
+            <ion-item [button]="true" [detail]="true" routerLink="profile">
+              <ion-label class="ion-text-wrap">
+                <h3>Профіль</h3>
+                <p>{{ me.email }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item [button]="true" [detail]="true" routerLink="/mfa">
+              <ion-label>Двофакторний вхід</ion-label>
+              <ion-note slot="end">{{ mfaLabel() }}</ion-note>
+            </ion-item>
+          </ion-item-group>
         </ion-list>
       }
       <ion-list [inset]="true">
-        <ion-item [button]="true" [detail]="true" routerLink="about">
-          <ion-label>Про застосунок</ion-label>
-        </ion-item>
+        <ion-item-group>
+          <ion-item [button]="true" [detail]="true" routerLink="about">
+            <ion-label>Про застосунок</ion-label>
+          </ion-item>
+        </ion-item-group>
       </ion-list>
       @if (user()) {
         <ion-list [inset]="true">
-          <ion-item [button]="true" [disabled]="leaving()" (click)="logout()">
-            <ion-label color="danger">Вийти</ion-label>
-          </ion-item>
+          <ion-item-group>
+            <ion-item [button]="true" [disabled]="leaving()" (click)="logout()">
+              <ion-label color="danger">Вийти</ion-label>
+            </ion-item>
+          </ion-item-group>
         </ion-list>
       }
     </ion-content>

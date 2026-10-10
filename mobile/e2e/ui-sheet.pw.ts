@@ -13,7 +13,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('mode', mode);
     await expect(page.getByTestId(`mode-${mode}`)).toHaveClass(/current/);
-    const sections = ['buttons', 'tabs', 'switches', 'inputs', 'list', 'tags', 'card', 'bars', 'glass'];
+    const sections = ['buttons', 'tabs', 'switches', 'inputs', 'list', 'tags', 'card', 'bars'];
     await Promise.all(sections.map((section) => expect(page.getByTestId(section)).toBeVisible()));
     // The brand side is set in Manrope; the Ionic side keeps the platform font.
     await page.evaluate(() => document.fonts.ready);

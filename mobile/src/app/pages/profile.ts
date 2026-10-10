@@ -6,6 +6,7 @@ import {
   IonContent,
   IonHeader,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonList,
   IonSkeletonText,
@@ -29,6 +30,7 @@ import { MeService } from '../me/me.service';
     IonContent,
     IonList,
     IonItem,
+    IonItemGroup,
     IonLabel,
     IonAvatar,
     IonSkeletonText,
@@ -83,23 +85,29 @@ import { MeService } from '../me/me.service';
           @if (m.latestPlastLevelDisplay) { <p>{{ m.latestPlastLevelDisplay }}</p> }
         </div>
         <ion-list [inset]="true">
-          @for (row of rows(m); track row.label) {
-            <ion-item>
-              <ion-label class="ion-text-wrap">
-                <h3>{{ row.label }}</h3>
-                <p>{{ row.value }}</p>
-              </ion-label>
-            </ion-item>
-          }
+          <ion-item-group>
+            @for (row of rows(m); track row.label) {
+              <ion-item>
+                <ion-label class="ion-text-wrap">
+                  <h3>{{ row.label }}</h3>
+                  <p>{{ row.value }}</p>
+                </ion-label>
+              </ion-item>
+            }
+          </ion-item-group>
         </ion-list>
       } @else if (failed()) {
         <ion-list [inset]="true">
-          <ion-item><ion-label class="ion-text-wrap">{{ failed() }}</ion-label></ion-item>
+          <ion-item-group>
+            <ion-item><ion-label class="ion-text-wrap">{{ failed() }}</ion-label></ion-item>
+          </ion-item-group>
         </ion-list>
       } @else {
         <ion-list [inset]="true">
-          <ion-item><ion-skeleton-text [animated]="true" style="height: 40px" /></ion-item>
-          <ion-item><ion-skeleton-text [animated]="true" style="height: 40px" /></ion-item>
+          <ion-item-group>
+            <ion-item><ion-skeleton-text [animated]="true" style="height: 40px" /></ion-item>
+            <ion-item><ion-skeleton-text [animated]="true" style="height: 40px" /></ion-item>
+          </ion-item-group>
         </ion-list>
       }
     </ion-content>

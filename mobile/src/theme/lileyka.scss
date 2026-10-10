@@ -3,12 +3,12 @@
 // Everything is scoped to `.lk`: the app root carries it (app.ts), and the component sheet at /ui
 // sets it only on its brand side, next to Ionic as it ships.
 //
-// Ionic crossed with the web (Rost's review of the sheet, 2026-10-10):
-// - Both platforms: tabs (segment) and fields are the web's; tags, cards, the toolbar and the tab
-//   bar take Ionic's sizes and radii with the brand's colours, lines and type; toggles,
-//   checkboxes, radios and the progress bar stay as Ionic draws them.
-// - iPhone: buttons stay Ionic's; the «Ще» list keeps iOS sizes (big group title) in brand colours.
-// - Android: buttons are the web's at Ionic's 14px; the «Ще» list is the web's menu.
+// Ionic crossed with the web (Rost's reviews of the sheet, 2026-10-10):
+// - Both platforms: the brand's colours, Manrope, the surface ground, the web's fields, tags in
+//   p-tag colours and the card eyebrow; toggles, checkboxes, radios and progress stay Ionic's.
+// - iPhone: every control is Liquid Glass, drawn by rdlabo's iOS 26/27 theme (styles.scss).
+// - Android: the web's skin at Material's sizes: buttons, segmented tabs, toolbar, tab bar, cards
+//   and the «Ще» menu.
 
 @font-face {
   font-family: 'Manrope';
@@ -52,6 +52,8 @@
   --lk-accent-700: #a8541b;
   --lk-danger: #dc2626;
   --lk-danger-rgb: 220, 38, 38;
+  --lk-ios-ground: #eff1f0;
+  --lk-ios-ground-rgb: 239, 241, 240;
   --lk-danger-50: #fee2e2;
   --lk-danger-700: #b91c1c;
   --lk-ink: #101413;
@@ -61,12 +63,6 @@
   --lk-line: #e4e8e6;
   --lk-surface: #f7f9f8;
   --lk-paper: #ffffff;
-  --lk-paper-rgb: 255, 255, 255;
-  --lk-surface-rgb: 247, 249, 248;
-  // Glass (iOS 26 look, on trial in the sheet): the light rim, the lift and the chosen-tab pill.
-  --lk-glass-rim: rgba(255, 255, 255, 0.7);
-  --lk-glass-shadow: 0 8px 28px rgba(16, 20, 19, 0.14);
-  --lk-glass-pill: rgba(16, 20, 19, 0.07);
   // Aura's secondary button: surface.100 under surface.600.
   --lk-secondary-bg: #eff1f0;
   --lk-secondary-bg-active: #e4e8e6;
@@ -86,6 +82,8 @@
     --lk-accent-700: #f3b784;
     --lk-danger: #f87171;
     --lk-danger-rgb: 248, 113, 113;
+    --lk-ios-ground: #0d1110;
+    --lk-ios-ground-rgb: 13, 17, 16;
     --lk-danger-50: #2c1515;
     --lk-danger-700: #fca5a5;
     --lk-ink: #e9edea;
@@ -95,11 +93,6 @@
     --lk-line: #232a27;
     --lk-surface: #0d1110;
     --lk-paper: #161b19;
-    --lk-paper-rgb: 22, 27, 25;
-    --lk-surface-rgb: 13, 17, 16;
-    --lk-glass-rim: rgba(255, 255, 255, 0.14);
-    --lk-glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-    --lk-glass-pill: rgba(255, 255, 255, 0.1);
     --lk-secondary-bg: #1d2320;
     --lk-secondary-bg-active: #232a27;
     --lk-secondary-fg: #c7cfcb;
@@ -122,57 +115,6 @@
   ion-content {
     --background: var(--lk-surface);
     --color: var(--lk-ink);
-  }
-
-  // ── Tabs: the web's segmented tabs (agenda board on a phone, p-selectButton) ────────────────
-  // A tray on the page ground with a 1px line; the chosen tab is a paper plate with a line.
-  ion-segment {
-    --background: var(--lk-surface);
-    background: var(--lk-surface);
-    border: 1px solid var(--lk-line);
-    border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
-  }
-
-  // Heights and type follow each platform's own segment (see the .ios / .md blocks below).
-  ion-segment-button {
-    --color: var(--lk-muted);
-    --color-checked: var(--lk-ink);
-    --background: transparent;
-    --background-checked: transparent;
-    --background-hover: transparent;
-    --indicator-color: var(--lk-paper);
-    --indicator-box-shadow: none;
-    --indicator-height: 100%;
-    --border-radius: 8px;
-    --border-width: 0;
-    --padding-top: 0;
-    --padding-bottom: 0;
-    margin: 0;
-    min-width: 0;
-    font-weight: 650;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-
-  // iOS draws hairlines between the options; the web has none.
-  ion-segment-button::before {
-    display: none;
-  }
-
-  ion-segment-button::part(indicator) {
-    height: 100%;
-    padding: 0;
-    top: 0;
-    bottom: 0;
-  }
-
-  ion-segment-button::part(indicator-background) {
-    height: 100%;
-    border: 1px solid var(--lk-line);
-    border-radius: 8px;
-    background: var(--lk-paper);
   }
 
   // ── Fields: the web's field (BRANDBOOK §5 «Поля введення») ─────────────────────────────────
@@ -254,14 +196,11 @@
     --color: var(--lk-secondary-fg);
   }
 
-  // ── Card: the web tile's skin on Ionic's card ─────────────────────────────────────────────────
-  // A 1px line instead of a shadow, the eyebrow above the title, brand colours; type sizes and the
-  // progress bar are Ionic's.
+  // ── Card: brand colours and the web tile's eyebrow above the title ────────────────────────────
+  // Type sizes and the progress bar are Ionic's; the shape is each platform's (see below).
   ion-card {
     --background: var(--lk-paper);
     --color: var(--lk-muted);
-    border: 1px solid var(--lk-line);
-    box-shadow: none;
   }
 
   // iOS puts the subtitle under the title (column-reverse); the web's eyebrow sits above it.
@@ -278,10 +217,6 @@
   }
 
   // ── Lists: brand colours and lines ────────────────────────────────────────────────────────────
-  ion-list {
-    --ion-item-background: var(--lk-paper);
-  }
-
   ion-item {
     --border-color: var(--lk-line);
     --color: var(--lk-ink-soft);
@@ -298,6 +233,93 @@
 
   ion-list-header {
     color: var(--lk-ink);
+  }
+}
+
+// ── iPhone: Liquid Glass ──────────────────────────────────────────────────────────────────────
+// rdlabo's iOS 26/27 theme (styles.scss) draws every control as Apple does: glass tab bar and
+// toolbar buttons, segments, lists, buttons, overlays and page motion. The brand only lends its
+// green, type and ground; nothing here reshapes a control.
+.ios .lk {
+  // iOS grouped look: paper groups and cards on a ground a step darker than the web's surface
+  // (Apple's #f2f2f7 in the brand's grey). Surfaces the theme draws from the background colour
+  // (segment plates, fields, overlays) stay paper; its scroll-edge fades take the ground.
+  --ion-background-color: var(--lk-paper);
+  --ion-item-background: var(--lk-paper);
+  --ion-card-background: var(--lk-paper);
+  --ion-toolbar-background: var(--lk-ios-ground);
+  --ios-theme-content-box-shadow-rgb: var(--lk-ios-ground-rgb);
+
+  // The glass bars let the page show through above the content, so the app itself is ground too.
+  background: var(--lk-ios-ground);
+
+  ion-content,
+  ion-header.header-collapse-condense ion-toolbar {
+    --background: var(--lk-ios-ground);
+  }
+
+  ion-tab-bar {
+    --color-selected: var(--lk-primary);
+  }
+}
+
+// ── Android ───────────────────────────────────────────────────────────────────────────────────
+// Buttons are the web's p-button (radius 8, no uppercase or elevation) at Material's size:
+// 36px with 14/500 labels, 27px small with 13px. The segment is Material's 48px with 14px labels.
+// The web's skin lives here only: segmented tabs, the paper toolbar and tab bar with a 1px line,
+// cards with the web tile's 12px radius and the «Ще» menu, framed by a line instead of a shadow.
+.md .lk {
+  // ── Tabs: the web's segmented tabs (agenda board on a phone, p-selectButton) ────────────────
+  // A tray on the page ground with a 1px line; the chosen tab is a paper plate with a line.
+  ion-segment {
+    --background: var(--lk-surface);
+    background: var(--lk-surface);
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  // Material's 48px segment with 14px labels: a 4px tray around 38px plates.
+  ion-segment-button {
+    --color: var(--lk-muted);
+    --color-checked: var(--lk-ink);
+    --background: transparent;
+    --background-checked: transparent;
+    --background-hover: transparent;
+    --indicator-color: var(--lk-paper);
+    --indicator-box-shadow: none;
+    --indicator-height: 100%;
+    --border-radius: 8px;
+    --border-width: 0;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    margin: 0;
+    min-width: 0;
+    min-height: 38px;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  // iOS draws hairlines between the options; the web has none.
+  ion-segment-button::before {
+    display: none;
+  }
+
+  ion-segment-button::part(indicator) {
+    height: 100%;
+    padding: 0;
+    top: 0;
+    bottom: 0;
+  }
+
+  ion-segment-button::part(indicator-background) {
+    height: 100%;
+    border: 1px solid var(--lk-line);
+    border-radius: 8px;
+    background: var(--lk-paper);
   }
 
   // ── Toolbar: paper with a 1px line, no shadow (BRANDBOOK §5 «Тулбар»); Ionic's title size ─────
@@ -335,93 +357,16 @@
     font-weight: 700;
   }
 
-  // ── Glass: an iOS 26 Liquid Glass look-alike, on trial in the sheet (.lk-glass) ────────────────
-  // The web can't refract, so it is frosted translucency: the page blurs through, a light rim on top
-  // and a soft lift. The bar fades into the page and its buttons float as glass circles; the tab
-  // bar floats as a capsule with a pill behind the chosen tab.
-  ion-toolbar.lk-glass {
-    --background: transparent;
-    --border-width: 0;
-  }
-
-  ion-toolbar.lk-glass::part(background) {
-    background: linear-gradient(rgba(var(--lk-surface-rgb), 0.92), rgba(var(--lk-surface-rgb), 0));
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    mask-image: linear-gradient(#000 55%, transparent);
-    -webkit-mask-image: linear-gradient(#000 55%, transparent);
-  }
-
-  ion-toolbar.lk-glass ion-buttons {
-    margin-inline: 8px;
-  }
-
-  ion-toolbar.lk-glass ion-buttons ion-button {
-    --background: rgba(var(--lk-paper-rgb), 0.6);
-    --border-radius: 999px;
-    --padding-start: 0;
-    --padding-end: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    border: 1px solid var(--lk-glass-rim);
-    box-shadow: var(--lk-glass-shadow);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-  }
-
-  ion-tab-bar.lk-glass {
-    --background: rgba(var(--lk-paper-rgb), 0.62);
-    --border: 0;
-    height: 62px;
-    margin: 0 16px 8px;
-    padding: 4px;
-    border-radius: 999px;
-    border: 1px solid var(--lk-glass-rim);
-    box-shadow: var(--lk-glass-shadow);
-    backdrop-filter: blur(18px) saturate(180%);
-    -webkit-backdrop-filter: blur(18px) saturate(180%);
-  }
-
-  ion-tab-bar.lk-glass ion-tab-button {
-    --background: transparent;
-    border-radius: 999px;
-  }
-
-  ion-tab-bar.lk-glass ion-tab-button.tab-selected {
-    background: var(--lk-glass-pill);
-  }
-}
-
-// ── iPhone ────────────────────────────────────────────────────────────────────────────────────
-// Buttons, toggles and the card's radius are Apple's as Ionic draws them. The «Ще» list keeps
-// iOS sizes and its big group title; it only takes the brand's colours and a 1px line.
-.ios .lk {
-  ion-list.list-inset {
+  ion-card {
     border: 1px solid var(--lk-line);
+    border-radius: 12px;
+    box-shadow: none;
   }
 
-  // Ionic's iOS segment is 32px tall with 13px labels: a 2px tray around 26px plates.
-  ion-segment {
-    padding: 2px;
-    gap: 2px;
+  ion-list {
+    --ion-item-background: var(--lk-paper);
   }
 
-  ion-segment-button {
-    min-height: 26px;
-    font-size: 13px;
-  }
-
-  ion-segment-button::part(indicator-background) {
-    border-radius: 6px;
-  }
-}
-
-// ── Android ───────────────────────────────────────────────────────────────────────────────────
-// Buttons are the web's p-button (radius 8, no uppercase or elevation) at Material's size:
-// 36px with 14/500 labels, 27px small with 13px. The segment is Material's 48px with 14px labels.
-// The «Ще» list is the web's menu, and cards take the web tile's 12px radius.
-.md .lk {
   ion-button:not(ion-toolbar ion-button) {
     --border-radius: 8px;
     --box-shadow: none;
@@ -443,11 +388,6 @@
     --padding-start: 0.9em;
     --padding-end: 0.9em;
     font-size: 13px;
-  }
-
-  ion-segment-button {
-    min-height: 38px;
-    font-size: 14px;
   }
 
   // Material pads the label 12px top and bottom, which would push the plate past 38px.
@@ -494,10 +434,6 @@
 
   ion-button.button-disabled {
     opacity: 0.4;
-  }
-
-  ion-card {
-    border-radius: 12px;
   }
 
   ion-list.list-inset {

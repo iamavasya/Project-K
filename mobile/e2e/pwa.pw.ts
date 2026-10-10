@@ -172,7 +172,7 @@ async function signIn(page: Page, account = member): Promise<ApiLog> {
 }
 
 async function shot(page: Page, project: string, name: string): Promise<void> {
-  await page.waitForTimeout(400); // let Ionic transitions settle
+  await page.waitForTimeout(900); // let Ionic transitions settle (the iOS 27 page motion runs ~0.6s)
   await page.screenshot({ path: `${shots}/${project}-${name}.png`, scale: 'css' });
 }
 

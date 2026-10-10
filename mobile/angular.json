@@ -37,6 +37,9 @@
             "styles": [
               "src/styles.scss"
             ],
+            "stylePreprocessorOptions": {
+              "includePaths": ["node_modules"]
+            },
             "outputPath": {
               "base": "www",
               "browser": ""
@@ -47,7 +50,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
+                  "maximumWarning": "1.6MB",
                   "maximumError": "2MB"
                 },
                 {

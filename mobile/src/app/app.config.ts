@@ -3,7 +3,8 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideServiceWorker } from '@angular/service-worker';
 import { Capacitor } from '@capacitor/core';
 import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
-import { provideIonicAngular } from '@ionic/angular';
+import { isPlatform, provideIonicAngular } from '@ionic/angular';
+import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
 
@@ -12,7 +13,7 @@ import { authInterceptor } from './auth/auth.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideIonicAngular(),
+    provideIonicAngular(isPlatform('ios') ? glassAnimations() : {}),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     // PWA only: the native shells already ship the app offline, and WKWebView has no service
@@ -23,3 +24,10 @@ export const appConfig: ApplicationConfig = {
     }),
   ],
 };
+
+/** iOS 27 page and popover motion wherever a Liquid Glass theme is loaded (see styles.scss). */
+function glassAnimations() {
+  if (typeof CSS === 'undefined') return {};
+  if (!CSS.supports('overflow-anchor: auto') && !CSS.supports('text-wrap: pretty')) return {};
+  return { navAnimation: iosTransitionAnimation, popoverEnter: popoverEnterAnimation, popoverLeave: popoverLeaveAnimation };
+}
