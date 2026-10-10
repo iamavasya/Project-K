@@ -1,0 +1,100 @@
+name: Mobile CI
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    name: Test, build APK and smoke on emulator
+    # Screenshots are pushed to the ci/mobile-screens branch so they can be viewed without
+    # downloading artifacts.
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test -- --watch=false
+
+      - name: Build bundled debug APK
+        run: |
+          npm run build
+          npx cap sync android
+          (cd android && ./gradlew assembleDebug --no-daemon -q)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/bundled.apk"
+
+      - name: Build live-reload debug APK
+        run: |
+          LIVE_RELOAD_URL=http://10.0.2.2:4200 npx cap sync android
+          (cd android && ./gradlew assembleDebug --no-daemon -q)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/live.apk"
+
+      - name: Start dev server for live reload
+        run: |
+          nohup npx ng serve --host 0.0.0.0 --port 4200 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:4200 > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/serve.log"; exit 1
+
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          working-directory: mobile
+          script: ./scripts/emulator-smoke.sh "$RUNNER_TEMP/bundled.apk" "$RUNNER_TEMP/live.apk" "$RUNNER_TEMP/screens"
+
+      - name: Job summary
+        if: always()
+        run: cat "$RUNNER_TEMP/screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Publish screenshots
+        if: always()
+        working-directory: ${{ runner.temp }}/screens
+        run: |
+          [ -f report.md ] || exit 0
+          git init -q -b ci/mobile-screens
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "Run ${{ github.run_id }} on ${{ github.sha }}" >> report.md
+          git add -A && git commit -qm "Mobile emulator screenshots for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci/mobile-screens
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-screens
+          path: ${{ runner.temp }}/screens
