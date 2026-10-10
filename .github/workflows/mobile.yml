@@ -162,6 +162,8 @@ jobs:
         env:
           PW_BASE_URL: http://localhost:4201/m/
           PW_REAL_API: http://localhost:5206/api
+          # The e2e seed's shared test password (Frontend/projectk-frontend/e2e/support/test-users.ts).
+          E2E_MEMBER_PASSWORD: User@12345
         run: npx --no-install playwright test e2e/real-login.pw.ts
         working-directory: mobile
 

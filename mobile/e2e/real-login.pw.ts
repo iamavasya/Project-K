@@ -3,16 +3,17 @@ import { expect, test } from '@playwright/test';
 /**
  * Sign-in against the real API: the e2e stack (scripts/dev.sh up e2e) serves the web image with the
  * PWA under /m/ and the API next to it, seeded with the web suite's accounts. Runs only when
- * PW_REAL_API points at that API, so the plain PWA smoke stays self-contained.
+ * PW_REAL_API points at that API (and E2E_MEMBER_PASSWORD is set), so the plain PWA smoke stays self-contained.
  */
 const realApi = process.env['PW_REAL_API'];
 const resetToken = process.env['E2E_RESET_TOKEN'] ?? 'local-e2e-reset-token';
+// The e2e stack's seeded member; the workflow passes the seed's password in.
 const member = {
   email: process.env['E2E_MEMBER_EMAIL'] ?? 'g1member1@projectk.com',
-  password: process.env['E2E_MEMBER_PASSWORD'] ?? 'User@12345',
+  password: process.env['E2E_MEMBER_PASSWORD'] ?? '',
 };
 
-test.skip(!realApi, 'needs the e2e stack (PW_REAL_API)');
+test.skip(!realApi || !member.password, 'needs the e2e stack (PW_REAL_API, E2E_MEMBER_PASSWORD)');
 
 test.beforeAll(async ({ request }) => {
   const reset = await request.post(`${realApi}/test/e2e/reset`, {

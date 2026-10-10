@@ -1,10 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 const shots = 'test-results/pwa-screens';
 // What scripts/serve-www.mjs puts in /env.js.
 const api = 'https://api.example.test/api';
-const member = { email: 'yunak@example.com', password: 'Yunak@12345' };
-const leader = { email: 'lead@example.com', password: 'Lead@12345' };
+// Mock accounts; their passwords only have to match between the form and the stand-in API.
+const member = { email: 'yunak@example.com', password: randomUUID() };
+const leader = { email: 'lead@example.com', password: randomUUID() };
 
 /**
  * A stand-in for the API's auth endpoints, with the refresh cookie kept as a flag. Routed on the
@@ -12,7 +14,7 @@ const leader = { email: 'lead@example.com', password: 'Lead@12345' };
  */
 async function mockApi(context: BrowserContext): Promise<void> {
   let session = false;
-  await context.route(`${api}/**`, async (route) => {
+  await context.route(`${api}/**`, (route) => {
     const request = route.request();
     const headers = {
       'access-control-allow-origin': request.headers()['origin'] ?? '*',
