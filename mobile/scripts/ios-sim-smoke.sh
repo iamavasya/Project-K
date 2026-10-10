@@ -33,6 +33,17 @@ launch() {
   return $status
 }
 
+# Safari's first cold start can outlast openurl's own timeout on a busy runner; try a few times.
+open_url() {
+  local attempt
+  for attempt in 1 2 3; do
+    xcrun simctl openurl booted "$1" && return 0
+    echo "  openurl attempt $attempt timed out, retrying"
+    sleep 10
+  done
+  return 1
+}
+
 DEVICE=$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
 devices = json.load(sys.stdin)["devices"]
@@ -68,10 +79,10 @@ xcrun simctl ui booted appearance light
 
 log ""
 log "## Safari on the simulator (S2: $DEV_URL)"
-xcrun simctl openurl booted "$DEV_URL/tabs/home" && pass "Safari opened the dev server" || fail "Safari openurl"
+open_url "$DEV_URL/tabs/home" && pass "Safari opened the dev server" || fail "Safari openurl"
 sleep 10
 shot 03-safari-home
-xcrun simctl openurl booted "$DEV_URL/tabs/more" || fail "Safari openurl tabs/more"
+open_url "$DEV_URL/tabs/more" || fail "Safari openurl tabs/more"
 sleep 6
 shot 04-safari-more
 
