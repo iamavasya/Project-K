@@ -12,10 +12,8 @@ jobs:
   emulator:
     runs-on: ubuntu-latest
     name: Test, build APK and smoke on emulator
-    # Screenshots are pushed to the ci/mobile-screens branch so they can be viewed without
-    # downloading artifacts.
     permissions:
-      contents: write
+      contents: read
     defaults:
       run:
         working-directory: mobile
@@ -80,24 +78,6 @@ jobs:
       - name: Job summary
         if: always()
         run: cat "$RUNNER_TEMP/screens/report.md" >> "$GITHUB_STEP_SUMMARY" || true
-
-      - name: Publish screenshots
-        if: always()
-        working-directory: ${{ runner.temp }}/screens
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ github.run_id }}
-          HEAD_SHA: ${{ github.sha }}
-          REPO: ${{ github.repository }}
-        run: |
-          [ -f report.md ] || exit 0
-          git init -q -b ci/mobile-screens
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          echo "Run $RUN_ID on $HEAD_SHA" >> report.md
-          git add -A && git commit -qm "Mobile emulator screenshots for $HEAD_SHA"
-          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
-          git -c http.extraheader="AUTHORIZATION: basic $AUTH" push -f "https://github.com/$REPO.git" ci/mobile-screens
 
       - uses: actions/upload-artifact@v4
         if: always()
