@@ -83,6 +83,8 @@ launch() {
   return 0
 }
 
+ABOUT="Про застосунок"
+
 log "## Bundled build"
 adb install -r "$BUNDLED_APK" > /dev/null && pass "APK installed" || fail "APK install"
 adb shell cmd uimode night no
@@ -90,9 +92,9 @@ launch
 if wait_for_text "Найближче" 60; then pass "App starts and renders Головна"; else fail "Головна did not render"; fi
 shot 01-home-light
 
-if tap_text "Ще" && wait_for_text "Про застосунок" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
+if tap_text "Ще" && wait_for_text "$ABOUT" 10; then pass "Tab Ще opens"; else fail "Tab Ще did not open"; fi
 shot 03-more-light
-if tap_text "Про застосунок" && wait_for_text "Перевірка оболонки" 10; then pass "Про застосунок opens"; else fail "Про застосунок did not open"; fi
+if tap_text "$ABOUT" && wait_for_text "Перевірка оболонки" 10; then pass "$ABOUT opens"; else fail "$ABOUT did not open"; fi
 grep -q 'text="md"' "$OUT/ui.xml" && pass "Ionic mode is md on Android" || fail "Ionic mode md not found"
 grep -q 'text="android' "$OUT/ui.xml" && pass "Capacitor platform is android" || fail "Capacitor platform android not found"
 
@@ -114,7 +116,7 @@ log "## Live reload (server.url = http://10.0.2.2:4200)"
 adb install -r "$LIVE_APK" > /dev/null && pass "Live-reload APK installed" || fail "Live-reload APK install"
 launch
 if wait_for_text "Найближче" 60; then pass "App loads from the dev server via 10.0.2.2 (cleartext allowed)"; else fail "App did not load from the dev server"; fi
-tap_text "Ще" && wait_for_text "Про застосунок" 10 && tap_text "Про застосунок"
+tap_text "Ще" && wait_for_text "$ABOUT" 10 && tap_text "$ABOUT"
 wait_for_text '10.0.2.2:5205' 15 && pass "Dev build points the API at http://10.0.2.2:5205/api" || fail "Dev API URL not shown"
 shot 05-live-before
 

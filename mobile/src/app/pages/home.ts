@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   IonButton,
   IonCard,
@@ -291,7 +291,7 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     </ion-content>
   `,
 })
-export class HomePage {
+export class HomePage implements OnInit {
   private readonly me = inject(MeService);
   private readonly auth = inject(AuthService);
   private readonly toasts = inject(ToastController);
@@ -323,7 +323,7 @@ export class HomePage {
   protected readonly scoreValue = computed(() => valueOf(this.score()) ?? []);
   protected readonly duesValue = computed(() => valueOf(this.dues()) ?? []);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

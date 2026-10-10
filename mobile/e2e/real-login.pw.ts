@@ -29,7 +29,7 @@ function totp(sharedKey: string, at = Date.now()): string {
   const bits = [...sharedKey.replace(/[\s=]/g, '').toUpperCase()]
     .map((c) => alphabet.indexOf(c).toString(2).padStart(5, '0'))
     .join('');
-  const key = Buffer.from(bits.match(/.{8}/g)!.map((b) => parseInt(b, 2)));
+  const key = Buffer.from(bits.match(/.{8}/g)!.map((b) => Number.parseInt(b, 2)));
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
   const hmac = createHmac('sha1', key).update(counter).digest();

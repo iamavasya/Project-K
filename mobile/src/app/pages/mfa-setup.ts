@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   IonBackButton,
@@ -210,7 +210,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
               @for (item of recoveryCodes(); track item) { <span>{{ item }}</span> }
             </div>
             <div class="actions">
-              <ion-button expand="block" fill="outline" (click)="copy(recoveryCodes().join('\\n'), 'Коди скопійовано')">
+              <ion-button expand="block" fill="outline" (click)="copyCodes()">
                 Скопіювати коди
               </ion-button>
               <ion-button expand="block" (click)="done()">Я зберіг коди</ion-button>
@@ -227,7 +227,7 @@ type Step = 'loading' | 'failed' | 'already-on' | 'setup' | 'codes';
     </ion-content>
   `,
 })
-export class MfaSetupPage {
+export class MfaSetupPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
@@ -242,7 +242,7 @@ export class MfaSetupPage {
   protected readonly failedText = signal('');
   protected readonly recoveryCodes = signal<string[]>([]);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 
@@ -295,6 +295,10 @@ export class MfaSetupPage {
     } catch {
       await this.toast('Не вдалося скопіювати. Виділи текст вручну.');
     }
+  }
+
+  protected copyCodes(): Promise<void> {
+    return this.copy(this.recoveryCodes().join('\n'), 'Коди скопійовано');
   }
 
   protected async done(): Promise<void> {

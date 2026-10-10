@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import {
   IonAvatar,
   IonBackButton,
@@ -105,13 +105,13 @@ import { MeService } from '../me/me.service';
     </ion-content>
   `,
 })
-export class ProfilePage {
+export class ProfilePage implements OnInit {
   private readonly me = inject(MeService);
   private readonly memberKey = inject(AuthService).user()?.memberKey ?? null;
   protected readonly member = signal<MemberDto | null>(null);
   protected readonly failed = signal<string | null>(null);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

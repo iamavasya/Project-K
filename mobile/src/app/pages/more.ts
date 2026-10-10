@@ -66,7 +66,8 @@ export class MorePage implements ViewWillEnter {
   protected readonly leaving = signal(false);
   protected readonly mfaLabel = computed(() => {
     const enabled = this.auth.mfaEnabled();
-    return enabled === null ? '' : enabled ? 'увімкнено' : 'вимкнено';
+    if (enabled === null) return '';
+    return enabled ? 'увімкнено' : 'вимкнено';
   });
 
   /** The status is asked once (the endpoint is rate-limited); turning it on updates it in place. */
