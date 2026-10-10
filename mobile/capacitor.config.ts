@@ -11,6 +11,11 @@ const config: CapacitorConfig = {
   appName: 'Лілейка',
   webDir: 'www',
   server: liveReloadUrl ? { url: liveReloadUrl, cleartext: true } : undefined,
+  ios: {
+    // @rdlabo/ionic-theme-ios27 also ships a native plugin (Native UI Shell, a preview) that needs
+    // a newer SDK than Xcode 26.3 has; the app only uses its CSS and JS, so leave it out of the shell.
+    includePlugins: ['@capacitor/app', '@capacitor/haptics', '@capacitor/keyboard', '@capacitor/status-bar'],
+  },
 };
 
 export default config;
