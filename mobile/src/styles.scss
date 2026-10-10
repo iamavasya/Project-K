@@ -1,0 +1,11 @@
+/* Ionic core + basic CSS (PLAN.md §5: brand tokens come in Phase 1). */
+@use '@ionic/angular/css/core';
+@use '@ionic/angular/css/normalize';
+@use '@ionic/angular/css/structure';
+@use '@ionic/angular/css/typography';
+@use '@ionic/angular/css/padding';
+@use '@ionic/angular/css/flex-utils';
+@use '@ionic/angular/css/display';
+@use '@ionic/angular/css/palettes/dark.system';
+
+@use './theme/variables';

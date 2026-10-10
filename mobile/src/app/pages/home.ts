@@ -1,0 +1,106 @@
+import { Component, computed, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import {
+  IonButton,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
+  IonContent,
+  IonHeader,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonNote,
+  IonTitle,
+  IonToolbar,
+  getPlatforms,
+  isPlatform,
+} from '@ionic/angular';
+import { environment } from '../../environments/environment';
+
+@Component({
+  selector: 'app-home',
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonButton,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonNote,
+  ],
+  template: `
+    <ion-header [translucent]="true">
+      <ion-toolbar>
+        <ion-title>Лілейка</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content [fullscreen]="true">
+      <ion-header collapse="condense">
+        <ion-toolbar>
+          <ion-title size="large">Лілейка</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Привіт від S1</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Ionic 9 + Angular 22 (zoneless) + Capacitor 8.</p>
+          <p>Натиснуто: {{ taps() }} · подвоєно: {{ doubled() }}</p>
+          <ion-button expand="block" (click)="tap()">Натиснути</ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-list [inset]="true">
+        <ion-item>
+          <ion-label>Режим Ionic</ion-label>
+          <ion-note slot="end">{{ mode }}</ion-note>
+        </ion-item>
+        <ion-item>
+          <ion-label>Платформа Capacitor</ion-label>
+          <ion-note slot="end">{{ nativePlatform }}</ion-note>
+        </ion-item>
+        <ion-item>
+          <ion-label>Платформи Ionic</ion-label>
+          <ion-note slot="end">{{ platforms }}</ion-note>
+        </ion-item>
+        <ion-item>
+          <ion-label>API</ion-label>
+          <ion-note slot="end">{{ apiUrl }}</ion-note>
+        </ion-item>
+        <ion-item>
+          <ion-label>Версія</ion-label>
+          <ion-note slot="end">{{ version }}</ion-note>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  `,
+})
+export class HomePage {
+  protected readonly taps = signal(0);
+  protected readonly doubled = computed(() => this.taps() * 2);
+
+  protected readonly mode = document.documentElement.getAttribute('mode') ?? '?';
+  protected readonly nativePlatform = Capacitor.getPlatform();
+  protected readonly platforms = getPlatforms().join(', ');
+  protected readonly apiUrl = environment.apiUrl;
+  protected readonly version = environment.version;
+
+  protected async tap(): Promise<void> {
+    this.taps.update((n) => n + 1);
+    if (isPlatform('capacitor')) {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    }
+  }
+}

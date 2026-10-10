@@ -1,0 +1,20 @@
+// Minimal brand primary for S1; the full BRANDBOOK token mapping is Phase 1.
+:root {
+  --ion-color-primary: #0e6e4e;
+  --ion-color-primary-rgb: 14, 110, 78;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0c6145;
+  --ion-color-primary-tint: #267d60;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-color-primary: #34c48d;
+    --ion-color-primary-rgb: 52, 196, 141;
+    --ion-color-primary-contrast: #0d1110;
+    --ion-color-primary-contrast-rgb: 13, 17, 16;
+    --ion-color-primary-shade: #2eac7c;
+    --ion-color-primary-tint: #48ca98;
+  }
+}

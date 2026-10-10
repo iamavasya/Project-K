@@ -1,0 +1,43 @@
+{
+  "name": "lileyka-mobile",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "build:dev": "ng build --configuration development",
+    "android:live": "cap run android -l --host 10.0.2.2 --port 4200",
+    "sync": "ng build && cap sync"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/status-bar": "^8.0.4",
+    "@ionic/angular": "^9.0.7",
+    "ionicons": "^8.1.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.2",
+    "@angular/cli": "^22.2.2",
+    "@angular/compiler-cli": "^22.2.0",
+    "@capacitor/cli": "^8.5.3",
+    "jsdom": "^30.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.0"
+  }
+}
