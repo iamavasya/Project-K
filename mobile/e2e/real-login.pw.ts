@@ -67,8 +67,8 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await expect(page.locator('app-home ion-skeleton-text')).toHaveCount(0);
   await expect(page.getByText('Не вдалося завантажити', { exact: false })).toHaveCount(0);
 
-  await page.getByText('Ще', { exact: true }).click();
-  await expect(page.getByText('вимкнено', { exact: true })).toBeVisible();
+  await page.locator('#tab-button-more').click();
+  await expect(page.locator('app-more').getByText('вимкнено', { exact: true })).toBeVisible();
   await page.getByText('Профіль', { exact: true }).click();
   await expect(page.locator('app-profile h1')).toBeVisible();
   // Ще stays in the DOM under the profile and shows the email too.
@@ -84,12 +84,12 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await expect(page.getByTestId('recovery-codes')).not.toBeEmpty();
   await page.getByRole('button', { name: 'Я зберіг коди' }).click();
   await expect(page).toHaveURL(/\/m\/tabs\/home$/);
-  await page.getByText('Ще', { exact: true }).click();
-  await expect(page.getByText('увімкнено', { exact: true })).toBeVisible();
+  await page.locator('#tab-button-more').click();
+  await expect(page.locator('app-more').getByText('увімкнено', { exact: true })).toBeVisible();
 
   // Enabling ended the old session; signing out works only with the token it handed back.
   const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
-  await page.getByText('Вийти', { exact: true }).click();
+  await page.locator('app-more').getByText('Вийти', { exact: true }).click();
   expect((await loggedOut).ok()).toBe(true);
   await expect(page).toHaveURL(/\/m\/login$/);
 
