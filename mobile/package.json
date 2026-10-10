@@ -10,7 +10,9 @@
     "build:dev": "ng build --configuration development",
     "android:live": "cap run android -l --host 10.0.2.2 --port 4200",
     "sync": "ng build && cap sync",
-    "cap": "cap"
+    "cap": "cap",
+    "e2e": "ng build && playwright test",
+    "e2e:install": "playwright install --with-deps chromium webkit"
   },
   "private": true,
   "dependencies": {
@@ -20,6 +22,7 @@
     "@angular/forms": "^22.2.0",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
+    "@angular/service-worker": "^22.2.0",
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
@@ -37,6 +40,7 @@
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.0",
     "@capacitor/cli": "^8.5.3",
+    "@playwright/test": "^1.64.0",
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

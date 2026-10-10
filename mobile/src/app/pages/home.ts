@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {
@@ -16,9 +16,10 @@ import {
   IonTitle,
   IonToolbar,
   getPlatforms,
-  isPlatform,
 } from '@ionic/angular';
 import { environment } from '../../environments/environment';
+import { InstallCard } from '../pwa/install-card';
+import { InstallService } from '../pwa/install.service';
 
 @Component({
   selector: 'app-home',
@@ -36,6 +37,7 @@ import { environment } from '../../environments/environment';
     IonItem,
     IonLabel,
     IonNote,
+    InstallCard,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -50,6 +52,8 @@ import { environment } from '../../environments/environment';
           <ion-title size="large">Лілейка</ion-title>
         </ion-toolbar>
       </ion-header>
+
+      <app-install-card />
 
       <ion-card>
         <ion-card-header>
@@ -84,6 +88,10 @@ import { environment } from '../../environments/environment';
           </ion-label>
         </ion-item>
         <ion-item>
+          <ion-label>Відкрито як</ion-label>
+          <ion-note slot="end">{{ standalone() ? 'застосунок' : 'вкладка браузера' }}</ion-note>
+        </ion-item>
+        <ion-item>
           <ion-label>Версія</ion-label>
           <ion-note slot="end">{{ version }}</ion-note>
         </ion-item>
@@ -100,11 +108,16 @@ export class HomePage {
   protected readonly platforms = getPlatforms().join(', ');
   protected readonly apiUrl = environment.apiUrl;
   protected readonly version = environment.version;
+  protected readonly standalone = inject(InstallService).standalone;
 
   protected async tap(): Promise<void> {
     this.taps.update((n) => n + 1);
-    if (isPlatform('capacitor')) {
+    // Native shells use the Taptic engine; on the web Capacitor falls back to navigator.vibrate
+    // (Android browsers), and iOS Safari has no vibration API at all.
+    try {
       await Haptics.impact({ style: ImpactStyle.Light });
+    } catch {
+      // No haptics on this device.
     }
   }
 }

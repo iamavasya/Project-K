@@ -2,7 +2,8 @@
 
 Ionic 9 + Angular 22 (zoneless) + Capacitor 8. План: [PLAN.md](PLAN.md).
 
-Статус: спайк S1 (hello-оболонка з двома табами, Android-платформа, live reload).
+Статус: Фаза 0 пройдена (див. PLAN.md §17). Зараз основний шлях — PWA: той самий код у браузері,
+з Material-виглядом на Android і iOS-виглядом на iPhone. Нативні збірки Capacitor чекають.
 
 ## Вимоги
 
@@ -17,7 +18,17 @@ npm start                 # ng serve на http://localhost:4200
 npm test                  # vitest
 npm run build             # прод-збірка у www/
 npm run sync              # build + cap sync (копіює www/ у native-проєкти)
+npm run e2e               # прод-збірка + PWA-смоук у Playwright (iPhone/WebKit і Pixel/Chromium)
 ```
+
+## PWA
+
+Прод-збірка (`npm run build`) містить маніфест, іконки і service worker (`ngsw-config.json`).
+Service worker вмикається лише в прод-збірці і лише в браузері, у нативних оболонках він вимкнений.
+Перевірити локально: `npm run build && node scripts/serve-www.mjs`, далі http://127.0.0.1:4300.
+
+Перед першим `npm run e2e` постав браузери: `npm run e2e:install`. Скріни лягають у
+`test-results/pwa-screens/`.
 
 У браузері режим Ionic можна примусити: `http://localhost:4200/?ionic:mode=ios` або `?ionic:mode=md`.
 

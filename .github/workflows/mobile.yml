@@ -85,6 +85,47 @@ jobs:
           name: mobile-screens
           path: ${{ runner.temp }}/screens
 
+  pwa:
+    runs-on: ubuntu-latest
+    name: PWA as iPhone Safari and Android Chrome
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Install WebKit and Chromium
+        run: npm run e2e:install
+
+      - name: Build and run the PWA smoke
+        run: npm run e2e
+
+      - name: "Temporary: dump downscaled screenshots to the log"
+        if: always()
+        working-directory: mobile/test-results/pwa-screens
+        run: |
+          for f in iphone-*.png; do
+            convert "$f" -resize 414x -quality 70 "/tmp/${f%.png}.jpg"
+            echo "BEGIN-SHOT ${f%.png}"; base64 -w 0 "/tmp/${f%.png}.jpg"; echo; echo "END-SHOT"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pwa-screens
+          path: mobile/test-results/pwa-screens
+
   ios-simulator:
     runs-on: macos-15
     name: Build for iOS Simulator and smoke

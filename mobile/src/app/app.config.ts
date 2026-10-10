@@ -1,4 +1,6 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
+import { Capacitor } from '@capacitor/core';
 import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
 import { provideIonicAngular } from '@ionic/angular';
 import { routes } from './app.routes';
@@ -10,5 +12,11 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    // PWA only: the native shells already ship the app offline, and WKWebView has no service
+    // workers for capacitor:// anyway.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode() && !Capacitor.isNativePlatform(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };

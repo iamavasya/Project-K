@@ -9,3 +9,15 @@
 @use '@ionic/angular/css/palettes/dark.system';
 
 @use './theme/variables';
+
+/* App feel in the browser and as a home-screen PWA: no page bounce, no text selection on chrome. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+ion-tab-bar,
+ion-toolbar {
+  user-select: none;
+  -webkit-user-select: none;
+}
