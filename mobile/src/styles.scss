@@ -6,7 +6,6 @@
 @use '@ionic/angular/css/padding';
 @use '@ionic/angular/css/flex-utils';
 @use '@ionic/angular/css/display';
-@use '@ionic/angular/css/palettes/dark.system';
 
 @use 'sass:meta';
 @use './theme/variables';
@@ -14,19 +13,17 @@
 /*
  * Liquid Glass on iPhone (ios mode only): rdlabo's iOS 27 theme where Safari has the iOS 27
  * generation's features, the iOS 26 one on the generation before, plain Ionic on older iOS.
- * Dark follows the system, like Ionic's palette above.
+ * Dark comes in class form from theme/lileyka.scss (the person's choice in «Ще → Вигляд»).
  */
 @supports (overflow-anchor: auto) {
   @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/default-variables');
   @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/ionic-theme-ios27');
-  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/ionic-theme-ios27-dark-system');
   @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/md-remove-ios-class-effect');
 }
 
 @supports (text-wrap: pretty) and (not (overflow-anchor: auto)) {
   @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/default-variables');
   @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/ionic-theme-ios26');
-  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/ionic-theme-ios26-dark-system');
   @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/md-remove-ios-class-effect');
 }
 
