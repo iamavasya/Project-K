@@ -68,10 +68,12 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await expect(page.getByText('Не вдалося завантажити', { exact: false })).toHaveCount(0);
 
   await page.locator('#tab-button-more').click();
-  await expect(page.locator('app-more').getByText('вимкнено', { exact: true })).toBeVisible();
-  await page.getByTestId('account').click();
+  await page.locator('app-more').getByTestId('menu-account').click();
+  await expect(page.locator('app-account').getByTestId('mfa-status')).toHaveText('Вимкнено');
+  await page.locator('#tab-button-more').click();
+  await page.locator('app-more').getByTestId('account').click();
   await expect(page.locator('app-profile h1')).toBeVisible();
-  // Ще stays in the DOM under the profile and shows the email too.
+  // Меню stays in the DOM under the profile and shows the email too.
   await expect(page.locator('app-profile').getByText(member.email, { exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/pwa-screens/${info.project.name}-real-profile.png`, scale: 'css' });
 
@@ -85,7 +87,9 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await page.getByRole('button', { name: 'Я зберіг коди' }).click();
   await expect(page).toHaveURL(/\/m\/tabs\/home$/);
   await page.locator('#tab-button-more').click();
-  await expect(page.locator('app-more').getByText('увімкнено', { exact: true })).toBeVisible();
+  await page.locator('app-more').getByTestId('menu-account').click();
+  await expect(page.locator('app-account').getByTestId('mfa-status')).toHaveText('Увімкнено');
+  await page.locator('#tab-button-more').click();
 
   // Enabling ended the old session; signing out works only with the token it handed back.
   const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
