@@ -1,4 +1,6 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
+import { MessageService } from '@openng/optimus-ui/api';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -34,6 +36,9 @@ export class KurinSettingsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly kurinService = inject(KurinService);
   private readonly onboardingService = inject(OnboardingService);
+  private readonly messages = inject(MessageService);
+  /** The archive terms are part of the page and go out with its one «Зберегти». */
+  private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
 
   kurinKey = '';
   kurin: KurinDto | null = null;
@@ -101,6 +106,12 @@ export class KurinSettingsComponent implements OnInit {
   save(): void {
     if (!this.kurin || this.saving || this.numberProblem) return;
 
+    const archive = this.archivePolicy();
+    if (archive && !archive.pending()) {
+      this.errorMessage = 'Строк архіву — від 1 до 3650 днів.';
+      return;
+    }
+
     const request: KurinDto = {
       ...this.kurin,
       number: this.preparatory ? null : this.number,
@@ -110,13 +121,14 @@ export class KurinSettingsComponent implements OnInit {
     this.saving = true;
     this.errorMessage = null;
 
-    this.kurinService.updateKurin(request).subscribe({
-      next: (updated) => {
+    forkJoin([this.kurinService.updateKurin(request), archive ? archive.save() : of(undefined)]).subscribe({
+      next: ([updated]) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;
+        this.messages.add({ severity: 'success', summary: 'Збережено' });
       },
       error: (error: HttpErrorResponse) => {
         console.error('Error saving kurin settings:', error);

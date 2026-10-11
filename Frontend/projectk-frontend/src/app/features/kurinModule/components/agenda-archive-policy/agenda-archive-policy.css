@@ -7,4 +7,3 @@
 .archive-policy__days { align-items: center; color: var(--p-text-muted-color); display: inline-flex; font-size: 0.9rem; gap: 0.5rem; }
 .archive-policy__days input { width: 5.5rem; }
 
-.archive-policy__actions { display: flex; justify-content: flex-end; }

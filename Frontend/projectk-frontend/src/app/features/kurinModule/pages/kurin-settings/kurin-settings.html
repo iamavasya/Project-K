@@ -33,7 +33,7 @@
           [binary]="true"
           [disabled]="loading || saving"
           inputId="preparatoryKurin" />
-        <label for="preparatoryKurin">Підготовчий курінь (ще без числа)</label>
+        <label for="preparatoryKurin">Підготовчий курінь</label>
       </div>
       @if (!preparatory) {
         <div class="number-field">
@@ -89,7 +89,7 @@
           З архіву задачу можна знайти й повернути. Видалення з архіву — назавжди.
         </p>
       </div>
-      <app-agenda-archive-policy [kurinKey]="kurinKey" />
+      <app-agenda-archive-policy #archivePolicy [kurinKey]="kurinKey" />
     </section>
   }
 
