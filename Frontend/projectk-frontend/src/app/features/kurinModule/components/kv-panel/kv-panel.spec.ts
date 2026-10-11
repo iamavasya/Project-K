@@ -198,6 +198,10 @@ describe('KvPanelComponent', () => {
 
       expect(leadershipService.update.calls.mostRecent().args[0]).toBe('kv-1');
       expect(sentSeats()).toEqual([['Zvyazkovyi', 'manager-member'], ['Instruktor', 'new-member']]);
+      // The API binds the keys as Guid?: an empty string is a 400, a new seat goes with null.
+      const seat = leadershipService.update.calls.mostRecent().args[1].leadershipHistories[1];
+      expect(seat.leadershipHistoryKey).toBeNull();
+      expect(seat.leadershipKey).toBe('kv-1');
     });
 
     it('turns a впорядник left without гуртки into an інструктор', () => {
