@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 170" width="320" height="170" role="img" aria-label="Safari на Mac: меню «Файл» → «Додати в Dock»">
+<title>Safari на Mac: меню «Файл» → «Додати в Dock»</title>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,'Segoe UI',Roboto,sans-serif}
+.sc{fill:#f2f2f7}.pn{fill:#fff}.bar{fill:#f9f9fb}.ln{stroke:#d1d1d6;fill:none}.lnf{fill:#d1d1d6}
+.ink{fill:#1c1c1e}.mut{fill:#8e8e93}.blue{fill:#007aff}.sb{stroke:#007aff;fill:none}.si{stroke:#1c1c1e;fill:none}.sm{stroke:#8e8e93;fill:none}
+.ph{fill:#e5e5ea}.scrim{fill:#000;fill-opacity:.32}.mblue{fill:#0b57d0}.onb{fill:#fff}
+.hl{fill:#d9762f;fill-opacity:.16;stroke:#d9762f;stroke-width:2.5}.hlr{fill:none;stroke:#d9762f;stroke-width:2.5}.tag{fill:#d9762f}.ontag{fill:#fff}
+.frame{fill:none;stroke:#d1d1d6}.on{fill:#34c759}
+@media (prefers-color-scheme:dark){
+.sc{fill:#000}.pn{fill:#1c1c1e}.bar{fill:#161618}.ln{stroke:#3a3a3c}.lnf{fill:#3a3a3c}
+.ink{fill:#f2f2f7}.mut{fill:#98989f}.blue{fill:#0a84ff}.sb{stroke:#0a84ff}.si{stroke:#f2f2f7}.sm{stroke:#98989f}
+.ph{fill:#2c2c2e}.scrim{fill-opacity:.55}.mblue{fill:#a8c7fa}.onb{fill:#062e6f}
+.hl{fill:#ee9a5a;stroke:#ee9a5a;fill-opacity:.2}.hlr{stroke:#ee9a5a}.tag{fill:#ee9a5a}.ontag{fill:#1c1c1e}.frame{stroke:#3a3a3c}.on{fill:#30d158}
+}
+</style>
+<defs><symbol id="lk" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0E6E4E"/><g fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(9 9) scale(0.46)"><g transform="rotate(45 50 50)"><path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51"/><path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"/><path d="M33 60 H67"/><path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"/><path d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" stroke="#D9762F"/></g></g></symbol></defs>
+<rect class="sc" width="320" height="170" rx="18"/>
+<rect class="bar" width="320" height="28" rx="18"/><rect class="bar" y="14" width="320" height="14"/><text class="ink" x="18" y="19" font-size="12" font-weight="700">Safari</text><rect class="blue" x="62" y="4" width="40" height="22" rx="5"/><text fill="#fff" x="82" y="19" font-size="12" text-anchor="middle">Файл</text><text class="ink" x="112" y="19" font-size="12">Редагувати</text><text class="ink" x="186" y="19" font-size="12">Вигляд</text><rect class="pn" x="62" y="30" width="200" height="128" rx="10"/><rect class="frame" x="62.5" y="30.5" width="199" height="127" rx="9.5"/><text class="ink" x="78" y="55" font-size="12.5" font-weight="400">Нове вікно</text><text class="ink" x="78" y="84" font-size="12.5" font-weight="400">Нова вкладка</text><text class="ink" x="78" y="113" font-size="12.5" font-weight="400">Відкрити файл…</text><path class="ln" d="M72 121.5h180"/><rect class="hl" x="66" y="123" width="192" height="28" rx="7"/><text class="ink" x="78" y="142" font-size="12.5" font-weight="600">Додати в Dock…</text>
+<rect class="frame" x=".5" y=".5" width="319" height="169" rx="17.5"/>
+</svg>

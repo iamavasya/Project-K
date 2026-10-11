@@ -1,0 +1,134 @@
+import { MemberDto, MemberWarningDto } from './kurin.models';
+import {
+  NO_WARNING_CHANGES,
+  canClearWarning,
+  canEditEmail,
+  canSelectWarning,
+  closeBranch,
+  memberFormData,
+  newMemberFormData,
+  oldEnough,
+  openBranches,
+  rankDates,
+  rankHistories,
+  toggleWarning,
+  warningCalls,
+  warningChecked,
+} from './member-edit';
+
+const now = Date.parse('2026-10-10T12:00:00Z');
+const warning = (key: string, level: MemberWarningDto['level'], issuedBy: string, extra: Partial<MemberWarningDto> = {}): MemberWarningDto => ({
+  memberWarningKey: key, level, issuedAtUtc: '2026-09-01T00:00:00Z', expiresAtUtc: '2026-12-01T00:00:00Z', issuedByUserKey: issuedBy, ...extra,
+});
+
+describe('member edit rules', () => {
+  it('shows the email only without a claimed account, or to an admin', () => {
+    expect(canEditEmail({ userKey: null }, false)).toBe(true);
+    expect(canEditEmail({ userKey: 'u1', accountStatus: 'PendingActivation' }, false)).toBe(true);
+    expect(canEditEmail({ userKey: 'u1', accountStatus: 'Active' }, false)).toBe(false);
+    expect(canEditEmail({ userKey: 'u1', accountStatus: 'Active' }, true)).toBe(true);
+  });
+
+  it('opens the branches that have dates and clears a branch that is switched off', () => {
+    const dates = rankDates([
+      { plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23' },
+      { plastLevel: 'Skob', dateAchieved: '2024-05-01T00:00:00' },
+    ]);
+    expect(dates['Skob']).toBe('2024-05-01');
+    expect(openBranches(dates)).toEqual({ UPYu: true, USP: false, UPS: false });
+    const closed = closeBranch(dates, 'UPYu');
+    expect(closed['Skob']).toBe('');
+    expect(closed['Uchasnyk']).toBe('2022-04-23');
+  });
+
+  it('sends the achieved ступені, keeping the keys of rows that exist', () => {
+    const existing = [{ plastLevelHistoryKey: 'pl1', memberKey: 'm1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23' }];
+    const dates = { ...rankDates(existing), Uchasnyk: '2022-04-24', Rozviduvach: '2024-01-02', Entry: '' };
+    expect(rankHistories(existing, dates)).toEqual([
+      { plastLevelHistoryKey: 'pl1', memberKey: 'm1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-24' },
+      { plastLevel: 'Rozviduvach', dateAchieved: '2024-01-02' },
+    ]);
+  });
+
+  it('lets each пересторога follow the one before and only its author lift it', () => {
+    const warnings = [warning('w1', 'Level1', 'U-LEAD'), warning('old', 'Level2', 'u-lead', { revokedAtUtc: '2026-09-02T00:00:00Z' })];
+    const draft = NO_WARNING_CHANGES;
+    expect(warningChecked(warnings, draft, 'Level1', now)).toBe(true);
+    expect(warningChecked(warnings, draft, 'Level2', now)).toBe(false);
+    expect(canSelectWarning(warnings, draft, 'Level2', now)).toBe(true);
+    expect(canSelectWarning(warnings, draft, 'Level3', now)).toBe(false);
+    expect(canClearWarning(warnings, draft, 'Level1', 'u-lead', now)).toBe(true);
+    expect(canClearWarning(warnings, draft, 'Level1', 'u-other', now)).toBe(false);
+    // Somebody else's stays as it is.
+    expect(toggleWarning(warnings, draft, 'Level1', false, 'u-other', now)).toBe(draft);
+  });
+
+  it('plans lifts first, then additions from the lowest level', () => {
+    const warnings = [warning('w1', 'Level1', 'u-lead')];
+    let draft = toggleWarning(warnings, NO_WARNING_CHANGES, 'Level2', true, 'u-lead', now);
+    draft = toggleWarning(warnings, draft, 'Level3', true, 'u-lead', now);
+    draft = toggleWarning(warnings, draft, 'Level1', false, 'u-lead', now);
+    expect(warningCalls(draft)).toEqual([
+      { kind: 'cancel', key: 'w1' },
+      { kind: 'assign', level: 'Level2' },
+      { kind: 'assign', level: 'Level3' },
+    ]);
+    // Ticking a lifted one back just takes the lift away again.
+    draft = toggleWarning(warnings, draft, 'Level1', true, 'u-lead', now);
+    expect(draft.cancel).toEqual([]);
+  });
+
+  it('expired перестороги are not in force', () => {
+    const warnings = [warning('w1', 'Level1', 'u-lead', { expiresAtUtc: '2026-10-01T00:00:00' })];
+    expect(warningChecked(warnings, NO_WARNING_CHANGES, 'Level1', now)).toBe(false);
+  });
+
+  it('builds the multipart body as the web does, keeping the address and school', () => {
+    const member = { memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', email: 'o@example.com', address: 'Львів', school: null } as unknown as MemberDto;
+    const photo = new Blob(['x'], { type: 'image/jpeg' });
+    const body = memberFormData(
+      member,
+      { firstName: ' Остап ', middleName: 'Петрович', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '+380', dateOfBirth: '2012-03-14' },
+      [{ plastLevelHistoryKey: 'pl1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23T00:00:00' }],
+      { blob: photo, name: 'me.jpg', remove: false },
+    );
+    expect(body.get('firstName')).toBe('Остап');
+    expect(body.get('address')).toBe('Львів');
+    expect(body.has('school')).toBe(false);
+    expect(body.get('plastLevelHistories[0].dateAchieved')).toBe('2022-04-23');
+    expect(body.get('plastLevelHistories[0].plastLevelHistoryKey')).toBe('pl1');
+    expect(body.get('removeProfilePhoto')).toBe('false');
+    expect((body.get('blob') as File).name).toBe('me.jpg');
+
+    const cleared = memberFormData(member, { firstName: 'a', middleName: 'b', lastName: 'c', email: '', phoneNumber: '', dateOfBirth: '' }, [], { blob: null, name: '', remove: true });
+    expect(cleared.get('removeProfilePhoto')).toBe('true');
+    expect(cleared.has('blob')).toBe(false);
+  });
+
+  it('builds a new member’s body with its place and an account, as the web’s create does', () => {
+    const form = { firstName: 'Марта ', middleName: 'Іванівна', lastName: 'Шевчук', email: ' marta@example.com ', phoneNumber: '+380 67 111 22 33', dateOfBirth: '2013-05-02' };
+    const photo = new Blob(['x'], { type: 'image/jpeg' });
+    const inGroup = newMemberFormData({ groupKey: 'g1' }, form, [{ plastLevel: 'Prykhylnyk', dateAchieved: '2024-01-10' }], { blob: photo, name: 'marta.jpg' });
+    expect(inGroup.get('groupKey')).toBe('g1');
+    expect(inGroup.has('kurinKey')).toBe(false);
+    expect(inGroup.get('createUserAccount')).toBe('true');
+    expect(inGroup.get('firstName')).toBe('Марта');
+    expect(inGroup.get('email')).toBe('marta@example.com');
+    expect(inGroup.get('plastLevelHistories[0].plastLevel')).toBe('Prykhylnyk');
+    expect(inGroup.has('removeProfilePhoto')).toBe(false);
+    expect((inGroup.get('blob') as File).name).toBe('marta.jpg');
+
+    const inKurin = newMemberFormData({ kurinKey: 'k1' }, form, [], { blob: null, name: '' });
+    expect(inKurin.get('kurinKey')).toBe('k1');
+    expect(inKurin.has('groupKey')).toBe(false);
+    expect(inKurin.has('blob')).toBe(false);
+  });
+
+  it('takes a member from their sixth birthday on, as the web’s minAge does', () => {
+    expect(oldEnough('2020-10-11', '2026-10-11')).toBe(true);
+    expect(oldEnough('2020-10-12', '2026-10-11')).toBe(false);
+    expect(oldEnough('2020-11-01', '2026-10-11')).toBe(false);
+    expect(oldEnough('2012-03-14', '2026-10-11')).toBe(true);
+    expect(oldEnough('', '2026-10-11')).toBe(false);
+  });
+});

@@ -37,4 +37,10 @@ public interface IAppUserRepository
     /// <c>SaveChangesAsync</c>.
     /// </summary>
     Task DetachFromKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The kurin the account last stepped into (<c>ActiveKurinKey</c>), or <c>null</c> when it never
+    /// chose or does not exist. A push that opens a kurin's screen checks it is the kurin the app is in.
+    /// </summary>
+    Task<Guid?> GetActiveKurinKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
 }

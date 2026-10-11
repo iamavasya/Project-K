@@ -15,15 +15,18 @@ public sealed class NotificationService : INotificationService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMapper _mapper;
+    private readonly IPushQueue _pushQueue;
 
     public NotificationService(
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
-        IMapper mapper)
+        IMapper mapper,
+        IPushQueue pushQueue)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _mapper = mapper;
+        _pushQueue = pushQueue;
     }
 
     public async Task<AppNotificationDto?> NotifyAsync(NotificationRequest request, CancellationToken cancellationToken = default)
@@ -46,6 +49,7 @@ public sealed class NotificationService : INotificationService
                 cancellationToken);
         }
 
+        var isNew = notification is null;
         if (notification is null)
         {
             notification = new AppNotification
@@ -61,7 +65,19 @@ public sealed class NotificationService : INotificationService
         ApplyRequest(notification, request, now, deduplicationKey);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return changes <= 0 ? null : _mapper.Map<AppNotificationDto>(notification);
+        if (changes <= 0)
+        {
+            return null;
+        }
+
+        var saved = _mapper.Map<AppNotificationDto>(notification);
+        // Only a new entry reaches the phone: a repeat folded into an unread one must not buzz again.
+        if (isNew)
+        {
+            _pushQueue.Enqueue(saved);
+        }
+
+        return saved;
     }
 
     public async Task<IReadOnlyList<AppNotificationDto>> NotifyManyAsync(

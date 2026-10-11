@@ -401,6 +401,51 @@ public class UpsertMemberProfileCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Update_ByOwner_WhenLevelsChange_ShouldRecordThemAndMarkVerifiedStale()
+    {
+        var group = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = ownerUserKey;
+        existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2024, 4, 22) }];
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().BeEquivalentTo([PlastLevel.Skob]);
+        existing.LatestPlastLevel.Should().Be(PlastLevel.Skob);
+        existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ByRegularUserForAnotherMember_ShouldIgnoreLevels()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2024, 4, 22) }];
+
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Should().BeEmpty();
+        existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
+    }
+
+    [Fact]
     public async Task Handle_Update_LinkedMember_ByRegularUserForAnotherMember_WhenContactInfoChanges_ShouldReturnBadRequest()
     {
         var group = MakeGroup();

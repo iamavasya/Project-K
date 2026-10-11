@@ -286,6 +286,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.GetUnreadCount), AuthorizationPolicies.RequireUser);
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAllAsRead), AuthorizationPolicies.RequireUser);
         yield return Endpoint<NotificationsController>(nameof(NotificationsController.MarkAsRead), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.GetPushPublicKey), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.SubscribeToPush), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<NotificationsController>(nameof(NotificationsController.UnsubscribeFromPush), AuthorizationPolicies.RequireUser);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.ApproveWaitlistEntry), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.GetWaitlistEntries), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<OnboardingController>(nameof(OnboardingController.RejectWaitlistEntry), AuthorizationPolicies.RequireAdmin);

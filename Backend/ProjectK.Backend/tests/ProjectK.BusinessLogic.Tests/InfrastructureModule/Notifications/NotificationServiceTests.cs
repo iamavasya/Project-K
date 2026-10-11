@@ -17,6 +17,7 @@ public class NotificationServiceTests
     private readonly Mock<IAppNotificationRepository> _notificationRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<IPushQueue> _pushQueueMock;
     private readonly NotificationService _service;
 
     private readonly Guid _currentUserKey = Guid.NewGuid();
@@ -27,6 +28,7 @@ public class NotificationServiceTests
         _notificationRepositoryMock = new Mock<IAppNotificationRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _mapperMock = new Mock<IMapper>();
+        _pushQueueMock = new Mock<IPushQueue>();
 
         _unitOfWorkMock.SetupGet(x => x.AppNotifications).Returns(_notificationRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -43,7 +45,8 @@ public class NotificationServiceTests
         _service = new NotificationService(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _pushQueueMock.Object);
     }
 
     [Fact]
@@ -116,6 +119,84 @@ public class NotificationServiceTests
         existing.ReadAtUtc.Should().BeNull();
         _notificationRepositoryMock.Verify(x => x.Create(It.IsAny<AppNotification>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task NotifyAsync_ShouldQueueANewNotificationForThePhoneOnceSaved()
+    {
+        var steps = new List<string>();
+        _unitOfWorkMock
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => steps.Add("saved"))
+            .ReturnsAsync(1);
+        AppNotificationDto? queued = null;
+        _pushQueueMock
+            .Setup(x => x.Enqueue(It.IsAny<AppNotificationDto>()))
+            .Callback<AppNotificationDto>(dto =>
+            {
+                steps.Add("queued");
+                queued = dto;
+            });
+
+        var result = await _service.NotifyAsync(new NotificationRequest
+        {
+            RecipientUserKey = _currentUserKey,
+            Type = AppNotificationType.AgendaItemAssigned,
+            Title = "Задачу призначено вам",
+            Body = "Принести намет",
+            Route = "/tasks/k1"
+        });
+
+        steps.Should().Equal("saved", "queued");
+        queued.Should().BeSameAs(result);
+        queued!.RecipientUserKey.Should().Be(_currentUserKey);
+        queued.Title.Should().Be("Задачу призначено вам");
+    }
+
+    [Fact]
+    public async Task NotifyAsync_ShouldNotBuzzThePhoneAgainForARepeatFoldedIntoAnUnreadOne()
+    {
+        _notificationRepositoryMock
+            .Setup(x => x.GetUnreadByDeduplicationKeyAsync(
+                _currentUserKey,
+                "agenda-assigned:item-1",
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppNotification
+            {
+                RecipientUserKey = _currentUserKey,
+                Type = AppNotificationType.AgendaItemAssigned,
+                DeduplicationKey = "agenda-assigned:item-1"
+            });
+
+        var result = await _service.NotifyAsync(new NotificationRequest
+        {
+            RecipientUserKey = _currentUserKey,
+            Type = AppNotificationType.AgendaItemAssigned,
+            Title = "Задачу призначено вам",
+            Body = "Принести намет",
+            DeduplicationKey = "agenda-assigned:item-1"
+        });
+
+        result.Should().NotBeNull();
+        _pushQueueMock.Verify(x => x.Enqueue(It.IsAny<AppNotificationDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task NotifyAsync_ShouldQueueNothingWhenNothingWasSaved()
+    {
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        var result = await _service.NotifyAsync(new NotificationRequest
+        {
+            RecipientUserKey = _currentUserKey,
+            Type = AppNotificationType.MemberWarningAssigned,
+            Title = "Пересторога",
+            Body = "-"
+        });
+
+        result.Should().BeNull();
+        _pushQueueMock.Verify(x => x.Enqueue(It.IsAny<AppNotificationDto>()), Times.Never);
     }
 
     [Fact]
