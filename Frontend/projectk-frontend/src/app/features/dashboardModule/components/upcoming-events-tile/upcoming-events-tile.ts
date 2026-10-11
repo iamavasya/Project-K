@@ -7,6 +7,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 import { AgendaRsvpStatus } from '../../../kurinModule/models/agenda';
 import { dayLabel, timeLabel } from '../../functions/day-label.function';
 import { MyEventDto } from '../../models/me.dto';
+import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface EventResponseChange {
   event: MyEventDto;
@@ -74,7 +75,7 @@ export class UpcomingEventsTileComponent {
   }
 
   kurinLabel(row: EventRow): string {
-    return `к. ч. ${row.event.kurin.kurinNumber}`;
+    return kurinLabel(row.event.kurin.kurinNumber);
   }
 
   calendarLink(): unknown[] | null {

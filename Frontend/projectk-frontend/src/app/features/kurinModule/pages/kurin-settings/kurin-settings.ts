@@ -4,6 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
+import { CheckboxModule } from '@openng/optimus-ui/checkbox';
+import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
+import { HttpErrorResponse } from '@angular/common/http';
+import { KurinNumberRange, OnboardingService } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KurinDto } from '../../models/kurin.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AgendaCategoryManagerComponent } from '../../components/agenda-category-manager/agenda-category-manager';
@@ -16,6 +20,8 @@ import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-po
     ButtonModule,
     MessageModule,
     ToggleSwitchModule,
+    CheckboxModule,
+    InputNumberModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent
   ],
@@ -27,10 +33,16 @@ export class KurinSettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly kurinService = inject(KurinService);
+  private readonly onboardingService = inject(OnboardingService);
 
   kurinKey = '';
   kurin: KurinDto | null = null;
   profileVerificationEnabled = false;
+  /** A підготовчий курінь has no number; clearing the box asks for one. */
+  preparatory = false;
+  number: number | null = null;
+  /** The server says the real range; this is its default until it answers. */
+  numberRange: KurinNumberRange = { min: 1, max: 200 };
   loading = true;
   saving = false;
   errorMessage: string | null = null;
@@ -45,6 +57,25 @@ export class KurinSettingsComponent implements OnInit {
     }
 
     this.loadSettings();
+    this.onboardingService.getKurinNumberRange().subscribe({
+      next: range => this.numberRange = range,
+      // The default range stands in; the server still checks the real one.
+      error: () => undefined
+    });
+  }
+
+  /** A kurin may keep the number it has, even one outside the range (the team's kurin 0). */
+  get keepsOwnNumber(): boolean {
+    return this.number !== null && this.number === this.kurin?.number;
+  }
+
+  get numberProblem(): string | null {
+    if (this.preparatory || this.loading) return null;
+    if (this.number === null) return 'Впишіть число куреня або позначте його підготовчим.';
+    if (!this.keepsOwnNumber && (this.number < this.numberRange.min || this.number > this.numberRange.max)) {
+      return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
+    }
+    return null;
   }
 
   loadSettings(): void {
@@ -55,6 +86,8 @@ export class KurinSettingsComponent implements OnInit {
       next: (kurin) => {
         this.kurin = kurin;
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+        this.preparatory = kurin.number === null;
+        this.number = kurin.number;
         this.loading = false;
       },
       error: (error) => {
@@ -66,10 +99,11 @@ export class KurinSettingsComponent implements OnInit {
   }
 
   save(): void {
-    if (!this.kurin || this.saving) return;
+    if (!this.kurin || this.saving || this.numberProblem) return;
 
     const request: KurinDto = {
       ...this.kurin,
+      number: this.preparatory ? null : this.number,
       profileVerificationEnabled: this.profileVerificationEnabled
     };
 
@@ -80,14 +114,27 @@ export class KurinSettingsComponent implements OnInit {
       next: (updated) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
+        this.preparatory = updated.number === null;
+        this.number = updated.number;
         this.saving = false;
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         console.error('Error saving kurin settings:', error);
-        this.errorMessage = 'Не вдалося зберегти налаштування куреня.';
+        this.errorMessage = this.saveFailure(error.error?.error);
         this.saving = false;
       }
     });
+  }
+
+  private saveFailure(code: string | undefined): string {
+    switch (code) {
+      case 'KurinNumberTaken':
+        return `Курінь з числом ${this.number} уже є в Лілейці. Перевірте число.`;
+      case 'KurinNumberOutOfRange':
+        return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
+      default:
+        return 'Не вдалося зберегти налаштування куреня.';
+    }
   }
 
   cancel(): void {

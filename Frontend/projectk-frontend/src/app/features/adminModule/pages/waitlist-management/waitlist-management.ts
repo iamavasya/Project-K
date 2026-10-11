@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding-service/onboarding.service';
+import { OnboardingService, WaitlistEntry, WaitlistEntrySource } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -11,6 +11,7 @@ import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { FormsModule } from '@angular/forms';
+import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { WaitlistAttentionService } from '../../services/waitlist-attention/waitlist-attention.service';
 import {
@@ -34,6 +35,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     DialogModule,
     TextareaModule,
     FormsModule,
+    SelectButtonModule,
     LocalUtcDatePipe,
     EmptyStateComponent
 ],
@@ -58,10 +60,16 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     <div class="card p-4">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Заявки на приєднання</h2>
-        
+        <p-selectButton
+          [options]="sourceOptions"
+          [(ngModel)]="sourceFilter"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          ariaLabel="Які записи показати" />
       </div>
 
-      <p-table [value]="entries" [responsiveLayout]="'scroll'" [loading]="loading" styleClass="p-datatable-sm">
+      <p-table [value]="visibleEntries" [responsiveLayout]="'scroll'" [loading]="loading" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
             <th>Імʼя</th>
@@ -81,7 +89,11 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
             <td>{{ entry.stanytsia || '-' }}</td>
             <td>{{ entry.regionOrCountry || '-' }}</td>
             <td>
-              @if (entry.isKurinLeaderCandidate) {
+              @if (isDirectAdd(entry)) {
+                <span class="text-gray-400 text-sm italic">Доданий проводом</span>
+              } @else if (entry.isPreparatoryKurin) {
+                <p-tag severity="warn" value="Підготовчий курінь" pTooltip="Курінь ще без числа: його задають у налаштуваннях куреня" />
+              } @else if (entry.isKurinLeaderCandidate) {
                 <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber" />
               } @else {
                 <span class="text-gray-400 text-sm italic">Звичайний учасник</span>
@@ -112,8 +124,10 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
                 <td colspan="8" class="lil-empty-cell">
                     <app-empty-state
                         art="list"
-                        title="Заявок немає"
-                        body="Нові заявки на приєднання зʼявляться тут." />
+                        [title]="sourceFilter === 'DirectAdd' ? 'Нікого не додавали напряму' : 'Заявок немає'"
+                        [body]="sourceFilter === 'DirectAdd'
+                          ? 'Тут зʼявляться ті, кому провід відкрив акаунт прямо з куреня.'
+                          : 'Нові заявки на приєднання зʼявляться тут.'" />
                 </td>
             </tr>
         </ng-template>
@@ -131,6 +145,28 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 export class WaitlistManagementComponent implements OnInit {
   entries: WaitlistEntry[] = [];
   loading = true;
+
+  /**
+   * Applications from зв'язкові by default. People a провід added straight into a kurin also get an
+   * entry, for their invitation to hang off, but nobody has to decide on them, so they wait apart.
+   */
+  sourceFilter: WaitlistEntrySource | 'All' = 'Application';
+  readonly sourceOptions: { label: string; value: WaitlistEntrySource | 'All' }[] = [
+    { label: 'Заявки', value: 'Application' },
+    { label: 'Додані напряму', value: 'DirectAdd' },
+    { label: 'Усі', value: 'All' }
+  ];
+
+  get visibleEntries(): WaitlistEntry[] {
+    if (this.sourceFilter === 'All') {
+      return this.entries;
+    }
+    return this.entries.filter(entry => this.isDirectAdd(entry) === (this.sourceFilter === 'DirectAdd'));
+  }
+
+  isDirectAdd(entry: WaitlistEntry): boolean {
+    return entry.source === 'DirectAdd';
+  }
 
   rejectionDialogVisible = false;
   rejectionNote = '';

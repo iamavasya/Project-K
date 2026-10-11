@@ -2,7 +2,7 @@
   <header class="lil-page-head">
     <div>
       <p class="lil-page-head__eyebrow">Налаштування куреня</p>
-      <h1>{{ kurin?.number || '-' }} курінь</h1>
+      <h1>{{ kurin ? (kurin.number ?? 'Підготовчий') : '-' }} курінь</h1>
     </div>
     <div class="lil-page-head__actions">
       <p-button
@@ -17,6 +17,41 @@
   @if (errorMessage) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
+
+  <section class="kurin-tile" aria-labelledby="kurin-number-title">
+    <div class="setting-copy">
+      <h2 id="kurin-number-title">Число куреня</h2>
+      <p>
+        Підготовчий курінь ще не має числа, і його квадратик лишається порожнім. Коли курінь отримає
+        число, зніміть галочку і впишіть його: число не має бути зайняте іншим куренем.
+      </p>
+    </div>
+    <div class="number-row">
+      <div class="number-check">
+        <p-checkbox
+          [(ngModel)]="preparatory"
+          [binary]="true"
+          [disabled]="loading || saving"
+          inputId="preparatoryKurin" />
+        <label for="preparatoryKurin">Підготовчий курінь (ще без числа)</label>
+      </div>
+      @if (!preparatory) {
+        <div class="number-field">
+          <label for="kurinNumber">Число</label>
+          <p-inputNumber
+            [(ngModel)]="number"
+            [disabled]="loading || saving"
+            [useGrouping]="false"
+            [min]="keepsOwnNumber ? undefined : numberRange.min"
+            [max]="keepsOwnNumber ? undefined : numberRange.max"
+            inputId="kurinNumber" />
+          @if (numberProblem) {
+            <small class="number-problem">{{ numberProblem }}</small>
+          }
+        </div>
+      }
+    </div>
+  </section>
 
   <section class="kurin-tile" aria-labelledby="profile-verification-title">
     <div class="setting-row">
@@ -69,7 +104,7 @@
       label="Зберегти"
       icon="pi pi-save"
       [loading]="saving"
-      [disabled]="loading || saving || !kurin"
+      [disabled]="loading || saving || !kurin || !!numberProblem"
       (onClick)="save()" />
   </footer>
 </section>

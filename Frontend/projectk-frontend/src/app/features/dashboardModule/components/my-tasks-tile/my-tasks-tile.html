@@ -31,7 +31,7 @@
             <span class="tasks-tile__meta">
               <p-tag [value]="statusMeta[row.task.status].label" [severity]="statusMeta[row.task.status].severity" />
               @if (row.due) { <span [class.tasks-tile__overdue]="row.isOverdue">{{ row.isOverdue ? 'прострочено · ' : 'до ' }}{{ row.due }}</span> }
-              @if (namesKurin()) { <span>· к. ч. {{ row.task.kurin.kurinNumber }}</span> }
+              @if (namesKurin()) { <span>· {{ kurinLabel(row.task.kurin.kurinNumber) }}</span> }
             </span>
           </span>
           @if (row.task.canChangeStatus) {

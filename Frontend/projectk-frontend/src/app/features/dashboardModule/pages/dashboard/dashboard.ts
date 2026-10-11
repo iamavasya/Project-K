@@ -24,6 +24,7 @@ import { MyDuesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, 
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
+import { kurinName } from '../../../../shared/functions/kurin-label.function';
 
 /**
  * The first screen of a signed-in person: who they are and where they stand, as tiles they may
@@ -224,7 +225,7 @@ export class DashboardComponent implements OnInit {
     this.openIn(group.kurin.kurinKey, group.kurin.kurinNumber, group.groupKey, ['/group', group.groupKey]);
   }
 
-  private openIn(kurinKey: string, kurinNumber: number, rowKey: string, path: string[]): void {
+  private openIn(kurinKey: string, kurinNumber: number | null, rowKey: string, path: string[]): void {
     if (kurinKey === this.currentKurinKey()) {
       this.router.navigate(path);
       return;
@@ -243,7 +244,7 @@ export class DashboardComponent implements OnInit {
         this.messages.add({
           severity: 'error',
           summary: 'Не вдалося перейти',
-          detail: failureDetail(error, `Курінь ч. ${kurinNumber} лишився недосяжним. Спробуй ще раз.`)
+          detail: failureDetail(error, `${kurinName(kurinNumber)} лишився недосяжним. Спробуй ще раз.`)
         });
       }
     });

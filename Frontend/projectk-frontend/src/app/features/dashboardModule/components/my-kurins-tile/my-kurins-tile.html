@@ -63,7 +63,7 @@
                 <span class="kurins-tile__name">{{ group.name }}</span>
                 <span class="kurins-tile__meta">
                   <span>{{ groupRole(group) }}</span>
-                  @if (namesKurin()) { <span>· к. ч. {{ group.kurin.kurinNumber }}</span> }
+                  @if (namesKurin()) { <span>· {{ numberLabel(group.kurin.kurinNumber) }}</span> }
                 </span>
               </span>
               @if (openingKey() === group.groupKey) {

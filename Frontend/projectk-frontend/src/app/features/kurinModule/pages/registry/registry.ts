@@ -72,6 +72,8 @@ export class RegistryComponent implements OnInit {
   readonly loading = signal(true);
   readonly branch = signal<KurinBranch | null>(null);
   readonly kurinNumber = signal<number | null>(null);
+  /** Tells a підготовчий курінь (no number) from a kurin not loaded yet. */
+  readonly kurinLoaded = signal(false);
   readonly selectedColumnIds = signal<string[]>([]);
   readonly exporting = signal(false);
   readonly search = signal('');
@@ -180,6 +182,7 @@ export class RegistryComponent implements OnInit {
         const branch = kurin.branch ?? KurinBranch.UPYu;
         this.branch.set(branch);
         this.kurinNumber.set(kurin.number);
+        this.kurinLoaded.set(true);
         this.selectedColumnIds.set(this.restoreColumnChoice(branch));
       },
       // A kurin we cannot read still lists its people; the columns just fall back to the youth set.

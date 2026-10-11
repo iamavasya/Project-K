@@ -12,8 +12,8 @@
             <div class="group-hero__copy">
                 <p class="lil-page-head__eyebrow">Гурток</p>
                 <h1>{{ group?.name || 'Гурток' }}</h1>
-                @if (group?.kurinNumber) {
-                    <p>{{ group.kurinNumber }} курінь</p>
+                @if (group) {
+                    <p>{{ group.kurinNumber === null ? 'Підготовчий курінь' : group.kurinNumber + ' курінь' }}</p>
                 }
             </div>
 

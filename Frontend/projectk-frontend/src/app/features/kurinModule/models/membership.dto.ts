@@ -8,7 +8,8 @@ import { MembershipKind } from './enums/membership-kind.enum';
 export interface MembershipDto {
   membershipKey: string;
   kurinKey: string;
-  kurinNumber: number;
+  /** Null for a підготовчий курінь. */
+  kurinNumber: number | null;
   branch: KurinBranch;
   kurinNamedAfter?: string | null;
   groupKey?: string | null;

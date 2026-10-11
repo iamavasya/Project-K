@@ -8,6 +8,7 @@ import { AgendaItemStatus } from '../../../kurinModule/models/agenda';
 import { AGENDA_STATUS_META } from '../../../kurinModule/models/agenda-status.config';
 import { dayLabel } from '../../functions/day-label.function';
 import { MyTaskDto } from '../../models/me.dto';
+import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface TaskStatusChange {
   task: MyTaskDto;
@@ -32,6 +33,7 @@ export interface TaskRow {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MyTasksTileComponent {
+  protected readonly kurinLabel = kurinLabel;
   readonly tasks = input<MyTaskDto[]>([]);
   readonly loading = input(false);
   readonly failed = input(false);
