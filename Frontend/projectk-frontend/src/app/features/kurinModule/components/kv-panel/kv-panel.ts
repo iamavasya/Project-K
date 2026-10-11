@@ -251,8 +251,8 @@ export class KvPanelComponent implements OnChanges {
           leadershipHistories: [
             ...retained,
             {
-              leadershipHistoryKey: '',
-              leadershipKey: leadership.leadershipKey!,
+              leadershipHistoryKey: null,
+              leadershipKey: leadership.leadershipKey,
               role: LeadershipRole.Zvyazkovyi,
               startDate: today,
               endDate: null,
@@ -378,8 +378,8 @@ export class KvPanelComponent implements OnChanges {
         const retained = active.filter(history => !toEnd.includes(history));
         const seats: LeadershipHistoryDto[] = toSeat
           ? [{
-            leadershipHistoryKey: '',
-            leadershipKey: leadership?.leadershipKey ?? '',
+            leadershipHistoryKey: null,
+            leadershipKey: leadership?.leadershipKey ?? null,
             role: LeadershipRole.Instruktor,
             startDate: today,
             endDate: null,
