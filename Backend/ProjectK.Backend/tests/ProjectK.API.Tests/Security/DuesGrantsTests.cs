@@ -16,7 +16,6 @@ public class DuesGrantsTests
     [InlineData("Member")]
     [InlineData("Group.Pysar")]
     [InlineData("Kurin.Kurinnuy")]
-    [InlineData("KV.Instruktor")]
     public void OthersSeeOnlyTheirOwnBalance_AndNoBox(string role)
     {
         Assert.Equal(AccessScope.Own, Widest(role, ResourceType.GroupDues, ResourceAction.Read));
@@ -28,6 +27,7 @@ public class DuesGrantsTests
     [InlineData("Group.Skarbnyk")]
     [InlineData("Group.Hurtkoviy")]
     [InlineData("KV.Vykhovnyk")]
+    [InlineData("KV.Instruktor")]
     public void GroupKeepers_KeepTheirOwnGroupsBox(string role)
     {
         foreach (var action in new[] { ResourceAction.Read, ResourceAction.Create, ResourceAction.Update, ResourceAction.Delete })
@@ -40,6 +40,7 @@ public class DuesGrantsTests
 
     [Theory]
     [InlineData("KV.Vykhovnyk", AccessScope.OwnGroups)]
+    [InlineData("KV.Instruktor", AccessScope.OwnGroups)]
     [InlineData("KV.Zvyazkovyi", AccessScope.KurinWide)]
     [InlineData("Group.Skarbnyk", null)]
     [InlineData("Group.Hurtkoviy", null)]

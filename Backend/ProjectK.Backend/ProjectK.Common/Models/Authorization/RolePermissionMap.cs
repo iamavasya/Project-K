@@ -8,6 +8,7 @@ namespace ProjectK.Common.Models.Authorization;
 /// <list type="bullet">
 /// <item><b>Зв'язковий (КВ)</b> — full kurin management incl. kurin settings and office assignment.</item>
 /// <item><b>Виховник (КВ)</b> — runs his гурток: members, progress, the group record and its провід.</item>
+/// <item><b>Інструктор (КВ)</b> — the Виховник's grants without a гурток, so only the kurin-wide ones reach anything.</item>
 /// <item><b>Курінний</b> — reads the kurin, plans, raises agenda items and assigns the курінний провід
 /// below himself. He holds nothing on members: probe sign-off, awards, warnings and profile
 /// verification all sit behind <c>Member:Update</c>, which he does not get.</item>
@@ -19,7 +20,7 @@ namespace ProjectK.Common.Models.Authorization;
 /// <item><b>Суддя</b> — his провід's grants plus точкування: the гурток's sheets for a гуртковий суддя,
 /// every гурток's and the kurin's rules for a курінний one. Курінний, Гуртковий and Виховник score
 /// within their reach too; the Виховник and the Зв'язковий also keep the КВ's private score.</item>
-/// <item><b>Інструктор</b> and the bare <b>Member</b> — read within the kurin plus own profile/progress.</item>
+/// <item>the bare <b>Member</b> — read within the kurin plus own profile/progress.</item>
 /// </list>
 /// </summary>
 public static class RolePermissionMap
@@ -208,7 +209,10 @@ public static class RolePermissionMap
             return ZvyazkovyiGrants;
         }
 
-        if (role == SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk))
+        // An інструктор is the КВ without a гурток of his own: the same grants, and every OwnGroups
+        // scope among them reaches nothing until a гурток is assigned, which makes him a впорядник.
+        if (role == SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
+            || role == SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Instruktor))
         {
             return VykhovnykGrants;
         }
@@ -253,7 +257,7 @@ public static class RolePermissionMap
             return GroupProvidGrants;
         }
 
-        // Інструктор and every non-leading office: baseline only.
+        // Every non-leading office: baseline only.
         return MemberGrants;
     }
 

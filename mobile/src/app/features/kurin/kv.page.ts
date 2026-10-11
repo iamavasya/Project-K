@@ -131,7 +131,7 @@ interface KvData {
               @if (manager()) {
                 <ion-item [button]="true" [detail]="false" [disabled]="busy() || candidates().state !== 'ready'" (click)="editMentor(null)" data-testid="add-mentor">
                   <ion-icon slot="start" name="person-add" color="primary" aria-hidden="true" />
-                  <ion-label color="primary">Додати впорядника</ion-label>
+                  <ion-label color="primary">Додати до КВ</ion-label>
                 </ion-item>
               }
             }
@@ -234,13 +234,13 @@ export class KvPage implements OnInit {
     return officePeriod(day(item.assignedAtUtc), day(item.revokedAtUtc));
   }
 
-  /** «Налаштування впорядника»: from a row, their гуртки; with none, a new впорядник. */
+  /** «Учасник КВ»: from a row, their гуртки; with none, someone new to the КВ. */
   protected async editMentor(row: KvRow | null): Promise<void> {
     const kv = valueOf(this.kv());
     if (!kv || this.busy()) return;
     const modal = await this.modals.create({
       component: KvMentorSheet,
-      componentProps: { candidates: valueOf(this.candidates()) ?? [], groups: kv.groups, rows: kv.rows, row },
+      componentProps: { candidates: valueOf(this.candidates()) ?? [], groups: kv.groups, rows: kv.rows, row, kurinKey: this.kurinKey },
       presentingElement: this.presenting(),
     });
     await modal.present();

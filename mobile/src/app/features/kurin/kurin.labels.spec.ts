@@ -61,21 +61,23 @@ describe('kurin labels', () => {
     expect(memberRoleTags(member('d', 'А', 'Б', { mentoredGroupNames: ['Орли', 'Соколи'] }))).toEqual(['Впорядник: Орли, Соколи']);
   });
 
-  it('puts the Звʼязковий first in КВ, then впорядники with their гуртки', () => {
+  it('puts the Звʼязковий first in КВ, then the rest named by their гуртки', () => {
     const zv = member('z', 'Олена', 'Петренко', { userRole: 'KV.Zvyazkovyi' });
-    const mentor = member('m', 'Андрій', 'Мельник', { userRole: 'KV.Vykhovnyk' });
+    const mentor = member('m', 'Андрій', 'Мельник', { userRole: 'KV.Instruktor' });
     const idle = member('i', 'Богдан', 'Антонюк', { userRole: 'KV.Vykhovnyk' });
+    const instructor = member('n', 'Ірина', 'Ничипорук', { userRole: 'KV.Instruktor' });
     const groups = [{ groupKey: 'g1', name: 'Соколи' }, { groupKey: 'g2', name: 'Орли' }] as GroupDto[];
     const assignments = [
       { groupKey: 'g1', revokedAtUtc: null, member: mentor },
       { groupKey: 'g2', revokedAtUtc: '2026-01-01T00:00:00Z', member: mentor },
       { groupKey: 'g9', revokedAtUtc: null, member: idle },
     ] as MentorAssignmentDto[];
-    const rows = kvRows([mentor, zv, idle], assignments, groups);
+    const rows = kvRows([mentor, zv, idle, instructor], assignments, groups);
     expect(rows.map((r) => [r.member.memberKey, r.status, r.groups])).toEqual([
       ['z', 'Звʼязковий', []],
-      ['i', 'Впорядник', []],
+      ['i', 'Інструктор', []],
       ['m', 'Впорядник', ['Соколи']],
+      ['n', 'Інструктор', []],
     ]);
   });
 

@@ -21,16 +21,17 @@ import { checkmarkCircle, ellipseOutline } from 'ionicons/icons';
 import { apiErrorText } from '../../core/api';
 import { Toasts } from '../../core/toast';
 import { mentorChanges } from './group-people';
-import { KvRow, fullName } from './kurin.labels';
+import { KvRow, fullName, toDateOnly } from './kurin.labels';
 import { GroupDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
+import { kvSeatRequest } from './leadership-seats';
 import { PeoplePickSheet, PickPerson } from './people-pick.sheet';
 
 /**
- * «Налаштування впорядника» (web kv-panel's dialog): a member of the kurin with an account and the
- * гуртки they are виховник of. Opened empty it adds a впорядник; from a row it changes their
- * гуртки. Saving assigns the newly ticked гуртки and revokes the unticked. Dismisses with true
- * once saved.
+ * «Учасник КВ» (web kv-panel's dialog): a member of the kurin with an account and the гуртки they
+ * are виховник of. Opened empty it adds someone to the КВ; from a row it changes their гуртки.
+ * Saving assigns the newly ticked гуртки, revokes the unticked, and keeps the КВ seat in step:
+ * without a гурток the person sits as інструктор. Dismisses with true once saved.
  */
 @Component({
   selector: 'app-kv-mentor-sheet',
@@ -76,7 +77,7 @@ import { PeoplePickSheet, PickPerson } from './people-pick.sheet';
         <ion-buttons slot="start">
           <ion-button (click)="close(false)">Скасувати</ion-button>
         </ion-buttons>
-        <ion-title>Впорядник</ion-title>
+        <ion-title>Учасник КВ</ion-title>
         <ion-buttons slot="end">
           <ion-button [strong]="true" [disabled]="!canSave() || busy()" (click)="save()" data-testid="save-mentor">
             @if (busy()) { <ion-spinner name="crescent" /> } @else { Зберегти }
@@ -88,7 +89,7 @@ import { PeoplePickSheet, PickPerson } from './people-pick.sheet';
       <ion-list [inset]="true">
         <ion-item-group>
           <ion-item [button]="true" [detail]="true" [disabled]="busy()" (click)="chooseMentor()" data-testid="mentor">
-            <ion-label>Впорядник</ion-label>
+            <ion-label>Учасник</ion-label>
             <ion-note slot="end" [color]="mentor() ? undefined : 'medium'">{{ mentorName() }}</ion-note>
           </ion-item>
         </ion-item-group>
@@ -120,7 +121,7 @@ import { PeoplePickSheet, PickPerson } from './people-pick.sheet';
           }
         </ion-item-group>
       </ion-list>
-      <p class="hint">Впорядник матиме доступ до обраних гуртків.</p>
+      <p class="hint">З гуртком людина — впорядник із доступом до обраних гуртків, без гуртка — інструктор КВ.</p>
     </ion-content>
   `,
 })
@@ -136,8 +137,9 @@ export class KvMentorSheet implements OnInit {
   groups: GroupDto[] = [];
   /** The КВ as shown, to know whose гуртки are whose. */
   rows: KvRow[] = [];
-  /** The row this was opened from, or null to add a впорядник. */
+  /** The row this was opened from, or null to add someone to the КВ. */
   row: KvRow | null = null;
+  kurinKey = '';
 
   protected readonly mentor = signal<MemberLookupDto | null>(null);
   protected readonly picked = signal<string[]>([]);
@@ -148,9 +150,11 @@ export class KvMentorSheet implements OnInit {
   });
   private readonly before = computed(() => this.groupsOf(this.mentor()));
   protected readonly canSave = computed(() => {
-    if (!this.mentor()?.userKey) return false;
+    const mentor = this.mentor();
+    if (!mentor?.userKey) return false;
     const changes = mentorChanges(this.before(), this.picked());
-    return changes.assign.length + changes.revoke.length > 0;
+    // Someone new saved without a гурток still joins the КВ, as інструктор.
+    return changes.assign.length + changes.revoke.length > 0 || !this.rowOf(mentor);
   });
 
   constructor() {
@@ -176,7 +180,7 @@ export class KvMentorSheet implements OnInit {
     const modal = await this.modals.create({
       component: PeoplePickSheet,
       componentProps: {
-        title: 'Впорядник',
+        title: 'Учасник КВ',
         people: people.map((member): PickPerson => ({ key: member.userKey!, member })),
         selected: this.mentor()?.userKey ? [this.mentor()!.userKey!] : [],
         emptyText: 'У курені ще нікого з акаунтом немає.',
@@ -193,12 +197,22 @@ export class KvMentorSheet implements OnInit {
   }
 
   protected async save(): Promise<void> {
-    const userKey = this.mentor()?.userKey;
-    if (!userKey || !this.canSave() || this.busy()) return;
+    const member = this.mentor();
+    const userKey = member?.userKey;
+    if (!member || !userKey || !this.canSave() || this.busy()) return;
     this.busy.set(true);
     try {
-      await this.data.saveMentorGroups(userKey, mentorChanges(this.before(), this.picked()));
-      await this.toasts.show('Гуртки впорядника збережено.');
+      const changes = mentorChanges(this.before(), this.picked());
+      if (changes.assign.length + changes.revoke.length > 0) {
+        await this.data.saveMentorGroups(userKey, changes);
+      }
+      if (!this.rowOf(member)?.isManager) {
+        // A kurin whose КВ провід was never written answers 404: the first seat creates it.
+        const kv = (await this.data.leadership('kv', this.kurinKey).catch(() => null)) ?? null;
+        const request = kvSeatRequest(kv, this.kurinKey, member, this.picked().length > 0, toDateOnly(new Date()));
+        if (request) await this.data.saveLeadership(kv?.leadershipKey ?? null, request);
+      }
+      await this.toasts.show('Збережено.');
       this.close(true);
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти гуртки. Спробуй ще раз.'), 'danger');
@@ -212,9 +226,12 @@ export class KvMentorSheet implements OnInit {
     void (own ? own.dismiss(saved) : this.modals.dismiss(saved));
   }
 
-  private groupsOf(member: MemberLookupDto | null): string[] {
-    if (!member) return [];
+  private rowOf(member: MemberLookupDto): KvRow | undefined {
     const same = (r: KvRow) => (r.member.userKey && member.userKey ? r.member.userKey === member.userKey : r.member.memberKey === member.memberKey);
-    return [...(this.rows.find(same)?.groupKeys ?? [])];
+    return this.rows.find(same);
+  }
+
+  private groupsOf(member: MemberLookupDto | null): string[] {
+    return member ? [...(this.rowOf(member)?.groupKeys ?? [])] : [];
   }
 }
