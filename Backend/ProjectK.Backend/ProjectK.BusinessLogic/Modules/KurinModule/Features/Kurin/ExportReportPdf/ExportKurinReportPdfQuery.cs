@@ -43,7 +43,7 @@ public sealed class ExportKurinReportPdfQueryHandler
         }
 
         var bytes = _renderer.Render(report, request.TimeZone);
-        var fileName = $"kurin-{report.Kurin.Number}-report-{_timeProvider.GetUtcNow():yyyyMMdd-HHmmss}.pdf";
+        var fileName = $"kurin-{report.Kurin.Number?.ToString() ?? "pidhotovchyi"}-report-{_timeProvider.GetUtcNow():yyyyMMdd-HHmmss}.pdf";
 
         return new ServiceResult<KurinReportPdf>(ResultType.Success, new KurinReportPdf(bytes, fileName));
     }

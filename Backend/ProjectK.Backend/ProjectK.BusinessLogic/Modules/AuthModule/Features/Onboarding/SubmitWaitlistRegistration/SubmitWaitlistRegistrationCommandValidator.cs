@@ -1,12 +1,16 @@
 using System.Linq;
 using FluentValidation;
+using Microsoft.Extensions.Options;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 
 public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidator<SubmitWaitlistRegistrationCommand>
 {
-    public SubmitWaitlistRegistrationCommandValidator()
+    public SubmitWaitlistRegistrationCommandValidator(IOptions<KurinNumberOptions> numbers)
     {
+        var range = numbers.Value;
+
         // Stop at the first failing rule per property so one message is returned at a time,
         // matching the handler's previous first-check-wins behaviour.
         RuleLevelCascadeMode = CascadeMode.Stop;
@@ -27,9 +31,15 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         RuleFor(command => command.IsKurinLeaderCandidate)
             .Equal(true).WithMessage("Kurin leader confirmation is required.");
 
-        RuleFor(command => command.ClaimedKurinNameOrNumber)
-            .NotEmpty().WithMessage("Kurin number is required.")
-            .Must(BeNumeric).WithMessage("Kurin number must contain only digits.");
+        // A підготовчий курінь has no number yet, so the box stands in for it.
+        When(command => !command.IsPreparatoryKurin, () =>
+        {
+            RuleFor(command => command.ClaimedKurinNameOrNumber)
+                .NotEmpty().WithMessage("Kurin number is required.")
+                .Must(BeNumeric).WithMessage("Kurin number must contain only digits.")
+                .Must(value => range.IsAllowed(int.Parse(value!.Trim())))
+                .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.");
+        });
     }
 
     private static bool BeNumeric(string? value)

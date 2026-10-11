@@ -36,7 +36,7 @@ public sealed record MemberDossierFolder(string Name, int Count);
 public sealed record MembershipRecord(
     Guid MembershipKey,
     Guid KurinKey,
-    int KurinNumber,
+    int? KurinNumber,
     KurinBranch Branch,
     string? KurinNamedAfter,
     Guid? GroupKey,

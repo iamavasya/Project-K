@@ -13,5 +13,5 @@ public class GroupResponse
     public string Name { get; set; }
     public string? Description { get; set; }
     public string? SilhouetteUrl { get; set; }
-    public int KurinNumber { get; set; }
+    public int? KurinNumber { get; set; }
 }

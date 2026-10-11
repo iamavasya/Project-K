@@ -236,6 +236,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             PhoneNumber = request.PhoneNumber ?? string.Empty,
             DateOfBirth = (request.DateOfBirth ?? DateOnly.FromDateTime(now)).ToDateTime(TimeOnly.MinValue),
             IsKurinLeaderCandidate = false,
+            Source = WaitlistEntrySource.DirectAdd,
             VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation,
             RequestedAtUtc = now,
             ReviewedAtUtc = now,

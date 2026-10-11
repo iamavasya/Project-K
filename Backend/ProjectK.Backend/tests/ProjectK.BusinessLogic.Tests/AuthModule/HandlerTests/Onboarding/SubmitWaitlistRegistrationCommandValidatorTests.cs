@@ -1,13 +1,15 @@
 using System;
 using FluentValidation.TestHelper;
+using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.Common.Models.Settings;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 
 public class SubmitWaitlistRegistrationCommandValidatorTests
 {
-    private readonly SubmitWaitlistRegistrationCommandValidator _validator = new();
+    private readonly SubmitWaitlistRegistrationCommandValidator _validator = new(Options.Create(new KurinNumberOptions()));
 
     [Fact]
     public void Validate_ShouldPass_ForValidCommand()
@@ -70,11 +72,41 @@ public class SubmitWaitlistRegistrationCommandValidatorTests
             .WithErrorMessage("Kurin number must contain only digits.");
     }
 
+    [Theory]
+    [InlineData("0")]
+    [InlineData("201")]
+    [InlineData("1153")]
+    public void Validate_ShouldFail_WhenKurinNumberOutsideTheRange(string number)
+    {
+        var result = _validator.TestValidate(CreateCommand(claimedKurinNumber: number));
+        result.ShouldHaveValidationErrorFor(x => x.ClaimedKurinNameOrNumber)
+            .WithErrorMessage("Kurin number must be between 1 and 200.");
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("200")]
+    public void Validate_ShouldPass_AtTheEdgesOfTheRange(string number)
+    {
+        var result = _validator.TestValidate(CreateCommand(claimedKurinNumber: number));
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Validate_ShouldPass_ForPreparatoryKurinWithoutNumber(string? number)
+    {
+        var result = _validator.TestValidate(CreateCommand(claimedKurinNumber: number, isPreparatoryKurin: true));
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
     private static SubmitWaitlistRegistrationCommand CreateCommand(
         string? stanytsia = "Kyiv",
         string? regionOrCountry = "Ukraine",
         bool isKurinLeaderCandidate = true,
-        string? claimedKurinNumber = "97")
+        string? claimedKurinNumber = "97",
+        bool isPreparatoryKurin = false)
         => new(
             "Ihor",
             "Kovalenko",
@@ -84,5 +116,6 @@ public class SubmitWaitlistRegistrationCommandValidatorTests
             stanytsia,
             regionOrCountry,
             isKurinLeaderCandidate,
-            claimedKurinNumber);
+            claimedKurinNumber,
+            isPreparatoryKurin);
 }

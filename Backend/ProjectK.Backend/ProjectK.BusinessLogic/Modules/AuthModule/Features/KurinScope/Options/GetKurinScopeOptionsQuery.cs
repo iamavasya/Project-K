@@ -15,7 +15,7 @@ public sealed record GetKurinScopeOptionsQuery(Guid UserKey)
 /// <param name="Kind">Юнацьке членство чи виховний склад — the same person may be either, in different kurins.</param>
 public sealed record KurinScopeOption(
     Guid KurinKey,
-    int KurinNumber,
+    int? KurinNumber,
     KurinBranch Branch,
     string? NamedAfter,
     MembershipKind Kind);

@@ -630,6 +630,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(120);
             entity.Property(e => e.VerificationStatus)
                 .HasConversion<string>();
+            entity.Property(e => e.Source)
+                .HasConversion<string>();
             entity.HasIndex(e => e.Email).IsUnique();
             // The kurin a founder's approval opened; it goes with the kurin, not with the entry.
             entity.HasOne<Kurin>()

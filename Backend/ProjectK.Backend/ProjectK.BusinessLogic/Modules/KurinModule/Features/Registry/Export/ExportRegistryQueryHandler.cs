@@ -78,7 +78,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
 
         return new ServiceResult<RegistryFile>(
             ResultType.Success,
-            new RegistryFile(content, $"reyestr-kurin-{kurin.Number}-{stamp}.xlsx"));
+            new RegistryFile(content, $"reyestr-kurin-{kurin.Number?.ToString() ?? "pidhotovchyi"}-{stamp}.xlsx"));
     }
 
     /// <summary>One sheet of people, in the columns asked for, name first.</summary>
