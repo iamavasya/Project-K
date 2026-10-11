@@ -39,6 +39,59 @@ public class AssignMentorCommandHandlerTests
         return (group, member);
     }
 
+    private void BelongsTo(Guid kurinKey, Guid memberKey, Guid userKey)
+    {
+        _memberDirectory
+            .Setup(d => d.GetByKurinAsync(kurinKey, It.Is<MemberSelection>(s => s.AccountKeys.Contains(userKey)), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new MemberSummary(memberKey, userKey, kurinKey, null, "A", "B", "a@example.com", null)]);
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheirNewestMembershipIsInAnotherKurin_ShouldStillAssign()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var mentorUserKey = Guid.NewGuid();
+        var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
+
+        _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
+        _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
+        // The summary names the kurin they joined last, not the one this гурток is in.
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
+        BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+
+        var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheyHaveNoMembershipInTheGroupsKurin_ShouldRefuse()
+    {
+        var groupKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var mentorUserKey = Guid.NewGuid();
+        var (group, member) = BuildFixture(groupKey, kurinKey, mentorUserKey);
+
+        _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
+        _memberDirectory
+            .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
+        _memberDirectory
+            .Setup(d => d.GetByKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+
+        var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task Handle_WhenAssigned_ShouldCreateAssignmentAndSyncMemberRoles()
     {
@@ -53,6 +106,7 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
@@ -77,6 +131,7 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
@@ -108,6 +163,7 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+        BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);

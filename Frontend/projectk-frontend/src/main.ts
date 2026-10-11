@@ -5,6 +5,7 @@ import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { captureInstallPrompt } from './app/features/systemModule/services/install-app-service/install-app.service';
 import { redirectPhoneToApp } from './app/features/systemModule/functions/mobile-redirect.function';
+import { acceptDatePickerInputWithoutKeydown } from './app/shared/functions/date-picker-input.function';
 
 // LocalUtcDatePipe formats with the 'uk-UA' locale; without its data registered, formatDate throws
 // NG0701 mid-render and aborts change detection (e.g. only the first notification row painted).
@@ -16,6 +17,7 @@ registerLocaleData(localeUk, 'uk-UA');
 if (!redirectPhoneToApp()) {
   // Before Angular starts: Chrome may offer the phone app's install right away (see InstallAppService).
   captureInstallPrompt();
+  acceptDatePickerInputWithoutKeydown();
 
   bootstrapApplication(App, appConfig)
     .catch((err) => console.error(err));
