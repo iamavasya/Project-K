@@ -8,10 +8,12 @@ import { MfaSetupDialogComponent } from './features/authModule/components/mfa-se
 import { DevRoleSwitcherComponent } from './features/systemModule/components/dev-role-switcher/dev-role-switcher';
 import { MfaEnforcerService } from './features/authModule/services/mfa-enforcer-service/mfa-enforcer.service';
 import { ToastModule } from '@openng/optimus-ui/toast';
+import { InstallAppBannerComponent } from './features/systemModule/components/install-app-banner/install-app-banner';
+import { installBannerRoute } from './features/systemModule/functions/install-app.function';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, DevRoleSwitcherComponent, ToastModule],
+  imports: [RouterOutlet, ToolbarHeaderComponent, ColdStartBannerComponent, MfaSetupDialogComponent, DevRoleSwitcherComponent, ToastModule, InstallAppBannerComponent],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
@@ -19,6 +21,8 @@ import { ToastModule } from '@openng/optimus-ui/toast';
 export class App implements AfterViewInit {
   protected readonly title = signal('projectk-frontend');
   protected readonly isPublicShellRoute = signal(false);
+  /** «Лілейка на телефоні» shows in the signed-in shell and on the login page (it decides the rest). */
+  protected readonly isInstallBannerRoute = signal(false);
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly router = inject(Router);
 
@@ -40,6 +44,11 @@ export class App implements AfterViewInit {
 
   private updateShellVisibility(url: string): void {
     const path = url.split('?')[0].split('#')[0];
+    this.setShellVisibility(path);
+    this.isInstallBannerRoute.set(installBannerRoute(path, this.isPublicShellRoute()));
+  }
+
+  private setShellVisibility(path: string): void {
     // `/` is the welcome page for a guest and the dashboard for a person with a card: the same
     // address, so the route that matched says which, not the path.
     if (path === '/') {

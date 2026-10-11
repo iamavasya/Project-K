@@ -1,0 +1,90 @@
+.install-banner {
+  align-items: flex-start;
+  background: var(--lil-green-50);
+  border-bottom: 1px solid var(--lil-green-100);
+  color: var(--lil-ink);
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.install-banner__icon {
+  align-items: center;
+  background: var(--p-primary-color);
+  border-radius: var(--lil-radius-lg);
+  color: var(--p-primary-contrast-color, #fff);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 18px;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.install-banner__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.install-banner__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.install-banner__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.install-banner__message {
+  color: var(--lil-ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.install-banner__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.install-banner__link {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  color: var(--p-primary-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The green tints stay light in the dark palette; there the banner takes the darkest greens. */
+:host-context(:root[data-theme="dark"]) .install-banner {
+  background: var(--lil-green-950);
+  border-bottom-color: var(--lil-green-900);
+}
+
+.mobile-version {
+  align-items: center;
+  background: var(--lil-surface);
+  border-bottom: 1px solid var(--lil-line);
+  color: var(--lil-muted);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.mobile-version__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}

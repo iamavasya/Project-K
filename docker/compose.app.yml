@@ -39,6 +39,11 @@ services:
       Telegram__PublicChannel__Enabled: "false"
       Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
       Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
+      # Web Push to the PWA (VAPID). Both keys or none: without them push is off. The e2e env sets a
+      # throwaway test pair; real deployments generate their own and keep the private key secret.
+      WebPush__PublicKey: ${PROJECTK_WEBPUSH_PUBLIC_KEY:-}
+      WebPush__PrivateKey: ${PROJECTK_WEBPUSH_PRIVATE_KEY:-}
+      WebPush__Subject: ${PROJECTK_WEBPUSH_SUBJECT:-}
       # LAN/test convenience: skip privileged-MFA for Admin/Manager (mirrors appsettings.E2E.json).
       # Defaults off; opt in per env with PROJECTK_BYPASS_MFA=true. Never enable for staging/prod.
       E2E__BypassPrivilegedMfa: ${PROJECTK_BYPASS_MFA:-false}

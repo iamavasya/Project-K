@@ -1,0 +1,52 @@
+/* Ionic core + basic CSS (PLAN.md §5: brand tokens come in Phase 1). */
+@use '@ionic/angular/css/core';
+@use '@ionic/angular/css/normalize';
+@use '@ionic/angular/css/structure';
+@use '@ionic/angular/css/typography';
+@use '@ionic/angular/css/padding';
+@use '@ionic/angular/css/flex-utils';
+@use '@ionic/angular/css/display';
+
+@use 'sass:meta';
+@use './theme/variables';
+
+/*
+ * Liquid Glass on iPhone (ios mode only): rdlabo's iOS 27 theme where Safari has the iOS 27
+ * generation's features, the iOS 26 one on the generation before, plain Ionic on older iOS.
+ * Dark comes in class form from theme/lileyka.scss (the person's choice in «Ще → Вигляд»).
+ */
+@supports (overflow-anchor: auto) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/default-variables');
+  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/ionic-theme-ios27');
+  @include meta.load-css('@rdlabo/ionic-theme-ios27/src/styles/md-remove-ios-class-effect');
+}
+
+@supports (text-wrap: pretty) and (not (overflow-anchor: auto)) {
+  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/default-variables');
+  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/ionic-theme-ios26');
+  @include meta.load-css('@rdlabo/ionic-theme-ios26/src/styles/md-remove-ios-class-effect');
+}
+
+// The brand goes on top of either theme.
+@include meta.load-css('./theme/lileyka');
+
+/* App feel in the browser and as a home-screen PWA: no page bounce, no text selection on chrome. */
+html,
+body {
+  overscroll-behavior: none;
+  /* No double-tap or pinch zoom: only scrolling, like a native screen. */
+  touch-action: pan-x pan-y;
+}
+
+/* iOS zooms into inputs with text under 16px on focus. */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+ion-tab-bar,
+ion-toolbar {
+  user-select: none;
+  -webkit-user-select: none;
+}

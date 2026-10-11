@@ -1,5 +1,10 @@
 @if (!isPublicShellRoute()) {
   <app-cold-start-banner />
+}
+@if (isInstallBannerRoute()) {
+  <app-install-app-banner />
+}
+@if (!isPublicShellRoute()) {
   <app-toolbar-header />
 }
 <p-toast />

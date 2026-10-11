@@ -50,6 +50,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IWaitlistRepository _waitlistEntries;
     private IInvitationRepository _invitations;
     private IAppNotificationRepository _appNotifications;
+    private IWebPushSubscriptionRepository _webPushSubscriptions;
     private ISystemSettingRepository _systemSettings;
     private IAppUserRepository _users;
     private IUserTileLayoutRepository _userTileLayouts;
@@ -89,6 +90,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
     public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
     public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
+    public IWebPushSubscriptionRepository WebPushSubscriptions => _webPushSubscriptions ??= new WebPushSubscriptionRepository(_context);
     public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
     public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
     public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);

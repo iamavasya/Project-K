@@ -100,6 +100,11 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         yield return Row("GET", $"/api/member/{g}/probes/probe-1/progress");
         yield return Row("PUT", $"/api/member/{g}/probes/probe-1/progress/status", "{}");
 
+        // Push to the phone: a device is always someone's
+        yield return Row("GET", "/api/notifications/push/public-key");
+        yield return Row("POST", "/api/notifications/push/subscriptions", "{}");
+        yield return Row("DELETE", "/api/notifications/push/subscriptions?endpoint=https%3A%2F%2Ffcm.googleapis.com%2Fx");
+
         // Protected static assets
         yield return Row("GET", "/badges_images/test.png");
     }

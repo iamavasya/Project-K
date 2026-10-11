@@ -47,4 +47,11 @@ public sealed class AppUserRepository : IAppUserRepository
             user.ActiveKurinKey = null;
         }
     }
+
+    public Task<Guid?> GetActiveKurinKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
+        => _context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userKey)
+            .Select(user => user.ActiveKurinKey)
+            .FirstOrDefaultAsync(cancellationToken);
 }

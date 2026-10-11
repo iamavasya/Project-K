@@ -808,6 +808,50 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("SystemSettings");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.WebPushSubscription", b =>
+                {
+                    b.Property<Guid>("WebPushSubscriptionKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("nvarchar(800)");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("UserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("WebPushSubscriptionKey");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("UserKey");
+
+                    b.ToTable("WebPushSubscriptions");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>
                 {
                     b.Property<Guid>("AgendaAssignmentKey")
@@ -2433,6 +2477,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("DuesEntry");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.WebPushSubscription", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>

@@ -396,6 +396,15 @@ export class SidebarMenuComponent implements OnChanges {
       command: () => this.close()
     });
 
+    // The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
+    // Its /install page offers the one-tap install or shows the steps for the phone at hand.
+    items.push({
+      label: 'Встановити на телефон',
+      icon: 'pi pi-mobile',
+      url: '/m/install',
+      command: () => this.close()
+    });
+
     items.push({
       label: 'Повідомити про проблему',
       icon: 'icon-bug',

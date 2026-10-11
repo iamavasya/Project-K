@@ -43,7 +43,15 @@ export default defineConfig({
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 7'] },
+      use: {
+        ...devices['Pixel 7'],
+        // A phone is sent to the phone app (/m/) unless it chose «Повна версія»; this project tests
+        // the web itself on a phone. Role suites bring their own state, saved with the same flag.
+        storageState: {
+          cookies: [],
+          origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: 'lk.preferWeb', value: '1' }] }]
+        }
+      },
       dependencies: ['auth-setup']
     }
   ]

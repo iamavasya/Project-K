@@ -187,6 +187,25 @@ bash — те саме з `./dev.sh`:
 (наприклад `ghcr.io/iamavasya/projectk-api:1.0`), далі `./dev.ps1 pull <env>` і
 `./dev.ps1 up <env>` — ні збірки, ні токена.
 
+## Телефонна PWA (`/m/`)
+
+Веб-образ (`Frontend/projectk-frontend/Dockerfile`) збирає і мобільну PWA з `mobile/` і віддає її тим
+самим nginx за адресою `<web>/m/`. Тож будь-яке середовище, підняте з `--build`, уже має PWA поруч із
+вебом, з тим самим API (`PROJECTK_API_URL` з `env.js`) і тією самою сесією: вхід у вебі — вхід у PWA.
+
+```powershell
+./dev.ps1 up dev --build         # PWA на цьому компі: http://localhost:4200/m/
+./dev.ps1 up tailscale --build   # з будь-якого пристрою в tailnet: http://100.64.66.7:4210/m/
+```
+
+- На комп'ютері зручно дивитися в DevTools у режимі пристрою (iPhone чи Pixel): Ionic вибирає вигляд
+  iOS чи Material за пристроєм; `?ionic:mode=ios` або `?ionic:mode=md` у адресі примушує один із них.
+- Для `tailscale` відкривай саме адресу tailnet (як і веб): CORS пускає одне джерело.
+- `watch` (hot-reload) PWA не віддає: там `ng serve` лише вебу. Для PWA — `up <env> --build`.
+- Звичайний http у tailnet — це не «безпечний контекст», тому service worker не реєструється: PWA
+  працює як сторінка, але без офлайну, а Android не запропонує «Встановити» (на iPhone «Поділитися →
+  На початковий екран» працює). Повна поведінка — на `localhost` або через HTTPS.
+
 ## Hot-reload
 
 `./dev.ps1 watch dev` монтує джерела і запускає `dotnet watch` + `ng serve` у контейнерах — правки
