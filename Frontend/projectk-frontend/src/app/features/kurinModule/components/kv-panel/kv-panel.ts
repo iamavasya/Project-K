@@ -114,7 +114,21 @@ export class KvPanelComponent implements OnChanges {
       }));
   }
 
+  // The table tracks rows by identity, so the Звʼязковий's row is built once per data change, not
+  // on every check: a fresh object each time re-rendered that row between mousedown and click, and
+  // its pencil never opened the dialog.
+  private kvRowsCache: { manager: MemberLookupDto | null; mentorRows: MentorAssignmentRow[]; rows: MentorAssignmentRow[] } | null = null;
+
   get kvRows(): MentorAssignmentRow[] {
+    if (this.kvRowsCache?.manager === this.manager && this.kvRowsCache.mentorRows === this.mentorRows) {
+      return this.kvRowsCache.rows;
+    }
+
+    this.kvRowsCache = { manager: this.manager, mentorRows: this.mentorRows, rows: this.buildKvRows() };
+    return this.kvRowsCache.rows;
+  }
+
+  private buildKvRows(): MentorAssignmentRow[] {
     if (!this.manager) {
       return this.mentorRows;
     }

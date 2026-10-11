@@ -107,6 +107,14 @@ describe('KvPanelComponent', () => {
     expect(component.kvRows[0].groups).toEqual([group]);
   });
 
+  it('hands the table the same rows until the data changes', () => {
+    component.manager = { memberKey: 'manager-member', userKey: 'manager-user', firstName: 'Manager', lastName: 'Member', middleName: null, userRole: 'KV.Zvyazkovyi' };
+    component.mentorRows = [];
+
+    expect(component.kvRows).toBe(component.kvRows);
+    expect(component.kvRows[0]).toBe(component.kvRows[0]);
+  });
+
   it('should navigate to the selected member profile', () => {
     component.onMemberSelect({
       memberKey: 'member-1',
