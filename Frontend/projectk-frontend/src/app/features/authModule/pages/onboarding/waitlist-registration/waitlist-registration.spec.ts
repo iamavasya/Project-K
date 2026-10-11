@@ -15,7 +15,10 @@ describe('WaitlistRegistrationComponent', () => {
       providers: [
         provideRouter([]),
         MessageService,
-        { provide: OnboardingService, useValue: { submitWaitlist: () => of(undefined) } }
+        {
+          provide: OnboardingService,
+          useValue: { submitWaitlist: () => of(undefined), getKurinNumberRange: () => of({ min: 1, max: 200 }) }
+        }
       ]
     });
     fixture = TestBed.createComponent(WaitlistRegistrationComponent);
@@ -50,5 +53,27 @@ describe('WaitlistRegistrationComponent', () => {
     expect(component.form.valid).toBeTrue();
     expect(element().querySelector('button[type=submit]')?.hasAttribute('disabled')).toBeFalse();
     expect(element().textContent).not.toContain('приймаємо лише курені');
+  });
+
+  it('refuses a kurin number outside the range, so nobody takes kurin 0 or 1153', () => {
+    fillEverythingBut(true);
+
+    for (const number of ['0', '201', '1153']) {
+      component.form.patchValue({ claimedKurinNameOrNumber: number });
+      expect(component.form.invalid).withContext(number).toBeTrue();
+    }
+    component.form.patchValue({ claimedKurinNameOrNumber: '200' });
+    expect(component.form.valid).toBeTrue();
+  });
+
+  it('lets a підготовчий курінь apply without a number', () => {
+    fillEverythingBut(true);
+    component.form.patchValue({ isPreparatoryKurin: true });
+    fixture.detectChanges();
+
+    expect(component.form.valid).toBeTrue();
+    expect(component.form.value.claimedKurinNameOrNumber).toBeUndefined();
+    expect(component.form.value.isPreparatoryKurin).toBeTrue();
+    expect(element().querySelector('#kurin')).toBeNull();
   });
 });

@@ -19,6 +19,31 @@
   line-height: 1.5;
 }
 
+.number-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 2rem;
+  margin-top: 1rem;
+}
+
+.number-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+}
+
+.number-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.number-problem {
+  color: var(--p-red-500);
+}
+
 .settings-actions {
   display: flex;
   justify-content: flex-end;

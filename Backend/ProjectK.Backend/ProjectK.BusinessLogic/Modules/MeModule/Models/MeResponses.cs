@@ -6,7 +6,7 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 public sealed class MyKurinRefDto
 {
     public Guid KurinKey { get; set; }
-    public int KurinNumber { get; set; }
+    public int? KurinNumber { get; set; }
     public string? NamedAfter { get; set; }
     /// <summary>Whether this is the kurin the token acts in; what can be done from the dashboard depends on it.</summary>
     public bool IsCurrent { get; set; }

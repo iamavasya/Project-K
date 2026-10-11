@@ -4,5 +4,6 @@ export interface GroupDto {
   name: string;
   description?: string | null;
   silhouetteUrl?: string | null;
-  kurinNumber: number;
+  /** Null for a підготовчий курінь. */
+  kurinNumber: number | null;
 }

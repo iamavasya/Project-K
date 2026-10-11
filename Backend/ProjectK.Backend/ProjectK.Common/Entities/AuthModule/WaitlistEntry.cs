@@ -35,6 +35,17 @@ public class WaitlistEntry : Entity
     public string? ClaimedKurinNameOrNumber { get; set; }
 
     /// <summary>
+    /// The applicant leads a підготовчий курінь, which has no number yet: approval opens it without one.
+    /// </summary>
+    public bool IsPreparatoryKurin { get; set; }
+
+    /// <summary>
+    /// How the entry came to be: a зв'язковий applied through the form, or a провід added the person
+    /// straight into a kurin and the entry exists only for their invitation to hang off.
+    /// </summary>
+    public WaitlistEntrySource Source { get; set; } = WaitlistEntrySource.Application;
+
+    /// <summary>
     /// The kurin this applicant's approval opened for them, when they applied as its leader.
     /// Activation seats them in it. Written here, on the record that exists only for as long as
     /// the application does, rather than on the account — where it read as the kurin the person
@@ -65,4 +76,13 @@ public enum WaitlistVerificationStatus
     Verified = 2,
     Rejected = 3,
     ApprovedForInvitation = 4
+}
+
+public enum WaitlistEntrySource
+{
+    /// <summary>Submitted through the public waitlist form.</summary>
+    Application = 0,
+
+    /// <summary>Opened on someone's behalf when a провід gave a member an account directly.</summary>
+    DirectAdd = 1
 }

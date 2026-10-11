@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OnboardingService } from '../../../services/onboarding-service/onboarding.service';
+import { KurinNumberRange, OnboardingService } from '../../../services/onboarding-service/onboarding.service';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
@@ -101,17 +101,30 @@ import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../.
           }
 
           @if (form.get('isKurinLeaderCandidate')?.value) {
-            <div class="flex flex-col gap-2">
-              <label for="kurin">Число куреня</label>
-              <input
-                pInputText
-                id="kurin"
-                formControlName="claimedKurinNameOrNumber"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                (input)="onKurinNumberInput($event)"
-              />
+            <div class="flex items-center gap-2">
+              <p-checkbox formControlName="isPreparatoryKurin" [binary]="true" inputId="preparatory" />
+              <label for="preparatory">Мій курінь є підготовчим (ще без числа)</label>
             </div>
+
+            @if (!form.get('isPreparatoryKurin')?.value) {
+              <div class="flex flex-col gap-2">
+                <label for="kurin">Число куреня</label>
+                <input
+                  pInputText
+                  id="kurin"
+                  formControlName="claimedKurinNameOrNumber"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  (input)="onKurinNumberInput($event)"
+                />
+                @if (kurinNumberOutOfRange) {
+                  <small class="text-red-500">Число куреня від {{ numberRange.min }} до {{ numberRange.max }}.</small>
+                }
+              </div>
+            } @else {
+              <p-message severity="info" styleClass="w-full"
+                text="Число куреню можна буде вписати пізніше, у його налаштуваннях." />
+            }
           }
 
           <p-button label="Подати заявку"
@@ -144,6 +157,8 @@ export class WaitlistRegistrationComponent {
   maxDate = new Date();
   readonly phoneMask = UKRAINIAN_PHONE_MASK;
   readonly phonePlaceholder = UKRAINIAN_PHONE_PLACEHOLDER;
+  /** The server says the real range; this is its default until it answers. */
+  numberRange: KurinNumberRange = { min: 1, max: 200 };
 
   // Only a Зв'язковий may apply for now: the kurin is what gets onboarded, and a person on
   // their own has nowhere to be placed. The box is required, so the button stays disabled
@@ -162,8 +177,45 @@ export class WaitlistRegistrationComponent {
       stanytsia: ['', [Validators.required, Validators.maxLength(120)]],
       regionOrCountry: ['', [Validators.required, Validators.maxLength(120)]],
       isKurinLeaderCandidate: [false, Validators.requiredTrue],
-      claimedKurinNameOrNumber: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]]
+      isPreparatoryKurin: [false],
+      claimedKurinNameOrNumber: ['', this.kurinNumberValidators()]
     });
+
+    // A підготовчий курінь has no number yet, so the field steps aside rather than stay required.
+    this.form.get('isPreparatoryKurin')!.valueChanges.subscribe((preparatory: boolean) => {
+      const number = this.form.get('claimedKurinNameOrNumber')!;
+      if (preparatory) {
+        number.reset('');
+        number.disable();
+      } else {
+        number.enable();
+      }
+    });
+
+    this.onboardingService.getKurinNumberRange().subscribe({
+      next: range => {
+        this.numberRange = range;
+        const number = this.form.get('claimedKurinNameOrNumber')!;
+        number.setValidators(this.kurinNumberValidators());
+        number.updateValueAndValidity();
+      },
+      // The default range stands in; the server still checks the real one.
+      error: () => undefined
+    });
+  }
+
+  get kurinNumberOutOfRange(): boolean {
+    const number = this.form.get('claimedKurinNameOrNumber')!;
+    return number.dirty && (number.hasError('min') || number.hasError('max'));
+  }
+
+  private kurinNumberValidators() {
+    return [
+      Validators.required,
+      Validators.pattern(/^[0-9]+$/),
+      Validators.min(this.numberRange.min),
+      Validators.max(this.numberRange.max)
+    ];
   }
 
   onKurinNumberInput(event: Event): void {

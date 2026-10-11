@@ -4,6 +4,7 @@ using ProjectK.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
@@ -19,6 +20,8 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
+
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.API.Controllers.AuthModule;
 
@@ -52,6 +55,15 @@ public class OnboardingController : ControllerBase
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }
+
+    /// <summary>
+    /// The numbers a kurin may carry, so the forms can say so before the server refuses.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("kurin-numbers")]
+    [ProducesResponseType(typeof(KurinNumberRange), StatusCodes.Status200OK)]
+    public IActionResult GetKurinNumberRange([FromServices] IOptions<KurinNumberOptions> numbers)
+        => Ok(new KurinNumberRange(KurinNumberOptions.MinNumber, numbers.Value.MaxNumber));
 
     /// <summary>
     /// Approves a waitlist entry and emails the applicant an invitation link.

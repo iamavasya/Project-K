@@ -148,7 +148,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text($"Курінь #{report.Kurin.Number}").FontSize(15).Bold();
+                column.Item().Text(report.Kurin.Number is int number ? $"Курінь #{number}" : "Підготовчий курінь").FontSize(15).Bold();
                 column.Item().Text("Beta export звіту").FontSize(8).SemiBold().FontColor(Colors.Orange.Darken2);
                 column.Item().Text($"Звіт сформовано: {ReportClock.Format(report.Header.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
@@ -179,7 +179,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 row.ConstantItem(110).Element(item => ComposeKurinSilhouette(item, report.Kurin.Number));
                 row.RelativeItem().Element(item => KeyValueGrid(item, new[]
                 {
-                    ("Число куреня", report.Kurin.Number.ToString(CultureInfo.InvariantCulture)),
+                    ("Число куреня", report.Kurin.Number?.ToString(CultureInfo.InvariantCulture) ?? "підготовчий"),
                     ("Станиця", report.Kurin.Stanytsia ?? "-"),
                     ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
                     ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
@@ -189,7 +189,8 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeKurinSilhouette(IContainer container, int number)
+    /// <summary>The kurin's plaque; a підготовчий курінь has no number yet, so its plaque is blank.</summary>
+    private static void ComposeKurinSilhouette(IContainer container, int? number)
     {
         container
             .Width(90)
@@ -199,7 +200,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             .Background(Colors.Blue.Lighten5)
             .AlignCenter()
             .AlignMiddle()
-            .Text(number.ToString(CultureInfo.InvariantCulture))
+            .Text(number?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)
             .FontSize(42)
             .Bold()
             .FontColor(Colors.Blue.Darken2);

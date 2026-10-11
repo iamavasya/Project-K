@@ -14,12 +14,24 @@ export interface WaitlistRegistration {
   stanytsia: string;
   regionOrCountry: string;
   isKurinLeaderCandidate: boolean;
-  claimedKurinNameOrNumber?: string;
+  claimedKurinNameOrNumber?: string | null;
+  /** The applicant leads a підготовчий курінь, which has no number yet. */
+  isPreparatoryKurin?: boolean;
+}
+
+/** How an entry came to be: a зв'язковий applied, or a провід added the person straight into a kurin. */
+export type WaitlistEntrySource = 'Application' | 'DirectAdd';
+
+/** The numbers a kurin may carry. */
+export interface KurinNumberRange {
+  min: number;
+  max: number;
 }
 
 export interface WaitlistEntry extends WaitlistRegistration {
   waitlistEntryKey: string;
   verificationStatus: string | number;
+  source?: WaitlistEntrySource;
   requestedAtUtc: string;
   approvedAtUtc?: string;
   invitationSentAtUtc?: string;
@@ -53,6 +65,10 @@ export class OnboardingService {
 
   submitWaitlist(registration: WaitlistRegistration): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/waitlist`, registration);
+  }
+
+  getKurinNumberRange(): Observable<KurinNumberRange> {
+    return this.http.get<KurinNumberRange>(`${this.apiUrl}/kurin-numbers`);
   }
 
   getWaitlistEntries(): Observable<WaitlistEntry[]> {

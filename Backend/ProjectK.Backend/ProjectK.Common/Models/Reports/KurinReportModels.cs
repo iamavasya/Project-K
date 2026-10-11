@@ -33,7 +33,7 @@ public sealed record KurinReportHeader(
 
 public sealed record KurinReportKurin(
     Guid KurinKey,
-    int Number,
+    int? Number,
     string? Stanytsia,
     string? RegionOrCountry,
     string? NamedAfter,

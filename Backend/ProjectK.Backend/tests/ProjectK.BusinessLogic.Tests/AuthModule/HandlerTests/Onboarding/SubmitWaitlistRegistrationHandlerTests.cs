@@ -106,11 +106,69 @@ public class SubmitWaitlistRegistrationHandlerTests
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // A rejected applicant comes back with a corrected application; the old entry must not hold
+    // the address until its cleanup.
+    [Fact]
+    public async Task Handle_ShouldReopenARejectedEntry_WhenTheApplicantAppliesAgain()
+    {
+        var rejected = new WaitlistEntry
+        {
+            WaitlistEntryKey = Guid.NewGuid(),
+            Email = "ihor.kovalenko@example.com",
+            ClaimedKurinNameOrNumber = "0",
+            VerificationStatus = WaitlistVerificationStatus.Rejected,
+            ReviewedAtUtc = DateTime.UtcNow.AddDays(-1),
+            VerificationNote = "Курінь 0 не існує"
+        };
+        _waitlistRepository
+            .Setup(x => x.GetByEmailAsync(rejected.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(rejected);
+
+        var result = await _handler.Handle(CreateCommand(claimedKurinNumber: null, isPreparatoryKurin: true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        result.Data.Should().Be(rejected.WaitlistEntryKey);
+        rejected.VerificationStatus.Should().Be(WaitlistVerificationStatus.Submitted);
+        rejected.IsPreparatoryKurin.Should().BeTrue();
+        rejected.ClaimedKurinNameOrNumber.Should().BeNull();
+        rejected.ReviewedAtUtc.Should().BeNull();
+        rejected.VerificationNote.Should().BeNull();
+        _waitlistRepository.Verify(x => x.Update(rejected, It.IsAny<CancellationToken>()), Times.Once);
+        _waitlistRepository.Verify(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(WaitlistVerificationStatus.Submitted)]
+    [InlineData(WaitlistVerificationStatus.ApprovedForInvitation)]
+    public async Task Handle_ShouldRefuse_WhenTheAddressIsStillInTheQueue(WaitlistVerificationStatus status)
+    {
+        _waitlistRepository
+            .Setup(x => x.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WaitlistEntry { Email = "ihor.kovalenko@example.com", VerificationStatus = status });
+
+        var result = await _handler.Handle(CreateCommand(), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("WaitlistEntryExists");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSayPreparatory_WhenTheKurinHasNoNumber()
+    {
+        var result = await _handler.Handle(CreateCommand(claimedKurinNumber: null, isPreparatoryKurin: true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        _notifications.Verify(x => x.NotifyManyAsync(
+            It.Is<IEnumerable<NotificationRequest>>(requests => requests.Single().Body == "Ihor Kovalenko · курінь підготовчий"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static SubmitWaitlistRegistrationCommand CreateCommand(
         string? stanytsia = "Kyiv",
         string? regionOrCountry = "Ukraine",
         bool isKurinLeaderCandidate = true,
-        string? claimedKurinNumber = "97")
+        string? claimedKurinNumber = "97",
+        bool isPreparatoryKurin = false)
     {
         return new SubmitWaitlistRegistrationCommand(
             "Ihor",
@@ -121,6 +179,7 @@ public class SubmitWaitlistRegistrationHandlerTests
             stanytsia,
             regionOrCountry,
             isKurinLeaderCandidate,
-            claimedKurinNumber);
+            claimedKurinNumber,
+            isPreparatoryKurin);
     }
 }

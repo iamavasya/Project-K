@@ -13,4 +13,5 @@ public record SubmitWaitlistRegistrationCommand(
     string? Stanytsia,
     string? RegionOrCountry,
     bool IsKurinLeaderCandidate,
-    string? ClaimedKurinNameOrNumber) : IRequest<ServiceResult<Guid>>;
+    string? ClaimedKurinNameOrNumber,
+    bool IsPreparatoryKurin = false) : IRequest<ServiceResult<Guid>>;

@@ -4,7 +4,8 @@ namespace ProjectK.Common.Models.Dtos.KurinModule.Requests;
 
 public class UpdateKurinRequest
 {
-    public int Number { get; set; }
+    /// <summary>The kurin's number; null makes it a підготовчий курінь.</summary>
+    public int? Number { get; set; }
 
     [MaxLength(120)]
     public string? Stanytsia { get; set; }

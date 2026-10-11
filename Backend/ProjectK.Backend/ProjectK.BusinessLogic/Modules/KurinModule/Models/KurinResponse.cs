@@ -11,7 +11,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 public class KurinResponse
 {
     public Guid KurinKey { get; set; }
-    public int Number { get; set; }
+    public int? Number { get; set; }
+
+    /// <summary>A підготовчий курінь has no number yet.</summary>
+    public bool IsPreparatory => Number is null;
 
     /// <summary>Яка гілка. Read by the UI, which shows юнацькі речі only where they mean something.</summary>
     public KurinBranch Branch { get; set; }

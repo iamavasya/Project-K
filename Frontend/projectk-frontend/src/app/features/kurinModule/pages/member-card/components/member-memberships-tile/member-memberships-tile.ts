@@ -6,6 +6,7 @@ import { KURIN_BRANCH_LABELS } from '../../../../models/enums/kurin-branch.enum'
 import { MEMBERSHIP_KIND_LABELS } from '../../../../models/enums/membership-kind.enum';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { RouterLink } from '@angular/router';
+import { kurinLabel } from '../../../../../../shared/functions/kurin-label.function';
 
 /**
  * Тека «Членства» з коробки людини: де вона є зараз і де була раніше.
@@ -64,7 +65,7 @@ export class MemberMembershipsTileComponent {
   }
 
   kurinTitle(membership: MembershipDto): string {
-    return `к. ч. ${membership.kurinNumber}`;
+    return kurinLabel(membership.kurinNumber);
   }
 
   period(membership: MembershipDto): string {

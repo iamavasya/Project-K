@@ -396,6 +396,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<bool>("IsKurinLeaderCandidate")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsPreparatoryKurin")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -418,6 +421,10 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<Guid?>("ReviewedByUserKey")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Stanytsia")
                         .HasMaxLength(120)
@@ -1113,7 +1120,7 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int>("Number")
+                    b.Property<int?>("Number")
                         .HasColumnType("int");
 
                     b.Property<bool>("ProfileVerificationEnabled")
@@ -1139,7 +1146,8 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasKey("KurinKey");
 
                     b.HasIndex("Number")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Number] IS NOT NULL");
 
                     b.ToTable("Kurins");
                 });

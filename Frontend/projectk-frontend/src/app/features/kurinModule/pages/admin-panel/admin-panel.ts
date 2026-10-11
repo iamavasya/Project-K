@@ -56,7 +56,10 @@ export class AdminPanelComponent implements OnInit {
         hiddenOn: ['delete'],
       }
     ],
-    displayName: (entity: KurinDto) => `${entity.number} курінь`,
+    displayName: (entity: KurinDto) => {
+      const name = entity.number === null ? 'Підготовчий курінь' : `${entity.number} курінь`;
+      return entity.namedAfter ? `${name} ім. ${entity.namedAfter}` : name;
+    },
     createFactory: () => ({ kurinKey: '', number: null }),
   }
 
