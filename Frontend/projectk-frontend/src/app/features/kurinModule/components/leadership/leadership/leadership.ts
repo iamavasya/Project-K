@@ -36,12 +36,11 @@ const COMMON_ROLES: LeadershipRole[] = [
 const MULTI_MEMBER_ROLES = new Set<LeadershipRole>([LeadershipRole.Vykhovnyk, LeadershipRole.Instruktor]);
 
 export const LEADERSHIP_ROLE_MAP: Record<string, LeadershipRole[]> = {
-  kv: [ LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.Zvyazkovyi ],
   kurin: [ LeadershipRole.Kurinnuy, ...COMMON_ROLES, LeadershipRole.OtherKurin ],
   group: [ LeadershipRole.Hurtkoviy, ...COMMON_ROLES, LeadershipRole.OtherGroup ]
 };
 
-type LeadershipType = 'kurin' | 'group' | 'kv';
+type LeadershipType = 'kurin' | 'group';
 
 @Component({
   selector: 'app-leadership-component',
@@ -124,7 +123,7 @@ export class LeadershipComponent implements OnInit {
     const type = this.leadershipType.toLowerCase();
 
     if (type === 'group') groupKey = this.entityKey ?? undefined;
-    else if (type === 'kurin' || type === 'kv') kurinKey = this.entityKey ?? undefined;
+    else if (type === 'kurin') kurinKey = this.entityKey ?? undefined;
 
     this.memberService.getAll(groupKey, kurinKey).pipe(
       map((fullMembers: MemberDto[]) => 
@@ -253,7 +252,7 @@ export class LeadershipComponent implements OnInit {
 
     const payload: LeadershipDto = {
       leadershipKey: this.leadershipKey,
-      type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as 'kurin' | 'group' | 'kv', 
+      type: (this.leadershipType![0].toUpperCase() + this.leadershipType?.slice(1)) as 'kurin' | 'group',
       entityKey: this.entityKey!,
       startDate: toDateOnlyString(new Date())!,
       endDate: null,
@@ -283,7 +282,7 @@ export class LeadershipComponent implements OnInit {
         this.isLoading = false;
         this.patchForm(response);
         const type = this.leadershipType?.toLowerCase();
-        if (type == 'kurin' || type == 'kv') this.router.navigate(['/kurin']);
+        if (type == 'kurin') this.router.navigate(['/kurin']);
         else if (type == 'group') this.router.navigate(['/group', this.entityKey]);
       },
       error: (err) => {

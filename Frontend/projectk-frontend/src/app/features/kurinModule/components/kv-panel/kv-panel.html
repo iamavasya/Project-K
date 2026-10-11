@@ -19,18 +19,9 @@
               size="small"
               [rounded]="true"
               [text]="true"
-              pTooltip="Додати впорядника" ariaLabel="Додати впорядника"
+              pTooltip="Додати до КВ" ariaLabel="Додати до КВ"
               tooltipPosition="bottom"
               (onClick)="openAssignmentDialog()" />
-            <p-button
-              icon="pi pi-users"
-              severity="secondary"
-              size="small"
-              [rounded]="true"
-              [text]="true"
-              pTooltip="Склад КВ: інструктори, впорядники" ariaLabel="Склад КВ"
-              tooltipPosition="bottom"
-              (onClick)="openKvLeadership()" />
             <p-button
               icon="pi pi-refresh"
               [text]="true"
@@ -65,7 +56,7 @@
           <span class="kv-member-name">{{ getMemberName(row.mentor) }}</span>
         </td>
         <td data-mobile-label="Статус">
-          <p-tag [value]="getStatusLabel(row.mentor)" [severity]="getStatusSeverity(row.mentor)" [rounded]="true" />
+          <p-tag [value]="getStatusLabel(row)" [severity]="getStatusSeverity(row)" [rounded]="true" />
         </td>
         <td data-mobile-label="Гуртки">
           @if (row.groups.length) {
@@ -137,9 +128,9 @@
   [modal]="true"
   [closable]="true"
   [style]="{ width: 'min(92vw, 38rem)' }"
-  header="Налаштування впорядника">
+  header="Учасник КВ">
   <div class="kv-dialog-body">
-    <label for="mentorSelect">Впорядник</label>
+    <label for="mentorSelect">Учасник</label>
     <p-select
       inputId="mentorSelect"
       [options]="mentorOptions"
@@ -163,7 +154,7 @@
       display="chip"
       placeholder="Оберіть гуртки"
       [style]="{ width: '100%' }" />
-    <p class="kv-muted">Без гуртків людина стане впорядником КВ без гуртка. Інструкторів додають у «Склад КВ».</p>
+    <p class="kv-muted">З гуртком людина — впорядник, без гуртка — інструктор КВ.</p>
   </div>
 
   <ng-template pTemplate="footer">

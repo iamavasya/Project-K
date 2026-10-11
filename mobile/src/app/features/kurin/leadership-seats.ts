@@ -118,3 +118,36 @@ export function handoverRequest(kv: LeadershipDto | null, kurinKey: string, inco
     ],
   };
 }
+
+// ── Місце в КВ за гуртками (web kv-panel syncKvSeat) ────────────────────────────────────────────
+
+/**
+ * The КВ's провід with `member`'s seat in step with their гуртки: with none they sit as інструктор
+ * and a впорядник seat ends; with some the mentor assignment makes them a впорядник, so the
+ * інструктор seat ends. Null when the провід already says so.
+ */
+export function kvSeatRequest(
+  kv: LeadershipDto | null,
+  kurinKey: string,
+  member: MemberLookupDto,
+  hasGroups: boolean,
+  today: string,
+): UpsertLeadershipRequest | null {
+  const active = (kv?.leadershipHistories ?? []).filter((h) => !h.endDate && h.member);
+  const theirs = (h: LeadershipHistoryDto) => h.member.memberKey === member.memberKey;
+  const outgoing = hasGroups ? 'Instruktor' : 'Vykhovnyk';
+  const toEnd = active.filter((h) => theirs(h) && h.role === outgoing);
+  const toSeat = !hasGroups && !active.some((h) => theirs(h) && h.role === 'Instruktor');
+  if (!toSeat && toEnd.length === 0) return null;
+
+  return {
+    type: 'KV',
+    entityKey: kurinKey,
+    startDate: today,
+    endDate: null,
+    leadershipHistories: [
+      ...active.filter((h) => !toEnd.includes(h)).map((h) => ({ role: h.role, startDate: h.startDate, endDate: null, member: lookup(h.member) })),
+      ...(toSeat ? [{ role: 'Instruktor', startDate: today, endDate: null, member: lookup(member) }] : []),
+    ],
+  };
+}

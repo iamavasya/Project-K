@@ -139,51 +139,86 @@ describe('KvPanelComponent', () => {
     component.loadData();
 
     expect(component.kvRows.map(row => row.mentor.memberKey)).toEqual(['manager-member', 'instructor-member']);
-    expect(component.getStatusLabel(component.kvRows[1].mentor)).toBe('Інструктор');
+    expect(component.getStatusLabel(component.kvRows[1])).toBe('Інструктор');
   });
 
-  it('seats a впорядник without a гурток when saved with none', () => {
-    const leadership: LeadershipDto = {
-      leadershipKey: 'kv-1',
-      type: 'kv',
-      entityKey: 'kurin-1',
-      startDate: '2026-01-01',
-      endDate: null,
-      leadershipHistories: [{
-        leadershipHistoryKey: 'h1',
+  it('names the status by the гуртки, not by the seat', () => {
+    const seatedMentor = { memberKey: 'm', userKey: 'u', firstName: 'M', lastName: 'M', middleName: null, userRole: 'KV.Vykhovnyk' };
+    const seatedInstructor = { ...seatedMentor, userRole: 'KV.Instruktor' };
+    const group = { groupKey: 'g1', name: 'Кицьки' } as GroupDto;
+
+    expect(component.getStatusLabel({ mentor: seatedMentor, groups: [] })).toBe('Інструктор');
+    expect(component.getStatusLabel({ mentor: seatedInstructor, groups: [group] })).toBe('Впорядник');
+    expect(component.getStatusLabel({ mentor: seatedMentor, groups: [], isManager: true })).toBe("Зв'язковий");
+  });
+
+  describe('the КВ seat on save', () => {
+    const manager = { memberKey: 'manager-member', firstName: 'Manager', lastName: 'Member', middleName: null };
+    const person = { memberKey: 'new-member', userKey: 'new-user', firstName: 'New', lastName: 'Person', middleName: null };
+
+    function kvWith(...seats: [string, string][]): LeadershipDto {
+      return {
         leadershipKey: 'kv-1',
-        role: 'Zvyazkovyi',
+        type: 'kv',
+        entityKey: 'kurin-1',
         startDate: '2026-01-01',
         endDate: null,
-        member: { memberKey: 'manager-member', firstName: 'Manager', lastName: 'Member', middleName: null }
-      }]
-    };
-    leadershipService.getLeadershipByTypeAndKey.and.returnValue(of(leadership));
-    leadershipService.update.and.returnValue(of(leadership));
-    groupService.getAllByKurinKey.and.returnValue(of([]));
-    groupService.getMentorAssignments.and.returnValue(of([]));
-    memberService.getKVMembers.and.returnValue(of([]));
-    memberService.getMentorCandidates.and.returnValue(of([]));
-    fixture.componentRef.setInput('kurinKey', 'kurin-1');
-    component.mentorCandidates = [{ memberKey: 'new-member', userKey: 'new-user', firstName: 'New', lastName: 'Mentor', middleName: null }];
-    component.selectedMentorUserKey = 'new-user';
-    component.selectedGroupKeys = [];
+        leadershipHistories: seats.map(([role, memberKey], index) => ({
+          leadershipHistoryKey: `h${index}`,
+          leadershipKey: 'kv-1',
+          role,
+          startDate: '2026-01-01',
+          endDate: null,
+          member: memberKey === manager.memberKey ? manager : person
+        }))
+      };
+    }
 
-    component.saveAssignments();
+    function save(leadership: LeadershipDto, groupKeys: string[]): void {
+      leadershipService.getLeadershipByTypeAndKey.and.returnValue(of(leadership));
+      leadershipService.update.and.returnValue(of(leadership));
+      groupService.assignMentor.and.returnValue(of(void 0) as never);
+      groupService.getAllByKurinKey.and.returnValue(of([]));
+      groupService.getMentorAssignments.and.returnValue(of([]));
+      memberService.getKVMembers.and.returnValue(of([]));
+      memberService.getMentorCandidates.and.returnValue(of([]));
+      fixture.componentRef.setInput('kurinKey', 'kurin-1');
+      component.mentorCandidates = [person];
+      component.selectedMentorUserKey = 'new-user';
+      component.selectedGroupKeys = groupKeys;
 
-    const [key, payload] = leadershipService.update.calls.mostRecent().args;
-    expect(key).toBe('kv-1');
-    expect(payload.leadershipHistories.map(history => [history.role, history.member.memberKey]))
-      .toEqual([['Zvyazkovyi', 'manager-member'], ['Vykhovnyk', 'new-member']]);
-  });
+      component.saveAssignments();
+    }
 
-  it('opens the КВ провід form for its leadership', () => {
-    leadershipService.getLeadershipByTypeAndKey.and.returnValue(of({ leadershipKey: 'kv-1', startDate: '', endDate: null, leadershipHistories: [] }));
-    fixture.componentRef.setInput('kurinKey', 'kurin-1');
+    const sentSeats = () => leadershipService.update.calls.mostRecent().args[1].leadershipHistories
+      .map(history => [history.role, history.member.memberKey]);
 
-    component.openKvLeadership();
+    it('seats someone saved without a гурток as інструктор', () => {
+      save(kvWith(['Zvyazkovyi', 'manager-member']), []);
 
-    expect(router.navigate).toHaveBeenCalledWith(['/leadership', 'kv-1', 'kv', 'kurin-1']);
+      expect(leadershipService.update.calls.mostRecent().args[0]).toBe('kv-1');
+      expect(sentSeats()).toEqual([['Zvyazkovyi', 'manager-member'], ['Instruktor', 'new-member']]);
+    });
+
+    it('turns a впорядник left without гуртки into an інструктор', () => {
+      save(kvWith(['Zvyazkovyi', 'manager-member'], ['Vykhovnyk', 'new-member']), []);
+
+      expect(sentSeats()).toEqual([['Zvyazkovyi', 'manager-member'], ['Instruktor', 'new-member']]);
+    });
+
+    it('ends the інструктор seat once a гурток is assigned', () => {
+      save(kvWith(['Zvyazkovyi', 'manager-member'], ['Instruktor', 'new-member']), ['g1']);
+
+      expect(groupService.assignMentor).toHaveBeenCalledWith('g1', 'new-user');
+      expect(sentSeats()).toEqual([['Zvyazkovyi', 'manager-member']]);
+    });
+
+    it('leaves the провід alone for a newcomer given a гурток', () => {
+      save(kvWith(['Zvyazkovyi', 'manager-member']), ['g1']);
+
+      expect(groupService.assignMentor).toHaveBeenCalledWith('g1', 'new-user');
+      expect(leadershipService.update).not.toHaveBeenCalled();
+    });
   });
 });
 
