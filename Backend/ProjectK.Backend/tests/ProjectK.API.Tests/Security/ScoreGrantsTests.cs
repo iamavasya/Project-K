@@ -20,7 +20,6 @@ public class ScoreGrantsTests
     [InlineData("Member")]
     [InlineData("Group.Pysar")]
     [InlineData("Kurin.Skarbnyk")]
-    [InlineData("KV.Instruktor")]
     public void Others_SeeTheTable_AndOnlyTheirOwnPoints(string role)
     {
         Assert.Equal(AccessScope.KurinWide, Widest(role, ResourceType.KurinScore, ResourceAction.Read));
@@ -34,6 +33,7 @@ public class ScoreGrantsTests
     [InlineData("Group.Suddya")]
     [InlineData("Group.Hurtkoviy")]
     [InlineData("KV.Vykhovnyk")]
+    [InlineData("KV.Instruktor")]
     public void TheGurtoksScorers_ScoreTheirOwnGurtok(string role)
     {
         foreach (var action in Keeping)
@@ -62,6 +62,7 @@ public class ScoreGrantsTests
     [InlineData("Kurin.Kurinnuy", null)]
     [InlineData("Group.Suddya", null)]
     [InlineData("KV.Vykhovnyk", null)]
+    [InlineData("KV.Instruktor", null)]
     public void OnlyTheKurinsSuddyaAndTheZvyazkovyi_SetTheRules(string role, AccessScope? expected)
     {
         Assert.Equal(expected, Widest(role, ResourceType.KurinScore, ResourceAction.Manage));
@@ -69,6 +70,7 @@ public class ScoreGrantsTests
 
     [Theory]
     [InlineData("KV.Vykhovnyk", AccessScope.KurinWide)]
+    [InlineData("KV.Instruktor", AccessScope.KurinWide)]
     [InlineData("KV.Zvyazkovyi", AccessScope.KurinWide)]
     [InlineData("Kurin.Suddya", null)]
     [InlineData("Kurin.Kurinnuy", null)]

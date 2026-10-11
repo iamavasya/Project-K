@@ -1,6 +1,6 @@
 import { kvArchive, kvRows } from './kurin.labels';
 import { LeadershipHistoryDto, MemberLookupDto, MentorAssignmentDto } from './kurin.models';
-import { handoverRequest, holdersLine, holdsSeveral, leadershipRequest, officePeriod, pastOffices, sameSeats, seatsOf } from './leadership-seats';
+import { handoverRequest, holdersLine, holdsSeveral, kvSeatRequest, leadershipRequest, officePeriod, pastOffices, sameSeats, seatsOf } from './leadership-seats';
 
 const person = (memberKey: string, lastName: string, extra: Partial<MemberLookupDto> = {}): MemberLookupDto => ({
   memberKey, firstName: 'Імʼя', lastName, middleName: null, ...extra,
@@ -98,6 +98,33 @@ describe('провід seats', () => {
       ],
     });
     expect(handoverRequest(null, 'k1', incoming, '2026-10-11').leadershipHistories.map((h) => h.role)).toEqual(['Zvyazkovyi']);
+  });
+
+  describe('КВ seat by гуртки', () => {
+    const zv = person('m1', 'Коваль');
+    const who = person('m2', 'Шевчук', { userKey: 'u2' });
+    const kvOf = (...histories: LeadershipHistoryDto[]) => ({ leadershipKey: 'kv1', startDate: '2024-09-01', endDate: null, leadershipHistories: histories });
+    const seats = (kv: ReturnType<typeof kvOf> | null, hasGroups: boolean) =>
+      kvSeatRequest(kv, 'k1', who, hasGroups, '2026-10-11')?.leadershipHistories.map((h) => `${h.role}:${h.member.memberKey}`) ?? null;
+
+    it('seats someone without a гурток as інструктор, a first КВ провід included', () => {
+      expect(seats(kvOf(office('Zvyazkovyi', zv, '2024-09-01')), false)).toEqual(['Zvyazkovyi:m1', 'Instruktor:m2']);
+      expect(seats(null, false)).toEqual(['Instruktor:m2']);
+    });
+
+    it('turns a впорядник seat without гуртки into an інструктор one', () => {
+      expect(seats(kvOf(office('Zvyazkovyi', zv, '2024-09-01'), office('Vykhovnyk', who, '2025-01-01')), false))
+        .toEqual(['Zvyazkovyi:m1', 'Instruktor:m2']);
+    });
+
+    it('ends the інструктор seat once a гурток is assigned', () => {
+      expect(seats(kvOf(office('Zvyazkovyi', zv, '2024-09-01'), office('Instruktor', who, '2025-01-01')), true)).toEqual(['Zvyazkovyi:m1']);
+    });
+
+    it('writes nothing when the seat already matches', () => {
+      expect(seats(kvOf(office('Instruktor', who, '2025-01-01')), false)).toBeNull();
+      expect(seats(kvOf(office('Zvyazkovyi', zv, '2024-09-01')), true)).toBeNull();
+    });
   });
 });
 

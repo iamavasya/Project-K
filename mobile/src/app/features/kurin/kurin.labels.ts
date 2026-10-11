@@ -240,7 +240,10 @@ export interface KvRow {
   isManager: boolean;
 }
 
-/** The Звʼязковий first, then the впорядники by name, each with the гуртки they are closed over. */
+/**
+ * The Звʼязковий first, then the rest of the КВ by name, each with the гуртки they are closed over.
+ * The гуртки name the status, not the seat: a впорядник runs at least one, an інструктор none.
+ */
 export function kvRows(kvMembers: MemberLookupDto[], assignments: MentorAssignmentDto[], groups: GroupDto[]): KvRow[] {
   const same = (a: MemberLookupDto, b: MemberLookupDto) =>
     a.userKey && b.userKey ? a.userKey === b.userKey : a.memberKey === b.memberKey;
@@ -258,13 +261,13 @@ export function kvRows(kvMembers: MemberLookupDto[], assignments: MentorAssignme
     rows.set(key, row);
   }
   for (const member of kvMembers) {
-    if (!holdsOffice(member.userRole, 'Hurtkoviy') && !holdsOffice(member.userRole, 'Vykhovnyk')) continue;
+    if (!['Hurtkoviy', 'Vykhovnyk', 'Instruktor'].some((office) => holdsOffice(member.userRole, office))) continue;
     const key = member.userKey ?? member.memberKey;
     if (!rows.has(key)) rows.set(key, { member, groups: [], groupKeys: [] });
   }
   const mentors = [...rows.values()]
     .sort((a, b) => fullName(a.member).localeCompare(fullName(b.member), 'uk'))
-    .map((row) => ({ ...row, status: 'Впорядник', isManager: false }));
+    .map((row) => ({ ...row, status: row.groups.length ? 'Впорядник' : 'Інструктор', isManager: false }));
   const manager = kvMembers.find((m) => holdsOffice(m.userRole, 'Zvyazkovyi'));
   if (!manager) return mentors;
   const own = mentors.find((row) => same(row.member, manager));

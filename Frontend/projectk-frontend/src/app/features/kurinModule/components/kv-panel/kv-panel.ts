@@ -192,10 +192,10 @@ export class KvPanelComponent implements OnChanges {
       ...toRevoke.map(groupKey => this.groupService.revokeMentor(groupKey, this.selectedMentorUserKey as string))
     ];
 
-    // Saved with no гуртки, someone who is not in the КВ yet becomes a впорядник without one.
-    const newcomer = this.mentorCandidates.find(candidate => candidate.userKey === this.selectedMentorUserKey);
-    if (selectedGroupKeys.size === 0 && newcomer && !this.isInKv(newcomer)) {
-      requests.push(this.seatInKv(newcomer, LeadershipRole.Vykhovnyk));
+    const person = this.kvRows.find(row => row.mentor.userKey === this.selectedMentorUserKey)?.mentor
+      ?? this.mentorCandidates.find(candidate => candidate.userKey === this.selectedMentorUserKey);
+    if (person && !this.isUserRole(person, 'Manager')) {
+      requests.push(this.syncKvSeat(person, selectedGroupKeys.size > 0));
     }
 
     if (requests.length === 0) {
@@ -214,22 +214,6 @@ export class KvPanelComponent implements OnChanges {
         console.error('Error saving mentor assignments:', err);
         this.assignmentSaveInProgress = false;
       }
-    });
-  }
-
-  /** Opens the КВ провід form, where інструктори and впорядники are seated with or without a гурток. */
-  openKvLeadership(): void {
-    if (!this.canManageKv) {
-      return;
-    }
-
-    this.loadKvLeadership().subscribe(leadership => {
-      if (leadership?.leadershipKey) {
-        this.router.navigate(['/leadership', leadership.leadershipKey, 'kv', this.kurinKey()]);
-        return;
-      }
-
-      this.router.navigate(['/leadership/create', 'kv', this.kurinKey()]);
     });
   }
 
@@ -290,36 +274,22 @@ export class KvPanelComponent implements OnChanges {
       }
     });
   }
-  getStatusLabel(member: MemberLookupDto): string {
-    if (this.isUserRole(member, 'Manager')) {
+  // The гуртки decide, not the seat: a впорядник runs at least one, an інструктор none, and the
+  // Звʼязковий is himself either way.
+  getStatusLabel(row: MentorAssignmentRow): string {
+    if (row.isManager) {
       return "Зв'язковий";
     }
 
-    if (this.isUserRole(member, 'Mentor')) {
-      return 'Впорядник';
-    }
-
-    if (this.isUserRole(member, 'Instructor')) {
-      return 'Інструктор';
-    }
-
-    return 'Учасник';
+    return row.groups.length ? 'Впорядник' : 'Інструктор';
   }
 
-  getStatusSeverity(member: MemberLookupDto): 'danger' | 'success' | 'info' | 'warn' {
-    if (this.isUserRole(member, 'Manager')) {
+  getStatusSeverity(row: MentorAssignmentRow): 'danger' | 'success' | 'warn' {
+    if (row.isManager) {
       return 'danger';
     }
 
-    if (this.isUserRole(member, 'Mentor')) {
-      return 'success';
-    }
-
-    if (this.isUserRole(member, 'Instructor')) {
-      return 'warn';
-    }
-
-    return 'info';
+    return row.groups.length ? 'success' : 'warn';
   }
 
   onMemberSelect(member: MemberLookupDto): void {
@@ -377,30 +347,45 @@ export class KvPanelComponent implements OnChanges {
     return assignment.member ? memberDisplayName(assignment.member) : 'Невідомий учасник';
   }
 
-  private isInKv(member: MemberLookupDto): boolean {
-    return this.kvRows.some(row => this.isSameUserMember(row.mentor, member));
-  }
-
   private loadKvLeadership(): Observable<LeadershipDto | null> {
     return this.leadershipService.getLeadershipByTypeAndKey('kv', this.kurinKey()).pipe(
       catchError(() => of(null))
     );
   }
 
-  // The КВ провід is diffed on save, so the roster goes back whole with the new seat added.
-  private seatInKv(member: MemberLookupDto, role: LeadershipRole): Observable<LeadershipDto> {
+  /**
+   * Keeps a person's КВ seat in step with their гуртки: with none they sit as інструктор and a
+   * впорядник seat ends; with some the mentor assignment makes them a впорядник, so the інструктор
+   * seat ends.
+   * The КВ провід is diffed on save, so the roster goes back whole minus or plus that seat.
+   */
+  private syncKvSeat(member: MemberLookupDto, hasGroups: boolean): Observable<unknown> {
     const today = toDateOnlyString(new Date()) ?? '';
     return this.loadKvLeadership().pipe(
       switchMap(leadership => {
-        const seat: LeadershipHistoryDto = {
-          leadershipHistoryKey: '',
-          leadershipKey: leadership?.leadershipKey ?? '',
-          role,
-          startDate: today,
-          endDate: null,
-          member
-        };
-        const retained = (leadership?.leadershipHistories ?? []).filter(history => !history.endDate);
+        const active = (leadership?.leadershipHistories ?? []).filter(history => !history.endDate);
+        const isTheirs = (history: LeadershipHistoryDto) => history.member?.memberKey === member.memberKey;
+        const outgoingRole = hasGroups ? LeadershipRole.Instruktor : LeadershipRole.Vykhovnyk;
+
+        const alreadyInstructor = active.some(history => isTheirs(history) && history.role === LeadershipRole.Instruktor);
+        const toEnd = active.filter(history => isTheirs(history) && history.role === outgoingRole);
+        const toSeat = !hasGroups && !alreadyInstructor;
+
+        if (!toSeat && toEnd.length === 0) {
+          return of(null);
+        }
+
+        const retained = active.filter(history => !toEnd.includes(history));
+        const seats: LeadershipHistoryDto[] = toSeat
+          ? [{
+            leadershipHistoryKey: '',
+            leadershipKey: leadership?.leadershipKey ?? '',
+            role: LeadershipRole.Instruktor,
+            startDate: today,
+            endDate: null,
+            member
+          }]
+          : [];
 
         if (!leadership?.leadershipKey) {
           return this.leadershipService.create({
@@ -409,13 +394,13 @@ export class KvPanelComponent implements OnChanges {
             entityKey: this.kurinKey(),
             startDate: today,
             endDate: null,
-            leadershipHistories: [seat]
+            leadershipHistories: seats
           });
         }
 
         return this.leadershipService.update(leadership.leadershipKey, {
           ...leadership,
-          leadershipHistories: [...retained, seat]
+          leadershipHistories: [...retained, ...seats]
         });
       })
     );

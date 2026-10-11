@@ -177,7 +177,7 @@ test('lets the Звʼязковий add a впорядник, change their гу�
   await expect(page.getByTestId('edit-mentor')).toHaveCount(2);
   await shot(page, project, 'kv-manage');
 
-  // «Додати впорядника»: somebody from the kurin, and their гуртки.
+  // «Додати до КВ»: somebody from the kurin, and their гуртки.
   await page.getByTestId('add-mentor').click();
   const sheet = mentorSheet(page);
   await expect(sheet.getByTestId('mentor')).toContainText('Оберіть учасника');
