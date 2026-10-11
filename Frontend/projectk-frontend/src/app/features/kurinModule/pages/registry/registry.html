@@ -5,7 +5,7 @@
     <div>
       <h1>Реєстр</h1>
       <p>
-        @if (kurinNumber(); as number) { {{ number }} курінь }
+        @if (kurinNumber(); as number) { {{ number }} курінь } @else if (kurinLoaded()) { Підготовчий курінь }
         @if (branchLabel(); as branch) { · {{ branch }} }
         · {{ members().length }} у складі
       </p>

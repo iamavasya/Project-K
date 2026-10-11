@@ -314,6 +314,7 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResetPassword));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.SubmitWaitlistRegistration));
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.GetKurinNumberRange));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ValidateInvitationToken));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.GetStatus));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.Initialize));

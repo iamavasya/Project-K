@@ -3,6 +3,7 @@ import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
 import { MyDuesDto } from '../../models/me.dto';
+import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface DuesRow {
   dues: MyDuesDto;
@@ -64,7 +65,7 @@ export class MyDuesTileComponent {
   readonly owing = computed(() => this.rows().filter(r => r.standing === 'debt').length);
 
   kurinLabel(row: DuesRow): string {
-    return `к. ч. ${row.dues.kurin.kurinNumber}`;
+    return kurinLabel(row.dues.kurin.kurinNumber);
   }
 
   rate(row: DuesRow): string | null {

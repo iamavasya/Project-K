@@ -4,7 +4,8 @@ import { AgendaItemStatus, AgendaRsvpStatus } from '../../kurinModule/models/age
 /** The kurin a row belongs to; named on screen only when the person stands in more than one. */
 export interface MyKurinRefDto {
   kurinKey: string;
-  kurinNumber: number;
+  /** Null for a підготовчий курінь. */
+  kurinNumber: number | null;
   namedAfter: string | null;
   isCurrent: boolean;
 }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -13,20 +14,23 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 
 public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
 {
     public Guid KurinKey { get; set; }
-    public int Number { get; set; }
+
+    /// <summary>The kurin's number; null makes it a підготовчий курінь.</summary>
+    public int? Number { get; set; }
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }
     public string? Description { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 
-    public UpsertKurinCommand(Guid kurinKey, int number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null, bool profileVerificationEnabled = false)
+    public UpsertKurinCommand(Guid kurinKey, int? number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null, bool profileVerificationEnabled = false)
     {
         KurinKey = kurinKey;
         Number = number;
@@ -47,12 +51,13 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IBackendCache _cache;
-    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
+    private readonly KurinNumberOptions _numbers;
+    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache, IOptions<KurinNumberOptions> numbers)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _cache = cache;
-
+        _numbers = numbers.Value;
     }
     public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
     {
@@ -85,14 +90,30 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
         bool isCreated = false;
 
+        // A number is checked only when it changes: a kurin keeps the one it already has, so the
+        // team's own kurins outside the range (a test kurin 0) can still be edited.
+        var numberChanges = existing is null || existing.Number != request.Number;
+        if (numberChanges && request.Number is int number)
+        {
+            if (!_numbers.IsAllowed(number))
+            {
+                return ServiceResult<KurinResponse>.Failure(
+                    ResultType.BadRequest,
+                    "KurinNumberOutOfRange",
+                    $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+            }
+
+            var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(number, cancellationToken);
+            if (existingByNumber is not null)
+            {
+                return existing is null
+                    ? new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber))
+                    : ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists.");
+            }
+        }
+
         if (existing is null)
         {
-            var isExistingByNumber = await _unitOfWork.Kurins.ExistsAsync(request.Number, cancellationToken);
-            if (isExistingByNumber)
-            {
-                var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(request.Number, cancellationToken);
-                return new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber));
-            }
             // Create new Kurin
             existing = new(request.Number);
             _unitOfWork.Kurins.Create(existing, cancellationToken);
@@ -102,6 +123,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         {
             // Update existing Kurin
             _mapper.Map(request, existing);
+            existing.Number = request.Number;
             existing.Stanytsia = stanytsia;
             existing.RegionOrCountry = regionOrCountry;
             existing.NamedAfter = namedAfter;

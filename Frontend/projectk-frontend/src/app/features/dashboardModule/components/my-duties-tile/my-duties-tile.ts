@@ -5,6 +5,7 @@ import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { dayLabel, timeLabel } from '../../functions/day-label.function';
 import { MyDutyDto, MyDutyKind } from '../../models/me.dto';
+import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface DutyRow {
   duty: MyDutyDto;
@@ -83,7 +84,7 @@ export class MyDutiesTileComponent {
       parts.push('каса куреня');
     }
     if (this.namesKurin()) {
-      parts.push(`к. ч. ${duty.kurin.kurinNumber}`);
+      parts.push(kurinLabel(duty.kurin.kurinNumber));
     }
 
     return {

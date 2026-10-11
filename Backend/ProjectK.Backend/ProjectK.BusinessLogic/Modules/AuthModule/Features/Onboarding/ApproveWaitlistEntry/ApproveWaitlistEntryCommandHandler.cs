@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -12,6 +13,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
 
@@ -23,6 +25,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
     private readonly IEmailService _emailService;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMembershipDirectory _memberships;
+    private readonly KurinNumberOptions _numbers;
 
     public ApproveWaitlistEntryCommandHandler(
         IUnitOfWork unitOfWork,
@@ -30,8 +33,10 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         IAccountProvisioningService accountProvisioning,
         IEmailService emailService,
         ICurrentUserContext currentUserContext,
-        IMembershipDirectory memberships)
+        IMembershipDirectory memberships,
+        IOptions<KurinNumberOptions> numbers)
     {
+        _numbers = numbers.Value;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _accountProvisioning = accountProvisioning;
@@ -51,6 +56,22 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         if (entry.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation)
         {
             return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryAlreadyApproved", "Waitlist entry is already approved.");
+        }
+
+        // A leader's kurin opens with the number they claimed, or none when they lead a підготовчий
+        // курінь. A claim outside the range (an early form let "0" through) is read the same way:
+        // the number is theirs to set later in the kurin's settings.
+        int? kurinNumber = null;
+        if (entry.IsKurinLeaderCandidate
+            && !entry.IsPreparatoryKurin
+            && int.TryParse(entry.ClaimedKurinNameOrNumber?.Trim(), out var claimed)
+            && _numbers.IsAllowed(claimed))
+        {
+            kurinNumber = claimed;
+            if (await _unitOfWork.Kurins.ExistsAsync(claimed, cancellationToken))
+            {
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists.");
+            }
         }
 
         // 2. Create the inactive account and its invitation
@@ -73,8 +94,6 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         // 3. Create Kurin Placeholder if leader candidate
         if (entry.IsKurinLeaderCandidate)
         {
-            // Parse kurin number from claim if possible, else use 0 for placeholder
-            int.TryParse(entry.ClaimedKurinNameOrNumber, out int kurinNumber);
             var kurin = new Kurin(kurinNumber);
             _unitOfWork.Kurins.Create(kurin, cancellationToken);
 

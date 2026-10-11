@@ -10,6 +10,7 @@ import { KurinScopeOption } from '../../models/kurin-scope-option.model';
 import { KURIN_BRANCH_LABELS } from '../../models/enums/kurin-branch.enum';
 import { MEMBERSHIP_KIND_LABELS } from '../../models/enums/membership-kind.enum';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 
 /**
  * Вибір куреня, в якому людина зараз діє. Зʼявляється лише тим, хто справді належить до кількох:
@@ -26,6 +27,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
   styleUrl: './kurin-switcher.css'
 })
 export class KurinSwitcherComponent implements OnInit {
+  protected readonly kurinLabel = kurinLabel;
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
@@ -55,7 +57,7 @@ export class KurinSwitcherComponent implements OnInit {
 
   get currentLabel(): string {
     const current = this.current;
-    return current ? `к. ч. ${current.kurinNumber}` : 'Оберіть курінь';
+    return current ? kurinLabel(current.kurinNumber) : 'Оберіть курінь';
   }
 
   isCurrent(option: KurinScopeOption): boolean {
@@ -80,7 +82,7 @@ export class KurinSwitcherComponent implements OnInit {
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося перейти',
-          detail: failureDetail(error, `Курінь ч. ${option.kurinNumber} лишився недосяжним. Спробуй ще раз.`)
+          detail: failureDetail(error, `${kurinName(option.kurinNumber)} лишився недосяжним. Спробуй ще раз.`)
         });
       }
     });

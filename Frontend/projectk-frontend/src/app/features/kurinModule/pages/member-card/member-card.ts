@@ -65,6 +65,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
+import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 
 @Component({
   selector: 'app-member-card',
@@ -308,7 +309,7 @@ export class MemberCardComponent implements OnInit {
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося перейти',
-          detail: failureDetail(error, `Курінь ч. ${membership.kurinNumber} лишився недосяжним. Спробуй ще раз.`)
+          detail: failureDetail(error, `${kurinName(membership.kurinNumber)} лишився недосяжним. Спробуй ще раз.`)
         });
       }
     });
@@ -376,7 +377,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     return this.memberships.reduce<Record<string, string>>((stamps, membership) => {
-      stamps[membership.kurinKey] = `к. ч. ${membership.kurinNumber}`;
+      stamps[membership.kurinKey] = kurinLabel(membership.kurinNumber);
       return stamps;
     }, {});
   }
@@ -427,7 +428,7 @@ export class MemberCardComponent implements OnInit {
       header: 'Вивести з куреня',
       // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
       // змушував провід тримати в курені тих, хто давно пішов.
-      message: `Членство в курені ч. ${membership.kurinNumber} буде закрите. Людина, її проби, `
+      message: `Членство (${kurinLabel(membership.kurinNumber)}) буде закрите. Людина, її проби, `
         + 'вмілості й відзначення лишаються — вони належать їй, а не куреню.',
       icon: 'pi pi-sign-out',
       acceptLabel: 'Вивести',

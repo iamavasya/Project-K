@@ -6,6 +6,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { SCORE_ALGORITHM_LABELS, SCORE_SOURCE_LABELS, SCORE_SOURCE_ORDER, ScoreSource } from '../../../scoreModule/models/score.enums';
 import { MyScoreDto } from '../../models/me.dto';
+import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface ScoreSourcePart {
   source: ScoreSource;
@@ -61,7 +62,7 @@ export class MyScoreTileComponent {
   readonly periodLabel = computed(() => this.scores()[0]?.periodLabel ?? '');
 
   kurinLabel(row: ScoreRow): string {
-    return `к. ч. ${row.score.kurin.kurinNumber}`;
+    return kurinLabel(row.score.kurin.kurinNumber);
   }
 
   pointsClass(points: number): string {

@@ -6,6 +6,7 @@ import { KURIN_BRANCH_LABELS } from '../../../kurinModule/models/enums/kurin-bra
 import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
+import { compareKurinNumbers, kurinLabel } from '../../../../shared/functions/kurin-label.function';
 
 export interface KurinRow {
   option: KurinScopeOption;
@@ -24,6 +25,7 @@ export interface KurinRow {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MyKurinsTileComponent {
+  protected readonly numberLabel = kurinLabel;
   readonly kurins = input<KurinScopeOption[]>([]);
   readonly groups = input<MyGroupDto[]>([]);
   readonly currentKurinKey = input<string | null>(null);
@@ -41,18 +43,18 @@ export class MyKurinsTileComponent {
     const current = this.currentKurinKey();
     return this.kurins()
       .map(option => ({ option, isCurrent: option.kurinKey === current }))
-      .sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent) || a.option.kurinNumber - b.option.kurinNumber);
+      .sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent) || compareKurinNumbers(a.option.kurinNumber, b.option.kurinNumber));
   });
 
   /** A гурток names its kurin only when there is more than one to tell apart. */
   readonly namesKurin = computed(() => this.kurins().length > 1);
 
   readonly sortedGroups = computed(() =>
-    [...this.groups()].sort((a, b) => Number(b.kurin.isCurrent) - Number(a.kurin.isCurrent) || a.kurin.kurinNumber - b.kurin.kurinNumber)
+    [...this.groups()].sort((a, b) => Number(b.kurin.isCurrent) - Number(a.kurin.isCurrent) || compareKurinNumbers(a.kurin.kurinNumber, b.kurin.kurinNumber))
   );
 
   kurinLabel(option: KurinScopeOption): string {
-    return option.namedAfter ? `к. ч. ${option.kurinNumber} ім. ${option.namedAfter}` : `к. ч. ${option.kurinNumber}`;
+    return option.namedAfter ? `${kurinLabel(option.kurinNumber)} ім. ${option.namedAfter}` : kurinLabel(option.kurinNumber);
   }
 
   /** Leading one's own гурток is sitting in its провід; leading another's is being its впорядник. */

@@ -10,10 +10,15 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Entities.KurinModule;
 
-public class Kurin(int number) : Entity
+public class Kurin(int? number) : Entity
 {
     public Guid KurinKey { get; set; } = Guid.NewGuid();
-    public int Number { get; set; } = number;
+
+    /// <summary>
+    /// The kurin's number. Null for a підготовчий курінь, which has not been given one yet;
+    /// its plaque renders empty until a number is set in the kurin's settings.
+    /// </summary>
+    public int? Number { get; set; } = number;
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }

@@ -46,11 +46,12 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         // Input validation lives in SubmitWaitlistRegistrationCommandValidator (runs in the pipeline).
         var stanytsia = request.Stanytsia?.Trim();
         var regionOrCountry = request.RegionOrCountry?.Trim();
-        var claimedKurinNumber = request.ClaimedKurinNameOrNumber?.Trim();
+        var claimedKurinNumber = request.IsPreparatoryKurin ? null : request.ClaimedKurinNameOrNumber?.Trim();
 
-        // Check for existing waitlist entry with same email
+        // A rejected entry does not hold the address: the applicant may come back with a corrected
+        // application, which then takes the old entry's place instead of waiting out its cleanup.
         var existingEntry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
-        if (existingEntry != null)
+        if (existingEntry != null && existingEntry.VerificationStatus != WaitlistVerificationStatus.Rejected)
         {
             return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryExists", "Waitlist entry with this email already exists.");
         }
@@ -61,23 +62,34 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
             return ServiceResult<Guid>.Failure(ResultType.Conflict, "MemberEmailExists", "A member with this email already exists in the system.");
         }
 
-        var entry = new WaitlistEntry
-        {
-            WaitlistEntryKey = Guid.NewGuid(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            PhoneNumber = request.PhoneNumber,
-            DateOfBirth = request.DateOfBirth,
-            Stanytsia = stanytsia,
-            RegionOrCountry = regionOrCountry,
-            IsKurinLeaderCandidate = request.IsKurinLeaderCandidate,
-            ClaimedKurinNameOrNumber = claimedKurinNumber,
-            VerificationStatus = WaitlistVerificationStatus.Submitted,
-            RequestedAtUtc = DateTime.UtcNow
-        };
+        var entry = existingEntry ?? new WaitlistEntry { WaitlistEntryKey = Guid.NewGuid() };
+        entry.FirstName = request.FirstName;
+        entry.LastName = request.LastName;
+        entry.Email = request.Email;
+        entry.PhoneNumber = request.PhoneNumber;
+        entry.DateOfBirth = request.DateOfBirth;
+        entry.Stanytsia = stanytsia;
+        entry.RegionOrCountry = regionOrCountry;
+        entry.IsKurinLeaderCandidate = request.IsKurinLeaderCandidate;
+        entry.ClaimedKurinNameOrNumber = claimedKurinNumber;
+        entry.IsPreparatoryKurin = request.IsPreparatoryKurin;
+        entry.Source = WaitlistEntrySource.Application;
+        entry.VerificationStatus = WaitlistVerificationStatus.Submitted;
+        entry.VerificationChannel = null;
+        entry.VerificationNote = null;
+        entry.RequestedAtUtc = DateTime.UtcNow;
+        entry.ReviewedAtUtc = null;
+        entry.ReviewedByUserKey = null;
 
-        _unitOfWork.WaitlistEntries.Create(entry, cancellationToken);
+        if (existingEntry is null)
+        {
+            _unitOfWork.WaitlistEntries.Create(entry, cancellationToken);
+        }
+        else
+        {
+            _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await NotifyAdministratorsAsync(entry, cancellationToken);
@@ -96,7 +108,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         {
             var admins = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
             var applicant = $"{entry.FirstName} {entry.LastName}";
-            var kurin = entry.ClaimedKurinNameOrNumber;
+            var kurin = entry.IsPreparatoryKurin ? "підготовчий" : entry.ClaimedKurinNameOrNumber;
 
             await _notifications.NotifyManyAsync(
                 admins.Select(admin => new NotificationRequest
@@ -108,7 +120,8 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
                     EntityType = "WaitlistEntry",
                     EntityKey = entry.WaitlistEntryKey,
                     Route = "/waitlist",
-                    DeduplicationKey = $"waitlist-submitted:{entry.WaitlistEntryKey}:{admin.Id}"
+                    // A re-application reuses the entry, so the time keeps it from being taken for a repeat.
+                    DeduplicationKey = $"waitlist-submitted:{entry.WaitlistEntryKey}:{entry.RequestedAtUtc.Ticks}:{admin.Id}"
                 }),
                 cancellationToken);
 

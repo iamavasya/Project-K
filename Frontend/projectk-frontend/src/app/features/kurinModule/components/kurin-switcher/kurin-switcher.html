@@ -21,7 +21,7 @@
             [disabled]="switchingTo() !== null"
             (click)="switchTo(option, switcher)">
             <span class="kurin-switcher-name">
-              к. ч. {{ option.kurinNumber }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+              {{ kurinLabel(option.kurinNumber) }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
             </span>
             <span class="kurin-switcher-meta">
               <p-tag [value]="branchLabels[option.branch]" severity="secondary" />
