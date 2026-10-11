@@ -37,8 +37,8 @@
             <tr class="admin-kurin-row">
                 <td data-mobile-label="Курінь">
                     <div class="kurin-number-cell">
-                        <span>{{ item.number ?? 'підг.' }}</span>
-                        <small>число куреня</small>
+                        <span>{{ item.number ?? 'Підготовчий' }}</span>
+                        <small>{{ item.namedAfter ? 'ім. ' + item.namedAfter : (item.number === null ? 'ще без числа' : 'число куреня') }}</small>
                     </div>
                 </td>
                 <td class="admin-kurin-actions" data-mobile-label="Дії">
