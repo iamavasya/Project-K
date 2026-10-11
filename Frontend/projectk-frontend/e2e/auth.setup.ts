@@ -11,6 +11,8 @@ test('authenticate seeded users', async ({ browser, request }) => {
   for (const user of Object.values(e2eUsers)) {
     const page = await browser.newPage();
     await loginThroughUi(page, user);
+    // «Повна версія»: the mobile-chrome project tests the web on a phone, which otherwise goes to /m/.
+    await page.evaluate(() => localStorage.setItem('lk.preferWeb', '1'));
     await page.context().storageState({ path: authStatePath(user.role) });
     await page.close();
   }

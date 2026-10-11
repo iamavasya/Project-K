@@ -22,6 +22,7 @@ using ProjectK.Infrastructure.Services.Feedback;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.Spreadsheets;
+using ProjectK.Infrastructure.Services.WebPush;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 
@@ -67,6 +68,7 @@ public static class DependencyInjection
 
         AddEmail(services, configuration);
         AddFeedback(services, configuration);
+        AddWebPush(services, configuration);
 
         return services;
     }
@@ -86,6 +88,32 @@ public static class DependencyInjection
         }
 
         services.AddHttpClient<IProblemReporter, GitHubProblemReporter>();
+    }
+
+    /// <summary>
+    /// Web Push to the PWA when VAPID keys are configured (<c>WebPush:PublicKey</c>/<c>PrivateKey</c>);
+    /// without them the queue swallows everything and the PWA hides its switch. Decided once at startup.
+    /// </summary>
+    private static void AddWebPush(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<WebPushOptions>(configuration.GetSection(WebPushOptions.SectionName));
+
+        var configured = new WebPushOptions
+        {
+            PublicKey = configuration[$"{WebPushOptions.SectionName}:PublicKey"],
+            PrivateKey = configuration[$"{WebPushOptions.SectionName}:PrivateKey"]
+        };
+        if (!configured.IsConfigured)
+        {
+            services.AddSingleton<IPushQueue, DisabledPushQueue>();
+            return;
+        }
+
+        services.AddSingleton<ChannelPushQueue>();
+        services.AddSingleton<IPushQueue>(sp => sp.GetRequiredService<ChannelPushQueue>());
+        services.AddHttpClient<WebPushSender>(client => client.Timeout = TimeSpan.FromSeconds(15));
+        services.AddScoped<WebPushDispatcher>();
+        services.AddHostedService<WebPushBackgroundService>();
     }
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)

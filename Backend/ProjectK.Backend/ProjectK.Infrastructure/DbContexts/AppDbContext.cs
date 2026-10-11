@@ -66,6 +66,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<AppNotification> AppNotifications { get; set; }
+    public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<UserTileLayout> UserTileLayouts { get; set; }
 
@@ -687,6 +688,29 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => new { e.RecipientUserKey, e.ReadAtUtc });
             entity.HasIndex(e => new { e.RecipientUserKey, e.DeduplicationKey })
                 .HasFilter("[DeduplicationKey] IS NOT NULL AND [ReadAtUtc] IS NULL");
+        });
+
+        // A device's push endpoint. Unique, so a device that signs in as someone else moves its row;
+        // the account's rows go with the account.
+        builder.Entity<WebPushSubscription>(entity =>
+        {
+            entity.HasKey(e => e.WebPushSubscriptionKey);
+            entity.Property(e => e.Endpoint)
+                .HasMaxLength(800)
+                .IsRequired();
+            entity.Property(e => e.P256dh)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.Auth)
+                .HasMaxLength(100)
+                .IsRequired();
+            entity.Property(e => e.UserAgent)
+                .HasMaxLength(300);
+            entity.HasOne<AppUser>()
+                .WithMany()
+                .HasForeignKey(e => e.UserKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.Endpoint).IsUnique();
         });
 
         builder.Entity<UserTileLayout>(entity =>

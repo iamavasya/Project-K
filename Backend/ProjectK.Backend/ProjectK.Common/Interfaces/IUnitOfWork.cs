@@ -29,6 +29,7 @@ public interface IUnitOfWork
     IWaitlistRepository WaitlistEntries { get; }
     IInvitationRepository Invitations { get; }
     IAppNotificationRepository AppNotifications { get; }
+    IWebPushSubscriptionRepository WebPushSubscriptions { get; }
     ISystemSettingRepository SystemSettings { get; }
     IUserTileLayoutRepository UserTileLayouts { get; }
     IAppUserRepository Users { get; }

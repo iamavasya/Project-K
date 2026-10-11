@@ -89,4 +89,57 @@ public class NotificationsController : ControllerBase
         var response = await _mediator.Send(new MarkAllNotificationsAsReadCommand(), cancellationToken);
         return response.ToActionResult(this);
     }
+
+    /// <summary>
+    /// The VAPID public key a browser subscribes to push with; <c>publicKey</c> is null when this
+    /// server sends no pushes (the PWA then hides its switch).
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("push/public-key")]
+    [ProducesResponseType(typeof(WebPushPublicKeyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetPushPublicKey(CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new GetPushPublicKeyQuery(), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Registers this device (the browser's <c>PushSubscription.toJSON()</c>) to receive the caller's
+    /// notifications as pushes. Posting the same endpoint again refreshes it.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPost("push/subscriptions")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SubscribeToPush(
+        [FromBody] WebPushSubscriptionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(
+            new SubscribeToPushCommand(
+                request.Endpoint ?? string.Empty,
+                request.Keys?.P256dh ?? string.Empty,
+                request.Keys?.Auth ?? string.Empty,
+                Request.Headers.UserAgent.ToString()),
+            cancellationToken);
+
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Stops pushes to one of the caller's devices: turned off in the app, or signing out on it.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpDelete("push/subscriptions")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UnsubscribeFromPush(
+        [FromQuery] string endpoint,
+        CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new UnsubscribeFromPushCommand(endpoint), cancellationToken);
+        return response.ToActionResult(this);
+    }
 }

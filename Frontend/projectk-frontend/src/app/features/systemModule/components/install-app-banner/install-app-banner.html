@@ -1,0 +1,22 @@
+@if (offersMobileVersion()) {
+  <aside class="mobile-version" data-testid="mobile-version-banner">
+    <span class="pi pi-mobile" aria-hidden="true"></span>
+    <span class="mobile-version__text">Це повна версія сайту.</span>
+    <button type="button" class="install-banner__link" (click)="openMobile()">Мобільна версія</button>
+  </aside>
+} @else if (isVisible()) {
+  <aside class="install-banner" aria-labelledby="install-banner-title" data-testid="install-app-banner">
+    <span class="install-banner__icon pi pi-download" aria-hidden="true"></span>
+    <div class="install-banner__body">
+      <div class="install-banner__copy">
+        <span class="install-banner__title" id="install-banner-title">Лілейка на телефоні</span>
+        <span class="install-banner__message">Встанови застосунок: іконка на екрані, своє вікно і сповіщення.</span>
+      </div>
+      <div class="install-banner__actions">
+        <p-button label="Встановити" icon="pi pi-download" size="small" (onClick)="install()" />
+        <p-button label="Не зараз" variant="text" severity="secondary" size="small" (onClick)="dismiss()" />
+      </div>
+      <button type="button" class="install-banner__link" (click)="openMobile()">Відкрити мобільну версію</button>
+    </div>
+  </aside>
+}

@@ -173,7 +173,7 @@ public class UpsertMemberProfileCommandHandler
                 existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
             }
 
-            if (CanEditRestrictedFields())
+            if (CanEditPlastLevels(existing))
             {
                 UpdatePlastLevelHistory(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
                 existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
@@ -208,6 +208,10 @@ public class UpsertMemberProfileCommandHandler
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();
 
     private bool IsAdmin() => _currentUserContext.IsAdmin();
+
+    // A member records their own ступені too; a change to them counts as a significant one, so a
+    // verified profile goes stale until the провід checks it again.
+    private bool CanEditPlastLevels(MemberEntity member) => CanEditRestrictedFields() || IsCurrentUserOwner(member);
 
     private bool IsCurrentUserOwner(MemberEntity member) =>
         member.UserKey.HasValue
@@ -285,7 +289,7 @@ public class UpsertMemberProfileCommandHandler
                || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
                || current?.GroupKey != targetGroupKey
                || current?.KurinKey != targetKurinKey
-               || (CanEditRestrictedFields() && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
+               || (CanEditPlastLevels(existing) && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
     }
 
     private static bool HasPlastLevelHistoryChange(
