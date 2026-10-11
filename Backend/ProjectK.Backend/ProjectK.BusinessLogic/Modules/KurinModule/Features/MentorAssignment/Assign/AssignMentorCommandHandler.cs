@@ -39,7 +39,13 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
             return ServiceResult<Guid>.Failure(ResultType.NotFound, "MentorNotFound", "Mentor member profile not found.");
         }
 
-        if (mentorMember.KurinKey != group.KurinKey)
+        // A person can belong to several kurins, and the summary above names only the newest one.
+        // What matters is a membership in this гурток's kurin, wherever else they are.
+        var belongsHere = await _members.GetByKurinAsync(
+            group.KurinKey,
+            new MemberSelection([], [], [request.MentorUserKey]),
+            cancellationToken);
+        if (belongsHere.Count == 0)
         {
             return ServiceResult<Guid>.Failure(ResultType.Forbidden, "MentorFromAnotherKurin", "Mentor must belong to the same Kurin as the Group.");
         }

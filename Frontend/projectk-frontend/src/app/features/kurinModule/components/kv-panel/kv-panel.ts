@@ -2,7 +2,7 @@
 import { Component, OnChanges, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, of, switchMap } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MultiSelectModule } from '@openng/optimus-ui/multiselect';
@@ -26,6 +26,7 @@ import { toDateOnlyString } from '../../functions/to-date-only-string.function';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { memberDisplayName } from '../../functions/leadership-role-display.function';
+import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -172,10 +173,16 @@ export class KvPanelComponent implements OnChanges {
     const selectedGroupKeys = new Set(this.selectedGroupKeys);
     const toAssign = [...selectedGroupKeys].filter(groupKey => !currentGroupKeys.has(groupKey));
     const toRevoke = [...currentGroupKeys].filter(groupKey => !selectedGroupKeys.has(groupKey));
-    const requests = [
+    const requests: Observable<unknown>[] = [
       ...toAssign.map(groupKey => this.groupService.assignMentor(groupKey, this.selectedMentorUserKey as string)),
       ...toRevoke.map(groupKey => this.groupService.revokeMentor(groupKey, this.selectedMentorUserKey as string))
     ];
+
+    // Saved with no гуртки, someone who is not in the КВ yet becomes a впорядник without one.
+    const newcomer = this.mentorCandidates.find(candidate => candidate.userKey === this.selectedMentorUserKey);
+    if (selectedGroupKeys.size === 0 && newcomer && !this.isInKv(newcomer)) {
+      requests.push(this.seatInKv(newcomer, LeadershipRole.Vykhovnyk));
+    }
 
     if (requests.length === 0) {
       this.assignmentDialogVisible = false;
@@ -193,6 +200,22 @@ export class KvPanelComponent implements OnChanges {
         console.error('Error saving mentor assignments:', err);
         this.assignmentSaveInProgress = false;
       }
+    });
+  }
+
+  /** Opens the КВ провід form, where інструктори and впорядники are seated with or without a гурток. */
+  openKvLeadership(): void {
+    if (!this.canManageKv) {
+      return;
+    }
+
+    this.loadKvLeadership().subscribe(leadership => {
+      if (leadership?.leadershipKey) {
+        this.router.navigate(['/leadership', leadership.leadershipKey, 'kv', this.kurinKey()]);
+        return;
+      }
+
+      this.router.navigate(['/leadership/create', 'kv', this.kurinKey()]);
     });
   }
 
@@ -262,16 +285,24 @@ export class KvPanelComponent implements OnChanges {
       return 'Впорядник';
     }
 
+    if (this.isUserRole(member, 'Instructor')) {
+      return 'Інструктор';
+    }
+
     return 'Учасник';
   }
 
-  getStatusSeverity(member: MemberLookupDto): 'danger' | 'success' | 'info' {
+  getStatusSeverity(member: MemberLookupDto): 'danger' | 'success' | 'info' | 'warn' {
     if (this.isUserRole(member, 'Manager')) {
       return 'danger';
     }
 
     if (this.isUserRole(member, 'Mentor')) {
       return 'success';
+    }
+
+    if (this.isUserRole(member, 'Instructor')) {
+      return 'warn';
     }
 
     return 'info';
@@ -306,8 +337,9 @@ export class KvPanelComponent implements OnChanges {
         rowMap.set(key, existing);
       });
 
+    // Інструктори and впорядники seated without a гурток are КВ too, so they get a row of their own.
     this.kvMembers
-      .filter(member => this.isUserRole(member, 'Mentor'))
+      .filter(member => this.isUserRole(member, 'Mentor') || this.isUserRole(member, 'Instructor'))
       .forEach(mentor => {
         const key = mentor.userKey ?? mentor.memberKey;
         if (!rowMap.has(key)) {
@@ -331,6 +363,50 @@ export class KvPanelComponent implements OnChanges {
     return assignment.member ? memberDisplayName(assignment.member) : 'Невідомий учасник';
   }
 
+  private isInKv(member: MemberLookupDto): boolean {
+    return this.kvRows.some(row => this.isSameUserMember(row.mentor, member));
+  }
+
+  private loadKvLeadership(): Observable<LeadershipDto | null> {
+    return this.leadershipService.getLeadershipByTypeAndKey('kv', this.kurinKey()).pipe(
+      catchError(() => of(null))
+    );
+  }
+
+  // The КВ провід is diffed on save, so the roster goes back whole with the new seat added.
+  private seatInKv(member: MemberLookupDto, role: LeadershipRole): Observable<LeadershipDto> {
+    const today = toDateOnlyString(new Date()) ?? '';
+    return this.loadKvLeadership().pipe(
+      switchMap(leadership => {
+        const seat: LeadershipHistoryDto = {
+          leadershipHistoryKey: '',
+          leadershipKey: leadership?.leadershipKey ?? '',
+          role,
+          startDate: today,
+          endDate: null,
+          member
+        };
+        const retained = (leadership?.leadershipHistories ?? []).filter(history => !history.endDate);
+
+        if (!leadership?.leadershipKey) {
+          return this.leadershipService.create({
+            leadershipKey: null,
+            type: 'kv',
+            entityKey: this.kurinKey(),
+            startDate: today,
+            endDate: null,
+            leadershipHistories: [seat]
+          });
+        }
+
+        return this.leadershipService.update(leadership.leadershipKey, {
+          ...leadership,
+          leadershipHistories: [...retained, seat]
+        });
+      })
+    );
+  }
+
   private getGroupsForUser(userKey: string): GroupDto[] {
     return this.mentorRows.find(row => row.mentor.userKey === userKey)?.groups ?? [];
   }
@@ -349,9 +425,13 @@ export class KvPanelComponent implements OnChanges {
     return left.memberKey === right.memberKey;
   }
 
-  private isUserRole(member: MemberLookupDto, role: 'Manager' | 'Mentor'): boolean {
+  private isUserRole(member: MemberLookupDto, role: 'Manager' | 'Mentor' | 'Instructor'): boolean {
     if (role === 'Manager') {
       return holdsOffice(member.userRole, LeadershipRole.Zvyazkovyi);
+    }
+
+    if (role === 'Instructor') {
+      return holdsOffice(member.userRole, LeadershipRole.Instruktor);
     }
 
     return holdsOffice(member.userRole, LeadershipRole.Hurtkoviy)

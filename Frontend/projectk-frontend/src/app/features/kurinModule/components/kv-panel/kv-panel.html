@@ -23,6 +23,15 @@
               tooltipPosition="bottom"
               (onClick)="openAssignmentDialog()" />
             <p-button
+              icon="pi pi-users"
+              severity="secondary"
+              size="small"
+              [rounded]="true"
+              [text]="true"
+              pTooltip="Склад КВ: інструктори, впорядники" ariaLabel="Склад КВ"
+              tooltipPosition="bottom"
+              (onClick)="openKvLeadership()" />
+            <p-button
               icon="pi pi-refresh"
               [text]="true"
               [rounded]="true"
@@ -154,6 +163,7 @@
       display="chip"
       placeholder="Оберіть гуртки"
       [style]="{ width: '100%' }" />
+    <p class="kv-muted">Без гуртків людина стане впорядником КВ без гуртка. Інструкторів додають у «Склад КВ».</p>
   </div>
 
   <ng-template pTemplate="footer">
