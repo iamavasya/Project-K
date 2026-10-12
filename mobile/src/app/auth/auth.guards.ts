@@ -15,9 +15,14 @@ export const signedInGuard: CanActivateFn = () => {
   return inject(AuthService).ensureSession() || inject(Router).parseUrl('/login');
 };
 
-/** The sign-in screen is skipped when a session is already there. */
-export const signedOutGuard: CanActivateFn = () =>
-  inject(AuthService).ensureSession() ? inject(Router).parseUrl('/tabs/home') : true;
+/**
+ * The sign-in screen is skipped when a session is already there, unless it was opened to add a
+ * second account from the switcher.
+ */
+export const signedOutGuard: CanActivateFn = (route) =>
+  route.queryParamMap.get('add') !== '1' && inject(AuthService).ensureSession()
+    ? inject(Router).parseUrl('/tabs/home')
+    : true;
 
 /**
  * Admins and the kurin's провід must turn on the second factor first, as on the web. Runs after

@@ -267,6 +267,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<DevToolsController>(nameof(DevToolsController.ImpersonateMember), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.ReportProblem), AuthorizationPolicies.RequireUser);
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.UploadScreenshot), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<PhoneAppController>(nameof(PhoneAppController.GetInstallCode), AuthorizationPolicies.RequireUser);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
@@ -302,10 +303,12 @@ public class AuthorizationBaselineMatrixTests
 
     public static IEnumerable<object[]> AllowAnonymousEndpoints()
     {
-        yield return Row<Action<AuthController, LoginUserRequest>>(nameof(AuthController.Login));
+        yield return Row<Action<AuthController, LoginUserRequest, bool>>(nameof(AuthController.Login));
         yield return Row<Action<DevToolsController, DevToolsController.ReturnRequest>>(nameof(DevToolsController.Return));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
-        yield return Row<Action<AuthController, MfaLoginRequestDto>>(nameof(AuthController.VerifyMfaLogin));
+        yield return Row<Action<AuthController, MfaLoginRequestDto, bool>>(nameof(AuthController.VerifyMfaLogin));
+        yield return AnonymousEndpoint<AuthController>(nameof(AuthController.GetSavedAccounts));
+        yield return AnonymousEndpoint<AuthController>(nameof(AuthController.SwitchAccount));
 
         yield return AnonymousEndpoint<AuthController>(nameof(AuthController.LoadTestLogin));
         yield return AnonymousEndpoint<DemoController>(nameof(DemoController.Enter));

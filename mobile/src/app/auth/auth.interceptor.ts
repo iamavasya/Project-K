@@ -5,7 +5,7 @@ import { catchError, from, of, switchMap, throwError } from 'rxjs';
 import { AuthService, isOffline } from './auth.service';
 
 /** Sign-in steps answer 401 for a wrong password or code; that is not an expired session. */
-const NO_REFRESH = ['/auth/login', '/auth/mfa/login-verify', '/auth/logout', '/auth/refresh'];
+const NO_REFRESH = ['/auth/login', '/auth/mfa/login-verify', '/auth/logout', '/auth/refresh', '/auth/accounts'];
 
 /**
  * Adds the access token (waiting for a renewal already under way when there is none yet) and, on a

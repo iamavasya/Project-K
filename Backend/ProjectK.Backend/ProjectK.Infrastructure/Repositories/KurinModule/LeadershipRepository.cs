@@ -213,7 +213,7 @@ public class LeadershipRepository : ILeadershipRepository
                                  .Join(_context.Members,
                                        h => h.MemberKey,
                                        m => m.MemberKey,
-                                       (h, m) => new { m.MemberKey, m.UserKey, m.FirstName, m.MiddleName, m.LastName, h.Role })
+                                       (h, m) => new { m.MemberKey, m.UserKey, m.FirstName, m.MiddleName, m.LastName, m.ProfilePhotoBlobName, h.Role })
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);
 
@@ -225,6 +225,7 @@ public class LeadershipRepository : ILeadershipRepository
                 FirstName = r.FirstName,
                 MiddleName = r.MiddleName,
                 LastName = r.LastName,
+                ProfilePhotoBlobName = r.ProfilePhotoBlobName,
                 // The system-role name, not the bare enum: MemberLookupDto.UserRole is read as an
                 // office identity, and MemberRepository fills the same field the same way.
                 UserRole = SystemRole.ForOffice(type, r.Role)
@@ -242,7 +243,7 @@ public class LeadershipRepository : ILeadershipRepository
                 .Join(_context.Members,
                       assignment => assignment.MentorUserKey,
                       member => member.UserKey,
-                      (assignment, member) => new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName })
+                      (assignment, member) => new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName, member.ProfilePhotoBlobName })
                 .Distinct()
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -256,6 +257,7 @@ public class LeadershipRepository : ILeadershipRepository
                     FirstName = mentor.FirstName,
                     MiddleName = mentor.MiddleName,
                     LastName = mentor.LastName,
+                    ProfilePhotoBlobName = mentor.ProfilePhotoBlobName,
                     UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
                 }));
         }
