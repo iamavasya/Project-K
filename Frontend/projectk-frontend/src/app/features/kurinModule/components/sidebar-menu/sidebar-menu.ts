@@ -9,12 +9,9 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { catchError, combineLatest, defer, filter, map, Observable, of, startWith, switchMap, tap } from 'rxjs';
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
-import { TagModule } from '@openng/optimus-ui/tag';
 import { environment } from '../../../../../environments/environment';
-import { LeadershipRole } from '../../models/enums/leadership-role.enum';
-import { parseOfficeRole } from '../../functions/system-role.function';
-import { getLeadershipRoleSortWeight } from '../../functions/leadership-role-order.function';
-import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
+import { accountRoleTag, AccountRoleTag, GENERIC_MEMBER_TAG } from '../../functions/account-role-tag.function';
+import { AccountSwitcherComponent } from '../../../authModule/components/account-switcher/account-switcher';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
@@ -25,7 +22,7 @@ import { WaitlistAttentionService } from '../../../adminModule/services/waitlist
 
 @Component({
   selector: 'app-sidebar-menu',
-  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, TagModule, RouterLink, ReportProblemDialogComponent],
+  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, RouterLink, ReportProblemDialogComponent, AccountSwitcherComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
@@ -41,7 +38,7 @@ export class SidebarMenuComponent implements OnChanges {
   readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
-  roleTag$: Observable<{ label: string; severity: RoleSeverity }> = of(GENERIC_MEMBER_TAG);
+  roleTag$: Observable<AccountRoleTag> = of(GENERIC_MEMBER_TAG);
 
   kurinKey: string | null = null;
 
@@ -436,39 +433,14 @@ export class SidebarMenuComponent implements OnChanges {
    * rather than the tier "Провід куреня", coloured by the member list's rule. The tiers are the
    * fallback for accounts that hold no office.
    */
-  private currentRoleTag(state: AuthState | null): { label: string; severity: RoleSeverity } {
-    if (this.permissionService.isAdmin()) {
-      return { label: 'Адміністратор', severity: 'danger' };
-    }
-
-    const office = mostSeniorOffice(state?.roles ?? []);
-    if (office) {
-      return {
-        label: leadershipRoleDisplayName(office),
-        severity: leadershipRoleSeverityForRole(office)
-      };
-    }
-
+  private currentRoleTag(state: AuthState | null): AccountRoleTag {
+    let tier = GENERIC_MEMBER_TAG;
     if (this.permissionService.canManageWholeKurin()) {
-      return { label: 'Провід куреня', severity: 'warn' };
+      tier = { label: 'Провід куреня', severity: 'warn' };
+    } else if (this.permissionService.canLeadGroups()) {
+      tier = { label: 'Гуртковий провід', severity: 'success' };
     }
-    if (this.permissionService.canLeadGroups()) {
-      return { label: 'Гуртковий провід', severity: 'success' };
-    }
-    return GENERIC_MEMBER_TAG;
+
+    return accountRoleTag(this.permissionService.isAdmin(), state?.roles ?? [], tier);
   }
-}
-
-const GENERIC_MEMBER_TAG: { label: string; severity: RoleSeverity } = { label: 'Учасник', severity: 'info' };
-
-/**
- * The office to show when an account holds several. Ordered by the same weights the member list
- * sorts by, so "most senior" means one thing across the app.
- */
-function mostSeniorOffice(systemRoles: string[]): LeadershipRole | null {
-  return systemRoles
-    .map(parseOfficeRole)
-    .filter((office): office is NonNullable<ReturnType<typeof parseOfficeRole>> => office !== null)
-    .map(office => office.role)
-    .sort((left, right) => getLeadershipRoleSortWeight(left) - getLeadershipRoleSortWeight(right))[0] ?? null;
 }

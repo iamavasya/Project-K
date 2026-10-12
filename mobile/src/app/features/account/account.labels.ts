@@ -1,4 +1,5 @@
-import { AuthState, KurinBranch, KurinScopeOption, MembershipKind } from '../../auth/auth.models';
+import { AuthState, KurinBranch, KurinScopeOption, MembershipKind, SavedAccount } from '../../auth/auth.models';
+import { roleName, roleWeight } from '../kurin/kurin.labels';
 import { MyGroupDto } from './account.models';
 import { compareKurinNumbers, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 
@@ -22,6 +23,21 @@ export function sortKurins(options: KurinScopeOption[], currentKey: string | nul
     (a, b) =>
       Number(b.kurinKey === currentKey) - Number(a.kurinKey === currentKey) || compareKurinNumbers(a.kurinNumber, b.kurinNumber),
   );
+}
+
+/**
+ * How the account switcher names another account's standing: administrator, else its most senior
+ * office (as the web's account-role-tag does), else a member. `roles` are system-role names such
+ * as «KV.Zvyazkovyi».
+ */
+export function accountRoleLabel(account: Pick<SavedAccount, 'isAdmin' | 'roles'>): string {
+  if (account.isAdmin) return 'Адміністратор';
+  const offices = account.roles
+    .map((role) => role.split('.'))
+    .filter((parts) => parts.length === 2 && ['Kurin', 'Group', 'KV'].includes(parts[0]))
+    .map((parts) => parts[1])
+    .sort((a, b) => roleWeight(a) - roleWeight(b));
+  return offices.length ? roleName(offices[0]) : 'Учасник';
 }
 
 /** Leading one's own гурток is sitting in its провід; leading another's is being its впорядник. */

@@ -1,0 +1,57 @@
+<div class="account-switcher">
+    @if (open()) {
+        <div class="account-switcher__panel" id="account-switcher-panel" role="group" aria-label="Інші акаунти">
+            @if (loading() && rows().length === 0) {
+                <div class="account-switcher__status">
+                    <p-progressspinner strokeWidth="6" styleClass="account-switcher__spinner" aria-label="Завантаження" />
+                </div>
+            }
+
+            @for (row of rows(); track row.account.userKey) {
+                <button
+                    type="button"
+                    class="account-switcher__row"
+                    [disabled]="switching() !== null"
+                    [attr.aria-label]="'Перейти в акаунт ' + row.account.email"
+                    (click)="switchTo(row)">
+                    @if (row.account.profilePhotoUrl) {
+                        <img class="account-switcher__avatar" [src]="row.account.profilePhotoUrl" alt="" width="28" height="28" />
+                    } @else {
+                        <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-user" aria-hidden="true"></span>
+                    }
+                    <span class="account-switcher__who">
+                        <span class="account-switcher__title">{{ row.title }}</span>
+                        @if (row.subtitle) {
+                            <span class="account-switcher__subtitle">{{ row.subtitle }}</span>
+                        }
+                    </span>
+                    @if (switching() === row.account.userKey) {
+                        <p-progressspinner strokeWidth="6" styleClass="account-switcher__spinner" aria-label="Перемикаю" />
+                    } @else {
+                        <p-tag [severity]="row.tag.severity" [value]="row.tag.label" />
+                    }
+                </button>
+            }
+
+            <button type="button" class="account-switcher__row account-switcher__add" (click)="addAccount()">
+                <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-user-plus" aria-hidden="true"></span>
+                <span class="account-switcher__title">Додати акаунт</span>
+            </button>
+        </div>
+    }
+
+    <button
+        type="button"
+        class="sidebar-footer account-switcher__current"
+        [attr.aria-expanded]="open()"
+        aria-controls="account-switcher-panel"
+        aria-label="Перемкнути акаунт"
+        (click)="toggle()">
+        <span class="pi pi-user" aria-hidden="true"></span>
+        <span class="sidebar-footer__email">{{ email() ?? 'Error' }}</span>
+        @if (roleTag(); as tag) {
+            <p-tag [severity]="tag.severity" [value]="tag.label" />
+        }
+        <span class="account-switcher__chevron pi" [class.pi-angle-down]="open()" [class.pi-angle-up]="!open()" aria-hidden="true"></span>
+    </button>
+</div>

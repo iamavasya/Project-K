@@ -44,7 +44,7 @@ public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, Servi
         }
         // Only this browser's sessions. Signing out on one device leaves the others signed in —
         // the whole point of a row per session.
-        foreach (var refreshToken in request.RefreshTokens.Distinct(StringComparer.Ordinal))
+        foreach (var refreshToken in request.RefreshTokens.Concat(request.SavedTokens).Distinct(StringComparer.Ordinal))
         {
             await _refreshTokens.RevokeAsync(refreshToken, cancellationToken);
         }

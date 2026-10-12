@@ -177,7 +177,7 @@ Permission                           напр. Group:Manage:KurinWide
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена | `Infrastructure/Repositories/AuthModule` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі | `Infrastructure/Repositories/AuthModule` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |

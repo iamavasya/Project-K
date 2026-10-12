@@ -10,6 +10,7 @@ import {
   IonLabel,
   IonList,
   IonNote,
+  IonSpinner,
   IonToggle,
   MenuController,
 } from '@ionic/angular';
@@ -42,8 +43,9 @@ import {
   wallet,
 } from 'ionicons/icons';
 import { filter, map } from 'rxjs';
+import { SavedAccount } from '../auth/auth.models';
 import { AuthService } from '../auth/auth.service';
-import { kurinShortLabel } from '../features/account/account.labels';
+import { accountRoleLabel, kurinShortLabel } from '../features/account/account.labels';
 import { AppearanceService } from '../features/account/appearance.service';
 import { fullVersionUrl, helpUrl, openExternal, webOnlyPage } from '../features/account/web-links';
 import { hasYouthProgram, kurinAccess } from '../features/kurin/kurin.labels';
@@ -70,7 +72,7 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
  */
 @Component({
   selector: 'app-nav-menu',
-  imports: [IonList, IonItem, IonItemGroup, IonLabel, IonNote, IonAvatar, IonIcon, IonToggle],
+  imports: [IonList, IonItem, IonItemGroup, IonLabel, IonNote, IonAvatar, IonIcon, IonSpinner, IonToggle],
   styles: `
     .account ion-avatar {
       width: 60px;
@@ -87,6 +89,18 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
     .account h2 {
       font-size: 20px;
       font-weight: 700;
+      color: var(--lk-ink);
+    }
+    /* The other accounts sit under the signed-in one, a size smaller. */
+    .account ion-avatar.other {
+      width: 40px;
+      height: 40px;
+      margin: 8px 16px 8px 10px;
+      font-size: 16px;
+    }
+    .account h3 {
+      font-size: 16px;
+      font-weight: 600;
       color: var(--lk-ink);
     }
     .current {
@@ -131,6 +145,39 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
               <h2>{{ name() || me.email }}</h2>
               <p>{{ name() ? 'Мій профіль, ' + me.email : 'Мій профіль' }}</p>
             </ion-label>
+          </ion-item>
+          @for (row of otherAccounts(); track row.account.userKey) {
+            <ion-item
+              [button]="true"
+              [detail]="false"
+              [disabled]="switching() !== null"
+              (click)="switchTo(row.account)"
+              [attr.aria-label]="'Перейти в акаунт ' + row.account.email"
+              data-testid="saved-account"
+            >
+              <ion-avatar slot="start" class="other" aria-hidden="true">
+                @if (row.account.profilePhotoUrl; as photo) {
+                  <img [src]="photo" alt="" />
+                } @else {
+                  {{ row.monogram }}
+                }
+              </ion-avatar>
+              <ion-label class="ion-text-wrap">
+                <h3>{{ row.title }}</h3>
+                @if (row.subtitle) {
+                  <p>{{ row.subtitle }}</p>
+                }
+              </ion-label>
+              @if (switching() === row.account.userKey) {
+                <ion-spinner slot="end" name="crescent" />
+              } @else {
+                <ion-note slot="end">{{ row.role }}</ion-note>
+              }
+            </ion-item>
+          }
+          <ion-item [button]="true" [detail]="false" (click)="addAccount()" data-testid="add-account">
+            <ion-icon class="lk-tile" slot="start" name="person-add" aria-hidden="true" style="--lk-tile: #8e8e93" />
+            <ion-label>Додати акаунт</ion-label>
           </ion-item>
         </ion-item-group>
       </ion-list>
@@ -246,6 +293,22 @@ export class NavMenu implements OnInit {
   protected readonly member = signal<MemberDto | null>(null);
   private readonly duesGroups = signal<{ groupKey: string; groupName: string }[]>([]);
   protected readonly leaving = signal(false);
+  private readonly savedAccounts = signal<SavedAccount[]>([]);
+  /** The account being switched to, while the server answers. */
+  protected readonly switching = signal<string | null>(null);
+  protected readonly otherAccounts = computed(() =>
+    this.savedAccounts().map((account) => {
+      const name = account.fullName.trim();
+      const [first, ...rest] = name.split(' ');
+      return {
+        account,
+        title: name || account.email,
+        subtitle: name ? account.email : null,
+        role: accountRoleLabel(account),
+        monogram: name ? initials(first, rest.join(' ')) : account.email.charAt(0).toUpperCase(),
+      };
+    }),
+  );
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -319,6 +382,10 @@ export class NavMenu implements OnInit {
     if (!user) return;
     void this.scopes.load();
     void this.push.load();
+    this.auth.savedAccounts().then(
+      (accounts) => this.savedAccounts.set(accounts),
+      () => undefined, // The switcher shows only «Додати акаунт».
+    );
     if (user.memberKey) {
       this.me.member(user.memberKey).then(
         (member) => this.member.set(member),
@@ -370,10 +437,37 @@ export class NavMenu implements OnInit {
     toggle.checked = this.push.state() === 'on';
   }
 
+  /**
+   * The app starts afresh in the other account: every screen and service holds what it read for
+   * this one, and a reload is the one way to drop all of it.
+   */
+  protected async switchTo(account: SavedAccount): Promise<void> {
+    if (this.switching()) return;
+    this.switching.set(account.userKey);
+    try {
+      await this.auth.switchAccount(account.userKey);
+      globalThis.location.assign(new URL('tabs/home', document.baseURI).href);
+    } catch (error) {
+      this.switching.set(null);
+      await this.toasts.show(apiErrorText(error, 'Не вдалося перейти в цей акаунт. Увійди в нього ще раз.'), 'danger');
+      this.auth.savedAccounts().then(
+        (accounts) => this.savedAccounts.set(accounts),
+        () => undefined,
+      );
+    }
+  }
+
+  protected async addAccount(): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigateByUrl('/login?add=1');
+  }
+
   /** As iOS Settings does: a sheet with the destructive action and a way back. */
   protected async confirmLogout(): Promise<void> {
     const sheet = await this.sheets.create({
-      header: 'Вийти з акаунта на цьому пристрої?',
+      header: this.savedAccounts().length
+        ? 'Вийти з усіх акаунтів на цьому пристрої?'
+        : 'Вийти з акаунта на цьому пристрої?',
       buttons: [
         { text: 'Вийти', role: 'destructive', data: 'leave' },
         { text: 'Скасувати', role: 'cancel' },

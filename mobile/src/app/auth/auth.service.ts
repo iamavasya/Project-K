@@ -12,6 +12,7 @@ import {
   MfaRecoveryCodes,
   MfaSetup,
   MfaStatus,
+  SavedAccount,
 } from './auth.models';
 
 /**
@@ -42,8 +43,12 @@ export class AuthService {
     return this.state()?.accessToken ?? null;
   }
 
-  async login(email: string, password: string): Promise<LoginOutcome> {
-    const response = await this.post<LoginResponse>('auth/login', { email, password });
+  /**
+   * `addAccount` keeps the account in use in the switcher instead of ending it: the server moves its
+   * session aside before the new one takes the refresh cookie.
+   */
+  async login(email: string, password: string, addAccount = false): Promise<LoginOutcome> {
+    const response = await this.post<LoginResponse>(withAddAccount('auth/login', addAccount), { email, password });
     if (response.requiresMfa || !response.tokens) {
       return { kind: 'mfa', mfaToken: response.mfaToken ?? null };
     }
@@ -52,13 +57,30 @@ export class AuthService {
   }
 
   /** The second step; `code` is a 6-digit authenticator code or a recovery code. */
-  async verifyMfa(email: string, code: string, mfaToken: string | null): Promise<void> {
-    const response = await this.post<LoginResponse>('auth/mfa/login-verify', {
+  async verifyMfa(email: string, code: string, mfaToken: string | null, addAccount = false): Promise<void> {
+    const response = await this.post<LoginResponse>(withAddAccount('auth/mfa/login-verify', addAccount), {
       email,
       code,
       rememberMe: true,
       mfaToken,
     });
+    this.apply(toState(response));
+  }
+
+  /** The other accounts this browser is signed in to; the httpOnly cookies say which. */
+  savedAccounts(): Promise<SavedAccount[]> {
+    return firstValueFrom(
+      this.http.get<SavedAccount[]>(`${this.api}/auth/accounts`, { withCredentials: true }),
+    );
+  }
+
+  /**
+   * Makes a kept account the one in use; the account being left is kept in its place. The caller
+   * reloads the app afterwards: screens and services still hold the previous account's data.
+   */
+  async switchAccount(userKey: string): Promise<void> {
+    const response = await this.post<LoginResponse>('auth/accounts/switch', { userKey });
+    this.mfaEnabled.set(null);
     this.apply(toState(response));
   }
 
@@ -239,6 +261,10 @@ export function loginErrorText(error: unknown, fallback: string): string {
  */
 export function isOffline(error: unknown): boolean {
   return error instanceof HttpErrorResponse && (error.status === 0 || error.status === 504);
+}
+
+function withAddAccount(path: string, addAccount: boolean): string {
+  return addAccount ? `${path}?addAccount=true` : path;
 }
 
 function mfaCheckedKey(userKey: string | undefined): string {

@@ -20,13 +20,7 @@
 
         <div class="sidebar-version">{{ versionLabel }}</div>
 
-        <div class="sidebar-footer">
-            <span class="pi pi-user" aria-hidden="true"></span>
-            <span class="sidebar-footer__email">{{ (email$ | async) ?? 'Error' }}</span>
-            @if (roleTag$ | async; as roleTag) {
-                <p-tag [severity]="$any(roleTag.severity)" [value]="roleTag.label" />
-            }
-        </div>
+        <app-account-switcher [email]="email$ | async" [roleTag]="roleTag$ | async" (navigated)="close()" />
     </ng-template>
 </p-drawer>
 

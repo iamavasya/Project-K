@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonInput, IonSpinner } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { downloadOutline } from 'ionicons/icons';
@@ -71,7 +71,15 @@ type Step = 'password' | 'code';
         <div class="brand">
           <img src="icons/icon.svg" alt="" />
           <h1>Лілейка</h1>
-          <p>{{ step() === 'password' ? 'Увійди у свій акаунт' : 'Підтвердження входу' }}</p>
+          <p>
+            @if (step() === 'code') {
+              Підтвердження входу
+            } @else if (addingAccount) {
+              Увійди в інший акаунт. Поточний лишиться в меню, щоб перемикатися між ними
+            } @else {
+              Увійди у свій акаунт
+            }
+          </p>
         </div>
 
         <form (submit)="$event.preventDefault(); submit()">
@@ -142,7 +150,10 @@ type Step = 'password' | 'code';
         </form>
 
         <div class="links">
-          @if (step() === 'password') {
+          @if (step() === 'password' && addingAccount) {
+            <a href="" (click)="$event.preventDefault(); cancel()" data-testid="cancel-add">Скасувати</a>
+            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забули пароль?</a>
+          } @else if (step() === 'password') {
             <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забули пароль?</a>
             <a [href]="joinUrl" [attr.target]="outTarget" rel="noopener" data-testid="join">Подати заявку</a>
           } @else {
@@ -153,7 +164,9 @@ type Step = 'password' | 'code';
           }
         </div>
 
-        @if (install.canPrompt()) {
+        @if (addingAccount) {
+          <!-- Already in the app: no install offer while adding an account. -->
+        } @else if (install.canPrompt()) {
           <div class="install">
             <ion-button fill="outline" size="small" (click)="install.prompt()" data-testid="login-install">
               <ion-icon slot="start" name="download-outline" aria-hidden="true" />
@@ -175,6 +188,13 @@ type Step = 'password' | 'code';
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  /**
+   * Opened from the menu's «Додати акаунт»: the account in use stays signed in and goes to the
+   * switcher once this one signs in.
+   */
+  protected readonly addingAccount =
+    inject(ActivatedRoute).snapshot.queryParamMap.get('add') === '1' && this.auth.signedIn();
 
   /**
    * Password reset, activation and the join form are the web's pages on this same origin. From the
@@ -220,14 +240,19 @@ export class LoginPage {
     this.error.set(null);
     try {
       if (this.step() === 'password') {
-        const outcome = await this.auth.login(this.email().trim(), this.password());
+        const outcome = await this.auth.login(this.email().trim(), this.password(), this.addingAccount);
         if (outcome.kind === 'mfa') {
           this.mfaToken = outcome.mfaToken;
           this.step.set('code');
           return;
         }
       } else {
-        await this.auth.verifyMfa(this.email().trim(), this.code().trim(), this.mfaToken);
+        await this.auth.verifyMfa(this.email().trim(), this.code().trim(), this.mfaToken, this.addingAccount);
+      }
+      if (this.addingAccount) {
+        // A fresh start: services still hold what they read for the account that was in use.
+        globalThis.location.assign(new URL('tabs/home', document.baseURI).href);
+        return;
       }
       await this.router.navigateByUrl('/tabs/home', { replaceUrl: true });
     } catch (error) {
@@ -236,6 +261,10 @@ export class LoginPage {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected cancel(): void {
+    void this.router.navigateByUrl('/tabs/more', { replaceUrl: true });
   }
 
   protected back(): void {

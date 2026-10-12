@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login';
@@ -35,7 +35,7 @@ describe('LoginComponent', () => {
         provideHttpClient(),
         { provide: AuthService, useValue: authService },
         { provide: Router, useValue: router },
-        { provide: ActivatedRoute, useValue: {} },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: MessageService, useValue: messageService }
       ],
     }).compileComponents();
@@ -78,7 +78,7 @@ describe('LoginComponent', () => {
     expect(authService.login).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'password123'
-    });
+    }, false);
   });
 
   it('should show otp input when login requires mfa', () => {
@@ -109,7 +109,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456', 'challenge');
+    expect(authService.verifyMfaLogin).toHaveBeenCalledWith('mfa@example.com', '123456', 'challenge', false);
     expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
@@ -302,7 +302,7 @@ describe('LoginComponent', () => {
           provideHttpClient(),
           { provide: AuthService, useValue: authService },
           { provide: Router, useValue: router },
-          { provide: ActivatedRoute, useValue: {} },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
           { provide: MessageService, useValue: messageService },
           { provide: DemoService, useValue: demo }
         ]

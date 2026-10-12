@@ -1,0 +1,106 @@
+.account-switcher {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-switcher__panel {
+  border-top: 1px solid var(--p-surface-border);
+  display: flex;
+  flex-direction: column;
+  padding: 0.375rem 0.5rem;
+}
+
+.account-switcher__status {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.account-switcher__row,
+.account-switcher__current {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.account-switcher__row {
+  align-items: center;
+  border-radius: var(--lil-radius);
+  display: flex;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0.375rem 0.625rem;
+}
+
+.account-switcher__row:hover:not(:disabled),
+.account-switcher__current:hover {
+  background: var(--lil-surface);
+}
+
+.account-switcher__row:disabled {
+  cursor: default;
+}
+
+.account-switcher__row:focus-visible,
+.account-switcher__current:focus-visible {
+  outline: 1px solid var(--p-primary-color);
+  outline-offset: -1px;
+}
+
+.account-switcher__avatar {
+  border-radius: 50%;
+  flex: none;
+  height: 28px;
+  object-fit: cover;
+  width: 28px;
+}
+
+.account-switcher__avatar--empty {
+  align-items: center;
+  border: 1px solid var(--p-surface-border);
+  color: var(--lil-faint);
+  display: inline-flex;
+  font-size: 0.8125rem;
+  justify-content: center;
+}
+
+.account-switcher__add .account-switcher__avatar--empty {
+  color: var(--p-primary-color);
+}
+
+.account-switcher__who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.account-switcher__title {
+  color: var(--lil-ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-switcher__subtitle {
+  color: var(--lil-muted);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-switcher__chevron {
+  margin-inline-start: auto;
+}
+
+:host ::ng-deep .account-switcher__spinner {
+  height: 1.25rem;
+  width: 1.25rem;
+}
