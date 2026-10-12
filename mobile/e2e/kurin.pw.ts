@@ -177,8 +177,10 @@ test('shows the kurin with its groups, КВ, провід and people', async ({ 
   await expect(page.getByTestId('groups')).toContainText('Орли');
   // The Звʼязковий first, then the впорядники with their гуртки.
   await expect(page.getByTestId('kv').locator('ion-item').first()).toContainText('Петренко Олена');
-  await expect(page.getByTestId('kv')).toContainText('Впорядник · Соколи');
-  await expect(page.getByTestId('leadership')).toContainText('Курінний');
+  // The status and each гурток as tags, coloured as the web's КВ table colours them.
+  await expect(page.getByTestId('kv').locator('ion-badge.lk-tag--success', { hasText: 'Впорядник' })).toBeVisible();
+  await expect(page.getByTestId('kv').locator('ion-badge.lk-tag--info', { hasText: 'Соколи' })).toBeVisible();
+  await expect(page.getByTestId('leadership').locator('ion-badge.lk-tag--danger', { hasText: 'Курінний' })).toBeVisible();
   // A youth manages and reviews nothing.
   await expect(page.getByTestId('new-group')).toHaveCount(0);
   await expect(page.getByText('Вмілості на перевірку')).toHaveCount(0);
@@ -189,7 +191,7 @@ test('shows the kurin with its groups, КВ, провід and people', async ({ 
   await expect(members).toHaveCount(5);
   await expect(page.getByTestId('members')).toContainText('5 учасників · за прізвищем');
   await expect(members.first()).toContainText('Бойко Іван');
-  await expect(members.filter({ hasText: 'Шевчук Марта' })).toContainText('Гуртковий: Соколи');
+  await expect(members.filter({ hasText: 'Шевчук Марта' }).locator('ion-badge.lk-tag--danger')).toHaveText('Гуртковий: Соколи');
   await shot(page, info.project.name, 'kurin-members');
 
   // By office: the Звʼязковий leads.

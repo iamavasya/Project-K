@@ -5,9 +5,12 @@ import {
   duesAmountLabel,
   duesMoney,
   filterMembers,
+  kvRowTags,
   kvRows,
   memberBranch,
   memberRoleTags,
+  officeTag,
+  roleTone,
   membershipPeriod,
   phoneHref,
   plastLevelLabel,
@@ -57,8 +60,33 @@ describe('kurin labels', () => {
     expect(filterMembers(people, 'пл. уч').map((m) => m.memberKey)).toEqual(['a']);
     expect(filterMembers(people, '111').map((m) => m.memberKey)).toEqual(['c']);
     expect(filterMembers(people, '  ')).toHaveLength(3);
-    expect(memberRoleTags(people[1])).toEqual(['Гуртковий: Соколи']);
-    expect(memberRoleTags(member('d', 'А', 'Б', { mentoredGroupNames: ['Орли', 'Соколи'] }))).toEqual(['Впорядник: Орли, Соколи']);
+    expect(memberRoleTags(people[1])).toEqual([{ label: 'Гуртковий: Соколи', tone: 'danger' }]);
+    expect(memberRoleTags(member('d', 'А', 'Б', { mentoredGroupNames: ['Орли', 'Соколи'] }))).toEqual([
+      { label: 'Впорядник: Орли, Соколи', tone: 'info' },
+    ]);
+  });
+
+  it('colours an office as the web does, and an ended one grey', () => {
+    expect(['Zvyazkovyi', 'Kurinnuy', 'Hurtkoviy', 'Suddya', 'Skarbnyk', 'Pysar', 'Vykhovnyk'].map(roleTone)).toEqual([
+      'danger',
+      'danger',
+      'danger',
+      'warn',
+      'success',
+      'info',
+      'info',
+    ]);
+    expect(officeTag({ role: 'Skarbnyk', endDate: null })).toEqual({ label: 'Скарбник', tone: 'success' });
+    expect(officeTag({ role: 'Skarbnyk', endDate: '2025-06-01' })).toEqual({ label: 'Скарбник', tone: 'secondary' });
+  });
+
+  it('tags a КВ row by its status, not its office, then each гурток', () => {
+    expect(kvRowTags({ status: 'Звʼязковий', groups: [], isManager: true })).toEqual([{ label: 'Звʼязковий', tone: 'danger' }]);
+    expect(kvRowTags({ status: 'Впорядник', groups: ['Соколи'], isManager: false })).toEqual([
+      { label: 'Впорядник', tone: 'success' },
+      { label: 'Соколи', tone: 'info' },
+    ]);
+    expect(kvRowTags({ status: 'Інструктор', groups: [], isManager: false })).toEqual([{ label: 'Інструктор', tone: 'warn' }]);
   });
 
   it('puts the Звʼязковий first in КВ, then the rest named by their гуртки', () => {

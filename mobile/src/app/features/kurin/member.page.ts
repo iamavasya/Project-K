@@ -58,7 +58,9 @@ import {
   probeRows,
   progressStatus,
   quarterLabel,
-  roleName,
+  officeTag,
+  roleTone,
+  type RoleTag,
   shortDate,
   skillsSummary,
   utcDate,
@@ -75,6 +77,7 @@ import {
 } from './kurin.models';
 import { KurinApi, ProtectedImages } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
 import { inKurin, kurinLabel } from '../../core/kurin-label';
@@ -96,6 +99,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
 @Component({
   selector: 'app-member',
   imports: [
+    RoleTags,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -120,6 +124,9 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
   ],
   host: { '[class.lk-embedded]': 'own()' },
   styles: `
+    app-role-tags.inline {
+      margin-top: 0;
+    }
     /* Inside «Профіль» the profile page is the Ionic page; the card lays out as its content. */
     :host(.lk-embedded) {
       display: contents;
@@ -405,18 +412,18 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                 <ion-item-group>
                   @for (office of staffOffices(); track office.leadershipHistoryKey) {
                     <ion-item>
-                      <ion-label>{{ roleName(office.role) }}</ion-label>
+                      <ion-label><app-role-tags class="inline" [tags]="[officeTag(office)]" /></ion-label>
                       <ion-note slot="end">з {{ office.startDate.slice(0, 4) }}</ion-note>
                     </ion-item>
                   }
                   @for (group of mentoredGroups(); track group.name) {
                     @if (group.groupKey) {
                       <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/group', group.groupKey]">
-                        <ion-label class="ion-text-wrap"><h3>{{ group.name }}</h3><p>Впорядник гуртка</p></ion-label>
+                        <ion-label class="ion-text-wrap"><h3>{{ group.name }}</h3><app-role-tags [tags]="mentorTag" /></ion-label>
                       </ion-item>
                     } @else {
                       <ion-item>
-                        <ion-label class="ion-text-wrap"><h3>{{ group.name }}</h3><p>Впорядник гуртка</p></ion-label>
+                        <ion-label class="ion-text-wrap"><h3>{{ group.name }}</h3><app-role-tags [tags]="mentorTag" /></ion-label>
                       </ion-item>
                     }
                   }
@@ -529,7 +536,8 @@ export class MemberPage implements OnInit {
 
   protected readonly failedText = FAILED_TEXT;
   protected readonly scopedKurin = this.auth.user()?.kurinKey ?? null;
-  protected readonly roleName = roleName;
+  protected readonly officeTag = officeTag;
+  protected readonly mentorTag: RoleTag[] = [{ label: 'Впорядник гуртка', tone: roleTone('Vykhovnyk') }];
   protected readonly awardTitle = awardTitle;
   protected readonly probeMeta = probeMeta;
   protected readonly warningText = warningText;

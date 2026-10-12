@@ -4,6 +4,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import {
   ActionSheetController,
   IonAvatar,
+  IonBadge,
   IonIcon,
   IonItem,
   IonItemGroup,
@@ -45,7 +46,7 @@ import {
 import { filter, map } from 'rxjs';
 import { SavedAccount } from '../auth/auth.models';
 import { AuthService } from '../auth/auth.service';
-import { accountRoleLabel, kurinShortLabel } from '../features/account/account.labels';
+import { accountRoleTag, kurinShortLabel } from '../features/account/account.labels';
 import { AppearanceService } from '../features/account/appearance.service';
 import { fullVersionUrl, helpUrl, openExternal, webOnlyPage } from '../features/account/web-links';
 import { hasYouthProgram, kurinAccess } from '../features/kurin/kurin.labels';
@@ -72,7 +73,7 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
  */
 @Component({
   selector: 'app-nav-menu',
-  imports: [IonList, IonItem, IonItemGroup, IonLabel, IonNote, IonAvatar, IonIcon, IonSpinner, IonToggle],
+  imports: [IonList, IonItem, IonItemGroup, IonLabel, IonNote, IonAvatar, IonBadge, IonIcon, IonSpinner, IonToggle],
   styles: `
     .account ion-avatar {
       width: 60px;
@@ -171,7 +172,7 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
               @if (switching() === row.account.userKey) {
                 <ion-spinner slot="end" name="crescent" />
               } @else {
-                <ion-note slot="end">{{ row.role }}</ion-note>
+                <ion-badge slot="end" [class]="'lk-tag--' + row.role.tone">{{ row.role.label }}</ion-badge>
               }
             </ion-item>
           }
@@ -304,7 +305,7 @@ export class NavMenu implements OnInit {
         account,
         title: name || account.email,
         subtitle: name ? account.email : null,
-        role: accountRoleLabel(account),
+        role: accountRoleTag(account),
         monogram: name ? initials(first, rest.join(' ')) : account.email.charAt(0).toUpperCase(),
       };
     }),

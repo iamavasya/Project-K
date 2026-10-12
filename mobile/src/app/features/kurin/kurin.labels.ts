@@ -182,21 +182,52 @@ export function holdsOffice(userRole: string | null | undefined, role: string): 
   return parts.length === 2 && ['Kurin', 'Group', 'KV'].includes(parts[0]) && parts[1] === role;
 }
 
+/** The colours of the web's p-tag severities; each has an `lk-tag--*` class in lileyka.scss. */
+export type TagTone = 'info' | 'success' | 'warn' | 'danger' | 'secondary';
+
+/** A coloured label, as the web's `<p-tag [value] [severity]>`. */
+export interface RoleTag {
+  label: string;
+  tone: TagTone;
+}
+
+/** The colour an office is shown in (web leadershipRoleSeverityForRole), the same on every screen. */
+export function roleTone(role: string): TagTone {
+  switch (role) {
+    case 'Kurinnuy':
+    case 'Zvyazkovyi':
+    case 'Hurtkoviy':
+      return 'danger';
+    case 'Suddya':
+      return 'warn';
+    case 'Skarbnyk':
+      return 'success';
+    default:
+      return 'info';
+  }
+}
+
+/** An office as a tag; an ended one is grey whatever it was (web leadershipRoleSeverity). */
+export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'>): RoleTag {
+  return { label: roleName(history.role), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+}
+
 /**
- * The offices a member holds now, one label each; a mentor assignment joins the Впорядник label
+ * The offices a member holds now, one tag each; a mentor assignment joins the Впорядник tag
  * (web member-list getMemberRoleTags).
  */
-export function memberRoleTags(member: MemberLookupDto): string[] {
+export function memberRoleTags(member: MemberLookupDto): RoleTag[] {
   const active = currentOffices(member.leadershipHistories);
-  const tags = active.map((h) =>
-    (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${roleName(h.role)}: ${h.groupName}` : roleName(h.role),
-  );
+  const tags = active.map((h) => ({
+    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${roleName(h.role)}: ${h.groupName}` : roleName(h.role),
+    tone: roleTone(h.role),
+  }));
   const mentored = member.mentoredGroupNames ?? [];
   if (!mentored.length) return tags;
-  const label = `${roleName('Vykhovnyk')}: ${mentored.join(', ')}`;
+  const tag = { label: `${roleName('Vykhovnyk')}: ${mentored.join(', ')}`, tone: roleTone('Vykhovnyk') };
   const seated = active.findIndex((h) => h.role === 'Vykhovnyk');
-  if (seated >= 0) tags[seated] = label;
-  else tags.push(label);
+  if (seated >= 0) tags[seated] = tag;
+  else tags.push(tag);
   return tags;
 }
 
@@ -275,6 +306,16 @@ export function kvRows(kvMembers: MemberLookupDto[], assignments: MentorAssignme
     { member: manager, status: 'Звʼязковий', groups: own?.groups ?? [], groupKeys: own?.groupKeys ?? [], isManager: true },
     ...mentors.filter((row) => !same(row.member, manager)),
   ];
+}
+
+/**
+ * A КВ row's tags (web kv-panel «Статус» and «Гуртки»): the status in its own colour, which is not
+ * the office colour (the Звʼязковий red, a впорядник with гуртки green, an інструктор without
+ * them amber), then each гурток.
+ */
+export function kvRowTags(row: Pick<KvRow, 'status' | 'groups' | 'isManager'>): RoleTag[] {
+  const tone: TagTone = row.isManager ? 'danger' : row.groups.length ? 'success' : 'warn';
+  return [{ label: row.status, tone }, ...row.groups.map((group) => ({ label: group, tone: 'info' as const }))];
 }
 
 /** The ended assignments, the latest ended first (web kv-panel archivedAssignments). */

@@ -43,7 +43,8 @@ import {
   fullName,
   kurinAccess,
   plastLevelLabel,
-  roleName,
+  memberRoleTags,
+  officeTag,
   shortDate,
   sortMembers,
   upcomingBirthdays,
@@ -52,6 +53,7 @@ import {
 import { GroupDto, LeadershipDto, LeadershipHistoryDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { RoleTags } from './role-tags';
 import { GroupSilhouette } from './group-silhouette';
 import { GroupEditResult, GroupEditSheet } from './group-edit.sheet';
 import { LeadershipSheet } from './leadership.sheet';
@@ -81,6 +83,7 @@ const SEARCH_FROM = 9;
 @Component({
   selector: 'app-group',
   imports: [
+    RoleTags,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -260,7 +263,7 @@ const SEARCH_FROM = 9;
                 <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', office.member.memberKey]">
                   <ion-label class="ion-text-wrap">
                     <h3>{{ name(office.member) }}</h3>
-                    <p>{{ roleName(office.role) }}</p>
+                    <app-role-tags [tags]="[officeTag(office)]" />
                   </ion-label>
                 </ion-item>
               } @empty {
@@ -371,6 +374,7 @@ const SEARCH_FROM = 9;
                       }
                     </h3>
                     <p>{{ levelOf(member) }}</p>
+                    <app-role-tags [tags]="roleTags(member)" />
                   </ion-label>
                   @if (manager()) {
                     <ion-button
@@ -437,7 +441,8 @@ export class GroupPage implements OnInit {
   protected readonly groupKey = inject(ActivatedRoute).snapshot.paramMap.get('groupKey') ?? '';
 
   protected readonly failedText = FAILED_TEXT;
-  protected readonly roleName = roleName;
+  protected readonly roleTags = memberRoleTags;
+  protected readonly officeTag = officeTag;
   protected readonly shortDate = shortDate;
   protected readonly birthdayWhen = birthdayWhen;
   protected readonly warningText = warningText;

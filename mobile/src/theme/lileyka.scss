@@ -75,6 +75,9 @@
   --lk-ios-ground-rgb: 239, 241, 240;
   --lk-danger-50: #fee2e2;
   --lk-danger-700: #b91c1c;
+  // Aura's green tag (green.100 under green.700): the web's success p-tag, the Скарбник's colour.
+  --lk-success-50: #dcfce7;
+  --lk-success-700: #15803d;
   --lk-ink: #101413;
   --lk-ink-soft: #2e3633;
   --lk-muted: #6e7873;
@@ -104,6 +107,8 @@
   --lk-ios-ground-rgb: 13, 17, 16;
   --lk-danger-50: #2c1515;
   --lk-danger-700: #fca5a5;
+  --lk-success-50: #15291c;
+  --lk-success-700: #86efac;
   --lk-ink: #e9edea;
   --lk-ink-soft: #dde2df;
   --lk-muted: #9ba8a2;
@@ -211,6 +216,11 @@
   ion-badge.lk-tag--info {
     --background: var(--lk-primary-50);
     --color: var(--lk-primary-700);
+  }
+
+  ion-badge.lk-tag--success {
+    --background: var(--lk-success-50);
+    --color: var(--lk-success-700);
   }
 
   ion-badge.lk-tag--warn {

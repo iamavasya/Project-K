@@ -1,5 +1,5 @@
 import { AuthState, KurinBranch, KurinScopeOption, MembershipKind, SavedAccount } from '../../auth/auth.models';
-import { roleName, roleWeight } from '../kurin/kurin.labels';
+import { RoleTag, roleName, roleTone, roleWeight } from '../kurin/kurin.labels';
 import { MyGroupDto } from './account.models';
 import { compareKurinNumbers, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 
@@ -26,18 +26,18 @@ export function sortKurins(options: KurinScopeOption[], currentKey: string | nul
 }
 
 /**
- * How the account switcher names another account's standing: administrator, else its most senior
- * office (as the web's account-role-tag does), else a member. `roles` are system-role names such
- * as «KV.Zvyazkovyi».
+ * How the account switcher tags another account's standing: administrator, else its most senior
+ * office in that office's colour (as the web's account-role-tag does), else a member. `roles` are
+ * system-role names such as «KV.Zvyazkovyi».
  */
-export function accountRoleLabel(account: Pick<SavedAccount, 'isAdmin' | 'roles'>): string {
-  if (account.isAdmin) return 'Адміністратор';
+export function accountRoleTag(account: Pick<SavedAccount, 'isAdmin' | 'roles'>): RoleTag {
+  if (account.isAdmin) return { label: 'Адміністратор', tone: 'danger' };
   const offices = account.roles
     .map((role) => role.split('.'))
     .filter((parts) => parts.length === 2 && ['Kurin', 'Group', 'KV'].includes(parts[0]))
     .map((parts) => parts[1])
     .sort((a, b) => roleWeight(a) - roleWeight(b));
-  return offices.length ? roleName(offices[0]) : 'Учасник';
+  return offices.length ? { label: roleName(offices[0]), tone: roleTone(offices[0]) } : { label: 'Учасник', tone: 'info' };
 }
 
 /** Leading one's own гурток is sitting in its провід; leading another's is being its впорядник. */
