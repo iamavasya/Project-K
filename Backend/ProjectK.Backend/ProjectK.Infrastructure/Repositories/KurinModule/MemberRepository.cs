@@ -403,7 +403,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     UserKey = m.UserKey,
                     FirstName = m.FirstName,
                     MiddleName = m.MiddleName,
-                    LastName = m.LastName
+                    LastName = m.LastName,
+                    ProfilePhotoBlobName = m.ProfilePhotoBlobName
                 }
             })
             .AsNoTracking()

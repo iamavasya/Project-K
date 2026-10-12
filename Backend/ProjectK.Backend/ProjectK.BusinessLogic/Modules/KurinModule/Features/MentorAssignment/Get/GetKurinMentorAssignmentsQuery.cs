@@ -1,5 +1,7 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -15,16 +17,20 @@ public class GetKurinMentorAssignmentsQueryHandler : IRequestHandler<GetKurinMen
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
 
-    public GetKurinMentorAssignmentsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
+    private readonly IBlobReadLinks _links;
+
+    public GetKurinMentorAssignmentsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _links = links;
     }
 
     public async Task<ServiceResult<IEnumerable<MentorAssignmentDto>>> Handle(GetKurinMentorAssignmentsQuery request, CancellationToken cancellationToken)
     {
         var assignments = await _unitOfWork.MentorAssignments.GetByKurinKeyAsync(request.KurinKey, cancellationToken);
         var memberLookup = (await _members.GetLookupByKurinAsync(request.KurinKey, cancellationToken))
+            .WithPhotoLinks(_links)
             .Where(member => member.UserKey.HasValue)
             .ToDictionary(member => member.UserKey!.Value);
         var response = new List<MentorAssignmentDto>();
