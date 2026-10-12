@@ -44,14 +44,15 @@ export class InstallAppService {
   private readonly dismissedAt = signal(readDismissedAt());
   private readonly installed = signal(false);
   private readonly preferWeb = signal(readPreferWeb());
-  private readonly phone =
+  /** A phone's browser. On a computer «Встановити на телефон» shows a code instead of opening /m/install. */
+  readonly onPhone =
     globalThis.matchMedia?.(PHONE_MEDIA_QUERY).matches === true || isMobileUserAgent(globalThis.navigator?.userAgent ?? '');
 
   /**
    * A phone on the web is one that chose «Повна версія» (main.ts sends the others to /m/): it gets
    * a quiet way back instead of the install offer.
    */
-  readonly offersMobileVersion = computed(() => this.phone && this.preferWeb());
+  readonly offersMobileVersion = computed(() => this.onPhone && this.preferWeb());
 
   /** Chrome's install dialog can open right now. */
   readonly canPrompt = computed(() => this.deferred() !== null && !this.installed());

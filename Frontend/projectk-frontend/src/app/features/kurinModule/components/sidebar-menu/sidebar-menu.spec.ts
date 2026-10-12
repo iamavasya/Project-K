@@ -1,3 +1,4 @@
+import { MessageService } from '@openng/optimus-ui/api';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarMenuComponent } from './sidebar-menu';
 import { provideHttpClient } from '@angular/common/http';
@@ -34,7 +35,8 @@ describe('SidebarMenuComponent', () => {
       providers: [
         provideHttpClient(),
         { provide: Router, useValue: mockRouter },
-        { provide: AuthService, useValue: mockAuthService }
+        { provide: AuthService, useValue: mockAuthService },
+        MessageService
       ],
     })
     .compileComponents();

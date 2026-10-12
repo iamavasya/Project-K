@@ -12,6 +12,8 @@ import { AsyncPipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
 import { accountRoleTag, AccountRoleTag, GENERIC_MEMBER_TAG } from '../../functions/account-role-tag.function';
 import { AccountSwitcherComponent } from '../../../authModule/components/account-switcher/account-switcher';
+import { InstallOnPhoneDialogComponent } from '../../../systemModule/components/install-on-phone-dialog/install-on-phone-dialog';
+import { InstallAppService } from '../../../systemModule/services/install-app-service/install-app.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
@@ -22,7 +24,7 @@ import { WaitlistAttentionService } from '../../../adminModule/services/waitlist
 
 @Component({
   selector: 'app-sidebar-menu',
-  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, RouterLink, ReportProblemDialogComponent, AccountSwitcherComponent],
+  imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, RouterLink, ReportProblemDialogComponent, AccountSwitcherComponent, InstallOnPhoneDialogComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sidebar-menu.html',
 })
@@ -32,9 +34,11 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly kurinService = inject(KurinService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
   private readonly duesService = inject(DuesService);
+  private readonly installApp = inject(InstallAppService);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
+  readonly installOnPhoneVisible = signal(false);
   readonly state$ = input<Observable<AuthState | null>>(of(null));
   items$: Observable<MenuItem[]> = of([]);
   email$: Observable<string | null> = of(null);
@@ -394,13 +398,23 @@ export class SidebarMenuComponent implements OnChanges {
     });
 
     // The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
-    // Its /install page offers the one-tap install or shows the steps for the phone at hand.
-    items.push({
-      label: 'Встановити на телефон',
-      icon: 'pi pi-mobile',
-      url: '/m/install',
-      command: () => this.close()
-    });
+    // Its /install page offers the one-tap install or shows the steps for the phone at hand. A
+    // computer gets a code for the phone instead: /m/ there read as «install it on this computer».
+    items.push(this.installApp.onPhone
+      ? {
+        label: 'Встановити на телефон',
+        icon: 'pi pi-mobile',
+        url: '/m/install',
+        command: () => this.close()
+      }
+      : {
+        label: 'Встановити на телефон',
+        icon: 'pi pi-mobile',
+        command: () => {
+          this.close();
+          this.installOnPhoneVisible.set(true);
+        }
+      });
 
     items.push({
       label: 'Повідомити про проблему',

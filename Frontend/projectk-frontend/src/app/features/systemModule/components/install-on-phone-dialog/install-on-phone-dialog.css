@@ -1,0 +1,71 @@
+.install-phone {
+  align-items: center;
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* White in both themes, not a surface token: a camera reads a dark code on a light field. */
+.install-phone__code {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--p-surface-border);
+  border-radius: var(--lil-radius-lg);
+  display: flex;
+  flex: none;
+  height: 216px;
+  justify-content: center;
+  padding: 7px;
+  width: 216px;
+}
+
+.install-phone__code img {
+  display: block;
+  height: 200px;
+  width: 200px;
+}
+
+.install-phone__code .pi {
+  color: var(--lil-faint);
+  font-size: 1.5rem;
+}
+
+.install-phone__lead {
+  color: var(--lil-ink-soft);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.install-phone__help {
+  font-size: 0.875rem;
+}
+
+.install-phone__fallback {
+  color: var(--lil-muted);
+  font-size: 0.8125rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.install-phone__link {
+  align-items: center;
+  border-top: 1px solid var(--p-surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+}
+
+.install-phone__url {
+  color: var(--lil-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .install-phone {
+    flex-direction: column;
+  }
+}
