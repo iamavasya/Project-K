@@ -49,7 +49,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
-        services.AddScoped<IMfaService, MfaService>();
+        services.AddSingleton<IQrCodeService, QrCodeService>();
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();

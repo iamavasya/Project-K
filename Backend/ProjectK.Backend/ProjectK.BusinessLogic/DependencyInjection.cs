@@ -29,6 +29,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+        services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();

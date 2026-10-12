@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -20,10 +22,12 @@ public class GetKurinKvMembersQueryHandler : IRequestHandler<GetKurinKvMembersQu
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
-    public GetKurinKvMembersQueryHandler(IUnitOfWork uow, IMapper mapper)
+    private readonly IBlobReadLinks _links;
+    public GetKurinKvMembersQueryHandler(IUnitOfWork uow, IMapper mapper, IBlobReadLinks links)
     {
         _uow = uow;
         _mapper = mapper;
+        _links = links;
     }
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetKurinKvMembersQuery request, CancellationToken cancellationToken)
@@ -31,6 +35,6 @@ public class GetKurinKvMembersQueryHandler : IRequestHandler<GetKurinKvMembersQu
         // One row per active КВ office (Зв'язковий / Впорядник / Інструктор), UserRole = office role name.
         var kvMembers = await _uow.Leaderships.GetOfficeMembersLookupAsync(request.kurinKey, LeadershipType.KV, cancellationToken);
 
-        return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, kvMembers);
+        return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, kvMembers.WithPhotoLinks(_links));
     }
 }

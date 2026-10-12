@@ -138,7 +138,7 @@ export class AboutPageComponent {
     {
       when: 'Вересень 2026',
       title: 'Фундамент 1.0',
-      body: 'Уряди як джерело прав, сесії на кожен пристрій, реєстр і імпорт складу з Excel, '
+      body: 'Ролі як джерело прав, сесії на кожен пристрій, реєстр і імпорт складу з Excel, '
         + 'людина в центрі замість куреня: один акаунт, кілька куренів.',
       releases: [{ tag: 'v0.19.0-beta', codeName: 'Carpenter Ant' }, { tag: 'v0.20.0-beta', codeName: 'Honeypot Ant' }],
       icon: 'pi pi-sitemap'

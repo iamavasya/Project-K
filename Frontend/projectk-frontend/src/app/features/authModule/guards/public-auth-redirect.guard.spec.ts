@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRouteSnapshot, convertToParamMap, Router } from '@angular/router';
 import { firstValueFrom, isObservable, of } from 'rxjs';
 import { AuthState } from '../models/auth-state.model';
 import { AuthService } from '../services/auth-service/auth.service';
@@ -88,8 +88,18 @@ describe('publicAuthRedirectGuard', () => {
     expect(router.createUrlTree).not.toHaveBeenCalled();
   });
 
-  async function runGuard(): Promise<unknown> {
-    const result = TestBed.runInInjectionContext(() => publicAuthRedirectGuard({} as never, {} as never));
+  it('lets a signed-in person open the sign-in page to add a second account', async () => {
+    authService.getAuthState.and.returnValue(of(createAuthState()));
+
+    const result = await runGuard({ add: '1' });
+
+    expect(result).toBeTrue();
+    expect(authService.ensureAccessToken).not.toHaveBeenCalled();
+  });
+
+  async function runGuard(queryParams: Record<string, string> = {}): Promise<unknown> {
+    const route = { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot;
+    const result = TestBed.runInInjectionContext(() => publicAuthRedirectGuard(route, {} as never));
     return isObservable(result) ? firstValueFrom(result) : result;
   }
 

@@ -28,13 +28,14 @@ import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { KvRow, fullName, kurinAccess, kvArchive, kvRows, toDateOnly, utcDate } from './kurin.labels';
+import { KvRow, fullName, kurinAccess, kvArchive, kvRowTags, kvRows, toDateOnly, utcDate } from './kurin.labels';
 import { GroupDto, MemberLookupDto, MentorAssignmentDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { KvMentorSheet } from './kv-mentor.sheet';
 import { handoverRequest, officePeriod } from './leadership-seats';
 import { MemberAvatar } from './member-avatar';
 import { PeoplePickSheet, PickPerson } from './people-pick.sheet';
+import { RoleTags } from './role-tags';
 
 interface KvData {
   groups: GroupDto[];
@@ -51,6 +52,7 @@ interface KvData {
 @Component({
   selector: 'app-kv',
   imports: [
+    RoleTags,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -108,7 +110,7 @@ interface KvData {
                   <app-member-avatar slot="start" [photo]="row.member.profilePhotoUrl" [firstName]="row.member.firstName" [lastName]="row.member.lastName" />
                   <ion-label class="ion-text-wrap">
                     <h3>{{ name(row.member) }}</h3>
-                    <p>{{ row.status }} · {{ row.groups.length ? row.groups.join(', ') : 'без призначених гуртків' }}</p>
+                    <app-role-tags [tags]="tagsOf(row)" />
                   </ion-label>
                   @if (manager() && row.member.userKey) {
                     <ion-button
@@ -163,14 +165,16 @@ interface KvData {
                 <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', item.member.memberKey]" data-testid="kv-archived">
                   <ion-label class="ion-text-wrap">
                     <h3>{{ name(item.member) }}</h3>
-                    <p>{{ item.groupName }} · {{ archivePeriod(item) }}</p>
+                    <p>{{ archivePeriod(item) }}</p>
+                    <app-role-tags [tags]="[{ label: item.groupName, tone: 'secondary' }]" />
                   </ion-label>
                 </ion-item>
               } @else {
                 <ion-item data-testid="kv-archived">
                   <ion-label class="ion-text-wrap">
                     <h3>Невідомий учасник</h3>
-                    <p>{{ item.groupName }} · {{ archivePeriod(item) }}</p>
+                    <p>{{ archivePeriod(item) }}</p>
+                    <app-role-tags [tags]="[{ label: item.groupName, tone: 'secondary' }]" />
                   </ion-label>
                 </ion-item>
               }
@@ -226,6 +230,8 @@ export class KvPage implements OnInit {
   }
 
   /** «01.09.24 – 31.08.25» for an assignment (web 'dd.MM.yy', in the reader's zone). */
+  protected readonly tagsOf = kvRowTags;
+
   protected archivePeriod(item: MentorAssignmentDto): string {
     const day = (value: string | null) => {
       const date = utcDate(value);

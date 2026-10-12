@@ -6,7 +6,7 @@ import { PasswordModule } from '@openng/optimus-ui/password';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { LoginRequest } from '../../models/login-request.model';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InputOtpModule } from '@openng/optimus-ui/inputotp';
 
 import { MessageService } from '@openng/optimus-ui/api';
@@ -14,8 +14,8 @@ import { authenticatedHomeRoute } from '../../functions/authenticated-home-route
 import { DemoSeat, DemoService } from '../../services/demo-service/demo.service';
 
 const LOGIN_ERROR_TEXT: Record<string, string> = {
-  InvalidCredentials: 'Невірний email або пароль.',
-  Unauthorized: 'Невірний email або пароль.'
+  InvalidCredentials: 'Неправильний email або пароль.',
+  Unauthorized: 'Неправильний email або пароль.'
 };
 
 @Component({
@@ -30,6 +30,14 @@ export class LoginComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly demo = inject(DemoService);
+  private readonly route = inject(ActivatedRoute);
+
+  /**
+   * Signing in a second account from the account switcher: the account in use stays signed in and
+   * one tap away, so the page offers a way back instead of the demo seats and the application link.
+   */
+  readonly addingAccount = this.route.snapshot.queryParamMap.get('add') === '1'
+    && !!this.authService.getAuthStateValue()?.userKey;
 
   /** The demo stand offers three chairs instead of a password. */
   readonly isDemo = DemoService.isDemo();
@@ -83,7 +91,7 @@ export class LoginComponent implements OnInit {
     };
 
     this.loading = true;
-    this.authService.login(loginRequest).subscribe({
+    this.authService.login(loginRequest, this.addingAccount).subscribe({
       next: (response) => {
         this.loading = false;
         if (response.requiresMfa) {
@@ -104,14 +112,14 @@ export class LoginComponent implements OnInit {
 
   verifyOtp(): void {
     this.loading = true;
-    this.authService.verifyMfaLogin(this.email, this.otpValue, this.mfaToken).subscribe({
+    this.authService.verifyMfaLogin(this.email, this.otpValue, this.mfaToken, this.addingAccount).subscribe({
       next: () => {
         this.loading = false;
         this.navigateToPanel();
       },
       error: (error) => {
         this.loading = false;
-        this.showError(this.errorText(error, 'Невірний код підтвердження.'));
+        this.showError(this.errorText(error, 'Неправильний код підтвердження.'));
       }
     });
   }
@@ -154,8 +162,19 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  private navigateToPanel(): void {
+  /** Back to the account that is still signed in. */
+  cancelAddingAccount(): void {
     this.router.navigate(authenticatedHomeRoute(this.authService.getAuthStateValue()));
+  }
+
+  private navigateToPanel(): void {
+    const home = authenticatedHomeRoute(this.authService.getAuthStateValue());
+    if (this.addingAccount) {
+      // A fresh page: services still hold what they read for the account that was in use.
+      window.location.assign(this.router.serializeUrl(this.router.createUrlTree(home)));
+      return;
+    }
+    this.router.navigate(home);
   }
 
   /**

@@ -12,14 +12,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
 public class GetMfaSetupQueryHandler : IRequestHandler<GetMfaSetupQuery, ServiceResult<MfaSetupResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IMfaService _mfaService;
+    private readonly IQrCodeService _qrCodes;
     private readonly UrlEncoder _urlEncoder;
     private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
 
-    public GetMfaSetupQueryHandler(UserManager<AppUser> userManager, IMfaService mfaService, UrlEncoder urlEncoder)
+    public GetMfaSetupQueryHandler(UserManager<AppUser> userManager, IQrCodeService qrCodes, UrlEncoder urlEncoder)
     {
         _userManager = userManager;
-        _mfaService = mfaService;
+        _qrCodes = qrCodes;
         _urlEncoder = urlEncoder;
     }
 
@@ -45,7 +45,7 @@ public class GetMfaSetupQueryHandler : IRequestHandler<GetMfaSetupQuery, Service
             _urlEncoder.Encode(email!),
             unformattedKey);
 
-        var qrCodeBase64 = _mfaService.GenerateQrCodeBase64(authenticatorUri);
+        var qrCodeBase64 = _qrCodes.ToPngDataUrl(authenticatorUri);
 
         return new ServiceResult<MfaSetupResponseDto>(
             ResultType.Success,

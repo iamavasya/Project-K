@@ -91,7 +91,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
         CreateMap<Member, MemberLookupDto>()
-            .ForMember(dest => dest.UserRole, opt => opt.Ignore());
+            .ForMember(dest => dest.UserRole, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberLookupPhotoUrlResolver>());
 
         // The mentor list is answered through IMemberDirectory, which hands back the summary
         // record rather than the entity; without this map every GET /group/{key}/mentors was a 500
@@ -102,7 +103,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.ProfileVerificationStatus, opt => opt.Ignore())
             .ForMember(dest => dest.ProfileVerifiedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.ProfileVerifiedByUserKey, opt => opt.Ignore())
-            .ForMember(dest => dest.ProfileVerificationNote, opt => opt.Ignore());
+            .ForMember(dest => dest.ProfileVerificationNote, opt => opt.Ignore())
+            .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberSummaryLookupPhotoUrlResolver>());
 
         // Plast Level History Mapping
         CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();

@@ -25,7 +25,8 @@ import { addIcons } from 'ionicons';
 import { settingsOutline } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
-import { currentOffices, fullName, kurinAccess, roleName } from './kurin.labels';
+import { currentOffices, fullName, kurinAccess, officeTag } from './kurin.labels';
+import { RoleTags } from './role-tags';
 import { LeadershipDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { officePeriod, pastOffices } from './leadership-seats';
@@ -44,6 +45,7 @@ const SEARCH_FROM = 9;
 @Component({
   selector: 'app-leadership',
   imports: [
+    RoleTags,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -99,7 +101,8 @@ const SEARCH_FROM = 9;
                 <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', office.member.memberKey]" data-testid="office">
                   <ion-label class="ion-text-wrap">
                     <h3>{{ name(office.member) }}</h3>
-                    <p>{{ roleName(office.role) }} · {{ period(office.startDate, null) }}</p>
+                    <p>{{ period(office.startDate, null) }}</p>
+                    <app-role-tags [tags]="[officeTag(office)]" />
                   </ion-label>
                 </ion-item>
               } @empty {
@@ -127,7 +130,8 @@ const SEARCH_FROM = 9;
               <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', office.member.memberKey]" data-testid="past-office">
                 <ion-label class="ion-text-wrap">
                   <h3>{{ name(office.member) }}</h3>
-                  <p>{{ roleName(office.role) }} · {{ period(office.startDate, office.endDate) }}</p>
+                  <p>{{ period(office.startDate, office.endDate) }}</p>
+                  <app-role-tags [tags]="[officeTag(office)]" />
                 </ion-label>
               </ion-item>
             } @empty {
@@ -155,7 +159,7 @@ export class LeadershipPage implements OnInit {
     inject(Config).get('mode') === 'ios' ? (this.kind === 'kurin' ? 'Курінь' : 'Гурток') : undefined;
 
   protected readonly failedText = FAILED_TEXT;
-  protected readonly roleName = roleName;
+  protected readonly officeTag = officeTag;
   protected readonly period = officePeriod;
   protected readonly searchFrom = SEARCH_FROM;
 

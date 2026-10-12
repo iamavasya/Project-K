@@ -1,9 +1,15 @@
 <main class="login-page">
   <section class="login-panel" aria-labelledby="login-title">
     <div class="login-heading">
-      <h1 id="login-title">{{ showOtpInput ? 'Підтвердження входу' : 'Вхід' }}</h1>
+      <h1 id="login-title">{{ showOtpInput ? 'Підтвердження входу' : (addingAccount ? 'Додати акаунт' : 'Вхід') }}</h1>
       <p>
-        {{ showOtpInput ? 'Введіть код із застосунку автентифікації.' : 'Увійдіть у свій обліковий запис.' }}
+        @if (showOtpInput) {
+          Введіть код із застосунку автентифікації.
+        } @else if (addingAccount) {
+          Увійдіть в інший обліковий запис. Поточний лишиться в перемикачі акаунтів.
+        } @else {
+          Увійдіть у свій обліковий запис.
+        }
       </p>
     </div>
 
@@ -94,11 +100,19 @@
             (onClick)="backToPassword()"
             styleClass="w-full"
           />
+        } @else if (addingAccount) {
+          <p-button
+            label="Скасувати"
+            type="button"
+            variant="text"
+            (onClick)="cancelAddingAccount()"
+            styleClass="w-full"
+          />
         }
       </div>
     </form>
 
-    @if (!showOtpInput && isDemo) {
+    @if (!showOtpInput && isDemo && !addingAccount) {
       <section class="demo-entry" aria-labelledby="demo-title">
         <h2 id="demo-title">Демо-курінь</h2>
         <p>
@@ -113,7 +127,7 @@
       </section>
     }
 
-    @if (!showOtpInput) {
+    @if (!showOtpInput && !addingAccount) {
       <p class="join-link">
         <a routerLink="/forgot-password">Забули пароль?</a>
       </p>

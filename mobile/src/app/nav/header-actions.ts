@@ -41,16 +41,25 @@ import { kurinName } from '../core/kurin-label';
       clip-path: inset(50%);
       white-space: nowrap;
     }
+    /* The badge hangs off the bell's top corner, not the button's: on Android the button is wider
+       than the glyph, and a badge pinned to its edge sat on top of the bell. */
+    .bell__glyph {
+      position: relative;
+      display: inline-flex;
+    }
+    .bell__glyph ion-icon {
+      font-size: 24px;
+    }
     .bell ion-badge {
       position: absolute;
-      top: 2px;
-      inset-inline-end: 0;
-      min-width: 18px;
-      height: 18px;
-      padding: 2px 5px;
+      top: -7px;
+      inset-inline-start: 13px;
+      min-width: 17px;
+      height: 17px;
+      padding: 2px 4px;
       border-radius: 9px;
-      font-size: 11px;
-      line-height: 14px;
+      font-size: 10px;
+      line-height: 13px;
       pointer-events: none;
     }
   `,
@@ -68,11 +77,13 @@ import { kurinName } from '../core/kurin-label';
       </ion-button>
     }
     <ion-button class="bell" routerLink="/tabs/home/notifications" data-testid="bell">
-      <ion-icon slot="icon-only" name="notifications-outline" aria-hidden="true" />
+      <span class="bell__glyph" slot="icon-only">
+        <ion-icon name="notifications-outline" aria-hidden="true" />
+        @if (unread() > 0) {
+          <ion-badge color="danger" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</ion-badge>
+        }
+      </span>
       <span class="sr-only">{{ bellLabel() }}</span>
-      @if (unread() > 0) {
-        <ion-badge color="danger" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</ion-badge>
-      }
     </ion-button>
   `,
 })
