@@ -6,6 +6,11 @@ namespace ProjectK.API.Helpers;
 /// <summary>
 /// The sessions this browser keeps for the accounts it is signed in to but not using. Scoped like
 /// the refresh cookie and just as unreadable to scripts: each value in it is a refresh token.
+/// <para>
+/// Always <c>Secure</c>, unlike the refresh cookie: it holds other accounts' sessions, so it never
+/// travels over plain HTTP. Browsers treat <c>localhost</c> as secure, so local development keeps
+/// working; a self-hosted instance served over plain HTTP elsewhere simply keeps no other accounts.
+/// </para>
 /// </summary>
 public static class SavedSessionsCookie
 {
@@ -21,12 +26,11 @@ public static class SavedSessionsCookie
             return;
         }
 
-        var isSecureRequest = IsSecureRequest(context.Request);
         context.Response.Cookies.Append(Name, string.Join(Separator, sessions.Select(session => session.Token)), new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecureRequest,
-            SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteFor(context.Request),
             Expires = sessions.Max(session => session.ExpiresAtUtc),
             Path = Path
         });
@@ -34,12 +38,11 @@ public static class SavedSessionsCookie
 
     public static void Delete(HttpContext context)
     {
-        var isSecureRequest = IsSecureRequest(context.Request);
         context.Response.Cookies.Delete(Name, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecureRequest,
-            SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteFor(context.Request),
             Path = Path
         });
     }
@@ -52,9 +55,14 @@ public static class SavedSessionsCookie
             : [];
     }
 
-    private static bool IsSecureRequest(HttpRequest request)
+    /// <summary>
+    /// Cross-site over HTTPS, where the web and the API sit on different hosts; same-site over
+    /// local HTTP, where a browser refuses <c>None</c> without a secure origin.
+    /// </summary>
+    private static SameSiteMode SameSiteFor(HttpRequest request)
     {
-        return request.IsHttps
+        var isSecureRequest = request.IsHttps
             || string.Equals(request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
+        return isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax;
     }
 }
