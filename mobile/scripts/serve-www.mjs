@@ -4,8 +4,10 @@
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('../www/', import.meta.url).pathname;
+// fileURLToPath, not .pathname: on Windows the latter is «/D:/…» and every file came back missing.
+const root = fileURLToPath(new URL('../www/', import.meta.url));
 const base = '/m/';
 const port = Number(process.env.PORT ?? 4300);
 // Stand-in for the env.js nginx renders from the container environment.
