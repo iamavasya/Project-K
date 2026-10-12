@@ -36,13 +36,13 @@ import { AccountService } from './account.service';
 const CONTACT_ERRORS: Record<string, string> = {
   InvalidEmail: 'Перевір email.',
   EmailAlreadyInUse: 'Цей email уже має інший акаунт.',
-  InvalidCredentials: 'Невірний поточний пароль.',
+  InvalidCredentials: 'Неправильний поточний пароль.',
 };
 const PASSWORD_ERRORS: Record<string, string> = {
   PasswordChangeFailed: 'Не вдалося змінити пароль. Перевір поточний пароль і вимоги до нового.',
 };
 const MFA_ERRORS: Record<string, string> = {
-  InvalidCredentials: 'Невірний поточний пароль.',
+  InvalidCredentials: 'Неправильний поточний пароль.',
   MfaRequired: 'Для твоєї ролі двофакторний вхід обовʼязковий: його можна лише скинути.',
   MfaNotEnabled: 'Двофакторний вхід уже вимкнено.',
 };

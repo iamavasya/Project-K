@@ -256,7 +256,7 @@ export class LoginPage {
       }
       await this.router.navigateByUrl('/tabs/home', { replaceUrl: true });
     } catch (error) {
-      const fallback = this.step() === 'password' ? 'Не вдалося увійти.' : 'Невірний код підтвердження.';
+      const fallback = this.step() === 'password' ? 'Не вдалося увійти.' : 'Неправильний код підтвердження.';
       this.error.set(loginErrorText(error, fallback));
     } finally {
       this.busy.set(false);

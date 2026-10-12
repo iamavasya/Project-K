@@ -49,7 +49,7 @@ test('a member uses the app against the real API: sign-in, dashboard, profile, t
   await page.locator('[data-testid=email] input').fill(member.email);
   await page.locator('[data-testid=password] input').fill('WrongPassword123!');
   await page.getByRole('button', { name: 'Увійти' }).click();
-  await expect(page.getByRole('alert')).toHaveText('Невірний email або пароль.');
+  await expect(page.getByRole('alert')).toHaveText('Неправильний email або пароль.');
 
   await page.locator('[data-testid=password] input').fill(member.password);
   await page.getByRole('button', { name: 'Увійти' }).click();

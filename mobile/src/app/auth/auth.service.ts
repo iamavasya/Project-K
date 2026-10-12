@@ -24,8 +24,8 @@ import {
 const STORAGE_KEY = 'authState';
 
 const ERROR_TEXT: Record<string, string> = {
-  InvalidCredentials: 'Невірний email або пароль.',
-  Unauthorized: 'Невірний email або пароль.',
+  InvalidCredentials: 'Неправильний email або пароль.',
+  Unauthorized: 'Неправильний email або пароль.',
 };
 
 @Injectable({ providedIn: 'root' })

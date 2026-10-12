@@ -203,7 +203,7 @@ describe('LoginComponent', () => {
 
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'error',
-      detail: 'Невірний email або пароль.'
+      detail: 'Неправильний email або пароль.'
     }));
     expect(router.navigate).not.toHaveBeenCalled();
   });

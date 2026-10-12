@@ -484,7 +484,7 @@ export class KurinPage implements OnInit, OnDestroy {
   );
   protected readonly membersHeader = computed(() => {
     const all = valueOf(this.members());
-    const by = this.sort() === 'name' ? 'за прізвищем' : 'за посадою';
+    const by = this.sort() === 'name' ? 'за прізвищем' : 'за роллю';
     return all ? `${all.length} ${plural(all.length)} · ${by}` : 'Учасники';
   });
 
@@ -542,7 +542,7 @@ export class KurinPage implements OnInit, OnDestroy {
       header: 'Сортування',
       buttons: [
         { text: 'За прізвищем', data: 'name' },
-        { text: 'За посадою', data: 'role' },
+        { text: 'За роллю', data: 'role' },
         { text: 'Скасувати', role: 'cancel' },
       ],
     });

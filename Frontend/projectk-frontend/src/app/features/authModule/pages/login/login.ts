@@ -14,8 +14,8 @@ import { authenticatedHomeRoute } from '../../functions/authenticated-home-route
 import { DemoSeat, DemoService } from '../../services/demo-service/demo.service';
 
 const LOGIN_ERROR_TEXT: Record<string, string> = {
-  InvalidCredentials: 'Невірний email або пароль.',
-  Unauthorized: 'Невірний email або пароль.'
+  InvalidCredentials: 'Неправильний email або пароль.',
+  Unauthorized: 'Неправильний email або пароль.'
 };
 
 @Component({
@@ -119,7 +119,7 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.showError(this.errorText(error, 'Невірний код підтвердження.'));
+        this.showError(this.errorText(error, 'Неправильний код підтвердження.'));
       }
     });
   }

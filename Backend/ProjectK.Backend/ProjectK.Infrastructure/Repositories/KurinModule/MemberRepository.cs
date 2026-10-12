@@ -137,8 +137,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     GroupKey = x.Placement.GroupKey,
                     GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
                     KurinKey = x.Placement.KurinKey,
-                    // Кадра виховників, і саме цього куреня. Уряд типу Group — це гуртковий, а він
-                    // юнак; тому тут звужено до KV, а не до «має якийсь уряд». Активне закріплення
+                    // Кадра виховників, і саме цього куреня. Роль типу Group — це гуртковий, а він
+                    // юнак; тому тут звужено до KV, а не до «має якусь роль». Активне закріплення
                     // за гуртком — теж впорядник: доступ так його й трактує (LeadershipRepository),
                     // і реєстр не має казати «юнак» тому, кого сайдбар зве впорядником.
                     // Це дзеркало KurinRoster.IsStaffOffice і KurinRoster.IsStaffAssignment, яким

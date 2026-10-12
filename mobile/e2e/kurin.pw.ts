@@ -196,7 +196,7 @@ test('shows the kurin with its groups, КВ, провід and people', async ({ 
 
   // By office: the Звʼязковий leads.
   await page.getByRole('button', { name: 'Сортування' }).click();
-  await page.getByRole('button', { name: 'За посадою' }).click();
+  await page.getByRole('button', { name: 'За роллю' }).click();
   await expect(members.first()).toContainText('Петренко Олена');
 
   await page.locator('[data-testid=member-search] input').fill('бойко');

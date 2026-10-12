@@ -304,7 +304,7 @@ import { GlassEffects } from '../ui/glass';
               <div class="lk-field">
                 <span class="lk-field__label">Пароль</span>
                 <div class="lk-input-box lk-invalid"><ion-input aria-label="Пароль" type="password" value="секретик" /></div>
-                <span class="lk-field__error">Невірний email або пароль.</span>
+                <span class="lk-field__error">Неправильний email або пароль.</span>
               </div>
             </div>
           </div>

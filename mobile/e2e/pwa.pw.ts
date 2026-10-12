@@ -158,7 +158,7 @@ test('signs in with email and password, and keeps the session across a reload', 
   await shot(page, info.project.name, '00-login');
 
   await fillCredentials(page, { ...member, password: 'wrong' });
-  await expect(page.getByRole('alert')).toHaveText('Невірний email або пароль.');
+  await expect(page.getByRole('alert')).toHaveText('Неправильний email або пароль.');
   await expect(page).toHaveURL(/\/m\/login$/);
   await shot(page, info.project.name, '00-login-error');
 
@@ -187,7 +187,7 @@ test('asks for the code when the account has two-factor sign-in', async ({ page 
 
   await page.locator('[data-testid=code] input').fill('000000');
   await page.getByRole('button', { name: 'Підтвердити' }).click();
-  await expect(page.getByRole('alert')).toHaveText('Невірний код підтвердження.');
+  await expect(page.getByRole('alert')).toHaveText('Неправильний код підтвердження.');
 
   await page.locator('[data-testid=code] input').fill('123456');
   await page.getByRole('button', { name: 'Підтвердити' }).click();

@@ -302,7 +302,7 @@ describe('LeadershipComponent', () => {
       expect(leadershipServiceSpy.update).not.toHaveBeenCalled();
     });
 
-    it('зберігає провід, де обсаджено лише частину урядів', () => {
+    it('зберігає провід, де обсаджено лише частину ролей', () => {
       component.buildFormRowsFromDefaults('group');
       const seat = (role: LeadershipRole) => component.leadershipHistories.controls
         .find(c => c.getRawValue().role === role)!

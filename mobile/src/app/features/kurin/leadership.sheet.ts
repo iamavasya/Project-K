@@ -110,7 +110,7 @@ const FROM = { kurin: 'Обирай з учасників куреня.', group:
           }
         </ion-item-group>
       </ion-list>
-      <p class="hint">{{ fromHint() }} Попередні уряди лишаються в архіві проводу.</p>
+      <p class="hint">{{ fromHint() }} Попередні ролі лишаються в архіві проводу.</p>
 
       <ion-list [inset]="true" data-testid="leadership-archive">
         <ion-item-group>
