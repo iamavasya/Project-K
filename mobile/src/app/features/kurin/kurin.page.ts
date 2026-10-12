@@ -46,15 +46,17 @@ import {
   fullName,
   hasYouthProgram,
   kurinAccess,
+  kvRowTags,
   kvRows,
   memberRoleTags,
+  officeTag,
   plastLevelLabel,
-  roleName,
   sortMembers,
 } from './kurin.labels';
 import { GroupDto, KurinDto, LeadershipDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { RoleTags } from './role-tags';
 import { GroupSilhouette } from './group-silhouette';
 import { KurinPlaque } from './kurin-plaque';
 import { GroupEditResult, GroupEditSheet } from './group-edit.sheet';
@@ -82,6 +84,7 @@ const DESCRIPTION_LIMIT = 360;
 @Component({
   selector: 'app-kurin',
   imports: [
+    RoleTags,
     IonMenuButton,
     HeaderActions,
     IonHeader,
@@ -325,7 +328,7 @@ const DESCRIPTION_LIMIT = 360;
                       <app-member-avatar slot="start" [photo]="row.member.profilePhotoUrl" [firstName]="row.member.firstName" [lastName]="row.member.lastName" />
                       <ion-label class="ion-text-wrap">
                         <h3>{{ name(row.member) }}</h3>
-                        <p>{{ row.status }} · {{ row.groups.length ? row.groups.join(', ') : 'без гуртків' }}</p>
+                        <app-role-tags [tags]="kvTags(row)" />
                       </ion-label>
                     </ion-item>
                   } @empty {
@@ -350,7 +353,7 @@ const DESCRIPTION_LIMIT = 360;
                     <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', office.member.memberKey]">
                       <ion-label class="ion-text-wrap">
                         <h3>{{ name(office.member) }}</h3>
-                        <p>{{ roleName(office.role) }}</p>
+                        <app-role-tags [tags]="[officeTag(office)]" />
                       </ion-label>
                     </ion-item>
                   } @empty {
@@ -411,7 +414,10 @@ const DESCRIPTION_LIMIT = 360;
                             <ion-icon class="verified stale" name="alert-circle" aria-label="Дані змінено після верифікації" />
                           }
                         </h3>
-                        <p>{{ memberLine(member) }}</p>
+                        @if (levelLine(member); as level) {
+                          <p>{{ level }}</p>
+                        }
+                        <app-role-tags [tags]="roleTags(member)" />
                       </ion-label>
                     </ion-item>
                   } @empty {
@@ -439,7 +445,9 @@ export class KurinPage implements OnInit, OnDestroy {
 
   protected readonly kurinKey = this.auth.user()?.kurinKey ?? null;
   protected readonly failedText = FAILED_TEXT;
-  protected readonly roleName = roleName;
+  protected readonly roleTags = memberRoleTags;
+  protected readonly officeTag = officeTag;
+  protected readonly kvTags = kvRowTags;
 
   protected readonly section = signal<Section>('overview');
   protected readonly expanded = signal(false);
@@ -476,7 +484,7 @@ export class KurinPage implements OnInit, OnDestroy {
   );
   protected readonly membersHeader = computed(() => {
     const all = valueOf(this.members());
-    const by = this.sort() === 'name' ? 'за прізвищем' : 'за посадою';
+    const by = this.sort() === 'name' ? 'за прізвищем' : 'за роллю';
     return all ? `${all.length} ${plural(all.length)} · ${by}` : 'Учасники';
   });
 
@@ -524,11 +532,9 @@ export class KurinPage implements OnInit, OnDestroy {
     return BRANCH_LABELS[kurin.branch ?? 'UPYu'];
   }
 
-  /** The offices first, as the web's «Статус» column; else the ступінь. */
-  protected memberLine(member: MemberLookupDto): string {
-    const roles = memberRoleTags(member);
-    if (roles.length) return roles.join(' · ');
-    return plastLevelLabel(member) ?? 'Учасник';
+  /** The ступінь above the office tags; «Учасник» only for someone with neither (web «Статус»). */
+  protected levelLine(member: MemberLookupDto): string | null {
+    return plastLevelLabel(member) ?? (memberRoleTags(member).length ? null : 'Учасник');
   }
 
   protected async chooseSort(): Promise<void> {
@@ -536,7 +542,7 @@ export class KurinPage implements OnInit, OnDestroy {
       header: 'Сортування',
       buttons: [
         { text: 'За прізвищем', data: 'name' },
-        { text: 'За посадою', data: 'role' },
+        { text: 'За роллю', data: 'role' },
         { text: 'Скасувати', role: 'cancel' },
       ],
     });

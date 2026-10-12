@@ -1,5 +1,6 @@
 import { KurinScopeOption } from '../../auth/auth.models';
 import {
+  accountRoleTag,
   displayCodeName,
   fitWithin,
   groupRole,
@@ -77,5 +78,14 @@ describe('account labels', () => {
     expect(pingResult(new Error('Timeout'))).toBe('waking');
     expect(pingResult(new HttpErrorResponse({ status: 0 }))).toBe('unreachable');
     expect(pingResult(new HttpErrorResponse({ status: 404 }))).toBe('up');
+  });
+});
+
+describe('accountRoleTag', () => {
+  it('tags the switcher row as the web sidebar does', () => {
+    expect(accountRoleTag({ isAdmin: true, roles: ['Admin'] })).toEqual({ label: 'Адміністратор', tone: 'danger' });
+    expect(accountRoleTag({ isAdmin: false, roles: ['Member', 'KV.Vykhovnyk', 'KV.Zvyazkovyi'] })).toEqual({ label: 'Звʼязковий', tone: 'danger' });
+    expect(accountRoleTag({ isAdmin: false, roles: ['Kurin.Skarbnyk'] })).toEqual({ label: 'Скарбник', tone: 'success' });
+    expect(accountRoleTag({ isAdmin: false, roles: ['Member'] })).toEqual({ label: 'Учасник', tone: 'info' });
   });
 });

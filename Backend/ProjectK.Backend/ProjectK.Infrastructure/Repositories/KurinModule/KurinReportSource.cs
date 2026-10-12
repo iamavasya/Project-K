@@ -77,7 +77,7 @@ public sealed class KurinReportSource : IKurinReportSource
             .Where(user => userKeys.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, cancellationToken);
 
-        // Уряди більше не читаються тут окремим запитом. Вони вже приходять із людиною
+        // Ролі більше не читаються тут окремим запитом. Вони вже приходять із людиною
         // (`Include(LeadershipHistories).ThenInclude(Leadership)`), а звіт друкує їх словами, не
         // системними ролями — тож той запит рахував те саме вдруге, аби перекласти назад у
         // "KV.Vykhovnyk".

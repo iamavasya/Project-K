@@ -23,6 +23,22 @@ export interface LoginResponse {
   tokens: { accessToken: string } | null;
 }
 
+/**
+ * Another account this browser is signed in to, from `auth/accounts` (web saved-account.model.ts,
+ * the API's SavedAccountDto).
+ */
+export interface SavedAccount {
+  userKey: string;
+  memberKey: string | null;
+  email: string;
+  /** Empty for an account without a member, such as a bare administrator. */
+  fullName: string;
+  profilePhotoUrl: string | null;
+  isAdmin: boolean;
+  /** System-role names for the kurin the account was last in, for display only. */
+  roles: string[];
+}
+
 export type LoginOutcome = { kind: 'signed-in' } | { kind: 'mfa'; mfaToken: string | null };
 
 export interface MfaStatus {

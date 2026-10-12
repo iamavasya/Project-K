@@ -333,8 +333,8 @@ export class MemberCardComponent implements OnInit {
   }
 
   /**
-   * Чинні уряди в КВ — там, де людина у виховному проводі: впорядник, зв'язковий. Уряди куреня й
-   * гуртка сюди не йдуть — це юнацькі уряди.
+   * Чинні ролі в КВ — там, де людина у виховному проводі: впорядник, зв'язковий. Ролі куреня й
+   * гуртка сюди не йдуть — це юнацькі ролі.
    */
   get staffOffices(): LeadershipHistoryDto[] {
     return (this.member?.leadershipHistories ?? [])

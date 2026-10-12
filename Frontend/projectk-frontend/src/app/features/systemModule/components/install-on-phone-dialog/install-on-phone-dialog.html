@@ -1,0 +1,36 @@
+<p-dialog
+  header="Лілейка на твоєму телефоні"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(96vw, 32rem)' }">
+
+  <div class="install-phone">
+    <div class="install-phone__code">
+      @if (code(); as installCode) {
+        <img [src]="installCode.qrCode" alt="QR-код зі сторінкою встановлення Лілейки на телефон" width="200" height="200" />
+      } @else if (failed()) {
+        <span class="install-phone__fallback">Код не завантажився. Закрий і відкрий це вікно ще раз.</span>
+      } @else {
+        <span class="pi pi-spin pi-spinner" aria-label="Готую код"></span>
+      }
+    </div>
+
+    <div class="install-phone__body">
+      <p class="install-phone__lead">
+        Відскануй код камерою телефона, встанови застосунок за підказкою й увійди у свій акаунт.
+      </p>
+      <a class="install-phone__help" [href]="helpUrl" target="_blank" rel="noopener">Як це працює</a>
+    </div>
+  </div>
+
+  @if (code(); as installCode) {
+    <div class="install-phone__link">
+      <span class="install-phone__url">{{ installCode.url }}</span>
+      <p-button label="Скопіювати посилання" icon="pi pi-copy" variant="text" size="small" (onClick)="copyLink(installCode.url)" />
+    </div>
+  }
+</p-dialog>

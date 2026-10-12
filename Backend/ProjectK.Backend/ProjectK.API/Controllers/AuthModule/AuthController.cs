@@ -15,6 +15,9 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Add;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Get;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Switch;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
@@ -127,13 +130,14 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("StrictAuthLimit")]
     [HttpPost("login")]
     [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Login([FromBody] LoginUserRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginUserRequest request, [FromQuery] bool addAccount = false)
     {
         var command = _mapper.Map<LoginUserCommand>(request);
         command.MfaTrustToken = MfaTrustCookie.Read(Request);
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data.Tokens != null)
         {
+            await KeepPreviousSessionIf(addAccount, response.Data.UserKey);
             SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
         }
         return response.ToActionResult(this);
@@ -245,19 +249,86 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Revokes the caller's refresh token and clears the cookie.
     /// </summary>
+    /// <remarks>
+    /// Ends the accounts this browser keeps for switching as well: signing out of a shared computer
+    /// must not leave another account one click away.
+    /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
         var refreshTokens = GetRefreshTokenCookieValues();
-        var command = new LogoutUserCommand(this.UserKey()?.ToString(), refreshTokens);
+        var savedTokens = SavedSessionsCookie.Read(Request);
+        var command = new LogoutUserCommand(this.UserKey()?.ToString(), refreshTokens, savedTokens);
         var response = await _mediator.Send(command);
         if (refreshTokens.Count > 0)
         {
             DeleteRefreshTokenCookie();
         }
+        if (savedTokens.Count > 0)
+        {
+            SavedSessionsCookie.Delete(HttpContext);
+        }
         return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// The other accounts this browser is signed in to, for the account switcher.
+    /// </summary>
+    /// <remarks>
+    /// Anonymous like <c>refresh</c>: the httpOnly cookies are the credential. Sessions that have
+    /// ended since are dropped from the cookie on the way.
+    /// </remarks>
+    [AllowAnonymous]
+    [HttpGet("accounts")]
+    [ProducesResponseType(typeof(IEnumerable<SavedAccountDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSavedAccounts()
+    {
+        var savedTokens = SavedSessionsCookie.Read(Request);
+        if (savedTokens.Count == 0)
+        {
+            return Ok(Array.Empty<SavedAccountDto>());
+        }
+
+        var response = await _mediator.Send(new GetSavedAccountsQuery(savedTokens, GetRefreshTokenCookieValues()));
+        if (response.Type != ResultType.Success || response.Data is null)
+        {
+            return response.ToActionResult(this);
+        }
+
+        if (response.Data.Saved.Count != savedTokens.Count)
+        {
+            SavedSessionsCookie.Write(HttpContext, response.Data.Saved);
+        }
+        return Ok(response.Data.Accounts);
+    }
+
+    public class SwitchAccountRequest { public Guid UserKey { get; set; } }
+
+    /// <summary>
+    /// Makes a kept account the one in use; the account that was in use is kept in its place.
+    /// </summary>
+    /// <remarks>
+    /// Answers like a sign-in. Anonymous for the same reason as <c>refresh</c>: the access token of
+    /// the account being left may already have expired, and the kept session is what proves the right.
+    /// </remarks>
+    [AllowAnonymous]
+    [HttpPost("accounts/switch")]
+    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SwitchAccount([FromBody] SwitchAccountRequest request)
+    {
+        var command = new SwitchSavedAccountCommand(request.UserKey, SavedSessionsCookie.Read(Request), GetRefreshTokenCookieValues());
+        var response = await _mediator.Send(command);
+        if (response.Type != ResultType.Success || response.Data?.Login.Tokens is not { } tokens)
+        {
+            return response.ToActionResult(this);
+        }
+
+        SetRefreshTokenCookie(tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+        SavedSessionsCookie.Write(HttpContext, response.Data.Saved);
+        return Ok(response.Data.Login);
     }
 
     /// <summary>
@@ -364,12 +435,13 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("mfa/login-verify")]
     [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request)
+    public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request, [FromQuery] bool addAccount = false)
     {
         var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe, request.MfaToken);
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data.Tokens != null)
         {
+            await KeepPreviousSessionIf(addAccount, response.Data.UserKey);
             SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
         }
         if (response.Type == ResultType.Success && response.Data.MfaTrust is { } trust)
@@ -394,6 +466,25 @@ public class AuthController : ControllerBase
     {
         var response = await _mediator.Send(new GetMfaStatusQuery());
         return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// On a sign-in that adds an account, keeps the session the browser was using so the person can
+    /// switch back to it. Read from the request before the new refresh cookie replaces it.
+    /// </summary>
+    private async Task KeepPreviousSessionIf(bool addAccount, Guid signedInUserKey)
+    {
+        var previous = GetRefreshTokenCookieValues();
+        if (!addAccount || previous.Count == 0)
+        {
+            return;
+        }
+
+        var saved = await _mediator.Send(new AddSavedAccountCommand(SavedSessionsCookie.Read(Request), previous, signedInUserKey));
+        if (saved.Type == ResultType.Success && saved.Data is not null)
+        {
+            SavedSessionsCookie.Write(HttpContext, saved.Data);
+        }
     }
 
     private void SetRefreshTokenCookie(string token, DateTime expires) => RefreshTokenCookie.Set(HttpContext, token, expires);

@@ -140,8 +140,9 @@ test('shows everyone the КВ and the провід with their archives, and noth
   const rows = page.getByTestId('kv-row');
   await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText('Петренко');
-  await expect(rows.first()).toContainText('Звʼязковий · без призначених гуртків');
-  await expect(rows.nth(1)).toContainText('Впорядник · Соколи');
+  await expect(rows.first().locator('ion-badge')).toHaveText(['Звʼязковий']);
+  await expect(rows.first().locator('ion-badge')).toHaveClass(/lk-tag--danger/);
+  await expect(rows.nth(1).locator('ion-badge')).toHaveText(['Впорядник', 'Соколи']);
   await expect(page.getByTestId('kv-archived')).toContainText('Коваль');
   await expect(page.getByTestId('kv-archived')).toContainText('01.09.23 – 30.06.25');
   for (const part of ['add-mentor', 'edit-mentor', 'hand-over']) await expect(page.getByTestId(part)).toHaveCount(0);
@@ -153,9 +154,12 @@ test('shows everyone the КВ and the провід with their archives, and noth
   const now = page.getByTestId('office');
   await expect(now).toHaveCount(2);
   await expect(now.first()).toContainText('Шевчук');
-  await expect(now.first()).toContainText('Курінний · з 01.09.25');
+  await expect(now.first()).toContainText('з 01.09.25');
+  await expect(now.first().locator('ion-badge.lk-tag--danger')).toHaveText('Курінний');
   await expect(page.getByTestId('past-office')).toContainText('Коваль');
-  await expect(page.getByTestId('past-office')).toContainText('Курінний · 01.09.23 – 31.08.25');
+  await expect(page.getByTestId('past-office')).toContainText('01.09.23 – 31.08.25');
+  // An ended office is grey whatever it was, as on the web.
+  await expect(page.getByTestId('past-office').locator('ion-badge.lk-tag--secondary')).toHaveText('Курінний');
   await expect(page.getByTestId('setup-leadership')).toHaveCount(0);
   await shot(page, project, 'leadership-page');
 
@@ -191,7 +195,7 @@ test('lets the Звʼязковий add a впорядник, change their гу�
   await sheet.getByTestId('save-mentor').click();
   await expect.poll(() => writes(log, 'POST', /^group\/g\d\/mentors\//).map((w) => w.path)).toEqual(['group/g2/mentors/u-m6']);
   await expect(sheet).toHaveCount(0);
-  await expect(page.getByTestId('kv-row').filter({ hasText: 'Гнатюк' })).toContainText('Впорядник · Орли');
+  await expect(page.getByTestId('kv-row').filter({ hasText: 'Гнатюк' }).locator('ion-badge')).toHaveText(['Впорядник', 'Орли']);
 
   // Their гуртки from the row: Соколи on, Орли off.
   await page.getByTestId('kv-row').filter({ hasText: 'Гнатюк' }).getByTestId('edit-mentor').click();
@@ -204,7 +208,7 @@ test('lets the Звʼязковий add a впорядник, change their гу�
     'POST group/g1/mentors/u-m6',
     'POST group/g2/mentors/u-m6',
   ]);
-  await expect(page.getByTestId('kv-row').filter({ hasText: 'Гнатюк' })).toContainText('Впорядник · Соколи');
+  await expect(page.getByTestId('kv-row').filter({ hasText: 'Гнатюк' }).locator('ion-badge')).toHaveText(['Впорядник', 'Соколи']);
   await expect(page.getByTestId('kv-archived').filter({ hasText: 'Гнатюк' })).toContainText('Орли');
   await expect(page.locator('ion-toast')).toHaveCount(0, { timeout: 8_000 });
 

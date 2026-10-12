@@ -244,7 +244,7 @@ test('changes contacts and the password from Акаунт', async ({ page }, inf
   await contacts.locator('[data-testid=contact-email] input').filter({ visible: true }).fill('new@example.com');
   await contacts.locator('[data-testid=contact-password] input').filter({ visible: true }).fill('wrong');
   await contacts.getByTestId('save-contacts').click();
-  await expect(contacts.getByRole('alert')).toHaveText('Невірний поточний пароль.');
+  await expect(contacts.getByRole('alert')).toHaveText('Неправильний поточний пароль.');
   await contacts.locator('[data-testid=contact-password] input').filter({ visible: true }).fill(member.password);
   await shot(page, info.project.name, 'account-03-contacts');
   await contacts.getByTestId('save-contacts').click();
@@ -300,7 +300,7 @@ test('renews recovery codes and turns the second factor off', async ({ page }, i
   await account.getByText('Вимкнути двофакторний вхід').click();
   await alert.locator('input').fill('wrong');
   await alert.getByRole('button', { name: 'Вимкнути' }).click();
-  await expect(page.getByText('Невірний поточний пароль.')).toBeVisible();
+  await expect(page.getByText('Неправильний поточний пароль.')).toBeVisible();
   await expect(account.getByTestId('mfa-status')).toHaveText('Увімкнено');
 
   await account.getByText('Вимкнути двофакторний вхід').click();

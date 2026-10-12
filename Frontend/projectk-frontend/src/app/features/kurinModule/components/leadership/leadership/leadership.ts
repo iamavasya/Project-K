@@ -184,8 +184,8 @@ export class LeadershipComponent implements OnInit {
     const isArchived = !!data?.endDate;
     return this.fb.group({
       role: [{ value: role, disabled: true }, Validators.required],
-      // Жоден уряд не обов'язковий: у проводі буває лише курінний чи гуртковий, суддя й писар, а
-      // решти людей просто немає. Порожній рядок означає «уряд не обсаджено».
+      // Жодна роль не обов'язкова: у проводі буває лише курінний чи гуртковий, суддя й писар, а
+      // решти людей просто немає. Порожній рядок означає «роль нікому не призначено».
       member: [{ value: data?.member || null, disabled: isArchived }],
       startDate: [data?.startDate ? new Date(data.startDate) : null],
       endDate: [data?.endDate ? new Date(data.endDate) : null],
@@ -224,7 +224,7 @@ export class LeadershipComponent implements OnInit {
 
     this.leadershipHistories.removeAt(index);
 
-    // Одномісний уряд лишається в списку порожнім рядком, щоб його можна було обсадити пізніше
+    // Роль на одну людину лишається в списку порожнім рядком, щоб її можна було призначити пізніше
     if (!this.canHaveMultipleMembers(role)) {
        const remainingRows = this.getRoleRowsCount(role);
        if (remainingRows === 0) {
@@ -235,7 +235,7 @@ export class LeadershipComponent implements OnInit {
 
   /**
    * Новий провід без жодної людини зберігати нема чого. Наявний — можна: зняти всіх означає
-   * закрити їхні уряди.
+   * закрити їхні ролі.
    */
   get canSave(): boolean {
     return !!this.leadershipKey

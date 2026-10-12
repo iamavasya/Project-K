@@ -792,7 +792,7 @@ describe('MemberCardComponent', () => {
   describe('впорядництво', () => {
     const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    it('показує чинні уряди КВ і закріплені гуртки, без юнацьких і минулих урядів', () => {
+    it('показує чинні ролі КВ і закріплені гуртки, без юнацьких і минулих ролей', () => {
       memberServiceSpy.getByKey.and.returnValue(of({
         ...member,
         mentoredGroupNames: ['Gurtok 1', 'Gurtok 2'],

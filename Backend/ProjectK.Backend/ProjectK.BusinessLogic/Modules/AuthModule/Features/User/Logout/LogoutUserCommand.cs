@@ -24,9 +24,16 @@ public class LogoutUserCommand : IRequest<ServiceResult<object>>
     /// </summary>
     public IReadOnlyList<string> RefreshTokens { get; set; }
 
-    public LogoutUserCommand(string? userKey, IReadOnlyList<string>? refreshTokens = null)
+    /// <summary>
+    /// The sessions this browser keeps for the other accounts it can switch to. Signing out ends
+    /// them too, whoever they belong to: holding the token is the right to end it.
+    /// </summary>
+    public IReadOnlyList<string> SavedTokens { get; set; }
+
+    public LogoutUserCommand(string? userKey, IReadOnlyList<string>? refreshTokens = null, IReadOnlyList<string>? savedTokens = null)
     {
         UserKey = userKey;
         RefreshTokens = refreshTokens ?? [];
+        SavedTokens = savedTokens ?? [];
     }
 }

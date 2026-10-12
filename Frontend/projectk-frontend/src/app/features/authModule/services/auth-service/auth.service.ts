@@ -6,6 +6,7 @@ import { LoginRequest } from "../../models/login-request.model";
 import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
 import { KurinScopeOption } from "../../../kurinModule/models/kurin-scope-option.model";
+import { SavedAccount } from "../../models/saved-account.model";
 import { clearMfaSessionState } from "../mfa-session-state";
 import { clearTileLayoutStorage } from "../../../../shared/tile-board/tile-layout-storage";
 import { ClientCacheService } from "../../../kurinModule/services/client-cache/client-cache.service";
@@ -72,9 +73,13 @@ export class AuthService {
     return this.authState$.value;
   } 
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
+  /**
+   * `addAccount` keeps the account in use one tap away in the account switcher instead of ending
+   * it: the server moves its session aside before the new one takes the refresh cookie.
+   */
+  login(credentials: LoginRequest, addAccount = false): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
-      `${this.apiUrl}/auth/login`,
+      `${this.apiUrl}/auth/login${addAccount ? '?addAccount=true' : ''}`,
       credentials,
       { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
@@ -91,9 +96,9 @@ export class AuthService {
    * The second step of a sign-in. `mfaToken` is what the password step answered with; the server
    * refuses a code that arrives without it.
    */
-  verifyMfaLogin(email: string, code: string, mfaToken: string | null): Observable<AuthState> {
+  verifyMfaLogin(email: string, code: string, mfaToken: string | null, addAccount = false): Observable<AuthState> {
     return this.http.post<LoginResponse>(
-      `${this.apiUrl}/auth/mfa/login-verify`,
+      `${this.apiUrl}/auth/mfa/login-verify${addAccount ? '?addAccount=true' : ''}`,
       { email, code, rememberMe: true, mfaToken },
       { withCredentials: true, context: requestFeedback('errors') }
     ).pipe(
@@ -101,6 +106,32 @@ export class AuthService {
       tap(state => {
         clearMfaSessionState();
         this.applyState(state);
+      })
+    );
+  }
+
+  /** The other accounts this browser is signed in to; the httpOnly cookies say which. */
+  getSavedAccounts(): Observable<SavedAccount[]> {
+    return this.http.get<SavedAccount[]>(
+      `${this.apiUrl}/auth/accounts`,
+      { withCredentials: true, context: requestFeedback('silent') }
+    );
+  }
+
+  /**
+   * Makes a kept account the one in use; the account being left is kept in its place. Everything
+   * remembered for the previous account is dropped here, but the caller should still reload the
+   * page: screens and services hold that account's data in memory too.
+   */
+  switchAccount(userKey: string): Observable<AuthState> {
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/auth/accounts/switch`,
+      { userKey },
+      { withCredentials: true, context: requestFeedback('errors') }
+    ).pipe(
+      map(response => {
+        clearTileLayoutStorage();
+        return this.applyLoginResponse(response);
       })
     );
   }
