@@ -6,12 +6,16 @@
         <section class="member-tile member-profile-tile rounded-2xl p-4 md:p-5">
             <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">
                 <div class="member-photo-frame flex items-center justify-center p-2">
+                    @if (member.profilePhotoUrl) {
                     <img
                         width="320"
-                        src="{{ member.profilePhotoUrl || 'https://placehold.co/560x560?text=Member+Image' }}"
+                        [src]="member.profilePhotoUrl"
                         alt="{{ member.firstName }} {{ member.lastName }}"
                         class="member-photo h-48 w-full rounded-xl object-cover md:w-48"
                     />
+                    } @else {
+                    <span class="member-photo member-photo--initials h-48 w-full rounded-xl md:w-48" aria-hidden="true">{{ photoInitials }}</span>
+                    }
                 </div>
 
                 <div class="min-w-0">
@@ -51,42 +55,28 @@
 
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
                         <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Email:</span>
+                            <span class="member-summary-label">Email: </span>
                             <span class="member-summary-value">
                                 @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
                             </span>
                         </p>
 
                         <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Телефон:</span>
+                            <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
                                 @if (phoneLink; as href) { <a [href]="href">{{ member.phoneNumber }}</a> } @else { {{ member.phoneNumber || 'Не вказано' }} }
                             </span>
                         </p>
 
                         <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Дата народження:</span>
+                            <span class="member-summary-label">Дата народження: </span>
                             <span class="member-summary-value">
-                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'yyyy-MM-dd') : 'Не вказано' }}
+                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
                             </span>
                         </p>
-
-                        @if (member.school) {
-                        <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Школа:</span>
-                            <span class="member-summary-value"> {{ member.school }}</span>
-                        </p>
-                        }
-
-                        @if (member.address) {
-                        <p class="member-summary-line text-sm sm:col-span-2">
-                            <span class="member-summary-label">Адреса:</span>
-                            <span class="member-summary-value"> {{ member.address }}</span>
-                        </p>
-                        }
                         @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
                         <p class="member-summary-line text-sm sm:col-span-2">
-                            <span class="member-summary-label">Верифіковано:</span>
+                            <span class="member-summary-label">Верифіковано: </span>
                             <span class="member-summary-value"> {{ profileVerifiedAtDisplay }}</span>
                         </p>
                         }
@@ -402,7 +392,7 @@
 
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                    <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc || 'Дата відсутня' }}</p>
+                                    <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc ? (skill.reviewedAtUtc | date:'dd.MM.yyyy') : 'Дата відсутня' }}</p>
                                 </div>
                             </div>
 
@@ -447,7 +437,7 @@
 
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                    <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc || 'Дата відсутня' }}</p>
+                                    <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc ? (skill.submittedAtUtc | date:'dd.MM.yyyy') : 'Дата відсутня' }}</p>
                                 </div>
                             </div>
 

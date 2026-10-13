@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpResponse } from '@angular/common/http';
@@ -15,13 +15,11 @@ import { MenuModule } from '@openng/optimus-ui/menu';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { MemberService } from '../../services/member-service/member.service';
 import { KurinNumberComponent } from '../../components/kurin-number/kurin-number';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { MemberListComponent } from '../../components/member-list/member-list';
 import { KurinDto } from '../../models/kurin.dto';
-import { JoinByCodeDialogComponent } from '../../components/join-by-code-dialog/join-by-code-dialog';
 import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { KvPanelComponent } from '../../components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
@@ -42,7 +40,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     KurinNumberComponent,
     MemberListComponent,
     TagModule,
-    JoinByCodeDialogComponent,
     TooltipModule,
     KvPanelComponent,
     LeadershipPanelComponent,
@@ -59,7 +56,6 @@ export class KurinPanelComponent implements OnInit {
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
-  private readonly memberService = inject(MemberService);
   private readonly fb = inject(FormBuilder);
 
   groups: GroupDto[] = [];
@@ -68,8 +64,6 @@ export class KurinPanelComponent implements OnInit {
   kurinKey = '';
   kurinNumber: number | null = null;
   kurinData: KurinDto | null = null;
-  isJoinByCodeVisible = false;
-  readonly memberList = viewChild(MemberListComponent);
 
   canManageGroups = false;
   canManageMembers = false;
@@ -257,12 +251,6 @@ export class KurinPanelComponent implements OnInit {
 
   onOpenClick(groupKey: string): void {
     this.router.navigate(['/group', groupKey]);
-  }
-
-  /** Склад куреня щойно змінився не через цю сторінку — перечитуємо його. */
-  onMembershipsChanged(): void {
-    this.memberService.invalidateMemberCache();
-    this.memberList()?.reload();
   }
 
   onMemberCreate(): void {
