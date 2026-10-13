@@ -26,11 +26,11 @@ docker/                        одна збірка образу на всі с
 scripts/                       dev.sh / dev.ps1 — підняти будь-яке середовище локально
 ```
 
-Три залежності живуть як зовнішні пакети, не як проєкти в солюшені: `ProjectK.Optimization`
-(закритий двигун підбору дати табору в плануванні — `CampDateSolver`),
-`ProjectK.ProbeAndBadges.DependencyInjection` (каталоги проб і вмілостей),
-`ProjectK.ProbeAndBadges.Abstractions`. Каталоги **читаються, а не редагуються** через застосунок —
-тому `BadgesCatalogController` і `ProbesCatalogController` не мають операцій запису.
+`ProjectK.Optimization` (закритий двигун підбору дати табору в плануванні — `CampDateSolver`) живе
+як зовнішній пакет, не як проєкт у солюшені. Каталог вмілостей, проб і відзначень Лілейка бере із
+сервісу каталогу по API (`GET /v1/catalog`, секція `Catalog` в `appsettings`). Каталоги **читаються,
+а не редагуються** через застосунок — тому `BadgesCatalogController` і `ProbesCatalogController` не
+мають операцій запису.
 
 ---
 

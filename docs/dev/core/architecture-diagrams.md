@@ -121,7 +121,7 @@ flowchart TB
         BG["Фонові служби<br/>аудит · перестороги · осиротілі фото · архів задач"]
     end
 
-    EXT["Зовнішні пакети<br/>ProjectK.Optimization · ProbeAndBadges.*"]
+    EXT["Зовнішнє<br/>пакет ProjectK.Optimization · API каталогу"]
 
     API --> BL
     API --> INFRA

@@ -14,8 +14,8 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.ProbeAndBadges.Abstractions;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -29,12 +29,12 @@ namespace ProjectK.API.Controllers.KurinModule;
 public class MemberAwardsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IAwardImagesStore _awardImagesStore;
+    private readonly IAwardImagesCatalog _awardImages;
 
-    public MemberAwardsController(IMediator mediator, IAwardImagesStore awardImagesStore)
+    public MemberAwardsController(IMediator mediator, IAwardImagesCatalog awardImages)
     {
         _mediator = mediator;
-        _awardImagesStore = awardImagesStore;
+        _awardImages = awardImages;
     }
 
     /// <summary>
@@ -84,19 +84,20 @@ public class MemberAwardsController : ControllerBase
     }
 
     /// <summary>
-    /// Serves the illustration for an award level, coloured or plain.
+    /// Serves the illustration for an award level, coloured or plain, as the catalogue publishes it.
     /// </summary>
     [AllowAnonymous]
     [HttpGet("/api/awards/images/{level}")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "image/png")]
-    public IActionResult GetAwardImage(int level, [FromQuery] bool colored = true)
+    public async Task<IActionResult> GetAwardImage(int level, [FromQuery] bool colored = true, CancellationToken cancellationToken = default)
     {
-        var stream = _awardImagesStore.GetAwardImageStream(level, colored);
-        if (stream == null)
+        var image = await _awardImages.GetAwardImageAsync(level, colored, cancellationToken);
+        if (image == null)
         {
             return this.Failure(ResultType.NotFound, "AwardImageNotFound", "No award image exists for this level.");
         }
 
-        return File(stream, "image/png");
+        Response.Headers.CacheControl = "public,max-age=86400";
+        return File(image.Content, image.ContentType);
     }
 }

@@ -1,4 +1,4 @@
-using ProjectK.ProbeAndBadges.Abstractions;
+using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

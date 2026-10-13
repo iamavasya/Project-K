@@ -35,7 +35,6 @@
     <!-- Pin transitive Microsoft.OpenApi above the vulnerable range (GHSA-v5pm-xwqc-g5wc). -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageReference Include="ProjectK.Optimization" Version="1.1.1" />
-    <PackageReference Include="ProjectK.ProbeAndBadges.DependencyInjection" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

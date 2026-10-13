@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.ProbeAndBadges.Abstractions;
+using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
 /// <summary>
 /// The badge catalogue — the definitions themselves, identical for every kurin. Read-only: the
-/// catalogue ships with the application rather than being edited through it.
+/// catalogue service owns them and Lilejka keeps a copy.
 /// </summary>
 [Route("api/catalog/badges")]
 [Authorize(Policy = AuthorizationPolicies.RequireUser)]

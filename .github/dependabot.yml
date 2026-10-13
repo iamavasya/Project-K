@@ -1,7 +1,7 @@
 version: 2
 
-# Note: the backend also restores private packages (ProjectK.Optimization,
-# ProjectK.ProbeAndBadges.*) from a private NuGet feed via NUGET_AUTH_TOKEN.
+# Note: the backend also restores a private package (ProjectK.Optimization)
+# from a private NuGet feed via NUGET_AUTH_TOKEN.
 # Dependabot cannot resolve those without a matching `registries:` block; if the
 # nuget updater errors on them, add a private registry here or scope it with
 # `ignore`. Public transitive packages still update fine. Reporting and scope

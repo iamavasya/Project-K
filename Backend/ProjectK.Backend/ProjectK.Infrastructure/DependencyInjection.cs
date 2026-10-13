@@ -6,6 +6,7 @@ using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Logging;
@@ -17,6 +18,7 @@ using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Seeding;
 using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Services.Catalog;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.Feedback;
 using ProjectK.Infrastructure.Services.GeoIP;
@@ -66,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
         services.AddSingleton<IActivityLogger, ActivityLogger>();
 
+        AddCatalog(services, configuration);
         AddEmail(services, configuration);
         AddFeedback(services, configuration);
         AddWebPush(services, configuration);
@@ -114,6 +117,24 @@ public static class DependencyInjection
         services.AddHttpClient<WebPushSender>(client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<WebPushDispatcher>();
         services.AddHostedService<WebPushBackgroundService>();
+    }
+
+    /// <summary>
+    /// Вмілості, проби and відзначення come from the catalogue service over HTTP and live in memory,
+    /// with the last good answer kept on disk for a restart without the network.
+    /// </summary>
+    private static void AddCatalog(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<CatalogOptions>(configuration.GetSection(CatalogOptions.SectionName));
+        var timeout = TimeSpan.FromSeconds(Math.Max(1, configuration.GetValue<int?>($"{CatalogOptions.SectionName}:TimeoutSeconds") ?? 30));
+
+        services.AddSingleton<CatalogStore>();
+        services.AddSingleton<IBadgesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
+        services.AddSingleton<IProbesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
+        services.AddHttpClient(CatalogClient.HttpClientName, client => client.Timeout = timeout);
+        services.AddSingleton<CatalogClient>();
+        services.AddSingleton<IAwardImagesCatalog, CatalogAwardImages>();
+        services.AddHostedService<CatalogSyncBackgroundService>();
     }
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)

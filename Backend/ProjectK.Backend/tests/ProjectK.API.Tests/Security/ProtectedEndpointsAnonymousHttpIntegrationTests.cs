@@ -16,7 +16,6 @@ using ProjectK.API.Helpers;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
-using ProjectK.ProbeAndBadges.Abstractions;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -104,9 +103,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         yield return Row("GET", "/api/notifications/push/public-key");
         yield return Row("POST", "/api/notifications/push/subscriptions", "{}");
         yield return Row("DELETE", "/api/notifications/push/subscriptions?endpoint=https%3A%2F%2Ffcm.googleapis.com%2Fx");
-
-        // Protected static assets
-        yield return Row("GET", "/badges_images/test.png");
     }
 
     private static object[] Row(string method, string route, string? body = null) => [method, route, body];
@@ -182,12 +178,10 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
     private sealed class ProtectedEndpointsTestHost : IAsyncDisposable
     {
         private readonly WebApplication _app;
-        private readonly string _assetsDirectory;
 
-        private ProtectedEndpointsTestHost(WebApplication app, string assetsDirectory)
+        private ProtectedEndpointsTestHost(WebApplication app)
         {
             _app = app;
-            _assetsDirectory = assetsDirectory;
             Client = app.GetTestClient();
         }
 
@@ -195,10 +189,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
 
         public static async Task<ProtectedEndpointsTestHost> StartAsync()
         {
-            var assetsDirectory = Path.Combine(Path.GetTempPath(), "projectk-badges-assets", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(assetsDirectory);
-            await File.WriteAllBytesAsync(Path.Combine(assetsDirectory, "test.png"), [0x89, 0x50, 0x4E, 0x47]);
-
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions
             {
                 EnvironmentName = "Testing"
@@ -216,7 +206,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            builder.Services.AddSingleton<IBadgesAssetsStore>(new TestBadgesAssetsStore(assetsDirectory));
             builder.Services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
 
             var app = builder.Build();
@@ -224,22 +213,16 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseBadgesImagesStaticFiles();
             app.MapControllers();
 
             await app.StartAsync();
-            return new ProtectedEndpointsTestHost(app, assetsDirectory);
+            return new ProtectedEndpointsTestHost(app);
         }
 
         public async ValueTask DisposeAsync()
         {
             await _app.StopAsync();
             await _app.DisposeAsync();
-
-            if (Directory.Exists(_assetsDirectory))
-            {
-                Directory.Delete(_assetsDirectory, recursive: true);
-            }
         }
     }
 
@@ -267,12 +250,5 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
             Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class TestBadgesAssetsStore(string assetsDirectoryPath) : IBadgesAssetsStore
-    {
-        public string? AssetsDirectoryPath { get; } = assetsDirectoryPath;
-        public bool HasAssets => true;
-        public BadgesAssetsSnapshotInfo? AssetsSnapshot => null;
     }
 }
