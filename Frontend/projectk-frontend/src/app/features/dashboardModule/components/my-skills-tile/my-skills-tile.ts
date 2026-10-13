@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { resolveBadgeImageUrl } from '../../../kurinModule/functions/member-skills-view-mapper.function';
+import { BadgeImageBlobService } from '../../../kurinModule/services/probes-and-badges/badge-image-blob.service';
 import { SkillMiniCardComponent } from '../../../kurinModule/pages/member-card/components/skill-mini-card/skill-mini-card';
 import { MyBadgeDto, MyGrowthDto } from '../../models/me.dto';
 
@@ -25,6 +26,8 @@ export interface SkillShelf {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MySkillsTileComponent {
+  private readonly badgeImages = inject(BadgeImageBlobService);
+
   readonly growth = input<MyGrowthDto | null>(null);
   readonly loading = input(false);
   readonly failed = input(false);
@@ -58,7 +61,12 @@ export class MySkillsTileComponent {
     return growth ? ['/member', growth.memberKey] : null;
   });
 
+  /**
+   * Badge pictures sit behind sign-in, so a bare <img> gets a 401: the blob service fetches them with
+   * the token. Reading `loaded` redraws the tile when one arrives.
+   */
   imageOf(badge: MyBadgeDto): string | null {
-    return resolveBadgeImageUrl(badge.imagePath);
+    this.badgeImages.loaded();
+    return this.badgeImages.resolveBadgeImageForDisplay(resolveBadgeImageUrl(badge.imagePath));
   }
 }

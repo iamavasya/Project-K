@@ -484,6 +484,17 @@ describe('UpsertMemberComponent', () => {
       expect(dto.email).toBe(loadedMember.email);
     });
 
+    it('should send the loaded address and school back so the update does not blank them', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
+      create();
+
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.address).toBe('вул. Січових Стрільців, 5');
+      expect(dto.school).toBe('Ліцей №3');
+    });
+
     it('should convert Date to yyyy-MM-dd format', () => {
       create();
       // Use noon to avoid timezone shifts
