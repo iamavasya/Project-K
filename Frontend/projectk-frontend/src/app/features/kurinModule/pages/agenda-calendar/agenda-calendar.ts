@@ -152,7 +152,9 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
 
   private onDatesSet(arg: DatesSetArg): void {
     this.currentRange = { from: arg.start.toISOString(), to: arg.end.toISOString() };
-    this.viewTitle.set(arg.view.title);
+    // «жовтень 2026 р.»: only the first letter goes up; text-transform: capitalize made it «Р.» too.
+    const title = arg.view.title;
+    this.viewTitle.set(title.charAt(0).toUpperCase() + title.slice(1));
     this.currentView.set(arg.view.type);
     this.reload();
     // Deferred re-measure: guards the first paint, where FullCalendar can size itself before the host has
