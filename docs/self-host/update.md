@@ -4,7 +4,8 @@
 
 ## Перед оновленням
 
-1. Прочитай нотатки до релізу.
+1. Прочитай нотатки до релізу на [GitHub Releases](https://github.com/iamavasya/Project-K/releases):
+   там сказано, чи є нові міграції і нові змінні `.env`.
 2. Зроби [копії бази і файлів](backup-restore.md).
 3. Збережи поточний `.env`.
 4. Перевір, що томи на місці:
@@ -48,7 +49,7 @@ ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION}
 ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION}
 ```
 
-Для живих інсталяцій — явна версія (наприклад `1.0`). Тег `beta` рухається до найновішої бети і
+Для живих інсталяцій — явна версія (наприклад `1.1.9`). Тег `beta` рухається до найновішої бети і
 годиться лише тим, хто свідомо хоче йти за нею.
 
 ## Оновлення з нового bundle
@@ -56,7 +57,9 @@ ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION}
 1. Завантаж новий `projectk-<версія>-docker-selfhost`.
 2. Розпакуй у нову теку.
 3. Скопіюй туди свій `.env`.
-4. Переглянь `.env.example` — чи не зʼявились нові змінні.
+4. Переглянь `.env.example` — чи не зʼявились нові змінні. У 1.1.x додались, зокрема,
+   `PROJECTK_EMAIL_*` (пошта), `PROJECTK_TIME_ZONE`, `PROJECTK_KURIN_NUMBER_MAX` і
+   `PROJECTK_WEBPUSH_*` (сповіщення на телефон) — див. [Self-host](README.md).
 5. Виконай:
 
 ```bash
@@ -74,6 +77,19 @@ Bundle використовує явні назви томів `projectk-sql-dat
 перевір реальні назви томів (`docker volume ls --filter name=projectk`). Якщо дані в томах із
 префіксом — зроби копію зі старої теки і віднови її в нові томи `projectk-sql-data` та
 `projectk-azurite-data`.
+
+## Перевір після оновлення
+
+1. `docker compose ps` — усі чотири контейнери `running (healthy)`.
+2. Здоровʼя API і його версія:
+
+   ```bash
+   docker compose exec projectk-api curl -fsS http://localhost:8080/health
+   ```
+
+   У відповіді `"status":"ready"` і нова версія.
+3. Увійди в Лілейку й відкрий «Про Лілейку» внизу бічного меню: там версія застосунку й API.
+4. Якщо щось не так — `docker compose logs -f projectk-api`.
 
 ## Відкат
 

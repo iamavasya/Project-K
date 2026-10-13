@@ -2,7 +2,10 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
@@ -24,30 +27,67 @@ public class MemberNotificationHandlersTests
         => new(domainEvent);
 
 
+    private MemberProfileWentStaleEventHandler StaleHandler(params (Membership Membership, bool VerificationOn)[] memberships)
+    {
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var membershipRepository = new Mock<IMembershipRepository>();
+        var kurinRepository = new Mock<IKurinRepository>();
+        membershipRepository
+            .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(memberships.Select(m => m.Membership).ToList());
+        foreach (var (membership, verificationOn) in memberships)
+        {
+            kurinRepository
+                .Setup(x => x.GetByKeyAsync(membership.KurinKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Kurin(1) { KurinKey = membership.KurinKey, ProfileVerificationEnabled = verificationOn });
+        }
+        unitOfWork.SetupGet(x => x.Memberships).Returns(membershipRepository.Object);
+        unitOfWork.SetupGet(x => x.Kurins).Returns(kurinRepository.Object);
+        return new MemberProfileWentStaleEventHandler(_notifications.Object, _recipients.Object, unitOfWork.Object);
+    }
+
     [Fact]
-    public async Task StaleProfile_ShouldAskTheOwnerToHaveItCheckedAgain()
+    public async Task StaleProfile_ShouldAskTheProvidWhoVerifyToCheckItAgain()
     {
         var memberKey = Guid.NewGuid();
-        var ownerUserKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
         var actorUserKey = Guid.NewGuid();
-        var handler = new MemberProfileWentStaleEventHandler(_notifications.Object);
+        var mentorUserKey = Guid.NewGuid();
+        _recipients
+            .Setup(x => x.ResolveAsync(kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([mentorUserKey]);
+        var handler = StaleHandler((new Membership { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = groupKey }, true));
 
         await handler.Handle(
-            Raised(new MemberProfileWentStale(memberKey, ownerUserKey, actorUserKey)),
+            Raised(new MemberProfileWentStale(memberKey, "Іван Петренко", actorUserKey)),
             CancellationToken.None);
 
-        _notifications.Verify(x => x.NotifyAsync(
-            It.Is<NotificationRequest>(request =>
-                request.RecipientUserKey == ownerUserKey
-                && request.Type == AppNotificationType.MemberProfileChangedAfterVerification
-                && request.Severity == AppNotificationSeverity.Warn
-                && request.EntityType == "Member"
-                && request.EntityKey == memberKey
-                && request.Route == $"/member/{memberKey}"
-                && request.ActorUserKey == actorUserKey
-                && request.DeduplicationKey == $"member-profile-stale:{memberKey}"),
+        _notifications.Verify(x => x.NotifyManyAsync(
+            It.Is<IEnumerable<NotificationRequest>>(requests =>
+                requests.Single().RecipientUserKey == mentorUserKey
+                && requests.Single().Type == AppNotificationType.MemberProfileChangedAfterVerification
+                && requests.Single().Severity == AppNotificationSeverity.Warn
+                && requests.Single().Body == "Дані Іван Петренко змінилися після верифікації. Перевір їх ще раз."
+                && requests.Single().EntityKey == memberKey
+                && requests.Single().Route == $"/member/{memberKey}"
+                && requests.Single().ActorUserKey == actorUserKey
+                && requests.Single().DeduplicationKey == $"member-profile-stale:{memberKey}"),
             It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task StaleProfile_InAKurinWithoutVerification_ShouldSendNothing()
+    {
+        var handler = StaleHandler((new Membership { MemberKey = Guid.NewGuid(), KurinKey = Guid.NewGuid() }, false));
+
+        await handler.Handle(
+            Raised(new MemberProfileWentStale(Guid.NewGuid(), "Іван", null)),
+            CancellationToken.None);
+
+        _recipients.Verify(x => x.ResolveAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _notifications.Verify(x => x.NotifyManyAsync(It.IsAny<IEnumerable<NotificationRequest>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

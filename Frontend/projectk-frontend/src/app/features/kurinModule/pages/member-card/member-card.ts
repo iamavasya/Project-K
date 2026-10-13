@@ -66,6 +66,7 @@ import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
 import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { initials } from '../../../dashboardModule/functions/greeting.function';
 
 @Component({
   selector: 'app-member-card',
@@ -460,6 +461,10 @@ export class MemberCardComponent implements OnInit {
 
   get canEditMember(): boolean {
     return this.canManageMemberActions;
+  }
+
+  get photoInitials(): string {
+    return initials(this.member?.firstName, this.member?.lastName);
   }
 
   /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */

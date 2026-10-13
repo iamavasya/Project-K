@@ -100,9 +100,7 @@ const REQUIRED_LABELS: Record<string, string> = {
 const OPTIONAL_LABELS: Record<string, string> = {
   [RosterField.MiddleName]: 'По батькові',
   [RosterField.KurinNumber]: 'Курінь',
-  [RosterField.PhoneNumber]: 'Телефон',
-  [RosterField.Address]: 'Адреса',
-  [RosterField.School]: 'Школа'
+  [RosterField.PhoneNumber]: 'Телефон'
 };
 
 function plain(field: RosterField, label: string): FieldOption {
@@ -129,8 +127,13 @@ export function requiredFieldName(field: RosterField): string {
   return (REQUIRED_LABELS[field] ?? field).replace(/\s\*$/, '');
 }
 
+/**
+ * The option a column starts on. The server still suggests Address and School for such columns, but
+ * those are not offered here (not shown or kept in the app yet), so they start on «Не імпортувати».
+ */
 export function optionValueOf(field: RosterField, level: PlastLevel | null | undefined): string {
-  return field === RosterField.LevelDate && level ? `LevelDate:${level}` : field;
+  const value = field === RosterField.LevelDate && level ? `LevelDate:${level}` : field;
+  return FIELD_OPTIONS.some(option => option.value === value) ? value : RosterField.Ignore;
 }
 
 export function optionByValue(value: string): FieldOption {

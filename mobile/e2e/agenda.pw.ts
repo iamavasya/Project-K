@@ -250,7 +250,7 @@ test('opens an event, answers it for the occurrence and sees who answered', asyn
   await expect(event.getByTestId('delete')).toHaveCount(0);
   await expect(event.getByTestId('attendance')).toHaveCount(0);
 
-  await event.getByTestId('rsvp').locator('ion-segment-button').filter({ hasText: /^Йду$/ }).click();
+  await event.getByTestId('rsvp').locator('ion-segment-button').filter({ hasText: /^Іду$/ }).click();
   await expect(event.getByTestId('rsvp-counts')).toContainText('6');
   const answer = log.writes.find((w) => w.path === 'agenda/e1/response');
   expect(answer?.body.status).toBe('Going');

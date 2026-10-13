@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -12,33 +13,69 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 /// severity and the route live here rather than in the module that raised the event: the курінь does
 /// not know there is an inbox, and this file is the only place that has to change when the wording does.
 /// </summary>
+/// <summary>
+/// A stale verification goes to the провід who can verify again — the впорядники of the person's
+/// гурток and the kurin-wide reviewers — in every kurin where the person stands and verification is on.
+/// The person used to get it, and could do nothing with it.
+/// </summary>
 public sealed class MemberProfileWentStaleEventHandler
     : INotificationHandler<DomainEventNotification<MemberProfileWentStale>>
 {
     private readonly INotificationService _notifications;
+    private readonly IReviewNotificationRecipientResolver _recipients;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public MemberProfileWentStaleEventHandler(INotificationService notifications)
+    public MemberProfileWentStaleEventHandler(
+        INotificationService notifications,
+        IReviewNotificationRecipientResolver recipients,
+        IUnitOfWork unitOfWork)
     {
         _notifications = notifications;
+        _recipients = recipients;
+        _unitOfWork = unitOfWork;
     }
 
-    public Task Handle(DomainEventNotification<MemberProfileWentStale> notification, CancellationToken cancellationToken)
+    public async Task Handle(DomainEventNotification<MemberProfileWentStale> notification, CancellationToken cancellationToken)
     {
         var raised = notification.Event;
-        return _notifications.NotifyAsync(
-            new NotificationRequest
+        var recipientUserKeys = new HashSet<Guid>();
+
+        foreach (var membership in await _unitOfWork.Memberships.GetActiveForMemberAsync(raised.MemberKey, cancellationToken))
+        {
+            var kurin = await _unitOfWork.Kurins.GetByKeyAsync(membership.KurinKey, cancellationToken);
+            if (kurin is null || !kurin.ProfileVerificationEnabled)
             {
-                RecipientUserKey = raised.MemberUserKey,
+                continue;
+            }
+
+            recipientUserKeys.UnionWith(await _recipients.ResolveAsync(
+                membership.KurinKey,
+                membership.GroupKey,
+                raised.ActorUserKey,
+                cancellationToken));
+        }
+
+        if (recipientUserKeys.Count == 0)
+        {
+            return;
+        }
+
+        await _notifications.NotifyManyAsync(
+            recipientUserKeys.Select(userKey => new NotificationRequest
+            {
+                RecipientUserKey = userKey,
                 Type = AppNotificationType.MemberProfileChangedAfterVerification,
                 Severity = AppNotificationSeverity.Warn,
                 Title = "Профіль потребує повторної перевірки",
-                Body = "Після підтвердження профільні дані змінилися. Потрібно перевірити їх повторно.",
+                Body = string.IsNullOrWhiteSpace(raised.MemberName)
+                    ? "Дані верифікованого профілю змінилися. Перевір їх ще раз."
+                    : $"Дані {raised.MemberName} змінилися після верифікації. Перевір їх ще раз.",
                 EntityType = "Member",
                 EntityKey = raised.MemberKey,
                 Route = $"/member/{raised.MemberKey}",
                 ActorUserKey = raised.ActorUserKey,
                 DeduplicationKey = $"member-profile-stale:{raised.MemberKey}"
-            },
+            }),
             cancellationToken);
     }
 }

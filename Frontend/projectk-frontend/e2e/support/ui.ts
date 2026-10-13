@@ -126,7 +126,7 @@ export async function fillMemberRequiredFields(page: Page, data: {
 
   await fillMaskedInput(page.locator('input[name="phoneNumber"]'), data.phone ?? '1234567890');
 
-  await fillDatePicker(page.locator('input[name="dateOfBirth"]'), data.dateOfBirth ?? '2000-12-12');
+  await fillDatePicker(page.locator('input[name="dateOfBirth"]'), data.dateOfBirth ?? '12.12.2000');
 }
 
 export async function openWarningPanel(page: Page): Promise<void> {

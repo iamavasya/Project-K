@@ -195,18 +195,14 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
             ? new ServiceResult<MemberResponse>(step.Type)
             : ServiceResult<MemberResponse>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
 
-    private async Task PublishProfileWentStaleAsync(
+    private Task PublishProfileWentStaleAsync(
         MemberEntity member,
-        CancellationToken cancellationToken)
-    {
-        if (!member.UserKey.HasValue)
-        {
-            return;
-        }
-
-        await _events.PublishAsync(
-            new MemberProfileWentStale(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
+        CancellationToken cancellationToken) =>
+        _events.PublishAsync(
+            new MemberProfileWentStale(
+                member.MemberKey,
+                $"{member.FirstName} {member.LastName}".Trim(),
+                _currentUserContext.UserId),
             cancellationToken);
-    }
 
 }

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../../../../environments/environment';
 
 @Injectable({
@@ -11,6 +11,13 @@ export class BadgeImageBlobService {
 
   private readonly objectUrlBySourceUrl = new Map<string, string>();
   private readonly pendingImageLoads = new Set<string>();
+  private readonly loadedCount = signal(0);
+
+  /**
+   * Ticks each time an image finishes loading. resolveBadgeImageForDisplay answers null until then,
+   * so an OnPush view reads this next to it to be drawn again once the picture is there.
+   */
+  readonly loaded = this.loadedCount.asReadonly();
 
   resolveBadgeImageForDisplay(imageUrl: string | null): string | null {
     if (!imageUrl) {
@@ -35,6 +42,7 @@ export class BadgeImageBlobService {
           const objectUrl = URL.createObjectURL(blob);
           this.objectUrlBySourceUrl.set(sourceUrl, objectUrl);
           this.pendingImageLoads.delete(sourceUrl);
+          this.loadedCount.update(count => count + 1);
         },
         error: () => {
           this.pendingImageLoads.delete(sourceUrl);

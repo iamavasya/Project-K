@@ -1,20 +1,21 @@
 export type WaitlistStatusSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | undefined;
 
+/** The same words the phone app uses (mobile waitlist.labels WAITLIST_STATUS). */
 export function getWaitlistStatusLabel(status: string | number): string {
   const normalized = normalizeWaitlistStatus(status);
   switch (normalized) {
     case 'Submitted':
-      return 'Submitted';
+      return 'Подано';
     case 'NeedsManualVerification':
-      return 'Verification Required';
+      return 'Потрібна перевірка';
     case 'Verified':
-      return 'Verified';
+      return 'Перевірено';
     case 'Rejected':
-      return 'Rejected';
+      return 'Відхилено';
     case 'ApprovedForInvitation':
-      return 'Approved';
+      return 'Схвалено';
     default:
-      return `Unknown (${String(status)})`;
+      return `Невідомо (${String(status)})`;
   }
 }
 

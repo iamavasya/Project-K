@@ -3,13 +3,13 @@ import { MemberLookupDto } from './kurin.models';
 
 /*
  * The rules of the web's people controls on a гурток (group-panel's «Додати учасника» and
- * «Виховники», and member-card's «Гурток»), pure so the page and its sheets stay views. Its провід
+ * «Впорядники», and member-card's «Гурток»), pure so the page and its sheets stay views. Its провід
  * is leadership-seats.ts.
  */
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
-// ── Виховники (web group-panel saveMentorAssignments) ────────────────────────────────────────────
+// ── Впорядники (web group-panel saveMentorAssignments) ────────────────────────────────────────────
 
 /** The user keys to assign and to revoke, from the ones there before and the ones ticked now. */
 export function mentorChanges(before: string[], after: string[]): { assign: string[]; revoke: string[] } {
