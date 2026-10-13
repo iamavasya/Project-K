@@ -128,7 +128,7 @@ interface KvData {
                   }
                 </ion-item>
               } @empty {
-                <ion-item><ion-label class="ion-text-wrap">Коло виховників порожнє. Призначені впорядники зʼявляться тут.</ion-label></ion-item>
+                <ion-item><ion-label class="ion-text-wrap">У КВ поки нікого. Призначені впорядники зʼявляться тут.</ion-label></ion-item>
               }
               @if (manager()) {
                 <ion-item [button]="true" [detail]="false" [disabled]="busy() || candidates().state !== 'ready'" (click)="editMentor(null)" data-testid="add-mentor">

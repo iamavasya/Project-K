@@ -88,7 +88,7 @@
         <td [attr.colspan]="canManageKv ? 4 : 3" class="lil-empty-cell">
           <app-empty-state
             art="list"
-            title="Коло виховників порожнє"
+            title="У КВ поки нікого"
             body="Призначені впорядники зʼявляться тут." />
         </td>
       </tr>
@@ -183,7 +183,7 @@
       filterBy="label"
       placeholder="Оберіть учасника"
       [style]="{ width: '100%' }" />
-    <p class="kv-muted">Після передачі поточний зв'язковий буде переведений у роль впорядника.</p>
+    <p class="kv-muted">Поточний Звʼязковий втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
   </div>
 
   <ng-template pTemplate="footer">

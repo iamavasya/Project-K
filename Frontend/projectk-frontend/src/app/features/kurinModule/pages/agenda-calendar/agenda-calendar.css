@@ -3,7 +3,7 @@
 .agenda-toolbar__nav { align-items: center; display: flex; gap: 0.4rem; }
 .agenda-toolbar__schedules { align-items: center; color: var(--p-text-muted-color); display: inline-flex; font-size: 0.85rem; font-weight: 650; gap: 0.5rem; margin-inline-start: auto; }
 .agenda-toolbar__schedules label { cursor: pointer; }
-.agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; text-transform: capitalize; }
+.agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; }
 
 /* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
    scrolls inside the card instead of the whole page. */

@@ -179,7 +179,7 @@ describe('GroupPanelComponent', () => {
     expect(component.groupEditMenuItems.map(item => item.label)).toEqual([
       'Редагувати профіль',
       'Додати учасника',
-      'Виховники',
+      'Впорядники',
       'Завантажити сильветку'
     ]);
 
@@ -187,7 +187,7 @@ describe('GroupPanelComponent', () => {
     expect(component.groupEditMenuItems.map(item => item.label)).toEqual([
       'Редагувати профіль',
       'Додати учасника',
-      'Виховники',
+      'Впорядники',
       'Замінити сильветку',
       'Видалити сильветку'
     ]);

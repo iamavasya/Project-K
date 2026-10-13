@@ -69,7 +69,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
             </div>
           </p-panel>
     
-          <p-panel header="Учасники та Зайнятість">
+          <p-panel header="Учасники та зайнятість">
             <div formArrayName="participants" class="flex flex-col gap-4">
     
               @for (p of participantsArray.controls; track p; let i = $index) {
@@ -95,7 +95,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
                       <div class="flex-1">
                         <div class="flex justify-between items-center mb-2">
                           <span class="text-sm font-semibold text-muted-color">
-                            Коли ця людина ЗАЙНЯТА?
+                            Коли ця людина зайнята?
                           </span>
                           <p-button
                             label="Додати період"
@@ -111,6 +111,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
                                 <p-datepicker
                                   formControlName="range"
                                   selectionMode="range"
+                                  dateFormat="dd.mm.yy"
                                   [readonlyInput]="true"
                                   placeholder="Виберіть дати"
                                   appendTo="body"
@@ -137,7 +138,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
                   </p-panel>
     
                   <div class="flex justify-end gap-4 mt-6 pb-10">
-                    <p-button label="Створити та Розрахувати" icon="pi pi-cog" type="submit" [loading]="loading" />
+                    <p-button label="Створити й розрахувати" icon="pi pi-cog" type="submit" [loading]="loading" />
                   </div>
                 </form>
               </div>

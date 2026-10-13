@@ -21,7 +21,7 @@ export function statusLabel(status: AgendaItemStatus): string {
 }
 
 export const RSVP_OPTIONS: { value: AgendaRsvpStatus; label: string }[] = [
-  { value: 'Going', label: 'Йду' },
+  { value: 'Going', label: 'Іду' },
   { value: 'Maybe', label: 'Можливо' },
   { value: 'NotGoing', label: 'Не йду' },
 ];

@@ -31,7 +31,7 @@ export function waitlistStatus(entry: Pick<WaitlistEntry, 'verificationStatus'>)
 }
 
 /**
- * The web shows the enum's English names; the phone says them in Ukrainian. Tones are Лілейка's
+ * The same words as the web's getWaitlistStatusLabel. Tones are Лілейка's
  * tags (info is the brand green, the web's «success»).
  */
 export const WAITLIST_STATUS: Record<WaitlistStatus, { label: string; tone: 'info' | 'warn' | 'danger' | 'secondary' }> = {

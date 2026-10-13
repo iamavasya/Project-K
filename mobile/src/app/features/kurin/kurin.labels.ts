@@ -617,10 +617,21 @@ export function probeSections(probe: GroupedProbeDto | null, progress: ProbeProg
 export function signerLabel(point: ProbePointView): string {
   if (!point.isSigned) return 'Не підписано';
   const name = point.signedByName?.trim();
-  if (name) return point.signedByRole ? `${name} (${point.signedByRole})` : name;
-  if (point.signedByUserKey) return point.signedByRole ? `${point.signedByUserKey} (${point.signedByRole})` : point.signedByUserKey;
-  if (point.signedByRole) return `Невідомий користувач (${point.signedByRole})`;
+  const role = signerRole(point.signedByRole);
+  if (name) return role ? `${name} (${role})` : name;
+  if (point.signedByUserKey) return role ? `${point.signedByUserKey} (${role})` : point.signedByUserKey;
+  if (role) return `Невідомий користувач (${role})`;
   return 'Підписант не вказаний';
+}
+
+/** The office as people say it («Впорядник»), not the stored system role («KV.Vykhovnyk»). */
+function signerRole(systemRole: string | null | undefined): string | null {
+  if (!systemRole) return null;
+  const parts = systemRole.split('.');
+  if (parts.length === 2 && ['Kurin', 'Group', 'KV'].includes(parts[0])) return roleName(parts[1]);
+  if (systemRole === 'Admin') return 'Адміністратор';
+  // Older signatures already carry the office's name.
+  return /^[A-Za-z.]+$/.test(systemRole) ? null : systemRole;
 }
 
 export function isProbeClosed(progress: ProbeProgressDto | null): boolean {
