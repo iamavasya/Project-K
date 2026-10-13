@@ -46,11 +46,12 @@ describe('AboutPageComponent', () => {
     expect(text).toContain('Ідея');
   });
 
-  it('tells the story in order, from the idea to 1.0', () => {
+  it('tells the story in order, from the idea to 1.1', () => {
     http.expectOne(() => true).flush({});
 
     expect(component.milestones[0].title).toBe('Ідея');
-    expect(component.milestones[component.milestones.length - 1].title).toContain('1.0');
+    expect(component.milestones.map(m => m.title).some(t => t.includes('1.0'))).toBeTrue();
+    expect(component.milestones[component.milestones.length - 1].title).toContain('1.1');
   });
 
   // One spelling for every release tag: the suffix git knows, then the code name when there was one.
