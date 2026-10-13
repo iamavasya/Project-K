@@ -29,6 +29,7 @@ internal sealed record CatalogBadge(
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("level")] int? Level,
     [property: JsonPropertyName("categories")] IReadOnlyList<string>? Categories,
+    [property: JsonPropertyName("ulady")] IReadOnlyList<string>? Ulady,
     [property: JsonPropertyName("krai")] string? Krai,
     [property: JsonPropertyName("status")] string? Status,
     [property: JsonPropertyName("images")] CatalogImages? Images,

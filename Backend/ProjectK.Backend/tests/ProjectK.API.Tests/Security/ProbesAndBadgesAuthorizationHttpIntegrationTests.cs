@@ -95,7 +95,10 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 LastUpdated: "2026-04-15",
                 SeekerRequirements: "Do requirements",
                 InstructorRequirements: "Confirm requirements",
-                FixNotes: []);
+                FixNotes: [],
+                Requirements: [new BadgeRequirement("1", "Do requirements")],
+                Author: string.Empty,
+                Ulady: ["УПЮ"]);
 
             badgesCatalogService.Setup(x => x.GetBadgesMetadata())
                 .Returns(new BadgesMetadata(

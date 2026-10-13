@@ -27,7 +27,15 @@ internal static class CatalogMapper
         ["trial"] = "Апробаційна",
     };
 
-    public static CatalogState ToState(CatalogDocument document, string sourceUrl, DateTimeOffset fetchedAtUtc)
+    private static readonly Dictionary<string, string> UladNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["upn"] = "УПН",
+        ["upyu"] = "УПЮ",
+        ["usp"] = "УСП",
+        ["ups"] = "УПС",
+    };
+
+    public static CatalogState ToState(CatalogDocument document, string sourceUrl, DateTimeOffset? fetchedAtUtc)
     {
         var categories = (document.Categories ?? [])
             .GroupBy(category => category.Id)
@@ -72,7 +80,10 @@ internal static class CatalogMapper
             badge.UpdatedOn ?? string.Empty,
             requirements,
             badge.InstructorRequirements ?? string.Empty,
-            []);
+            [],
+            [.. (badge.Requirements ?? []).Select(r => new BadgeRequirement(r.Id, r.Text))],
+            badge.Author ?? string.Empty,
+            [.. (badge.Ulady ?? []).Select(ulad => UladNames.GetValueOrDefault(ulad, ulad.ToUpperInvariant()))]);
     }
 
     private static Probe ToProbe(CatalogProbe probe)

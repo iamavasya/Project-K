@@ -32,6 +32,7 @@ import { MemberSkillItemView } from '../../models/probes-and-badges/member-skill
 import { BadgeProgressStatus } from '../../models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card';
+import { BadgeDetailsDialogComponent } from '../../components/badge-details-dialog/badge-details-dialog';
 import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb.service';
@@ -85,6 +86,7 @@ import { initials } from '../../../dashboardModule/functions/greeting.function';
     SelectModule,
     TooltipModule,
     SkillMiniCardComponent,
+    BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
@@ -150,6 +152,8 @@ export class MemberCardComponent implements OnInit {
   probesLoadFailed = false;
   isAllSkillsDialogVisible = false;
   isAddSkillDialogVisible = false;
+  isBadgeDetailsVisible = false;
+  badgeDetailsId: string | null = null;
   isSubmittingSkill = false;
   submittingBadgeId: string | null = null;
   inlineModerationBadgeId: string | null = null;
@@ -701,6 +705,11 @@ export class MemberCardComponent implements OnInit {
     }
 
     return 'Додати';
+  }
+
+  openBadgeDetails(badgeId: string): void {
+    this.badgeDetailsId = badgeId;
+    this.isBadgeDetailsVisible = true;
   }
 
   getCatalogBadgeImageUrl(imagePath: string): string | null {

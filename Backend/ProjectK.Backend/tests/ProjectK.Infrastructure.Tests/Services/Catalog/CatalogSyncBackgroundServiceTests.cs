@@ -18,9 +18,9 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
 
     private string SnapshotPath => Path.Combine(_directory, "catalog.json");
 
-    private CatalogSyncBackgroundService Service(string? krai = null)
+    private CatalogSyncBackgroundService Service(string? krai = null, int refreshMinutes = 60)
     {
-        var options = Options.Create(new CatalogOptions { BaseUrl = "https://catalog.test/", Krai = krai, SnapshotPath = SnapshotPath });
+        var options = Options.Create(new CatalogOptions { BaseUrl = "https://catalog.test/", Krai = krai, RefreshMinutes = refreshMinutes, SnapshotPath = SnapshotPath });
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(CatalogClient.HttpClientName)).Returns(() => new HttpClient(_handler, disposeHandler: false));
         return new CatalogSyncBackgroundService(_store, new CatalogClient(factory.Object, options), options, NullLogger<CatalogSyncBackgroundService>.Instance);
@@ -85,6 +85,72 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
 
         Assert.False(refreshed);
         Assert.Equal(7, _store.State.Revision);
+    }
+
+    [Fact]
+    public async Task Start_WithoutACopyAndWithTheServiceDown_ServesTheBuiltInCopy()
+    {
+        _handler.Respond(HttpStatusCode.ServiceUnavailable);
+        var service = Service();
+
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.True(_store.IsLoaded);
+        Assert.NotNull(((IProbesCatalog)_store).GetById("probe-1"));
+        Assert.Null(_store.Metadata.ParsedAtUtc);
+        Assert.False(File.Exists(SnapshotPath));
+    }
+
+    [Fact]
+    public async Task NextDelay_OnTheBuiltInCopy_StartsAtAMinuteAndDoublesUpToTheInterval()
+    {
+        _handler.Respond(HttpStatusCode.ServiceUnavailable);
+        var service = Service(refreshMinutes: 5);
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+
+        var delays = new List<TimeSpan> { service.NextDelay() };
+        for (var i = 0; i < 4; i++)
+        {
+            await service.RefreshAsync(CancellationToken.None);
+            delays.Add(service.NextDelay());
+        }
+
+        Assert.Equal([1, 2, 4, 5, 5], delays.Select(d => d.TotalMinutes));
+    }
+
+    [Fact]
+    public async Task NextDelay_ReturnsToTheInterval_OnceTheServiceAnswers()
+    {
+        _handler.Respond(HttpStatusCode.ServiceUnavailable);
+        var service = Service();
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+        await service.RefreshAsync(CancellationToken.None);
+
+        _handler.Respond(HttpStatusCode.OK, CatalogTestData.Bytes, "\"r7\"");
+        var refreshed = await service.RefreshAsync(CancellationToken.None);
+
+        Assert.True(refreshed);
+        Assert.Equal(7, _store.State.Revision);
+        Assert.True(File.Exists(SnapshotPath));
+        Assert.Equal(TimeSpan.FromMinutes(60), service.NextDelay());
+    }
+
+    [Fact]
+    public async Task NextDelay_WithACopyOnDisk_KeepsTheIntervalWhileTheServiceIsDown()
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllBytes(SnapshotPath, CatalogTestData.Bytes);
+        _handler.Respond(HttpStatusCode.ServiceUnavailable);
+        var service = Service();
+
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+        await service.RefreshAsync(CancellationToken.None);
+
+        Assert.Equal(TimeSpan.FromMinutes(60), service.NextDelay());
     }
 
     public void Dispose()

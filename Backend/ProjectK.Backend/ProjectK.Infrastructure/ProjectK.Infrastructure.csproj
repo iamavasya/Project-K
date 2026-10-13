@@ -37,6 +37,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The catalogue served when neither the service nor the copy on disk is there; scripts/update-catalog-seed.sh refreshes it. -->
+    <EmbeddedResource Include="Services\Catalog\Seed\catalog.json" LogicalName="ProjectK.Infrastructure.Catalog.Seed.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ProjectK.Common\ProjectK.Common.csproj" />
   </ItemGroup>
 

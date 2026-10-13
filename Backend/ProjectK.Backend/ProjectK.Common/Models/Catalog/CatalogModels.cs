@@ -1,8 +1,9 @@
 namespace ProjectK.Common.Models.Catalog;
 
 /// <summary>
-/// A вмілість as Lilejka has always shown it. The catalogue service publishes richer data; this shape
-/// stays so the clients keep working unchanged.
+/// A вмілість as Lilejka has always shown it, plus the catalogue's own pieces the badge card shows.
+/// <see cref="SeekerRequirements"/> still carries the requirements and the author as one text, so
+/// clients that read only it keep working.
 /// </summary>
 public sealed record Badge(
     string Id,
@@ -15,7 +16,12 @@ public sealed record Badge(
     string LastUpdated,
     string SeekerRequirements,
     string InstructorRequirements,
-    IReadOnlyList<string> FixNotes);
+    IReadOnlyList<string> FixNotes,
+    IReadOnlyList<BadgeRequirement> Requirements,
+    string Author,
+    IReadOnlyList<string> Ulady);
+
+public sealed record BadgeRequirement(string Id, string Text);
 
 public sealed record BadgesMetadata(
     string ParserVersion,

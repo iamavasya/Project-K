@@ -396,17 +396,26 @@
                                 </div>
                             </div>
 
-                            @if (canInlineModerateSkills) {
-                            <p-button (onClick)="removeConfirmedSkill(skill)"
-                                icon="pi pi-times"
-                                severity="danger"
-                                [rounded]="true"
-                                [text]="true"
-                                [loading]="isInlineModerationInProgress(skill.badgeId)"
-                                [disabled]="isInlineModerationBusy"
-                                styleClass="dialog-inline-action-btn"
-                             />
-                            }
+                            <div class="flex shrink-0 items-center gap-1">
+                                <p-button (onClick)="openBadgeDetails(skill.badgeId)"
+                                    label="Деталі"
+                                    icon="pi pi-info-circle"
+                                    severity="secondary"
+                                    [text]="true"
+                                    styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
+                                 />
+                                @if (canInlineModerateSkills) {
+                                <p-button (onClick)="removeConfirmedSkill(skill)"
+                                    icon="pi pi-times"
+                                    severity="danger"
+                                    [rounded]="true"
+                                    [text]="true"
+                                    [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                    [disabled]="isInlineModerationBusy"
+                                    styleClass="dialog-inline-action-btn"
+                                 />
+                                }
+                            </div>
                         </div>
                     </div>
                     }
@@ -441,17 +450,26 @@
                                 </div>
                             </div>
 
-                            @if (canInlineModerateSkills) {
-                            <p-button (onClick)="approvePendingSkill(skill)"
-                                icon="pi pi-check"
-                                severity="success"
-                                [rounded]="true"
-                                [text]="true"
-                                [loading]="isInlineModerationInProgress(skill.badgeId)"
-                                [disabled]="isInlineModerationBusy"
-                                styleClass="dialog-inline-action-btn"
-                             />
-                            }
+                            <div class="flex shrink-0 items-center gap-1">
+                                <p-button (onClick)="openBadgeDetails(skill.badgeId)"
+                                    label="Деталі"
+                                    icon="pi pi-info-circle"
+                                    severity="secondary"
+                                    [text]="true"
+                                    styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
+                                 />
+                                @if (canInlineModerateSkills) {
+                                <p-button (onClick)="approvePendingSkill(skill)"
+                                    icon="pi pi-check"
+                                    severity="success"
+                                    [rounded]="true"
+                                    [text]="true"
+                                    [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                    [disabled]="isInlineModerationBusy"
+                                    styleClass="dialog-inline-action-btn"
+                                 />
+                                }
+                            </div>
                         </div>
                     </div>
                     }
@@ -558,13 +576,22 @@
                         </div>
                     </div>
 
-                    <p-button (onClick)="submitBadge(badge.id)"
-                        [label]="getSubmitBadgeButtonLabel(badge.id)"
-                        icon="pi pi-plus"
-                        [disabled]="!canSubmitBadge(badge.id) || isSubmittingSkill"
-                        severity="secondary"
-                        styleClass="!rounded-lg !px-3 !py-2 !text-xs"
-                     />
+                    <div class="flex shrink-0 items-center gap-1">
+                        <p-button (onClick)="openBadgeDetails(badge.id)"
+                            label="Деталі"
+                            icon="pi pi-info-circle"
+                            severity="secondary"
+                            [text]="true"
+                            styleClass="!rounded-lg !px-2 !py-2 !text-xs"
+                         />
+                        <p-button (onClick)="submitBadge(badge.id)"
+                            [label]="getSubmitBadgeButtonLabel(badge.id)"
+                            icon="pi pi-plus"
+                            [disabled]="!canSubmitBadge(badge.id) || isSubmittingSkill"
+                            severity="secondary"
+                            styleClass="!rounded-lg !px-3 !py-2 !text-xs"
+                         />
+                    </div>
                 </div>
                 }
             </div>
@@ -583,6 +610,8 @@
             }
         </div>
     </p-dialog>
+
+    <app-badge-details-dialog [(visible)]="isBadgeDetailsVisible" [badgeId]="badgeDetailsId" />
     } @else {
     <section class="member-tile mx-auto w-full max-w-6xl rounded-2xl p-4 md:p-5">
         <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Infrastructure.Services.Catalog;
 using Xunit;
 
@@ -23,6 +24,21 @@ public class CatalogMapperTests
         Assert.Equal("1. Пропливти 100 м\n2. Знати правила\n\nАвтор: Ольга", badge.SeekerRequirements);
         Assert.Equal("Інструктор з плавання", badge.InstructorRequirements);
         Assert.Empty(badge.FixNotes);
+    }
+
+    [Fact]
+    public void Badge_CarriesTheCardPiecesSeparately()
+    {
+        var badge = Map().BadgesById["plavets"];
+
+        Assert.Equal([new BadgeRequirement("1", "Пропливти 100 м"), new BadgeRequirement("2", "Знати правила")], badge.Requirements);
+        Assert.Equal("Ольга", badge.Author);
+        Assert.Equal(["УПЮ"], badge.Ulady);
+
+        var bare = Map().BadgesById["bez-kraiu"];
+        Assert.Empty(bare.Requirements);
+        Assert.Equal(string.Empty, bare.Author);
+        Assert.Empty(bare.Ulady);
     }
 
     [Fact]

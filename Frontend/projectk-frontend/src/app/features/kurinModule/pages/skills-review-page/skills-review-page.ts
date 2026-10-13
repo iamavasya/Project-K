@@ -23,6 +23,7 @@ import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-im
 import { formatUtcDateTime, parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { BadgeDetailsDialogComponent } from '../../components/badge-details-dialog/badge-details-dialog';
 
 interface SkillsReviewItemView {
   reviewKey: string;
@@ -48,7 +49,8 @@ interface SkillsReviewItemView {
     TextareaModule,
     TooltipModule,
     FormsModule,
-    EmptyStateComponent
+    EmptyStateComponent,
+    BadgeDetailsDialogComponent
   ],
   templateUrl: './skills-review-page.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -75,6 +77,8 @@ export class SkillsReviewPageComponent implements OnInit {
   pendingReviewItem: SkillsReviewItemView | null = null;
   pendingReviewIsApproved = true;
   pendingReviewNote = '';
+  isBadgeDetailsVisible = false;
+  badgeDetailsId: string | null = null;
 
   feedbackMessage: string | null = null;
   feedbackSeverity: 'success' | 'info' | 'warn' | 'error' = 'info';
@@ -198,6 +202,11 @@ export class SkillsReviewPageComponent implements OnInit {
     }
 
     return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
+  }
+
+  openBadgeDetails(badgeId: string): void {
+    this.badgeDetailsId = badgeId;
+    this.isBadgeDetailsVisible = true;
   }
 
   getBadgeImageUrl(imageUrl: string | null): string | null {
