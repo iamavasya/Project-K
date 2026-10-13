@@ -38,7 +38,7 @@ jobs:
       - name: Build and run the PWA smoke
         run: npm run e2e
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pwa-screens
@@ -95,7 +95,7 @@ jobs:
         run: npx --no-install playwright test e2e/real-login.pw.ts e2e/real-tabs.pw.ts e2e/real-push.pw.ts --workers 1
         working-directory: mobile
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pwa-real-api-screens
