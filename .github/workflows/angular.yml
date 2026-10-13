@@ -175,8 +175,11 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+    # The preview was uploaded by build_and_deploy, which for a pull request always lands on the
+    # staging app (github.ref is refs/pull/N/merge there, never main). Closing it on the production
+    # app instead left every dev → main preview behind until SWA refused new ones.
     environment:
-      name: ${{ github.base_ref == 'main' && 'production' || 'staging' }}
+      name: staging
     steps:
       - name: Close Pull Request
         id: closepullrequest
