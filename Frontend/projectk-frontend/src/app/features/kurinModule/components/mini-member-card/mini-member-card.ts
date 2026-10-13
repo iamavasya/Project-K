@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, ChangeDetectionStrategy, output, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, output, input } from '@angular/core';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
@@ -9,6 +9,7 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { phoneHref } from '../../../../shared/functions/contact-href.function';
+import { initials } from '../../../dashboardModule/functions/greeting.function';
 
 @Component({
   selector: 'app-mini-member-card',
@@ -20,6 +21,7 @@ import { phoneHref } from '../../../../shared/functions/contact-href.function';
 export class MiniMemberCardComponent {
   readonly member = input.required<MemberLookupDto>();
   readonly navigate = output<MemberLookupDto>();
+  readonly photoInitials = computed(() => initials(this.member().firstName, this.member().lastName));
 
   readonly warningLevels = [
     MemberWarningLevel.Level1,
