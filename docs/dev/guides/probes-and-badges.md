@@ -1,6 +1,6 @@
 ---
 title: Проби та вмілості
-description: Модуль поступу — каталог із сервісу каталогу, прогрес у базі, аудит змін.
+description: Складання проб і здобуття вмілостей — каталог із сервісу каталогу, записи в базі, аудит змін.
 sidebar:
   order: 4
 ---
@@ -30,7 +30,7 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 
 - `ProbesCatalogController` — каталог проб;
 - `BadgesCatalogController` — каталог вмілостей;
-- `MemberProgressController` — поступ конкретного члена;
+- `MemberProgressController` — проби й вмілості конкретного члена;
 - черга розгляду вмілостей куреня — `KurinController.GetBadgeReviewQueue`.
 
 ## Сутності
