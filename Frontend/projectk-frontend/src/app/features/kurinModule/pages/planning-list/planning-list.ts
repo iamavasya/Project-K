@@ -4,6 +4,9 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { ConfirmationService } from '@openng/optimus-ui/api';
 import { PlanningService } from '../../services/planning-service/planning.service';
 import { MemberService } from '../../services/member-service/member.service';
 import { PlanningSessionDto } from '../../models/planning-session.dto';
@@ -13,8 +16,10 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 
 @Component({
   selector: 'app-planning-list',
-  imports: [TableModule, ButtonModule, TagModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
+  imports: [TableModule, ButtonModule, TagModule, TooltipModule, ConfirmDialogModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
+  providers: [ConfirmationService],
   template: `
+    <p-confirmdialog />
     <div class="planning-page">
       <section class="kurin-tile">
         <div class="planning-header">
@@ -51,7 +56,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
                 <div class="planning-actions">
                   <p-button icon="pi pi-eye" severity="secondary" [rounded]="true" [text]="true" (click)="openDetails(session.planningSessionKey)" pTooltip="Переглянути графік" ariaLabel="Переглянути графік"/>
                   @if (session.canDelete) {
-                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session.planningSessionKey)" />
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (click)="delete(session)" pTooltip="Видалити планування" ariaLabel="Видалити планування" />
                   }
                 </div>
               </td>
@@ -182,6 +187,7 @@ export class PlanningListComponent implements OnInit {
   private readonly permissionService = inject(PermissionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirmationService = inject(ConfirmationService);
 
   sessions = signal<PlanningSessionDto[]>([]);
 
@@ -212,12 +218,17 @@ export class PlanningListComponent implements OnInit {
     this.router.navigate(['/planning/create', this.kurinKey]);
   }
 
-  delete(id: string) {
-    if(confirm('Видалити це планування?')) {
-       this.planningService.deleteSession(id).subscribe(() => {
-        this.loadData();
-      });
-    }
+  delete(session: PlanningSessionDto) {
+    this.confirmationService.confirm({
+      header: 'Видалити планування',
+      message: `Планування «${session.name}» зникне разом із зайнятістю КВ. Повернути його не вийде; подія, яку з нього вже перенесли в календар, лишиться.`,
+      icon: 'pi pi-trash',
+      acceptLabel: 'Видалити',
+      rejectLabel: 'Скасувати',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      accept: () => this.planningService.deleteSession(session.planningSessionKey).subscribe(() => this.loadData())
+    });
   }
 
   openDetails(id: string) {
