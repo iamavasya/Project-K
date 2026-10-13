@@ -6,7 +6,7 @@
         <p>Контактні дані, пароль і двофакторна автентифікація.</p>
       </div>
       @if (settings) {
-        <p-tag [value]="settings.role" />
+        <p-tag [value]="roleTag.label" [severity]="roleTag.severity" />
       }
     </header>
 
@@ -144,12 +144,12 @@
           <h2>MFA</h2>
           @if (settings.twoFactorEnabled) {
             <p>
-              Можна скинути поточний authenticator key і налаштувати MFA заново.
+              Можна скинути ключ застосунку-автентифікатора й налаштувати MFA заново.
             </p>
           } @else {
             @if (isPrivileged) {
               <p>
-                Для вашої ролі MFA є обов'язковим. Налаштуйте authenticator, щоб акаунт лишався захищеним.
+                Для вашої ролі MFA є обов'язковим. Налаштуйте застосунок-автентифікатор, щоб акаунт лишався захищеним.
               </p>
             } @else {
               <p>

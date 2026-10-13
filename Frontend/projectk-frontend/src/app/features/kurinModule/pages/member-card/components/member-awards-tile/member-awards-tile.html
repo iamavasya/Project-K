@@ -2,7 +2,7 @@
     <div class="lil-tile-head">
         <h2>Відзначення УПЮ</h2>
         @if (canEdit()) {
-            <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" (onClick)="openDialog()" />
+            <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Додати відзначення" (onClick)="openDialog()" />
         }
     </div>
 

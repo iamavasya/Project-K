@@ -19,6 +19,17 @@
     border: 1px solid var(--p-content-border-color);
 }
 
+.member-photo--initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--p-primary-50);
+    color: var(--p-primary-color);
+    font-size: var(--lil-text-h1);
+    font-weight: var(--lil-weight-heading);
+    letter-spacing: 0.02em;
+}
+
 .member-name,
 .member-summary-value {
     color: var(--p-text-color);
@@ -338,3 +349,5 @@
     outline: 2px solid var(--p-primary-color);
     outline-offset: 2px;
 }
+
+

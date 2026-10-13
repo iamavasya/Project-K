@@ -87,7 +87,7 @@ export class AgendaItemDialogComponent {
   protected readonly rsvp = signal<AgendaResponsesResponse | null>(null);
   protected readonly rsvpSaving = signal(false);
   protected readonly rsvpOptions = [
-    { label: 'Йду', value: 'Going' as AgendaRsvpStatus },
+    { label: 'Іду', value: 'Going' as AgendaRsvpStatus },
     { label: 'Можливо', value: 'Maybe' as AgendaRsvpStatus },
     { label: 'Не йду', value: 'NotGoing' as AgendaRsvpStatus }
   ];

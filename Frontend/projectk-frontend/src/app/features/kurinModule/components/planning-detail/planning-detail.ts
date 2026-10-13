@@ -265,7 +265,7 @@ export class PlanningDetailComponent implements OnChanges {
             unit: 'day',
             tooltipFormat: 'dd.MM.yyyy',
             displayFormats: {
-              day: 'dd MMM'
+              day: 'dd.MM'
             }
           },
           min: s.searchStart,

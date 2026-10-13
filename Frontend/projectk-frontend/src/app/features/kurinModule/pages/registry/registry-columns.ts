@@ -79,20 +79,6 @@ export const REGISTRY_COLUMNS: RegistryColumn[] = [
     kind: 'email',
     value: member => member.email || null
   },
-  {
-    id: 'address',
-    header: 'Адреса',
-    group: 'Контакти',
-    kind: 'text',
-    value: member => member.address ?? null
-  },
-  {
-    id: 'school',
-    header: 'Школа',
-    group: 'Контакти',
-    kind: 'text',
-    value: member => member.school ?? null
-  },
   ...LEVEL_COLUMNS
 ];
 

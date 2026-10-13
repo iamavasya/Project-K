@@ -242,11 +242,13 @@ describe('MemberProbePageComponent', () => {
     });
   });
 
-  it('getProbePointSignerLabel should fallback to userKey + role when signer name is absent', () => {
+  // A system role is shown by its Ukrainian office name; a bare pre-офіс name like «Mentor» has none,
+  // so it is left out rather than shown in English.
+  it('getProbePointSignerLabel should fallback to userKey + office when signer name is absent', () => {
     createComponent();
     fixture.detectChanges();
 
-    const label = component.getProbePointSignerLabel({
+    const point = {
       sectionId: 'sec-1',
       sectionCode: 'A',
       sectionTitle: 'Розділ A',
@@ -255,11 +257,13 @@ describe('MemberProbePageComponent', () => {
       isSigned: true,
       signedByUserKey: '4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111',
       signedByName: null,
-      signedByRole: 'Mentor',
+      signedByRole: 'KV.Zvyazkovyi',
       signedAtUtc: null
-    });
+    };
 
-    expect(label).toBe('4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111 (Mentor)');
+    expect(component.getProbePointSignerLabel(point)).toMatch(/^4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111 \([^A-Za-z)]+\)$/);
+    expect(component.getProbePointSignerLabel({ ...point, signedByRole: 'Mentor' }))
+      .toBe('4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111');
   });
 
   it('onUnsignPoint should show conflict message when API returns 409', () => {

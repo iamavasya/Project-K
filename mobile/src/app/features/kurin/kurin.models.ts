@@ -111,7 +111,6 @@ export interface MemberAwardDto {
 
 /** `GET member/{memberKey}`: the card. */
 export interface MemberDto extends MemberLookupDto {
-  publicId?: string;
   /** Where the account stands; sent only to those who see the person's private details. */
   accountStatus?: AccountStatus | null;
   /** Only on a write: false when the invitation letter did not go out. */
@@ -140,22 +139,6 @@ export interface MembershipDto {
   isCurrent: boolean;
 }
 
-/**
- * Who a public code names, as the провід sees them before taking them in (API MemberCard): no
- * kurins and no contacts, only enough to be sure it is the right person.
- */
-export interface MembershipCandidateDto {
-  member: {
-    memberKey: string;
-    publicId: string;
-    firstName: string;
-    lastName: string;
-    fullName: string;
-    profilePhotoBlobName?: string | null;
-    currentMembershipCount: number;
-  };
-  alreadyInThisKurin: boolean;
-}
 
 export interface MentorAssignmentDto {
   mentorAssignmentKey: string;

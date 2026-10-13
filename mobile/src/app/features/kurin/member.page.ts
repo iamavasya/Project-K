@@ -296,12 +296,6 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
                 </ion-item>
-                @if (m.school) {
-                  <ion-item><ion-label class="ion-text-wrap"><h3>Школа</h3><p>{{ m.school }}</p></ion-label></ion-item>
-                }
-                @if (m.address) {
-                  <ion-item><ion-label class="ion-text-wrap"><h3>Адреса</h3><p>{{ m.address }}</p></ion-label></ion-item>
-                }
                 @if (verificationEnabled() && m.profileVerifiedAtUtc) {
                   <ion-item><ion-label><h3>Верифіковано</h3><p>{{ when(m.profileVerifiedAtUtc) }}</p></ion-label></ion-item>
                 }
