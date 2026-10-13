@@ -30,7 +30,7 @@ import {
 } from '@ionic/angular';
 import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, idCard, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { canShareFile, saveFile, shareFile } from '../../core/file-share';
@@ -62,7 +62,6 @@ import { KurinPlaque } from './kurin-plaque';
 import { GroupEditResult, GroupEditSheet } from './group-edit.sheet';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { KurinEditSheet } from './kurin-edit.sheet';
-import { JoinByCodeSheet } from './join-by-code.sheet';
 import { reportFileName } from './kurin-profile';
 import { LeadershipSheet } from './leadership.sheet';
 import { kurinTitle } from '../../core/kurin-label';
@@ -74,8 +73,7 @@ const DESCRIPTION_LIMIT = 360;
 /**
  * The kurin tab (web kurin-panel): who the kurin is, its гуртки, КВ and провід on «Огляд», and
  * everyone in it on «Учасники». The Звʼязковий starts a гурток here («Новий гурток», web
- * manage-panel), adds a member to the kurin («Новий учасник», web «Додати учасника куреня») and
- * takes in someone already in the system by their code («Прийняти за кодом»); a гурток is changed
+ * manage-panel), adds a member to the kurin («Новий учасник», web «Додати учасника куреня»); a гурток is changed
  * and deleted from its own page. «Редагувати» on the kurin's card is the web's menu of the same
  * name: the kurin's record and its PDF report. The КВ and the провід open their own pages with the
  * archive (web kv-panel, leadership-panel); «Налаштувати провід» opens the провід form here for
@@ -397,10 +395,6 @@ const DESCRIPTION_LIMIT = 360;
                       <ion-icon slot="start" name="person-add" color="primary" aria-hidden="true" />
                       <ion-label color="primary">Новий учасник</ion-label>
                     </ion-item>
-                    <ion-item [button]="true" [detail]="false" (click)="joinByCode()" data-testid="join-by-code">
-                      <ion-icon slot="start" name="id-card" color="primary" aria-hidden="true" />
-                      <ion-label color="primary">Прийняти за кодом</ion-label>
-                    </ion-item>
                   }
                   @for (member of shownMembers(); track member.memberKey) {
                     <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/member', member.memberKey]" data-testid="member">
@@ -489,7 +483,7 @@ export class KurinPage implements OnInit, OnDestroy {
   });
 
   constructor() {
-    addIcons({ add, personAdd, idCard, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline });
+    addIcons({ add, personAdd, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline });
     afterRenderEffect(() => {
       this.section();
       this.glass.sync();
@@ -573,17 +567,6 @@ export class KurinPage implements OnInit, OnDestroy {
     await modal.present();
     const { data } = await modal.onWillDismiss<ProfileEditResult>();
     if (data && typeof data === 'object') await this.nav.navigateForward(['/tabs/kurin/member', data.created]);
-  }
-
-  /** «Прийняти за кодом» (web join-by-code-dialog); the list follows through membersChanged. */
-  protected async joinByCode(): Promise<void> {
-    if (!this.kurinKey) return;
-    const modal = await this.modals.create({
-      component: JoinByCodeSheet,
-      componentProps: { kurinKey: this.kurinKey },
-      presentingElement: this.host.closest<HTMLElement>('.ion-page') ?? undefined,
-    });
-    await modal.present();
   }
 
   /** «Налаштувати провід» (web leadership-panel's gear → the leadership form for the kurin). */

@@ -4,24 +4,6 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { MEMBER_CACHE_PREFIX, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX } from '../client-cache/cache-policy';
-import { MembershipKind } from '../../models/enums/membership-kind.enum';
-import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
-
-/** Картка людини, яку провід бачить перед тим, як прийняти її за кодом. Куренів вона не називає. */
-export interface MemberCardDto {
-  memberKey: string;
-  publicId: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  profilePhotoBlobName?: string | null;
-  currentMembershipCount: number;
-}
-
-export interface MembershipCandidateDto {
-  member: MemberCardDto;
-  alreadyInThisKurin: boolean;
-}
 
 /**
  * Той, хто був у курені й пішов. Курінь пам'ятає рівно свій відтинок: хто, в якому гуртку, з коли
@@ -48,27 +30,14 @@ export class MembershipService {
   private readonly cache = inject(ClientCacheService);
   private readonly apiUrl = `${environment.apiUrl}/kurin`;
 
-  findCandidate(kurinKey: string, publicId: string): Observable<MembershipCandidateDto> {
-    return this.http.get<MembershipCandidateDto>(
-      `${this.apiUrl}/${kurinKey}/memberships/candidate`,
-      { params: { publicId }, context: requestFeedback('auto', [400, 404]) }
-    );
-  }
-
-  joinByPublicId(kurinKey: string, publicId: string, kind = MembershipKind.Youth): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/${kurinKey}/memberships`, { publicId, kind }).pipe(
-      tap(() => this.forgetPlacement())
-    );
-  }
-
   /** Кого курінь вивів і ще не повернув. */
   former(kurinKey: string): Observable<FormerMemberDto[]> {
     return this.http.get<FormerMemberDto[]>(`${this.apiUrl}/${kurinKey}/memberships/former`);
   }
 
   /**
-   * Прийняти назад того, кого курінь уже знає — за ключем, без коду, який тримає сама людина.
-   * Це те саме долучення, що й за кодом: відкривається нове членство, старе лишається в історії.
+   * Прийняти назад того, кого курінь уже знає, — за ключем.
+   * Відкривається нове членство, старе лишається в історії.
    */
   takeBack(kurinKey: string, memberKey: string, groupKey: string | null = null): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/${kurinKey}/memberships`, { memberKey, groupKey }).pipe(

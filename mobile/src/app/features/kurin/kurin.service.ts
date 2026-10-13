@@ -16,7 +16,6 @@ import {
   MemberDuesDto,
   MemberLookupDto,
   MemberWarningDto,
-  MembershipCandidateDto,
   MembershipDto,
   MentorAssignmentDto,
   ProbeProgressDto,
@@ -241,20 +240,6 @@ export class KurinApi {
   /** Into another гурток of the kurin, or out of any with null; the person stays in the kurin. */
   async moveToGroup(kurinKey: string, memberKey: string, groupKey: string | null): Promise<void> {
     await this.api.put(`kurin/${kurinKey}/memberships/${memberKey}/group`, { groupKey });
-    this.membersChanged.update((n) => n + 1);
-  }
-
-  /**
-   * The person a public code names (web join-by-code-dialog): an exact match on a code they handed
-   * over, never a search. 400 for a malformed code, 404 for one nobody has.
-   */
-  findCandidate(kurinKey: string, publicId: string): Promise<MembershipCandidateDto> {
-    return this.api.get(`kurin/${kurinKey}/memberships/candidate`, { publicId });
-  }
-
-  /** Into this kurin as юнацтво, by the code (web joinByPublicId); their other kurins stay. */
-  async joinByPublicId(kurinKey: string, publicId: string): Promise<void> {
-    await this.api.post(`kurin/${kurinKey}/memberships`, { publicId, kind: 'Youth' });
     this.membersChanged.update((n) => n + 1);
   }
 

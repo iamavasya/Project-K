@@ -138,7 +138,7 @@ import { compareKurinNumbers, kurinLabel as kurinNumberLabel, kurinName } from '
               <p class="footnote">Курінь, у якому ти зараз дієш. Права залежать від куреня, тож після перемикання Лілейка відкриється заново.</p>
             }
           } @else {
-            <p class="note">Поки ти не стоїш у жодному курені. Провід приймає за кодом з твоєї картки.</p>
+            <p class="note">Поки ти не стоїш у жодному курені. Попроси Звʼязкового свого куреня додати тебе.</p>
           }
 
           @if (groups().length) {
