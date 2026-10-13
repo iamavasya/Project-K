@@ -10,6 +10,8 @@ export interface UpsertMemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: string;
+    address?: string | null;
+    school?: string | null;
     removeProfilePhoto?: boolean;
     plastLevelHistories?: PlastLevelHistoryDto[];
 }

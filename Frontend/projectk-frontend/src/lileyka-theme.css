@@ -405,7 +405,8 @@ a.lil-sidebar-brand:hover {
   font-size: 0.6875rem;
   line-height: 1.4;
   margin-top: auto;
-  padding: 0 1.125rem 0.625rem;
+  /* A gap above, so a menu scrolled under it reads as cut off, not as overlapping the version. */
+  padding: 0.625rem 1.125rem;
 }
 
 .sidebar-footer {

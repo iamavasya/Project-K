@@ -24,6 +24,11 @@
   align-items: start;
 }
 
+/* The role tag sits at the start of its column, as wide as its word, not stretched across it. */
+.settings-header p-tag {
+  justify-self: start;
+}
+
 .settings-header h1,
 .section-copy h2 {
   color: var(--p-text-color);

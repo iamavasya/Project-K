@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { member, ok, refuse, shot, signIn, type Answer, type ExtraApi } from './support/mock-api';
 
 /**
- * People on a гурток (web group-panel, its «Виховники» dialog, the leadership form for a гурток
+ * People on a гурток (web group-panel, its «Впорядники» dialog, the leadership form for a гурток
  * and member-card's «Гурток»): the Звʼязковий adds people from the kurin, moves them to another
  * гурток or out of this one, and picks the виховники; whoever seats a гурток's провід does so
  * here; a youth sees none of it.
@@ -155,11 +155,11 @@ test('lets the Звʼязковий pick the виховники and seat the п�
   const log = await signIn(page, member, peopleApi({ canCreate: true, withLeadership: true }), ZVYAZKOVYI);
   await openGroup(page);
 
-  // Виховники: the КВ, with the ones there now ticked.
+  // Впорядники: the КВ, with the ones there now ticked.
   await expect(page.getByTestId('group-mentors')).toContainText('Петренко');
   await page.getByTestId('choose-mentors').click();
   const pick = picker(page);
-  await expect(pick.locator('ion-title')).toContainText('Виховники');
+  await expect(pick.locator('ion-title')).toContainText('Впорядники');
   await expect(pick.getByTestId('pick-person').filter({ hasText: 'Петренко' })).toHaveAttribute('aria-pressed', 'true');
   await pick.getByTestId('pick-person').filter({ hasText: 'Петренко' }).click();
   await pick.getByTestId('pick-person').filter({ hasText: 'Мельник' }).click();

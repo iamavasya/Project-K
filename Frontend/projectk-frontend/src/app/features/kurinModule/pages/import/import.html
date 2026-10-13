@@ -109,10 +109,10 @@
 
           @if (result.invitedCount > 0) {
             <p-message severity="info" styleClass="import__error"
-              text="Кожна людина зі списку отримає акаунт і лист із посиланням для активації. Пошта має бути актуальною; попередьте людей перевірити теку «Спам»." />
+              text="Кожна людина зі списку отримає акаунт і лист із посиланням для активації. Пошта має бути актуальною; попередь людей перевірити теку «Спам»." />
           }
 
-          @if (result.missingGroups.length) {
+          @if (result.missingGroups.length && createMissingGroups()) {
             <p-message severity="info" styleClass="import__error"
               [text]="'Буде створено гуртки: ' + result.missingGroups.join(', ')" />
           }

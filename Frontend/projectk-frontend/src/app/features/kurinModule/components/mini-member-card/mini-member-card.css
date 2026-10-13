@@ -22,6 +22,17 @@
     border: 1px solid var(--p-content-border-color);
 }
 
+.mini-member-card__initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--p-primary-50);
+    color: var(--p-primary-color);
+    font-size: var(--lil-text-h1);
+    font-weight: var(--lil-weight-heading);
+    letter-spacing: 0.02em;
+}
+
 .mini-member-card__overlay {
     background: linear-gradient(to top, color-mix(in srgb, var(--p-surface-900) 55%, transparent), transparent 72%);
 }

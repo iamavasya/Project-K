@@ -141,7 +141,7 @@ export class UpsertMemberComponent implements OnInit {
 
   private objectUrlToRevoke: string | null = null;
 
-  defaultDateFormat = 'yy-mm-dd';
+  defaultDateFormat = 'dd.mm.yy';
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -597,6 +597,10 @@ export class UpsertMemberComponent implements OnInit {
       phoneNumber: this.member.phoneNumber,
       dateOfBirth: toDateOnlyString(this.member.dateOfBirth)!,
       plastLevelHistories: this.buildPlastLevelsPayload(),
+      // The form has no address or school, but the update writes every field it gets: left out,
+      // they would come back blank. They go back as loaded, the way the phone app sends them.
+      address: this.member.address,
+      school: this.member.school,
     };
 
     // Куди людину поставити — сказано лише при заведенні. Редагування профілю нікого не переносить:
@@ -664,10 +668,12 @@ export class UpsertMemberComponent implements OnInit {
   confirmDeleteMember(event: Event) {
       this.confirmationService.confirm({
           target: event.target as EventTarget,
-          message: 'Do you want to delete this record?',
-          header: 'Danger Zone',
-          icon: 'pi pi-info-circle',
-          rejectLabel: 'Cancel',
+          // Not «Вивести»: this removes the person from Лілейка in every kurin, so it says so and points at the gentler way.
+          message: 'Людину буде видалено з Лілейки назавжди — разом із пробами, вмілостями, відзначеннями й членствами в усіх куренях. '
+            + 'Якщо людина просто пішла з куреня, закрий її членство кнопкою «Вивести» на картці.',
+          header: 'Видалити профіль',
+          icon: 'pi pi-exclamation-triangle',
+          rejectLabel: 'Скасувати',
           rejectButtonProps: {
               label: 'Скасувати',
               severity: 'secondary',

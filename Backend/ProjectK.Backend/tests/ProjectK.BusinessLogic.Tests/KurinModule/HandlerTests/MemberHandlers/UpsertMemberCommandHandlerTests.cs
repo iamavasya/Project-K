@@ -334,7 +334,7 @@ public class UpsertMemberHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenAVerifiedProfileWentStale_ShouldNotifyTheOwner()
+    public async Task Handle_WhenAVerifiedProfileWentStale_ShouldRaiseItForTheProvid()
     {
         var actorUserKey = Guid.NewGuid();
         var memberUserKey = Guid.NewGuid();
@@ -357,7 +357,7 @@ public class UpsertMemberHandlerTests
         _eventsMock.Verify(x => x.PublishAsync(
             It.Is<MemberProfileWentStale>(raised =>
                 raised.MemberKey == member.MemberKey
-                && raised.MemberUserKey == memberUserKey
+                && raised.MemberName == $"{member.FirstName} {member.LastName}".Trim()
                 && raised.ActorUserKey == actorUserKey),
             It.IsAny<CancellationToken>()),
             Times.Once);

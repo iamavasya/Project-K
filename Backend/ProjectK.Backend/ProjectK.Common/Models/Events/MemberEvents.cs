@@ -4,11 +4,12 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.Common.Models.Events;
 
 /// <summary>
-/// A verified profile was edited, so what was checked no longer matches what is stored.
+/// A verified profile was edited, so what was checked no longer matches what is stored. It is news for
+/// the провід who verify, not for the person: someone has to look at the data again.
 /// </summary>
 public sealed record MemberProfileWentStale(
     Guid MemberKey,
-    Guid MemberUserKey,
+    string MemberName,
     Guid? ActorUserKey) : IDomainEvent;
 
 /// <summary>A profile was checked against the person and confirmed current.</summary>

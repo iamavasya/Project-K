@@ -2,8 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { member, ok, refuse, shot, signIn, type Answer, type ExtraApi } from './support/mock-api';
 
 /**
- * Membership in the kurin, the Звʼязковий's (web kurin-panel «Прийняти за кодом», member-card's
- * memberships tile «Гурток» / «Вивести»): someone already in the system joins by their public code,
+ * Membership in the kurin, the Звʼязковий's (member-card's memberships tile «Гурток» / «Вивести»):
  * a member's гурток changes, and a membership is closed with a confirmation. Nobody else sees any
  * of it.
  */
@@ -23,18 +22,6 @@ const marta = {
   plastLevelHistories: [], awards: [], leadershipHistories: [], mentoredGroupNames: [], profileVerificationStatus: 'Unverified',
 };
 
-/** The candidate a code names: Yarema is in another kurin; Marta is already in this one. */
-const cards: Record<string, { member: Record<string, unknown>; alreadyInThisKurin: boolean }> = {
-  'PL-7K3QD-M2XWA': {
-    member: { memberKey: 'm9', publicId: 'PL-7K3QD-M2XWA', firstName: 'Ярема', lastName: 'Гнатюк', fullName: 'Ярема Гнатюк', currentMembershipCount: 1 },
-    alreadyInThisKurin: false,
-  },
-  'PL-00000-MARTA': {
-    member: { memberKey: 'm2', publicId: 'PL-00000-MARTA', firstName: 'Марта', lastName: 'Шевчук', fullName: 'Марта Шевчук', currentMembershipCount: 1 },
-    alreadyInThisKurin: true,
-  },
-};
-
 interface World {
   kurinMembers: ReturnType<typeof row>[];
   /** Marta's memberships: here (with her гурток) and another kurin she is also in. */
@@ -43,7 +30,7 @@ interface World {
 }
 
 function membershipApi(world: World): ExtraApi {
-  return ({ method, path, body, query }): Answer | null => {
+  return ({ method, path, body }): Answer | null => {
     if (method === 'GET') {
       switch (path) {
         case 'kurin/k1': return ok(kurin);
@@ -57,10 +44,6 @@ function membershipApi(world: World): ExtraApi {
         case 'member/m2/badges/progress':
           return ok([]);
         case 'leadership/type/kurin/k1': return ok(null);
-        case 'kurin/k1/memberships/candidate': {
-          const card = cards[(query.get('publicId') ?? '').toUpperCase()];
-          return card ? ok(card) : refuse(404, 'NoSuchCode');
-        }
         case 'member/m2': return ok({ ...marta, groupKey: world.martaGroup.groupKey, groupName: world.martaGroup.groupName });
         case 'member/m2/dossier/memberships':
           return ok([
@@ -74,10 +57,6 @@ function membershipApi(world: World): ExtraApi {
       return null;
     }
     if (path === 'auth/check-access') return ok(false);
-    if (method === 'POST' && path === 'kurin/k1/memberships') {
-      world.kurinMembers = [...world.kurinMembers, { ...row('m9', 'Ярема', 'Гнатюк'), groupKey: null as never, groupName: null as never }];
-      return { status: 201, json: 'ms9' };
-    }
     if (method === 'PUT' && path === 'kurin/k1/memberships/m2/group') {
       const target = groups.find((g) => g.groupKey === body?.groupKey);
       world.martaGroup = { groupKey: target?.groupKey ?? null, groupName: target?.name ?? null };
@@ -117,48 +96,6 @@ async function openMarta(page: Page): Promise<void> {
   await expect(page.locator('app-member h1')).toContainText('Марта');
   await expect(page.getByTestId('memberships')).toContainText('к. ч. 7');
 }
-
-test('lets the Звʼязковий take someone in by their code', async ({ page }, info) => {
-  const project = info.project.name;
-  const log = await signIn(page, member, membershipApi(newWorld()), ZVYAZKOVYI);
-  await openKurinMembers(page);
-  await page.getByTestId('join-by-code').click();
-  const sheet = page.locator('ion-modal app-join-by-code-sheet');
-  await expect(sheet.locator('ion-title')).toContainText('За кодом');
-  // Nothing to consent to before a card is found.
-  await expect(sheet.getByTestId('join-confirm')).toHaveCount(0);
-
-  // A code nobody has: one answer, as the server gives it.
-  await sheet.locator('[data-testid=join-code] input').fill('PL-NOPE1-NOPE2');
-  await sheet.getByTestId('join-find').click();
-  await expect(sheet.getByTestId('join-error')).toHaveText('Такого коду ні в кого немає.');
-
-  // Someone already here: shown, but not taken in twice.
-  await sheet.locator('[data-testid=join-code] input').fill('PL-00000-MARTA');
-  await sheet.locator('[data-testid=join-code] input').press('Enter');
-  await expect(sheet.getByTestId('join-candidate')).toContainText('Марта Шевчук');
-  await expect(sheet.getByTestId('join-already')).toHaveText('Ця людина вже в цьому курені.');
-  await expect(sheet.getByTestId('join-confirm')).toHaveAttribute('disabled', '');
-
-  await sheet.locator('[data-testid=join-code] input').fill('pl-7k3qd-m2xwa');
-  // A changed code no longer names the card shown.
-  await expect(sheet.getByTestId('join-candidate')).toHaveCount(0);
-  await sheet.getByTestId('join-find').click();
-  await expect(sheet.getByTestId('join-candidate')).toContainText('Ярема Гнатюк');
-  await expect(sheet.getByTestId('join-candidate')).toContainText('Належить до куренів: 1');
-  await sheet.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await shot(page, project, 'kurin-join-by-code');
-
-  await sheet.getByTestId('join-confirm').click();
-  await expect(sheet).toHaveCount(0);
-  await expect(page.locator('ion-toast')).toContainText('Ярема Гнатюк тепер у курені.');
-  // The code the server found goes back, as the web sends it; the list reads the newcomer.
-  expect(log.writes.find((w) => w.method === 'POST' && w.path === 'kurin/k1/memberships')?.body).toEqual({
-    publicId: 'PL-7K3QD-M2XWA', kind: 'Youth',
-  });
-  await expect(page.getByTestId('member')).toHaveCount(3);
-  await expect(page.getByTestId('members')).toContainText(/Гнатюк.*Ярема/);
-});
 
 test('lets the Звʼязковий change a member’s гурток and take them out of the kurin', async ({ page }, info) => {
   const project = info.project.name;
@@ -202,5 +139,4 @@ test('keeps the Звʼязковий’s membership controls from a Виховн
   await page.locator('ion-tab-button[tab=kurin]').click();
   await expect(page.getByTestId('member')).toHaveCount(2);
   await expect(page.getByTestId('new-member')).toHaveCount(0);
-  await expect(page.getByTestId('join-by-code')).toHaveCount(0);
 });
