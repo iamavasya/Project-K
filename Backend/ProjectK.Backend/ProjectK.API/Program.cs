@@ -39,8 +39,6 @@ using ProjectK.Infrastructure.Services.BlobStorageService;
 using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Optimization.Extensions;
-using ProjectK.ProbeAndBadges.Abstractions;
-using ProjectK.ProbeAndBadges.DependencyInjection;
 using QuestPDF.Infrastructure;
 using Serilog;
 using Serilog.Enrichers.Sensitive;
@@ -294,11 +292,6 @@ public static class Program
         builder.Services.Configure<SecurityPatchOptions>(
             builder.Configuration.GetSection("SecurityPatch"));
 
-        builder.Services.AddProbeAndBadgesApi(options =>
-        {
-            builder.Configuration.GetSection("ProbeAndBadges").Bind(options);
-        });
-
         builder.Services.AddProjectDependencies(builder.Configuration);
 
         // Which address a request is charged to. X-Forwarded-For is believed from the proxies
@@ -376,8 +369,6 @@ public static class Program
         app.UseMiddleware<ProjectK.API.Middleware.PrivilegedMfaEnforcementMiddleware>();
 
         app.UseAuthorization();
-
-        app.UseBadgesImagesStaticFiles();
 
         app.MapControllers();
 
@@ -509,9 +500,6 @@ public static class Program
                     // Storage being down must not keep the API from starting; the first upload retries.
                     app.Logger.LogWarning(ex, "Could not prepare blob storage at startup.");
                 }
-
-                ctx.Status("Waking the badges archive...");
-                _ = scope.ServiceProvider.GetRequiredService<IBadgesCatalog>();
 
                 ctx.Status("Startup complete.");
             });

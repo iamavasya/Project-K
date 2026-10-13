@@ -318,10 +318,15 @@ export class ProtectedImages {
   private readonly urls = signal<Record<string, string | null>>({});
   private readonly pending = new Set<string>();
 
-  /** A catalogue badge's picture (its path is relative to the API origin's /badges_images). */
+  /**
+   * A catalogue badge's picture. The catalogue serves it publicly, so it loads as is: fetching it here
+   * would send the access token to another host.
+   */
   badge(imagePath: string | null | undefined): string | null {
     if (!imagePath) return null;
-    if (/^(https?:|data:)/.test(imagePath)) return this.resolve(imagePath);
+    if (/^(https?:|data:)/.test(imagePath)) {
+      return imagePath.startsWith(`${this.origin}/`) ? this.resolve(imagePath) : imagePath;
+    }
     const path = imagePath.replace(/^\//, '');
     return this.resolve(`${this.origin}/${path.startsWith('badges_images/') ? path : `badges_images/${path}`}`);
   }

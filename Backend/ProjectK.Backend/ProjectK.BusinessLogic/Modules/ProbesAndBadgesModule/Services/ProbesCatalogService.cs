@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
-using ProjectK.ProbeAndBadges.Abstractions;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

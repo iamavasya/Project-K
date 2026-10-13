@@ -37,11 +37,11 @@ sidebar:
 
 ## Внутрішні NuGet-пакети
 
-- `ProjectK.Optimization` — закритий пакет, на якому працює планування таборів.
-- `ProjectK.ProbeAndBadges.DependencyInjection` — каталог проб і вмілостей, дані беруться з релізів
-  `PlastBadgesParser`.
+- `ProjectK.Optimization` — закритий пакет, на якому працює планування таборів. Публікується в
+  GitHub Packages, тому для збірки потрібен `NUGET_AUTH_TOKEN`.
 
-Обидва публікуються в GitHub Packages, тому для збірки потрібен `NUGET_AUTH_TOKEN`.
+Каталог проб і вмілостей — не пакет, а сервіс каталогу, який Лілейка читає по API
+(див. [Проби та вмілості](../guides/probes-and-badges/)).
 
 ## Інфраструктура
 
@@ -49,7 +49,7 @@ sidebar:
   обслуговує `dev | e2e | selfhost | tailscale | staging | prod` через `ASPNETCORE_ENVIRONMENT`.
 - **Azurite** — локальна емуляція Azure Blob Storage; **SQL Server** у контейнері, спільний для всіх
   середовищ.
-- **Self-host bundle** — один порт через nginx з проксі `/api`, `/badges_images`, `/blob`.
+- **Self-host bundle** — один порт через nginx з проксі `/api`, `/blob`.
 - Прод: API — Azure App Service за Cloudflare, фронтенд — Azure Static Web Apps; staging — той
   самий набір в окремій підписці. **CI** — GitHub Actions: `dotnet.yml`, `angular.yml`, `e2e.yml`,
   `site.yml`, `selfhost-docker.yml`, `codeql.yml`; Dependabot і secret scanning.
