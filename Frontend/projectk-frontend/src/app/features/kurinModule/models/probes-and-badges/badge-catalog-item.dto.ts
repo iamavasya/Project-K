@@ -14,6 +14,8 @@ export interface BadgeCatalogItemDto {
   requirements?: BadgeRequirementDto[];
   author?: string;
   ulady?: string[];
+  /** The catalogue's code of the край the вмілість belongs to; empty when it names none. */
+  kraiCode?: string;
 }
 
 export interface BadgeRequirementDto {

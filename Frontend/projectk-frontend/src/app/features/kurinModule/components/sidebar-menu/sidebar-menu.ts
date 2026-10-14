@@ -365,6 +365,15 @@ export class SidebarMenuComponent implements OnChanges {
           }
         },
         {
+          label: 'Краї',
+          icon: 'pi pi-map',
+          routerLink: ['/krai'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/krai']);
+          }
+        },
+        {
           label: 'Системні налаштування',
           icon: 'pi pi-sliders-h',
           routerLink: ['/system-settings'],

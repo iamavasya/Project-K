@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
         services.AddScoped<IKraiProfileProvider, KraiProfileProvider>();
+        services.AddScoped<KraiProfileEditor>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
         services.AddScoped<ResourceAccessService>();
         services.AddScoped<IResourceAccessService>(sp =>

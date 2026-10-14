@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 
 namespace ProjectK.API.Controllers.KraiModule;
@@ -28,6 +29,51 @@ public class KraiController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var response = await _mediator.Send(new GetKraisQuery());
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Returns the край's profile document as it is stored, for the editor and for export.</summary>
+    [HttpGet("{kraiCode}/profile")]
+    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProfile(string kraiCode)
+    {
+        var response = await _mediator.Send(new GetKraiProfileQuery(kraiCode));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Saves the край's profile as a new revision; an imported file is saved the same way. Refused
+    /// with 409 when someone saved after the revision the editor started from.
+    /// </summary>
+    [HttpPut("{kraiCode}/profile")]
+    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SaveProfile(string kraiCode, [FromBody] SaveKraiProfileRequest request)
+    {
+        var response = await _mediator.Send(new SaveKraiProfileCommand(kraiCode, request.BaseRevision, request.Document, request.Note));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Lists every saved revision of the край's profile, newest first.</summary>
+    [HttpGet("{kraiCode}/profile/revisions")]
+    [ProducesResponseType(typeof(IReadOnlyList<KraiProfileRevisionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProfileRevisions(string kraiCode)
+    {
+        var response = await _mediator.Send(new GetKraiProfileRevisionsQuery(kraiCode));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Brings an earlier revision back as the newest one; the history keeps both.</summary>
+    [HttpPost("{kraiCode}/profile/revisions/{revision:int}/restore")]
+    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestoreProfileRevision(string kraiCode, int revision)
+    {
+        var response = await _mediator.Send(new RestoreKraiProfileRevisionCommand(kraiCode, revision));
         return response.ToActionResult(this);
     }
 }

@@ -15,13 +15,6 @@ namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 /// </summary>
 public sealed class KraiProfileProvider : IKraiProfileProvider
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true
-    };
-
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
     private readonly ILogger<KraiProfileProvider> _logger;
@@ -62,7 +55,7 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
 
     private KraiProfileDocument Read(KraiProfileRevision? revision)
     {
-        if (revision is null || string.IsNullOrWhiteSpace(revision.Json))
+        if (revision is null)
         {
             return new KraiProfileDocument();
         }
@@ -72,7 +65,7 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
         // reinterprets a field adds its conversion here, keyed on SchemaVersion.
         try
         {
-            return JsonSerializer.Deserialize<KraiProfileDocument>(revision.Json, JsonOptions) ?? new KraiProfileDocument();
+            return KraiProfileJson.Parse(revision.Json);
         }
         catch (JsonException exception)
         {
