@@ -193,6 +193,7 @@ public static class Program
 
         builder.Services.Configure<OrphanCleanupOptions>(builder.Configuration.GetSection("OrphanCleanup"));
         builder.Services.Configure<KurinNumberOptions>(builder.Configuration.GetSection(KurinNumberOptions.SectionName));
+        builder.Services.Configure<KraiOptions>(builder.Configuration.GetSection(KraiOptions.SectionName));
 
         builder.Services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
         {

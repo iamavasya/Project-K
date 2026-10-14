@@ -54,6 +54,7 @@ services:
       # The kurin's wall clock for repeating events (IANA zone) and the highest kurin number.
       Agenda__TimeZone: ${PROJECTK_TIME_ZONE:-Europe/Kyiv}
       KurinNumbers__MaxNumber: ${PROJECTK_KURIN_NUMBER_MAX:-200}
+      Krai__Default: ${PROJECTK_DEFAULT_KRAI:-ua}
       # Refused at startup when it is the example value or shorter than 32 characters.
       Jwt__Key: ${PROJECTK_JWT_KEY}
       Jwt__Issuer: ${PROJECTK_JWT_ISSUER:-ProjectK-Backend}

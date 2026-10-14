@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
@@ -138,7 +139,7 @@ public static class DataSeeder
 
     private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
     {
-        var kurin1 = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == 1);
+        var kurin1 = await dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == 1);
         if (kurin1 == null)
         {
             return;

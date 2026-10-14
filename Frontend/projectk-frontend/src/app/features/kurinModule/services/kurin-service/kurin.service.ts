@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { KurinDto } from '../../models/kurin.dto';
+import { KraiDto } from '../../models/krai.dto';
 import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
 import { tap } from 'rxjs';
@@ -77,10 +78,22 @@ export class KurinService {
     );
   }
 
+  /** The краї of this instance, for the admin's kurin list. */
+  getKrais(): Observable<KraiDto[]> {
+    return this.http.get<KraiDto[]>(`${environment.apiUrl}/krai`);
+  }
+
+  /** Moves a kurin to another край. Admin-only; refused when its number is taken there. */
+  setKurinKrai(kurinKey: string, kraiCode: string): Observable<KurinDto> {
+    return this.http.put<KurinDto>(`${this.apiUrl}/${kurinKey}/krai`, { kraiCode }).pipe(
+      tap(() => this.invalidateKurinDataCache())
+    );
+  }
+
   createKurin(kurin: KurinDto): Observable<KurinDto> {
     return this.http.post<KurinDto>(
       `${this.apiUrl}`,
-      kurin.number,
+      { number: kurin.number, kraiCode: kurin.kraiCode || null },
       {
         headers: {
           'Content-Type': 'application/json'

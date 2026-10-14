@@ -15,7 +15,7 @@
     </header>
 
     <section class="kurin-tile">
-    <p-table [value]="data" styleClass="project-table">
+    <p-table [value]="data" styleClass="project-table" rowGroupMode="subheader" groupRowsBy="kraiCode">
         <ng-template #caption>
             <div class="lil-tile-head">
                 <div>
@@ -31,6 +31,14 @@
             <tr>
                 <th scope="col">Курінь</th>
                 <th scope="col" class="admin-kurin-actions">Дії</th>
+            </tr>
+        </ng-template>
+        <ng-template #groupheader let-item>
+            <tr pRowGroupHeader class="admin-krai-row">
+                <td colspan="2">
+                    <span class="admin-krai-row__name">{{ kraiName(item.kraiCode) }}</span>
+                    <small>{{ kurinCountInKrai(item.kraiCode) }}</small>
+                </td>
             </tr>
         </ng-template>
         <ng-template #body let-item>

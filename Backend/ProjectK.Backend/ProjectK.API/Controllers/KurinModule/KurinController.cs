@@ -11,6 +11,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
@@ -209,18 +210,46 @@ public class KurinController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a kurin from its number alone.
+    /// Creates a kurin from its number and, optionally, its край (the instance default otherwise).
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost]
     [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Create([FromBody] int kurinNumber)
+    public async Task<IActionResult> Create([FromBody] CreateKurinRequest body)
     {
-        var request = new UpsertKurinCommand(kurinNumber);
+        var request = new UpsertKurinCommand(body.Number, body.KraiCode);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Moves a kurin to another край. Admin-only; the number must be free in that край.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+    [HttpPut("{kurinKey}/krai")]
+    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetKrai(Guid kurinKey, [FromBody] SetKurinKraiRequest body)
+    {
+        var response = await _mediator.Send(new SetKurinKraiCommand(kurinKey, body.KraiCode));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>POST api/kurin</c>.</summary>
+    public sealed class CreateKurinRequest
+    {
+        public int Number { get; set; }
+        public string? KraiCode { get; set; }
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/krai</c>.</summary>
+    public sealed class SetKurinKraiRequest
+    {
+        public string KraiCode { get; set; } = string.Empty;
     }
 
     /// <summary>

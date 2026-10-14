@@ -18,6 +18,7 @@ public class KurinResponse
 
     /// <summary>Яка гілка. Read by the UI, which shows юнацькі речі only where they mean something.</summary>
     public KurinBranch Branch { get; set; }
+    public string KraiCode { get; set; } = string.Empty;
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }

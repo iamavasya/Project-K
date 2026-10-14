@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Entities;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Enums;
@@ -19,6 +20,8 @@ public class Kurin(int? number) : Entity
     /// its plaque renders empty until a number is set in the kurin's settings.
     /// </summary>
     public int? Number { get; set; } = number;
+    /// <summary>The край this kurin belongs to; its number is unique within that край only.</summary>
+    public string KraiCode { get; set; } = Krai.Ukraine;
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }

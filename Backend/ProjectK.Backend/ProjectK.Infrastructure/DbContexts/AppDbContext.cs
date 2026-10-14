@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Entities.InfrastructureModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
@@ -19,6 +20,8 @@ namespace ProjectK.Infrastructure.DbContexts;
 
 public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 {
+    public DbSet<Krai> Krais { get; set; }
+    public DbSet<KraiProfileRevision> KraiProfileRevisions { get; set; }
     public DbSet<Kurin> Kurins { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
@@ -96,11 +99,63 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     {
         base.OnModelCreating(builder);
 
+        // The two краї every instance starts with. Their first profile revision is empty: a
+        // section a profile leaves out takes its value from code, which is how Lilejka works today.
+        var seededAt = new DateTime(2026, 10, 14, 0, 0, 0, DateTimeKind.Utc);
+        builder.Entity<Krai>(entity =>
+        {
+            entity.HasKey(e => e.Code);
+            entity.HasData(
+                new Krai { Code = Krai.Ukraine, Name = "Україна", CreatedAtUtc = seededAt },
+                new Krai { Code = Krai.Czechia, Name = "Чехія", CreatedAtUtc = seededAt });
+        });
+
+        builder.Entity<KraiProfileRevision>(entity =>
+        {
+            entity.HasKey(e => e.KraiProfileRevisionKey);
+            entity.HasIndex(e => new { e.KraiCode, e.Revision }).IsUnique();
+            entity.Property(e => e.KraiCode).HasMaxLength(8);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.HasOne(e => e.Krai)
+                  .WithMany(k => k.ProfileRevisions)
+                  .HasForeignKey(e => e.KraiCode)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasData(
+                new KraiProfileRevision
+                {
+                    KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a01"),
+                    KraiCode = Krai.Ukraine,
+                    Revision = 1,
+                    SchemaVersion = 1,
+                    Json = "{}",
+                    CreatedAtUtc = seededAt,
+                    Note = "Початковий профіль"
+                },
+                new KraiProfileRevision
+                {
+                    KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a02"),
+                    KraiCode = Krai.Czechia,
+                    Revision = 1,
+                    SchemaVersion = 1,
+                    Json = "{}",
+                    CreatedAtUtc = seededAt,
+                    Note = "Початковий профіль"
+                });
+        });
+
         builder.Entity<Kurin>(entity =>
         {
             entity.Property(e => e.Branch).HasConversion<int>();
             entity.HasKey(e => e.KurinKey);
-            entity.HasIndex(e => e.Number).IsUnique();
+            entity.Property(e => e.KraiCode)
+                .HasMaxLength(8)
+                .HasDefaultValue(Krai.Ukraine);
+            entity.HasOne<Krai>()
+                  .WithMany()
+                  .HasForeignKey(e => e.KraiCode)
+                  .OnDelete(DeleteBehavior.Restrict);
+            // A number is the kurin's within its край: two краї can each have a kurin 12.
+            entity.HasIndex(e => new { e.KraiCode, e.Number }).IsUnique();
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)
