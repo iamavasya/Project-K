@@ -251,7 +251,7 @@ export class KraiSettingsComponent implements OnInit {
         this.profiles.save(editor.kraiCode, editor.revision, parsed as KraiProfileDocument, `Імпорт з файлу ${file.name}`),
         'Профіль імпортовано.'
       );
-    });
+    }).catch(() => this.fail('Не вдалося прочитати файл.'));
   }
 
   revisionLabel(revision: KraiProfileRevisionDto): string {

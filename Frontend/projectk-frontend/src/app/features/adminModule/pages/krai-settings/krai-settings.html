@@ -87,14 +87,15 @@
     }
 
     <div class="krai-save">
+      <label for="krai-note" class="krai-hidden">Що змінено</label>
       <input
         pInputText
+        id="krai-note"
         type="text"
         [ngModel]="note()"
         (ngModelChange)="note.set($event)"
         maxlength="500"
-        placeholder="Що змінено (необовʼязково)"
-        aria-label="Що змінено" />
+        placeholder="Що змінено (необовʼязково)" />
       <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="!dirty() || saving()" (onClick)="reset()" />
       <p-button label="Зберегти" icon="pi pi-check" [disabled]="!dirty() || saving()" [loading]="saving()" (onClick)="save()" />
     </div>
@@ -109,7 +110,8 @@
       <div class="krai-actions">
         <p-button label="Експорт JSON" icon="pi pi-download" severity="secondary" [disabled]="saving()" (onClick)="exportProfile()" />
         <p-button label="Імпорт JSON" icon="pi pi-upload" severity="secondary" [disabled]="saving() || dirty()" (onClick)="importInput.click()" />
-        <input #importInput type="file" accept="application/json,.json" hidden (change)="importProfile(importInput)" />
+        <label for="krai-import" class="krai-hidden">Файл профілю краю</label>
+        <input #importInput id="krai-import" type="file" accept="application/json,.json" hidden (change)="importProfile(importInput)" />
       </div>
     </div>
 
