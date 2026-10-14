@@ -37,4 +37,25 @@ public class KraiRepository : IKraiRepository
             .OrderByDescending(r => r.Revision)
             .FirstOrDefaultAsync(token);
     }
+
+    public Task<KraiProfileRevision?> GetProfileRevisionAsync(string code, int revision, CancellationToken token = default)
+    {
+        return _context.KraiProfileRevisions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.KraiCode == code && r.Revision == revision, token);
+    }
+
+    public async Task<IReadOnlyList<KraiProfileRevision>> GetProfileRevisionsAsync(string code, CancellationToken token = default)
+    {
+        return await _context.KraiProfileRevisions
+            .AsNoTracking()
+            .Where(r => r.KraiCode == code)
+            .OrderByDescending(r => r.Revision)
+            .ToListAsync(token);
+    }
+
+    public void AddProfileRevision(KraiProfileRevision revision)
+    {
+        _context.KraiProfileRevisions.Add(revision);
+    }
 }

@@ -15,6 +15,7 @@ using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
@@ -210,6 +211,10 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
+        yield return Row<Action<KraiController, string>>(nameof(KraiController.GetProfile), "RequireAdmin");
+        yield return Row<Action<KraiController, string, SaveKraiProfileRequest>>(nameof(KraiController.SaveProfile), "RequireAdmin");
+        yield return Row<Action<KraiController, string>>(nameof(KraiController.GetProfileRevisions), "RequireAdmin");
+        yield return Row<Action<KraiController, string, int>>(nameof(KraiController.RestoreProfileRevision), "RequireAdmin");
         yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireUser");
 

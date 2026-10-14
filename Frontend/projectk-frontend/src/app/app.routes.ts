@@ -148,6 +148,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Системні налаштування', parent: '/panel' }
   },
   {
+    path: 'krai',
+    canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
+    loadComponent: () => import('./features/adminModule/pages/krai-settings/krai-settings')
+      .then(m => m.KraiSettingsComponent),
+    title: 'Краї',
+    data: { breadcrumb: 'Краї', parent: '/panel' }
+  },
+  {
     path: 'panel',
     canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')], 
     loadComponent: () => import('./features/kurinModule/pages/admin-panel/admin-panel')

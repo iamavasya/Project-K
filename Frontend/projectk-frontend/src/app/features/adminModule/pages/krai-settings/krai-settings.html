@@ -1,0 +1,137 @@
+<section class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <p class="lil-page-head__eyebrow">Профілі краю</p>
+      <h1>Краї</h1>
+    </div>
+    <div class="lil-page-head__actions">
+      <p-button label="Назад" icon="pi pi-arrow-left" severity="secondary" variant="text" (onClick)="back()" />
+    </div>
+  </header>
+
+  <section class="kurin-tile">
+    <div class="krai-picker">
+      <label for="krai-select">Край</label>
+      <p-select
+        inputId="krai-select"
+        [options]="krais()"
+        optionLabel="name"
+        optionValue="code"
+        [ngModel]="kraiCode()"
+        (ngModelChange)="select($event)"
+        [disabled]="loading() || saving() || dirty()"
+        appendTo="body" />
+      @if (editor(); as e) {
+        <span class="krai-muted">Ревізія {{ e.revision }}</span>
+      }
+    </div>
+    @if (dirty()) {
+      <p class="krai-muted">Є незбережені зміни. Збережи або скасуй їх, щоб перейти до іншого краю.</p>
+    }
+  </section>
+
+  @if (editor(); as e) {
+  <section class="kurin-tile" aria-labelledby="badges-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="badges-title">Вмілості</h2>
+        <p>Курені краю «{{ e.kraiName }}» можуть почати {{ offeredCount() }} із {{ sourceBadges().length }} вмілостей.</p>
+      </div>
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-sources">Краї, з яких беруться вмілості</label>
+      <p-multiselect
+        inputId="krai-sources"
+        [options]="sourceOptions()"
+        optionLabel="label"
+        optionValue="code"
+        display="chip"
+        [ngModel]="sources()"
+        (ngModelChange)="sources.set($event ?? [])"
+        placeholder="Свій край"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Якщо нічого не вибрано, курені бачать вмілості свого краю.</small>
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-search">Пошук вмілості</label>
+      <input
+        pInputText
+        id="krai-search"
+        type="search"
+        [ngModel]="search()"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Назва вмілості" />
+    </div>
+
+    <ul class="krai-badges" data-testid="krai-badges">
+      @for (badge of visibleBadges(); track badge.id) {
+        <li class="krai-badge">
+          <span class="krai-badge__title">{{ badge.title }}</span>
+          <span class="krai-muted">{{ badge.country }}</span>
+          <p-toggleswitch
+            [inputId]="'badge-' + badge.id"
+            [ngModel]="isOffered(badge.id)"
+            (ngModelChange)="setOffered(badge.id, $event)"
+            [disabled]="saving()"
+            [attr.aria-label]="(isOffered(badge.id) ? 'Сховати ' : 'Показати ') + badge.title" />
+        </li>
+      } @empty {
+        <li class="krai-muted">Тут немає вмілостей.</li>
+      }
+    </ul>
+    @if (filteredBadges().length > visibleBadges().length) {
+      <p-button label="Показати ще" severity="secondary" variant="text" (onClick)="showMore()" />
+    }
+
+    <div class="krai-save">
+      <input
+        pInputText
+        type="text"
+        [ngModel]="note()"
+        (ngModelChange)="note.set($event)"
+        maxlength="500"
+        placeholder="Що змінено (необовʼязково)"
+        aria-label="Що змінено" />
+      <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="!dirty() || saving()" (onClick)="reset()" />
+      <p-button label="Зберегти" icon="pi pi-check" [disabled]="!dirty() || saving()" [loading]="saving()" (onClick)="save()" />
+    </div>
+  </section>
+
+  <section class="kurin-tile" aria-labelledby="history-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="history-title">Історія</h2>
+        <p>Кожне збереження — окрема ревізія. Відновлення додає нову ревізію, нічого не стираючи.</p>
+      </div>
+      <div class="krai-actions">
+        <p-button label="Експорт JSON" icon="pi pi-download" severity="secondary" [disabled]="saving()" (onClick)="exportProfile()" />
+        <p-button label="Імпорт JSON" icon="pi pi-upload" severity="secondary" [disabled]="saving() || dirty()" (onClick)="importInput.click()" />
+        <input #importInput type="file" accept="application/json,.json" hidden (change)="importProfile(importInput)" />
+      </div>
+    </div>
+
+    <ul class="krai-history">
+      @for (revision of revisions(); track revision.revision) {
+        <li class="krai-revision">
+          <div>
+            <strong>Ревізія {{ revision.revision }}</strong>
+            @if (revision.revision === e.revision) {
+              <span class="krai-current">чинна</span>
+            }
+            <div class="krai-muted">{{ revisionLabel(revision) }}</div>
+            @if (revision.note) {
+              <div>{{ revision.note }}</div>
+            }
+          </div>
+          @if (revision.revision !== e.revision) {
+            <p-button label="Відновити" icon="pi pi-replay" severity="secondary" variant="text" [disabled]="saving() || dirty()" (onClick)="restore(revision)" />
+          }
+        </li>
+      }
+    </ul>
+  </section>
+  }
+</section>
