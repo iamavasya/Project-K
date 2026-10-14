@@ -50,6 +50,18 @@
                     [placeholder]="f.placeholder"
                     [formControlName]="f.name" />
                 }
+                @case ('select') {
+                  <p-select
+                    [inputId]="'manage-field-' + f.name"
+                    [options]="f.options ?? []"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="f.placeholder"
+                    [showClear]="!f.required"
+                    [formControlName]="f.name"
+                    appendTo="body"
+                    styleClass="w-full" />
+                }
                 @case ('textarea') {
                   <textarea
                     #autoField

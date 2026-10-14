@@ -47,7 +47,8 @@ public class ApproveWaitlistEntryHandlerTests
             new Mock<IEmailService>().Object,
             new Mock<ICurrentUserContext>().Object,
             new Mock<IMembershipDirectory>().Object,
-            Options.Create(new KurinNumberOptions()));
+            Options.Create(new KurinNumberOptions()),
+            Options.Create(new KraiOptions()));
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class ApproveWaitlistEntryHandlerTests
     public async Task Handle_ShouldRefuse_WhenTheClaimedNumberIsTaken()
     {
         var entry = Given(claimed: "47");
-        _kurins.Setup(x => x.ExistsAsync(47, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _kurins.Setup(x => x.ExistsAsync("ua", 47, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
 

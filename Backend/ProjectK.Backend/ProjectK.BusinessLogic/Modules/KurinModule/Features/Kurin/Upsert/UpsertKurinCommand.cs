@@ -30,6 +30,12 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     public string? Description { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 
+    /// <summary>
+    /// The край a new kurin joins; null takes the instance default. An existing kurin keeps its
+    /// край here and moves only through <c>SetKurinKraiCommand</c>, which only an admin may send.
+    /// </summary>
+    public string? KraiCode { get; set; }
+
     public UpsertKurinCommand(Guid kurinKey, int? number, string? stanytsia = null, string? regionOrCountry = null, string? namedAfter = null, string? description = null, bool profileVerificationEnabled = false)
     {
         KurinKey = kurinKey;
@@ -40,9 +46,10 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
         Description = description;
         ProfileVerificationEnabled = profileVerificationEnabled;
     }
-    public UpsertKurinCommand(int number)
+    public UpsertKurinCommand(int? number, string? kraiCode = null)
     {
         Number = number;
+        KraiCode = kraiCode;
     }
 }
 
@@ -52,12 +59,14 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private readonly IMapper _mapper;
     private readonly IBackendCache _cache;
     private readonly KurinNumberOptions _numbers;
-    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache, IOptions<KurinNumberOptions> numbers)
+    private readonly KraiOptions _krai;
+    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache, IOptions<KurinNumberOptions> numbers, IOptions<KraiOptions> krai)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _cache = cache;
         _numbers = numbers.Value;
+        _krai = krai.Value;
     }
     public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
     {
@@ -90,6 +99,12 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
         bool isCreated = false;
 
+        var kraiCode = existing?.KraiCode ?? NormalizeOptionalText(request.KraiCode) ?? _krai.Default;
+        if (existing is null && !await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "UnknownKrai", $"There is no край '{kraiCode}'.");
+        }
+
         // A number is checked only when it changes: a kurin keeps the one it already has, so the
         // team's own kurins outside the range (a test kurin 0) can still be edited.
         var numberChanges = existing is null || existing.Number != request.Number;
@@ -103,19 +118,19 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
                     $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
             }
 
-            var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(number, cancellationToken);
+            var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken);
             if (existingByNumber is not null)
             {
                 return existing is null
                     ? new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber))
-                    : ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists.");
+                    : ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
             }
         }
 
         if (existing is null)
         {
             // Create new Kurin
-            existing = new(request.Number);
+            existing = new(request.Number) { KraiCode = kraiCode };
             _unitOfWork.Kurins.Create(existing, cancellationToken);
             isCreated = true;
         }

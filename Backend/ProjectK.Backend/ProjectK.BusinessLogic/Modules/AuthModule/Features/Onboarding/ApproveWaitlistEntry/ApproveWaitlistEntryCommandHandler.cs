@@ -26,6 +26,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMembershipDirectory _memberships;
     private readonly KurinNumberOptions _numbers;
+    private readonly KraiOptions _krai;
 
     public ApproveWaitlistEntryCommandHandler(
         IUnitOfWork unitOfWork,
@@ -34,9 +35,11 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         IEmailService emailService,
         ICurrentUserContext currentUserContext,
         IMembershipDirectory memberships,
-        IOptions<KurinNumberOptions> numbers)
+        IOptions<KurinNumberOptions> numbers,
+        IOptions<KraiOptions> krai)
     {
         _numbers = numbers.Value;
+        _krai = krai.Value;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _accountProvisioning = accountProvisioning;
@@ -68,7 +71,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             && _numbers.IsAllowed(claimed))
         {
             kurinNumber = claimed;
-            if (await _unitOfWork.Kurins.ExistsAsync(claimed, cancellationToken))
+            if (await _unitOfWork.Kurins.ExistsAsync(_krai.Default, claimed, cancellationToken))
             {
                 return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists.");
             }
@@ -94,7 +97,9 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         // 3. Create Kurin Placeholder if leader candidate
         if (entry.IsKurinLeaderCandidate)
         {
-            var kurin = new Kurin(kurinNumber);
+            // The waitlist does not ask for a край yet, so the kurin opens in the instance's default
+            // one; an admin moves it from the kurin list if it belongs elsewhere.
+            var kurin = new Kurin(kurinNumber) { KraiCode = _krai.Default };
             _unitOfWork.Kurins.Create(kurin, cancellationToken);
 
             // The entry remembers which kurin it opened, so activation can seat the founder in it.

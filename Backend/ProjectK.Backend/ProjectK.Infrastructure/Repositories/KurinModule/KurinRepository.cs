@@ -31,9 +31,9 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
         return await Context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
     }
 
-    public async Task<Kurin?> GetByNumberAsync(int number, CancellationToken token = default)
+    public async Task<Kurin?> GetByNumberAsync(string kraiCode, int number, CancellationToken token = default)
     {
-        return await Context.Kurins.FirstOrDefaultAsync(k => k.Number == number, token);
+        return await Context.Kurins.FirstOrDefaultAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
     }
 
     public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken token = default)
@@ -41,9 +41,9 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
         return await Context.Kurins.ToListAsync(token);
     }
 
-    public async Task<bool> ExistsAsync(int number, CancellationToken token = default)
+    public async Task<bool> ExistsAsync(string kraiCode, int number, CancellationToken token = default)
     {
-        return await Context.Kurins.AnyAsync(k => k.Number == number, token);
+        return await Context.Kurins.AnyAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
     }
 
     public override void Update(Kurin kurin, CancellationToken token = default)

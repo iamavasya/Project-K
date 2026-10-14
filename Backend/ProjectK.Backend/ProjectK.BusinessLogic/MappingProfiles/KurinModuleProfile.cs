@@ -29,6 +29,7 @@ public class KurinModuleProfile : Profile
         CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
             .ForMember(dest => dest.Number, opt => opt.Ignore())
+            .ForMember(dest => dest.KraiCode, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
         // Group Mapping

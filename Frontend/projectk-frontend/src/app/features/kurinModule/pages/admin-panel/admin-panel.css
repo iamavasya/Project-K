@@ -66,6 +66,20 @@
     }
 }
 
+:host ::ng-deep .project-table .p-datatable-tbody > tr.admin-krai-row > td {
+    background: var(--p-content-hover-background);
+    padding-block: 0.5rem;
+}
+
+.admin-krai-row__name {
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
+.admin-krai-row small {
+    color: var(--p-text-muted-color);
+}
+
 .admin-panel__empty {
     margin-top: 1rem;
 }

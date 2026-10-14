@@ -4,11 +4,17 @@ import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TitleCasePipe } from '@angular/common';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
+import { SelectModule } from '@openng/optimus-ui/select';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 export type ManageAction = 'create' | 'update' | 'delete';
-export type ManageFieldType = 'text' | 'number' | 'textarea';
+export type ManageFieldType = 'text' | 'number' | 'textarea' | 'select';
+
+export interface ManageFieldOption {
+  label: string;
+  value: string;
+}
 
 export interface ManagePanelField {
   name: string;
@@ -18,6 +24,8 @@ export interface ManagePanelField {
   required?: boolean;
   disabledOn?: ManageAction[];
   hiddenOn?: ManageAction[];
+  /** The choices of a <code>select</code> field. */
+  options?: ManageFieldOption[];
 }
 
 export interface ManagePanelConfig {
@@ -31,7 +39,7 @@ export interface ManagePanelConfig {
 
 @Component({
   selector: 'app-manage-panel',
-  imports: [DialogModule, InputTextModule, TextareaModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
+  imports: [DialogModule, InputTextModule, TextareaModule, SelectModule, ButtonModule, FormsModule, ReactiveFormsModule, TitleCasePipe],
   templateUrl: './manage-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './manage-panel.css'
