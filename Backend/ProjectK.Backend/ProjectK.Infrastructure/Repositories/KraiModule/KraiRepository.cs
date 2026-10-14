@@ -23,4 +23,18 @@ public class KraiRepository : IKraiRepository
     {
         return _context.Krais.AnyAsync(k => k.Code == code, token);
     }
+
+    public Task<Krai?> GetAsync(string code, CancellationToken token = default)
+    {
+        return _context.Krais.AsNoTracking().FirstOrDefaultAsync(k => k.Code == code, token);
+    }
+
+    public Task<KraiProfileRevision?> GetLatestProfileRevisionAsync(string code, CancellationToken token = default)
+    {
+        return _context.KraiProfileRevisions
+            .AsNoTracking()
+            .Where(r => r.KraiCode == code)
+            .OrderByDescending(r => r.Revision)
+            .FirstOrDefaultAsync(token);
+    }
 }

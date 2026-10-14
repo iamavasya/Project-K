@@ -14,6 +14,12 @@ public static class BackendCachePolicies
         Ttl: EntityReadTtl,
         Scope: CacheScope.Shared);
 
+    // A край's profile changes only when an admin saves it, and that save drops this prefix.
+    public static readonly CachePolicy KraiProfileReads = new(
+        Prefix: "krai-profile",
+        Ttl: TimeSpan.FromMinutes(5),
+        Scope: CacheScope.Shared);
+
     public static readonly CachePolicy SystemSettingReads = new(
         Prefix: "system-setting",
         Ttl: TimeSpan.FromMinutes(5),

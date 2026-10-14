@@ -7,6 +7,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
@@ -25,6 +26,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
 
@@ -221,6 +223,21 @@ public class KurinController : ControllerBase
     {
         var request = new UpsertKurinCommand(body.Number, body.KraiCode);
         var response = await _mediator.Send(request);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Returns the край profile the kurin works under: which вмілості and проби it sees, its
+    /// currency and time zone. Every value is filled in, from the край's profile or from code.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey}/profile")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(KraiProfile), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProfile(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetKurinProfileQuery(kurinKey));
         return response.ToActionResult(this);
     }
 

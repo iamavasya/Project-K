@@ -206,6 +206,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
         yield return Row<Action<KurinController, KurinController.CreateKurinRequest>>(nameof(KurinController.Create), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetProfile), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
