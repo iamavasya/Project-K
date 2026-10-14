@@ -79,6 +79,7 @@ describe('GroupDuesComponent', () => {
     groupKey: 'g1',
     kurinKey: 'k1',
     groupName: 'Соколи',
+    currency: 'UAH',
     currentQuarter: q(2026, 2),
     years: [
       { startYear: 2025, label: '25–26', quarters: [q(2025, 4), q(2026, 1), q(2026, 2), q(2026, 3)] },

@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dues;
@@ -30,6 +31,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
     public GetMemberDuesQueryHandler(
         IDuesUnitOfWork dues,
@@ -39,7 +41,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
         ICurrentUserContext currentUser,
-        TimeProvider time)
+        TimeProvider time,
+        IKraiProfileProvider profiles)
     {
         _dues = dues;
         _ledgers = ledgers;
@@ -49,6 +52,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         _resourceAccess = resourceAccess;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<MemberDuesResponse>> Handle(GetMemberDuesQuery request, CancellationToken cancellationToken)
@@ -91,10 +95,13 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var canOpenGroup = currentGroup is { } groupKey
             && (await _resourceAccess.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Read, groupKey, cancellationToken)).IsAllowed;
 
+        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
+
         return new ServiceResult<MemberDuesResponse>(ResultType.Success, new MemberDuesResponse
         {
             HasAccount = true,
             KurinKey = kurinKey,
+            Currency = currency,
             CurrentQuarter = Quarter(current),
             Balance = accounts.Sum(a => a.Balance),
             QuarterRate = rate is null ? null : Amount(rate),

@@ -19,6 +19,7 @@ import {
   PERSONAL_DUES_KINDS
 } from '../../../../models/dues.enums';
 import { DuesAccountDto, DuesEntryDto, DuesPersonDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
+import { DEFAULT_CURRENCY, currencySymbol } from '../../../../functions/dues-format.function';
 
 /** The other side of an exchange: cash goes to the card, the card to cash. */
 export function oppositeMethod(method: DuesPaymentMethod): DuesPaymentMethod {
@@ -51,6 +52,8 @@ export class DuesEntryDialogComponent {
   readonly entry = input<DuesEntryDto | null>(null);
   readonly saving = input(false);
   readonly errorMessage = input<string | null>(null);
+  readonly currency = input(DEFAULT_CURRENCY);
+  readonly currencySymbol = computed(() => currencySymbol(this.currency()));
   readonly save = output<UpsertDuesEntryRequest>();
 
   readonly today = new Date();

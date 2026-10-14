@@ -77,7 +77,7 @@ describe('KraiSettingsComponent', () => {
 
     expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
       catalog: { badgeSources: ['ua'], hiddenBadges: undefined },
-      locale: { currency: 'CZK' }
+      locale: { currency: 'CZK', timeZone: undefined }
     }, 'усе українське');
     expect(component.editor()!.revision).toBe(3);
     expect(component.dirty()).toBeFalse();
@@ -93,6 +93,21 @@ describe('KraiSettingsComponent', () => {
     component.save();
 
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ detail: 'Профіль змінили, поки ти його редагував. Онови сторінку.' }));
+  });
+
+  it('saves the currency and time zone, leaving what it does not edit', () => {
+    profiles.save.and.returnValue(of(czProfile));
+
+    expect(component.currency()).toBe('CZK');
+    expect(component.timeZone()).toBeNull();
+    component.timeZone.set('Europe/Prague');
+    expect(component.dirty()).toBeTrue();
+    component.save();
+
+    expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
+      catalog: { badgeSources: ['ua'], hiddenBadges: ['ua-2'] },
+      locale: { currency: 'CZK', timeZone: 'Europe/Prague' }
+    }, null);
   });
 
   it('restores an earlier revision', () => {

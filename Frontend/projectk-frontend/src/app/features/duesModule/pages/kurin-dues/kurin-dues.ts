@@ -15,7 +15,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
-import { duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
@@ -57,8 +57,6 @@ export class KurinDuesComponent implements OnInit {
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
 
-  readonly money = money;
-  readonly signedMoney = signedMoney;
   readonly quarterLabel = quarterLabel;
   readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
@@ -69,6 +67,12 @@ export class KurinDuesComponent implements OnInit {
   readonly data = signal<KurinDuesDto | null>(null);
   readonly loading = signal(true);
   readonly loadFailed = signal(false);
+
+  /** What this kurin counts its вкладка in, from its край's profile. */
+  readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  readonly currencySymbol = computed(() => currencySymbol(this.currency()));
+  readonly money = (amount: number): string => money(amount, this.currency());
+  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
 
   readonly selectedYear = signal<number | null>(null);
   readonly year = computed(() => {
@@ -194,7 +198,7 @@ export class KurinDuesComponent implements OnInit {
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    return duesAmountLabel(entry);
+    return duesAmountLabel(entry, this.currency());
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {
@@ -239,7 +243,7 @@ export class KurinDuesComponent implements OnInit {
   confirmDelete(entry: DuesEntryDto): void {
     this.confirmation.confirm({
       header: 'Видалити операцію',
-      message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
+      message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
       icon: 'pi pi-exclamation-triangle',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },

@@ -1,6 +1,7 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
@@ -14,6 +15,7 @@ public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTim
     /// </summary>
     public static async Task<EventOccurrence?> LoadAsync(
         IUnitOfWork unitOfWork,
+        IKraiProfileProvider profiles,
         Guid kurinKey,
         Guid agendaItemKey,
         DateTime occurrenceStartUtc,
@@ -26,7 +28,8 @@ public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTim
         }
 
         var wanted = DateTime.SpecifyKind(occurrenceStartUtc, DateTimeKind.Utc);
-        var occurrence = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1))
+        var zone = await profiles.ForKurinAsync(kurinKey, cancellationToken);
+        var occurrence = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
             .FirstOrDefault(o => DateTime.SpecifyKind(o.StartUtc, DateTimeKind.Utc) == wanted);
 
         if (occurrence == default)

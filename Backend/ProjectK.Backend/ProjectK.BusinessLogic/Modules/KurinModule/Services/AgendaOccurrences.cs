@@ -13,9 +13,9 @@ public static class AgendaOccurrences
     /// <summary>
     /// Resolves the requested occurrence to its stored key. A one-off event accepts no occurrence
     /// (or its own start); a series requires one that the rule really produces. False means the
-    /// request named a day that is not an occurrence of this item.
+    /// request named a day that is not an occurrence of this item. <paramref name="zone"/> is the kurin's.
     /// </summary>
-    public static bool TryResolveKey(AgendaItem item, DateTime? requestedStartUtc, out DateTime? key)
+    public static bool TryResolveKey(AgendaItem item, DateTime? requestedStartUtc, TimeZoneInfo zone, out DateTime? key)
     {
         key = null;
         if (item.RecurrenceFrequency == RecurrenceFrequency.None)
@@ -29,7 +29,7 @@ public static class AgendaOccurrences
         }
 
         var wanted = DateTime.SpecifyKind(requestedStartUtc.Value, DateTimeKind.Utc);
-        var found = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1))
+        var found = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
             .Any(o => SameInstant(o.StartUtc, wanted));
         if (!found)
         {

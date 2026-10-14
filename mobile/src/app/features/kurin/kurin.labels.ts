@@ -1,4 +1,5 @@
 import { AuthState } from '../../auth/auth.models';
+import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
 import {
   AwardLevel,
   BadgeCatalogItemDto,
@@ -688,9 +689,9 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
 
 const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-/** «1 240 ₴», «−300 ₴» with a real minus (web dues-format money). */
-export function duesMoney(amount: number): string {
-  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ₴`;
+/** «1 240 ₴», «−300 Kč» with a real minus (web dues-format money). */
+export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** «II кв. 2026» */
@@ -710,10 +711,10 @@ export const DUES_KIND_LABELS: Record<string, string> = {
 };
 
 /** Signed as the history shows it: in is plus, out is minus, an exchange bare. */
-export function duesAmountLabel(entry: { kind: string; amount: number }): string {
-  if (entry.kind === 'Exchange') return duesMoney(entry.amount);
+export function duesAmountLabel(entry: { kind: string; amount: number }, currency: string = DEFAULT_CURRENCY): string {
+  if (entry.kind === 'Exchange') return duesMoney(entry.amount, currency);
   const signed = entry.kind === 'Correction' ? entry.amount : ['Contribution', 'OtherIncome'].includes(entry.kind) ? entry.amount : -entry.amount;
-  return signed > 0 ? `+${duesMoney(signed)}` : duesMoney(signed);
+  return signed > 0 ? `+${duesMoney(signed, currency)}` : duesMoney(signed, currency);
 }
 
 // ── Memberships ──────────────────────────────────────────────────────────────────────────────────

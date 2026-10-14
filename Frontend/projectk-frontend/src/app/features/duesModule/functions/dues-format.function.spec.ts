@@ -1,5 +1,5 @@
 import { DuesEntryKind } from '../models/dues.enums';
-import { duesAmountLabel, isIncomingDues, signedDuesAmount } from './dues-format.function';
+import { currencySymbol, money, duesAmountLabel, isIncomingDues, signedDuesAmount } from './dues-format.function';
 
 describe('dues entry sign', () => {
   it('signs money in with a plus and money out with a minus', () => {
@@ -20,5 +20,20 @@ describe('dues entry sign', () => {
     expect(signedDuesAmount({ kind: DuesEntryKind.Exchange, amount: 100 })).toBeNull();
     expect(duesAmountLabel({ kind: DuesEntryKind.Exchange, amount: 100 })).toBe('100 ₴');
     expect(isIncomingDues({ kind: DuesEntryKind.Exchange, amount: 100 })).toBeNull();
+  });
+});
+
+describe('money in the край\'s currency', () => {
+  it('writes hryvnias when no currency is given, as before profiles', () => {
+    expect(money(-300)).toBe('−300 ₴');
+  });
+
+  it('writes the край\'s own currency after the amount', () => {
+    expect(money(1240.5, 'CZK')).toBe(`${money(1240.5).slice(0, -2)} Kč`);
+    expect(currencySymbol('PLN')).toBe('zł');
+  });
+
+  it('falls back to the code for a currency the browser does not know', () => {
+    expect(currencySymbol('XYZW')).toBe('XYZW');
   });
 });

@@ -101,6 +101,8 @@ public sealed class MyDuesDto
 {
     public MyKurinRefDto Kurin { get; set; } = new();
     public string? GroupName { get; set; }
+    /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
+    public string Currency { get; set; } = "UAH";
     public int QuarterYear { get; set; }
     public int QuarterNumber { get; set; }
     /// <summary>Across every гурток of the kurin: negative is debt, positive a surplus.</summary>

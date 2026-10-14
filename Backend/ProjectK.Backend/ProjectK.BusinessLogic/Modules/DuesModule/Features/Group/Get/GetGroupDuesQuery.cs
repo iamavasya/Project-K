@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dues;
@@ -27,6 +28,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
     public GetGroupDuesQueryHandler(
         GroupDuesAccess access,
@@ -35,7 +37,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
-        TimeProvider time)
+        TimeProvider time,
+        IKraiProfileProvider profiles)
     {
         _access = access;
         _dues = dues;
@@ -44,6 +47,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         _members = members;
         _resourceAccess = resourceAccess;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<GroupDuesResponse>> Handle(GetGroupDuesQuery request, CancellationToken cancellationToken)
@@ -122,6 +126,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             GroupKey = group.GroupKey,
             KurinKey = kurinKey,
             GroupName = group.Name,
+            Currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken),
             CurrentQuarter = Quarter(current),
             Years = Years(charges, current),
             KurinRates = kurinRates.Select(r => new KurinDuesRateDto

@@ -16,6 +16,7 @@ import { BadgeCatalogItemDto } from '../../../kurinModule/models/probes-and-badg
 import { KraiProfileService } from '../../services/krai-profile-service/krai-profile.service';
 import { KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
+import { currencySymbol, DEFAULT_CURRENCY } from '../../../duesModule/functions/dues-format.function';
 
 interface SourceOption {
   code: string;
@@ -23,6 +24,20 @@ interface SourceOption {
 }
 
 const PAGE_SIZE = 40;
+
+/** What a край without its own setting uses: how Lilejka worked before profiles. */
+const DEFAULT_TIME_ZONE = 'Europe/Kyiv';
+
+function supported(key: 'currency' | 'timeZone'): string[] {
+  try {
+    return Intl.supportedValuesOf(key);
+  } catch {
+    return [];
+  }
+}
+
+const CURRENCIES = supported('currency');
+const TIME_ZONES = supported('timeZone');
 
 /**
  * Профіль краю: з яких країв курені бачать вмілості і які з них сховано. Кожне збереження —
@@ -51,7 +66,16 @@ export class KraiSettingsComponent implements OnInit {
 
   readonly sources = signal<string[]>([]);
   readonly hidden = signal<ReadonlySet<string>>(new Set());
+  readonly currency = signal<string | null>(null);
+  readonly timeZone = signal<string | null>(null);
   readonly note = signal('');
+
+  readonly defaultCurrency = DEFAULT_CURRENCY;
+  readonly defaultTimeZone = DEFAULT_TIME_ZONE;
+  readonly currencyOptions = computed<SourceOption[]>(() =>
+    withValue(CURRENCIES, this.currency()).map(code => ({ code, label: `${code} · ${currencySymbol(code)}` })));
+  readonly timeZoneOptions = computed<SourceOption[]>(() =>
+    withValue(TIME_ZONES, this.timeZone()).map(code => ({ code, label: code })));
   readonly search = signal('');
   readonly shown = signal(PAGE_SIZE);
 
@@ -110,7 +134,11 @@ export class KraiSettingsComponent implements OnInit {
       return false;
     }
     const saved = editor.document.catalog;
-    return !sameSet(saved?.badgeSources ?? [], this.sources()) || !sameSet(saved?.hiddenBadges ?? [], [...this.hidden()]);
+    const locale = editor.document.locale;
+    return !sameSet(saved?.badgeSources ?? [], this.sources())
+      || !sameSet(saved?.hiddenBadges ?? [], [...this.hidden()])
+      || (locale?.currency ?? null) !== this.currency()
+      || (locale?.timeZone ?? null) !== this.timeZone();
   });
 
   ngOnInit(): void {
@@ -199,6 +227,11 @@ export class KraiSettingsComponent implements OnInit {
       catalog: {
         badgeSources: this.sources().length ? this.sources() : undefined,
         hiddenBadges: this.hidden().size ? [...this.hidden()] : undefined
+      },
+      locale: {
+        ...editor.document.locale,
+        currency: this.currency() ?? undefined,
+        timeZone: this.timeZone() ?? undefined
       }
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
@@ -282,12 +315,19 @@ export class KraiSettingsComponent implements OnInit {
     this.editor.set(editor);
     this.sources.set([...(editor.document.catalog?.badgeSources ?? [])]);
     this.hidden.set(new Set(editor.document.catalog?.hiddenBadges ?? []));
+    this.currency.set(editor.document.locale?.currency ?? null);
+    this.timeZone.set(editor.document.locale?.timeZone ?? null);
     this.note.set('');
   }
 
   private fail(detail: string): void {
     this.messages.add({ severity: 'error', summary: 'Помилка', detail });
   }
+}
+
+/** The list with the saved value in it, so a value this browser does not know still shows. */
+function withValue(values: string[], value: string | null): string[] {
+  return value && !values.includes(value) ? [value, ...values] : values;
 }
 
 function sameSet(left: readonly string[], right: readonly string[]): boolean {

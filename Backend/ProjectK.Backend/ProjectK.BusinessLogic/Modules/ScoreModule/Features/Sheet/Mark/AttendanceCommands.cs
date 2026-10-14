@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
@@ -40,6 +41,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
     public MarkAttendanceCommandHandler(
         ScoreAccess access,
@@ -48,7 +50,8 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         IMembershipDirectory memberships,
         ScoreBookReader books,
         ICurrentUserContext currentUser,
-        TimeProvider time)
+        TimeProvider time,
+        IKraiProfileProvider profiles)
     {
         _access = access;
         _score = score;
@@ -57,6 +60,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         _books = books;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MarkAttendanceResultDto>>> Handle(MarkAttendanceCommand request, CancellationToken cancellationToken)
@@ -66,7 +70,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
             return refused;
         }
 
-        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
+        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
             return ScoreAccess.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("There is no such event, or it does not meet that day.");

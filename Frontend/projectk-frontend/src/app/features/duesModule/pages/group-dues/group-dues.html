@@ -311,6 +311,7 @@
       [entry]="entryToEdit()"
       [saving]="savingEntry()"
       [errorMessage]="entryError()"
+      [currency]="currency()"
       (save)="saveEntry($event)" />
 
     <p-dialog
@@ -339,7 +340,7 @@
             styleClass="w-full" />
         </div>
         <div class="lil-dialog-field">
-          <label for="dues-rate-share">На гурток за квартал, ₴</label>
+          <label for="dues-rate-share">На гурток за квартал, {{ currencySymbol() }}</label>
           <input pInputText id="dues-rate-share" type="number" inputmode="decimal" min="0" step="0.01"
             [ngModel]="rateShare()" (ngModelChange)="rateShare.set($event)" />
         </div>
