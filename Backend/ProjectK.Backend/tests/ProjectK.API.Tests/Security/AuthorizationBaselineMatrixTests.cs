@@ -232,7 +232,6 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById), "RequireUser");
 
         yield return Row<Action<KurinCatalogController, Guid>>(nameof(KurinCatalogController.GetBadges), "RequireUser");
-        yield return Row<Action<KurinCatalogController, Guid>>(nameof(KurinCatalogController.GetProbes), "RequireUser");
 
         yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetBadgeProgresses), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");

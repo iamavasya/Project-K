@@ -55,13 +55,12 @@ public class CatalogMapperTests
     }
 
     [Fact]
-    public void Entries_CarryTheCatalogueKraiCode()
+    public void Badges_CarryTheCatalogueKraiCode()
     {
         var state = Map();
 
         Assert.Equal("ua", state.BadgesById["plavets"].KraiCode);
         Assert.Equal(string.Empty, state.BadgesById["bez-kraiu"].KraiCode);
-        Assert.All(state.Probes, probe => Assert.Equal("ua", probe.KraiCode));
     }
 
     [Fact]

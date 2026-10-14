@@ -96,10 +96,7 @@ internal static class CatalogMapper
             .ToList();
         var own = ToPoints(probe.Points);
 
-        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections)
-        {
-            KraiCode = KraiCode(probe.Krai)
-        };
+        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections);
     }
 
     private static string KraiCode(string? krai) => krai?.Trim().ToLowerInvariant() ?? string.Empty;

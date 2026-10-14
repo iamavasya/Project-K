@@ -15,7 +15,6 @@ public class KurinCatalogTests
 {
     private readonly Mock<IKraiProfileProvider> _profiles = new();
     private readonly Mock<IBadgesCatalog> _badges = new();
-    private readonly Mock<IProbesCatalog> _probes = new();
     private readonly KurinCatalog _catalog;
     private readonly Guid _kurinKey = Guid.NewGuid();
 
@@ -28,22 +27,17 @@ public class KurinCatalogTests
             Badge("pl-1", "pl"),
             Badge("none", ""),
         ]);
-        _probes.Setup(c => c.GetAll()).Returns(
-        [
-            new Probe("probe-1", "Перша", []) { KraiCode = "ua" },
-            new Probe("probe-2", "Друга", []) { KraiCode = "ua" },
-        ]);
-        _catalog = new KurinCatalog(_profiles.Object, _badges.Object, _probes.Object);
+        _catalog = new KurinCatalog(_profiles.Object, _badges.Object);
     }
 
     private static Badge Badge(string id, string krai) =>
         new(id, id, "", "", "", "", null, "", "", "", [], [], "", []) { KraiCode = krai };
 
-    private void Given(IReadOnlyList<string> badgeSources, IReadOnlyList<string>? hiddenBadges = null, IReadOnlyList<string>? hiddenProbes = null)
+    private void Given(IReadOnlyList<string> badgeSources, IReadOnlyList<string>? hiddenBadges = null)
     {
         _profiles.Setup(p => p.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
             "ua", "Україна", 1,
-            new KraiCatalogSettings(badgeSources, ["ua"], hiddenBadges ?? [], hiddenProbes ?? []),
+            new KraiCatalogSettings(badgeSources, hiddenBadges ?? []),
             new KraiLocaleSettings("UAH", "Europe/Kyiv", "uk-UA")));
     }
 
@@ -72,13 +66,12 @@ public class KurinCatalogTests
     [Fact]
     public async Task HiddenEntries_AreNotOffered()
     {
-        Given(["ua"], hiddenBadges: ["ua-2"], hiddenProbes: ["probe-2"]);
+        Given(["ua"], hiddenBadges: ["ua-2"]);
 
         var view = await _catalog.ForAsync(_kurinKey);
 
         view!.Badges.Select(b => b.Id).Should().Equal("ua-1");
-        view.Probes.Select(p => p.Id).Should().Equal("probe-1");
-        view.OffersProbe("probe-2").Should().BeFalse();
+        view.OffersBadge("ua-2").Should().BeFalse();
     }
 
     [Fact]
@@ -88,16 +81,5 @@ public class KurinCatalogTests
 
         var result = await new GetKurinBadgesQueryHandler(_catalog).Handle(new GetKurinBadgesQuery(Guid.NewGuid()), default);
         result.Type.Should().Be(ResultType.NotFound);
-    }
-
-    [Fact]
-    public async Task TheProbesQuery_ListsTheKurinsProbes()
-    {
-        Given(["ua"]);
-
-        var result = await new GetKurinProbesQueryHandler(_catalog).Handle(new GetKurinProbesQuery(_kurinKey), default);
-
-        result.Type.Should().Be(ResultType.Success);
-        result.Data!.Select(p => p.Id).Should().Equal("probe-1", "probe-2");
     }
 }

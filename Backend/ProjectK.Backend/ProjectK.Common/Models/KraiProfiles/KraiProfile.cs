@@ -16,13 +16,12 @@ public sealed record KraiProfileDocument
 
 public sealed record KraiCatalogDocument
 {
-    /// <summary>Which краї's catalogue entries the kurins see, by the catalogue's own krai mark.</summary>
+    /// <summary>Which краї's вмілості the kurins see, by the catalogue's own krai mark.</summary>
+    /// <remarks>Проби are not set here: the three юнацькі проби are the same across Plast.</remarks>
     public IReadOnlyList<string>? BadgeSources { get; init; }
-    public IReadOnlyList<string>? ProbeSources { get; init; }
 
-    /// <summary>Single entries the край leaves out of what its sources give.</summary>
+    /// <summary>Single вмілості the край leaves out of what its sources give.</summary>
     public IReadOnlyList<string>? HiddenBadges { get; init; }
-    public IReadOnlyList<string>? HiddenProbes { get; init; }
 }
 
 public sealed record KraiLocaleDocument
@@ -47,9 +46,7 @@ public sealed record KraiProfile(
 
 public sealed record KraiCatalogSettings(
     IReadOnlyList<string> BadgeSources,
-    IReadOnlyList<string> ProbeSources,
-    IReadOnlyList<string> HiddenBadges,
-    IReadOnlyList<string> HiddenProbes);
+    IReadOnlyList<string> HiddenBadges);
 
 public sealed record KraiLocaleSettings(
     string Currency,

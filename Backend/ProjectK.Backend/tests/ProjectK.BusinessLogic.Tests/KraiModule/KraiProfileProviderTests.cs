@@ -55,9 +55,7 @@ public class KraiProfileProviderTests
 
         profile!.Revision.Should().Be(1);
         profile.Catalog.BadgeSources.Should().Equal("ua");
-        profile.Catalog.ProbeSources.Should().Equal("ua");
         profile.Catalog.HiddenBadges.Should().BeEmpty();
-        profile.Catalog.HiddenProbes.Should().BeEmpty();
         profile.Locale.Currency.Should().Be("UAH");
         profile.Locale.TimeZone.Should().Be(AgendaRecurrence.DefaultZone.Id);
         profile.Locale.NumberLocale.Should().Be("uk-UA");
@@ -68,7 +66,7 @@ public class KraiProfileProviderTests
     {
         Given("cz", """
             {
-              "catalog": { "badgeSources": [" CZ ", "ua", "cz"], "probeSources": [], "hiddenBadges": [" b1 ", "", "b1"] },
+              "catalog": { "badgeSources": [" CZ ", "ua", "cz"], "hiddenBadges": [" b1 ", "", "b1"] },
               "locale": { "currency": "czk", "timeZone": "Europe/Prague" }
             }
             """, revision: 3);
@@ -77,7 +75,6 @@ public class KraiProfileProviderTests
 
         profile!.Revision.Should().Be(3);
         profile.Catalog.BadgeSources.Should().Equal("cz", "ua");
-        profile.Catalog.ProbeSources.Should().Equal("cz");
         profile.Catalog.HiddenBadges.Should().Equal("b1");
         profile.Locale.Currency.Should().Be("CZK");
         profile.Locale.TimeZone.Should().Be("Europe/Prague");

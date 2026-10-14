@@ -53,7 +53,7 @@ public class SubmitBadgeProgressHandlerTests
         var badges = ids.Select(id => new Badge(id, id, "", "", "", "", null, "", "", "", [], [], "", [])).ToList();
         _kurinCatalogMock
             .Setup(x => x.ForAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new KurinCatalogView(badges, []));
+            .ReturnsAsync(new KurinCatalogView(badges));
     }
 
     private Guid GivenMember(string badgeId, BadgeProgress? progress)

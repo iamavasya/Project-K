@@ -45,11 +45,7 @@ public sealed record Probe(
     string Id,
     string Title,
     IReadOnlyList<ProbePoint> Points,
-    IReadOnlyList<ProbeSection>? Sections = null)
-{
-    /// <summary>The catalogue's code of the край the probe belongs to; empty when the catalogue names none.</summary>
-    public string KraiCode { get; init; } = string.Empty;
-}
+    IReadOnlyList<ProbeSection>? Sections = null);
 
 public sealed record ProbePoint(string Id, string Title);
 

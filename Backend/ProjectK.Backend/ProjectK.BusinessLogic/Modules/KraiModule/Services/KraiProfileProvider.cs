@@ -94,9 +94,7 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
             revision?.Revision ?? 0,
             new KraiCatalogSettings(
                 BadgeSources: Codes(catalog?.BadgeSources) ?? [krai.Code],
-                ProbeSources: Codes(catalog?.ProbeSources) ?? [krai.Code],
-                HiddenBadges: Ids(catalog?.HiddenBadges),
-                HiddenProbes: Ids(catalog?.HiddenProbes)),
+                HiddenBadges: Ids(catalog?.HiddenBadges)),
             new KraiLocaleSettings(
                 Currency: Text(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
                 TimeZone: Text(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,

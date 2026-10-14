@@ -20,15 +20,13 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     private readonly IMemberProgressDirectory _progress;
     private readonly IProbesCatalogService _probes;
     private readonly IBadgesCatalogService _badges;
-    private readonly IKurinCatalog _kurinCatalog;
 
-    public GetMyGrowthQueryHandler(MePerson me, IMemberProgressDirectory progress, IProbesCatalogService probes, IBadgesCatalogService badges, IKurinCatalog kurinCatalog)
+    public GetMyGrowthQueryHandler(MePerson me, IMemberProgressDirectory progress, IProbesCatalogService probes, IBadgesCatalogService badges)
     {
         _me = me;
         _progress = progress;
         _probes = probes;
         _badges = badges;
-        _kurinCatalog = kurinCatalog;
     }
 
     public async Task<ServiceResult<MyGrowthDto>> Handle(GetMyGrowthQuery request, CancellationToken cancellationToken)
@@ -51,21 +49,16 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
         {
             MemberKey = memberKey,
             HasYouthProgram = true,
-            Probe = await ProbeAsync(memberKey, me.Person.KurinKey, progress.Probes, cancellationToken),
+            Probe = await ProbeAsync(memberKey, progress.Probes, cancellationToken),
             Badges = Badges(progress.Badges)
         });
     }
 
     /// <summary>The проба to show, with how far it has come and what is next in it.</summary>
-    private async Task<MyProbeDto?> ProbeAsync(Guid memberKey, Guid kurinKey, IReadOnlyCollection<ProbeProgressRecord> progresses, CancellationToken cancellationToken)
+    private async Task<MyProbeDto?> ProbeAsync(Guid memberKey, IReadOnlyCollection<ProbeProgressRecord> progresses, CancellationToken cancellationToken)
     {
         var byId = progresses.ToDictionary(p => p.ProbeId);
-        // The kurin's проби, plus any the member is already on that its край no longer offers.
-        var kurinCatalog = await _kurinCatalog.ForAsync(kurinKey, cancellationToken);
-        var order = _probes.GetProbes()
-            .Select(p => p.Id)
-            .Where(id => kurinCatalog?.OffersProbe(id) == true || byId.ContainsKey(id));
-        var currentId = GrowthSummary.CurrentProbeId(order, byId.Values.Select(p => (p.ProbeId, p.Status)));
+        var currentId = GrowthSummary.CurrentProbeId(_probes.GetProbes().Select(p => p.Id), byId.Values.Select(p => (p.ProbeId, p.Status)));
         if (currentId is null || _probes.GetGroupedProbeById(currentId) is not { } probe)
         {
             return null;

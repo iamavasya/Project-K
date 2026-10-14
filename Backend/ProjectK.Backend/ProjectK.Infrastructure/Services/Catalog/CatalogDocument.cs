@@ -41,7 +41,6 @@ internal sealed record CatalogBadge(
 internal sealed record CatalogProbe(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("title")] string Title,
-    [property: JsonPropertyName("krai")] string? Krai,
     [property: JsonPropertyName("order")] int Order,
     [property: JsonPropertyName("sections")] IReadOnlyList<CatalogProbeSection>? Sections,
     [property: JsonPropertyName("points")] IReadOnlyList<CatalogRequirement>? Points);

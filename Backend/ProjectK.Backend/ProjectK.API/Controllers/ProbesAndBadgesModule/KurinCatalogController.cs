@@ -6,14 +6,13 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
 /// <summary>
-/// The part of the catalogue a kurin is offered, by its край's profile. The whole catalogue stays at
+/// The вмілості a kurin is offered, by its край's profile. The whole catalogue stays at
 /// api/catalog for looking up anything a member already has.
 /// </summary>
 [ApiController]
@@ -38,20 +37,6 @@ public class KurinCatalogController : ControllerBase
     public async Task<IActionResult> GetBadges(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetKurinBadgesQuery(kurinKey));
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
-    /// Lists the проби the kurin works with.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("probes")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<ProbeSummaryResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProbes(Guid kurinKey)
-    {
-        var response = await _mediator.Send(new GetKurinProbesQuery(kurinKey));
         return response.ToActionResult(this);
     }
 }
