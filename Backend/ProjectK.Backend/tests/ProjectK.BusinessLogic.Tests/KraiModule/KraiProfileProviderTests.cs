@@ -11,6 +11,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
@@ -79,6 +80,31 @@ public class KraiProfileProviderTests
         profile.Locale.Currency.Should().Be("CZK");
         profile.Locale.TimeZone.Should().Be("Europe/Prague");
         profile.Locale.NumberLocale.Should().Be("uk-UA");
+    }
+
+    [Fact]
+    public async Task CardFields_AreTheCardAsItWas_WithTheKraisChangesOverIt()
+    {
+        Given("cz", """
+            {
+              "cardFields": {
+                "fields": { "middleName": "hidden", "school": "hidden" },
+                "extra": [
+                  { "key": "visaType", "label": "Тип візи", "required": true },
+                  { "key": "visaUntil", "label": "Віза до", "type": "date" },
+                  { "key": "odd", "label": "Невідомий тип", "type": "number" }
+                ]
+              }
+            }
+            """);
+
+        var card = (await _provider.GetForKraiAsync("cz"))!.CardFields;
+
+        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
+        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
+        card.Fields.Should().NotContainKey("school");
+        card.Extra.Select(field => field.Key).Should().Equal("visaType", "visaUntil");
+        card.Extra[0].Required.Should().BeTrue();
     }
 
     [Fact]

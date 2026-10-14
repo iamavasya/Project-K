@@ -13,6 +13,8 @@ public static partial class KraiProfileJson
     public const int MaxLength = 64 * 1024;
 
     private const int MaxListItems = 2000;
+    private const int MaxExtraFields = 30;
+    private const int MaxLabelLength = 80;
 
     private static readonly JsonSerializerOptions ReadOptions = new()
     {
@@ -49,6 +51,7 @@ public static partial class KraiProfileJson
     {
         var catalog = document.Catalog;
         var locale = document.Locale;
+        var card = document.CardFields;
 
         return new KraiProfileDocument
         {
@@ -62,6 +65,11 @@ public static partial class KraiProfileJson
                 Currency = Text(locale.Currency)?.ToUpperInvariant(),
                 TimeZone = Text(locale.TimeZone),
                 NumberLocale = Text(locale.NumberLocale)
+            }),
+            CardFields = card is null ? null : Empty(new KraiCardFieldsDocument
+            {
+                Fields = Modes(card.Fields),
+                Extra = Extra(card.Extra)
             })
         };
     }
@@ -101,7 +109,80 @@ public static partial class KraiProfileJson
             errors.Add($"Невідомий формат чисел: «{culture}».");
         }
 
+        if (document.CardFields is { } card)
+        {
+            errors.AddRange(CardFieldErrors(card));
+        }
+
         return errors;
+    }
+
+    private static IEnumerable<string> CardFieldErrors(KraiCardFieldsDocument card)
+    {
+        foreach (var (field, mode) in card.Fields ?? new Dictionary<string, string>())
+        {
+            if (!KraiCardFields.Configurable.ContainsKey(field))
+            {
+                yield return $"Поле «{field}» картки не налаштовується.";
+            }
+            else if (!KraiCardFields.Modes.Contains(mode))
+            {
+                yield return $"Поле «{field}» може бути лише required, optional чи hidden, а не «{mode}».";
+            }
+        }
+
+        var extra = card.Extra ?? [];
+        if (extra.Count > MaxExtraFields)
+        {
+            yield return $"Додаткових полів може бути щонайбільше {MaxExtraFields}.";
+        }
+
+        foreach (var field in extra)
+        {
+            if (!ExtraKeyPattern().IsMatch(field.Key))
+            {
+                yield return $"Ключ поля «{field.Key}» має бути латиницею, з малої літери, без пробілів.";
+            }
+
+            if (string.IsNullOrEmpty(field.Label) || field.Label.Length > MaxLabelLength)
+            {
+                yield return $"Поле «{field.Key}» потребує назви до {MaxLabelLength} знаків.";
+            }
+
+            if (!KraiCardFields.Types.Contains(field.Type))
+            {
+                yield return $"Поле «{field.Key}» може бути лише text чи date, а не «{field.Type}».";
+            }
+        }
+
+        foreach (var key in extra.GroupBy(field => field.Key, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key))
+        {
+            yield return $"Ключ поля «{key}» повторюється.";
+        }
+    }
+
+    private static IReadOnlyDictionary<string, string>? Modes(IReadOnlyDictionary<string, string>? fields)
+    {
+        var modes = fields?
+            .Where(pair => !string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+            .GroupBy(pair => pair.Key.Trim(), StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Last().Value.Trim().ToLowerInvariant(), StringComparer.Ordinal);
+        return modes is { Count: > 0 } ? modes : null;
+    }
+
+    private static IReadOnlyList<KraiCardExtraField>? Extra(IReadOnlyList<KraiCardExtraField>? fields)
+    {
+        var list = fields?
+            .Where(field => field is not null && !string.IsNullOrWhiteSpace(field.Key))
+            .Select(field => new KraiCardExtraField
+            {
+                Key = field.Key.Trim(),
+                Label = field.Label?.Trim() ?? string.Empty,
+                Type = Text(field.Type)?.ToLowerInvariant() ?? KraiCardFields.Text,
+                Required = field.Required
+            })
+            .ToList();
+        return list is { Count: > 0 } ? list : null;
     }
 
     private static T? Empty<T>(T section) where T : class
@@ -141,6 +222,9 @@ public static partial class KraiProfileJson
 
     [GeneratedRegex("^[a-z]{2,8}$")]
     private static partial Regex KraiCodePattern();
+
+    [GeneratedRegex("^[a-z][a-zA-Z0-9]{0,39}$")]
+    private static partial Regex ExtraKeyPattern();
 
     [GeneratedRegex("^[A-Z]{3}$")]
     private static partial Regex CurrencyPattern();

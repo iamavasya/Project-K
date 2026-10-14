@@ -32,6 +32,12 @@ public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>
     public string? Address { get; set; }
     public string? School { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
+
+    /// <inheritdoc cref="UpsertMemberProfileCommand.CardExtras"/>
+    public IDictionary<string, string>? CardExtras { get; set; }
+
+    /// <inheritdoc cref="UpsertMemberProfileCommand.ApplyCardFields"/>
+    public bool ApplyCardFields { get; set; }
     public bool RemoveProfilePhoto { get; set; }
     public Stream? BlobContent { get; set; }
     public string? BlobFileName { get; set; }
@@ -187,7 +193,9 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         DateOfBirth = request.DateOfBirth,
         Address = request.Address,
         School = request.School,
-        PlastLevelHistories = request.PlastLevelHistories
+        PlastLevelHistories = request.PlastLevelHistories,
+        CardExtras = request.CardExtras,
+        ApplyCardFields = request.ApplyCardFields
     };
 
     private static ServiceResult<MemberResponse> Propagate<T>(ServiceResult<T> step) =>

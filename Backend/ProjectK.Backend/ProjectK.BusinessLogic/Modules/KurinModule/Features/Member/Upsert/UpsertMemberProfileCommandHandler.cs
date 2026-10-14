@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -29,6 +30,7 @@ public class UpsertMemberProfileCommandHandler
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
+    private readonly IKraiProfileProvider _profiles;
 
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -36,9 +38,11 @@ public class UpsertMemberProfileCommandHandler
         IMapper mapper,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IAccountProvisioningService accounts)
+        IAccountProvisioningService accounts,
+        IKraiProfileProvider profiles)
     {
         _accounts = accounts;
+        _profiles = profiles;
         _unitOfWork = unitOfWork;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
@@ -85,6 +89,18 @@ public class UpsertMemberProfileCommandHandler
         var kurinKey = group?.KurinKey ?? request.KurinKey!.Value;
         var groupKey = group?.GroupKey;
 
+        var cardExtras = existing?.CardExtras;
+        if (request.ApplyCardFields && await _profiles.GetForKurinAsync(kurinKey, cancellationToken) is { } profile)
+        {
+            var card = MemberCardFields.Apply(profile.CardFields, request, existing);
+            if (card.Error is not null)
+            {
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberCardFields.ErrorCode, card.Error);
+            }
+
+            cardExtras = card.CardExtras;
+        }
+
         var wasProfileVerifiedCurrent =
             existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
 
@@ -95,6 +111,7 @@ public class UpsertMemberProfileCommandHandler
         if (existing == null)
         {
             existing = _mapper.Map<MemberEntity>(request);
+            existing.CardExtras = cardExtras;
 
             // The ступені the request carried. The mapper deliberately leaves the collection
             // alone — it cannot tell a new row from an edited one — so a person created with
@@ -118,7 +135,8 @@ public class UpsertMemberProfileCommandHandler
         {
             isCreated = false;
             var shouldMarkProfileStale = wasProfileVerifiedCurrent
-                && HasSignificantProfileChange(request, existing, current, kurinKey, groupKey);
+                && (HasSignificantProfileChange(request, existing, current, kurinKey, groupKey)
+                    || !string.Equals(existing.CardExtras, cardExtras, StringComparison.Ordinal));
 
             var preserveLinkedUserEmail = false;
             string? linkedUserEmail = null;
@@ -162,6 +180,7 @@ public class UpsertMemberProfileCommandHandler
 
             previousPhotoBlobName = existing.ProfilePhotoBlobName;
             _mapper.Map(request, existing);
+            existing.CardExtras = cardExtras;
 
             if (preserveLinkedUserEmail)
             {

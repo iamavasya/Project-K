@@ -35,6 +35,12 @@ public class Member : Entity
     public DateOnly DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+
+    /// <summary>
+    /// Values of the card fields a край adds, as a JSON object by field key; see
+    /// <c>MemberCardExtras</c>. Kept when the край drops a field, so bringing it back loses nothing.
+    /// </summary>
+    public string? CardExtras { get; set; }
     public string? ProfilePhotoBlobName { get; set; }
     public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; } = MemberProfileVerificationStatus.Unverified;
     public DateTime? ProfileVerifiedAtUtc { get; set; }

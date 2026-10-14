@@ -81,6 +81,12 @@ public class KraiProfileEditorTests
     [InlineData("""{"locale":{"currency":"korun"}}""")]
     [InlineData("""{"locale":{"timeZone":"Mars/Olympus"}}""")]
     [InlineData("""{"locale":{"numberLocale":"xx-NOPE"}}""")]
+    [InlineData("""{"cardFields":{"fields":{"email":"hidden"}}}""")]
+    [InlineData("""{"cardFields":{"fields":{"middleName":"sometimes"}}}""")]
+    [InlineData("""{"cardFields":{"extra":[{"key":"тип","label":"Тип візи"}]}}""")]
+    [InlineData("""{"cardFields":{"extra":[{"key":"visa","label":""}]}}""")]
+    [InlineData("""{"cardFields":{"extra":[{"key":"visa","label":"Віза","type":"number"}]}}""")]
+    [InlineData("""{"cardFields":{"extra":[{"key":"visa","label":"Віза"},{"key":"visa","label":"Ще"}]}}""")]
     public async Task AnInvalidDocument_IsRefused(string json)
     {
         Latest(1);

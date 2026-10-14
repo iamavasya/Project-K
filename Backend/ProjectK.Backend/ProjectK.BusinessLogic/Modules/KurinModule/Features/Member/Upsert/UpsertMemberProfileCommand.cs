@@ -22,4 +22,14 @@ public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWr
     public string? Address { get; set; }
     public string? School { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
+
+    /// <summary>Values of the край's own card fields, by key. A key left out keeps its value.</summary>
+    public IDictionary<string, string>? CardExtras { get; set; }
+
+    /// <summary>
+    /// Holds the write to the card fields of the member's край: required ones filled, hidden ones
+    /// left as they are. The forms ask for it; the roster import and kurin registration do not, so
+    /// a край's new required field does not turn away a whole import.
+    /// </summary>
+    public bool ApplyCardFields { get; set; }
 }

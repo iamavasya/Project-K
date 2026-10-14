@@ -1,8 +1,17 @@
-import { MemberDto, MemberWarningDto } from './kurin.models';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CardFields, MemberDto, MemberWarningDto } from './kurin.models';
 import {
+  DEFAULT_CARD_FIELDS,
   NO_WARNING_CHANGES,
   canClearWarning,
   canEditEmail,
+  cardExtraRows,
+  cardExtrasDraft,
+  cardExtrasValid,
+  cardFieldError,
+  cardFieldsOf,
+  changedCardExtras,
+  fieldMode,
   canSelectWarning,
   closeBranch,
   memberFormData,
@@ -17,6 +26,13 @@ import {
 } from './member-edit';
 
 const now = Date.parse('2026-10-10T12:00:00Z');
+const visaCard: CardFields = {
+  fields: { middleName: 'hidden', phoneNumber: 'optional' },
+  extra: [
+    { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+    { key: 'visaUntil', label: 'Віза до', type: 'date', required: false },
+  ],
+};
 const warning = (key: string, level: MemberWarningDto['level'], issuedBy: string, extra: Partial<MemberWarningDto> = {}): MemberWarningDto => ({
   memberWarningKey: key, level, issuedAtUtc: '2026-09-01T00:00:00Z', expiresAtUtc: '2026-12-01T00:00:00Z', issuedByUserKey: issuedBy, ...extra,
 });
@@ -130,5 +146,66 @@ describe('member edit rules', () => {
     expect(oldEnough('2020-11-01', '2026-10-11')).toBe(false);
     expect(oldEnough('2012-03-14', '2026-10-11')).toBe(true);
     expect(oldEnough('', '2026-10-11')).toBe(false);
+  });
+
+  it('reads the край’s card fields, falling back to both fields asked and nothing more', () => {
+    expect(cardFieldsOf(null)).toEqual(DEFAULT_CARD_FIELDS);
+    expect(cardFieldsOf({})).toEqual(DEFAULT_CARD_FIELDS);
+    expect(cardFieldsOf({ cardFields: { fields: { middleName: 'hidden', phoneNumber: 'sometimes' } } })).toEqual({
+      fields: { middleName: 'hidden', phoneNumber: 'required' },
+      extra: [],
+    });
+    expect(cardFieldsOf({ cardFields: { fields: { middleName: 'hidden', phoneNumber: 'optional' }, extra: [...visaCard.extra, { key: '', label: 'x' }] } })).toEqual(visaCard);
+    expect(fieldMode(visaCard, 'middleName')).toBe('hidden');
+    expect(fieldMode(visaCard, 'phoneNumber')).toBe('optional');
+    expect(fieldMode(visaCard, 'firstName')).toBe('required');
+  });
+
+  it('edits one value per extra field and holds required ones and dates', () => {
+    const draft = cardExtrasDraft(visaCard, { visaType: 'D', retired: 'x' });
+    expect(draft).toEqual({ visaType: 'D', visaUntil: '' });
+    expect(cardExtrasValid(visaCard, draft)).toBe(true);
+    expect(cardExtrasValid(visaCard, { ...draft, visaType: '  ' })).toBe(false);
+    expect(cardExtrasValid(visaCard, { ...draft, visaUntil: '2027-13' })).toBe(false);
+    expect(cardExtrasValid(visaCard, { ...draft, visaUntil: '2027-03-01' })).toBe(true);
+    expect(cardExtrasValid(DEFAULT_CARD_FIELDS, {})).toBe(true);
+  });
+
+  it('sends every extra field, a blank one as empty', () => {
+    const member = { memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', email: 'o@example.com' } as unknown as MemberDto;
+    const form = { firstName: 'Остап', middleName: '', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '', dateOfBirth: '2012-03-14' };
+    const body = memberFormData(member, form, [], { blob: null, name: '', remove: false }, { visaType: ' D ', visaUntil: '' });
+    expect(body.get('cardExtras[visaType]')).toBe('D');
+    expect(body.get('cardExtras[visaUntil]')).toBe('');
+    const created = newMemberFormData({ kurinKey: 'k1' }, form, [], { blob: null, name: '' }, { visaType: 'C' });
+    expect(created.get('cardExtras[visaType]')).toBe('C');
+    expect([...memberFormData(member, form, [], { blob: null, name: '', remove: false }).keys()].some((k) => k.startsWith('cardExtras'))).toBe(false);
+  });
+
+  it('sends only the extra fields changed from what was read, an emptied one as empty', () => {
+    const loaded = { visaType: 'D', visaUntil: '2027-03-01' };
+    expect(changedCardExtras(loaded, { visaType: ' D ', visaUntil: '' })).toEqual({ visaUntil: '' });
+    expect(changedCardExtras(loaded, loaded)).toEqual({});
+    // A viewer shown no values: what they leave empty stays as stored.
+    const unseen = cardExtrasDraft(visaCard, {});
+    expect(changedCardExtras(unseen, { visaType: '', visaUntil: '2027-05-01' })).toEqual({ visaUntil: '2027-05-01' });
+    // A new member: only the filled ones.
+    expect(changedCardExtras(unseen, { visaType: 'C', visaUntil: '' })).toEqual({ visaType: 'C' });
+  });
+
+  it('shows the extra fields that have a value, dates as the card writes them', () => {
+    expect(cardExtraRows(visaCard, { visaType: 'D', visaUntil: '2027-03-01' })).toEqual([
+      { key: 'visaType', label: 'Тип візи', value: 'D' },
+      { key: 'visaUntil', label: 'Віза до', value: '1 березня 2027' },
+    ]);
+    expect(cardExtraRows(visaCard, { visaType: ' ' })).toEqual([]);
+    expect(cardExtraRows(visaCard, undefined)).toEqual([]);
+  });
+
+  it('passes on the server’s wording only for a missing required field', () => {
+    const refused = (body: unknown) => new HttpErrorResponse({ status: 400, error: body });
+    expect(cardFieldError(refused({ error: 'CardFieldRequired', message: 'Заповни поле «Тип візи».' }))).toBe('Заповни поле «Тип візи».');
+    expect(cardFieldError(refused({ error: 'ValidationFailed', message: 'x' }))).toBeNull();
+    expect(cardFieldError(new Error('x'))).toBeNull();
   });
 });

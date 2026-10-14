@@ -14,8 +14,9 @@ import { BadgesCatalogService } from '../../../kurinModule/services/probes-and-b
 import { KraiDto } from '../../../kurinModule/models/krai.dto';
 import { BadgeCatalogItemDto } from '../../../kurinModule/models/probes-and-badges/badge-catalog-item.dto';
 import { KraiProfileService } from '../../services/krai-profile-service/krai-profile.service';
-import { KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
+import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
+import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
 import { currencySymbol, DEFAULT_CURRENCY } from '../../../duesModule/functions/dues-format.function';
 
 interface SourceOption {
@@ -45,7 +46,7 @@ const TIME_ZONES = supported('timeZone');
  */
 @Component({
   selector: 'app-krai-settings',
-  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule],
+  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule, KraiCardFieldsComponent],
   templateUrl: './krai-settings.html',
   styleUrl: './krai-settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -68,6 +69,7 @@ export class KraiSettingsComponent implements OnInit {
   readonly hidden = signal<ReadonlySet<string>>(new Set());
   readonly currency = signal<string | null>(null);
   readonly timeZone = signal<string | null>(null);
+  readonly cardFields = signal<KraiCardFieldsDocument | undefined>(undefined);
   readonly note = signal('');
 
   readonly defaultCurrency = DEFAULT_CURRENCY;
@@ -138,7 +140,8 @@ export class KraiSettingsComponent implements OnInit {
     return !sameSet(saved?.badgeSources ?? [], this.sources())
       || !sameSet(saved?.hiddenBadges ?? [], [...this.hidden()])
       || (locale?.currency ?? null) !== this.currency()
-      || (locale?.timeZone ?? null) !== this.timeZone();
+      || (locale?.timeZone ?? null) !== this.timeZone()
+      || !sameCardFields(editor.document.cardFields, this.cardFields());
   });
 
   ngOnInit(): void {
@@ -232,7 +235,8 @@ export class KraiSettingsComponent implements OnInit {
         ...editor.document.locale,
         currency: this.currency() ?? undefined,
         timeZone: this.timeZone() ?? undefined
-      }
+      },
+      cardFields: this.cardFields()
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
   }
@@ -317,6 +321,7 @@ export class KraiSettingsComponent implements OnInit {
     this.hidden.set(new Set(editor.document.catalog?.hiddenBadges ?? []));
     this.currency.set(editor.document.locale?.currency ?? null);
     this.timeZone.set(editor.document.locale?.timeZone ?? null);
+    this.cardFields.set(editor.document.cardFields);
     this.note.set('');
   }
 

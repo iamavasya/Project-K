@@ -122,6 +122,8 @@ export interface MemberDto extends MemberLookupDto {
   mentoredGroups?: { groupKey: string; name: string }[];
   awards?: MemberAwardDto[];
   profileVerifiedAtUtc?: string | null;
+  /** The край's extra card fields by key (dates as «YYYY-MM-DD»); empty to who may not see private details. */
+  cardExtras?: Record<string, string>;
 }
 
 export interface MembershipDto {
@@ -148,6 +150,23 @@ export interface MentorAssignmentDto {
   assignedAtUtc: string;
   revokedAtUtc: string | null;
   member: MemberLookupDto | null;
+}
+
+// ── The край's card fields (`kurin/{k}/profile`, KraiProfile.cardFields) ────────────────────────────
+
+export type CardFieldMode = 'required' | 'optional' | 'hidden';
+
+/** One field the край adds to its members' cards. */
+export interface CardExtraField {
+  key: string;
+  label: string;
+  type: 'text' | 'date';
+  required: boolean;
+}
+
+export interface CardFields {
+  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode };
+  extra: CardExtraField[];
 }
 
 // ── Skills and probes (ProbesAndBadgesModule) ────────────────────────────────────────────────────

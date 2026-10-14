@@ -87,6 +87,16 @@
     }
   </section>
 
+  <section class="kurin-tile" aria-labelledby="card-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="card-title">Картка члена</h2>
+        <p>Які поля картки курені краю «{{ e.kraiName }}» мусять заповнити, які можуть лишити порожніми, а яких у краї немає.</p>
+      </div>
+    </div>
+    <app-krai-card-fields [(value)]="cardFields" [disabled]="saving()" />
+  </section>
+
   <section class="kurin-tile" aria-labelledby="locale-title">
     <div class="lil-tile-head">
       <div>

@@ -39,6 +39,8 @@ export interface MemberDto {
     dateOfBirth: Date | null;
     address?: string | null;
     school?: string | null;
+    /** Values of the край's own card fields by key; empty when the viewer may not see them. */
+    cardExtras?: Record<string, string>;
     latestPlastLevel?: string | null;
     latestPlastLevelDisplay?: string | null;
     plastLevelHistories: PlastLevelHistoryDto[];

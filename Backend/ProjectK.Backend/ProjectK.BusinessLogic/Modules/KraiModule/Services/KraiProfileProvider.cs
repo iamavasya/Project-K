@@ -91,7 +91,30 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
             new KraiLocaleSettings(
                 Currency: Text(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
                 TimeZone: Text(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
-                NumberLocale: Text(locale?.NumberLocale) ?? "uk-UA"));
+                NumberLocale: Text(locale?.NumberLocale) ?? "uk-UA"),
+            CardFields(document.CardFields));
+    }
+
+    // The card as it was before profiles, with whatever the край changed over it. A mode or a
+    // field this Lilejka does not know is left out rather than guessed at.
+    private static KraiCardFieldsSettings CardFields(KraiCardFieldsDocument? document)
+    {
+        var fields = KraiCardFields.Configurable.ToDictionary(
+            field => field.Key,
+            field => document?.Fields is { } set
+                && set.TryGetValue(field.Key, out var mode)
+                && KraiCardFields.Modes.Contains(mode)
+                    ? mode
+                    : field.Value);
+
+        var extra = (document?.Extra ?? [])
+            .Where(field => !string.IsNullOrWhiteSpace(field.Key)
+                && !string.IsNullOrWhiteSpace(field.Label)
+                && KraiCardFields.Types.Contains(field.Type))
+            .DistinctBy(field => field.Key)
+            .ToList();
+
+        return new KraiCardFieldsSettings(fields, extra);
     }
 
     // An empty list of sources is read as "not set", never as "show nothing".

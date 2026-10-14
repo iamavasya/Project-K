@@ -25,10 +25,12 @@ import { Toasts } from '../../core/toast';
 import { IMAGE_TOO_LARGE } from './image-crop';
 import { CroppedImage, ImageCropSheet } from './image-crop.sheet';
 import { kurinAccess, shortDate, toDateOnly, utcDate } from './kurin.labels';
-import { MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
+import { CardFields, MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import {
+  CardExtras,
+  DEFAULT_CARD_FIELDS,
   MIN_AGE,
   MemberForm,
   NO_WARNING_CHANGES,
@@ -41,6 +43,11 @@ import {
   WarningDraft,
   canClearWarning,
   canEditEmail,
+  cardExtraValid,
+  cardExtrasDraft,
+  cardFieldError,
+  changedCardExtras,
+  fieldMode,
   canSelectWarning,
   closeBranch,
   isPendingAccount,
@@ -66,7 +73,23 @@ const SAVE_ERRORS = {
 
 type Field = keyof MemberForm;
 
-const FIELDS: { key: Field; label: string; type: 'text' | 'tel' | 'date' | 'email'; autocomplete: string }[] = [
+interface FormField {
+  key: Field;
+  label: string;
+  type: 'text' | 'tel' | 'date' | 'email';
+  autocomplete: string;
+}
+
+/** An input of «Основне»: a field of the form, or one the край adds (`extra`). */
+interface Row extends Omit<FormField, 'key'> {
+  key: string;
+  extra: boolean;
+  testId: string;
+  /** Only the birth date stops at today; a край's date may be ahead (a visa's end). */
+  max?: string;
+}
+
+const FIELDS: FormField[] = [
   { key: 'firstName', label: 'Імʼя', type: 'text', autocomplete: 'given-name' },
   { key: 'middleName', label: 'По батькові', type: 'text', autocomplete: 'additional-name' },
   { key: 'lastName', label: 'Прізвище', type: 'text', autocomplete: 'family-name' },
@@ -74,6 +97,11 @@ const FIELDS: { key: Field; label: string; type: 'text' | 'tel' | 'date' | 'emai
   { key: 'phoneNumber', label: 'Номер телефону', type: 'tel', autocomplete: 'tel' },
   { key: 'dateOfBirth', label: 'Дата народження', type: 'date', autocomplete: 'bday' },
 ];
+
+/** A field the край requires comes back in the server's own words, which name it. */
+function saveErrorText(error: unknown, fallback: string): string {
+  return cardFieldError(error) ?? apiErrorText(error, fallback, SAVE_ERRORS);
+}
 
 /**
  * What the card does once the sheet is gone: nothing, read itself again, or leave (the profile is
@@ -88,6 +116,8 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
  * (Виховник, Звʼязковий, admin) and to the member on their own card, перестороги to that провід, the
  * profile check to such a reviewer on somebody else's card when the kurin uses it, and «Видалити
  * профіль» to the Звʼязковий and admins.
+ * The middle name and phone are asked, left optional or left out as the kurin's край says, and
+ * its own fields (`cardExtras`) follow them.
  *
  * Without a `member` and with a `placement` it is the web's «Новий учасник»: the same form with the
  * email required, as the address the account's invitation goes to, and the ступені for the провід
@@ -188,19 +218,19 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
       <ion-list [inset]="true">
         <ion-list-header><ion-label>Основне</ion-label></ion-list-header>
         <ion-item-group>
-          @for (field of fields(); track field.key) {
+          @for (row of rows(); track row.testId) {
             <ion-item>
               <div class="lk-field">
-                <span class="lk-field__label">{{ field.label }}</span>
-                <div class="lk-input-box" [class.lk-invalid]="touched() && !fieldValid(field.key)">
+                <span class="lk-field__label">{{ row.label }}</span>
+                <div class="lk-input-box" [class.lk-invalid]="touched() && !rowValid(row)">
                   <ion-input
-                    [type]="field.type"
-                    [attr.data-testid]="'profile-' + field.key"
-                    [attr.aria-label]="field.label"
-                    [autocomplete]="$any(field.autocomplete)"
-                    [max]="field.type === 'date' ? today : undefined"
-                    [value]="form()[field.key]"
-                    (ionInput)="set(field.key, $any($event).detail.value)"
+                    [type]="row.type"
+                    [attr.data-testid]="row.testId"
+                    [attr.aria-label]="row.label"
+                    [autocomplete]="$any(row.autocomplete)"
+                    [max]="row.max"
+                    [value]="rowValue(row)"
+                    (ionInput)="setRow(row, $any($event).detail.value)"
                   />
                 </div>
               </div>
@@ -339,6 +369,10 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   placement: NewMemberPlacement | null = null;
   /** The kurin checks profiles (KurinDto.profileVerificationEnabled). */
   verificationEnabled = false;
+  /** What the край asks on the card, when the caller has it; otherwise the sheet reads it for `kurinKey`. */
+  cardFields: CardFields | null = null;
+  /** The kurin the member is in or goes to, when neither the card nor the placement says it. */
+  kurinKey: string | null = null;
 
   /** The profile check is done at once, as on the web; the card reads itself again after. */
   protected changed = false;
@@ -354,6 +388,12 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   private readonly reviewer = this.access.reviewSkills;
 
   protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '' });
+  protected readonly card = signal<CardFields>(DEFAULT_CARD_FIELDS);
+  /** Saving waits for the край's fields, so none of them goes out unasked. */
+  private readonly cardReady = signal(false);
+  protected readonly extras = signal<CardExtras>({});
+  /** The extra values as read, to send only what changed. */
+  private loadedExtras: CardExtras = {};
   protected readonly dates = signal<RankDates>(rankDates([]));
   protected readonly open = signal({ UPYu: false, USP: false, UPS: false });
   protected readonly draft = signal<WarningDraft>(NO_WARNING_CHANGES);
@@ -373,13 +413,29 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   protected readonly canWarnings = signal(false);
   protected readonly canDelete = signal(false);
 
-  protected readonly fields = computed(() => FIELDS.filter((f) => f.key !== 'email' || this.showEmail()));
+  /** The form's fields this sheet asks (a hidden one goes back as it was read), then the край's own. */
+  protected readonly rows = computed<Row[]>(() => [
+    ...FIELDS.filter((f) => (f.key !== 'email' || this.showEmail()) && fieldMode(this.card(), f.key) !== 'hidden').map((f) => ({
+      ...f,
+      extra: false,
+      testId: `profile-${f.key}`,
+      max: f.type === 'date' ? this.today : undefined,
+    })),
+    ...this.card().extra.map((f) => ({
+      key: f.key,
+      label: f.label,
+      type: f.type,
+      autocomplete: 'off',
+      extra: true,
+      testId: `profile-extra-${f.key}`,
+    })),
+  ]);
   protected readonly shownRanks = computed(() => RANK_FIELDS.filter((f) => f.branch === 'base' || this.open()[f.branch]));
   protected readonly shownPhoto = computed(() => this.preview() ?? (this.photoRemoved() ? null : (this.member?.profilePhotoUrl ?? null)));
   protected readonly emailChanged = computed(() => this.form().email.trim().toLowerCase() !== (this.member?.email ?? '').trim().toLowerCase());
   protected readonly valid = computed(() => {
     const ranksOk = Object.values(this.dates()).every((d) => !d || /^\d{4}-\d{2}-\d{2}$/.test(d));
-    return this.fields().every(({ key }) => this.fieldValid(key)) && ranksOk;
+    return this.cardReady() && this.rows().every((row) => this.rowValid(row)) && ranksOk;
   });
   protected readonly tooYoung = computed(() => {
     const birth = this.form().dateOfBirth;
@@ -393,6 +449,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    void this.loadCard();
     const m = this.member;
     if (!m) {
       // «Новий учасник»: the email is the invitation's address, the ступені are the провід's.
@@ -429,9 +486,25 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     if (url) URL.revokeObjectURL(url);
   }
 
-  protected fieldValid(key: Field): boolean {
+  protected rowValue(row: Row): string {
+    return row.extra ? (this.extras()[row.key] ?? '') : this.form()[row.key as Field];
+  }
+
+  protected rowValid(row: Row): boolean {
+    if (!row.extra) return this.fieldValid(row.key as Field);
+    const field = this.card().extra.find((f) => f.key === row.key);
+    return !field || cardExtraValid(field, this.extras()[row.key]);
+  }
+
+  protected setRow(row: Row, value: string | null | undefined): void {
+    if (!row.extra) return this.set(row.key as Field, value);
+    this.touched.set(true);
+    this.extras.update((extras) => ({ ...extras, [row.key]: value ?? '' }));
+  }
+
+  private fieldValid(key: Field): boolean {
     const value = this.form()[key].trim();
-    if (!value) return false;
+    if (!value) return fieldMode(this.card(), key) === 'optional';
     if (key === 'email') return looksLikeEmail(value);
     if (key === 'dateOfBirth') return /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= this.today && oldEnough(value, this.today);
     return true;
@@ -575,10 +648,16 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     try {
       saved = await this.data.updateMember(
         member.memberKey,
-        memberFormData(member, form, histories, { blob: photo?.blob ?? null, name: photo?.name ?? 'profile.jpg', remove: this.photoRemoved() }),
+        memberFormData(
+          member,
+          form,
+          histories,
+          { blob: photo?.blob ?? null, name: photo?.name ?? 'profile.jpg', remove: this.photoRemoved() },
+          changedCardExtras(this.loadedExtras, this.extras()),
+        ),
       );
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти профіль. Спробуй ще раз.', SAVE_ERRORS), 'danger');
+      await this.toasts.show(saveErrorText(error, 'Не вдалося зберегти профіль. Спробуй ще раз.'), 'danger');
       this.busy.set(false);
       return;
     }
@@ -601,12 +680,18 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     try {
       created = await this.data.createMember(
         placement,
-        newMemberFormData(placement, this.form(), histories, { blob: photo?.blob ?? null, name: photo?.name ?? 'profile.jpg' }),
+        newMemberFormData(
+          placement,
+          this.form(),
+          histories,
+          { blob: photo?.blob ?? null, name: photo?.name ?? 'profile.jpg' },
+          changedCardExtras(this.loadedExtras, this.extras()),
+        ),
       );
     } catch (error) {
       // A bare 409 on create is the server's «this address is already an account or an application».
       const taken = error instanceof HttpErrorResponse && error.status === 409;
-      await this.toasts.show(taken ? SAVE_ERRORS.EmailTaken : apiErrorText(error, 'Не вдалося створити учасника. Спробуй ще раз.', SAVE_ERRORS), 'danger');
+      await this.toasts.show(taken ? SAVE_ERRORS.EmailTaken : saveErrorText(error, 'Не вдалося створити учасника. Спробуй ще раз.'), 'danger');
       this.busy.set(false);
       return;
     }
@@ -618,6 +703,21 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     );
     this.busy.set(false);
     this.close({ created: created.memberKey });
+  }
+
+  /**
+   * The край's card fields: from the caller, or read for the kurin. One that cannot be read leaves
+   * the default; the server still holds the край's rules and says what is missing.
+   */
+  private async loadCard(): Promise<void> {
+    const placed = this.placement && 'kurinKey' in this.placement ? this.placement.kurinKey : null;
+    const kurinKey = this.kurinKey ?? this.member?.kurinKey ?? placed;
+    let card = this.cardFields ?? DEFAULT_CARD_FIELDS;
+    if (!this.cardFields && kurinKey) card = await this.data.cardFields(kurinKey).catch(() => DEFAULT_CARD_FIELDS);
+    this.card.set(card);
+    this.loadedExtras = cardExtrasDraft(card, this.member?.cardExtras);
+    this.extras.set(this.loadedExtras);
+    this.cardReady.set(true);
   }
 
   /** The перестороги after the profile, one by one as the web does; false when any call failed. */

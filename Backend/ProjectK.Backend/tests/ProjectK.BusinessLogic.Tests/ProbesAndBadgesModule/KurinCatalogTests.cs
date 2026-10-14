@@ -38,7 +38,8 @@ public class KurinCatalogTests
         _profiles.Setup(p => p.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
             "ua", "Україна", 1,
             new KraiCatalogSettings(badgeSources, hiddenBadges ?? []),
-            new KraiLocaleSettings("UAH", "Europe/Kyiv", "uk-UA")));
+            new KraiLocaleSettings("UAH", "Europe/Kyiv", "uk-UA"),
+            KraiCardFieldsSettings.Default));
     }
 
     [Fact]
