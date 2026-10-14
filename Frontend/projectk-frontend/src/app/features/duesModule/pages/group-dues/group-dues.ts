@@ -66,14 +66,15 @@ export class GroupDuesComponent implements OnInit {
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
 
+  readonly quarterLabel = quarterLabel;
+  readonly quarterShort = quarterShort;
+  readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
+
   /** What this kurin counts its вкладка in, from its край's profile. */
   readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
   readonly money = (amount: number): string => money(amount, this.currency());
   readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
-  readonly quarterLabel = quarterLabel;
-  readonly quarterShort = quarterShort;
-  readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
 
   groupKey = '';
 
