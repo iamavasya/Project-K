@@ -112,6 +112,7 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGrou
         case 'kurin/k1/dues/groups':
           return ok((options.duesGroups ?? []).map((groupKey) => ({ groupKey, groupName: 'Соколи' })));
         case 'catalog/badges': return ok(catalog);
+        case 'kurin/k1/catalog/badges': return ok(catalog);
         case 'catalog/probes':
           return ok([{ id: 'probe-1', title: 'Перша проба', pointsCount: 3, sectionsCount: 2 }, { id: 'probe-2', title: 'Друга проба', pointsCount: 4, sectionsCount: 2 }]);
         case 'catalog/probes/probe-1/grouped': return ok(groupedProbe);

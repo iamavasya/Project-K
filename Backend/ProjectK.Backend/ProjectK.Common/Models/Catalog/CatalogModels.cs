@@ -19,7 +19,11 @@ public sealed record Badge(
     IReadOnlyList<string> FixNotes,
     IReadOnlyList<BadgeRequirement> Requirements,
     string Author,
-    IReadOnlyList<string> Ulady);
+    IReadOnlyList<string> Ulady)
+{
+    /// <summary>The catalogue's code of the край the вмілість belongs to; empty when the catalogue names none.</summary>
+    public string KraiCode { get; init; } = string.Empty;
+}
 
 public sealed record BadgeRequirement(string Id, string Text);
 

@@ -20,6 +20,7 @@ import { memberBranchHere } from '../../functions/member-branch.function';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { GroupedProbeDto } from '../../models/probes-and-badges/grouped-probe.dto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
+import { ProbePointProgressDto } from '../../models/probes-and-badges/probe-point-progress.dto';
 import { MemberProbeDetailPointRowView } from '../../models/probes-and-badges/member-probe-detail-point-row.view';
 import { buildMemberProbeDetailPointRows } from '../../functions/member-probe-details-view-mapper.function';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
@@ -148,6 +149,25 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     return 'Підписант не вказаний';
+  }
+
+  /**
+   * Точки, підписані за вимогами, яких у пробі вже немає. Підпис не знімається, коли вимоги
+   * змінились: людина бачить чинні вимоги, а давніші підписи лишаються тут.
+   */
+  get signedEarlierPoints(): ProbePointProgressDto[] {
+    if (!this.groupedProbe) {
+      return [];
+    }
+
+    const current = new Set(this.groupedProbe.sections.flatMap(section => section.points.map(point => point.id)));
+    return (this.probeProgress?.pointSignatures ?? []).filter(point => point.isSigned && !current.has(point.pointId));
+  }
+
+  getSignedEarlierLabel(point: ProbePointProgressDto): string {
+    const date = point.signedAtUtc ? this.formatDate(point.signedAtUtc) : null;
+    const name = point.signedByName?.trim() || null;
+    return [`Точка ${point.pointId}`, name, date].filter(Boolean).join(' · ');
   }
 
   getProbePointSignedAtLabel(point: MemberProbeDetailPointRowView): string {

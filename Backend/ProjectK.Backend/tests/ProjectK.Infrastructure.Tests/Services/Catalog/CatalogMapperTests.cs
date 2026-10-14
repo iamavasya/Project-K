@@ -55,6 +55,15 @@ public class CatalogMapperTests
     }
 
     [Fact]
+    public void Badges_CarryTheCatalogueKraiCode()
+    {
+        var state = Map();
+
+        Assert.Equal("ua", state.BadgesById["plavets"].KraiCode);
+        Assert.Equal(string.Empty, state.BadgesById["bez-kraiu"].KraiCode);
+    }
+
+    [Fact]
     public void Probes_ComeInCatalogueOrder_WithSectionPointsAsTheirPoints()
     {
         var probes = Map().Probes;

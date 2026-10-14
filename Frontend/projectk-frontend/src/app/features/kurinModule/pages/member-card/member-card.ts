@@ -124,6 +124,8 @@ export class MemberCardComponent implements OnInit {
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
+  /** The вмілості the member's kurin is offered by its край; the whole catalogue stays for what they already have. */
+  offeredBadges: BadgeCatalogItemDto[] = [];
   memberships: MembershipDto[] = [];
   /** Інші курені того, хто дивиться, куди з членств можна перейти. Читаються, лише коли людина стоїть ще деінде. */
   reachableKurinKeys: string[] = [];
@@ -530,7 +532,7 @@ export class MemberCardComponent implements OnInit {
 
   get filteredAddSkillCandidates(): BadgeCatalogItemDto[] {
     const normalizedQuery = this.addSkillSearchTerm.trim().toLowerCase();
-    const source = [...this.allBadgesCatalog].sort((left, right) => left.title.localeCompare(right.title, 'uk'));
+    const source = [...this.offeredBadges].sort((left, right) => left.title.localeCompare(right.title, 'uk'));
 
     if (!normalizedQuery) {
       return source;
@@ -889,6 +891,13 @@ export class MemberCardComponent implements OnInit {
           return of([] as BadgeCatalogItemDto[]);
         })
       ),
+      offered: (isUsableKey(this.member?.kurinKey) ? this.badgesCatalogService.getForKurin(this.member!.kurinKey!) : of([] as BadgeCatalogItemDto[])).pipe(
+        catchError((error) => {
+          console.error('Error fetching the kurin badges:', error);
+          hasLoadError = true;
+          return of([] as BadgeCatalogItemDto[]);
+        })
+      ),
       progresses: this.memberProgressService.getBadgeProgresses(memberKey).pipe(
         catchError((error) => {
           console.error('Error fetching badge progresses:', error);
@@ -896,8 +905,9 @@ export class MemberCardComponent implements OnInit {
           return of([] as BadgeProgressDto[]);
         })
       )
-    }).subscribe(({ badges, progresses }) => {
+    }).subscribe(({ badges, offered, progresses }) => {
       this.allBadgesCatalog = badges;
+      this.offeredBadges = offered;
       this.badgeProgresses = progresses;
       this.skillsSummary = buildMemberSkillsSummary(progresses, badges);
       this.skillsLoadFailed = hasLoadError;
