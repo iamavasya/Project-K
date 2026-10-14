@@ -61,7 +61,7 @@ describe('MemberCardComponent', () => {
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
-    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
+    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll', 'getForKurin']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
     badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
@@ -83,6 +83,7 @@ describe('MemberCardComponent', () => {
     });
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
+    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([]));
     kurinServiceSpy.getByKey.and.returnValue(of({
       kurinKey: member.kurinKey,
       number: 1,
@@ -448,6 +449,21 @@ describe('MemberCardComponent', () => {
     memberServiceSpy.getByKey.and.returnValue(of(member));
     badgesCatalogServiceSpy.getAll.and.returnValue(of([
       {
+        id: 'pl-badge',
+        title: 'Rescue Badge PL',
+        imagePath: 'badges/pl.png',
+        country: 'PL',
+        specialization: 'Scout',
+        status: 'active',
+        level: 1,
+        lastUpdated: '2026-04-01',
+        seekerRequirements: '',
+        instructorRequirements: '',
+        fixNotes: []
+      }
+    ]));
+    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([
+      {
         id: 'badge-1',
         title: 'Rescue Badge',
         imagePath: 'badges/a.png',
@@ -483,6 +499,7 @@ describe('MemberCardComponent', () => {
     component.onAddSkillSearchTermChange();
 
     expect(component.addSkillVisibleCount).toBe(component.addSkillPageSize);
+    expect(badgesCatalogServiceSpy.getForKurin).toHaveBeenCalledWith(member.kurinKey);
     expect(component.filteredAddSkillCandidates.map(item => item.id)).toEqual(['badge-1']);
   });
 

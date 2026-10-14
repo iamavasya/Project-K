@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
+        services.AddScoped<IKurinCatalog, KurinCatalog>();
 
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();

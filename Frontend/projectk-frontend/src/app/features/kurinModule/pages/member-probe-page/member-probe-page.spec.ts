@@ -330,6 +330,40 @@ describe('MemberProbePageComponent', () => {
     expect(component.canCloseProbe).toBeTrue();
   });
 
+  it('keeps points signed under earlier requirements as signed earlier', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        },
+        {
+          probePointProgressKey: 'pp-old',
+          pointId: 'old-point',
+          isSigned: true,
+          signedAtUtc: '2025-09-01T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.signedEarlierPoints.map(point => point.pointId)).toEqual(['old-point']);
+    expect(component.getSignedEarlierLabel(component.signedEarlierPoints[0])).toContain('Точка old-point · Впорядник');
+    expect(component.canCloseProbe).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Підписано раніше');
+  });
+
   it('onCloseProbe should call updateProbeProgressStatus with Completed', () => {
     memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),

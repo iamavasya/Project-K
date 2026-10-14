@@ -19,7 +19,11 @@ public sealed record Badge(
     IReadOnlyList<string> FixNotes,
     IReadOnlyList<BadgeRequirement> Requirements,
     string Author,
-    IReadOnlyList<string> Ulady);
+    IReadOnlyList<string> Ulady)
+{
+    /// <summary>The catalogue's code of the край the вмілість belongs to; empty when the catalogue names none.</summary>
+    public string KraiCode { get; init; } = string.Empty;
+}
 
 public sealed record BadgeRequirement(string Id, string Text);
 
@@ -41,7 +45,11 @@ public sealed record Probe(
     string Id,
     string Title,
     IReadOnlyList<ProbePoint> Points,
-    IReadOnlyList<ProbeSection>? Sections = null);
+    IReadOnlyList<ProbeSection>? Sections = null)
+{
+    /// <summary>The catalogue's code of the край the probe belongs to; empty when the catalogue names none.</summary>
+    public string KraiCode { get; init; } = string.Empty;
+}
 
 public sealed record ProbePoint(string Id, string Title);
 

@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -33,17 +34,20 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
+    private readonly IKurinCatalog _kurinCatalog;
 
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IKurinCatalog kurinCatalog)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _events = events;
+        _kurinCatalog = kurinCatalog;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(SubmitBadgeProgressCommand request, CancellationToken cancellationToken)
@@ -70,6 +74,13 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         if (progress?.Status == BadgeProgressStatus.Submitted)
         {
             return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
+        }
+
+        // Only a new start is held to the kurin's catalogue: a вмілість already in work stays the
+        // member's even after the край's profile stops offering it.
+        if (progress is null && !await IsOfferedAsync(member.KurinKey, request.BadgeId.Trim(), cancellationToken))
+        {
+            return ServiceResult<BadgeProgressResponse>.Failure(ResultType.BadRequest, "BadgeNotOffered", "The kurin's край does not offer this badge.");
         }
 
         var now = DateTime.UtcNow;
@@ -136,6 +147,12 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         await PublishSubmittedAsync(member, progress, cancellationToken);
 
         return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
+    }
+
+    private async Task<bool> IsOfferedAsync(Guid kurinKey, string badgeId, CancellationToken cancellationToken)
+    {
+        var catalog = await _kurinCatalog.ForAsync(kurinKey, cancellationToken);
+        return catalog?.OffersBadge(badgeId) == true;
     }
 
     private async Task PublishSubmittedAsync(

@@ -114,6 +114,11 @@ export class KurinApi {
     return this.api.get('catalog/badges', { take: 1000 });
   }
 
+  /** Only the вмілості the kurin's край offers for a new start; what a member already has comes from badgeCatalog. */
+  kurinBadgeCatalog(kurinKey: string): Promise<BadgeCatalogItemDto[]> {
+    return this.api.get(`kurin/${kurinKey}/catalog/badges`);
+  }
+
   badgeProgress(memberKey: string): Promise<BadgeProgressDto[]> {
     return this.api.get(`member/${memberKey}/badges/progress`);
   }

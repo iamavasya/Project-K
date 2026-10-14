@@ -83,7 +83,10 @@ internal static class CatalogMapper
             [],
             [.. (badge.Requirements ?? []).Select(r => new BadgeRequirement(r.Id, r.Text))],
             badge.Author ?? string.Empty,
-            [.. (badge.Ulady ?? []).Select(ulad => UladNames.GetValueOrDefault(ulad, ulad.ToUpperInvariant()))]);
+            [.. (badge.Ulady ?? []).Select(ulad => UladNames.GetValueOrDefault(ulad, ulad.ToUpperInvariant()))])
+        {
+            KraiCode = KraiCode(badge.Krai)
+        };
     }
 
     private static Probe ToProbe(CatalogProbe probe)
@@ -93,8 +96,13 @@ internal static class CatalogMapper
             .ToList();
         var own = ToPoints(probe.Points);
 
-        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections);
+        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections)
+        {
+            KraiCode = KraiCode(probe.Krai)
+        };
     }
+
+    private static string KraiCode(string? krai) => krai?.Trim().ToLowerInvariant() ?? string.Empty;
 
     private static List<ProbePoint> ToPoints(IReadOnlyList<CatalogRequirement>? points)
         => [.. (points ?? []).Select(point => new ProbePoint(point.Id, point.Text))];

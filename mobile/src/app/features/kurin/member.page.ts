@@ -84,6 +84,8 @@ import { inKurin, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
   catalog: BadgeCatalogItemDto[];
+  /** What the kurin's край offers for a new start; the whole catalogue stays for what the member has. */
+  offered: BadgeCatalogItemDto[];
   progress: BadgeProgressDto[];
 }
 
@@ -775,7 +777,7 @@ export class MemberPage implements OnInit {
     if (!key || !s) return;
     const modal = await this.modals.create({
       component: SkillsSheet,
-      componentProps: { memberKey: key, canEdit: this.canEdit(), canReview: this.canModerate(), catalog: s.catalog, progress: s.progress },
+      componentProps: { memberKey: key, canEdit: this.canEdit(), canReview: this.canModerate(), catalog: s.catalog, offered: s.offered, progress: s.progress },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -848,10 +850,13 @@ export class MemberPage implements OnInit {
   }
 
   private loadSkills(key: string): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
     return settle(
-      Promise.all([this.data.badgeCatalog().catch(() => [] as BadgeCatalogItemDto[]), this.data.badgeProgress(key)]).then(
-        ([catalog, progress]) => ({ catalog, progress }),
-      ),
+      Promise.all([
+        this.data.badgeCatalog().catch(() => [] as BadgeCatalogItemDto[]),
+        kurinKey ? this.data.kurinBadgeCatalog(kurinKey).catch(() => [] as BadgeCatalogItemDto[]) : Promise.resolve([] as BadgeCatalogItemDto[]),
+        this.data.badgeProgress(key),
+      ]).then(([catalog, offered, progress]) => ({ catalog, offered, progress })),
       this.skills,
     );
   }

@@ -149,6 +149,18 @@
                 </p-accordion-panel>
                 }
             </p-accordion>
+
+            @if (signedEarlierPoints.length) {
+            <div class="mt-4">
+                <p class="probe-close-title text-sm font-semibold">Підписано раніше</p>
+                <p class="probe-close-meta mt-0.5 mb-2 text-xs">Ці точки підписали за попередніми вимогами проби. Підписи лишаються в записі.</p>
+                <div class="space-y-1">
+                    @for (point of signedEarlierPoints; track point.pointId) {
+                    <p class="probe-point-meta text-xs">{{ getSignedEarlierLabel(point) }}</p>
+                    }
+                </div>
+            </div>
+            }
             }
         </section>
     </div>

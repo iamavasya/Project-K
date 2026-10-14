@@ -142,6 +142,8 @@ export class SkillsSheet implements OnInit {
   canEdit = false;
   canReview = false;
   catalog: BadgeCatalogItemDto[] = [];
+  /** The вмілості the kurin's край offers; «Додати» picks from these. */
+  offered: BadgeCatalogItemDto[] = [];
   progress: BadgeProgressDto[] = [];
 
   private readonly list = signal<BadgeProgressDto[]>([]);
@@ -194,7 +196,7 @@ export class SkillsSheet implements OnInit {
   protected async add(): Promise<void> {
     const modal = await this.modals.create({
       component: AddSkillSheet,
-      componentProps: { memberKey: this.memberKey, catalog: this.catalog, progress: this.list() },
+      componentProps: { memberKey: this.memberKey, catalog: this.offered, progress: this.list() },
       presentingElement: this.host.closest('ion-modal') ?? undefined,
     });
     await modal.present();

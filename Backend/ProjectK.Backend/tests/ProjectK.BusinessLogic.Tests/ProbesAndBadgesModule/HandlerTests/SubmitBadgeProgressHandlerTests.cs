@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
@@ -24,6 +26,7 @@ public class SubmitBadgeProgressHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepositoryMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
+    private readonly Mock<IKurinCatalog> _kurinCatalogMock = new();
     private readonly SubmitBadgeProgressCommandHandler _handler;
 
     public SubmitBadgeProgressHandlerTests()
@@ -39,7 +42,53 @@ public class SubmitBadgeProgressHandlerTests
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
-            _eventsMock.Object);
+            _eventsMock.Object,
+            _kurinCatalogMock.Object);
+
+        OfferedBadges("badge-1");
+    }
+
+    private void OfferedBadges(params string[] ids)
+    {
+        var badges = ids.Select(id => new Badge(id, id, "", "", "", "", null, "", "", "", [], [], "", [])).ToList();
+        _kurinCatalogMock
+            .Setup(x => x.ForAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KurinCatalogView(badges, []));
+    }
+
+    private Guid GivenMember(string badgeId, BadgeProgress? progress)
+    {
+        var memberKey = Guid.NewGuid();
+        _memberDirectoryMock
+            .Setup(x => x.FindAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+        return memberKey;
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefuseANewStart_OfABadgeTheKraiDoesNotOffer()
+    {
+        var memberKey = GivenMember("pl-badge", null);
+
+        var result = await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "pl-badge", null), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("BadgeNotOffered");
+        _badgeProgressRepositoryMock.Verify(x => x.Create(It.IsAny<BadgeProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldResubmit_ABadgeAlreadyInWork_EvenWhenNoLongerOffered()
+    {
+        var memberKey = GivenMember("pl-badge", new BadgeProgress { BadgeId = "pl-badge", Status = BadgeProgressStatus.Rejected });
+
+        var result = await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "pl-badge", null), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.Status.Should().Be(BadgeProgressStatus.Submitted);
     }
 
     [Fact]
