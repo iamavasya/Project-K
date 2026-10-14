@@ -44,21 +44,19 @@ export const DEFAULT_CURRENCY = 'UAH';
 
 const symbols = new Map<string, string>();
 
+function symbolOf(currency: string): string {
+  try {
+    const parts = new Intl.NumberFormat('uk-UA', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0);
+    return parts.find((part) => part.type === 'currency')?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 /** «₴», «Kč», «zł»: how the край's currency is written after an amount (the web's dues-format). */
 export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
-  let symbol = symbols.get(currency);
-  if (symbol === undefined) {
-    try {
-      symbol =
-        new Intl.NumberFormat('uk-UA', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
-          .formatToParts(0)
-          .find((part) => part.type === 'currency')?.value ?? currency;
-    } catch {
-      symbol = currency;
-    }
-    symbols.set(currency, symbol);
-  }
-  return symbol;
+  if (!symbols.has(currency)) symbols.set(currency, symbolOf(currency));
+  return symbols.get(currency) ?? currency;
 }
 
 /** «150 ₴» with the sign kept for a debt. */
