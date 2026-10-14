@@ -13,6 +13,7 @@
 }
 
 .krai-field p-multiselect,
+.krai-field p-select,
 .krai-field input {
   width: 100%;
   max-width: 560px;

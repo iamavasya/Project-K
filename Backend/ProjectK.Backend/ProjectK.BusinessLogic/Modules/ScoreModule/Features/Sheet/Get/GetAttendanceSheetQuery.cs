@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -22,12 +23,14 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IKraiProfileProvider _profiles;
 
-    public GetAttendanceSheetQueryHandler(ScoreAccess access, ScoreBookReader books, IUnitOfWork unitOfWork)
+    public GetAttendanceSheetQueryHandler(ScoreAccess access, ScoreBookReader books, IUnitOfWork unitOfWork, IKraiProfileProvider profiles)
     {
         _access = access;
         _books = books;
         _unitOfWork = unitOfWork;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<AttendanceSheetResponse>> Handle(GetAttendanceSheetQuery request, CancellationToken cancellationToken)
@@ -37,7 +40,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             return refused;
         }
 
-        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
+        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
             return ScoreAccess.NotFound<AttendanceSheetResponse>("There is no such event, or it does not meet that day.");

@@ -39,9 +39,31 @@ export function initials(firstName: string | null | undefined, lastName: string 
   return `${(firstName ?? '').trim().charAt(0)}${(lastName ?? '').trim().charAt(0)}`.toUpperCase();
 }
 
+/** Lilejka counted in гривні before краї had profiles; a response without a currency is still that. */
+export const DEFAULT_CURRENCY = 'UAH';
+
+const symbols = new Map<string, string>();
+
+/** «₴», «Kč», «zł»: how the край's currency is written after an amount (the web's dues-format). */
+export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
+  let symbol = symbols.get(currency);
+  if (symbol === undefined) {
+    try {
+      symbol =
+        new Intl.NumberFormat('uk-UA', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+          .formatToParts(0)
+          .find((part) => part.type === 'currency')?.value ?? currency;
+    } catch {
+      symbol = currency;
+    }
+    symbols.set(currency, symbol);
+  }
+  return symbol;
+}
+
 /** «150 ₴» with the sign kept for a debt. */
-export function money(amount: number): string {
-  return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 }).format(amount)} ₴`;
+export function money(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 }).format(amount)} ${currencySymbol(currency)}`;
 }
 
 function clock(date: Date): string {

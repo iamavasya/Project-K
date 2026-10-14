@@ -143,7 +143,7 @@ export class MemberCardComponent implements OnInit {
   /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
   dues: MemberDuesDto | null = null;
   isDuesLoading = false;
-  readonly money = money;
+  readonly money = (amount: number): string => money(amount, this.dues?.currency);
   readonly quarterLabel = quarterLabel;
   private memberLoaded = false;
   private membershipsSettled = false;
@@ -247,7 +247,7 @@ export class MemberCardComponent implements OnInit {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
-  readonly duesAmountLabel = duesAmountLabel;
+  readonly duesAmountLabel = (entry: DuesEntryDto): string => duesAmountLabel(entry, this.dues?.currency);
   readonly duesStandingLabels = DUES_STANDING_LABELS;
 
   /**

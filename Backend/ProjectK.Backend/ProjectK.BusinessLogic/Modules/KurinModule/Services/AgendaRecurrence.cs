@@ -15,7 +15,8 @@ public readonly record struct AgendaOccurrence(DateTime StartUtc, DateTime? EndU
 /// The series repeats by the clock on the wall, not by the UTC instant: сходини at 18:30 stay at 18:30
 /// after the clocks go back. Stepping the stored UTC start by whole days moved every occurrence after
 /// the last Sunday of October an hour earlier (found live, 1.1.4). Occurrences are therefore stepped in
-/// <see cref="DefaultZone"/> and converted back; a time the zone skips (the spring gap) lands an hour later.
+/// the kurin's zone (its край's, see <see cref="KurinTimeZone"/>) and converted back; a time the zone skips
+/// (the spring gap) lands an hour later.
 /// </para>
 /// </summary>
 public static class AgendaRecurrence
@@ -24,9 +25,8 @@ public static class AgendaRecurrence
     private const int SafetyCap = 1000;
 
     /// <summary>
-    /// The zone a kurin's week is reckoned in. One for the instance until a kurin carries its own:
-    /// every kurin so far keeps the EU clock-change dates, so the wall-clock time holds for all of them.
-    /// Set once at startup from <c>Agenda:TimeZone</c>; defaults to Kyiv.
+    /// The zone of a kurin whose край sets none. Set once at startup from <c>Agenda:TimeZone</c>;
+    /// defaults to Kyiv.
     /// </summary>
     public static TimeZoneInfo DefaultZone { get; set; } = ResolveZone("Europe/Kyiv");
 
@@ -35,9 +35,6 @@ public static class AgendaRecurrence
         => !string.IsNullOrWhiteSpace(timeZoneId) && TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out var zone)
             ? zone
             : TimeZoneInfo.Utc;
-
-    public static IEnumerable<AgendaOccurrence> Expand(AgendaItem item, DateTime windowFrom, DateTime windowTo)
-        => Expand(item, windowFrom, windowTo, DefaultZone);
 
     public static IEnumerable<AgendaOccurrence> Expand(AgendaItem item, DateTime windowFrom, DateTime windowTo, TimeZoneInfo zone)
     {

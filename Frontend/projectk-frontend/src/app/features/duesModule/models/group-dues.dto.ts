@@ -102,6 +102,8 @@ export interface DuesViewerDto {
 export interface GroupDuesDto {
   groupKey: string;
   kurinKey: string;
+  /** ISO 4217 code of what the amounts are counted in: the край's currency. */
+  currency: string;
   groupName: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
@@ -174,6 +176,8 @@ export interface KurinDuesViewerDto {
 /** `GET api/kurin/{kurinKey}/dues` — the kurin's own box, the гуртки's handovers and transfers. */
 export interface KurinDuesDto {
   kurinKey: string;
+  /** ISO 4217 code of what the amounts are counted in: the край's currency. */
+  currency: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
@@ -202,6 +206,8 @@ export interface MemberDuesAccountDto {
 export interface MemberDuesDto {
   hasAccount: boolean;
   kurinKey: string;
+  /** ISO 4217 code of what the amounts are counted in: the край's currency. */
+  currency: string;
   currentQuarter: QuarterDto;
   balance: number;
   quarterRate: DuesAmountDto | null;

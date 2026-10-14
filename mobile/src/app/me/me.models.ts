@@ -60,6 +60,8 @@ export interface MyGrowthDto {
 export interface MyDuesDto {
   kurin: MyKurinRefDto;
   groupName: string | null;
+  /** ISO 4217 code of what the amounts are counted in: the край's currency. */
+  currency: string;
   quarterYear: number;
   quarterNumber: number;
   /** Negative is debt, positive a surplus. */

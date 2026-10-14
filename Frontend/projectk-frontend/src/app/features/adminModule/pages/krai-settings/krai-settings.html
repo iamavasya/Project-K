@@ -85,6 +85,48 @@
     @if (filteredBadges().length > visibleBadges().length) {
       <p-button label="Показати ще" severity="secondary" variant="text" (onClick)="showMore()" />
     }
+  </section>
+
+  <section class="kurin-tile" aria-labelledby="locale-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="locale-title">Валюта й час</h2>
+        <p>Валюта, в якій курені краю рахують вкладку, і часовий пояс, за яким повторюються події в порядку денному.</p>
+      </div>
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-currency">Валюта</label>
+      <p-select
+        inputId="krai-currency"
+        [options]="currencyOptions()"
+        optionLabel="label"
+        optionValue="code"
+        [filter]="true"
+        [showClear]="true"
+        [ngModel]="currency()"
+        (ngModelChange)="currency.set($event ?? null)"
+        [placeholder]="'Як за замовчуванням (' + defaultCurrency + ')'"
+        [disabled]="saving()"
+        appendTo="body" />
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-time-zone">Часовий пояс</label>
+      <p-select
+        inputId="krai-time-zone"
+        [options]="timeZoneOptions()"
+        optionLabel="label"
+        optionValue="code"
+        [filter]="true"
+        [showClear]="true"
+        [ngModel]="timeZone()"
+        (ngModelChange)="timeZone.set($event ?? null)"
+        [placeholder]="'Як за замовчуванням (' + defaultTimeZone + ')'"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Сходини о 18:30 лишаються о 18:30 і після переведення годинника в цьому поясі.</small>
+    </div>
 
     <div class="krai-save">
       <label for="krai-note" class="krai-hidden">Що змінено</label>

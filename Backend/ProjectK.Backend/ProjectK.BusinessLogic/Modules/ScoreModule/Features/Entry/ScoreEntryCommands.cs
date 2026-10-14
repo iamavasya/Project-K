@@ -5,6 +5,7 @@ using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -41,6 +42,7 @@ public static class ScoreEntryWriter
     public static async Task<ServiceResult<T>?> CheckAsync<T>(
         ScoreAccess access,
         IUnitOfWork unitOfWork,
+        IKraiProfileProvider profiles,
         ScoreBook book,
         UpsertScoreEntryRequest request,
         Guid? editingKey,
@@ -77,7 +79,7 @@ public static class ScoreEntryWriter
 
         if (request.AgendaItemKey is { } eventKey)
         {
-            var occurrence = await EventOccurrence.LoadAsync(unitOfWork, book.KurinKey, eventKey, request.OccurrenceStartUtc!.Value, cancellationToken);
+            var occurrence = await EventOccurrence.LoadAsync(unitOfWork, profiles, book.KurinKey, eventKey, request.OccurrenceStartUtc!.Value, cancellationToken);
             if (occurrence is null)
             {
                 return ScoreAccess.NotFound<T>("There is no such event, or it does not meet that day.");
@@ -156,8 +158,9 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public CreateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
+    public CreateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
     {
         _access = access;
         _books = books;
@@ -165,6 +168,7 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreateScoreEntryCommand request, CancellationToken cancellationToken)
@@ -175,7 +179,7 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await ScoreEntryWriter.CheckAsync<Guid>(_access, _unitOfWork, book, request.Request, null, cancellationToken) is { } problem)
+        if (await ScoreEntryWriter.CheckAsync<Guid>(_access, _unitOfWork, _profiles, book, request.Request, null, cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -228,8 +232,9 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
+    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
     {
         _access = access;
         _books = books;
@@ -237,6 +242,7 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<object>> Handle(UpdateScoreEntryCommand request, CancellationToken cancellationToken)
@@ -258,7 +264,7 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await ScoreEntryWriter.CheckAsync<object>(_access, _unitOfWork, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
+        if (await ScoreEntryWriter.CheckAsync<object>(_access, _unitOfWork, _profiles, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
         {
             return problem;
         }

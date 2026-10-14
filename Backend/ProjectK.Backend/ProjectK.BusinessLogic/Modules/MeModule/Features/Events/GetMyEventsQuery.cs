@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -28,13 +29,15 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
+    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MyEventDto>>> Handle(GetMyEventsQuery request, CancellationToken cancellationToken)
@@ -50,6 +53,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
                 context.Viewer.ToScope(), now, until, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
             var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
                 .ToDictionary(c => c.AgendaCategoryKey);
+            var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
 
             // The person's answers for the whole window in one read, then matched per occurrence: a
             // series' answers are keyed by occurrence start, a one-off's by null.
@@ -61,7 +65,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
             {
                 var category = item.AgendaCategoryKey is { } key ? categories.GetValueOrDefault(key) : null;
 
-                foreach (var occurrence in AgendaRecurrence.Expand(item, now, until))
+                foreach (var occurrence in AgendaRecurrence.Expand(item, now, until, zone))
                 {
                     var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc)), out var status)
                         ? status

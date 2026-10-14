@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dues;
@@ -25,6 +26,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
     public GetKurinDuesQueryHandler(
         KurinDuesAccess access,
@@ -34,7 +36,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
-        TimeProvider time)
+        TimeProvider time,
+        IKraiProfileProvider profiles)
     {
         _access = access;
         _dues = dues;
@@ -44,6 +47,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         _members = members;
         _resourceAccess = resourceAccess;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<KurinDuesResponse>> Handle(GetKurinDuesQuery request, CancellationToken cancellationToken)
@@ -114,9 +118,12 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .DefaultIfEmpty(current.Index)
             .Min();
 
+        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
+
         return new ServiceResult<KurinDuesResponse>(ResultType.Success, new KurinDuesResponse
         {
             KurinKey = kurinKey,
+            Currency = currency,
             CurrentQuarter = Quarter(current),
             Years = Years(DuesQuarter.FromIndex(first), current),
             Rates = rates.Select(r => new KurinDuesRateDto

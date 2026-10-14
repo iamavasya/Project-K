@@ -1,3 +1,4 @@
+import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
 import {
   IonButton,
@@ -152,7 +153,7 @@ const FORM_STYLES = `
         <ion-item-group>
           <ion-item>
             <ion-input
-              label="Сума, ₴"
+              [label]="'Сума, ' + symbol()"
               inputmode="decimal"
               placeholder="0"
               autocomplete="off"
@@ -228,6 +229,8 @@ export class DuesEntryForm implements OnInit, OnDestroy {
   readonly people = input<DuesPersonDto[]>([]);
   readonly entry = input<DuesEntryDto | null>(null);
   readonly saving = input(false);
+  readonly currency = input(DEFAULT_CURRENCY);
+  protected readonly symbol = computed(() => currencySymbol(this.currency()));
   readonly error = input<string | null>(null);
   readonly save = output<UpsertDuesEntryRequest>();
   readonly cancel = output<void>();
@@ -357,7 +360,7 @@ export class DuesEntryForm implements OnInit, OnDestroy {
           @if (mode() === 'rate') {
             <ion-item>
               <ion-input
-                label="На гурток за квартал, ₴"
+                [label]="'На гурток за квартал, ' + symbol()"
                 inputmode="decimal"
                 placeholder="0"
                 [value]="share()"
@@ -388,6 +391,8 @@ export class DuesQuarterForm implements OnInit {
   readonly startOn = input(true);
   readonly hint = input('');
   readonly saving = input(false);
+  readonly currency = input(DEFAULT_CURRENCY);
+  protected readonly symbol = computed(() => currencySymbol(this.currency()));
   readonly error = input<string | null>(null);
   readonly save = output<{ fromQuarter: QuarterDto; share: number; on: boolean }>();
   readonly cancel = output<void>();
@@ -476,7 +481,7 @@ export class DuesQuarterForm implements OnInit {
         <ion-item-group>
           <ion-item>
             <ion-input
-              label="Станиця, повна, ₴"
+              [label]="'Станиця, повна, ' + symbol()"
               inputmode="decimal"
               placeholder="0"
               [value]="full()"
@@ -486,7 +491,7 @@ export class DuesQuarterForm implements OnInit {
           </ion-item>
           <ion-item>
             <ion-input
-              label="Станиця, пільгова, ₴"
+              [label]="'Станиця, пільгова, ' + symbol()"
               inputmode="decimal"
               placeholder="як повна"
               [value]="reduced()"
@@ -496,7 +501,7 @@ export class DuesQuarterForm implements OnInit {
           </ion-item>
           <ion-item>
             <ion-input
-              label="Курінь, ₴"
+              [label]="'Курінь, ' + symbol()"
               inputmode="decimal"
               placeholder="0"
               [value]="share()"
@@ -521,6 +526,8 @@ export class DuesKurinRateForm implements OnInit {
   readonly quarters = input<QuarterDto[]>([]);
   readonly current = input.required<QuarterDto>();
   readonly saving = input(false);
+  readonly currency = input(DEFAULT_CURRENCY);
+  protected readonly symbol = computed(() => currencySymbol(this.currency()));
   readonly error = input<string | null>(null);
   readonly save = output<SetKurinDuesRateRequest>();
   readonly cancel = output<void>();

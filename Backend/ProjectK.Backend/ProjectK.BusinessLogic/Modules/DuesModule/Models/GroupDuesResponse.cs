@@ -9,6 +9,9 @@ public sealed class GroupDuesResponse
     public Guid KurinKey { get; init; }
     public string GroupName { get; init; } = string.Empty;
 
+    /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
+    public string Currency { get; init; } = "UAH";
+
     public QuarterDto CurrentQuarter { get; init; } = new();
 
     /// <summary>The пластові роки the table can show, newest first, each with its four quarters.</summary>

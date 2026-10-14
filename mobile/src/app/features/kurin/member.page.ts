@@ -541,7 +541,7 @@ export class MemberPage implements OnInit {
   protected readonly dateOnly = dateOnly;
   protected readonly emailHref = emailHref;
   protected readonly phoneHref = phoneHref;
-  protected readonly money = duesMoney;
+  protected readonly money = (amount: number): string => duesMoney(amount, this.dues()?.currency);
   protected readonly period = membershipPeriod;
 
   protected readonly key = signal<string | null>(null);
@@ -640,7 +640,7 @@ export class MemberPage implements OnInit {
 
   protected balanceTitle(d: MemberDuesDto): string {
     if (d.balance === 0) return 'Сплачено';
-    return d.balance < 0 ? duesMoney(d.balance) : `+${duesMoney(d.balance)}`;
+    return d.balance < 0 ? this.money(d.balance) : `+${this.money(d.balance)}`;
   }
 
   protected balanceHint(d: MemberDuesDto): string {
@@ -649,7 +649,7 @@ export class MemberPage implements OnInit {
   }
 
   protected duesLine(d: MemberDuesDto): string {
-    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${duesMoney(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
+    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
       .filter(Boolean)
       .join(' · ');
   }
@@ -664,7 +664,7 @@ export class MemberPage implements OnInit {
   }
 
   protected amountLabel(entry: { kind: string; amount: number }): string {
-    return duesAmountLabel(entry);
+    return duesAmountLabel(entry, this.dues()?.currency);
   }
 
   protected kurinTitle(m: MembershipDto): string {

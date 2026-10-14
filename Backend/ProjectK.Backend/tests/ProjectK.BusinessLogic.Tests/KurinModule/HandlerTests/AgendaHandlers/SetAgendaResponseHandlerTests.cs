@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -40,7 +41,7 @@ public class SetAgendaResponseHandlerTests
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
         _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AgendaResponse>());
-        _handler = new SetAgendaResponseCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object);
+        _handler = new SetAgendaResponseCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, Mock.Of<IKraiProfileProvider>());
     }
 
     private AgendaItem Event(Guid? kurin = null) => new()

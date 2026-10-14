@@ -11,6 +11,7 @@ using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
@@ -167,9 +168,9 @@ public class ScoreHandlerTests
         return new ScoreBookReader(_score.Object, _unitOfWork.Object, Memberships(), members.Object, NoFacts(), _time);
     }
 
-    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time);
+    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileProvider>());
 
-    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time);
+    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>());
 
     private static MarkAttendanceCommand MarkCommand(params Guid[] keys) =>
         new(Kurin, Skhodyny, Start, new MarkAttendanceRequest { MembershipKeys = keys });
@@ -180,7 +181,7 @@ public class ScoreHandlerTests
         var oksanaUser = _people.Single(p => p.FirstName == "Оксана").UserKey!.Value;
         _responses.Add(new AgendaResponse { AgendaItemKey = Skhodyny, UserKey = oksanaUser, Status = AgendaRsvpStatus.Going });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -196,7 +197,7 @@ public class ScoreHandlerTests
         _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("youth"));
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
