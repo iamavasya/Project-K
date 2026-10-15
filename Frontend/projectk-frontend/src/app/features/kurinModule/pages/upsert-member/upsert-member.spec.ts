@@ -61,8 +61,9 @@ describe('UpsertMemberComponent', () => {
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification', 'resendInvitation']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields', 'getPhoneCountry']);
     kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
+    kurinServiceSpy.getPhoneCountry.and.returnValue(of('UA'));
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     messageServiceSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);

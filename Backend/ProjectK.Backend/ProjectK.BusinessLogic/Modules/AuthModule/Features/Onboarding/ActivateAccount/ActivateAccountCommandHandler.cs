@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using System;
 using System.Linq;
 using System.Threading;
@@ -108,7 +109,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
                 user.Email!,
                 user.FirstName,
                 user.LastName,
-                entry?.PhoneNumber ?? "0000000000",
+                entry?.PhoneNumber ?? string.Empty,
                 entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
                 KurinKey: Guid.Empty),
             cancellationToken);

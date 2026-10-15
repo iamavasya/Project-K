@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FloatLabelModule } from '@openng/optimus-ui/floatlabel';
 import { FormGroup, FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
-import { InputMaskModule } from '@openng/optimus-ui/inputmask';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { MemberService } from '../../services/member-service/member.service';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -39,11 +38,13 @@ import { isUsableKey } from '../../../../shared/functions/is-usable-key.function
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
-import { toUkrainianPhone, UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../shared/functions/ukrainian-phone.function';
+import { CountryCode } from 'libphonenumber-js';
+import { DEFAULT_PHONE_COUNTRY } from '../../../../shared/functions/phone.function';
+import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, InputMaskModule, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent, MessageModule],
+  imports: [FloatLabelModule, FormsModule, InputTextModule, PhoneInputComponent, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent, MessageModule],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -74,8 +75,8 @@ export class UpsertMemberComponent implements OnInit {
   // Every new member gets an account: the letter is how they get in, and the box that used
   // to make it optional was mostly left unticked by accident.
   createUserAccount = true;
-  readonly phoneMask = UKRAINIAN_PHONE_MASK;
-  readonly phonePlaceholder = UKRAINIAN_PHONE_PLACEHOLDER;
+  /** The country a new number starts in: the kurin's край's. */
+  phoneCountry: CountryCode = DEFAULT_PHONE_COUNTRY;
 
   route = inject(ActivatedRoute);
   router = inject(Router);
@@ -183,7 +184,6 @@ export class UpsertMemberComponent implements OnInit {
         const memberForEdit: MemberDto = {
           ...member,
           dateOfBirth: parseDateOnlyString(member.dateOfBirth),
-          phoneNumber: toUkrainianPhone(member.phoneNumber),
           plastLevelHistories
         };
 
@@ -213,6 +213,7 @@ export class UpsertMemberComponent implements OnInit {
       return;
     }
 
+    this.kurinService.getPhoneCountry(key).subscribe(country => this.phoneCountry = country);
     this.kurinService.getCardFields(key).subscribe(card => {
       this.cardFields = card;
       this.cardExtras = Object.fromEntries(card.extra.map(field => [field.key, this.editableExtra(field)]));

@@ -45,7 +45,7 @@
 
           <div class="field">
             <label for="profile-phone">Телефон</label>
-            <input pInputText id="profile-phone" name="phoneNumber" [(ngModel)]="profileForm.phoneNumber" />
+            <app-phone-input inputId="profile-phone" name="phoneNumber" [(ngModel)]="profileForm.phoneNumber" />
           </div>
 
           @if (isEmailChanged) {

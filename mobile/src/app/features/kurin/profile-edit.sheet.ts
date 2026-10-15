@@ -19,8 +19,10 @@ import {
   IonToolbar,
   ModalController,
 } from '@ionic/angular';
+import { CountryCode } from 'libphonenumber-js';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
+import { DEFAULT_PHONE_COUNTRY, formatPhone, isPossiblePhone, toStoredPhone } from '../../core/phone';
 import { Toasts } from '../../core/toast';
 import { IMAGE_TOO_LARGE } from './image-crop';
 import { CroppedImage, ImageCropSheet } from './image-crop.sheet';
@@ -389,6 +391,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
 
   protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '' });
   protected readonly card = signal<CardFields>(DEFAULT_CARD_FIELDS);
+  /** Where a number typed without «+» is read: the kurin's край. */
+  private readonly phoneCountry = signal<CountryCode>(DEFAULT_PHONE_COUNTRY);
   /** Saving waits for the край's fields, so none of them goes out unasked. */
   private readonly cardReady = signal(false);
   protected readonly extras = signal<CardExtras>({});
@@ -465,7 +469,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       middleName: m.middleName ?? '',
       lastName: m.lastName ?? '',
       email: m.email ?? '',
-      phoneNumber: m.phoneNumber ?? '',
+      phoneNumber: formatPhone(m.phoneNumber),
       dateOfBirth: (m.dateOfBirth ?? '').slice(0, 10),
     });
     const dates = rankDates(m.plastLevelHistories);
@@ -506,6 +510,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     const value = this.form()[key].trim();
     if (!value) return fieldMode(this.card(), key) === 'optional';
     if (key === 'email') return looksLikeEmail(value);
+    if (key === 'phoneNumber') return value === formatPhone(this.member?.phoneNumber) || isPossiblePhone(value, this.phoneCountry());
     if (key === 'dateOfBirth') return /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= this.today && oldEnough(value, this.today);
     return true;
   }
@@ -638,7 +643,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     const member = this.member;
     if (!member || !this.valid() || this.busy()) return;
     this.busy.set(true);
-    const form = { ...this.form(), email: this.showEmail() ? this.form().email : (member.email ?? '') };
+    const form = { ...this.storedForm(), email: this.showEmail() ? this.form().email : (member.email ?? '') };
     // Someone who may not change the ступені sends them back as they were.
     const histories = this.canRanks()
       ? rankHistories(member.plastLevelHistories, this.dates())
@@ -682,7 +687,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
         placement,
         newMemberFormData(
           placement,
-          this.form(),
+          this.storedForm(),
           histories,
           { blob: photo?.blob ?? null, name: photo?.name ?? 'profile.jpg' },
           changedCardExtras(this.loadedExtras, this.extras()),
@@ -714,10 +719,19 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     const kurinKey = this.kurinKey ?? this.member?.kurinKey ?? placed;
     let card = this.cardFields ?? DEFAULT_CARD_FIELDS;
     if (!this.cardFields && kurinKey) card = await this.data.cardFields(kurinKey).catch(() => DEFAULT_CARD_FIELDS);
+    if (kurinKey) this.phoneCountry.set(await this.data.phoneCountry(kurinKey).catch(() => DEFAULT_PHONE_COUNTRY));
     this.card.set(card);
     this.loadedExtras = cardExtrasDraft(card, this.member?.cardExtras);
     this.extras.set(this.loadedExtras);
     this.cardReady.set(true);
+  }
+
+  /** The form as it is sent: the phone as +420777123456. */
+  private storedForm(): MemberForm {
+    const form = this.form();
+    // A number left as it was goes back as it was, even one older than the rule.
+    const unchanged = this.member && form.phoneNumber === formatPhone(this.member.phoneNumber);
+    return { ...form, phoneNumber: unchanged ? (this.member?.phoneNumber ?? '') : toStoredPhone(form.phoneNumber, this.phoneCountry()) };
   }
 
   /** The перестороги after the profile, one by one as the web does; false when any call failed. */

@@ -9,6 +9,7 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { ProfileVerificationBadgeComponent } from '../profile-verification-badge/profile-verification-badge';
 import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { phoneHref } from '../../../../shared/functions/contact-href.function';
+import { formatPhone } from '../../../../shared/functions/phone.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 
 @Component({
@@ -28,6 +29,11 @@ export class MiniMemberCardComponent {
     MemberWarningLevel.Level2,
     MemberWarningLevel.Level3
   ];
+
+  /** The phone as it reads: +420 777 123 456. */
+  get phoneText(): string {
+    return formatPhone(this.member().phoneNumber);
+  }
 
   get phoneLink(): string | null {
     return phoneHref(this.member().phoneNumber);

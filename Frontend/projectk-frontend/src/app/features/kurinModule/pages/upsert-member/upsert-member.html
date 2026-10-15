@@ -113,19 +113,22 @@
                             }
                         }
                         @if (fieldMode('phoneNumber') !== 'hidden') {
-                            <p-floatlabel variant="on">
-                                <p-inputMask
-                                    [mask]="phoneMask"
-                                    [placeholder]="phonePlaceholder"
-                                    id="phoneNumber"
+                            <div class="flex flex-col gap-1">
+                                <label for="phoneNumber" class="text-sm">Номер телефону</label>
+                                <app-phone-input
+                                    inputId="phoneNumber"
                                     name="phoneNumber"
+                                    [defaultCountry]="phoneCountry"
                                     [(ngModel)]="member.phoneNumber"
+                                    (ngModelChange)="markFormDirty()"
                                     [required]="fieldMode('phoneNumber') === 'required'"
                                     #phoneNumberCtrl="ngModel"
-                                    [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
+                                    [invalid]="!!phoneNumberCtrl.invalid && !!(phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
                                 />
-                                <label for="phoneNumber">Номер телефону</label>
-                            </p-floatlabel>
+                                @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
+                                    <small class="text-red-500">Схоже, номер неповний або зайвий.</small>
+                                }
+                            </div>
                         }
                         <p-floatlabel variant="on">
                             <p-datepicker

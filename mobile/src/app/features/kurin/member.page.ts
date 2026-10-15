@@ -27,6 +27,7 @@ import {
 import { addIcons } from 'ionicons';
 import { add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
+import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
@@ -295,7 +296,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                   <ion-label><h3>Email</h3><p>{{ m.email || 'Не вказано' }}</p></ion-label>
                 </ion-item>
                 <ion-item [href]="phoneHref(m.phoneNumber)" [detail]="false">
-                  <ion-label><h3>Телефон</h3><p>{{ m.phoneNumber || 'Не вказано' }}</p></ion-label>
+                  <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || 'Не вказано' }}</p></ion-label>
                 </ion-item>
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
@@ -548,6 +549,7 @@ export class MemberPage implements OnInit {
   protected readonly dateOnly = dateOnly;
   protected readonly emailHref = emailHref;
   protected readonly phoneHref = phoneHref;
+  protected readonly formatPhone = formatPhone;
   protected readonly money = (amount: number): string => duesMoney(amount, this.dues()?.currency);
   protected readonly period = membershipPeriod;
 

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { describeRole } from './support/role-test';
-import { fillDatePicker, fillMaskedInput } from './support/ui';
+import { fillDatePicker, fillPhone } from './support/ui';
 
 test.describe('Public onboarding', () => {
   test('join form gates submission and sanitizes kurin number', async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Public onboarding', () => {
     await page.locator('#email').fill(`e2e.applicant.${Date.now()}@example.com`);
     await page.locator('#stanytsia').fill('E2E Stanytsia');
     await page.locator('#regionOrCountry').fill('E2E Region');
-    await fillMaskedInput(page.locator('#phone input, input#phone'), '501112233');
+    await fillPhone(page.locator('input#phone'), '501112233');
     await fillDatePicker(page.locator('#dob input'), '01.01.2000');
     await expect(submit).toBeDisabled();
 

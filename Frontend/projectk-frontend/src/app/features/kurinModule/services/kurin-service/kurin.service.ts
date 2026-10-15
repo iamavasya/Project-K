@@ -1,3 +1,5 @@
+import { CountryCode } from 'libphonenumber-js';
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOfKrai } from '../../../../shared/functions/phone.function';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
@@ -89,13 +91,25 @@ export class KurinService {
    * always was; the server still checks the край's rules on save.
    */
   getCardFields(kurinKey: string): Observable<CardFieldsDto> {
+    return this.kurinProfile(kurinKey).pipe(
+      map(profile => profile.cardFields ?? DEFAULT_CARD_FIELDS),
+      catchError(() => of(DEFAULT_CARD_FIELDS))
+    );
+  }
+
+  /** The country new phone numbers in this kurin start in: its край's (CZ for cz). */
+  getPhoneCountry(kurinKey: string): Observable<CountryCode> {
+    return this.kurinProfile(kurinKey).pipe(
+      map(profile => phoneCountryOfKrai(profile.kraiCode)),
+      catchError(() => of(DEFAULT_PHONE_COUNTRY))
+    );
+  }
+
+  private kurinProfile(kurinKey: string): Observable<{ kraiCode?: string; cardFields?: CardFieldsDto }> {
     return this.cache.get(
       `${KURIN_CACHE_PREFIX}card-fields:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<{ cardFields?: CardFieldsDto }>(`${this.apiUrl}/${kurinKey}/profile`)
-    ).pipe(
-      map(profile => profile.cardFields ?? DEFAULT_CARD_FIELDS),
-      catchError(() => of(DEFAULT_CARD_FIELDS))
+      () => this.http.get<{ kraiCode?: string; cardFields?: CardFieldsDto }>(`${this.apiUrl}/${kurinKey}/profile`)
     );
   }
 

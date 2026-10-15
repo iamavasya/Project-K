@@ -1,7 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { CountryCode } from 'libphonenumber-js';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
+import { phoneCountryOfKrai } from '../../core/phone';
 import { apiUrl } from '../../runtime-config';
 import {
   BadgeCatalogItemDto,
@@ -57,6 +59,11 @@ export class KurinApi {
   /** What the kurin's край asks on a member's card (its profile's `cardFields`, or the default without one). */
   async cardFields(kurinKey: string): Promise<CardFields> {
     return cardFieldsOf(await this.api.get<KraiProfileCardFields>(`kurin/${kurinKey}/profile`));
+  }
+
+  /** The country a number typed without «+» is read in: the kurin's край's (CZ for cz). */
+  async phoneCountry(kurinKey: string): Promise<CountryCode> {
+    return phoneCountryOfKrai((await this.api.get<{ kraiCode?: string }>(`kurin/${kurinKey}/profile`)).kraiCode);
   }
 
   /** The kurin's report as a PDF (web «Експорт звіту куреня»), dated in the reader's zone. */

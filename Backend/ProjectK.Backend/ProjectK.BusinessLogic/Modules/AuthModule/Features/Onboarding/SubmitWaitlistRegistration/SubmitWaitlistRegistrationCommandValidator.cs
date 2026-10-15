@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using System.Linq;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -18,7 +19,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         RuleFor(command => command.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.LastName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(command => command.PhoneNumber).NotEmpty().MaximumLength(32);
+        RuleFor(command => command.PhoneNumber).NotEmpty().Must(PhoneNumbers.IsValid).WithMessage(PhoneNumbers.InvalidMessage);
 
         RuleFor(command => command.Stanytsia)
             .NotEmpty().WithMessage("Stanytsia is required.")
