@@ -39,10 +39,10 @@ import {
         [ariaLabel]="'Країна номера'"
         appendTo="body">
         <ng-template #selectedItem let-selected>
-          @if (selected) { <span>{{ flag(selected.code) }} {{ selected.dialCode }}</span> }
+          @if (selected) { <span><span class="phone-input__code">{{ selected.code }}</span> {{ selected.dialCode }}</span> }
         </ng-template>
         <ng-template #item let-option>
-          <span>{{ flag(option.code) }} {{ option.label }} <span class="phone-input__dial">{{ option.dialCode }}</span></span>
+          <span><span class="phone-input__code">{{ option.code }}</span> {{ option.label }} <span class="phone-input__dial">{{ option.dialCode }}</span></span>
         </ng-template>
       </p-select>
       <input
@@ -63,6 +63,7 @@ import {
     .phone-input__country { flex: 0 0 8.5rem; }
     .phone-input__number { flex: 1 1 auto; min-width: 0; }
     .phone-input__dial { color: var(--p-text-muted-color); margin-left: 0.25rem; }
+    .phone-input__code { display: inline-block; min-width: 1.75rem; margin-right: 0.25rem; color: var(--p-text-muted-color); font-size: var(--lil-text-caption); font-weight: 700; }
   `
 })
 export class PhoneInputComponent implements ControlValueAccessor, Validator {
@@ -128,10 +129,6 @@ export class PhoneInputComponent implements ControlValueAccessor, Validator {
   touched(): void {
     this.national.update(national => formatAsYouType(this.country(), national));
     this.onTouched();
-  }
-
-  flag(code: string): string {
-    return String.fromCodePoint(...[...code].map(letter => 0x1f1e6 + letter.charCodeAt(0) - 65));
   }
 
   private emit(): void {
