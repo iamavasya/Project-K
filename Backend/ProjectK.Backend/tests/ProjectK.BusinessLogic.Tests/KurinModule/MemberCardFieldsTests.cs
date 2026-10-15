@@ -58,6 +58,18 @@ public class MemberCardFieldsTests
     }
 
     [Fact]
+    public void AnOptionalPhoneLeftEmpty_IsStoredAsEmpty()
+    {
+        var request = Write(new() { ["visaType"] = "D" });
+        request.PhoneNumber = null!;
+
+        var outcome = MemberCardFields.Apply(Prague, request, null);
+
+        outcome.Error.Should().BeNull();
+        request.PhoneNumber.Should().BeEmpty();
+    }
+
+    [Fact]
     public void ARequiredExtraField_MustBeFilled()
     {
         var outcome = MemberCardFields.Apply(Prague, Write(new() { ["visaType"] = "  " }), null);
