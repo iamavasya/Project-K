@@ -102,6 +102,25 @@
                         severity="secondary"
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
                      />
+                    @if (canManageProfileVerification) {
+                    <p-button (onClick)="onProfileVerificationAction()"
+                        [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
+                        [icon]="isProfileVerified ? 'pi pi-undo' : 'pi pi-verified'"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                        [loading]="profileVerificationSubmitting"
+                     />
+                    }
+                    @if (canManageWarnings) {
+                    <p-button (onClick)="isWarningsDialogVisible = true"
+                        label="Перестороги"
+                        icon="pi pi-exclamation-triangle"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                     />
+                    }
                 </div>
                 }
             </div>
@@ -665,3 +684,11 @@
         <p-button label="Перевести" [loading]="isMovingToGroup" (onClick)="saveMoveToGroup()" />
     </ng-template>
 </p-dialog>
+
+@if (member && canManageWarnings) {
+<app-member-warnings-dialog [(visible)]="isWarningsDialogVisible"
+    [memberKey]="member.memberKey"
+    [warnings]="member.warnings ?? []"
+    [currentUserKey]="currentUserKey"
+    (changed)="onWarningsChanged()" />
+}

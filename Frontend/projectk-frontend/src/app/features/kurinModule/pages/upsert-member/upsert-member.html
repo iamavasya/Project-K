@@ -1,304 +1,235 @@
 <p-confirmdialog />
-<form #form="ngForm">
-    <p-accordion [multiple]="true" [(value)]="activeAccordionPanels">
-        <p-accordion-panel value="0">
-            <p-accordion-header>Основне</p-accordion-header>
-            <p-accordion-content>
-                @if (!isCreate) {
-                    <div class="upsert-profile-header">
-                        <div class="upsert-profile-name">
-                            <span>{{ member.firstName }} {{ member.lastName }}</span>
-                            <app-profile-verification-badge [enabled]="profileVerificationEnabled"
-                                [status]="member.profileVerificationStatus" />
-                        </div>
-
-                        @if (canManageProfileVerification) {
-                            <p-button type="button"
-                                [icon]="profileVerificationActionIcon"
-                                [rounded]="true"
-                                [text]="true"
-                                [severity]="profileVerificationActionSeverity"
-                                [loading]="profileVerificationSubmitting"
-                                [pTooltip]="profileVerificationActionTooltip"
-                                [ariaLabel]="profileVerificationActionTooltip"
-                                tooltipPosition="top"
-                                [showDelay]="2000"
-                                (onClick)="onProfileVerificationAction()"
-                                styleClass="upsert-profile-verification-action" />
-                        }
-                    </div>
-
-                    @if (profileVerificationMessage) {
-                        <p class="upsert-profile-verification-message" [class.upsert-profile-verification-message--success]="profileVerificationMessageSeverity === 'success'" [class.upsert-profile-verification-message--warn]="profileVerificationMessageSeverity === 'warn'" [class.upsert-profile-verification-message--error]="profileVerificationMessageSeverity === 'error'">
-                            {{ profileVerificationMessage }}
-                        </p>
-                    }
-                }
-                <div class="flex flex-col md:flex-row gap-4 my-4 md:m-5">
-                    <div class="flex flex-col gap-2">
-                        <p-floatlabel variant="on">
-                            <input 
-                                pInputText
-                                id="firstName"
-                                name="firstName"
-                                [(ngModel)]="member.firstName"
-                                required
-                                #firstNameCtrl="ngModel"
-                                [invalid]="firstNameCtrl.invalid && (firstNameCtrl.dirty || firstNameCtrl.touched)"
-                                autocomplete="off" />
-                            <label for="firstName">Імʼя</label>
-                        </p-floatlabel>
-                        @if (fieldMode('middleName') !== 'hidden') {
-                            <p-floatlabel variant="on">
-                                <input
-                                    pInputText
-                                    id="middleName"
-                                    name="middleName"
-                                    [(ngModel)]="member.middleName"
-                                    [required]="fieldMode('middleName') === 'required'"
-                                    #middleNameCtrl="ngModel"
-                                    [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
-                                    autocomplete="off" />
-                                <label for="middleName">По батькові</label>
-                            </p-floatlabel>
-                        }
-                        <p-floatlabel variant="on">
-                            <input
-                                pInputText
-                                id="lastName"
-                                name="lastName"
-                                [(ngModel)]="member.lastName"
-                                required
-                                #lastNameCtrl="ngModel"
-                                [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
-                                autocomplete="off" />
-                            <label for="lastName">Прізвище</label>
-                        </p-floatlabel>
-                        @if (canEditEmail()) {
-                            <p-floatlabel variant="on">
-                                <input
-                                    pInputText
-                                    id="email"
-                                    name="email"
-                                    [(ngModel)]="member.email"
-                                    required
-                                    email
-                                    #emailCtrl="ngModel"
-                                    [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
-                                    autocomplete="off" />
-                                <label for="email">Email</label>
-                            </p-floatlabel>
-                            @if (isCreate) {
-                                <p-message severity="info" styleClass="w-full"
-                                    text="На цю адресу прийде лист із посиланням для активації акаунта. Попросіть перевірити теку «Спам», якщо лист не видно." />
-                            }
-                            @if (isPendingAccount) {
-                                <div class="account-pending">
-                                    @if (emailChangedSinceSave) {
-                                        <p-message severity="info" styleClass="w-full"
-                                            text="Після збереження лист із новим посиланням піде на цю адресу, а посилання з попереднього листа перестане діяти." />
-                                    } @else {
-                                        <p-message severity="warn" styleClass="w-full"
-                                            text="Акаунт ще не активовано. Якщо в адресі помилка — виправте її й збережіть, лист піде заново." />
-                                        <p-button
-                                            label="Надіслати лист ще раз"
-                                            icon="pi pi-send"
-                                            severity="secondary"
-                                            [outlined]="true"
-                                            size="small"
-                                            [loading]="invitationSending"
-                                            (onClick)="resendInvitation()" />
-                                    }
-                                </div>
-                            }
-                        }
-                        @if (fieldMode('phoneNumber') !== 'hidden') {
-                            <div class="flex flex-col gap-1">
-                                <label for="phoneNumber" class="text-sm">Номер телефону</label>
-                                <app-phone-input
-                                    inputId="phoneNumber"
-                                    name="phoneNumber"
-                                    [defaultCountry]="phoneCountry"
-                                    [(ngModel)]="member.phoneNumber"
-                                    (ngModelChange)="markFormDirty()"
-                                    [required]="fieldMode('phoneNumber') === 'required'"
-                                    #phoneNumberCtrl="ngModel"
-                                    [invalid]="!!phoneNumberCtrl.invalid && !!(phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
-                                />
-                                @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
-                                    <small class="text-red-500">Схоже, номер неповний або зайвий.</small>
-                                }
-                            </div>
-                        }
-                        <p-floatlabel variant="on">
-                            <p-datepicker
-                                name="dateOfBirth"
-                                [(ngModel)]="member.dateOfBirth"
-                                (ngModelChange)="markFormDirty()"
-                                required
-                                minAge
-                                #dateOfBirthCtrl="ngModel"
-                                [dateFormat]="defaultDateFormat" />
-                            <label for="dateOfBirth">Дата народження</label>
-                        </p-floatlabel>
-                        @for (field of cardFields.extra; track field.key) {
-                            <p-floatlabel variant="on">
-                                @if (field.type === 'date') {
-                                    <p-datepicker
-                                        [inputId]="'extra-' + field.key"
-                                        [name]="'extra-' + field.key"
-                                        [(ngModel)]="cardExtras[field.key]"
-                                        (ngModelChange)="markFormDirty()"
-                                        [required]="field.required"
-                                        [dateFormat]="defaultDateFormat" />
-                                } @else {
-                                    <input
-                                        pInputText
-                                        [id]="'extra-' + field.key"
-                                        [name]="'extra-' + field.key"
-                                        [(ngModel)]="cardExtras[field.key]"
-                                        [required]="field.required"
-                                        maxlength="200"
-                                        autocomplete="off" />
-                                }
-                                <label [for]="'extra-' + field.key">{{ field.label }}</label>
-                            </p-floatlabel>
-                        }
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <p-fileUpload name="photo"
-                            accept="image/*"
-                            mode="basic"
-                            chooseLabel="Завантажити фото"
-                            (onSelect)="fileChangeEvent($event)"
-                             />
-                        <p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{ width: 'min(92vw, 400px)' }">
-                            <image-cropper [imageFile]="imageFile"
-                                [maintainAspectRatio]="true"
-                                [aspectRatio]="1 / 1"
-                                format="jpeg"
-                                [imageQuality]="85"
-                                [resizeToWidth]="1024"
-                                [onlyScaleDown]="true"
-                                (imageCropped)="imageCropped($event)" />
-            
-                            <div class="flex justify-content-end gap-2 mt-3">
-                                <p-button label="Зберегти" icon="pi pi-check" (onClick)="save(form.form)" />
-                                <p-button label="Скасувати" icon="pi pi-times" class="p-button-secondary" (onClick)="onCancelCrop()" />
-                            </div>
-                        </p-dialog>
-            
-                        @if (croppedImage || member.profilePhotoUrl) {
-                            <h4>Попередній перегляд</h4>
-                            <img [src]="croppedImage || member.profilePhotoUrl" width="150" height="150" style="border-radius: 50%;" alt="{{member.firstName}} {{member.lastName}}" />
-                            <p-button type="button" icon="pi pi-trash" label="Очистити фото"
-                                [disabled]="!member.profilePhotoUrl && !croppedImage"
-                                (onClick)="clearProfilePhoto(form.form)" />
-                        }
-                    </div>
+<form #form="ngForm" class="lil-page member-form">
+    <header class="lil-page-head">
+        <div>
+            @if (isCreate) {
+                <h1>Новий учасник</h1>
+            } @else {
+                <p class="lil-page-head__eyebrow">Редагування</p>
+                <div class="member-form__title">
+                    <h1>{{ member.firstName }} {{ member.lastName }}</h1>
+                    <app-profile-verification-badge [enabled]="profileVerificationEnabled"
+                        [status]="member.profileVerificationStatus" />
                 </div>
-            </p-accordion-content>
-        </p-accordion-panel>
-        <p-accordion-panel value="1">
-            <p-accordion-header>Пластові ступені</p-accordion-header>
-            <p-accordion-content>
-                <div class="flex flex-col gap-4">
-                    <div>
-                        УПЮ
-                        <p-toggleswitch [ngModel]="showUpuLevels" (ngModelChange)="onUpuToggle($event)" name="upuSwitch" />
-                        УСП
-                        <p-toggleswitch [ngModel]="showUspLevels" (ngModelChange)="onUspToggle($event)" name="uspSwitch" />
-                        УПС
-                        <p-toggleswitch [ngModel]="showUpsLevels" (ngModelChange)="onUpsToggle($event)" name="upsSwitch" />
-                    </div>
-                    <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Entry].dateAchieved" (ngModelChange)="markFormDirty()" name="dateEntry" #dateEntryCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                        <label for="plastLevelEntry">Дата вступу до Пласту</label>
-                    </p-floatLabel>
-                    <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Prykhylnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="datePrykhylnyk" #datePrykhylnykCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                        <label for="plastLevelPrykhylnyk">Дата здобуття прихильника</label>
-                    </p-floatLabel>
-                    <p-floatLabel variant="on">
-                        <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Uchasnyk].dateAchieved" (ngModelChange)="markFormDirty()" name="dateUchasnyk" #dateUchasnykCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                        <label for="plastLevelUchasnyk">Дата заприсяження</label>
-                    </p-floatLabel>
-
-                    @if (showUpuLevels) {
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Rozviduvach].dateAchieved" (ngModelChange)="markFormDirty()" name="dateRozviduvach" #dateRozviduvachCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelRozviduvach">Дата здобуття розвідувача</label>
-                        </p-floatLabel>
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Skob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSkob" #dateSkobCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelSkob">Дата здобуття скоба/вірлиці</label>
-                        </p-floatLabel>
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved" (ngModelChange)="markFormDirty()" name="dateHetmanskiySkob" #dateHetmanskiySkobCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelHetmanskiySkob">Дата здобуття гетьманського скоба/вірлиці</label>
-                        </p-floatLabel>
-                    }
-                    @if (showUspLevels) {
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Starshoplastun].dateAchieved" (ngModelChange)="markFormDirty()" name="dateStarshoplastun" #dateStarshoplastunCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelStarshoplastun">Дата переходу в УСП</label>
-                        </p-floatLabel>
-                    }
-                    @if (showUpsLevels) {
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.Senior].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSenior" #dateSeniorCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelSenior">Дата переходу в УПС</label>
-                        </p-floatLabel>
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorPratsi" #dateSeniorPratsiCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelSeniorPratsi">Дата здобуття пл. сен. праці</label>
-                        </p-floatLabel>
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorDovirja" #dateSeniorDovirjaCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelSeniorDovirja">Дата здобуття пл. сен. довір'я</label>
-                        </p-floatLabel>
-                        <p-floatLabel variant="on">
-                            <p-datePicker [(ngModel)]="plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved" (ngModelChange)="markFormDirty()" name="dateSeniorKerivnytstva" #dateSeniorKerivnytstvaCtrl="ngModel" [dateFormat]="defaultDateFormat" />
-                            <label for="plastLevelSeniorKerivnytstva">Дата здобуття пл. сен. керівництва</label>
-                        </p-floatLabel>
-                    }
-                </div>
-            </p-accordion-content>
-        </p-accordion-panel>
-        @if (canManageWarnings && !isCreate) {
-        <p-accordion-panel value="2">
-            <p-accordion-header>Перестороги</p-accordion-header>
-            <p-accordion-content>
-                <div class="warning-section flex flex-col gap-3">
-                    @for (warning of warningLevels; track warning.level) {
-                    <div class="warning-item flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            [id]="'warning-' + warning.level"
-                            [checked]="isWarningChecked(warning.level)"
-                            [disabled]="isWarningBusy(warning.level) || (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) || (isWarningChecked(warning.level) && !canClearWarning(warning.level))"
-                            (change)="onWarningToggle(warning.level, $any($event.target).checked)"
-                        />
-                        <label [for]="'warning-' + warning.level">{{ warning.label }}</label>
-                        @if (isWarningChecked(warning.level) && !canClearWarning(warning.level)) {
-                        <span class="warning-hint text-xs">Скасувати може лише автор перестороги.</span>
-                        }
-                        @if (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) {
-                        <span class="warning-hint text-xs">Доступно після попереднього рівня.</span>
-                        }
-                    </div>
-                    }
-                </div>
-            </p-accordion-content>
-        </p-accordion-panel>
-        }
-    </p-accordion>
-    <div>
-        <div class="upsert-member-actions">
-            <p-button [label]="isCreate ? 'Додати учасника' : 'Зберегти'" (onClick)="submit()" [disabled]="form.invalid || (form.pristine && form.untouched)" />
-            @if (canDeleteMember()) {
-                <p-button (onClick)="confirmDeleteMember($event)" severity="danger" label="Видалити профіль" icon="pi pi-trash" />
             }
         </div>
+    </header>
+
+    <div class="member-form__cols">
+        <div class="member-form__main">
+            <section class="kurin-tile member-form__tile">
+                <div class="lil-tile-head"><div><h2>Особа</h2></div></div>
+                <div class="member-form__grid">
+                    <div class="member-form__field">
+                        <label for="firstName">Імʼя</label>
+                        <input pInputText id="firstName" name="firstName"
+                            [(ngModel)]="member.firstName" required #firstNameCtrl="ngModel"
+                            [invalid]="firstNameCtrl.invalid && (firstNameCtrl.dirty || firstNameCtrl.touched)"
+                            autocomplete="off" />
+                    </div>
+                    @if (fieldMode('middleName') !== 'hidden') {
+                        <div class="member-form__field">
+                            <label for="middleName">По батькові
+                                @if (fieldMode('middleName') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
+                            </label>
+                            <input pInputText id="middleName" name="middleName"
+                                [(ngModel)]="member.middleName"
+                                [required]="fieldMode('middleName') === 'required'" #middleNameCtrl="ngModel"
+                                [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
+                                autocomplete="off" />
+                        </div>
+                    }
+                    <div class="member-form__field">
+                        <label for="lastName">Прізвище</label>
+                        <input pInputText id="lastName" name="lastName"
+                            [(ngModel)]="member.lastName" required #lastNameCtrl="ngModel"
+                            [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
+                            autocomplete="off" />
+                    </div>
+                    <div class="member-form__field">
+                        <label for="dateOfBirth">Дата народження</label>
+                        <p-datepicker inputId="dateOfBirth" name="dateOfBirth"
+                            [(ngModel)]="member.dateOfBirth" (ngModelChange)="markFormDirty()"
+                            required minAge #dateOfBirthCtrl="ngModel"
+                            [dateFormat]="defaultDateFormat" fluid />
+                        @if (dateOfBirthCtrl.errors?.['minAge'] && (dateOfBirthCtrl.dirty || dateOfBirthCtrl.touched)) {
+                            <small class="member-form__error">Людині має бути щонайменше 6 років.</small>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            @if (canEditEmail() || fieldMode('phoneNumber') !== 'hidden') {
+                <section class="kurin-tile member-form__tile">
+                    <div class="lil-tile-head">
+                        <div>
+                            <h2>Контакти</h2>
+                            @if (canEditEmail()) { <p>Email також вхід до Лілейки.</p> }
+                        </div>
+                    </div>
+                    <div class="member-form__grid member-form__grid--two">
+                        @if (canEditEmail()) {
+                            <div class="member-form__field">
+                                <label for="email">Email</label>
+                                <input pInputText id="email" name="email" type="email"
+                                    [(ngModel)]="member.email" required email #emailCtrl="ngModel"
+                                    [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
+                                    autocomplete="off" />
+                                @if (isCreate) {
+                                    <small class="member-form__hint">Сюди прийде лист, щоб активувати акаунт. Якщо його немає, хай перевірить «Спам».</small>
+                                }
+                                @if (isPendingAccount) {
+                                    @if (emailChangedSinceSave) {
+                                        <small class="member-form__hint">Після збереження лист із новим посиланням піде на цю адресу, а старе посилання перестане діяти.</small>
+                                    } @else {
+                                        <div class="member-form__account">
+                                            <p-tag severity="warn" value="Акаунт не активовано" />
+                                            <p-button type="button" label="Надіслати лист ще раз" icon="pi pi-send"
+                                                severity="secondary" variant="text" size="small"
+                                                [loading]="invitationSending" (onClick)="resendInvitation()" />
+                                        </div>
+                                        <small class="member-form__hint">Якщо в адресі помилка, виправ її й збережи, і лист піде заново.</small>
+                                    }
+                                }
+                            </div>
+                        }
+                        @if (fieldMode('phoneNumber') !== 'hidden') {
+                            <div class="member-form__field">
+                                <label for="phoneNumber">Телефон
+                                    @if (fieldMode('phoneNumber') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
+                                </label>
+                                <app-phone-input inputId="phoneNumber" name="phoneNumber"
+                                    [defaultCountry]="phoneCountry"
+                                    [(ngModel)]="member.phoneNumber" (ngModelChange)="markFormDirty()"
+                                    [required]="fieldMode('phoneNumber') === 'required'" #phoneNumberCtrl="ngModel"
+                                    [invalid]="!!phoneNumberCtrl.invalid && !!(phoneNumberCtrl.dirty || phoneNumberCtrl.touched)" />
+                                @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
+                                    <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
+                                }
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (cardFields.extra.length) {
+                <section class="kurin-tile member-form__tile">
+                    <div class="lil-tile-head"><div><h2>Від краю</h2><p>Ці поля просить край куреня.</p></div></div>
+                    <div class="member-form__grid member-form__grid--two">
+                        @for (field of cardFields.extra; track field.key) {
+                            <div class="member-form__field">
+                                <label [for]="'extra-' + field.key">{{ field.label }}
+                                    @if (!field.required) { <span class="member-form__optional">· необовʼязково</span> }
+                                </label>
+                                @if (field.type === 'date') {
+                                    <p-datepicker [inputId]="'extra-' + field.key" [name]="'extra-' + field.key"
+                                        [(ngModel)]="cardExtras[field.key]" (ngModelChange)="markFormDirty()"
+                                        [required]="field.required" [dateFormat]="defaultDateFormat" fluid />
+                                } @else {
+                                    <input pInputText [id]="'extra-' + field.key" [name]="'extra-' + field.key"
+                                        [(ngModel)]="cardExtras[field.key]" [required]="field.required"
+                                        maxlength="200" autocomplete="off" />
+                                }
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            <section class="kurin-tile member-form__tile">
+                <div class="lil-tile-head">
+                    <div><h2>Пластові ступені</h2><p>Дата здобуття кожного ступеня. Порожня дата означає «ще не здобуто».</p></div>
+                </div>
+                <div class="member-form__levels">
+                    @for (group of visibleLevelGroups; track group.title) {
+                        <div class="member-form__level-group">
+                            <p class="member-form__level-title">{{ group.title }}</p>
+                            @for (level of group.levels; track level.level) {
+                                <div class="member-form__level" [class.member-form__level--done]="plastLevelMap[level.level].dateAchieved">
+                                    <span class="member-form__level-mark" aria-hidden="true">
+                                        @if (plastLevelMap[level.level].dateAchieved) { <i class="pi pi-check"></i> }
+                                    </span>
+                                    <label class="member-form__level-name" [for]="'level-' + level.level">{{ level.title }}</label>
+                                    <p-datepicker class="member-form__level-date" [inputId]="'level-' + level.level" [name]="'level-' + level.level"
+                                        [(ngModel)]="plastLevelMap[level.level].dateAchieved" (ngModelChange)="markFormDirty()"
+                                        [dateFormat]="defaultDateFormat" placeholder="Ще не здобуто" [showClear]="true" fluid />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                @if (hiddenLevelGroups.length) {
+                    <div class="member-form__level-more">
+                        @for (group of hiddenLevelGroups; track group.title) {
+                            <p-button type="button" [label]="'Додати ступені ' + group.title" icon="pi pi-plus"
+                                severity="secondary" variant="text" size="small" (onClick)="showLevelGroup(group.key)" />
+                        }
+                    </div>
+                }
+            </section>
+
+        </div>
+
+        <aside class="kurin-tile member-form__photo">
+            @if (croppedImage || member.profilePhotoUrl) {
+                <img class="member-form__avatar" [src]="croppedImage || member.profilePhotoUrl"
+                    alt="{{ member.firstName }} {{ member.lastName }}" width="128" height="128" />
+            } @else {
+                <div class="member-form__avatar member-form__avatar--empty" aria-hidden="true">
+                    @if (photoInitials) { {{ photoInitials }} } @else { <i class="pi pi-user"></i> }
+                </div>
+            }
+            <label for="photo" class="member-form__file">Фото</label>
+            <input #photoInput type="file" accept="image/*" class="member-form__file" id="photo"
+                (change)="onPhotoPicked($event); photoInput.value = ''" />
+            <div class="member-form__photo-actions">
+                <p-button type="button" [label]="croppedImage || member.profilePhotoUrl ? 'Змінити фото' : 'Додати фото'"
+                    icon="pi pi-camera" severity="secondary" [outlined]="true" size="small"
+                    (onClick)="photoInput.click()" />
+                @if (croppedImage || member.profilePhotoUrl) {
+                    <p-button type="button" label="Прибрати" severity="secondary" variant="text" size="small"
+                        (onClick)="clearProfilePhoto(form.form)" />
+                }
+            </div>
+            <small class="member-form__hint">Квадратне фото. Обріжеш після вибору.</small>
+        </aside>
+    </div>
+
+    @if (canDeleteMember()) {
+        <div class="member-form__danger">
+            <p>Профіль зникне з Лілейки разом із пробами, вмілостями й членствами. Перед видаленням Лілейка перепитає.</p>
+            <p-button type="button" (onClick)="confirmDeleteMember($event)" severity="danger" variant="text"
+                label="Видалити профіль" icon="pi pi-trash" />
+        </div>
+    }
+
+    <div class="member-form__bar">
+        <span class="member-form__state">
+            @if (form.invalid && missingFields.length) {
+                Заповни: {{ missingFields.join(', ') }}
+            } @else if (form.dirty || form.touched) {
+                <span class="member-form__pip" aria-hidden="true"></span>Є незбережені зміни
+            } @else {
+                Змін ще немає
+            }
+        </span>
+        <p-button type="button" label="Скасувати" severity="secondary" variant="text" (onClick)="cancel()" />
+        <p-button class="member-form__submit" type="button" [label]="isCreate ? 'Додати учасника' : 'Зберегти'" (onClick)="submit()"
+            [disabled]="form.invalid || (form.pristine && form.untouched)" />
     </div>
 </form>
+
+<p-dialog [(visible)]="displayCropper" header="Обріж фото" [modal]="true" [style]="{ width: 'min(92vw, 420px)' }">
+    <image-cropper [imageFile]="imageFile"
+        [maintainAspectRatio]="true"
+        [aspectRatio]="1 / 1"
+        format="jpeg"
+        [imageQuality]="85"
+        [resizeToWidth]="1024"
+        [onlyScaleDown]="true"
+        (imageCropped)="imageCropped($event)" />
+    <ng-template #footer>
+        <p-button type="button" label="Скасувати" severity="secondary" variant="text" (onClick)="onCancelCrop()" />
+        <p-button type="button" label="Готово" icon="pi pi-check" (onClick)="save(form.form)" />
+    </ng-template>
+</p-dialog>

@@ -70,6 +70,8 @@ import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
 import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
+import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
 @Component({
   selector: 'app-member-card',
@@ -92,6 +94,7 @@ import { initials } from '../../../dashboardModule/functions/greeting.function';
     MemberAwardsTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
+    MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
     RouterLink
@@ -172,6 +175,8 @@ export class MemberCardComponent implements OnInit {
   inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
   canManageMemberActions = false;
   profileVerificationEnabled = false;
+  profileVerificationSubmitting = false;
+  isWarningsDialogVisible = false;
 
   readonly addSkillPageSize = 12;
   readonly warningLevels = [
@@ -477,6 +482,76 @@ export class MemberCardComponent implements OnInit {
 
   get canEditMember(): boolean {
     return this.canManageMemberActions;
+  }
+
+  /** The card of whoever is looking: nobody verifies or warns themselves. */
+  get isOwnCard(): boolean {
+    const auth = this.authService.getAuthStateValue?.();
+    return !!this.member
+      && ((!!auth?.memberKey && auth.memberKey === this.member.memberKey)
+        || (!!auth?.userKey && auth.userKey === this.member.userKey));
+  }
+
+  get currentUserKey(): string | null {
+    return this.authService.getAuthStateValue?.()?.userKey ?? null;
+  }
+
+  get canManageProfileVerification(): boolean {
+    return this.canEditMember && this.profileVerificationEnabled && !this.isOwnCard && this.permissionService.isReviewer();
+  }
+
+  get canManageWarnings(): boolean {
+    return this.canEditMember && !this.isOwnCard && this.permissionService.canManageWarnings();
+  }
+
+  get isProfileVerified(): boolean {
+    return this.member?.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent;
+  }
+
+  onProfileVerificationAction(): void {
+    const member = this.member;
+    if (!member || !this.canManageProfileVerification || this.profileVerificationSubmitting) {
+      return;
+    }
+
+    const verified = this.isProfileVerified;
+    this.confirmationService.confirm({
+      header: verified ? 'Зняти верифікацію' : 'Верифікувати профіль',
+      message: verified
+        ? 'Профіль знову чекатиме перевірки.'
+        : 'Підтвердити, що дані в профілі правильні?',
+      icon: verified ? 'pi pi-exclamation-triangle' : 'pi pi-verified',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', variant: 'text' },
+      acceptButtonProps: verified
+        ? { label: 'Зняти', severity: 'danger' }
+        : { label: 'Верифікувати' },
+      accept: () => {
+        this.profileVerificationSubmitting = true;
+        const request = verified
+          ? this.memberService.resetProfileVerification(member.memberKey)
+          : this.memberService.verifyProfile(member.memberKey, null);
+        request.pipe(finalize(() => this.profileVerificationSubmitting = false)).subscribe({
+          next: updated => {
+            this.member = { ...member, ...updated };
+            this.messageService.add({ severity: 'success', summary: verified ? 'Верифікацію знято.' : 'Профіль верифіковано.' });
+          },
+          error: (error: unknown) => this.messageService.add({
+            severity: 'error',
+            summary: verified ? 'Верифікацію не знято' : 'Профіль не верифіковано',
+            detail: (error as { status?: number })?.status === 400
+              ? 'Верифікацію профілів вимкнено для цього куреня.'
+              : failureDetail(error)
+          })
+        });
+      }
+    });
+  }
+
+  onWarningsChanged(): void {
+    if (!this.memberKey) {
+      return;
+    }
+    this.memberService.getByKey(this.memberKey).subscribe(member => this.member = member);
   }
 
   get photoInitials(): string {

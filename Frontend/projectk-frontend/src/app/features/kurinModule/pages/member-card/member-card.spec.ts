@@ -24,6 +24,7 @@ import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dt
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { KurinDto } from '../../models/kurin.dto';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 
@@ -60,7 +61,7 @@ describe('MemberCardComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships', 'verifyProfile', 'resetProfileVerification']);
     kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
     kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll', 'getForKurin']);
@@ -872,6 +873,64 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       expect(renderedText()).toContain('Впорядник гуртка:');
+    });
+  });
+
+  describe('verification and перестороги', () => {
+    function createAsReviewer(loaded: MemberDto) {
+      memberServiceSpy.getByKey.and.returnValue(of(loaded));
+      createComponent();
+      spyOn(component.permissionService, 'isReviewer').and.returnValue(true);
+      spyOn(component.permissionService, 'canManageWarnings').and.returnValue(true);
+      fixture.detectChanges();
+    }
+
+    it('offers both to a reviewer who may edit the member', () => {
+      createAsReviewer(member);
+      expect(component.canManageProfileVerification).toBeTrue();
+      expect(component.canManageWarnings).toBeTrue();
+    });
+
+    it('offers neither on the reviewer’s own card', () => {
+      createAsReviewer({ ...member, memberKey: 'test-member-key' });
+      expect(component.canManageProfileVerification).toBeFalse();
+      expect(component.canManageWarnings).toBeFalse();
+    });
+
+    it('offers neither to someone who may not edit the member', () => {
+      entityServiceSpy.checkEntityAccess.and.returnValue(of(false));
+      createAsReviewer(member);
+      expect(component.canManageProfileVerification).toBeFalse();
+      expect(component.canManageWarnings).toBeFalse();
+    });
+
+    it('verifies the profile after asking', () => {
+      memberServiceSpy.verifyProfile.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified });
+      const confirm = spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+        options.accept?.();
+        return component.confirmationService;
+      });
+
+      component.onProfileVerificationAction();
+
+      expect(confirm).toHaveBeenCalled();
+      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
+      expect(component.isProfileVerified).toBeTrue();
+    });
+
+    it('removes the verification after asking', () => {
+      memberServiceSpy.resetProfileVerification.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent });
+      spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+        options.accept?.();
+        return component.confirmationService;
+      });
+
+      component.onProfileVerificationAction();
+
+      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
+      expect(component.isProfileVerified).toBeFalse();
     });
   });
 });

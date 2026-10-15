@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FloatLabelModule } from '@openng/optimus-ui/floatlabel';
 import { FormGroup, FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
@@ -11,32 +10,23 @@ import { UpsertMemberDto } from '../../models/requests/member/upsert-member.dto'
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { MinAgeValidatorDirective } from "../../directives/min-age-validator/min-age.validator";
-import { FileSelectEvent, FileUploadModule } from '@openng/optimus-ui/fileupload';
 import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { base64ToBlob } from '../../functions/base64-to-blob.function';
 import { Location } from '@angular/common';
-import { AccordionModule } from '@openng/optimus-ui/accordion';
 import { PlastLevelHistoryDto } from '../../models/plast-level-history.dto';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
-import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { parseDateOnlyString, toDateOnlyString } from '../../functions/to-date-only-string.function';
-import { MemberWarningService } from '../../services/member-warning-service/member-warning.service';
-import { MemberWarningDto } from '../../models/member-warning.dto';
-import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
-import { concatMap, finalize, from, Observable, of, toArray } from 'rxjs';
+import { finalize } from 'rxjs';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { AccountStatus } from '../../models/enums/account-status.enum';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { TagModule } from '@openng/optimus-ui/tag';
 import { ProfileVerificationBadgeComponent } from '../../components/profile-verification-badge/profile-verification-badge';
-import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
-import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { MessageModule } from '@openng/optimus-ui/message';
+import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { CountryCode } from 'libphonenumber-js';
 import { DEFAULT_PHONE_COUNTRY } from '../../../../shared/functions/phone.function';
@@ -44,7 +34,7 @@ import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input'
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FloatLabelModule, FormsModule, InputTextModule, PhoneInputComponent, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, FileUploadModule, ImageCropperComponent, DialogModule, AccordionModule, ToggleSwitchModule, TooltipModule, ProfileVerificationBadgeComponent, MessageModule],
+  imports: [FormsModule, InputTextModule, PhoneInputComponent, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, ImageCropperComponent, DialogModule, TagModule, ProfileVerificationBadgeComponent],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -52,7 +42,6 @@ import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input'
 })
 export class UpsertMemberComponent implements OnInit {
   readonly form = viewChild.required<NgForm>('form');
-  activeAccordionPanels: string[] = ['0'];
 
   member: MemberDto = {
     memberKey: '',
@@ -82,7 +71,6 @@ export class UpsertMemberComponent implements OnInit {
   router = inject(Router);
   location = inject(Location);
   memberService = inject(MemberService);
-  memberWarningService = inject(MemberWarningService);
   kurinService = inject(KurinService);
   authService = inject(AuthService);
   permissionService = inject(PermissionService);
@@ -95,44 +83,34 @@ export class UpsertMemberComponent implements OnInit {
   // Адреса, на яку пішов лист. Поки поле з нею не збігається, «надіслати ще раз» пошле на стару.
   private savedEmail = '';
   invitationSending = false;
-  canManageWarnings = false;
   profileVerificationEnabled = false;
-  profileVerificationSubmitting = false;
-  profileVerificationMessage: string | null = null;
-  profileVerificationMessageSeverity: 'success' | 'warn' | 'error' = 'success';
 
   plastLevelMap: Record<PlastLevel, PlastLevelHistoryDto> = {} as Record<PlastLevel, PlastLevelHistoryDto>;
   readonly PlastLevel = PlastLevel;
-  readonly levelsConfig: { level: PlastLevel, label: string }[] = [
-    { level: PlastLevel.Entry, label: 'Вступ' },
-    { level: PlastLevel.Prykhylnyk, label: 'Прих.' },
-    { level: PlastLevel.Uchasnyk, label: 'Уч.' },
-    { level: PlastLevel.Rozviduvach, label: 'Розвд.' },
-    { level: PlastLevel.Skob, label: 'Скоб' },
-    { level: PlastLevel.HetmanskiySkob, label: 'Гетьм. скоб' },
-    { level: PlastLevel.Starshoplastun, label: 'Старшопластун' },
-    { level: PlastLevel.Senior, label: 'пл. сен.' },
-    { level: PlastLevel.SeniorPratsi, label: 'пл. сен. пр.' },
-    { level: PlastLevel.SeniorDovirja, label: 'пл. сен. дов.' },
-    { level: PlastLevel.SeniorKerivnytstva, label: 'пл. сен. кер.' },
+  /** The ступені by улад, in the order they are earned. */
+  readonly levelGroups: LevelGroup[] = [
+    { key: 'base', title: 'Пласт', levels: [
+      { level: PlastLevel.Entry, title: 'Вступ до Пласту' },
+      { level: PlastLevel.Prykhylnyk, title: 'Прихильник' },
+      { level: PlastLevel.Uchasnyk, title: 'Учасник (заприсяження)' },
+    ] },
+    { key: 'upu', title: 'УПЮ', levels: [
+      { level: PlastLevel.Rozviduvach, title: 'Розвідувач' },
+      { level: PlastLevel.Skob, title: 'Скоб / вірлиця' },
+      { level: PlastLevel.HetmanskiySkob, title: 'Гетьманський скоб / вірлиця' },
+    ] },
+    { key: 'usp', title: 'УСП', levels: [
+      { level: PlastLevel.Starshoplastun, title: 'Перехід в УСП' },
+    ] },
+    { key: 'ups', title: 'УПС', levels: [
+      { level: PlastLevel.Senior, title: 'Перехід в УПС' },
+      { level: PlastLevel.SeniorPratsi, title: 'Пластун сеньйор праці' },
+      { level: PlastLevel.SeniorDovirja, title: 'Пластун сеньйор довірʼя' },
+      { level: PlastLevel.SeniorKerivnytstva, title: 'Пластун сеньйор керівництва' },
+    ] },
   ];
-
-  plastLevelHistories: PlastLevelHistoryDto[] = [];
-  showUpuLevels = false;
-  showUspLevels = false;
-  showUpsLevels = false;
-  memberWarnings: MemberWarningDto[] = [];
-  
-  warningsToAssign = new Set<MemberWarningLevel>();
-  warningsToCancel = new Set<string>(); // memberWarningKeys
-
-  readonly MemberWarningLevel = MemberWarningLevel;
-  readonly MemberProfileVerificationStatus = MemberProfileVerificationStatus;
-  readonly warningLevels = [
-    { level: MemberWarningLevel.Level1, label: 'Перша пересторога (3 місяці)' },
-    { level: MemberWarningLevel.Level2, label: 'Друга пересторога (6 місяців)' },
-    { level: MemberWarningLevel.Level3, label: 'Третя пересторога (12 місяців)' }
-  ];
+  /** Groups on screen: Пласт and УПЮ always, the rest once they have a date or are asked for. */
+  private readonly shownLevelGroups = new Set<LevelGroupKey>(['base', 'upu']);
 
   imageFile?: File;
   croppedImage = '';
@@ -163,14 +141,13 @@ export class UpsertMemberComponent implements OnInit {
       this.isCreate = false;
     } else {
       this.ensurePlastLevelMap();
-      this.setupAccordionAndToggles();
+      this.showLevelGroupsWithDates();
       this.isCreate = true;
       this.loadCardFields(this.kurinKey);
     }
     const currentNavigation = this.router.currentNavigation();
     const navState = (currentNavigation?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
     this.cameFromMember = navState?.fromMember === true;
-    this.canManageWarnings = this.resolveCanManageWarnings();
   }
 
   private loadData(): void {
@@ -189,9 +166,8 @@ export class UpsertMemberComponent implements OnInit {
 
         this.member = memberForEdit;
         this.savedEmail = memberForEdit.email;
-        this.memberWarnings = memberForEdit.warnings ?? [];
         this.ensurePlastLevelMap();
-        this.setupAccordionAndToggles();
+        this.showLevelGroupsWithDates();
         this.loadProfileVerificationToggle(memberForEdit.kurinKey);
         this.loadCardFields(memberForEdit.kurinKey);
       },
@@ -246,189 +222,72 @@ export class UpsertMemberComponent implements OnInit {
     return this.groupKey ? ['/group', this.groupKey] : ['/kurin'];
   }
 
-  private setupAccordionAndToggles() {
-    const hasAnyPlastLevel = this.levelsConfig.some(config => this.plastLevelMap[config.level]?.dateAchieved != null);
-    if (hasAnyPlastLevel && !this.activeAccordionPanels.includes('1')) {
-      this.activeAccordionPanels.push('1');
+  // A group with a date stays on screen: hiding it would hide a ступінь that is saved.
+  private showLevelGroupsWithDates() {
+    for (const group of this.levelGroups) {
+      if (group.levels.some(({ level }) => this.plastLevelMap[level]?.dateAchieved != null)) {
+        this.shownLevelGroups.add(group.key);
+      }
     }
+  }
 
-    if (this.memberWarnings.some(w => this.isWarningActive(w, new Date())) && !this.activeAccordionPanels.includes('2')) {
-      this.activeAccordionPanels.push('2');
+  get visibleLevelGroups(): LevelGroup[] {
+    return this.levelGroups.filter(group => this.shownLevelGroups.has(group.key));
+  }
+
+  get hiddenLevelGroups(): LevelGroup[] {
+    return this.levelGroups.filter(group => !this.shownLevelGroups.has(group.key));
+  }
+
+  showLevelGroup(key: LevelGroupKey): void {
+    this.shownLevelGroups.add(key);
+  }
+
+  get photoInitials(): string {
+    return initials(this.member.firstName, this.member.lastName);
+  }
+
+  /** The required fields still empty or wrong, named as the form names them. */
+  get missingFields(): string[] {
+    const controls = this.form()?.controls ?? {};
+    const order = ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'email', 'phoneNumber'];
+    const rank = (name: string) => order.includes(name) ? order.indexOf(name) : order.length;
+    return Object.entries(controls)
+      .filter(([, control]) => control.invalid)
+      .map(([name]) => name)
+      .sort((left, right) => rank(left) - rank(right))
+      .map(name => this.fieldLabel(name))
+      .filter((label): label is string => !!label);
+  }
+
+  private fieldLabel(name: string): string | null {
+    const labels: Record<string, string> = {
+      firstName: 'імʼя',
+      middleName: 'по батькові',
+      lastName: 'прізвище',
+      dateOfBirth: 'дату народження',
+      email: 'email',
+      phoneNumber: 'телефон',
+    };
+    if (labels[name]) {
+      return labels[name];
     }
+    const extra = this.cardFields.extra.find(field => `extra-${field.key}` === name);
+    return extra ? extra.label.toLowerCase() : null;
+  }
 
-    this.showUpuLevels = [PlastLevel.Rozviduvach, PlastLevel.Skob, PlastLevel.HetmanskiySkob].some(l => this.plastLevelMap[l]?.dateAchieved != null);
-    this.showUspLevels = [PlastLevel.Starshoplastun].some(l => this.plastLevelMap[l]?.dateAchieved != null);
-    this.showUpsLevels = [PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva].some(l => this.plastLevelMap[l]?.dateAchieved != null);
+  cancel(): void {
+    if (this.cameFromMember) {
+      this.location.back();
+    } else if (this.isCreate) {
+      this.router.navigate(this.scopeRoute());
+    } else {
+      this.router.navigate(['/member', this.memberKey]);
+    }
   }
 
   markFormDirty() {
     this.form()?.form.markAsDirty();
-  }
-
-  onUpuToggle(value: boolean) {
-    this.showUpuLevels = value;
-    this.markFormDirty();
-    if (!value) {
-      this.plastLevelMap[PlastLevel.Rozviduvach].dateAchieved = null;
-      this.plastLevelMap[PlastLevel.Skob].dateAchieved = null;
-      this.plastLevelMap[PlastLevel.HetmanskiySkob].dateAchieved = null;
-    }
-  }
-
-  onUspToggle(value: boolean) {
-    this.showUspLevels = value;
-    this.markFormDirty();
-    if (!value) {
-      this.plastLevelMap[PlastLevel.Starshoplastun].dateAchieved = null;
-    }
-  }
-
-  onUpsToggle(value: boolean) {
-    this.showUpsLevels = value;
-    this.markFormDirty();
-    if (!value) {
-      this.plastLevelMap[PlastLevel.Senior].dateAchieved = null;
-      this.plastLevelMap[PlastLevel.SeniorPratsi].dateAchieved = null;
-      this.plastLevelMap[PlastLevel.SeniorDovirja].dateAchieved = null;
-      this.plastLevelMap[PlastLevel.SeniorKerivnytstva].dateAchieved = null;
-    }
-  }
-
-  private resolveCanManageWarnings(): boolean {
-    return this.permissionService.canManageWarnings();
-  }
-
-  get isCurrentUserMember(): boolean {
-    const authState = this.authService.getAuthStateValue?.();
-    return !!this.member
-      && ((!!authState?.memberKey && authState.memberKey === this.member.memberKey)
-        || (!!authState?.userKey && authState.userKey === this.member.userKey));
-  }
-
-  get canManageProfileVerification(): boolean {
-    return !this.isCreate
-      && this.profileVerificationEnabled
-      && !this.isCurrentUserMember
-      && this.permissionService.isReviewer();
-  }
-
-
-  get profileVerificationActionIcon(): string {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'pi pi-times'
-      : 'pi pi-verified';
-  }
-
-  get profileVerificationActionTooltip(): string {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'Зняти верифікацію профілю'
-      : 'Верифікувати профіль';
-  }
-
-  get profileVerificationActionSeverity(): 'success' | 'secondary' {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'secondary'
-      : 'success';
-  }
-
-  onProfileVerificationAction(): void {
-    if (!this.canManageProfileVerification || this.profileVerificationSubmitting || !this.memberKey) {
-      return;
-    }
-
-    if (this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent) {
-      this.confirmationService.confirm({
-        header: 'Зняти верифікацію профілю',
-        message: 'Зняти верифікацію з профілю цього учасника?',
-        icon: 'pi pi-exclamation-triangle',
-        rejectLabel: 'Скасувати',
-        rejectButtonProps: {
-          label: 'Скасувати',
-          severity: 'secondary',
-          outlined: true
-        },
-        acceptButtonProps: {
-          label: 'Зняти',
-          severity: 'danger'
-        },
-        accept: () => this.executeResetProfileVerification()
-      });
-      return;
-    }
-
-    this.executeVerifyProfile();
-  }
-
-  private executeVerifyProfile(): void {
-    if (!this.memberKey) {
-      return;
-    }
-
-    this.profileVerificationSubmitting = true;
-    this.profileVerificationMessage = null;
-
-    this.memberService
-      .verifyProfile(this.memberKey, null)
-      .pipe(finalize(() => {
-        this.profileVerificationSubmitting = false;
-      }))
-      .subscribe({
-        next: (member) => {
-          this.member = {
-            ...member,
-            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
-            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
-              ...history,
-              dateAchieved: parseDateOnlyString(history.dateAchieved)
-            }))
-          };
-          this.memberWarnings = this.member.warnings ?? [];
-          this.profileVerificationMessageSeverity = 'success';
-          this.profileVerificationMessage = 'Профіль верифіковано.';
-        },
-        error: (error) => {
-          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
-          this.profileVerificationMessage = error?.status === 400
-            ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : failureDetail(error, 'Не вдалося верифікувати профіль. Спробуй ще раз.');
-        }
-      });
-  }
-
-  private executeResetProfileVerification(): void {
-    if (!this.memberKey) {
-      return;
-    }
-
-    this.profileVerificationSubmitting = true;
-    this.profileVerificationMessage = null;
-
-    this.memberService
-      .resetProfileVerification(this.memberKey)
-      .pipe(finalize(() => {
-        this.profileVerificationSubmitting = false;
-      }))
-      .subscribe({
-        next: (member) => {
-          this.member = {
-            ...member,
-            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
-            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
-              ...history,
-              dateAchieved: parseDateOnlyString(history.dateAchieved)
-            }))
-          };
-          this.memberWarnings = this.member.warnings ?? [];
-          this.profileVerificationMessageSeverity = 'success';
-          this.profileVerificationMessage = 'Верифікацію профілю знято.';
-        },
-        error: (error) => {
-          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
-          this.profileVerificationMessage = error?.status === 400
-            ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : failureDetail(error, 'Не вдалося зняти верифікацію. Спробуй ще раз.');
-        }
-      });
   }
 
   private loadProfileVerificationToggle(kurinKey: string | null | undefined): void {
@@ -498,100 +357,8 @@ export class UpsertMemberComponent implements OnInit {
     return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin());
   }
 
-  private isWarningActive(warning: MemberWarningDto, now: Date): boolean {
-    if (warning.revokedAtUtc) {
-      return false;
-    }
-
-    const expiresAt = parseUtcDateTime(warning.expiresAtUtc)?.getTime() ?? 0;
-    return expiresAt > now.getTime();
-  }
-
-  getActiveWarning(level: MemberWarningLevel): MemberWarningDto | null {
-    if (this.warningsToAssign.has(level)) {
-      return {
-        memberWarningKey: 'dummy',
-        memberKey: this.memberKey,
-        level: level,
-        issuedAtUtc: new Date().toISOString(),
-        expiresAtUtc: new Date(Date.now() + 86400000).toISOString(),
-        issuedByUserKey: this.authService.getAuthStateValue()?.userKey ?? ''
-      } as MemberWarningDto;
-    }
-
-    const now = new Date();
-    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, now));
-    if (warning && !this.warningsToCancel.has(warning.memberWarningKey)) {
-      return warning;
-    }
-
-    return null;
-  }
-
-  isWarningChecked(level: MemberWarningLevel): boolean {
-    return this.getActiveWarning(level) !== null;
-  }
-
-  canSelectWarning(level: MemberWarningLevel): boolean {
-    if (!this.canManageWarnings) {
-      return false;
-    }
-
-    if (level === MemberWarningLevel.Level1) {
-      return true;
-    }
-
-    if (level === MemberWarningLevel.Level2) {
-      return this.isWarningChecked(MemberWarningLevel.Level1);
-    }
-
-    return this.isWarningChecked(MemberWarningLevel.Level2);
-  }
-
-  canClearWarning(level: MemberWarningLevel): boolean {
-    if (this.warningsToAssign.has(level)) return true;
-
-    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
-    if (!warning) return false;
-
-    const currentUserKey = this.authService.getAuthStateValue()?.userKey?.toLowerCase();
-    return !!currentUserKey && warning.issuedByUserKey.toLowerCase() === currentUserKey;
-  }
-
-  isWarningBusy(level: MemberWarningLevel): boolean {
-    void level;
-    return false; // we don't have flight status for inline anymore
-  }
-
-  onWarningToggle(level: MemberWarningLevel, isChecked: boolean): void {
-    this.markFormDirty();
-    if (!this.memberKey) return;
-
-    if (isChecked) {
-      if (!this.canSelectWarning(level)) return;
-
-      const existing = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
-      if (existing && this.warningsToCancel.has(existing.memberWarningKey)) {
-        this.warningsToCancel.delete(existing.memberWarningKey);
-      } else {
-        this.warningsToAssign.add(level);
-      }
-    } else {
-      if (!this.canClearWarning(level)) return;
-
-      if (this.warningsToAssign.has(level)) {
-        this.warningsToAssign.delete(level);
-      } else {
-        const existing = this.getActiveWarning(level);
-        if (existing) {
-          this.warningsToCancel.add(existing.memberWarningKey);
-        }
-      }
-    }
-  }
-
   private ensurePlastLevelMap() {
-    this.levelsConfig.forEach(config => {
+    this.levelGroups.flatMap(group => group.levels).forEach(config => {
       let rec = this.member.plastLevelHistories.find(x => x.plastLevel === config.level);
       if (!rec) {
         rec = { plastLevel: config.level, dateAchieved: null };
@@ -606,28 +373,6 @@ export class UpsertMemberComponent implements OnInit {
     const filteredHistory = history.filter(x => x.dateAchieved != null);
     filteredHistory.forEach(x => x.dateAchieved = toDateOnlyString(x.dateAchieved));
     return filteredHistory;
-  }
-
-  private processPendingWarnings(memberKey: string): Observable<unknown[] | null> {
-    const tasks: Observable<unknown>[] = [];
-
-    for (const key of this.warningsToCancel) {
-      tasks.push(this.memberWarningService.cancelWarning(memberKey, key));
-    }
-
-    const levelsToAssign = Array.from(this.warningsToAssign).sort((left, right) => left.localeCompare(right));
-    for (const warningLevel of levelsToAssign) {
-      tasks.push(this.memberWarningService.assignWarning(memberKey, { level: warningLevel }));
-    }
-
-    if (tasks.length === 0) {
-      return of(null);
-    }
-
-    return from(tasks).pipe(
-      concatMap(task => task),
-      toArray()
-    );
   }
 
   submit(): void {
@@ -670,24 +415,11 @@ export class UpsertMemberComponent implements OnInit {
             life: 10000
           });
         }
-        this.processPendingWarnings(savedMember.memberKey).subscribe({
-          next: () => {
-            if (this.cameFromMember) {
-              this.location.back();
-            } else {
-              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
-            }
-          },
-          error: (warnErr) => {
-            console.error('Error processing warnings:', warnErr);
-            // Still navigate even if warnings failed partially
-            if (this.cameFromMember) {
-              this.location.back();
-            } else {
-              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
-            }
-          }
-        });
+        if (this.cameFromMember) {
+          this.location.back();
+        } else {
+          this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
+        }
       },
       error: (error) => {
         if (error instanceof HttpErrorResponse && error.error?.error === 'EmailTaken') {
@@ -745,7 +477,11 @@ export class UpsertMemberComponent implements OnInit {
       });
   }
 
-  fileChangeEvent(event: FileSelectEvent): void {
+  onPhotoPicked(event: Event): void {
+    this.fileChangeEvent({ files: (event.target as HTMLInputElement).files });
+  }
+
+  fileChangeEvent(event: { files?: ArrayLike<File> | null }): void {
     const file = event.files?.[0];
     if (!file) {
       console.warn('No file selected');
@@ -821,4 +557,12 @@ export class UpsertMemberComponent implements OnInit {
     form.markAsTouched();
     this.removeProfilePhoto = true;
   }
+}
+
+type LevelGroupKey = 'base' | 'upu' | 'usp' | 'ups';
+
+interface LevelGroup {
+  key: LevelGroupKey;
+  title: string;
+  levels: { level: PlastLevel; title: string }[];
 }

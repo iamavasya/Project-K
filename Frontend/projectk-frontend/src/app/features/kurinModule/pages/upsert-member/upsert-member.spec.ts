@@ -17,6 +17,7 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
 
 describe('UpsertMemberComponent', () => {
   let fixture: ComponentFixture<UpsertMemberComponent>;
@@ -305,38 +306,6 @@ describe('UpsertMemberComponent', () => {
       expect(component.canEditEmail()).toBeTrue();
     });
 
-    it('should verify profile from upsert member action', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.Unverified
-      }));
-      create();
-
-      component.onProfileVerificationAction();
-
-      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
-    });
-
-    it('should reset profile verification from upsert member action when profile is current', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
-      }));
-      create();
-      spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
-        options.accept?.();
-        return component.confirmationService;
-      });
-
-      component.onProfileVerificationAction();
-
-      expect(component.confirmationService.confirm).toHaveBeenCalled();
-      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
-    });
   });
 
   describe('submit - create mode', () => {
@@ -574,6 +543,52 @@ describe('UpsertMemberComponent', () => {
 
       expect(console.error).toHaveBeenCalledWith('Error updating member:', error);
       expect(routerSpy.navigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ступені', () => {
+    it('shows Пласт and УПЮ and offers the other улади', () => {
+      create();
+      expect(component.visibleLevelGroups.map(group => group.key)).toEqual(['base', 'upu']);
+      expect(component.hiddenLevelGroups.map(group => group.key)).toEqual(['usp', 'ups']);
+    });
+
+    it('keeps a улад with a saved date on screen', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        plastLevelHistories: [{ plastLevel: PlastLevel.Senior, dateAchieved: '2020-01-01' }]
+      }));
+      create();
+      expect(component.visibleLevelGroups.map(group => group.key)).toEqual(['base', 'upu', 'ups']);
+    });
+
+    it('adds a улад when asked', () => {
+      create();
+      component.showLevelGroup('usp');
+      expect(component.hiddenLevelGroups.map(group => group.key)).toEqual(['ups']);
+    });
+  });
+
+  describe('action bar', () => {
+    it('names the empty required fields in the order of the form', async () => {
+      setRouteParams({ groupKey });
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(component.missingFields).toEqual(['імʼя', 'по батькові', 'прізвище', 'дату народження', 'email', 'телефон']);
+    });
+
+    it('goes back to the card when an edit is cancelled', () => {
+      create();
+      component.cancel();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey]);
+    });
+
+    it('goes back to the group when a new member is cancelled', () => {
+      setRouteParams({ groupKey });
+      create();
+      component.cancel();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/group', groupKey]);
     });
   });
 
