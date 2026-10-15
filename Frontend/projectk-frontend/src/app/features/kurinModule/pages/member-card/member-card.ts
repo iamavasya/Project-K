@@ -57,7 +57,7 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../../functions/progress-status-labels.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { cardExtraLines, cardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
+import { cardExtraLines, cardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS, StandardCardField } from '../../models/card-fields.dto';
 import { GroupService } from '../../services/group-service/group.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
 import { GroupDto } from '../../models/group.dto';
@@ -591,7 +591,7 @@ export class MemberCardComponent implements OnInit {
   }
 
   /** A field the member's край leaves off the card is not shown as «не вказано» either. */
-  showsField(field: 'middleName' | 'phoneNumber'): boolean {
+  showsField(field: StandardCardField): boolean {
     return cardFieldMode(this.cardFields, field) !== 'hidden';
   }
 

@@ -78,6 +78,18 @@
                                 {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
                             </span>
                         </p>
+                        @if (showsField('address') && member.address) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Адреса: </span>
+                            <span class="member-summary-value">{{ member.address }}</span>
+                        </p>
+                        }
+                        @if (showsField('school') && member.school) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Школа: </span>
+                            <span class="member-summary-value">{{ member.school }}</span>
+                        </p>
+                        }
                         @for (line of cardExtras; track line.key) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">{{ line.label }}: </span>

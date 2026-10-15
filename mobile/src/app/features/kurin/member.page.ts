@@ -301,6 +301,11 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
                 </ion-item>
+                @for (row of privateRows(); track row.key) {
+                  <ion-item [attr.data-testid]="'card-' + row.key">
+                    <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
+                  </ion-item>
+                }
                 @for (row of extraRows(); track row.key) {
                   <ion-item [attr.data-testid]="'card-extra-' + row.key">
                     <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
@@ -585,6 +590,14 @@ export class MemberPage implements OnInit {
     return (m && plastLevelLabel(m)) || 'Ступінь не вказано';
   });
   protected readonly warning = computed(() => activeWarning(this.memberValue()?.warnings));
+  /** Address and school when known and the край keeps them on the card. */
+  protected readonly privateRows = computed(() => {
+    const card = this.cardFields() ?? DEFAULT_CARD_FIELDS;
+    const m = this.memberValue();
+    return ([['address', 'Адреса'], ['school', 'Школа']] as const)
+      .filter(([key]) => card.fields[key] !== 'hidden' && !!m?.[key])
+      .map(([key, label]) => ({ key, label, value: m![key]! }));
+  });
   /** The край's own fields that have a value on this card. */
   protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));
   protected readonly birthDate = computed(() => {

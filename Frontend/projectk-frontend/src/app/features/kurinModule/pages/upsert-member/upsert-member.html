@@ -56,10 +56,22 @@
                             <small class="member-form__error">Людині має бути щонайменше 6 років.</small>
                         }
                     </div>
+                    @if (fieldMode('school') !== 'hidden') {
+                        <div class="member-form__field member-form__field--wide">
+                            <label for="school">Школа
+                                @if (fieldMode('school') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
+                            </label>
+                            <input pInputText id="school" name="school"
+                                [(ngModel)]="member.school"
+                                [required]="fieldMode('school') === 'required'" #schoolCtrl="ngModel"
+                                [invalid]="schoolCtrl.invalid && (schoolCtrl.dirty || schoolCtrl.touched)"
+                                maxlength="200" autocomplete="off" />
+                        </div>
+                    }
                 </div>
             </section>
 
-            @if (canEditEmail() || fieldMode('phoneNumber') !== 'hidden') {
+            @if (canEditEmail() || fieldMode('phoneNumber') !== 'hidden' || fieldMode('address') !== 'hidden') {
                 <section class="kurin-tile member-form__tile">
                     <div class="lil-tile-head">
                         <div>
@@ -106,6 +118,18 @@
                                 @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
                                     <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
                                 }
+                            </div>
+                        }
+                        @if (fieldMode('address') !== 'hidden') {
+                            <div class="member-form__field member-form__field--full">
+                                <label for="address">Адреса
+                                    @if (fieldMode('address') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
+                                </label>
+                                <input pInputText id="address" name="address"
+                                    [(ngModel)]="member.address"
+                                    [required]="fieldMode('address') === 'required'" #addressCtrl="ngModel"
+                                    [invalid]="addressCtrl.invalid && (addressCtrl.dirty || addressCtrl.touched)"
+                                    maxlength="200" autocomplete="street-address" />
                             </div>
                         }
                     </div>

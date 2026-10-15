@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,12 @@ public class UpsertMemberRequest
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public DateOnly DateOfBirth { get; set; }
+    /// <summary>Left out keeps what is stored; sent empty clears it.</summary>
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string? Address { get; set; }
+
+    /// <summary>Left out keeps what is stored; sent empty clears it.</summary>
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string? School { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
 

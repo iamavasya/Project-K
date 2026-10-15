@@ -481,15 +481,33 @@ describe('UpsertMemberComponent', () => {
       expect(dto.cardExtras).toEqual({ visaUntil: '' });
     });
 
-    it('should send the loaded address and school back so the update does not blank them', () => {
+    it('should leave address and school out when they were not touched, so the server keeps them', async () => {
       memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
       create();
+      await fixture.whenStable();
 
       component.submit();
 
       const dto = memberServiceSpy.update.calls.mostRecent().args[1];
-      expect(dto.address).toBe('вул. Січових Стрільців, 5');
-      expect(dto.school).toBe('Ліцей №3');
+      expect(dto.address).toBeUndefined();
+      expect(dto.school).toBeUndefined();
+    });
+
+    it('should send address and school once edited, an emptied one as empty', async () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      component.member.address = '  Praha 3, Seifertova 1 ';
+      component.form().controls['address'].markAsDirty();
+      component.member.school = null;
+      component.form().controls['school'].markAsDirty();
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.address).toBe('Praha 3, Seifertova 1');
+      expect(dto.school).toBe('');
     });
 
     it('should convert Date to yyyy-MM-dd format', () => {

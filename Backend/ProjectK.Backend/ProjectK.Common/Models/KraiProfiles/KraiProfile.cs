@@ -73,6 +73,8 @@ public static class KraiCardFields
 
     public const string MiddleName = "middleName";
     public const string PhoneNumber = "phoneNumber";
+    public const string Address = "address";
+    public const string School = "school";
 
     /// <summary>
     /// The card's fields a край may make optional or hide, each with how it works without a
@@ -81,14 +83,18 @@ public static class KraiCardFields
     public static readonly IReadOnlyDictionary<string, string> Configurable = new Dictionary<string, string>
     {
         [MiddleName] = Required,
-        [PhoneNumber] = Required
+        [PhoneNumber] = Required,
+        [Address] = Optional,
+        [School] = Optional
     };
 
     /// <summary>How the card names its configurable fields to people.</summary>
     public static readonly IReadOnlyDictionary<string, string> Labels = new Dictionary<string, string>
     {
         [MiddleName] = "По батькові",
-        [PhoneNumber] = "Номер телефону"
+        [PhoneNumber] = "Номер телефону",
+        [Address] = "Адреса",
+        [School] = "Школа"
     };
 
     public static readonly IReadOnlyList<string> Modes = [Required, Optional, Hidden];
