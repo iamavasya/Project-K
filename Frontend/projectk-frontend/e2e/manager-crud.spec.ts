@@ -41,7 +41,7 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
 
     await expect(page.locator('h1')).toContainText(testFirstName, { timeout: 10000 });
 
-    await page.locator('.member-actions button').click();
+    await page.locator('.member-actions').getByRole('button', { name: 'Редагувати' }).click();
 
     await page.locator('input[name="middleName"]').fill('E2EMiddleEdited');
     const saveEditButton = page.getByRole('button', { name: 'Зберегти', exact: true });
@@ -50,7 +50,7 @@ describeRole('manager', 'Manager CRUD operations', ({ user }) => {
 
     await expect(page.locator('body')).toContainText('E2EMiddleEdited', { timeout: 10000 });
 
-    await page.locator('.member-actions button').click();
+    await page.locator('.member-actions').getByRole('button', { name: 'Редагувати' }).click();
 
     const deleteButton = page.getByRole('button', { name: 'Видалити профіль' });
     await expect(deleteButton).toBeEnabled();

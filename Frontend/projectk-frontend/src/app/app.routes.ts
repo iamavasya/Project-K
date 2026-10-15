@@ -8,6 +8,7 @@ import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
 import { dashboardMatchGuard } from './features/dashboardModule/guards/dashboard-match.guard';
+import { unsavedChangesGuard } from './shared/guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   // `/` is the dashboard for a person with a card and the welcome page for everyone else.
@@ -214,6 +215,7 @@ export const routes: Routes = [
   { 
     path: 'group/:groupKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canDeactivate: [unsavedChangesGuard],
     loadComponent: () => import('./features/kurinModule/pages/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Редагування учасника',
@@ -222,6 +224,7 @@ export const routes: Routes = [
   { 
     path: 'group/:groupKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canDeactivate: [unsavedChangesGuard],
     loadComponent: () => import('./features/kurinModule/pages/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Новий учасник',
@@ -232,6 +235,7 @@ export const routes: Routes = [
     // used, its :groupKey would be Guid.Empty.
     path: 'kurin/:kurinKey/member/upsert/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canDeactivate: [unsavedChangesGuard],
     loadComponent: () => import('./features/kurinModule/pages/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Редагування учасника',
@@ -246,6 +250,7 @@ export const routes: Routes = [
   {
     path: 'kurin/:kurinKey/member/upsert',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canDeactivate: [unsavedChangesGuard],
     loadComponent: () => import('./features/kurinModule/pages/upsert-member/upsert-member')
       .then(m => m.UpsertMemberComponent),
     title: 'Новий учасник',
