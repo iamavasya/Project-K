@@ -14,12 +14,6 @@ public static class MemberCardFields
 
     private const int MaxValueLength = 200;
 
-    private static readonly IReadOnlyDictionary<string, string> Labels = new Dictionary<string, string>
-    {
-        [KraiCardFields.MiddleName] = "По батькові",
-        [KraiCardFields.PhoneNumber] = "Номер телефону"
-    };
-
     /// <summary>The member's values of the край's own fields once this write lands.</summary>
     public sealed record Outcome(string? CardExtras, string? Error);
 
@@ -44,7 +38,7 @@ public static class MemberCardFields
 
         if (missing.Field is not null)
         {
-            return new Outcome(existing?.CardExtras, $"Поле «{Labels[missing.Field]}» обовʼязкове.");
+            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[missing.Field]}» обовʼязкове.");
         }
 
         var values = MemberCardExtras.Read(existing?.CardExtras);

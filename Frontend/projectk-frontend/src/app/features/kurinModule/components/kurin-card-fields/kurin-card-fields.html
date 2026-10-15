@@ -1,0 +1,17 @@
+@if (loaded()) {
+  <div class="archive-policy">
+    @for (field of fields(); track field.key) {
+      <div class="archive-policy__row">
+        <label class="archive-policy__switch" [for]="'card-field-' + field.key">
+          <p-toggleswitch
+            [inputId]="'card-field-' + field.key"
+            [ngModel]="!field.hidden"
+            (ngModelChange)="setShown(field.key, $event)" />
+          <span>{{ field.label }}</span>
+        </label>
+      </div>
+    } @empty {
+      <p class="archive-policy__days">Край вимагає всі поля картки, тож прибрати тут нічого.</p>
+    }
+  </div>
+}

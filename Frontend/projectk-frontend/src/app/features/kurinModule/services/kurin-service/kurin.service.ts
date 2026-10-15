@@ -3,7 +3,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { KurinDto } from '../../models/kurin.dto';
 import { KraiDto } from '../../models/krai.dto';
-import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS, KurinCardFieldDto } from '../../models/card-fields.dto';
 import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
 import { catchError, map, of, tap } from 'rxjs';
@@ -96,6 +96,18 @@ export class KurinService {
     ).pipe(
       map(profile => profile.cardFields ?? DEFAULT_CARD_FIELDS),
       catchError(() => of(DEFAULT_CARD_FIELDS))
+    );
+  }
+
+  /** The card fields the kurin may leave off, each saying whether it does. */
+  getHideableCardFields(kurinKey: string): Observable<KurinCardFieldDto[]> {
+    return this.http.get<KurinCardFieldDto[]>(`${this.apiUrl}/${kurinKey}/card-fields`);
+  }
+
+  /** Saves which of them the kurin hides; the forms read the narrowed card afresh. */
+  setHiddenCardFields(kurinKey: string, hidden: string[]): Observable<KurinCardFieldDto[]> {
+    return this.http.put<KurinCardFieldDto[]>(`${this.apiUrl}/${kurinKey}/card-fields`, { hidden }).pipe(
+      tap(() => this.cache.invalidate(`${KURIN_CACHE_PREFIX}card-fields:${kurinKey}`))
     );
   }
 

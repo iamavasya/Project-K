@@ -38,7 +38,14 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
     public async Task<KraiProfile?> GetForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
-        return kurin is null ? null : await GetForKraiAsync(kurin.KraiCode, cancellationToken);
+        if (kurin is null || await GetForKraiAsync(kurin.KraiCode, cancellationToken) is not { } profile)
+        {
+            return null;
+        }
+
+        // The край's profile is shared and cached; what the kurin leaves off its card is its own.
+        var hidden = KurinHiddenCardFields.Read(kurin.HiddenCardFields);
+        return hidden.Count == 0 ? profile : profile with { CardFields = profile.CardFields.HidingFor(hidden) };
     }
 
     private async Task<KraiProfile?> BuildAsync(string kraiCode, CancellationToken cancellationToken)

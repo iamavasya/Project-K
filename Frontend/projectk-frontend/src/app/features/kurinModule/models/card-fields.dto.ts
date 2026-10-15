@@ -15,6 +15,13 @@ export interface CardFieldsDto {
   extra: CardExtraFieldDto[];
 }
 
+/** A field a kurin may leave off its card: one its край makes optional, or adds without requiring. */
+export interface KurinCardFieldDto {
+  key: string;
+  label: string;
+  hidden: boolean;
+}
+
 /** The card as it is without a profile: name and phone asked for, nothing added. */
 export const DEFAULT_CARD_FIELDS: CardFieldsDto = {
   fields: { middleName: 'required', phoneNumber: 'required' },

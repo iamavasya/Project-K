@@ -36,6 +36,12 @@ public class Kurin(int? number) : Entity
 
     /// <summary>Days an archived task is kept before it is deleted for good; null keeps the archive forever.</summary>
     public int? TaskArchivePurgeAfterDays { get; set; } = 365;
+
+    /// <summary>
+    /// Card fields this kurin leaves off, as a JSON array of keys: only what its край lets a kurin
+    /// drop (see <c>KraiCardFieldsSettings.Hideable</c>). A kurin can narrow its край's card, never widen it.
+    /// </summary>
+    public string? HiddenCardFields { get; set; }
     public ICollection<Group> Groups { get; set; } = new List<Group>();
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();

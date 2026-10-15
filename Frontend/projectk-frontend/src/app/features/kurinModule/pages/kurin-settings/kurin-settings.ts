@@ -14,6 +14,7 @@ import { KurinDto } from '../../models/kurin.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AgendaCategoryManagerComponent } from '../../components/agenda-category-manager/agenda-category-manager';
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
+import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 
 @Component({
   selector: 'app-kurin-settings',
@@ -25,7 +26,8 @@ import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-po
     CheckboxModule,
     InputNumberModule,
     AgendaCategoryManagerComponent,
-    AgendaArchivePolicyComponent
+    AgendaArchivePolicyComponent,
+    KurinCardFieldsComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -39,6 +41,7 @@ export class KurinSettingsComponent implements OnInit {
   private readonly messages = inject(MessageService);
   /** The archive terms are part of the page and go out with its one «Зберегти». */
   private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
+  private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
 
   kurinKey = '';
   kurin: KurinDto | null = null;
@@ -121,7 +124,12 @@ export class KurinSettingsComponent implements OnInit {
     this.saving = true;
     this.errorMessage = null;
 
-    forkJoin([this.kurinService.updateKurin(request), archive ? archive.save() : of(undefined)]).subscribe({
+    const cardFields = this.cardFields();
+    forkJoin([
+      this.kurinService.updateKurin(request),
+      archive ? archive.save() : of(undefined),
+      cardFields ? cardFields.save() : of(undefined)
+    ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;

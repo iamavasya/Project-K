@@ -1254,6 +1254,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<string>("HiddenCardFields")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("KraiCode")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
