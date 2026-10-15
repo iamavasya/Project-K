@@ -91,6 +91,17 @@
       </div>
       <app-agenda-archive-policy #archivePolicy [kurinKey]="kurinKey" />
     </section>
+
+    <section class="kurin-tile" aria-labelledby="card-fields-title">
+      <div class="setting-copy">
+        <h2 id="card-fields-title">Поля картки</h2>
+        <p>
+          Поля, які край дозволяє не заповнювати. Вимкнене поле зникає з картки й форми в цьому
+          курені; уже записані значення лишаються.
+        </p>
+      </div>
+      <app-kurin-card-fields #cardFields [kurinKey]="kurinKey" />
+    </section>
   }
 
   <footer class="settings-actions">

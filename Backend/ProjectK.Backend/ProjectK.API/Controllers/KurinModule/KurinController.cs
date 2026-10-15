@@ -242,6 +242,39 @@ public class KurinController : ControllerBase
     }
 
     /// <summary>
+    /// The card fields the kurin may leave off: what its край makes optional or adds without
+    /// requiring. Each says whether the kurin hides it.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey}/card-fields")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetCardFields(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetKurinCardFieldsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Sets which of those fields the kurin hides; a field it may not hide is ignored.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPut("{kurinKey}/card-fields")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetCardFields(Guid kurinKey, [FromBody] SetKurinCardFieldsRequest body)
+    {
+        var response = await _mediator.Send(new SetKurinCardFieldsCommand(kurinKey, body.Hidden ?? []));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/card-fields</c>.</summary>
+    public sealed class SetKurinCardFieldsRequest
+    {
+        public List<string>? Hidden { get; set; }
+    }
+
+    /// <summary>
     /// Moves a kurin to another край. Admin-only; the number must be free in that край.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]

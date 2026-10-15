@@ -148,6 +148,49 @@ public class KraiProfileProviderTests
         result.Data!.KraiCode.Should().Be("cz");
     }
 
+    private const string PragueCard = """
+        {
+          "cardFields": {
+            "fields": { "middleName": "optional" },
+            "extra": [
+              { "key": "visaType", "label": "Тип візи", "required": true },
+              { "key": "note", "label": "Примітка" }
+            ]
+          }
+        }
+        """;
+
+    [Fact]
+    public async Task AKurin_NarrowsItsKraisCard_ButKeepsWhatTheKraiRequires()
+    {
+        Given("cz", PragueCard);
+        var kurin = new Kurin(5) { KraiCode = "cz", HiddenCardFields = """["middleName","note","visaType","phoneNumber"]""" };
+        _kurins.Setup(r => r.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);
+
+        var card = (await _provider.GetForKurinAsync(kurin.KurinKey))!.CardFields;
+
+        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
+        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
+        card.Extra.Select(field => field.Key).Should().Equal("visaType");
+        (await _provider.GetForKraiAsync("cz"))!.CardFields.Extra.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task AKurin_HidesOnlyWhatItMay()
+    {
+        Given("cz", PragueCard);
+        var kurin = new Kurin(5) { KraiCode = "cz" };
+        _kurins.Setup(r => r.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);
+        var handler = new SetKurinCardFieldsCommandHandler(_unitOfWork.Object, _provider, new Mock<IBackendCache>().Object);
+
+        var result = await handler.Handle(new SetKurinCardFieldsCommand(kurin.KurinKey, ["note", "visaType", "email"]), default);
+
+        kurin.HiddenCardFields.Should().Be("""["note"]""");
+        result.Data!.Should().Equal(
+            new KurinCardFieldResponse("middleName", "По батькові", false),
+            new KurinCardFieldResponse("note", "Примітка", true));
+    }
+
     [Fact]
     public async Task AMissingKurin_IsNotFound()
     {
