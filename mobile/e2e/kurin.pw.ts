@@ -233,8 +233,9 @@ test('shows one’s own card and edits it, adds a skill and an award', async ({ 
   await expect(head).toContainText('пл. уч.');
   await expect(head.getByLabel('Дані верифіковано')).toBeVisible();
   await expect(page.getByTestId('contacts')).toContainText('Дата народження');
-  // School and address stay on the record but are not shown yet.
-  await expect(page.getByTestId('contacts')).not.toContainText('Львівська гімназія №1');
+  // The card shows school and address to whoever may see them.
+  await expect(page.getByTestId('contacts')).toContainText('Львівська гімназія №1');
+  await expect(page.getByTestId('contacts')).toContainText('Львів, вул. Франка, 1');
   await expect(page.getByTestId('skills')).toContainText('Плавець');
   await expect(page.getByTestId('skills')).toContainText('очікує');
   await expect(page.getByTestId('probe').first()).toContainText('Підписано 1 з 3');

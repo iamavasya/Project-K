@@ -183,7 +183,8 @@ test('lets the Звʼязковий change a card in full: photo, email, сту�
   expect(sent).toMatch(/name="plastLevelHistories\[1\]\.plastLevel"\r\n\r\nRozviduvach/);
   expect(sent).toMatch(/name="plastLevelHistories\[0\]\.plastLevelHistoryKey"\r\n\r\npl-m2/);
   expect(sent).toMatch(/name="removeProfilePhoto"\r\n\r\nfalse/);
-  expect(sent).toMatch(/name="address"\r\n\r\nЛьвів, вул\. Франка, 1/);
+  // The address was not touched, so it is left out and the server keeps it.
+  expect(sent).not.toMatch(/name="address"/);
   await expect.poll(() => log.writes.find((w) => w.method === 'POST' && w.path === 'member/m2/warnings')?.body).toEqual({ level: 'Level2' });
   // Somebody else's пересторога is not touched.
   expect(log.writes.some((w) => w.method === 'DELETE' && w.path.startsWith('member/m2/warnings'))).toBe(false);
