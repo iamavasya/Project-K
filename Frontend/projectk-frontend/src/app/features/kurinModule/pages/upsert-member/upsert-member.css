@@ -149,6 +149,12 @@
     font-weight: 600;
 }
 
+.member-form__level-issue {
+    grid-column: 2 / -1;
+    margin-top: -0.5rem;
+    padding-bottom: 0.5rem;
+}
+
 .member-form__level-more {
     display: flex;
     flex-wrap: wrap;

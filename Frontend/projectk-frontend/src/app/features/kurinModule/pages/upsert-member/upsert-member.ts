@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormGroup, FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -31,6 +31,7 @@ import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT
 import { CountryCode } from 'libphonenumber-js';
 import { DEFAULT_PHONE_COUNTRY } from '../../../../shared/functions/phone.function';
 import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
+import { LeavesWithUnsavedChanges } from '../../../../shared/guards/unsaved-changes.guard';
 
 @Component({
   selector: 'app-upsert-member',
@@ -40,7 +41,7 @@ import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input'
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './upsert-member.css'
 })
-export class UpsertMemberComponent implements OnInit {
+export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
   readonly form = viewChild.required<NgForm>('form');
 
   member: MemberDto = {
@@ -78,6 +79,8 @@ export class UpsertMemberComponent implements OnInit {
   private readonly messages = inject(MessageService);
 
   private cameFromMember = false;
+  /** Saved or deleted: the page goes away on purpose, nothing to ask about. */
+  private done = false;
 
   isCreate = false;
   // Адреса, на яку пішов лист. Поки поле з нею не збігається, «надіслати ще раз» пошле на стару.
@@ -122,6 +125,8 @@ export class UpsertMemberComponent implements OnInit {
   private objectUrlToRevoke: string | null = null;
 
   defaultDateFormat = 'dd.mm.yy';
+  /** Ступені can't be dated ahead of today. */
+  readonly today = new Date();
 
   /** What the member's край asks of the card; the card as it always was until it loads. */
   cardFields: CardFieldsDto = DEFAULT_CARD_FIELDS;
@@ -286,6 +291,66 @@ export class UpsertMemberComponent implements OnInit {
     }
   }
 
+  /** Edits on screen that nobody saved. */
+  get hasUnsavedChanges(): boolean {
+    return !this.done && !!this.form()?.dirty;
+  }
+
+  confirmLeave(): boolean | Promise<boolean> {
+    if (!this.hasUnsavedChanges) {
+      return true;
+    }
+
+    return new Promise(resolve => this.confirmationService.confirm({
+      header: 'Вийти без збереження?',
+      message: 'Зміни в цій формі пропадуть.',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Лишитися', severity: 'secondary', variant: 'text' },
+      acceptButtonProps: { label: 'Вийти', severity: 'danger' },
+      accept: () => resolve(true),
+      reject: () => resolve(false)
+    }));
+  }
+
+  /** Closing or reloading the tab: the browser asks with its own words. */
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges) {
+      event.preventDefault();
+    }
+  }
+
+  /** What is wrong with a ступінь's date, or null: not before birth, not ahead of today, not before the one it follows in its улад. */
+  levelDateIssue(level: PlastLevel): string | null {
+    const date = toDateOnlyString(this.plastLevelMap[level]?.dateAchieved);
+    if (!date) {
+      return null;
+    }
+
+    const birth = toDateOnlyString(this.member.dateOfBirth);
+    if (birth && date < birth) {
+      return 'Раніше за дату народження.';
+    }
+    if (date > toDateOnlyString(new Date())!) {
+      return 'Ця дата ще не настала.';
+    }
+
+    const levels = this.levelGroups.find(group => group.levels.some(item => item.level === level))?.levels ?? [];
+    const before = levels.slice(0, levels.findIndex(item => item.level === level))
+      .filter(item => toDateOnlyString(this.plastLevelMap[item.level]?.dateAchieved))
+      .at(-1);
+    const beforeDate = before && toDateOnlyString(this.plastLevelMap[before.level].dateAchieved);
+    if (before && beforeDate && date < beforeDate) {
+      return `Раніше, ніж «${before.title}».`;
+    }
+
+    return null;
+  }
+
+  get hasLevelDateIssues(): boolean {
+    return this.levelGroups.some(group => group.levels.some(({ level }) => !!this.levelDateIssue(level)));
+  }
+
   markFormDirty() {
     this.form()?.form.markAsDirty();
   }
@@ -407,6 +472,7 @@ export class UpsertMemberComponent implements OnInit {
 
     saveObs.subscribe({
       next: (savedMember) => {
+        this.done = true;
         if (savedMember.invitationSent === false) {
           this.messages.add({
             severity: 'warn',
@@ -467,6 +533,7 @@ export class UpsertMemberComponent implements OnInit {
           accept: () => {
             this.memberService.delete(this.memberKey).subscribe({
               next: () => {
+                this.done = true;
                 this.router.navigate(this.scopeRoute());
               },
               error: (error) => {
@@ -531,7 +598,7 @@ export class UpsertMemberComponent implements OnInit {
 
     if (this.fileToUpload) {
       this.removeProfilePhoto = false;
-      form.markAsTouched();
+      form.markAsDirty();
     }
     else {
       console.warn('Nothing to upload (cropped image undefined)');
@@ -554,7 +621,7 @@ export class UpsertMemberComponent implements OnInit {
     this.fileToUpload = null;
     this.member.profilePhotoUrl = null;
 
-    form.markAsTouched();
+    form.markAsDirty();
     this.removeProfilePhoto = true;
   }
 }

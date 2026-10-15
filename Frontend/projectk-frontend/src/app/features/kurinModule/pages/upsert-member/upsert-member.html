@@ -152,7 +152,10 @@
                                     <label class="member-form__level-name" [for]="'level-' + level.level">{{ level.title }}</label>
                                     <p-datepicker class="member-form__level-date" [inputId]="'level-' + level.level" [name]="'level-' + level.level"
                                         [(ngModel)]="plastLevelMap[level.level].dateAchieved" (ngModelChange)="markFormDirty()"
-                                        [dateFormat]="defaultDateFormat" placeholder="Ще не здобуто" [showClear]="true" fluid />
+                                        [dateFormat]="defaultDateFormat" [maxDate]="today" placeholder="Ще не здобуто" [showClear]="true" fluid />
+                                    @if (levelDateIssue(level.level); as issue) {
+                                        <small class="member-form__error member-form__level-issue">{{ issue }}</small>
+                                    }
                                 </div>
                             }
                         </div>
@@ -207,6 +210,8 @@
         <span class="member-form__state">
             @if (form.invalid && missingFields.length) {
                 Заповни: {{ missingFields.join(', ') }}
+            } @else if (hasLevelDateIssues) {
+                Перевір дати ступенів
             } @else if (form.dirty || form.touched) {
                 <span class="member-form__pip" aria-hidden="true"></span>Є незбережені зміни
             } @else {
@@ -215,7 +220,7 @@
         </span>
         <p-button type="button" label="Скасувати" severity="secondary" variant="text" (onClick)="cancel()" />
         <p-button class="member-form__submit" type="button" [label]="isCreate ? 'Додати учасника' : 'Зберегти'" (onClick)="submit()"
-            [disabled]="form.invalid || (form.pristine && form.untouched)" />
+            [disabled]="form.invalid || hasLevelDateIssues || (form.pristine && form.untouched)" />
     </div>
 </form>
 

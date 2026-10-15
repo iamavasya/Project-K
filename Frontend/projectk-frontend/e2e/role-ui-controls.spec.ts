@@ -37,6 +37,14 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     });
 
     await expect(saveButton).toBeEnabled();
+
+    // Leaving with the form filled in asks first, and staying keeps what was typed.
+    await page.getByRole('button', { name: 'Скасувати', exact: true }).click();
+    const leave = page.getByRole('alertdialog', { name: 'Вийти без збереження?' });
+    await expect(leave).toBeVisible();
+    await leave.getByRole('button', { name: 'Лишитися' }).click();
+    await expect(page).toHaveURL(new RegExp(`/group/${groupKey}/member/upsert$`));
+    await expect(page.locator('input[name="firstName"]')).toHaveValue('E2EValidationFirst');
   });
 
   test('manager gives перестороги in order from the member card', async ({ page, request }) => {
