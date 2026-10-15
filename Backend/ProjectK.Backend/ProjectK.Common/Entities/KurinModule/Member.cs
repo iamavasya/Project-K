@@ -36,6 +36,14 @@ public class Member : Entity
     public string? Address { get; set; }
     public string? School { get; set; }
 
+    // Parents' contacts, as a kurin reaches a child's family. Private like the address.
+    public string? MotherFirstName { get; set; }
+    public string? MotherLastName { get; set; }
+    public string? MotherPhone { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherPhone { get; set; }
+
     /// <summary>
     /// Values of the card fields a край adds, as a JSON object by field key; see
     /// <c>MemberCardExtras</c>. Kept when the край drops a field, so bringing it back loses nothing.

@@ -33,6 +33,20 @@ public class UpsertMemberRequest
     /// <summary>Left out keeps what is stored; sent empty clears it.</summary>
     [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string? School { get; set; }
+
+    /// <summary>Parents' contacts: left out keeps what is stored; sent empty clears it.</summary>
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? MotherFirstName { get; set; }
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? MotherLastName { get; set; }
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? MotherPhone { get; set; }
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? FatherFirstName { get; set; }
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? FatherLastName { get; set; }
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string? FatherPhone { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
 
     /// <summary>Values of the край's own card fields, by key, sent as <c>cardExtras[key]</c>.</summary>

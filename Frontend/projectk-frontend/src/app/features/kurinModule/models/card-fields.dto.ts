@@ -23,11 +23,11 @@ export interface KurinCardFieldDto {
 }
 
 /** The card's own fields a край may change. */
-export type StandardCardField = 'middleName' | 'phoneNumber' | 'address' | 'school';
+export type StandardCardField = 'middleName' | 'phoneNumber' | 'address' | 'school' | 'parents';
 
-/** The card as it is without a profile: name and phone asked for, address and school offered, nothing added. */
+/** The card as it is without a profile: name and phone asked for, address, school and parents offered, nothing added. */
 export const DEFAULT_CARD_FIELDS: CardFieldsDto = {
-  fields: { middleName: 'required', phoneNumber: 'required', address: 'optional', school: 'optional' },
+  fields: { middleName: 'required', phoneNumber: 'required', address: 'optional', school: 'optional', parents: 'optional' },
   extra: []
 };
 

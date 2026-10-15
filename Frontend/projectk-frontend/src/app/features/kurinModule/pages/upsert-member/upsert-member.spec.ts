@@ -510,6 +510,24 @@ describe('UpsertMemberComponent', () => {
       expect(dto.school).toBe('');
     });
 
+    it('should send only the parents\' fields that were edited', async () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, motherFirstName: 'Олена', motherPhone: '+380501234567' }));
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      component.member.fatherFirstName = ' Петро ';
+      component.form().controls['fatherFirstName'].markAsDirty();
+      component.member.motherPhone = '';
+      component.form().controls['motherPhone'].markAsDirty();
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.fatherFirstName).toBe('Петро');
+      expect(dto.motherPhone).toBe('');
+      expect(dto.motherFirstName).toBeUndefined();
+    });
+
     it('should convert Date to yyyy-MM-dd format', () => {
       create();
       // Use noon to avoid timezone shifts

@@ -191,6 +191,7 @@ public class KraiProfileProviderTests
             new KurinCardFieldResponse("middleName", "По батькові", false),
             new KurinCardFieldResponse("address", "Адреса", false),
             new KurinCardFieldResponse("school", "Школа", false),
+            new KurinCardFieldResponse("parents", "Контакти батьків", false),
             new KurinCardFieldResponse("note", "Примітка", true));
     }
 

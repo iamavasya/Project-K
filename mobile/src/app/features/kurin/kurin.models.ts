@@ -119,6 +119,12 @@ export interface MemberDto extends MemberLookupDto {
   email: string;
   address?: string | null;
   school?: string | null;
+  motherFirstName?: string | null;
+  motherLastName?: string | null;
+  motherPhone?: string | null;
+  fatherFirstName?: string | null;
+  fatherLastName?: string | null;
+  fatherPhone?: string | null;
   mentoredGroups?: { groupKey: string; name: string }[];
   awards?: MemberAwardDto[];
   profileVerifiedAtUtc?: string | null;
@@ -165,7 +171,7 @@ export interface CardExtraField {
 }
 
 export interface CardFields {
-  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode; address: CardFieldMode; school: CardFieldMode };
+  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode; address: CardFieldMode; school: CardFieldMode; parents: CardFieldMode };
   extra: CardExtraField[];
 }
 

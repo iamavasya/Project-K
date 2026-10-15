@@ -76,6 +76,12 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         {
             response.Address = string.Empty;
             response.School = string.Empty;
+            response.MotherFirstName = string.Empty;
+            response.MotherLastName = string.Empty;
+            response.MotherPhone = string.Empty;
+            response.FatherFirstName = string.Empty;
+            response.FatherLastName = string.Empty;
+            response.FatherPhone = string.Empty;
             response.CardExtras = new Dictionary<string, string>();
         }
 

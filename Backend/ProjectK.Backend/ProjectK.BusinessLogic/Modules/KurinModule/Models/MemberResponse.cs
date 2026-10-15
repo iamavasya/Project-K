@@ -67,6 +67,12 @@ public class MemberResponse
     public DateOnly? DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+    public string? MotherFirstName { get; set; }
+    public string? MotherLastName { get; set; }
+    public string? MotherPhone { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherPhone { get; set; }
 
     /// <summary>Values of the край's own card fields, by key; empty when the viewer may not see them.</summary>
     public IDictionary<string, string> CardExtras { get; set; } = new Dictionary<string, string>();

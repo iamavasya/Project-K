@@ -341,6 +341,26 @@ export class MemberCardComponent implements OnInit {
     return phoneHref(this.member?.phoneNumber);
   }
 
+  /** Mother's and father's lines on the card, only those with something filled in. */
+  get parentLines(): { label: string; name: string; phone: string; phoneLink: string | null }[] {
+    const member = this.member;
+    if (!member || !this.showsField('parents')) {
+      return [];
+    }
+
+    return [
+      { label: 'Мама', first: member.motherFirstName, last: member.motherLastName, phone: member.motherPhone },
+      { label: 'Тато', first: member.fatherFirstName, last: member.fatherLastName, phone: member.fatherPhone }
+    ]
+      .map(parent => ({
+        label: parent.label,
+        name: [parent.first, parent.last].filter(Boolean).join(' '),
+        phone: formatPhone(parent.phone),
+        phoneLink: phoneHref(parent.phone)
+      }))
+      .filter(parent => parent.name || parent.phone);
+  }
+
   get emailLink(): string | null {
     return emailHref(this.member?.email);
   }

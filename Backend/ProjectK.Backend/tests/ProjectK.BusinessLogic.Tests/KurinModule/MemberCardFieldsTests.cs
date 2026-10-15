@@ -37,6 +37,9 @@ public class MemberCardFieldsTests
         PhoneNumber = "+420 777 000 111",
         Address = "Praha 3, Seifertova 1",
         School = "ZŠ Praha 3",
+        MotherFirstName = "Olena",
+        MotherLastName = "Petrenko",
+        MotherPhone = "+420777000222",
         CardExtras = cardExtras
     };
 
@@ -170,6 +173,48 @@ public class MemberCardFieldsTests
     {
         KraiCardFieldsSettings.Default.ModeOf(KraiCardFields.Address).Should().Be(KraiCardFields.Optional);
         KraiCardFieldsSettings.Default.Hideable().Select(field => field.Key)
-            .Should().BeEquivalentTo([KraiCardFields.Address, KraiCardFields.School]);
+            .Should().BeEquivalentTo([KraiCardFields.Address, KraiCardFields.School, KraiCardFields.Parents]);
+    }
+
+    [Fact]
+    public void ParentsLeftOut_KeepWhatTheMemberHad_AndAnEmptyValueClears()
+    {
+        var request = Write(new() { ["visaType"] = "D" });
+        request.MotherPhone = "";
+        request.FatherFirstName = " Petro ";
+
+        MemberCardFields.Apply(Prague, request, Existing(null)).Error.Should().BeNull();
+
+        request.MotherFirstName.Should().Be("Olena");
+        request.MotherPhone.Should().BeNull();
+        request.FatherFirstName.Should().Be("Petro");
+        request.FatherPhone.Should().BeNull();
+    }
+
+    [Fact]
+    public void HiddenParents_KeepWhatTheMemberHad()
+    {
+        var card = new KraiCardFieldsSettings(
+            new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Hidden }, []);
+        var request = Write(middleName: "I", phone: "+420777000111");
+        request.MotherFirstName = "Someone";
+
+        MemberCardFields.Apply(card, request, Existing(null)).Error.Should().BeNull();
+
+        request.MotherFirstName.Should().Be("Olena");
+    }
+
+    [Fact]
+    public void RequiredParents_NeedAtLeastOnePhone()
+    {
+        var card = new KraiCardFieldsSettings(
+            new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Required }, []);
+        var request = Write(middleName: "I", phone: "+420777000111");
+        request.MotherFirstName = "Olena";
+
+        MemberCardFields.Apply(card, request, null).Error.Should().Be("Поле «Контакти батьків» обовʼязкове.");
+
+        request.FatherPhone = "+420777000333";
+        MemberCardFields.Apply(card, request, null).Error.Should().BeNull();
     }
 }

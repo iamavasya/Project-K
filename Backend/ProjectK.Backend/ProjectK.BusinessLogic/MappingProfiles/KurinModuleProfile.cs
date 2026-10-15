@@ -89,6 +89,13 @@ public class KurinModuleProfile : Profile
             // the code is something one person hands over, not something a roster hands out.
             .ForMember(dest => dest.PublicId, opt => opt.Ignore())
             .ForMember(dest => dest.CardExtras, opt => opt.Ignore())
+            // Parents' contacts are read on one member's card, never with a roster.
+            .ForMember(dest => dest.MotherFirstName, opt => opt.Ignore())
+            .ForMember(dest => dest.MotherLastName, opt => opt.Ignore())
+            .ForMember(dest => dest.MotherPhone, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherFirstName, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherLastName, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherPhone, opt => opt.Ignore())
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())

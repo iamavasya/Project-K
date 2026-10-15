@@ -21,6 +21,12 @@ public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWr
     public DateOnly DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+    public string? MotherFirstName { get; set; }
+    public string? MotherLastName { get; set; }
+    public string? MotherPhone { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherPhone { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
 
     /// <summary>Values of the край's own card fields, by key. A key left out keeps its value.</summary>

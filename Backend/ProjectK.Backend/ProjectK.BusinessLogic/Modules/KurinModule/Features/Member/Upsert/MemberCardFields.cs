@@ -47,6 +47,21 @@ public static class MemberCardFields
         request.Address = EmptyAsNull(request.Address);
         request.School = EmptyAsNull(request.School);
 
+        // Parents' contacts are private the same way, each value on its own.
+        var parentsHidden = card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Hidden;
+        request.MotherFirstName = EmptyAsNull(parentsHidden || request.MotherFirstName is null ? existing?.MotherFirstName : request.MotherFirstName);
+        request.MotherLastName = EmptyAsNull(parentsHidden || request.MotherLastName is null ? existing?.MotherLastName : request.MotherLastName);
+        request.MotherPhone = EmptyAsNull(parentsHidden || request.MotherPhone is null ? existing?.MotherPhone : request.MotherPhone);
+        request.FatherFirstName = EmptyAsNull(parentsHidden || request.FatherFirstName is null ? existing?.FatherFirstName : request.FatherFirstName);
+        request.FatherLastName = EmptyAsNull(parentsHidden || request.FatherLastName is null ? existing?.FatherLastName : request.FatherLastName);
+        request.FatherPhone = EmptyAsNull(parentsHidden || request.FatherPhone is null ? existing?.FatherPhone : request.FatherPhone);
+
+        var parentNames = new[] { request.MotherFirstName, request.MotherLastName, request.FatherFirstName, request.FatherLastName };
+        if (parentNames.Any(name => name?.Length > MaxValueLength))
+        {
+            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[KraiCardFields.Parents]}» задовге.");
+        }
+
         if (request.Address?.Length > MaxValueLength || request.School?.Length > MaxValueLength)
         {
             var field = request.Address?.Length > MaxValueLength ? KraiCardFields.Address : KraiCardFields.School;
@@ -61,6 +76,13 @@ public static class MemberCardFields
                 (Field: KraiCardFields.School, Value: request.School)
             }
             .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFields.Required && string.IsNullOrWhiteSpace(field.Value));
+
+        // Required parents' contacts mean at least one parent the kurin can call.
+        if (missing.Field is null && card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Required
+            && request.MotherPhone is null && request.FatherPhone is null)
+        {
+            missing.Field = KraiCardFields.Parents;
+        }
 
         if (missing.Field is not null)
         {

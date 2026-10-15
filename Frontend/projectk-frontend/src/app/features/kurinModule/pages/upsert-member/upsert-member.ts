@@ -247,15 +247,16 @@ export class UpsertMemberComponent implements OnInit {
     return initials(this.member.firstName, this.member.lastName);
   }
 
-  private privateFieldValue(field: 'address' | 'school'): string | undefined {
+  private privateFieldValue(field: PrivateField): string | undefined {
     const changed = this.isCreate || !!this.form()?.controls[field]?.dirty;
-    return changed && this.fieldMode(field) !== 'hidden' ? (this.member[field] ?? '').trim() : undefined;
+    const mode = this.fieldMode(PARENT_FIELDS.includes(field) ? 'parents' : field as 'address' | 'school');
+    return changed && mode !== 'hidden' ? (this.member[field] ?? '').trim() : undefined;
   }
 
   /** The required fields still empty or wrong, named as the form names them. */
   get missingFields(): string[] {
     const controls = this.form()?.controls ?? {};
-    const order = ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'school', 'email', 'phoneNumber', 'address'];
+    const order = ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'school', 'email', 'phoneNumber', 'address', 'motherPhone', 'fatherPhone'];
     const rank = (name: string) => order.includes(name) ? order.indexOf(name) : order.length;
     return Object.entries(controls)
       .filter(([, control]) => control.invalid)
@@ -275,6 +276,8 @@ export class UpsertMemberComponent implements OnInit {
       phoneNumber: 'телефон',
       address: 'адресу',
       school: 'школу',
+      motherPhone: 'телефон мами',
+      fatherPhone: 'телефон тата',
     };
     if (labels[name]) {
       return labels[name];
@@ -395,6 +398,7 @@ export class UpsertMemberComponent implements OnInit {
       // Left out, the server keeps what it has; sent empty, it clears them.
       address: this.privateFieldValue('address'),
       school: this.privateFieldValue('school'),
+      ...Object.fromEntries(PARENT_FIELDS.map(field => [field, this.privateFieldValue(field)])),
       cardExtras: this.cardExtrasPayload(),
     };
 
@@ -567,6 +571,11 @@ export class UpsertMemberComponent implements OnInit {
 }
 
 type LevelGroupKey = 'base' | 'upu' | 'usp' | 'ups';
+
+type ParentField = 'motherFirstName' | 'motherLastName' | 'motherPhone' | 'fatherFirstName' | 'fatherLastName' | 'fatherPhone';
+type PrivateField = 'address' | 'school' | ParentField;
+
+const PARENT_FIELDS: PrivateField[] = ['motherFirstName', 'motherLastName', 'motherPhone', 'fatherFirstName', 'fatherLastName', 'fatherPhone'];
 
 interface LevelGroup {
   key: LevelGroupKey;

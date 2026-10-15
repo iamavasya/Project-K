@@ -100,7 +100,15 @@ const FIELDS: FormField[] = [
   { key: 'dateOfBirth', label: 'Дата народження', type: 'date', autocomplete: 'bday' },
   { key: 'address', label: 'Адреса', type: 'text', autocomplete: 'street-address' },
   { key: 'school', label: 'Школа', type: 'text', autocomplete: 'off' },
+  { key: 'motherFirstName', label: 'Імʼя мами', type: 'text', autocomplete: 'off' },
+  { key: 'motherLastName', label: 'Прізвище мами', type: 'text', autocomplete: 'off' },
+  { key: 'motherPhone', label: 'Телефон мами', type: 'tel', autocomplete: 'off' },
+  { key: 'fatherFirstName', label: 'Імʼя тата', type: 'text', autocomplete: 'off' },
+  { key: 'fatherLastName', label: 'Прізвище тата', type: 'text', autocomplete: 'off' },
+  { key: 'fatherPhone', label: 'Телефон тата', type: 'tel', autocomplete: 'off' },
 ];
+
+const PARENT_PHONES = ['motherPhone', 'fatherPhone'] as const;
 
 /** A field the край requires comes back in the server's own words, which name it. */
 function saveErrorText(error: unknown, fallback: string): string {
@@ -391,7 +399,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   /** Web isReviewer: Виховник and up. */
   private readonly reviewer = this.access.reviewSkills;
 
-  protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '' });
+  protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '',
+    motherFirstName: '', motherLastName: '', motherPhone: '', fatherFirstName: '', fatherLastName: '', fatherPhone: '' });
   protected readonly card = signal<CardFields>(DEFAULT_CARD_FIELDS);
   /** Where a number typed without «+» is read: the kurin's край. */
   private readonly phoneCountry = signal<CountryCode>(DEFAULT_PHONE_COUNTRY);
@@ -475,6 +484,12 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       dateOfBirth: (m.dateOfBirth ?? '').slice(0, 10),
       address: m.address ?? '',
       school: m.school ?? '',
+      motherFirstName: m.motherFirstName ?? '',
+      motherLastName: m.motherLastName ?? '',
+      motherPhone: formatPhone(m.motherPhone),
+      fatherFirstName: m.fatherFirstName ?? '',
+      fatherLastName: m.fatherLastName ?? '',
+      fatherPhone: formatPhone(m.fatherPhone),
     });
     const dates = rankDates(m.plastLevelHistories);
     this.dates.set(dates);
@@ -514,7 +529,9 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     const value = this.form()[key].trim();
     if (!value) return fieldMode(this.card(), key) === 'optional';
     if (key === 'email') return looksLikeEmail(value);
-    if (key === 'phoneNumber') return value === formatPhone(this.member?.phoneNumber) || isPossiblePhone(value, this.phoneCountry());
+    if (key === 'phoneNumber' || key === 'motherPhone' || key === 'fatherPhone') {
+      return value === formatPhone(this.member?.[key]) || isPossiblePhone(value, this.phoneCountry());
+    }
     if (key === 'dateOfBirth') return /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= this.today && oldEnough(value, this.today);
     return true;
   }
@@ -734,8 +751,13 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   private storedForm(): MemberForm {
     const form = this.form();
     // A number left as it was goes back as it was, even one older than the rule.
-    const unchanged = this.member && form.phoneNumber === formatPhone(this.member.phoneNumber);
-    return { ...form, phoneNumber: unchanged ? (this.member?.phoneNumber ?? '') : toStoredPhone(form.phoneNumber, this.phoneCountry()) };
+    const stored = (key: 'phoneNumber' | (typeof PARENT_PHONES)[number]) =>
+      this.member && form[key] === formatPhone(this.member[key]) ? (this.member[key] ?? '') : toStoredPhone(form[key], this.phoneCountry());
+    return {
+      ...form,
+      phoneNumber: stored('phoneNumber'),
+      ...Object.fromEntries(PARENT_PHONES.map((key) => [key, stored(key)])),
+    };
   }
 
   /** The перестороги after the profile, one by one as the web does; false when any call failed. */

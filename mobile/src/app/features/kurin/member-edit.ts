@@ -176,9 +176,9 @@ export function warningCalls(draft: WarningDraft): ({ kind: 'cancel'; key: strin
 
 // ── Поля картки (профіль краю) ───────────────────────────────────────────────────────────────────
 
-/** A kurin whose край has no profile asks for what the card always asked: name and phone, address and school if known. */
+/** A kurin whose край has no profile asks for what the card always asked: name and phone, address, school and parents if known. */
 export const DEFAULT_CARD_FIELDS: CardFields = {
-  fields: { middleName: 'required', phoneNumber: 'required', address: 'optional', school: 'optional' },
+  fields: { middleName: 'required', phoneNumber: 'required', address: 'optional', school: 'optional', parents: 'optional' },
   extra: [],
 };
 
@@ -202,15 +202,27 @@ export function cardFieldsOf(profile: KraiProfileCardFields | null | undefined):
     return CARD_FIELD_MODES.includes(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
   };
   return {
-    fields: { middleName: mode('middleName'), phoneNumber: mode('phoneNumber'), address: mode('address'), school: mode('school') },
+    fields: { middleName: mode('middleName'), phoneNumber: mode('phoneNumber'), address: mode('address'), school: mode('school'), parents: mode('parents') },
     extra: (section?.extra ?? [])
       .filter((field) => !!field?.key && !!field.label)
       .map((field) => ({ key: field.key!, label: field.label!, type: field.type === 'date' ? 'date' : 'text', required: !!field.required })),
   };
 }
 
-/** Middle name, phone, address and school as the край says; the rest of the form is always asked. */
+/** The parents' contacts: one block of the card, each value on its own optional. */
+export const PARENT_FIELDS = ['motherFirstName', 'motherLastName', 'motherPhone', 'fatherFirstName', 'fatherLastName', 'fatherPhone'] as const;
+
+export type ParentField = (typeof PARENT_FIELDS)[number];
+
+const isParentField = (key: string): key is ParentField => (PARENT_FIELDS as readonly string[]).includes(key);
+
+/**
+ * Middle name, phone, address, school and parents as the край says; the rest of the form is always
+ * asked. A parent's single value is never required on its own: required parents mean one phone (the
+ * server says so in its own words).
+ */
 export function fieldMode(card: CardFields, key: keyof MemberForm): CardFieldMode {
+  if (isParentField(key)) return card.fields.parents === 'hidden' ? 'hidden' : 'optional';
   return key in card.fields ? card.fields[key as StandardField] : 'required';
 }
 
@@ -271,6 +283,12 @@ export interface MemberForm {
   dateOfBirth: string;
   address: string;
   school: string;
+  motherFirstName: string;
+  motherLastName: string;
+  motherPhone: string;
+  fatherFirstName: string;
+  fatherLastName: string;
+  fatherPhone: string;
 }
 
 export interface PhotoChange {
@@ -283,7 +301,7 @@ export interface PhotoChange {
 
 /**
  * The multipart body of `PUT member/{key}`, as the web's MemberService.buildFormData lays it out.
- * The address and school go only when changed: they are private, so someone who could not see them
+ * The address, school and parents' contacts go only when changed: they are private, so someone who could not see them
  * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
 export function memberFormData(
@@ -295,7 +313,7 @@ export function memberFormData(
 ): FormData {
   const body = new FormData();
   appendProfile(body, form, histories, extras);
-  for (const key of ['address', 'school'] as const) {
+  for (const key of ['address', 'school', ...PARENT_FIELDS] as const) {
     if (form[key].trim() !== (member[key] ?? '').trim()) body.append(key, form[key].trim());
   }
   body.append('removeProfilePhoto', String(photo.remove && !photo.blob));
@@ -323,8 +341,9 @@ export function newMemberFormData(
   else body.append('kurinKey', placement.kurinKey);
   body.append('createUserAccount', 'true');
   appendProfile(body, form, histories, extras);
-  if (form.address.trim()) body.append('address', form.address.trim());
-  if (form.school.trim()) body.append('school', form.school.trim());
+  for (const key of ['address', 'school', ...PARENT_FIELDS] as const) {
+    if (form[key].trim()) body.append(key, form[key].trim());
+  }
   if (photo.blob) body.append('blob', photo.blob, photo.name);
   return body;
 }

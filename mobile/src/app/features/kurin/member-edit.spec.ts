@@ -27,7 +27,7 @@ import {
 
 const now = Date.parse('2026-10-10T12:00:00Z');
 const visaCard: CardFields = {
-  fields: { middleName: 'hidden', phoneNumber: 'optional', address: 'optional', school: 'hidden' },
+  fields: { middleName: 'hidden', phoneNumber: 'optional', address: 'optional', school: 'hidden', parents: 'optional' },
   extra: [
     { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
     { key: 'visaUntil', label: 'Віза до', type: 'date', required: false },
@@ -37,6 +37,8 @@ const warning = (key: string, level: MemberWarningDto['level'], issuedBy: string
   memberWarningKey: key, level, issuedAtUtc: '2026-09-01T00:00:00Z', expiresAtUtc: '2026-12-01T00:00:00Z', issuedByUserKey: issuedBy, ...extra,
 });
 
+
+const NO_PARENTS = { motherFirstName: '', motherLastName: '', motherPhone: '', fatherFirstName: '', fatherLastName: '', fatherPhone: '' };
 describe('member edit rules', () => {
   it('shows the email only without a claimed account, or to an admin', () => {
     expect(canEditEmail({ userKey: null }, false)).toBe(true);
@@ -104,26 +106,28 @@ describe('member edit rules', () => {
     const photo = new Blob(['x'], { type: 'image/jpeg' });
     const body = memberFormData(
       member,
-      { firstName: ' Остап ', middleName: 'Петрович', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '+380', dateOfBirth: '2012-03-14', address: 'Львів', school: ' Ліцей 3 ' },
+      { firstName: ' Остап ', middleName: 'Петрович', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '+380', dateOfBirth: '2012-03-14', address: 'Львів', school: ' Ліцей 3 ', ...NO_PARENTS, motherPhone: '+420777000222' },
       [{ plastLevelHistoryKey: 'pl1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23T00:00:00' }],
       { blob: photo, name: 'me.jpg', remove: false },
     );
     expect(body.get('firstName')).toBe('Остап');
     expect(body.has('address')).toBe(false);
     expect(body.get('school')).toBe('Ліцей 3');
+    expect(body.get('motherPhone')).toBe('+420777000222');
+    expect(body.has('motherFirstName')).toBe(false);
     expect(body.get('plastLevelHistories[0].dateAchieved')).toBe('2022-04-23');
     expect(body.get('plastLevelHistories[0].plastLevelHistoryKey')).toBe('pl1');
     expect(body.get('removeProfilePhoto')).toBe('false');
     expect((body.get('blob') as File).name).toBe('me.jpg');
 
-    const cleared = memberFormData(member, { firstName: 'a', middleName: 'b', lastName: 'c', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '' }, [], { blob: null, name: '', remove: true });
+    const cleared = memberFormData(member, { firstName: 'a', middleName: 'b', lastName: 'c', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '', ...NO_PARENTS }, [], { blob: null, name: '', remove: true });
     expect(cleared.get('removeProfilePhoto')).toBe('true');
     expect(cleared.get('address')).toBe('');
     expect(cleared.has('blob')).toBe(false);
   });
 
   it('builds a new member’s body with its place and an account, as the web’s create does', () => {
-    const form = { firstName: 'Марта ', middleName: 'Іванівна', lastName: 'Шевчук', email: ' marta@example.com ', phoneNumber: '+380 67 111 22 33', dateOfBirth: '2013-05-02', address: ' Київ ', school: '' };
+    const form = { firstName: 'Марта ', middleName: 'Іванівна', lastName: 'Шевчук', email: ' marta@example.com ', phoneNumber: '+380 67 111 22 33', dateOfBirth: '2013-05-02', address: ' Київ ', school: '', ...NO_PARENTS, fatherFirstName: ' Петро ' };
     const photo = new Blob(['x'], { type: 'image/jpeg' });
     const inGroup = newMemberFormData({ groupKey: 'g1' }, form, [{ plastLevel: 'Prykhylnyk', dateAchieved: '2024-01-10' }], { blob: photo, name: 'marta.jpg' });
     expect(inGroup.get('groupKey')).toBe('g1');
@@ -135,6 +139,8 @@ describe('member edit rules', () => {
     expect(inGroup.has('removeProfilePhoto')).toBe(false);
     expect(inGroup.get('address')).toBe('Київ');
     expect(inGroup.has('school')).toBe(false);
+    expect(inGroup.get('fatherFirstName')).toBe('Петро');
+    expect(inGroup.has('motherPhone')).toBe(false);
     expect((inGroup.get('blob') as File).name).toBe('marta.jpg');
 
     const inKurin = newMemberFormData({ kurinKey: 'k1' }, form, [], { blob: null, name: '' });
@@ -155,7 +161,7 @@ describe('member edit rules', () => {
     expect(cardFieldsOf(null)).toEqual(DEFAULT_CARD_FIELDS);
     expect(cardFieldsOf({})).toEqual(DEFAULT_CARD_FIELDS);
     expect(cardFieldsOf({ cardFields: { fields: { middleName: 'hidden', phoneNumber: 'sometimes', address: 'sometimes' } } })).toEqual({
-      fields: { middleName: 'hidden', phoneNumber: 'required', address: 'optional', school: 'optional' },
+      fields: { middleName: 'hidden', phoneNumber: 'required', address: 'optional', school: 'optional', parents: 'optional' },
       extra: [],
     });
     expect(cardFieldsOf({ cardFields: { fields: { middleName: 'hidden', phoneNumber: 'optional', school: 'hidden' }, extra: [...visaCard.extra, { key: '', label: 'x' }] } })).toEqual(visaCard);
@@ -164,6 +170,9 @@ describe('member edit rules', () => {
     expect(fieldMode(visaCard, 'firstName')).toBe('required');
     expect(fieldMode(visaCard, 'address')).toBe('optional');
     expect(fieldMode(visaCard, 'school')).toBe('hidden');
+    expect(fieldMode(visaCard, 'motherPhone')).toBe('optional');
+    expect(fieldMode({ ...visaCard, fields: { ...visaCard.fields, parents: 'required' } }, 'fatherPhone')).toBe('optional');
+    expect(fieldMode({ ...visaCard, fields: { ...visaCard.fields, parents: 'hidden' } }, 'fatherPhone')).toBe('hidden');
   });
 
   it('edits one value per extra field and holds required ones and dates', () => {
@@ -178,7 +187,7 @@ describe('member edit rules', () => {
 
   it('sends every extra field, a blank one as empty', () => {
     const member = { memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', email: 'o@example.com' } as unknown as MemberDto;
-    const form = { firstName: 'Остап', middleName: '', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '', dateOfBirth: '2012-03-14', address: '', school: '' };
+    const form = { firstName: 'Остап', middleName: '', lastName: 'Коваль', email: 'o@example.com', phoneNumber: '', dateOfBirth: '2012-03-14', address: '', school: '', ...NO_PARENTS };
     const body = memberFormData(member, form, [], { blob: null, name: '', remove: false }, { visaType: ' D ', visaUntil: '' });
     expect(body.get('cardExtras[visaType]')).toBe('D');
     expect(body.get('cardExtras[visaUntil]')).toBe('');

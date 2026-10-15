@@ -35,7 +35,8 @@ export class KraiCardFieldsComponent {
     { field: 'middleName', label: 'По батькові' },
     { field: 'phoneNumber', label: 'Номер телефону' },
     { field: 'address', label: 'Адреса' },
-    { field: 'school', label: 'Школа' }
+    { field: 'school', label: 'Школа' },
+    { field: 'parents', label: 'Контакти батьків' }
   ];
   readonly modeOptions = (Object.keys(MODE_LABELS) as CardFieldMode[]).map(mode => ({ mode, label: MODE_LABELS[mode] }));
   readonly typeOptions = [

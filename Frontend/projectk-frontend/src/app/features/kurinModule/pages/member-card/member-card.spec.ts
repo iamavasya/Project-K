@@ -262,6 +262,20 @@ describe('MemberCardComponent', () => {
     expect(component.member).toEqual(member);
   });
 
+  it('should list the parents with something filled in, and none when the край hides them', () => {
+    memberServiceSpy.getByKey.and.returnValue(of({
+      ...member, motherFirstName: 'Олена', motherLastName: 'Петренко', motherPhone: '+380501234567', fatherFirstName: ''
+    }));
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.parentLines.map(line => [line.label, line.name, line.phoneLink]))
+      .toEqual([['Мама', 'Олена Петренко', 'tel:+380501234567']]);
+
+    component.cardFields = { fields: { parents: 'hidden' }, extra: [] } as CardFieldsDto;
+    expect(component.parentLines).toEqual([]);
+  });
+
   it('should show the край\'s own fields and leave out the ones it hides', () => {
     kurinServiceSpy.getCardFields.and.returnValue(of({
       fields: { middleName: 'hidden', phoneNumber: 'required' },
