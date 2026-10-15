@@ -39,7 +39,7 @@ interface Fixture {
 /** The account endpoints as the API answers them, with the second factor as the test sets it. */
 function accountApi(options: { password: string; mfa: boolean; kurins?: Record<string, unknown>[] }): Fixture {
   const authWrites: Fixture['authWrites'] = [];
-  const account = { email: '', phoneNumber: '+380 67 000 00 00', pendingEmail: null as string | null, twoFactorEnabled: options.mfa };
+  const account = { email: '', phoneNumber: '+380670000000', pendingEmail: null as string | null, twoFactorEnabled: options.mfa };
   const current = { kurinKey: 'k1' };
   const kurins = options.kurins ?? [k1, k2];
   let shots = 0;
@@ -220,7 +220,7 @@ test('changes contacts and the password from Акаунт', async ({ page }, inf
   await page.goto('./tabs/more/account');
   const account = page.locator('app-account');
   await expect(account.getByTestId('email-row')).toContainText(member.email);
-  await expect(account.getByText('+380 67 000 00 00')).toBeVisible();
+  await expect(account.getByText('+380 67 000 0000')).toBeVisible();
   await expect(account.getByTestId('mfa-status')).toHaveText('Вимкнено');
   await shot(page, info.project.name, 'account-02-account');
 
@@ -234,10 +234,10 @@ test('changes contacts and the password from Акаунт', async ({ page }, inf
   await expect(page.getByText('Контакти оновлено.')).toBeVisible();
   expect(log.writes.find((w) => w.path === 'user/me')?.body).toEqual({
     email: member.email,
-    phoneNumber: '+380 50 123 45 67',
+    phoneNumber: '+380501234567',
     currentPassword: null,
   });
-  await expect(account.getByText('+380 50 123 45 67')).toBeVisible();
+  await expect(account.getByText('+380 50 123 4567')).toBeVisible();
 
   // A new email asks for the password and waits for the letter.
   await account.getByTestId('email-row').click();

@@ -34,7 +34,7 @@ const ostap = person('m1', 'Остап', 'Коваль', { dateOfBirth: bornIn(3
 const marta = person('m2', 'Марта', 'Шевчук', { dateOfBirth: bornIn(0), latestPlastLevel: 'Rozviduvach' });
 const olena = person('m3', 'Олена', 'Петренко', { userRole: 'KV.Zvyazkovyi', latestPlastLevel: 'Starshoplastun' });
 const ivan = person('m4', 'Іван', 'Бойко', {
-  phoneNumber: '+380 50 123 45 67',
+  phoneNumber: '+380501234567',
   warnings: [{ memberWarningKey: 'w1', level: 'Level2', issuedAtUtc: '2026-09-01T10:00:00Z', expiresAtUtc: future }],
 });
 const andrii = person('m5', 'Андрій', 'Мельник', { userRole: 'KV.Vykhovnyk', latestPlastLevel: 'Senior', mentoredGroupNames: ['Соколи'] });
@@ -257,7 +257,7 @@ test('shows one’s own card and edits it, adds a skill and an award', async ({ 
   await page.getByTestId('save-profile').click();
   await expect.poll(() => log.writes.find((w) => w.method === 'PUT' && w.path === 'member/m1')).toBeTruthy();
   const sent = String(log.writes.find((w) => w.path === 'member/m1')?.body);
-  expect(sent).toContain('+380 67 111 11 11');
+  expect(sent).toContain('+380671111111');
   expect(sent).toContain(member.email);
   // The ступені go back as they were, or the server would drop them.
   expect(sent).toContain('plastLevelHistories[0].plastLevelHistoryKey');
@@ -330,7 +330,7 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
   await page.locator('[data-testid=profile-phoneNumber] input').fill('+380 50 222 22 22');
   await page.locator('[data-testid=profile-dateOfBirth] input').fill('2012-03-04');
   await page.getByTestId('save-profile').click();
-  await expect.poll(() => String(log.writes.find((w) => w.method === 'PUT' && w.path === 'member/m2')?.body ?? '')).toContain('+380 50 222 22 22');
+  await expect.poll(() => String(log.writes.find((w) => w.method === 'PUT' && w.path === 'member/m2')?.body ?? '')).toContain('+380502222222');
   await expect(page.locator('ion-modal.show-modal')).toHaveCount(0);
 
   await page.getByTestId('all-skills').click();
