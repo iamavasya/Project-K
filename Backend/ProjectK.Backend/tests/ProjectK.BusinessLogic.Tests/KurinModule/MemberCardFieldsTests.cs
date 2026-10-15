@@ -145,16 +145,22 @@ public class MemberCardFieldsTests
     }
 
     [Fact]
-    public void AHiddenAddress_KeepsWhatTheMemberHad()
+    public void AHiddenAddressAndParents_KeepWhatTheMemberHad()
     {
         var card = new KraiCardFieldsSettings(
-            new Dictionary<string, string> { [KraiCardFields.Address] = KraiCardFields.Hidden }, []);
+            new Dictionary<string, string>
+            {
+                [KraiCardFields.Address] = KraiCardFields.Hidden,
+                [KraiCardFields.Parents] = KraiCardFields.Hidden
+            }, []);
         var request = Write(middleName: "I", phone: "+420777000111");
         request.Address = "Somewhere else";
+        request.MotherFirstName = "Someone";
 
         MemberCardFields.Apply(card, request, Existing(null)).Error.Should().BeNull();
 
         request.Address.Should().Be("Praha 3, Seifertova 1");
+        request.MotherFirstName.Should().Be("Olena");
     }
 
     [Fact]
@@ -189,19 +195,6 @@ public class MemberCardFieldsTests
         request.MotherPhone.Should().BeNull();
         request.FatherFirstName.Should().Be("Petro");
         request.FatherPhone.Should().BeNull();
-    }
-
-    [Fact]
-    public void HiddenParents_KeepWhatTheMemberHad()
-    {
-        var card = new KraiCardFieldsSettings(
-            new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Hidden }, []);
-        var request = Write(middleName: "I", phone: "+420777000111");
-        request.MotherFirstName = "Someone";
-
-        MemberCardFields.Apply(card, request, Existing(null)).Error.Should().BeNull();
-
-        request.MotherFirstName.Should().Be("Olena");
     }
 
     [Fact]

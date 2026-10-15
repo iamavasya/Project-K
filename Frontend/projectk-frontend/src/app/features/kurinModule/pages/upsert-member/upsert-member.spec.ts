@@ -493,8 +493,10 @@ describe('UpsertMemberComponent', () => {
       expect(dto.school).toBeUndefined();
     });
 
-    it('should send address and school once edited, an emptied one as empty', async () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
+    it('should send address, school and parents once edited, an emptied one as empty', async () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3', motherFirstName: 'Олена', motherPhone: '+380501234567'
+      }));
       create();
       await fixture.whenStable();
       fixture.detectChanges();
@@ -503,19 +505,6 @@ describe('UpsertMemberComponent', () => {
       component.form().controls['address'].markAsDirty();
       component.member.school = null;
       component.form().controls['school'].markAsDirty();
-      component.submit();
-
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
-      expect(dto.address).toBe('Praha 3, Seifertova 1');
-      expect(dto.school).toBe('');
-    });
-
-    it('should send only the parents\' fields that were edited', async () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, motherFirstName: 'Олена', motherPhone: '+380501234567' }));
-      create();
-      await fixture.whenStable();
-      fixture.detectChanges();
-
       component.member.fatherFirstName = ' Петро ';
       component.form().controls['fatherFirstName'].markAsDirty();
       component.member.motherPhone = '';
@@ -523,6 +512,8 @@ describe('UpsertMemberComponent', () => {
       component.submit();
 
       const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.address).toBe('Praha 3, Seifertova 1');
+      expect(dto.school).toBe('');
       expect(dto.fatherFirstName).toBe('Петро');
       expect(dto.motherPhone).toBe('');
       expect(dto.motherFirstName).toBeUndefined();
