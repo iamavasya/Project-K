@@ -594,9 +594,17 @@ export class MemberPage implements OnInit {
   protected readonly privateRows = computed(() => {
     const card = this.cardFields() ?? DEFAULT_CARD_FIELDS;
     const m = this.memberValue();
-    return ([['address', 'Адреса'], ['school', 'Школа']] as const)
+    const rows = ([['address', 'Адреса'], ['school', 'Школа']] as const)
       .filter(([key]) => card.fields[key] !== 'hidden' && !!m?.[key])
-      .map(([key, label]) => ({ key, label, value: m![key]! }));
+      .map(([key, label]) => ({ key: key as string, label, value: m![key]! }));
+    if (!m || card.fields.parents === 'hidden') return rows;
+    const parents = [
+      { key: 'mother', label: 'Мама', first: m.motherFirstName, last: m.motherLastName, phone: m.motherPhone },
+      { key: 'father', label: 'Тато', first: m.fatherFirstName, last: m.fatherLastName, phone: m.fatherPhone },
+    ]
+      .map((p) => ({ key: p.key, label: p.label, value: [[p.first, p.last].filter(Boolean).join(' '), formatPhone(p.phone)].filter(Boolean).join(', ') }))
+      .filter((p) => !!p.value);
+    return [...rows, ...parents];
   });
   /** The край's own fields that have a value on this card. */
   protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));

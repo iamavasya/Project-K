@@ -136,6 +136,41 @@
                 </section>
             }
 
+            @if (fieldMode('parents') !== 'hidden') {
+                <section class="kurin-tile member-form__tile">
+                    <div class="lil-tile-head">
+                        <div>
+                            <h2>Батьки</h2>
+                            <p>{{ fieldMode('parents') === 'required' ? 'Потрібен телефон хоча б одного з батьків.' : 'Необовʼязково.' }}</p>
+                        </div>
+                    </div>
+                    <div class="member-form__grid member-form__grid--parents">
+                        @for (parent of parentRows; track parent.phone) {
+                            <div class="member-form__field">
+                                <label [for]="parent.firstName">Імʼя {{ parent.of }}</label>
+                                <input pInputText [id]="parent.firstName" [name]="parent.firstName"
+                                    [(ngModel)]="member[parent.firstName]" maxlength="200" autocomplete="off" />
+                            </div>
+                            <div class="member-form__field">
+                                <label [for]="parent.lastName">Прізвище {{ parent.of }}</label>
+                                <input pInputText [id]="parent.lastName" [name]="parent.lastName"
+                                    [(ngModel)]="member[parent.lastName]" maxlength="200" autocomplete="off" />
+                            </div>
+                            <div class="member-form__field">
+                                <label [for]="parent.phone">Телефон {{ parent.of }}</label>
+                                <app-phone-input [inputId]="parent.phone" [name]="parent.phone"
+                                    [defaultCountry]="phoneCountry"
+                                    [(ngModel)]="member[parent.phone]" (ngModelChange)="markFormDirty()" #parentPhoneCtrl="ngModel"
+                                    [invalid]="!!parentPhoneCtrl.invalid && !!(parentPhoneCtrl.dirty || parentPhoneCtrl.touched)" />
+                                @if (parentPhoneCtrl.errors?.['phone'] && (parentPhoneCtrl.dirty || parentPhoneCtrl.touched)) {
+                                    <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
+                                }
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
             @if (cardFields.extra.length) {
                 <section class="kurin-tile member-form__tile">
                     <div class="lil-tile-head"><div><h2>Від краю</h2><p>Ці поля просить край куреня.</p></div></div>

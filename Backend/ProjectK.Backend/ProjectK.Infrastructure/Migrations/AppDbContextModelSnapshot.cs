@@ -1389,6 +1389,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FatherFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FatherLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FatherPhone")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1401,6 +1410,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("MiddleName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")

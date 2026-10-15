@@ -155,30 +155,16 @@ public class UpsertMemberProfileCommandHandlerTests
     [InlineData(null, "")]
     public async Task Handle_Create_StoresThePhoneWithoutSeparators(string? sent, string stored)
     {
-        var group = MakeGroup();
-        var cmd = new UpsertMemberProfileCommand
-        {
-            GroupKey = group.GroupKey,
-            FirstName = "Ivan",
-            LastName = "Petrenko",
-            Email = "ivan@example.com",
-            PhoneNumber = sent!,
-            DateOfBirth = new DateOnly(2001, 2, 3)
-        };
-        ExistingMemberIs(null, cmd.MemberKey);
-        GroupIs(group);
-        Member? created = null;
-        _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
-            .Callback<Member, CancellationToken>((m, _) => created = m);
+        var cmd = NewMemberInAGroup(sent!);
+        var created = CaptureCreated();
 
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        created!.PhoneNumber.Should().Be(stored);
+        created()!.PhoneNumber.Should().Be(stored);
     }
 
-    [Fact]
-    public async Task Handle_Create_RefusesAPhoneWithoutCountryCode()
+    private UpsertMemberProfileCommand NewMemberInAGroup(string phone)
     {
         var group = MakeGroup();
         var cmd = new UpsertMemberProfileCommand
@@ -187,11 +173,43 @@ public class UpsertMemberProfileCommandHandlerTests
             FirstName = "Ivan",
             LastName = "Petrenko",
             Email = "ivan@example.com",
-            PhoneNumber = "0501234567",
+            PhoneNumber = phone,
             DateOfBirth = new DateOnly(2001, 2, 3)
         };
         ExistingMemberIs(null, cmd.MemberKey);
         GroupIs(group);
+        return cmd;
+    }
+
+    private Func<Member?> CaptureCreated()
+    {
+        Member? created = null;
+        _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+            .Callback<Member, CancellationToken>((m, _) => created = m);
+        return () => created;
+    }
+
+    [Fact]
+    public async Task Handle_Create_StoresParentsPhones_AndRefusesABadOne()
+    {
+        var cmd = NewMemberInAGroup("+380501234567");
+        cmd.MotherFirstName = "Olena";
+        cmd.MotherPhone = "+420 777 000 222";
+        var created = CaptureCreated();
+
+        (await _handler.Handle(cmd, CancellationToken.None)).Type.Should().Be(ResultType.Success);
+        created()!.MotherFirstName.Should().Be("Olena");
+        created()!.MotherPhone.Should().Be("+420777000222");
+
+        cmd.FatherPhone = "0501234567";
+        var refused = await _handler.Handle(cmd, CancellationToken.None);
+        refused.ErrorCode.Should().Be(PhoneNumbers.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Handle_Create_RefusesAPhoneWithoutCountryCode()
+    {
+        var cmd = NewMemberInAGroup("0501234567");
 
         var result = await _handler.Handle(cmd, CancellationToken.None);
 

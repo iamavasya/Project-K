@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Phones;
 using AutoMapper;
 using MediatR;
@@ -101,6 +102,14 @@ public class UpsertMemberProfileCommandHandler
 
             cardExtras = card.CardExtras;
         }
+        else if (existing is not null)
+        {
+            // A write that does not carry the parents' contacts (the roster import) keeps them.
+            foreach (var field in ParentContacts.Fields)
+            {
+                field.Set(request, field.Get(request) ?? field.Get(existing));
+            }
+        }
 
         // Every write stores the phone as +380501234567. One the member already has is let through
         // as it is, so a number older than the rule does not block an edit of something else.
@@ -114,6 +123,16 @@ public class UpsertMemberProfileCommandHandler
 
             request.PhoneNumber = phone;
         }
+
+        // A parent's phone is stored in the same shape; an empty one stays empty.
+        if (!TryNormalizeParentPhone(request.MotherPhone, existing?.MotherPhone, out var motherPhone)
+            || !TryNormalizeParentPhone(request.FatherPhone, existing?.FatherPhone, out var fatherPhone))
+        {
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+        }
+
+        request.MotherPhone = motherPhone;
+        request.FatherPhone = fatherPhone;
 
         var wasProfileVerifiedCurrent =
             existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
@@ -305,6 +324,18 @@ public class UpsertMemberProfileCommandHandler
         }
     }
 
+    private static bool TryNormalizeParentPhone(string? requested, string? stored, out string? phone)
+    {
+        phone = requested;
+        if (string.IsNullOrWhiteSpace(requested) || string.Equals(requested, stored, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        phone = PhoneNumbers.Normalize(requested);
+        return phone is not null;
+    }
+
     private bool HasSignificantProfileChange(
         UpsertMemberProfileCommand request,
         MemberEntity existing,
@@ -320,6 +351,7 @@ public class UpsertMemberProfileCommandHandler
                || existing.DateOfBirth != request.DateOfBirth
                || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
                || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
+               || existing.ParentsDiffer(request)
                || current?.GroupKey != targetGroupKey
                || current?.KurinKey != targetKurinKey
                || (CanEditPlastLevels(existing) && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));

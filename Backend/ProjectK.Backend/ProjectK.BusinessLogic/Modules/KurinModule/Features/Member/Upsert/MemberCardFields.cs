@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System.Globalization;
 using ProjectK.Common.Models.KraiProfiles;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
@@ -47,6 +48,20 @@ public static class MemberCardFields
         request.Address = EmptyAsNull(request.Address);
         request.School = EmptyAsNull(request.School);
 
+        // Parents' contacts are private the same way, each value on its own.
+        var parentsHidden = card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Hidden;
+        foreach (var field in ParentContacts.Fields)
+        {
+            var sent = field.Get(request);
+            field.Set(request, EmptyAsNull(parentsHidden || sent is null ? (existing is null ? null : field.Get(existing)) : sent));
+        }
+
+        var parentNames = new[] { request.MotherFirstName, request.MotherLastName, request.FatherFirstName, request.FatherLastName };
+        if (parentNames.Any(name => name?.Length > MaxValueLength))
+        {
+            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[KraiCardFields.Parents]}» задовге.");
+        }
+
         if (request.Address?.Length > MaxValueLength || request.School?.Length > MaxValueLength)
         {
             var field = request.Address?.Length > MaxValueLength ? KraiCardFields.Address : KraiCardFields.School;
@@ -61,6 +76,13 @@ public static class MemberCardFields
                 (Field: KraiCardFields.School, Value: request.School)
             }
             .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFields.Required && string.IsNullOrWhiteSpace(field.Value));
+
+        // Required parents' contacts mean at least one parent the kurin can call.
+        if (missing.Field is null && card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Required
+            && request.MotherPhone is null && request.FatherPhone is null)
+        {
+            missing.Field = KraiCardFields.Parents;
+        }
 
         if (missing.Field is not null)
         {

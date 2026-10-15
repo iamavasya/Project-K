@@ -90,6 +90,15 @@
                             <span class="member-summary-value">{{ member.school }}</span>
                         </p>
                         }
+                        @for (parent of parentLines; track parent.label) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">{{ parent.label }}: </span>
+                            <span class="member-summary-value">
+                                {{ parent.name }}@if (parent.name && parent.phone) {, }
+                                @if (parent.phoneLink; as href) { <a [href]="href">{{ parent.phone }}</a> } @else { {{ parent.phone }} }
+                            </span>
+                        </p>
+                        }
                         @for (line of cardExtras; track line.key) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">{{ line.label }}: </span>

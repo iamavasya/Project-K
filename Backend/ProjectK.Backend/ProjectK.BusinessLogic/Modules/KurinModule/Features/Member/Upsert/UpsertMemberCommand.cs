@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System.IO;
 using AutoMapper;
 using MediatR;
@@ -16,7 +17,7 @@ using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 
-public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>
+public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>, IHasParentContacts
 {
     public Guid MemberKey { get; set; }
     public Guid? UserKey { get; set; }
@@ -31,6 +32,12 @@ public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>
     public DateOnly DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+    public string? MotherFirstName { get; set; }
+    public string? MotherLastName { get; set; }
+    public string? MotherPhone { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherPhone { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
 
     /// <inheritdoc cref="UpsertMemberProfileCommand.CardExtras"/>
@@ -180,7 +187,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
             : new ServiceResult<MemberResponse>(ResultType.Success, response);
     }
 
-    private static UpsertMemberProfileCommand ToProfileCommand(UpsertMemberCommand request) => new()
+    private static UpsertMemberProfileCommand ToProfileCommand(UpsertMemberCommand request) => new UpsertMemberProfileCommand
     {
         MemberKey = request.MemberKey,
         KurinKey = request.KurinKey,
@@ -196,7 +203,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         PlastLevelHistories = request.PlastLevelHistories,
         CardExtras = request.CardExtras,
         ApplyCardFields = request.ApplyCardFields
-    };
+    }.WithParentsOf(request);
 
     private static ServiceResult<MemberResponse> Propagate<T>(ServiceResult<T> step) =>
         step.ErrorCode is null
