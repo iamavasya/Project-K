@@ -67,7 +67,7 @@
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
-                                @if (phoneLink; as href) { <a [href]="href">{{ member.phoneNumber }}</a> } @else { {{ member.phoneNumber || 'Не вказано' }} }
+                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || 'Не вказано' }} }
                             </span>
                         </p>
                         }

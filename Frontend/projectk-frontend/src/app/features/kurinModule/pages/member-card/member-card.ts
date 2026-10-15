@@ -65,6 +65,7 @@ import { ProfileVerificationBadgeComponent } from '../../components/profile-veri
 import { formatUtcDateTime, parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
+import { formatPhone } from '../../../../shared/functions/phone.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
 import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
@@ -324,6 +325,11 @@ export class MemberCardComponent implements OnInit {
         });
       }
     });
+  }
+
+  /** The phone as it reads: +420 777 123 456. */
+  get phoneText(): string {
+    return formatPhone(this.member?.phoneNumber);
   }
 
   get phoneLink(): string | null {

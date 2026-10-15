@@ -49,7 +49,7 @@ public class AccountEmailConfirmationHandlerTests
         {
             UserKey = userId,
             Email = currentEmail,
-            PhoneNumber = "old-phone",
+            PhoneNumber = "+380501111111",
             FirstName = "John",
             LastName = "Doe"
         };
@@ -59,7 +59,7 @@ public class AccountEmailConfirmationHandlerTests
             Id = userId,
             Email = currentEmail,
             UserName = currentEmail,
-            PhoneNumber = "old-phone",
+            PhoneNumber = "+380501111111",
             FirstName = "John",
             LastName = "Doe"
         };
@@ -68,7 +68,7 @@ public class AccountEmailConfirmationHandlerTests
             userId,
             member.MemberKey,
             currentEmail,
-            "new-phone",
+            "+380502222222",
             "John",
             "Doe",
             "User",
@@ -86,7 +86,7 @@ public class AccountEmailConfirmationHandlerTests
         var handler = CreateUpdateHandler();
 
         // Act
-        var result = await handler.Handle(new UpdateAccountProfileCommand(userId, $" {newEmail} ", " new-phone ", "current-password"), CancellationToken.None);
+        var result = await handler.Handle(new UpdateAccountProfileCommand(userId, $" {newEmail} ", " +380 50 222 22 22 ", "current-password"), CancellationToken.None);
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
@@ -94,9 +94,9 @@ public class AccountEmailConfirmationHandlerTests
         Assert.Equal(newEmail, result.Data.PendingEmail);
         Assert.Equal(currentEmail, user.Email);
         Assert.Equal(currentEmail, user.UserName);
-        Assert.Equal("new-phone", user.PhoneNumber);
+        Assert.Equal("+380502222222", user.PhoneNumber);
         _memberDirectoryMock.Verify(
-            x => x.SetPhoneFromAccountAsync(userId, "new-phone", It.IsAny<CancellationToken>()),
+            x => x.SetPhoneFromAccountAsync(userId, "+380502222222", It.IsAny<CancellationToken>()),
             Times.Once);
         _memberDirectoryMock.Verify(
             x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
@@ -181,11 +181,11 @@ public class AccountEmailConfirmationHandlerTests
             Id = userId,
             Email = email,
             UserName = email,
-            PhoneNumber = "old-phone",
+            PhoneNumber = "+380501111111",
             FirstName = "John",
             LastName = "Doe"
         };
-        var settings = new AccountSettingsDto(userId, null, email, "new-phone", "John", "Doe", "User", false);
+        var settings = new AccountSettingsDto(userId, null, email, "+380502222222", "John", "Doe", "User", false);
 
         _userManagerMock.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(user);
@@ -196,13 +196,13 @@ public class AccountEmailConfirmationHandlerTests
         var handler = CreateUpdateHandler();
 
         // Act
-        var result = await handler.Handle(new UpdateAccountProfileCommand(userId, "USER@example.com", " new-phone "), CancellationToken.None);
+        var result = await handler.Handle(new UpdateAccountProfileCommand(userId, "USER@example.com", " +380 50 222 22 22 "), CancellationToken.None);
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
         Assert.Null(result.Data?.PendingEmail);
         Assert.Equal(email, user.Email);
-        Assert.Equal("new-phone", user.PhoneNumber);
+        Assert.Equal("+380502222222", user.PhoneNumber);
         _userManagerMock.Verify(x => x.GenerateChangeEmailTokenAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
         _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }

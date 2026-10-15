@@ -14,6 +14,7 @@ import { AuthService } from '../../services/auth-service/auth.service';
 import { MfaEnforcerService } from '../../services/mfa-enforcer-service/mfa-enforcer.service';
 import { PermissionService } from '../../services/permission-service/permission.service';
 import { PasswordRulesComponent } from '../../../../shared/password-rules/password-rules';
+import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
 import { passwordMeetsRules } from '../../../../shared/functions/password-rules.function';
 import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/account-role-tag.function';
 
@@ -27,8 +28,9 @@ import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/
     DividerModule,
     TagModule,
     MfaSetupDialogComponent,
-    PasswordRulesComponent
-],
+    PasswordRulesComponent,
+    PhoneInputComponent
+  ],
   templateUrl: './account-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-settings.css'

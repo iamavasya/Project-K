@@ -15,7 +15,7 @@ const kurin = { kurinKey: 'k1', number: 7, branch: 'UPYu', namedAfter: 'Іван
 
 const card = (memberKey: string, firstName: string, lastName: string, extra: Record<string, unknown> = {}) => ({
   memberKey, userKey: `u-${memberKey}`, accountStatus: 'Active', userRole: 'Kurin.Member', firstName, middleName: 'Петрович', lastName,
-  email: `${memberKey}@example.com`, phoneNumber: '+380 67 000 00 00', dateOfBirth: '2012-03-14', kurinKey: 'k1', groupKey: 'g1',
+  email: `${memberKey}@example.com`, phoneNumber: '+380670000000', dateOfBirth: '2012-03-14', kurinKey: 'k1', groupKey: 'g1',
   address: 'Львів, вул. Франка, 1', school: null, profilePhotoUrl: null, latestPlastLevel: 'Uchasnyk',
   plastLevelHistories: [{ plastLevelHistoryKey: `pl-${memberKey}`, memberKey, plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23' }],
   profileVerificationStatus: 'Unverified', profileVerifiedAtUtc: null, warnings: [], awards: [], leadershipHistories: [], mentoredGroupNames: [],

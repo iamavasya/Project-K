@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using System.Net;
 using System.Net.Mail;
 using MediatR;
@@ -77,7 +78,13 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
             }
         }
 
-        user.PhoneNumber = request.PhoneNumber?.Trim();
+        var phone = PhoneNumbers.Normalize(request.PhoneNumber);
+        if (phone is null)
+        {
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+        }
+
+        user.PhoneNumber = phone.Length == 0 ? null : phone;
 
         var updateResult = await _userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)

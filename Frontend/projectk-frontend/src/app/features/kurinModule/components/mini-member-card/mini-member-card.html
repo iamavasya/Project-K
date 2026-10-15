@@ -62,9 +62,9 @@
 
         <p class="mini-member-card__meta text-sm">
             @if (phoneLink; as href) {
-                <a [href]="href">{{ member().phoneNumber }}</a>
+                <a [href]="href">{{ phoneText }}</a>
             } @else {
-                {{ member().phoneNumber || 'Телефон не вказано' }}
+                {{ phoneText || 'Телефон не вказано' }}
             }
         </p>
 

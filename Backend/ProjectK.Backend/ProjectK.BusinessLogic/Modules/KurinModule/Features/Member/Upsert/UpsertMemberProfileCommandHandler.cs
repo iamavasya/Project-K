@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
@@ -99,6 +100,19 @@ public class UpsertMemberProfileCommandHandler
             }
 
             cardExtras = card.CardExtras;
+        }
+
+        // Every write stores the phone as +380501234567. One the member already has is let through
+        // as it is, so a number older than the rule does not block an edit of something else.
+        if (existing is null || !string.Equals(request.PhoneNumber, existing.PhoneNumber, StringComparison.Ordinal))
+        {
+            var phone = PhoneNumbers.Normalize(request.PhoneNumber);
+            if (phone is null)
+            {
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+            }
+
+            request.PhoneNumber = phone;
         }
 
         var wasProfileVerifiedCurrent =
