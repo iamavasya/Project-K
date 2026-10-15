@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System.Globalization;
 using ProjectK.Common.Models.KraiProfiles;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
@@ -49,12 +50,11 @@ public static class MemberCardFields
 
         // Parents' contacts are private the same way, each value on its own.
         var parentsHidden = card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Hidden;
-        request.MotherFirstName = EmptyAsNull(parentsHidden || request.MotherFirstName is null ? existing?.MotherFirstName : request.MotherFirstName);
-        request.MotherLastName = EmptyAsNull(parentsHidden || request.MotherLastName is null ? existing?.MotherLastName : request.MotherLastName);
-        request.MotherPhone = EmptyAsNull(parentsHidden || request.MotherPhone is null ? existing?.MotherPhone : request.MotherPhone);
-        request.FatherFirstName = EmptyAsNull(parentsHidden || request.FatherFirstName is null ? existing?.FatherFirstName : request.FatherFirstName);
-        request.FatherLastName = EmptyAsNull(parentsHidden || request.FatherLastName is null ? existing?.FatherLastName : request.FatherLastName);
-        request.FatherPhone = EmptyAsNull(parentsHidden || request.FatherPhone is null ? existing?.FatherPhone : request.FatherPhone);
+        foreach (var field in ParentContacts.Fields)
+        {
+            var sent = field.Get(request);
+            field.Set(request, EmptyAsNull(parentsHidden || sent is null ? (existing is null ? null : field.Get(existing)) : sent));
+        }
 
         var parentNames = new[] { request.MotherFirstName, request.MotherLastName, request.FatherFirstName, request.FatherLastName };
         if (parentNames.Any(name => name?.Length > MaxValueLength))

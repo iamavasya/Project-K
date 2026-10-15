@@ -247,6 +247,12 @@ export class UpsertMemberComponent implements OnInit {
     return initials(this.member.firstName, this.member.lastName);
   }
 
+  /** The «Батьки» block: a row of name, surname and phone for the mother, then the father. */
+  readonly parentRows = [
+    { of: 'мами', firstName: 'motherFirstName', lastName: 'motherLastName', phone: 'motherPhone' },
+    { of: 'тата', firstName: 'fatherFirstName', lastName: 'fatherLastName', phone: 'fatherPhone' },
+  ] as const;
+
   private privateFieldValue(field: PrivateField): string | undefined {
     const changed = this.isCreate || !!this.form()?.controls[field]?.dirty;
     const mode = this.fieldMode(PARENT_FIELDS.includes(field) ? 'parents' : field as 'address' | 'school');

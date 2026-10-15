@@ -145,46 +145,28 @@
                         </div>
                     </div>
                     <div class="member-form__grid member-form__grid--parents">
-                        <div class="member-form__field">
-                            <label for="motherFirstName">Імʼя мами</label>
-                            <input pInputText id="motherFirstName" name="motherFirstName"
-                                [(ngModel)]="member.motherFirstName" maxlength="200" autocomplete="off" />
-                        </div>
-                        <div class="member-form__field">
-                            <label for="motherLastName">Прізвище мами</label>
-                            <input pInputText id="motherLastName" name="motherLastName"
-                                [(ngModel)]="member.motherLastName" maxlength="200" autocomplete="off" />
-                        </div>
-                        <div class="member-form__field">
-                            <label for="motherPhone">Телефон мами</label>
-                            <app-phone-input inputId="motherPhone" name="motherPhone"
-                                [defaultCountry]="phoneCountry"
-                                [(ngModel)]="member.motherPhone" (ngModelChange)="markFormDirty()" #motherPhoneCtrl="ngModel"
-                                [invalid]="!!motherPhoneCtrl.invalid && !!(motherPhoneCtrl.dirty || motherPhoneCtrl.touched)" />
-                            @if (motherPhoneCtrl.errors?.['phone'] && (motherPhoneCtrl.dirty || motherPhoneCtrl.touched)) {
-                                <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
-                            }
-                        </div>
-                        <div class="member-form__field">
-                            <label for="fatherFirstName">Імʼя тата</label>
-                            <input pInputText id="fatherFirstName" name="fatherFirstName"
-                                [(ngModel)]="member.fatherFirstName" maxlength="200" autocomplete="off" />
-                        </div>
-                        <div class="member-form__field">
-                            <label for="fatherLastName">Прізвище тата</label>
-                            <input pInputText id="fatherLastName" name="fatherLastName"
-                                [(ngModel)]="member.fatherLastName" maxlength="200" autocomplete="off" />
-                        </div>
-                        <div class="member-form__field">
-                            <label for="fatherPhone">Телефон тата</label>
-                            <app-phone-input inputId="fatherPhone" name="fatherPhone"
-                                [defaultCountry]="phoneCountry"
-                                [(ngModel)]="member.fatherPhone" (ngModelChange)="markFormDirty()" #fatherPhoneCtrl="ngModel"
-                                [invalid]="!!fatherPhoneCtrl.invalid && !!(fatherPhoneCtrl.dirty || fatherPhoneCtrl.touched)" />
-                            @if (fatherPhoneCtrl.errors?.['phone'] && (fatherPhoneCtrl.dirty || fatherPhoneCtrl.touched)) {
-                                <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
-                            }
-                        </div>
+                        @for (parent of parentRows; track parent.phone) {
+                            <div class="member-form__field">
+                                <label [for]="parent.firstName">Імʼя {{ parent.of }}</label>
+                                <input pInputText [id]="parent.firstName" [name]="parent.firstName"
+                                    [(ngModel)]="member[parent.firstName]" maxlength="200" autocomplete="off" />
+                            </div>
+                            <div class="member-form__field">
+                                <label [for]="parent.lastName">Прізвище {{ parent.of }}</label>
+                                <input pInputText [id]="parent.lastName" [name]="parent.lastName"
+                                    [(ngModel)]="member[parent.lastName]" maxlength="200" autocomplete="off" />
+                            </div>
+                            <div class="member-form__field">
+                                <label [for]="parent.phone">Телефон {{ parent.of }}</label>
+                                <app-phone-input [inputId]="parent.phone" [name]="parent.phone"
+                                    [defaultCountry]="phoneCountry"
+                                    [(ngModel)]="member[parent.phone]" (ngModelChange)="markFormDirty()" #parentPhoneCtrl="ngModel"
+                                    [invalid]="!!parentPhoneCtrl.invalid && !!(parentPhoneCtrl.dirty || parentPhoneCtrl.touched)" />
+                                @if (parentPhoneCtrl.errors?.['phone'] && (parentPhoneCtrl.dirty || parentPhoneCtrl.touched)) {
+                                    <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
+                                }
+                            </div>
+                        }
                     </div>
                 </section>
             }

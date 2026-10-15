@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
-public class MemberResponse
+public class MemberResponse : IHasParentContacts
 {
     public Guid MemberKey { get; set; }
 

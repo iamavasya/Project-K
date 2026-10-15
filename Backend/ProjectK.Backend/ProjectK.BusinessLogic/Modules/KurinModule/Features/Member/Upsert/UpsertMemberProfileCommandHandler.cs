@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Phones;
 using AutoMapper;
 using MediatR;
@@ -104,12 +105,10 @@ public class UpsertMemberProfileCommandHandler
         else if (existing is not null)
         {
             // A write that does not carry the parents' contacts (the roster import) keeps them.
-            request.MotherFirstName ??= existing.MotherFirstName;
-            request.MotherLastName ??= existing.MotherLastName;
-            request.MotherPhone ??= existing.MotherPhone;
-            request.FatherFirstName ??= existing.FatherFirstName;
-            request.FatherLastName ??= existing.FatherLastName;
-            request.FatherPhone ??= existing.FatherPhone;
+            foreach (var field in ParentContacts.Fields)
+            {
+                field.Set(request, field.Get(request) ?? field.Get(existing));
+            }
         }
 
         // Every write stores the phone as +380501234567. One the member already has is let through
@@ -352,12 +351,7 @@ public class UpsertMemberProfileCommandHandler
                || existing.DateOfBirth != request.DateOfBirth
                || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
                || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.MotherFirstName ?? string.Empty, request.MotherFirstName ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.MotherLastName ?? string.Empty, request.MotherLastName ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.MotherPhone ?? string.Empty, request.MotherPhone ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.FatherFirstName ?? string.Empty, request.FatherFirstName ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.FatherLastName ?? string.Empty, request.FatherLastName ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.FatherPhone ?? string.Empty, request.FatherPhone ?? string.Empty, StringComparison.Ordinal)
+               || existing.ParentsDiffer(request)
                || current?.GroupKey != targetGroupKey
                || current?.KurinKey != targetKurinKey
                || (CanEditPlastLevels(existing) && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));

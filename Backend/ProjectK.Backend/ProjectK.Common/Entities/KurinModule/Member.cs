@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace ProjectK.Common.Entities.KurinModule;
 /// all. Everything here is theirs and outlives any of those: leaving a kurin, or the kurin
 /// itself being deleted, leaves this record and its history untouched.
 /// </summary>
-public class Member : Entity
+public class Member : Entity, IHasParentContacts
 {
     public Guid MemberKey { get; set; } = Guid.NewGuid();
 

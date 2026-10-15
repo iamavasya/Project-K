@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -179,12 +180,6 @@ public class MemberController : ControllerBase
             DateOfBirth = request.DateOfBirth,
             Address = request.Address,
             School = request.School,
-            MotherFirstName = request.MotherFirstName,
-            MotherLastName = request.MotherLastName,
-            MotherPhone = request.MotherPhone,
-            FatherFirstName = request.FatherFirstName,
-            FatherLastName = request.FatherLastName,
-            FatherPhone = request.FatherPhone,
             PlastLevelHistories = request.PlastLevelHistories,
             CardExtras = request.CardExtras,
             ApplyCardFields = true,
@@ -192,7 +187,7 @@ public class MemberController : ControllerBase
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
@@ -229,12 +224,6 @@ public class MemberController : ControllerBase
             DateOfBirth = request.DateOfBirth,
             Address = request.Address,
             School = request.School,
-            MotherFirstName = request.MotherFirstName,
-            MotherLastName = request.MotherLastName,
-            MotherPhone = request.MotherPhone,
-            FatherFirstName = request.FatherFirstName,
-            FatherLastName = request.FatherLastName,
-            FatherPhone = request.FatherPhone,
             PlastLevelHistories = request.PlastLevelHistories,
             CardExtras = request.CardExtras,
             ApplyCardFields = true,
@@ -242,7 +231,7 @@ public class MemberController : ControllerBase
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
 
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
@@ -285,12 +274,6 @@ public class MemberController : ControllerBase
             DateOfBirth = request.DateOfBirth,
             Address = request.Address,
             School = request.School,
-            MotherFirstName = request.MotherFirstName,
-            MotherLastName = request.MotherLastName,
-            MotherPhone = request.MotherPhone,
-            FatherFirstName = request.FatherFirstName,
-            FatherLastName = request.FatherLastName,
-            FatherPhone = request.FatherPhone,
             PlastLevelHistories = request.PlastLevelHistories,
             CardExtras = request.CardExtras,
             ApplyCardFields = true,
@@ -299,7 +282,7 @@ public class MemberController : ControllerBase
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Models.Requests;
 
-public class UpsertMemberRequest
+public class UpsertMemberRequest : IHasParentContacts
 {
     public Guid? MemberKey { get; set; }
     public Guid? GroupKey { get; set; }

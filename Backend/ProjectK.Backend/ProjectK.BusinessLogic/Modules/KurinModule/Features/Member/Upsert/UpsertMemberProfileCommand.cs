@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using MediatR;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Records;
@@ -8,7 +9,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 /// The member's own data — who they are and where they are placed. Carries no photo and no
 /// account: those are separate use cases, so this one owns exactly the member row.
 /// </summary>
-public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWriteResult>>
+public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWriteResult>>, IHasParentContacts
 {
     public Guid MemberKey { get; set; }
     public Guid? KurinKey { get; set; }
