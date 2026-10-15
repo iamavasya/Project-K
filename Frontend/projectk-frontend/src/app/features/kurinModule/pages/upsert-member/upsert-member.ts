@@ -27,7 +27,7 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { ProfileVerificationBadgeComponent } from '../../components/profile-verification-badge/profile-verification-badge';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
-import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
+import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS, StandardCardField } from '../../models/card-fields.dto';
 import { CountryCode } from 'libphonenumber-js';
 import { DEFAULT_PHONE_COUNTRY } from '../../../../shared/functions/phone.function';
 import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
@@ -183,7 +183,7 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
     });
   }
 
-  fieldMode(field: 'middleName' | 'phoneNumber'): CardFieldMode {
+  fieldMode(field: StandardCardField): CardFieldMode {
     return cardFieldMode(this.cardFields, field);
   }
 
@@ -252,10 +252,15 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
     return initials(this.member.firstName, this.member.lastName);
   }
 
+  private privateFieldValue(field: 'address' | 'school'): string | undefined {
+    const changed = this.isCreate || !!this.form()?.controls[field]?.dirty;
+    return changed && this.fieldMode(field) !== 'hidden' ? (this.member[field] ?? '').trim() : undefined;
+  }
+
   /** The required fields still empty or wrong, named as the form names them. */
   get missingFields(): string[] {
     const controls = this.form()?.controls ?? {};
-    const order = ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'email', 'phoneNumber'];
+    const order = ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'school', 'email', 'phoneNumber', 'address'];
     const rank = (name: string) => order.includes(name) ? order.indexOf(name) : order.length;
     return Object.entries(controls)
       .filter(([, control]) => control.invalid)
@@ -273,6 +278,8 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
       dateOfBirth: 'дату народження',
       email: 'email',
       phoneNumber: 'телефон',
+      address: 'адресу',
+      school: 'школу',
     };
     if (labels[name]) {
       return labels[name];
@@ -449,10 +456,10 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
       phoneNumber: this.member.phoneNumber,
       dateOfBirth: toDateOnlyString(this.member.dateOfBirth)!,
       plastLevelHistories: this.buildPlastLevelsPayload(),
-      // The form has no address or school, but the update writes every field it gets: left out,
-      // they would come back blank. They go back as loaded, the way the phone app sends them.
-      address: this.member.address,
-      school: this.member.school,
+      // Private: someone who could not see them gets them blank, so they go only when touched here.
+      // Left out, the server keeps what it has; sent empty, it clears them.
+      address: this.privateFieldValue('address'),
+      school: this.privateFieldValue('school'),
       cardExtras: this.cardExtrasPayload(),
     };
 

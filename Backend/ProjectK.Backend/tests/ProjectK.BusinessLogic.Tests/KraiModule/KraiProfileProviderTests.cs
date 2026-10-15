@@ -88,7 +88,7 @@ public class KraiProfileProviderTests
         Given("cz", """
             {
               "cardFields": {
-                "fields": { "middleName": "hidden", "school": "hidden" },
+                "fields": { "middleName": "hidden", "school": "hidden", "shoeSize": "hidden" },
                 "extra": [
                   { "key": "visaType", "label": "Тип візи", "required": true },
                   { "key": "visaUntil", "label": "Віза до", "type": "date" },
@@ -102,7 +102,8 @@ public class KraiProfileProviderTests
 
         card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
         card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
-        card.Fields.Should().NotContainKey("school");
+        card.ModeOf(KraiCardFields.School).Should().Be(KraiCardFields.Hidden);
+        card.Fields.Should().NotContainKey("shoeSize");
         card.Extra.Select(field => field.Key).Should().Equal("visaType", "visaUntil");
         card.Extra[0].Required.Should().BeTrue();
     }
@@ -188,6 +189,8 @@ public class KraiProfileProviderTests
         kurin.HiddenCardFields.Should().Be("""["note"]""");
         result.Data!.Should().Equal(
             new KurinCardFieldResponse("middleName", "По батькові", false),
+            new KurinCardFieldResponse("address", "Адреса", false),
+            new KurinCardFieldResponse("school", "Школа", false),
             new KurinCardFieldResponse("note", "Примітка", true));
     }
 

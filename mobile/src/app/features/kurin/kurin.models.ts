@@ -165,7 +165,7 @@ export interface CardExtraField {
 }
 
 export interface CardFields {
-  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode };
+  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode; address: CardFieldMode; school: CardFieldMode };
   extra: CardExtraField[];
 }
 

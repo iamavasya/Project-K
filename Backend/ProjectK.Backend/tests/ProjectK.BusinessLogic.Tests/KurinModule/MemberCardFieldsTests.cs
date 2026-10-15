@@ -35,6 +35,8 @@ public class MemberCardFieldsTests
         MiddleName = "Ivanovych",
         Email = "ivan@example.com",
         PhoneNumber = "+420 777 000 111",
+        Address = "Praha 3, Seifertova 1",
+        School = "ZŠ Praha 3",
         CardExtras = cardExtras
     };
 
@@ -111,5 +113,63 @@ public class MemberCardFieldsTests
             Existing("""{"visaType":"D","visaUntil":"2027-06-30"}"""));
 
         MemberCardExtras.Read(outcome.CardExtras).Should().Equal(new Dictionary<string, string> { ["visaType"] = "D" });
+    }
+
+    [Fact]
+    public void AddressAndSchoolLeftOut_KeepWhatTheMemberHad()
+    {
+        var request = Write(new() { ["visaType"] = "D" });
+
+        var outcome = MemberCardFields.Apply(Prague, request, Existing(null));
+
+        outcome.Error.Should().BeNull();
+        request.Address.Should().Be("Praha 3, Seifertova 1");
+        request.School.Should().Be("ZŠ Praha 3");
+    }
+
+    [Fact]
+    public void AddressSentEmpty_IsCleared_AndSchoolSent_IsTrimmed()
+    {
+        var request = Write(new() { ["visaType"] = "D" });
+        request.Address = "";
+        request.School = "  Gymnázium  ";
+
+        var outcome = MemberCardFields.Apply(Prague, request, Existing(null));
+
+        outcome.Error.Should().BeNull();
+        request.Address.Should().BeNull();
+        request.School.Should().Be("Gymnázium");
+    }
+
+    [Fact]
+    public void AHiddenAddress_KeepsWhatTheMemberHad()
+    {
+        var card = new KraiCardFieldsSettings(
+            new Dictionary<string, string> { [KraiCardFields.Address] = KraiCardFields.Hidden }, []);
+        var request = Write(middleName: "I", phone: "+420777000111");
+        request.Address = "Somewhere else";
+
+        MemberCardFields.Apply(card, request, Existing(null)).Error.Should().BeNull();
+
+        request.Address.Should().Be("Praha 3, Seifertova 1");
+    }
+
+    [Fact]
+    public void ARequiredSchool_MustBeFilled()
+    {
+        var card = new KraiCardFieldsSettings(
+            new Dictionary<string, string> { [KraiCardFields.School] = KraiCardFields.Required }, []);
+        var request = Write(middleName: "I", phone: "+420777000111");
+        request.School = " ";
+
+        MemberCardFields.Apply(card, request, null).Error.Should().Be("Поле «Школа» обовʼязкове.");
+    }
+
+    [Fact]
+    public void AddressAndSchool_AreOptionalWithoutAProfile_AndAKurinMayHideThem()
+    {
+        KraiCardFieldsSettings.Default.ModeOf(KraiCardFields.Address).Should().Be(KraiCardFields.Optional);
+        KraiCardFieldsSettings.Default.Hideable().Select(field => field.Key)
+            .Should().BeEquivalentTo([KraiCardFields.Address, KraiCardFields.School]);
     }
 }

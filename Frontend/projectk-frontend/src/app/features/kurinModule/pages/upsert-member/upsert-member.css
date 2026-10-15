@@ -49,6 +49,14 @@
     min-width: 0;
 }
 
+.member-form__field--wide {
+    grid-column: span 2;
+}
+
+.member-form__field--full {
+    grid-column: 1 / -1;
+}
+
 .member-form__field > label {
     color: var(--lil-faint);
     font-size: var(--lil-text-caption);
@@ -257,6 +265,10 @@
     .member-form__grid,
     .member-form__grid--two {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .member-form__field--wide {
+        grid-column: auto;
     }
 
     .member-form__level {

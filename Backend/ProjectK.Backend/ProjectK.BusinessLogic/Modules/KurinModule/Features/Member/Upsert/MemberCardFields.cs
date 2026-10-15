@@ -32,10 +32,33 @@ public static class MemberCardFields
         // An optional field left empty arrives as null; the phone column takes no nulls.
         request.PhoneNumber ??= string.Empty;
 
+        // Address and school are private: a form that never showed them sends nothing, and that keeps
+        // what is stored. An empty value clears it.
+        if (card.ModeOf(KraiCardFields.Address) == KraiCardFields.Hidden || request.Address is null)
+        {
+            request.Address = existing?.Address;
+        }
+
+        if (card.ModeOf(KraiCardFields.School) == KraiCardFields.Hidden || request.School is null)
+        {
+            request.School = existing?.School;
+        }
+
+        request.Address = EmptyAsNull(request.Address);
+        request.School = EmptyAsNull(request.School);
+
+        if (request.Address?.Length > MaxValueLength || request.School?.Length > MaxValueLength)
+        {
+            var field = request.Address?.Length > MaxValueLength ? KraiCardFields.Address : KraiCardFields.School;
+            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[field]}» задовге.");
+        }
+
         var missing = new[]
             {
                 (Field: KraiCardFields.MiddleName, Value: request.MiddleName),
-                (Field: KraiCardFields.PhoneNumber, Value: request.PhoneNumber)
+                (Field: KraiCardFields.PhoneNumber, Value: request.PhoneNumber),
+                (Field: KraiCardFields.Address, Value: request.Address),
+                (Field: KraiCardFields.School, Value: request.School)
             }
             .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFields.Required && string.IsNullOrWhiteSpace(field.Value));
 
@@ -78,5 +101,11 @@ public static class MemberCardFields
         }
 
         return new Outcome(MemberCardExtras.Write(values), null);
+    }
+
+    private static string? EmptyAsNull(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 }

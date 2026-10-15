@@ -98,6 +98,8 @@ const FIELDS: FormField[] = [
   { key: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
   { key: 'phoneNumber', label: 'Номер телефону', type: 'tel', autocomplete: 'tel' },
   { key: 'dateOfBirth', label: 'Дата народження', type: 'date', autocomplete: 'bday' },
+  { key: 'address', label: 'Адреса', type: 'text', autocomplete: 'street-address' },
+  { key: 'school', label: 'Школа', type: 'text', autocomplete: 'off' },
 ];
 
 /** A field the край requires comes back in the server's own words, which name it. */
@@ -389,7 +391,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   /** Web isReviewer: Виховник and up. */
   private readonly reviewer = this.access.reviewSkills;
 
-  protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '' });
+  protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '' });
   protected readonly card = signal<CardFields>(DEFAULT_CARD_FIELDS);
   /** Where a number typed without «+» is read: the kurin's край. */
   private readonly phoneCountry = signal<CountryCode>(DEFAULT_PHONE_COUNTRY);
@@ -471,6 +473,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       email: m.email ?? '',
       phoneNumber: formatPhone(m.phoneNumber),
       dateOfBirth: (m.dateOfBirth ?? '').slice(0, 10),
+      address: m.address ?? '',
+      school: m.school ?? '',
     });
     const dates = rankDates(m.plastLevelHistories);
     this.dates.set(dates);

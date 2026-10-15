@@ -176,15 +176,20 @@ export function warningCalls(draft: WarningDraft): ({ kind: 'cancel'; key: strin
 
 // ── Поля картки (профіль краю) ───────────────────────────────────────────────────────────────────
 
-/** A kurin whose край has no profile asks for what the card always asked: both fields, nothing more. */
-export const DEFAULT_CARD_FIELDS: CardFields = { fields: { middleName: 'required', phoneNumber: 'required' }, extra: [] };
+/** A kurin whose край has no profile asks for what the card always asked: name and phone, address and school if known. */
+export const DEFAULT_CARD_FIELDS: CardFields = {
+  fields: { middleName: 'required', phoneNumber: 'required', address: 'optional', school: 'optional' },
+  extra: [],
+};
+
+type StandardField = keyof CardFields['fields'];
 
 const CARD_FIELD_MODES: readonly string[] = ['required', 'optional', 'hidden'];
 
 /** `GET kurin/{k}/profile` as far as the card needs it; any part may be missing. */
 export interface KraiProfileCardFields {
   cardFields?: {
-    fields?: Partial<Record<'middleName' | 'phoneNumber', string>> | null;
+    fields?: Partial<Record<StandardField, string>> | null;
     extra?: Partial<CardExtraField>[] | null;
   } | null;
 }
@@ -192,18 +197,21 @@ export interface KraiProfileCardFields {
 /** The profile's card fields, each part missing or not understood read as the default. */
 export function cardFieldsOf(profile: KraiProfileCardFields | null | undefined): CardFields {
   const section = profile?.cardFields;
-  const mode = (value: string | undefined): CardFieldMode => (CARD_FIELD_MODES.includes(value ?? '') ? (value as CardFieldMode) : 'required');
+  const mode = (field: StandardField): CardFieldMode => {
+    const value = section?.fields?.[field] ?? '';
+    return CARD_FIELD_MODES.includes(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
+  };
   return {
-    fields: { middleName: mode(section?.fields?.middleName), phoneNumber: mode(section?.fields?.phoneNumber) },
+    fields: { middleName: mode('middleName'), phoneNumber: mode('phoneNumber'), address: mode('address'), school: mode('school') },
     extra: (section?.extra ?? [])
       .filter((field) => !!field?.key && !!field.label)
       .map((field) => ({ key: field.key!, label: field.label!, type: field.type === 'date' ? 'date' : 'text', required: !!field.required })),
   };
 }
 
-/** Middle name and phone as the край says; the rest of the form is always asked. */
+/** Middle name, phone, address and school as the край says; the rest of the form is always asked. */
 export function fieldMode(card: CardFields, key: keyof MemberForm): CardFieldMode {
-  return key === 'middleName' || key === 'phoneNumber' ? card.fields[key] : 'required';
+  return key in card.fields ? card.fields[key as StandardField] : 'required';
 }
 
 /** Extra field key → value; dates as «YYYY-MM-DD». */
@@ -261,6 +269,8 @@ export interface MemberForm {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
+  address: string;
+  school: string;
 }
 
 export interface PhotoChange {
@@ -273,8 +283,8 @@ export interface PhotoChange {
 
 /**
  * The multipart body of `PUT member/{key}`, as the web's MemberService.buildFormData lays it out.
- * The address and school go back as they are: the phone does not edit them, and leaving them out
- * would blank them.
+ * The address and school go only when changed: they are private, so someone who could not see them
+ * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
 export function memberFormData(
   member: MemberDto,
@@ -285,8 +295,9 @@ export function memberFormData(
 ): FormData {
   const body = new FormData();
   appendProfile(body, form, histories, extras);
-  if (member.address) body.append('address', member.address);
-  if (member.school) body.append('school', member.school);
+  for (const key of ['address', 'school'] as const) {
+    if (form[key].trim() !== (member[key] ?? '').trim()) body.append(key, form[key].trim());
+  }
   body.append('removeProfilePhoto', String(photo.remove && !photo.blob));
   if (photo.blob) body.append('blob', photo.blob, photo.name);
   return body;
@@ -312,6 +323,8 @@ export function newMemberFormData(
   else body.append('kurinKey', placement.kurinKey);
   body.append('createUserAccount', 'true');
   appendProfile(body, form, histories, extras);
+  if (form.address.trim()) body.append('address', form.address.trim());
+  if (form.school.trim()) body.append('school', form.school.trim());
   if (photo.blob) body.append('blob', photo.blob, photo.name);
   return body;
 }

@@ -4,10 +4,10 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
-import { CardExtraFieldDto, CardFieldMode, DEFAULT_CARD_FIELDS } from '../../../../kurinModule/models/card-fields.dto';
+import { CardExtraFieldDto, CardFieldMode, DEFAULT_CARD_FIELDS, StandardCardField } from '../../../../kurinModule/models/card-fields.dto';
 import { KraiCardFieldsDocument } from '../../../models/krai-profile.dto';
 
-type StandardField = 'middleName' | 'phoneNumber';
+type StandardField = StandardCardField;
 
 const MODE_LABELS: Record<CardFieldMode, string> = {
   required: 'Обовʼязкове',
@@ -33,7 +33,9 @@ export class KraiCardFieldsComponent {
 
   readonly standardFields: { field: StandardField; label: string }[] = [
     { field: 'middleName', label: 'По батькові' },
-    { field: 'phoneNumber', label: 'Номер телефону' }
+    { field: 'phoneNumber', label: 'Номер телефону' },
+    { field: 'address', label: 'Адреса' },
+    { field: 'school', label: 'Школа' }
   ];
   readonly modeOptions = (Object.keys(MODE_LABELS) as CardFieldMode[]).map(mode => ({ mode, label: MODE_LABELS[mode] }));
   readonly typeOptions = [
