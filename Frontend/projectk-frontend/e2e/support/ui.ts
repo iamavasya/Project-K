@@ -115,8 +115,9 @@ export async function fillMemberRequiredFields(page: Page, data: {
 }
 
 export async function openWarningPanel(page: Page): Promise<void> {
-  // Перестороги are a tile on the member form now, always open.
-  await expect(page.locator('#warning-Level1')).toBeVisible();
+  // Перестороги live on the member card, in a dialog behind their own button.
+  await page.locator('.member-actions').getByRole('button', { name: 'Перестороги' }).click();
+  await expect(page.getByRole('dialog', { name: 'Перестороги' })).toBeVisible();
 }
 
 export async function acceptBrowserConfirm(page: Page): Promise<void> {

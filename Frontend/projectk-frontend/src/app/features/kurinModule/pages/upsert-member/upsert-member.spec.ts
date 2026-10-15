@@ -306,38 +306,6 @@ describe('UpsertMemberComponent', () => {
       expect(component.canEditEmail()).toBeTrue();
     });
 
-    it('should verify profile from upsert member action', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.Unverified
-      }));
-      create();
-
-      component.onProfileVerificationAction();
-
-      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
-    });
-
-    it('should reset profile verification from upsert member action when profile is current', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
-      }));
-      create();
-      spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
-        options.accept?.();
-        return component.confirmationService;
-      });
-
-      component.onProfileVerificationAction();
-
-      expect(component.confirmationService.confirm).toHaveBeenCalled();
-      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
-    });
   });
 
   describe('submit - create mode', () => {

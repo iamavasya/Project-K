@@ -12,22 +12,6 @@
     flex-wrap: wrap;
 }
 
-.member-form__verification-message {
-    font-size: var(--lil-text-caption);
-}
-
-.member-form__verification-message--success {
-    color: color-mix(in srgb, var(--p-green-700) 82%, var(--p-text-color) 18%);
-}
-
-.member-form__verification-message--warn {
-    color: color-mix(in srgb, var(--p-amber-700) 82%, var(--p-text-color) 18%);
-}
-
-.member-form__verification-message--error {
-    color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
-}
-
 .member-form__cols {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 15rem;

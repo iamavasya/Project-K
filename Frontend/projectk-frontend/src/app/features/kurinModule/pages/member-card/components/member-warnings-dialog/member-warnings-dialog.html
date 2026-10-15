@@ -1,0 +1,35 @@
+<p-dialog [(visible)]="visible" header="Перестороги" [modal]="true" [dismissableMask]="true"
+    [style]="{ width: 'min(92vw, 30rem)' }">
+    <p class="warnings-intro">Перестороги йдуть по черзі: наступну можна дати, лише поки діє попередня. Скасувати може той, хто дав.</p>
+    <ol class="warnings-steps">
+        @for (step of steps; track step.level) {
+            <li class="warnings-step" [class.warnings-step--active]="active(step.level)"
+                [class.warnings-step--locked]="!active(step.level) && !canGive(step.level)">
+                <span class="warnings-step__mark" aria-hidden="true">
+                    @if (active(step.level)) { <i class="pi pi-exclamation-triangle"></i> }
+                </span>
+                <div class="warnings-step__text">
+                    <span class="warnings-step__title">{{ step.title }}</span>
+                    <span class="warnings-step__meta">
+                        @if (active(step.level)) {
+                            Діє до {{ expiresAt(step.level) | date:'dd.MM.yyyy' }}
+                        } @else if (canGive(step.level)) {
+                            Можна дати {{ step.term }}
+                        } @else {
+                            Після попередньої
+                        }
+                    </span>
+                </div>
+                @if (canGive(step.level)) {
+                    <p-button [id]="'warning-' + step.level" type="button" label="Дати" severity="secondary"
+                        [outlined]="true" size="small" [loading]="busyLevel() === step.level"
+                        [ariaLabel]="'Дати: ' + step.title" (onClick)="give(step)" />
+                } @else if (canCancel(step.level)) {
+                    <p-button [id]="'warning-' + step.level" type="button" label="Скасувати" severity="danger"
+                        variant="text" size="small" [loading]="busyLevel() === step.level"
+                        [ariaLabel]="'Скасувати: ' + step.title" (onClick)="cancel(step)" />
+                }
+            </li>
+        }
+    </ol>
+</p-dialog>

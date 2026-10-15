@@ -11,28 +11,8 @@
                     <app-profile-verification-badge [enabled]="profileVerificationEnabled"
                         [status]="member.profileVerificationStatus" />
                 </div>
-                @if (profileVerificationMessage) {
-                    <p class="member-form__verification-message"
-                        [class.member-form__verification-message--success]="profileVerificationMessageSeverity === 'success'"
-                        [class.member-form__verification-message--warn]="profileVerificationMessageSeverity === 'warn'"
-                        [class.member-form__verification-message--error]="profileVerificationMessageSeverity === 'error'">
-                        {{ profileVerificationMessage }}
-                    </p>
-                }
             }
         </div>
-        @if (canManageProfileVerification) {
-            <div class="lil-page-head__actions">
-                <p-button type="button"
-                    [label]="profileVerificationActionTooltip"
-                    [icon]="profileVerificationActionIcon"
-                    severity="secondary"
-                    [outlined]="true"
-                    size="small"
-                    [loading]="profileVerificationSubmitting"
-                    (onClick)="onProfileVerificationAction()" />
-            </div>
-        }
     </header>
 
     <div class="member-form__cols">
@@ -188,30 +168,6 @@
                 }
             </section>
 
-            @if (canManageWarnings && !isCreate) {
-                <section class="kurin-tile member-form__tile">
-                    <div class="lil-tile-head">
-                        <div><h2>Перестороги</h2><p>Зміни тут застосуються після «Зберегти».</p></div>
-                    </div>
-                    <div class="member-form__warnings">
-                        @for (warning of warningLevels; track warning.level) {
-                            <div class="member-form__warning">
-                                <input type="checkbox" [id]="'warning-' + warning.level"
-                                    [checked]="isWarningChecked(warning.level)"
-                                    [disabled]="isWarningBusy(warning.level) || (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) || (isWarningChecked(warning.level) && !canClearWarning(warning.level))"
-                                    (change)="onWarningToggle(warning.level, $any($event.target).checked)" />
-                                <label [for]="'warning-' + warning.level">{{ warning.label }}</label>
-                                @if (isWarningChecked(warning.level) && !canClearWarning(warning.level)) {
-                                    <span class="member-form__hint">Скасувати може лише автор перестороги.</span>
-                                }
-                                @if (!isWarningChecked(warning.level) && !canSelectWarning(warning.level)) {
-                                    <span class="member-form__hint">Доступно після попередньої.</span>
-                                }
-                            </div>
-                        }
-                    </div>
-                </section>
-            }
         </div>
 
         <aside class="kurin-tile member-form__photo">

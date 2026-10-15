@@ -17,21 +17,15 @@ import { Location } from '@angular/common';
 import { PlastLevelHistoryDto } from '../../models/plast-level-history.dto';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { parseDateOnlyString, toDateOnlyString } from '../../functions/to-date-only-string.function';
-import { MemberWarningService } from '../../services/member-warning-service/member-warning.service';
-import { MemberWarningDto } from '../../models/member-warning.dto';
-import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
-import { concatMap, finalize, from, Observable, of, toArray } from 'rxjs';
+import { finalize } from 'rxjs';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { AccountStatus } from '../../models/enums/account-status.enum';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ProfileVerificationBadgeComponent } from '../../components/profile-verification-badge/profile-verification-badge';
-import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
-import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { CountryCode } from 'libphonenumber-js';
@@ -77,7 +71,6 @@ export class UpsertMemberComponent implements OnInit {
   router = inject(Router);
   location = inject(Location);
   memberService = inject(MemberService);
-  memberWarningService = inject(MemberWarningService);
   kurinService = inject(KurinService);
   authService = inject(AuthService);
   permissionService = inject(PermissionService);
@@ -90,11 +83,7 @@ export class UpsertMemberComponent implements OnInit {
   // Адреса, на яку пішов лист. Поки поле з нею не збігається, «надіслати ще раз» пошле на стару.
   private savedEmail = '';
   invitationSending = false;
-  canManageWarnings = false;
   profileVerificationEnabled = false;
-  profileVerificationSubmitting = false;
-  profileVerificationMessage: string | null = null;
-  profileVerificationMessageSeverity: 'success' | 'warn' | 'error' = 'success';
 
   plastLevelMap: Record<PlastLevel, PlastLevelHistoryDto> = {} as Record<PlastLevel, PlastLevelHistoryDto>;
   readonly PlastLevel = PlastLevel;
@@ -122,18 +111,6 @@ export class UpsertMemberComponent implements OnInit {
   ];
   /** Groups on screen: Пласт and УПЮ always, the rest once they have a date or are asked for. */
   private readonly shownLevelGroups = new Set<LevelGroupKey>(['base', 'upu']);
-  memberWarnings: MemberWarningDto[] = [];
-  
-  warningsToAssign = new Set<MemberWarningLevel>();
-  warningsToCancel = new Set<string>(); // memberWarningKeys
-
-  readonly MemberWarningLevel = MemberWarningLevel;
-  readonly MemberProfileVerificationStatus = MemberProfileVerificationStatus;
-  readonly warningLevels = [
-    { level: MemberWarningLevel.Level1, label: 'Перша пересторога (3 місяці)' },
-    { level: MemberWarningLevel.Level2, label: 'Друга пересторога (6 місяців)' },
-    { level: MemberWarningLevel.Level3, label: 'Третя пересторога (12 місяців)' }
-  ];
 
   imageFile?: File;
   croppedImage = '';
@@ -171,7 +148,6 @@ export class UpsertMemberComponent implements OnInit {
     const currentNavigation = this.router.currentNavigation();
     const navState = (currentNavigation?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
     this.cameFromMember = navState?.fromMember === true;
-    this.canManageWarnings = this.resolveCanManageWarnings();
   }
 
   private loadData(): void {
@@ -190,7 +166,6 @@ export class UpsertMemberComponent implements OnInit {
 
         this.member = memberForEdit;
         this.savedEmail = memberForEdit.email;
-        this.memberWarnings = memberForEdit.warnings ?? [];
         this.ensurePlastLevelMap();
         this.showLevelGroupsWithDates();
         this.loadProfileVerificationToggle(memberForEdit.kurinKey);
@@ -315,143 +290,6 @@ export class UpsertMemberComponent implements OnInit {
     this.form()?.form.markAsDirty();
   }
 
-  private resolveCanManageWarnings(): boolean {
-    return this.permissionService.canManageWarnings();
-  }
-
-  get isCurrentUserMember(): boolean {
-    const authState = this.authService.getAuthStateValue?.();
-    return !!this.member
-      && ((!!authState?.memberKey && authState.memberKey === this.member.memberKey)
-        || (!!authState?.userKey && authState.userKey === this.member.userKey));
-  }
-
-  get canManageProfileVerification(): boolean {
-    return !this.isCreate
-      && this.profileVerificationEnabled
-      && !this.isCurrentUserMember
-      && this.permissionService.isReviewer();
-  }
-
-
-  get profileVerificationActionIcon(): string {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'pi pi-undo'
-      : 'pi pi-verified';
-  }
-
-  get profileVerificationActionTooltip(): string {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'Зняти верифікацію профілю'
-      : 'Верифікувати профіль';
-  }
-
-  get profileVerificationActionSeverity(): 'success' | 'secondary' {
-    return this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent
-      ? 'secondary'
-      : 'success';
-  }
-
-  onProfileVerificationAction(): void {
-    if (!this.canManageProfileVerification || this.profileVerificationSubmitting || !this.memberKey) {
-      return;
-    }
-
-    if (this.member.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent) {
-      this.confirmationService.confirm({
-        header: 'Зняти верифікацію профілю',
-        message: 'Зняти верифікацію з профілю цього учасника?',
-        icon: 'pi pi-exclamation-triangle',
-        rejectLabel: 'Скасувати',
-        rejectButtonProps: {
-          label: 'Скасувати',
-          severity: 'secondary',
-          outlined: true
-        },
-        acceptButtonProps: {
-          label: 'Зняти',
-          severity: 'danger'
-        },
-        accept: () => this.executeResetProfileVerification()
-      });
-      return;
-    }
-
-    this.executeVerifyProfile();
-  }
-
-  private executeVerifyProfile(): void {
-    if (!this.memberKey) {
-      return;
-    }
-
-    this.profileVerificationSubmitting = true;
-    this.profileVerificationMessage = null;
-
-    this.memberService
-      .verifyProfile(this.memberKey, null)
-      .pipe(finalize(() => {
-        this.profileVerificationSubmitting = false;
-      }))
-      .subscribe({
-        next: (member) => {
-          this.member = {
-            ...member,
-            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
-            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
-              ...history,
-              dateAchieved: parseDateOnlyString(history.dateAchieved)
-            }))
-          };
-          this.memberWarnings = this.member.warnings ?? [];
-          this.profileVerificationMessageSeverity = 'success';
-          this.profileVerificationMessage = 'Профіль верифіковано.';
-        },
-        error: (error) => {
-          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
-          this.profileVerificationMessage = error?.status === 400
-            ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : failureDetail(error, 'Не вдалося верифікувати профіль. Спробуй ще раз.');
-        }
-      });
-  }
-
-  private executeResetProfileVerification(): void {
-    if (!this.memberKey) {
-      return;
-    }
-
-    this.profileVerificationSubmitting = true;
-    this.profileVerificationMessage = null;
-
-    this.memberService
-      .resetProfileVerification(this.memberKey)
-      .pipe(finalize(() => {
-        this.profileVerificationSubmitting = false;
-      }))
-      .subscribe({
-        next: (member) => {
-          this.member = {
-            ...member,
-            dateOfBirth: parseDateOnlyString(member.dateOfBirth),
-            plastLevelHistories: (member.plastLevelHistories ?? []).map(history => ({
-              ...history,
-              dateAchieved: parseDateOnlyString(history.dateAchieved)
-            }))
-          };
-          this.memberWarnings = this.member.warnings ?? [];
-          this.profileVerificationMessageSeverity = 'success';
-          this.profileVerificationMessage = 'Верифікацію профілю знято.';
-        },
-        error: (error) => {
-          this.profileVerificationMessageSeverity = error?.status === 400 ? 'warn' : 'error';
-          this.profileVerificationMessage = error?.status === 400
-            ? 'Верифікацію профілів вимкнено для цього куреня.'
-            : failureDetail(error, 'Не вдалося зняти верифікацію. Спробуй ще раз.');
-        }
-      });
-  }
-
   private loadProfileVerificationToggle(kurinKey: string | null | undefined): void {
     this.profileVerificationEnabled = false;
     if (!kurinKey) {
@@ -519,98 +357,6 @@ export class UpsertMemberComponent implements OnInit {
     return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin());
   }
 
-  private isWarningActive(warning: MemberWarningDto, now: Date): boolean {
-    if (warning.revokedAtUtc) {
-      return false;
-    }
-
-    const expiresAt = parseUtcDateTime(warning.expiresAtUtc)?.getTime() ?? 0;
-    return expiresAt > now.getTime();
-  }
-
-  getActiveWarning(level: MemberWarningLevel): MemberWarningDto | null {
-    if (this.warningsToAssign.has(level)) {
-      return {
-        memberWarningKey: 'dummy',
-        memberKey: this.memberKey,
-        level: level,
-        issuedAtUtc: new Date().toISOString(),
-        expiresAtUtc: new Date(Date.now() + 86400000).toISOString(),
-        issuedByUserKey: this.authService.getAuthStateValue()?.userKey ?? ''
-      } as MemberWarningDto;
-    }
-
-    const now = new Date();
-    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, now));
-    if (warning && !this.warningsToCancel.has(warning.memberWarningKey)) {
-      return warning;
-    }
-
-    return null;
-  }
-
-  isWarningChecked(level: MemberWarningLevel): boolean {
-    return this.getActiveWarning(level) !== null;
-  }
-
-  canSelectWarning(level: MemberWarningLevel): boolean {
-    if (!this.canManageWarnings) {
-      return false;
-    }
-
-    if (level === MemberWarningLevel.Level1) {
-      return true;
-    }
-
-    if (level === MemberWarningLevel.Level2) {
-      return this.isWarningChecked(MemberWarningLevel.Level1);
-    }
-
-    return this.isWarningChecked(MemberWarningLevel.Level2);
-  }
-
-  canClearWarning(level: MemberWarningLevel): boolean {
-    if (this.warningsToAssign.has(level)) return true;
-
-    const warning = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
-    if (!warning) return false;
-
-    const currentUserKey = this.authService.getAuthStateValue()?.userKey?.toLowerCase();
-    return !!currentUserKey && warning.issuedByUserKey.toLowerCase() === currentUserKey;
-  }
-
-  isWarningBusy(level: MemberWarningLevel): boolean {
-    void level;
-    return false; // we don't have flight status for inline anymore
-  }
-
-  onWarningToggle(level: MemberWarningLevel, isChecked: boolean): void {
-    this.markFormDirty();
-    if (!this.memberKey) return;
-
-    if (isChecked) {
-      if (!this.canSelectWarning(level)) return;
-
-      const existing = this.memberWarnings.find(w => w.level === level && this.isWarningActive(w, new Date()));
-      if (existing && this.warningsToCancel.has(existing.memberWarningKey)) {
-        this.warningsToCancel.delete(existing.memberWarningKey);
-      } else {
-        this.warningsToAssign.add(level);
-      }
-    } else {
-      if (!this.canClearWarning(level)) return;
-
-      if (this.warningsToAssign.has(level)) {
-        this.warningsToAssign.delete(level);
-      } else {
-        const existing = this.getActiveWarning(level);
-        if (existing) {
-          this.warningsToCancel.add(existing.memberWarningKey);
-        }
-      }
-    }
-  }
-
   private ensurePlastLevelMap() {
     this.levelGroups.flatMap(group => group.levels).forEach(config => {
       let rec = this.member.plastLevelHistories.find(x => x.plastLevel === config.level);
@@ -627,28 +373,6 @@ export class UpsertMemberComponent implements OnInit {
     const filteredHistory = history.filter(x => x.dateAchieved != null);
     filteredHistory.forEach(x => x.dateAchieved = toDateOnlyString(x.dateAchieved));
     return filteredHistory;
-  }
-
-  private processPendingWarnings(memberKey: string): Observable<unknown[] | null> {
-    const tasks: Observable<unknown>[] = [];
-
-    for (const key of this.warningsToCancel) {
-      tasks.push(this.memberWarningService.cancelWarning(memberKey, key));
-    }
-
-    const levelsToAssign = Array.from(this.warningsToAssign).sort((left, right) => left.localeCompare(right));
-    for (const warningLevel of levelsToAssign) {
-      tasks.push(this.memberWarningService.assignWarning(memberKey, { level: warningLevel }));
-    }
-
-    if (tasks.length === 0) {
-      return of(null);
-    }
-
-    return from(tasks).pipe(
-      concatMap(task => task),
-      toArray()
-    );
   }
 
   submit(): void {
@@ -691,24 +415,11 @@ export class UpsertMemberComponent implements OnInit {
             life: 10000
           });
         }
-        this.processPendingWarnings(savedMember.memberKey).subscribe({
-          next: () => {
-            if (this.cameFromMember) {
-              this.location.back();
-            } else {
-              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
-            }
-          },
-          error: (warnErr) => {
-            console.error('Error processing warnings:', warnErr);
-            // Still navigate even if warnings failed partially
-            if (this.cameFromMember) {
-              this.location.back();
-            } else {
-              this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
-            }
-          }
-        });
+        if (this.cameFromMember) {
+          this.location.back();
+        } else {
+          this.router.navigate(['/member', savedMember.memberKey], { replaceUrl: true });
+        }
       },
       error: (error) => {
         if (error instanceof HttpErrorResponse && error.error?.error === 'EmailTaken') {
