@@ -179,6 +179,7 @@
                     @if (photoInitials) { {{ photoInitials }} } @else { <i class="pi pi-user"></i> }
                 </div>
             }
+            <label for="photo" class="member-form__file">Фото</label>
             <input #photoInput type="file" accept="image/*" class="member-form__file" id="photo"
                 (change)="onPhotoPicked($event); photoInput.value = ''" />
             <div class="member-form__photo-actions">
