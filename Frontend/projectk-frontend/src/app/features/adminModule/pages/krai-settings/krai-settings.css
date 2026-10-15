@@ -97,3 +97,39 @@
     display: none;
   }
 }
+
+.krai-subtitle {
+  margin: 1.5rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.krai-extra {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.krai-extra__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.krai-extra__row .krai-field {
+  margin-bottom: 0;
+}
+
+.krai-extra__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .krai-extra__row {
+    grid-template-columns: 1fr;
+  }
+}

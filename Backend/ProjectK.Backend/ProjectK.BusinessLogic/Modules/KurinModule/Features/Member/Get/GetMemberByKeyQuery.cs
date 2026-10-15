@@ -76,6 +76,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         {
             response.Address = string.Empty;
             response.School = string.Empty;
+            response.CardExtras = new Dictionary<string, string>();
         }
 
         return canViewPrivate;

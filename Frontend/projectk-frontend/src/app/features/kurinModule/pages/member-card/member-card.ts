@@ -57,6 +57,7 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../../functions/progress-status-labels.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { cardExtraLines, cardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { GroupService } from '../../services/group-service/group.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
 import { GroupDto } from '../../models/group.dto';
@@ -120,6 +121,8 @@ export class MemberCardComponent implements OnInit {
   memberAwardService = inject(MemberAwardService);
 
   member: MemberDto | null = null;
+  /** What the member's край asks of the card; the card as it always was until it loads. */
+  cardFields: CardFieldsDto = DEFAULT_CARD_FIELDS;
   memberKey: string | null = null;
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
@@ -202,6 +205,7 @@ export class MemberCardComponent implements OnInit {
         }
         this.updateMemberAccess(member.memberKey ?? this.memberKey);
         this.loadProfileVerificationToggle(member);
+        this.loadCardFields(member);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -496,6 +500,22 @@ export class MemberCardComponent implements OnInit {
         this.canManageMemberActions = false;
       }
     });
+  }
+
+  private loadCardFields(member: MemberDto): void {
+    this.cardFields = DEFAULT_CARD_FIELDS;
+    if (isUsableKey(member.kurinKey)) {
+      this.kurinService.getCardFields(member.kurinKey!).subscribe(card => this.cardFields = card);
+    }
+  }
+
+  /** A field the member's край leaves off the card is not shown as «не вказано» either. */
+  showsField(field: 'middleName' | 'phoneNumber'): boolean {
+    return cardFieldMode(this.cardFields, field) !== 'hidden';
+  }
+
+  get cardExtras(): { key: string; label: string; value: string }[] {
+    return cardExtraLines(this.cardFields, this.member?.cardExtras);
   }
 
   private loadProfileVerificationToggle(member: MemberDto): void {

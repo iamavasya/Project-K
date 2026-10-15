@@ -48,18 +48,20 @@
                                 autocomplete="off" />
                             <label for="firstName">Імʼя</label>
                         </p-floatlabel>
-                        <p-floatlabel variant="on">
-                            <input
-                                pInputText
-                                id="middleName"
-                                name="middleName"
-                                [(ngModel)]="member.middleName"
-                                required
-                                #middleNameCtrl="ngModel"
-                                [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
-                                autocomplete="off" />
-                            <label for="middleName">По батькові</label>
-                        </p-floatlabel>
+                        @if (fieldMode('middleName') !== 'hidden') {
+                            <p-floatlabel variant="on">
+                                <input
+                                    pInputText
+                                    id="middleName"
+                                    name="middleName"
+                                    [(ngModel)]="member.middleName"
+                                    [required]="fieldMode('middleName') === 'required'"
+                                    #middleNameCtrl="ngModel"
+                                    [invalid]="middleNameCtrl.invalid && (middleNameCtrl.dirty || middleNameCtrl.touched)"
+                                    autocomplete="off" />
+                                <label for="middleName">По батькові</label>
+                            </p-floatlabel>
+                        }
                         <p-floatlabel variant="on">
                             <input
                                 pInputText
@@ -110,19 +112,21 @@
                                 </div>
                             }
                         }
-                        <p-floatlabel variant="on">
-                            <p-inputMask
-                                [mask]="phoneMask"
-                                [placeholder]="phonePlaceholder"
-                                id="phoneNumber"
-                                name="phoneNumber"
-                                [(ngModel)]="member.phoneNumber"
-                                required
-                                #phoneNumberCtrl="ngModel"
-                                [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
-                            />
-                            <label for="phoneNumber">Номер телефону</label>
-                        </p-floatlabel>
+                        @if (fieldMode('phoneNumber') !== 'hidden') {
+                            <p-floatlabel variant="on">
+                                <p-inputMask
+                                    [mask]="phoneMask"
+                                    [placeholder]="phonePlaceholder"
+                                    id="phoneNumber"
+                                    name="phoneNumber"
+                                    [(ngModel)]="member.phoneNumber"
+                                    [required]="fieldMode('phoneNumber') === 'required'"
+                                    #phoneNumberCtrl="ngModel"
+                                    [invalid]="phoneNumberCtrl.invalid && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)"
+                                />
+                                <label for="phoneNumber">Номер телефону</label>
+                            </p-floatlabel>
+                        }
                         <p-floatlabel variant="on">
                             <p-datepicker
                                 name="dateOfBirth"
@@ -134,6 +138,29 @@
                                 [dateFormat]="defaultDateFormat" />
                             <label for="dateOfBirth">Дата народження</label>
                         </p-floatlabel>
+                        @for (field of cardFields.extra; track field.key) {
+                            <p-floatlabel variant="on">
+                                @if (field.type === 'date') {
+                                    <p-datepicker
+                                        [inputId]="'extra-' + field.key"
+                                        [name]="'extra-' + field.key"
+                                        [(ngModel)]="cardExtras[field.key]"
+                                        (ngModelChange)="markFormDirty()"
+                                        [required]="field.required"
+                                        [dateFormat]="defaultDateFormat" />
+                                } @else {
+                                    <input
+                                        pInputText
+                                        [id]="'extra-' + field.key"
+                                        [name]="'extra-' + field.key"
+                                        [(ngModel)]="cardExtras[field.key]"
+                                        [required]="field.required"
+                                        maxlength="200"
+                                        autocomplete="off" />
+                                }
+                                <label [for]="'extra-' + field.key">{{ field.label }}</label>
+                            </p-floatlabel>
+                        }
                     </div>
                     <div class="flex flex-col gap-2">
                         <p-fileUpload name="photo"

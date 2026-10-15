@@ -1,3 +1,5 @@
+import { CardExtraFieldDto, CardFieldMode } from '../../kurinModule/models/card-fields.dto';
+
 /** A край's profile as it is stored. Every value is optional: what is left out comes from code. */
 export interface KraiProfileDocument {
   catalog?: {
@@ -10,6 +12,13 @@ export interface KraiProfileDocument {
     timeZone?: string;
     numberLocale?: string;
   };
+  cardFields?: KraiCardFieldsDocument;
+}
+
+/** The card: modes of its own fields that differ from the default, and the край's own fields. */
+export interface KraiCardFieldsDocument {
+  fields?: Record<string, CardFieldMode>;
+  extra?: CardExtraFieldDto[];
 }
 
 export interface KraiProfileEditorDto {

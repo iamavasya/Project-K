@@ -22,6 +22,7 @@ import { BadgeCatalogItemDto } from '../../models/probes-and-badges/badge-catalo
 import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.dto';
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { KurinDto } from '../../models/kurin.dto';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
@@ -60,7 +61,8 @@ describe('MemberCardComponent', () => {
 
   beforeEach(async () => {
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
+    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
     badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll', 'getForKurin']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
@@ -257,6 +259,26 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
     expect(component.member).toEqual(member);
+  });
+
+  it('should show the край\'s own fields and leave out the ones it hides', () => {
+    kurinServiceSpy.getCardFields.and.returnValue(of({
+      fields: { middleName: 'hidden', phoneNumber: 'required' },
+      extra: [
+        { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+        { key: 'visaUntil', label: 'Віза до', type: 'date', required: false },
+        { key: 'permit', label: 'Дозвіл', type: 'text', required: false }
+      ]
+    } as CardFieldsDto));
+    memberServiceSpy.getByKey.and.returnValue(of({ ...member, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+    createComponent();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Тип візи: D');
+    expect(text).toContain('Віза до: 30.06.2027');
+    expect(text).not.toContain('Дозвіл');
+    expect(text).not.toContain('По батькові не вказано');
   });
 
   it('should display profile verification timestamp without timezone as local time from UTC', () => {

@@ -69,6 +69,7 @@ import {
 import {
   BadgeCatalogItemDto,
   BadgeProgressDto,
+  CardFields,
   GroupDto,
   MemberAwardDto,
   MemberDto,
@@ -77,6 +78,7 @@ import {
 } from './kurin.models';
 import { KurinApi, ProtectedImages } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
 import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
@@ -298,6 +300,11 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
                 </ion-item>
+                @for (row of extraRows(); track row.key) {
+                  <ion-item [attr.data-testid]="'card-extra-' + row.key">
+                    <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
+                  </ion-item>
+                }
                 @if (verificationEnabled() && m.profileVerifiedAtUtc) {
                   <ion-item><ion-label><h3>Верифіковано</h3><p>{{ when(m.profileVerifiedAtUtc) }}</p></ion-label></ion-item>
                 }
@@ -553,6 +560,8 @@ export class MemberPage implements OnInit {
   protected readonly dues = signal<MemberDuesDto | null>(null);
   protected readonly canUpdate = signal(false);
   protected readonly verificationEnabled = signal(false);
+  /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
+  private readonly cardFields = signal<CardFields | null>(null);
   protected readonly placing = signal(false);
 
   protected readonly memberValue = computed(() => valueOf(this.member()));
@@ -574,6 +583,8 @@ export class MemberPage implements OnInit {
     return (m && plastLevelLabel(m)) || 'Ступінь не вказано';
   });
   protected readonly warning = computed(() => activeWarning(this.memberValue()?.warnings));
+  /** The край's own fields that have a value on this card. */
+  protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));
   protected readonly birthDate = computed(() => {
     const born = dateOnly(this.memberValue()?.dateOfBirth);
     return born ? dateLabel(born) : 'Не вказано';
@@ -804,7 +815,7 @@ export class MemberPage implements OnInit {
     if (!key || !member) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled() },
+      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled(), cardFields: this.cardFields() },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -833,7 +844,7 @@ export class MemberPage implements OnInit {
         (dues) => this.dues.set(dues?.hasAccount ? dues : null),
         () => this.dues.set(null),
       ),
-      member.then(() => this.loadVerificationToggle()),
+      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields()])),
       // Skills and probes wait for both: the branch comes from the ступінь and the kurin.
       Promise.all([member, memberships]).then(() => (this.youth() ? Promise.all([this.loadSkills(key), this.loadProbes(key)]) : null)),
     ]);
@@ -846,6 +857,16 @@ export class MemberPage implements OnInit {
       this.verificationEnabled.set((await this.data.kurin(kurinKey)).profileVerificationEnabled ?? false);
     } catch {
       this.verificationEnabled.set(false);
+    }
+  }
+
+  private async loadCardFields(): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
+    if (!kurinKey) return;
+    try {
+      this.cardFields.set(await this.data.cardFields(kurinKey));
+    } catch {
+      this.cardFields.set(null);
     }
   }
 

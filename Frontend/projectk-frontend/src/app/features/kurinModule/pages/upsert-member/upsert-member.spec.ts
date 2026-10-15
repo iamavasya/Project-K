@@ -14,6 +14,7 @@ import { FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 
@@ -60,7 +61,8 @@ describe('UpsertMemberComponent', () => {
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification', 'resendInvitation']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
+    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     messageServiceSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
@@ -482,6 +484,31 @@ describe('UpsertMemberComponent', () => {
 
       const dto = memberServiceSpy.update.calls.mostRecent().args[1];
       expect(dto.email).toBe(loadedMember.email);
+    });
+
+    it('should follow the card fields of the member\'s край', () => {
+      const prague: CardFieldsDto = {
+        fields: { middleName: 'hidden', phoneNumber: 'optional' },
+        extra: [
+          { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+          { key: 'visaUntil', label: 'Віза до', type: 'date', required: false }
+        ]
+      };
+      kurinServiceSpy.getCardFields.and.returnValue(of(prague));
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+      create();
+      fixture.detectChanges();
+
+      const page: HTMLElement = fixture.nativeElement;
+      expect(page.querySelector('#middleName')).toBeNull();
+      expect(page.textContent).toContain('Тип візи');
+      expect(component.cardExtras['visaUntil']).toEqual(new Date(2027, 5, 30));
+
+      component.cardExtras['visaUntil'] = null;
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.cardExtras).toEqual({ visaUntil: '' });
     });
 
     it('should send the loaded address and school back so the update does not blank them', () => {

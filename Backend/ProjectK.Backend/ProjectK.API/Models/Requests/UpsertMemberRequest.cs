@@ -28,6 +28,9 @@ public class UpsertMemberRequest
     public string? Address { get; set; }
     public string? School { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
+
+    /// <summary>Values of the край's own card fields, by key, sent as <c>cardExtras[key]</c>.</summary>
+    public Dictionary<string, string>? CardExtras { get; set; }
     public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = [];
     public bool? RemoveProfilePhoto { get; set; }
     public IFormFile? Blob { get; set; }

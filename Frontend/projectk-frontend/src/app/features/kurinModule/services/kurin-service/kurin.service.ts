@@ -3,9 +3,10 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { KurinDto } from '../../models/kurin.dto';
 import { KraiDto } from '../../models/krai.dto';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
-import { tap } from 'rxjs';
+import { catchError, map, of, tap } from 'rxjs';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { browserTimeZone } from '../../functions/browser-time-zone.function';
 import { ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
@@ -81,6 +82,21 @@ export class KurinService {
   /** The краї of this instance, for the admin's kurin list. */
   getKrais(): Observable<KraiDto[]> {
     return this.http.get<KraiDto[]>(`${environment.apiUrl}/krai`);
+  }
+
+  /**
+   * The card fields of the kurin's край. A profile that does not load leaves the card as it
+   * always was; the server still checks the край's rules on save.
+   */
+  getCardFields(kurinKey: string): Observable<CardFieldsDto> {
+    return this.cache.get(
+      `${KURIN_CACHE_PREFIX}card-fields:${kurinKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<{ cardFields?: CardFieldsDto }>(`${this.apiUrl}/${kurinKey}/profile`)
+    ).pipe(
+      map(profile => profile.cardFields ?? DEFAULT_CARD_FIELDS),
+      catchError(() => of(DEFAULT_CARD_FIELDS))
+    );
   }
 
   /** Moves a kurin to another край. Admin-only; refused when its number is taken there. */

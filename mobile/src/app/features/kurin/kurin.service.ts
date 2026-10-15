@@ -6,6 +6,7 @@ import { apiUrl } from '../../runtime-config';
 import {
   BadgeCatalogItemDto,
   BadgeProgressDto,
+  CardFields,
   GroupDto,
   GroupRequest,
   GroupedProbeDto,
@@ -24,7 +25,7 @@ import {
   UpsertLeadershipRequest,
   WarningLevel,
 } from './kurin.models';
-import { NewMemberPlacement } from './member-edit';
+import { KraiProfileCardFields, NewMemberPlacement, cardFieldsOf } from './member-edit';
 import { browserTimeZone } from './kurin-profile';
 
 /**
@@ -51,6 +52,11 @@ export class KurinApi {
   /** The kurin's record (web kurin-panel «Редагування даних куреня»); the whole record goes back. */
   updateKurin(kurin: KurinDto): Promise<KurinDto> {
     return this.api.put(`kurin/${kurin.kurinKey}`, kurin);
+  }
+
+  /** What the kurin's край asks on a member's card (its profile's `cardFields`, or the default without one). */
+  async cardFields(kurinKey: string): Promise<CardFields> {
+    return cardFieldsOf(await this.api.get<KraiProfileCardFields>(`kurin/${kurinKey}/profile`));
   }
 
   /** The kurin's report as a PDF (web «Експорт звіту куреня»), dated in the reader's zone. */

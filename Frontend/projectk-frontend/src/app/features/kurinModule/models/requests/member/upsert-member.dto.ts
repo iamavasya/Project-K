@@ -12,6 +12,8 @@ export interface UpsertMemberDto {
     dateOfBirth: string;
     address?: string | null;
     school?: string | null;
+    /** Values of the край's own card fields by key; an empty one clears it. */
+    cardExtras?: Record<string, string>;
     removeProfilePhoto?: boolean;
     plastLevelHistories?: PlastLevelHistoryDto[];
 }

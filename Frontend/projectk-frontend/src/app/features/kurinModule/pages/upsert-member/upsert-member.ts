@@ -38,6 +38,7 @@ import { parseUtcDateTime } from '../../../../shared/functions/utc-date-time.fun
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { MessageModule } from '@openng/optimus-ui/message';
+import { CardExtraFieldDto, cardFieldMode, CardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { toUkrainianPhone, UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../shared/functions/ukrainian-phone.function';
 
 @Component({
@@ -143,6 +144,11 @@ export class UpsertMemberComponent implements OnInit {
 
   defaultDateFormat = 'dd.mm.yy';
 
+  /** What the member's край asks of the card; the card as it always was until it loads. */
+  cardFields: CardFieldsDto = DEFAULT_CARD_FIELDS;
+  /** The край's own fields as the form edits them: text, or a date for a date field. */
+  cardExtras: Record<string, string | Date | null> = {};
+
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey') ?? '';
@@ -158,6 +164,7 @@ export class UpsertMemberComponent implements OnInit {
       this.ensurePlastLevelMap();
       this.setupAccordionAndToggles();
       this.isCreate = true;
+      this.loadCardFields(this.kurinKey);
     }
     const currentNavigation = this.router.currentNavigation();
     const navState = (currentNavigation?.extras.state as { fromMember?: boolean } | undefined) ?? history.state;
@@ -186,12 +193,46 @@ export class UpsertMemberComponent implements OnInit {
         this.ensurePlastLevelMap();
         this.setupAccordionAndToggles();
         this.loadProfileVerificationToggle(memberForEdit.kurinKey);
+        this.loadCardFields(memberForEdit.kurinKey);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
         this.router.navigate(this.scopeRoute(), { replaceUrl: true });
       }
     });
+  }
+
+  fieldMode(field: 'middleName' | 'phoneNumber'): CardFieldMode {
+    return cardFieldMode(this.cardFields, field);
+  }
+
+  // A new member placed in a гурток has no kurin in the route; they join the kurin being worked in.
+  private loadCardFields(kurinKey: string | null | undefined): void {
+    const key = kurinKey || this.authService.getAuthStateValue?.()?.kurinKey;
+    if (!key) {
+      return;
+    }
+
+    this.kurinService.getCardFields(key).subscribe(card => {
+      this.cardFields = card;
+      this.cardExtras = Object.fromEntries(card.extra.map(field => [field.key, this.editableExtra(field)]));
+    });
+  }
+
+  private editableExtra(field: CardExtraFieldDto): string | Date | null {
+    const value = this.member.cardExtras?.[field.key] ?? '';
+    return field.type === 'date' ? parseDateOnlyString(value) : value;
+  }
+
+  // Only what was changed goes back, an emptied field as '' to clear it. A card loaded without
+  // the private details shows these blank, and sending the blanks would wipe what is stored.
+  private cardExtrasPayload(): Record<string, string> {
+    return Object.fromEntries(this.cardFields.extra
+      .map(field => {
+        const value = this.cardExtras[field.key];
+        return [field.key, value instanceof Date ? toDateOnlyString(value) ?? '' : (value ?? '').trim()];
+      })
+      .filter(([key, value]) => value !== (this.member.cardExtras?.[key] ?? '')));
   }
 
   private usableParam(value: string | null): string {
@@ -601,6 +642,7 @@ export class UpsertMemberComponent implements OnInit {
       // they would come back blank. They go back as loaded, the way the phone app sends them.
       address: this.member.address,
       school: this.member.school,
+      cardExtras: this.cardExtrasPayload(),
     };
 
     // Куди людину поставити — сказано лише при заведенні. Редагування профілю нікого не переносить:
@@ -653,6 +695,11 @@ export class UpsertMemberComponent implements OnInit {
             summary: 'Пошта зайнята',
             detail: 'Ця адреса вже належить іншому акаунту або заявці. Перевір її.'
           });
+          return;
+        }
+
+        if (error instanceof HttpErrorResponse && error.error?.error === 'CardFieldRequired') {
+          this.messages.add({ severity: 'warn', summary: 'Не всі поля заповнено', detail: error.error.message });
           return;
         }
 

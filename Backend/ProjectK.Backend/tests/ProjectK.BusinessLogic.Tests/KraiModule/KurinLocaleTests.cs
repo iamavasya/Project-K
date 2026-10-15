@@ -17,7 +17,7 @@ public class KurinLocaleTests
     {
         var profiles = new Mock<IKraiProfileProvider>();
         profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
-            "cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", timeZone, "uk-UA")));
+            "cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", timeZone, "uk-UA"), KraiCardFieldsSettings.Default));
         return profiles;
     }
 

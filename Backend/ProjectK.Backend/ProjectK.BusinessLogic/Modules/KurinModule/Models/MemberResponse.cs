@@ -67,6 +67,9 @@ public class MemberResponse
     public DateOnly? DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+
+    /// <summary>Values of the край's own card fields, by key; empty when the viewer may not see them.</summary>
+    public IDictionary<string, string> CardExtras { get; set; } = new Dictionary<string, string>();
     public PlastLevel? LatestPlastLevel { get; set; }
     public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
     public ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];

@@ -526,7 +526,7 @@ export class GroupPage implements OnInit {
     if (!this.canCreate()) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member: null, placement: { groupKey: this.groupKey } },
+      componentProps: { member: null, placement: { groupKey: this.groupKey }, kurinKey: this.groupValue()?.kurinKey ?? null },
       presentingElement: this.presenting(),
     });
     await modal.present();

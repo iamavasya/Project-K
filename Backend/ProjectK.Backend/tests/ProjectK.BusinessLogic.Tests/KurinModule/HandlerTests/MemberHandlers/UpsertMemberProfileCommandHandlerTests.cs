@@ -11,10 +11,12 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Xunit;
@@ -31,6 +33,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
+    private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
 
     public UpsertMemberProfileCommandHandlerTests()
@@ -64,7 +67,8 @@ public class UpsertMemberProfileCommandHandlerTests
             mapperConfig.CreateMapper(),
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _accountsMock.Object);
+            _accountsMock.Object,
+            _profilesMock.Object);
     }
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
@@ -143,6 +147,40 @@ public class UpsertMemberProfileCommandHandlerTests
         created!.FirstName.Should().Be("Ivan");
         created.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
         _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_FromTheForm_RefusesAMissingRequiredCardField()
+    {
+        var group = MakeGroup();
+        _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
+                new KraiCardFieldsSettings(KraiCardFields.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }])));
+        var cmd = new UpsertMemberProfileCommand
+        {
+            GroupKey = group.GroupKey,
+            FirstName = "Ivan",
+            MiddleName = "I",
+            LastName = "Petrenko",
+            Email = "ivan@example.com",
+            PhoneNumber = "123",
+            DateOfBirth = new DateOnly(2001, 2, 3),
+            ApplyCardFields = true
+        };
+        ExistingMemberIs(null, cmd.MemberKey);
+        GroupIs(group);
+
+        var refused = await _handler.Handle(cmd, CancellationToken.None);
+        cmd.CardExtras = new Dictionary<string, string> { ["visaType"] = "D" };
+        Member? created = null;
+        _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+            .Callback<Member, CancellationToken>((m, _) => created = m);
+        var saved = await _handler.Handle(cmd, CancellationToken.None);
+
+        refused.Type.Should().Be(ResultType.BadRequest);
+        refused.ErrorCode.Should().Be(MemberCardFields.ErrorCode);
+        saved.Type.Should().Be(ResultType.Success);
+        created!.CardExtras.Should().Be("""{"visaType":"D"}""");
     }
 
     /// <summary>

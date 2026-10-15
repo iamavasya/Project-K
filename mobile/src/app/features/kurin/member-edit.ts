@@ -1,5 +1,7 @@
-import { utcDate } from './kurin.labels';
-import { MemberDto, MemberWarningDto, PlastLevelHistoryDto, WarningLevel } from './kurin.models';
+import { HttpErrorResponse } from '@angular/common/http';
+import { dateLabel } from '../../me/labels';
+import { dateOnly, utcDate } from './kurin.labels';
+import { CardExtraField, CardFieldMode, CardFields, MemberDto, MemberWarningDto, PlastLevelHistoryDto, WarningLevel } from './kurin.models';
 
 /*
  * The rules of the web's member edit (pages/upsert-member) the phone sheet follows: who changes the
@@ -172,6 +174,84 @@ export function warningCalls(draft: WarningDraft): ({ kind: 'cancel'; key: strin
   ];
 }
 
+// ── Поля картки (профіль краю) ───────────────────────────────────────────────────────────────────
+
+/** A kurin whose край has no profile asks for what the card always asked: both fields, nothing more. */
+export const DEFAULT_CARD_FIELDS: CardFields = { fields: { middleName: 'required', phoneNumber: 'required' }, extra: [] };
+
+const CARD_FIELD_MODES: readonly string[] = ['required', 'optional', 'hidden'];
+
+/** `GET kurin/{k}/profile` as far as the card needs it; any part may be missing. */
+export interface KraiProfileCardFields {
+  cardFields?: {
+    fields?: Partial<Record<'middleName' | 'phoneNumber', string>> | null;
+    extra?: Partial<CardExtraField>[] | null;
+  } | null;
+}
+
+/** The profile's card fields, each part missing or not understood read as the default. */
+export function cardFieldsOf(profile: KraiProfileCardFields | null | undefined): CardFields {
+  const section = profile?.cardFields;
+  const mode = (value: string | undefined): CardFieldMode => (CARD_FIELD_MODES.includes(value ?? '') ? (value as CardFieldMode) : 'required');
+  return {
+    fields: { middleName: mode(section?.fields?.middleName), phoneNumber: mode(section?.fields?.phoneNumber) },
+    extra: (section?.extra ?? [])
+      .filter((field) => !!field?.key && !!field.label)
+      .map((field) => ({ key: field.key!, label: field.label!, type: field.type === 'date' ? 'date' : 'text', required: !!field.required })),
+  };
+}
+
+/** Middle name and phone as the край says; the rest of the form is always asked. */
+export function fieldMode(card: CardFields, key: keyof MemberForm): CardFieldMode {
+  return key === 'middleName' || key === 'phoneNumber' ? card.fields[key] : 'required';
+}
+
+/** Extra field key → value; dates as «YYYY-MM-DD». */
+export type CardExtras = Record<string, string>;
+
+/** What the sheet edits: one value per extra field of the profile, the stored one or empty. */
+export function cardExtrasDraft(card: CardFields, stored: CardExtras | null | undefined): CardExtras {
+  return Object.fromEntries(card.extra.map((field) => [field.key, stored?.[field.key] ?? '']));
+}
+
+/**
+ * The extra fields to send: only those changed from what was read, so a value this viewer was not
+ * shown (`cardExtras` comes empty to who may not see private details) is not wiped. One emptied
+ * goes as '', which clears it; a new member's start empty, so only the filled ones go.
+ */
+export function changedCardExtras(loaded: CardExtras, values: CardExtras): CardExtras {
+  return Object.fromEntries(Object.entries(values).filter(([key, value]) => value.trim() !== (loaded[key] ?? '').trim()));
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+export function cardExtraValid(field: CardExtraField, value: string | null | undefined): boolean {
+  const text = (value ?? '').trim();
+  if (!text) return !field.required;
+  return field.type !== 'date' || DAY.test(text);
+}
+
+export function cardExtrasValid(card: CardFields, values: CardExtras): boolean {
+  return card.extra.every((field) => cardExtraValid(field, values[field.key]));
+}
+
+/** The card's lines: each extra field that has a value, under its label, a date written as the card writes dates. */
+export function cardExtraRows(card: CardFields, stored: CardExtras | null | undefined): { key: string; label: string; value: string }[] {
+  return card.extra.flatMap((field) => {
+    const value = (stored?.[field.key] ?? '').trim();
+    if (!value) return [];
+    const date = field.type === 'date' ? dateOnly(value) : null;
+    return [{ key: field.key, label: field.label, value: date ? dateLabel(date) : value }];
+  });
+}
+
+/** The server's own wording when a field the край requires was left empty (400 `CardFieldRequired`). */
+export function cardFieldError(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse)) return null;
+  const body = error.error as { error?: string; message?: string } | null;
+  return body?.error === 'CardFieldRequired' && body.message ? body.message : null;
+}
+
 // ── The request ──────────────────────────────────────────────────────────────────────────────────
 
 export interface MemberForm {
@@ -196,9 +276,15 @@ export interface PhotoChange {
  * The address and school go back as they are: the phone does not edit them, and leaving them out
  * would blank them.
  */
-export function memberFormData(member: MemberDto, form: MemberForm, histories: PlastLevelHistoryDto[], photo: PhotoChange): FormData {
+export function memberFormData(
+  member: MemberDto,
+  form: MemberForm,
+  histories: PlastLevelHistoryDto[],
+  photo: PhotoChange,
+  extras: CardExtras = {},
+): FormData {
   const body = new FormData();
-  appendProfile(body, form, histories);
+  appendProfile(body, form, histories, extras);
   if (member.address) body.append('address', member.address);
   if (member.school) body.append('school', member.school);
   body.append('removeProfilePhoto', String(photo.remove && !photo.blob));
@@ -219,17 +305,19 @@ export function newMemberFormData(
   form: MemberForm,
   histories: PlastLevelHistoryDto[],
   photo: Pick<PhotoChange, 'blob' | 'name'>,
+  extras: CardExtras = {},
 ): FormData {
   const body = new FormData();
   if ('groupKey' in placement) body.append('groupKey', placement.groupKey);
   else body.append('kurinKey', placement.kurinKey);
   body.append('createUserAccount', 'true');
-  appendProfile(body, form, histories);
+  appendProfile(body, form, histories, extras);
   if (photo.blob) body.append('blob', photo.blob, photo.name);
   return body;
 }
 
-function appendProfile(body: FormData, form: MemberForm, histories: PlastLevelHistoryDto[]): void {
+/** The extra fields given (see changedCardExtras), an empty one as '' to clear it; one left out keeps its value. */
+function appendProfile(body: FormData, form: MemberForm, histories: PlastLevelHistoryDto[], extras: CardExtras): void {
   body.append('firstName', form.firstName.trim());
   body.append('middleName', form.middleName.trim());
   body.append('lastName', form.lastName.trim());
@@ -242,6 +330,7 @@ function appendProfile(body: FormData, form: MemberForm, histories: PlastLevelHi
       body.append(`plastLevelHistories[${index}].${key}`, key === 'dateAchieved' ? String(value).slice(0, 10) : String(value));
     }
   });
+  for (const [key, value] of Object.entries(extras)) body.append(`cardExtras[${key}]`, value.trim());
 }
 
 /** The web's minAge validator: a member is at least six on the day the form is saved. */

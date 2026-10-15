@@ -77,7 +77,8 @@ describe('KraiSettingsComponent', () => {
 
     expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
       catalog: { badgeSources: ['ua'], hiddenBadges: undefined },
-      locale: { currency: 'CZK', timeZone: undefined }
+      locale: { currency: 'CZK', timeZone: undefined },
+      cardFields: undefined
     }, 'усе українське');
     expect(component.editor()!.revision).toBe(3);
     expect(component.dirty()).toBeFalse();
@@ -106,8 +107,24 @@ describe('KraiSettingsComponent', () => {
 
     expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
       catalog: { badgeSources: ['ua'], hiddenBadges: ['ua-2'] },
-      locale: { currency: 'CZK', timeZone: 'Europe/Prague' }
+      locale: { currency: 'CZK', timeZone: 'Europe/Prague' },
+      cardFields: undefined
     }, null);
+  });
+
+  it('saves the card fields with the rest of the profile', () => {
+    profiles.save.and.returnValue(of(czProfile));
+    const cardFields = {
+      fields: { middleName: 'hidden' as const },
+      extra: [{ key: 'visaType', label: 'Тип візи', type: 'text' as const, required: true }]
+    };
+
+    component.cardFields.set(cardFields);
+    expect(component.dirty()).toBeTrue();
+    component.save();
+
+    expect(profiles.save).toHaveBeenCalledWith('cz', 2, jasmine.objectContaining({ cardFields }), null);
+    expect(fixture.nativeElement.textContent).toContain('Картка члена');
   });
 
   it('restores an earlier revision', () => {

@@ -158,6 +158,9 @@ export class MemberService {
                 });
             });
         }
+          else if (key === 'cardExtras') {
+              Object.entries(value as Record<string, string>).forEach(([field, text]) => formData.append(`cardExtras[${field}]`, text));
+          }
           else if (value instanceof Date) {
               formData.append(key, toDateOnlyString(value) ?? '');
           }

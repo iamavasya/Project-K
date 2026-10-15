@@ -49,9 +49,11 @@
 
                     </div>
 
+                    @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
                         {{ member.middleName || 'По батькові не вказано' }}
                     </p>
+                    }
 
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
                         <p class="member-summary-line text-sm">
@@ -61,12 +63,14 @@
                             </span>
                         </p>
 
+                        @if (showsField('phoneNumber')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
                                 @if (phoneLink; as href) { <a [href]="href">{{ member.phoneNumber }}</a> } @else { {{ member.phoneNumber || 'Не вказано' }} }
                             </span>
                         </p>
+                        }
 
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Дата народження: </span>
@@ -74,6 +78,12 @@
                                 {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
                             </span>
                         </p>
+                        @for (line of cardExtras; track line.key) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">{{ line.label }}: </span>
+                            <span class="member-summary-value">{{ line.value }}</span>
+                        </p>
+                        }
                         @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
                         <p class="member-summary-line text-sm sm:col-span-2">
                             <span class="member-summary-label">Верифіковано: </span>
