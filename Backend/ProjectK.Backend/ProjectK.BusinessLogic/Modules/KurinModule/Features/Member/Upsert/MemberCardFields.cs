@@ -29,6 +29,9 @@ public static class MemberCardFields
             request.PhoneNumber = existing?.PhoneNumber ?? string.Empty;
         }
 
+        // An optional field left empty arrives as null; the phone column takes no nulls.
+        request.PhoneNumber ??= string.Empty;
+
         var missing = new[]
             {
                 (Field: KraiCardFields.MiddleName, Value: request.MiddleName),
