@@ -111,14 +111,9 @@ function renderInstances(s) {
   document.getElementById("instances").replaceChildren(
     ...s.instances.map((i) => {
       const remove = el("button", { class: "btn btn-text", type: "button", text: "Прибрати" });
-      remove.addEventListener("click", async () => {
+      remove.addEventListener("click", () => {
         if (!confirm(`Прибрати інстанс ${i.id.slice(0, 8)} і його історію?`)) return;
-        try {
-          await api(`/v1/admin/instances/${i.id}`, { method: "DELETE" });
-          await loadTelemetry();
-        } catch (e) {
-          showError(e);
-        }
+        void removeInstance(i.id);
       });
       const version = el("span", { class: older(i.version, s.latest) ? "tag danger" : "tag", text: i.version });
       return el(
@@ -140,6 +135,15 @@ function renderInstances(s) {
     }),
   );
   if (s.instances.length === 0) document.getElementById("instances").append(el("tr", {}, el("td", { colspan: "12", class: "muted", text: "Жоден інстанс ще не пінгував." })));
+}
+
+async function removeInstance(id) {
+  try {
+    await api(`/v1/admin/instances/${id}`, { method: "DELETE" });
+    await loadTelemetry();
+  } catch (e) {
+    showError(e);
+  }
 }
 
 async function loadTelemetry() {
@@ -167,11 +171,15 @@ async function loadNotices() {
       const actions = [];
       if (n.resolvedAt === null) {
         const resolve = el("button", { class: "btn btn-secondary", type: "button", text: "Завершити" });
-        resolve.addEventListener("click", () => act(() => api(`/v1/admin/incidents/${n.id}`, { method: "PATCH", body: JSON.stringify({ resolvedAt: Date.now() }) })));
+        resolve.addEventListener("click", () => {
+          void act(() => api(`/v1/admin/incidents/${n.id}`, { method: "PATCH", body: JSON.stringify({ resolvedAt: Date.now() }) }));
+        });
         actions.push(resolve);
       }
       const remove = el("button", { class: "btn btn-text", type: "button", text: "Видалити" });
-      remove.addEventListener("click", () => confirm(`Видалити «${n.title}»?`) && act(() => api(`/v1/admin/incidents/${n.id}`, { method: "DELETE" })));
+      remove.addEventListener("click", () => {
+        if (confirm(`Видалити «${n.title}»?`)) void act(() => api(`/v1/admin/incidents/${n.id}`, { method: "DELETE" }));
+      });
       actions.push(remove);
       const where = n.targets.length ? n.targets.map((id) => names.get(id) ?? id).join(", ") : "усі сервіси";
       const state = n.resolvedAt ? ` – ${dateTime.format(n.resolvedAt)}` : n.startsAt > Date.now() ? ", заплановано" : ", триває";
@@ -197,14 +205,13 @@ document.getElementById("notice-form").addEventListener("submit", (event) => {
   const data = new FormData(form);
   const startsAt = data.get("startsAt") ? new Date(data.get("startsAt")).getTime() : undefined;
   const payload = { kind: data.get("kind"), title: data.get("title"), body: data.get("body"), targets: data.getAll("target"), startsAt };
-  act(async () => {
+  void act(async () => {
     await api("/v1/admin/incidents", { method: "POST", body: JSON.stringify(payload) });
     form.reset();
   });
 });
 
-document.getElementById("check-now").addEventListener("click", async (event) => {
-  const button = event.currentTarget;
+async function checkNow(button) {
   button.disabled = true;
   try {
     const { results } = await api("/v1/admin/check", { method: "POST" });
@@ -215,6 +222,10 @@ document.getElementById("check-now").addEventListener("click", async (event) => 
   } finally {
     button.disabled = false;
   }
+}
+
+document.getElementById("check-now").addEventListener("click", (event) => {
+  void checkNow(event.currentTarget);
 });
 
 (async () => {
