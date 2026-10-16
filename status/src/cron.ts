@@ -55,7 +55,8 @@ export async function refreshLatestVersion(env: Env): Promise<string | null> {
       const tags = await get("/tags?per_page=100");
       if (tags.ok) {
         const names = ((await tags.json()) as { name: string }[]).map((t) => t.name).filter((n) => /^v?\d+\.\d+\.\d+$/.test(n));
-        latest = names.sort(compareVersions).at(-1) ?? null;
+        names.sort(compareVersions);
+        latest = names.at(-1) ?? null;
       }
     }
   } catch (e) {
