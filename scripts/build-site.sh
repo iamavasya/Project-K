@@ -75,6 +75,9 @@ mkdir -p "$site/public/demo"
 cp -R "$frontend/dist/projectk-frontend/browser/." "$site/public/demo/"
 # index.html asks for env.js; the demo has no runtime config, so an empty file keeps the console clean.
 : > "$site/public/demo/env.js"
+# The manifest installs the phone app under /m/, which the site does not have: the demo stays web.
+rm -f "$site/public/demo/manifest.webmanifest"
+sed -i.bak '/rel="manifest"/d' "$site/public/demo/index.html" && rm -f "$site/public/demo/index.html.bak"
 # The app's theme and pages reference /assets/... by absolute path (fonts, the hero photo), which
 # on the site host is the root, not /demo/. A copy of the same folder at the root keeps them found.
 rm -rf "$site/public/assets"
