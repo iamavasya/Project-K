@@ -322,6 +322,8 @@ public static class Program
 
         app.UseForwardedHeaders();
         app.UseMiddleware<ProjectK.API.Middleware.ClientIpMiddleware>();
+        // Outside the exception handler, so a request that ends in its 500 is counted as one.
+        app.UseMiddleware<ProjectK.API.Middleware.TelemetryCountingMiddleware>();
         app.UseSerilogRequestLogging(options =>
         {
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
