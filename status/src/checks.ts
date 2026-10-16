@@ -30,6 +30,14 @@ export interface Thresholds {
 
 export const thresholds = (env: Env): Thresholds => ({ slowMs: num(env.SLOW_MS, 3000), timeoutMs: num(env.TIMEOUT_MS, 10000) });
 
+/** What a non-ready /health answered, for the check detail. */
+function describe(body: { status?: unknown } | null): string {
+  if (body === null) return "не JSON";
+  const status = body.status;
+  if (typeof status === "string" || typeof status === "number" || typeof status === "boolean") return String(status);
+  return status === undefined || status === null ? "без status" : JSON.stringify(status);
+}
+
 export async function probe(target: Target, limits: Thresholds, now: () => number = Date.now): Promise<CheckResult> {
   const started = now();
   const result = (state: State, latencyMs: number | null, detail: string | null, version: string | null = null): CheckResult => ({
@@ -63,7 +71,7 @@ export async function probe(target: Target, limits: Thresholds, now: () => numbe
   if (target.kind === "health") {
     const body = (await res.json().catch(() => null)) as { status?: unknown; version?: unknown } | null;
     version = typeof body?.version === "string" ? body.version.slice(0, 40) : null;
-    if (body?.status !== "ready") return result("degraded", latency, `health: ${String(body?.status ?? "не JSON")}`.slice(0, 120), version);
+    if (body?.status !== "ready") return result("degraded", latency, `health: ${describe(body)}`.slice(0, 120), version);
   } else {
     await res.body?.cancel();
   }
