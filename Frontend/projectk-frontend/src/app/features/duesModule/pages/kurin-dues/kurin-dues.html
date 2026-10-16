@@ -91,9 +91,12 @@
 
       <p class="dues-rates">
         @if (rateNow(); as rate) {
-          Станиця {{ money(rate.stanytsiaFull) }}
-          @if (rate.stanytsiaReduced !== rate.stanytsiaFull) { (пільгова {{ money(rate.stanytsiaReduced) }}) }
-          · курінь {{ money(rate.kurinShare) }} за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.
+          @for (article of rate.articles; track article.name; let last = $last) {
+            {{ article.name }} {{ money(article.amount) }}
+            @if (article.reducedAmount !== article.amount) { (з пільгою {{ money(article.reducedAmount) }}) }
+            @if (!last) { · }
+          }
+          за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.
         } @else {
           <i class="pi pi-info-circle"></i>
           Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.
@@ -389,6 +392,7 @@
       [years]="d.years"
       [currentQuarter]="d.currentQuarter"
       [saving]="savingRate()"
+      [currency]="currency()"
       (save)="saveRate($event)" />
   }
 </section>

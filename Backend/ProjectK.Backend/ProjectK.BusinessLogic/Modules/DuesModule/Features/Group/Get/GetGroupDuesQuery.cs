@@ -129,13 +129,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             Currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken),
             CurrentQuarter = Quarter(current),
             Years = Years(charges, current),
-            KurinRates = kurinRates.Select(r => new KurinDuesRateDto
-            {
-                FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),
-                StanytsiaFull = r.StanytsiaFull,
-                StanytsiaReduced = r.StanytsiaReduced,
-                KurinShare = r.KurinShare
-            }).ToList(),
+            KurinRates = kurinRates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             GroupRates = groupRates.Where(r => r.GroupKey == group.GroupKey).Select(r => new GroupDuesRateDto
             {
                 FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),

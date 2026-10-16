@@ -126,13 +126,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             Currency = currency,
             CurrentQuarter = Quarter(current),
             Years = Years(DuesQuarter.FromIndex(first), current),
-            Rates = rates.Select(r => new KurinDuesRateDto
-            {
-                FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),
-                StanytsiaFull = r.StanytsiaFull,
-                StanytsiaReduced = r.StanytsiaReduced,
-                KurinShare = r.KurinShare
-            }).ToList(),
+            Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             Box = new DuesBoxDto
             {
                 Cash = kurinBox.Box.Cash,

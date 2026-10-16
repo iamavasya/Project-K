@@ -1,4 +1,4 @@
-import { DuesEntryKind, DuesPaymentMethod } from './dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from './dues.enums';
 
 export interface QuarterDto {
   year: number;
@@ -11,11 +11,23 @@ export interface PlastYearDto {
   quarters: QuarterDto[];
 }
 
+/** One стаття of the kurin's вкладка, such as «Станична вкладка» or «Табірний фонд». */
+export interface DuesArticleDto {
+  name: string;
+  recipient: DuesRecipient;
+  amount: number;
+  /** What a person with a пільга pays for it. */
+  reducedAmount: number;
+}
+
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
+  /** The kurin's статті, in its order; the amounts below are their totals. */
+  articles: DuesArticleDto[];
   stanytsiaFull: number;
   stanytsiaReduced: number;
   kurinShare: number;
+  kurinReduced: number;
 }
 
 export interface GroupDuesRateDto {
@@ -237,9 +249,14 @@ export interface SetGroupDuesRateRequest {
 
 export interface SetKurinDuesRateRequest {
   fromQuarter: QuarterDto;
-  stanytsiaFull: number;
-  stanytsiaReduced: number;
-  kurinShare: number;
+  articles: DuesArticleRequest[];
+}
+
+export interface DuesArticleRequest {
+  name: string;
+  recipient: DuesRecipient;
+  amount: number;
+  reducedAmount: number;
 }
 
 export interface SetDuesConcessionRequest {
