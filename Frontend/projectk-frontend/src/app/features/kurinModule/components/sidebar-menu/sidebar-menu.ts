@@ -409,21 +409,24 @@ export class SidebarMenuComponent implements OnChanges {
     // The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
     // Its /install page offers the one-tap install or shows the steps for the phone at hand. A
     // computer gets a code for the phone instead: /m/ there read as «install it on this computer».
-    items.push(this.installApp.onPhone
-      ? {
-        label: 'Встановити на телефон',
-        icon: 'pi pi-mobile',
-        url: '/m/install',
-        command: () => this.close()
-      }
-      : {
-        label: 'Встановити на телефон',
-        icon: 'pi pi-mobile',
-        command: () => {
-          this.close();
-          this.installOnPhoneVisible.set(true);
+    // The demo on the docs site has no phone app next to it.
+    if (this.installApp.available) {
+      items.push(this.installApp.onPhone
+        ? {
+          label: 'Встановити на телефон',
+          icon: 'pi pi-mobile',
+          url: '/m/install',
+          command: () => this.close()
         }
-      });
+        : {
+          label: 'Встановити на телефон',
+          icon: 'pi pi-mobile',
+          command: () => {
+            this.close();
+            this.installOnPhoneVisible.set(true);
+          }
+        });
+    }
 
     items.push({
       label: 'Повідомити про проблему',

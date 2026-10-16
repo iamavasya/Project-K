@@ -6,6 +6,7 @@ import {
   shouldShowInstallBanner
 } from '../../functions/install-app.function';
 import { PREFER_WEB_KEY } from '../../functions/mobile-redirect.function';
+import { environment } from '../../../../../environments/environment';
 
 /** Chrome's install prompt event (not in lib.dom). */
 interface BeforeInstallPromptEvent extends Event {
@@ -44,6 +45,8 @@ export class InstallAppService {
   private readonly dismissedAt = signal(readDismissedAt());
   private readonly installed = signal(false);
   private readonly preferWeb = signal(readPreferWeb());
+  /** The demo on the docs site has no phone app next to it. */
+  readonly available = !environment.isStaticDemo;
   /** A phone's browser. On a computer «Встановити на телефон» shows a code instead of opening /m/install. */
   readonly onPhone =
     globalThis.matchMedia?.(PHONE_MEDIA_QUERY).matches === true || isMobileUserAgent(globalThis.navigator?.userAgent ?? '');
@@ -52,12 +55,13 @@ export class InstallAppService {
    * A phone on the web is one that chose «Повна версія» (main.ts sends the others to /m/): it gets
    * a quiet way back instead of the install offer.
    */
-  readonly offersMobileVersion = computed(() => this.onPhone && this.preferWeb());
+  readonly offersMobileVersion = computed(() => this.available && this.onPhone && this.preferWeb());
 
   /** Chrome's install dialog can open right now. */
   readonly canPrompt = computed(() => this.deferred() !== null && !this.installed());
 
   readonly shouldOffer = computed(() =>
+    this.available &&
     !this.installed() &&
     !this.preferWeb() &&
     shouldShowInstallBanner({
